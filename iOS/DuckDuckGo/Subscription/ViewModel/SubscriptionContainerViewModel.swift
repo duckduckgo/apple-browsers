@@ -34,8 +34,8 @@ final class SubscriptionContainerViewModel: ObservableObject {
 
     init(subscriptionManager: SubscriptionManager,
          initialURL: URL,
-         flowType: SubscriptionFlowType = .firstPurchase,
-         isInternalUser: Bool = false,
+         flowType: SubscriptionFlowType,
+         isInternalUser: Bool,
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,

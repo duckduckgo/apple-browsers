@@ -1154,9 +1154,9 @@ final class SettingsViewModel: ObservableObject {
          darkReaderFeatureSettings: DarkReaderFeatureSettings,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
          sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
-         internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider,
-         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
-         expirationReminderScheduler: SubscriptionExpirationReminderScheduling = AppDependencyProvider.shared.subscriptionExpirationReminderScheduler
+         internalUserDecider: InternalUserDecider,
+         wideEvent: WideEventManaging,
+         expirationReminderScheduler: SubscriptionExpirationReminderScheduling
     ) {
 
         self.isSitePermissionsEnabled = sitePermissionsEnabled

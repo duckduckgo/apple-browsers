@@ -27,11 +27,6 @@ import PrivacyConfig
 @testable import Subscription
 import SubscriptionTestingUtilities
 
-struct PerformanceOptimizedPaywallsProviderStub: PerformanceOptimizedPaywallsProviding {
-    let isEnabled = false
-    let paths = SubscriptionURL.PerformanceOptimizedPaywallPaths.default
-}
-
 @MainActor
 @Suite("Subscription flow configuration")
 struct SubscriptionFlowConfigurationTests {

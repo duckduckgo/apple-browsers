@@ -35,8 +35,8 @@ struct SubscriptionPagesUseSubscriptionFeatureDependenciesTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("make builds the default App Store flow chain", .timeLimit(.minutes(1)))
-    func makeBuildsDefaultChain() {
+    @Test("smoke test: make builds the chain from the default App Store flow types", .timeLimit(.minutes(1)))
+    func makeBuildsDefaultChainSmokeTest() {
         let dependencies = makeDependencies()
 
         #expect(dependencies.pendingTransactionHandler is DefaultPendingTransactionHandler)

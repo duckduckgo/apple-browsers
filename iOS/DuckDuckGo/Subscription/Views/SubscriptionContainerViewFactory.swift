@@ -43,6 +43,13 @@ enum SubscriptionFlow {
         }
     }
 
+    var purchaseDependencies: SubscriptionPurchaseDependencies? {
+        switch self {
+        case let .subscribe(_, _, dependencies): return dependencies
+        case .plans, .restore, .email: return nil
+        }
+    }
+
     func configuration(subscriptionManager: SubscriptionManager, featureFlagger: FeatureFlagger) -> SubscriptionFlowConfiguration {
         switch self {
         case let .subscribe(redirectURLComponents, landingURL, dependencies):
@@ -75,14 +82,9 @@ enum SubscriptionContainerViewFactory {
     }
 
     static func makeViewModel(for flow: SubscriptionFlow, context: SubscriptionFlowContext) -> SubscriptionContainerViewModel {
-        let purchaseDependencies: SubscriptionPurchaseDependencies?
-        switch flow {
-        case let .subscribe(_, _, dependencies): purchaseDependencies = dependencies
-        case .plans, .restore, .email: purchaseDependencies = nil
-        }
         let configuration = flow.configuration(subscriptionManager: context.subscriptionManager, featureFlagger: context.featureFlagger)
         return makeViewModel(configuration: configuration,
-                             purchaseDependencies: purchaseDependencies,
+                             purchaseDependencies: flow.purchaseDependencies,
                              context: context)
     }
 

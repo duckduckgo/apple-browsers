@@ -11,16 +11,16 @@ API, checks their results and history, saves evidence, and stops its app or agen
 line tools. Builds and simulator operations use `xcodebuild` and `xcrun simctl` directly.
 It has no dependency on verify-ios, a UI runner, or a Python proof file.
 
-This verifies the broker flow through the shared native `DebugModeRunner`. It does not verify the dashboard, profile
-editor, subscription sign-in, production scheduler or their entry points. Confirmed opt-out means submission and
-confirmation completed. Removal requires a later scan.
+The `run` command verifies the broker flow through the shared native `DebugModeRunner`. It does not verify the
+dashboard, profile editor, subscription sign-in, production scheduler or their entry points. Confirmed opt-out means
+submission and confirmation completed. Removal requires a later scan.
 
 ## 1. Choose the scenario
 
 - **Scan only**, `"optOut": false`: pass when the app matches at least one record. No match is inconclusive. Supply a
-  token if the broker's scan needs the captcha service.
+  token if the broker's scan needs the captcha service and the app has no saved subscription.
 - **Scan and opt-out**, `"optOut": true`: scan, select one matched record, submit its opt-out and, when configured,
-  complete email confirmation. A supplied token removes the manual subscription login step.
+  complete email confirmation. Use a saved subscription with PIR entitlement or supply a token.
 
 Before submitting an opt-out, obtain the user's authorization for the broker, profile, selected record and scenario.
 An opt-out sends real broker requests and cannot be undone. A scan-only run can identify the record first. With several
@@ -49,9 +49,12 @@ expected record was found.
 }
 ```
 
-A scan-only run without a token needs only `brokerFile`, `profileFile` and `"optOut": false`. A token-authenticated run
-also needs the environment and endpoint fields, including when scan-only. An opt-out needs `emailConfirmation` explicitly
-set to `true` or `false`.
+A scan-only run without a token needs only `brokerFile`, `profileFile` and `"optOut": false`. An opt-out or a run with a
+supplied token also needs the environment and endpoint fields. For an opt-out, set `emailConfirmation` to `true` or `false`.
+
+For an opt-out without a supplied token, the native prerequisite check verifies that the saved subscription is signed
+in, has PIR entitlement and matches the configured backend before any broker requests. The macOS agent can use its
+saved subscription. The iOS runner creates a fresh simulator, so supply a token for an iOS opt-out.
 
 Supply an existing subscription service access token with `--token-file /local/path/to/token` or
 `--token-env ENVIRONMENT_VARIABLE_NAME`. The file contains only the token. Keep the token outside configuration and
@@ -104,19 +107,7 @@ the page changed. These are action-boundary captures of the viewport. The page c
 A `.unavailable` marker records a capture that produced no image. Screenshots can show unredacted broker
 records and form values. Keep them in the local attempt folder.
 
-## 4. Use interactive subscription setup only when requested
-
-For an iOS run that must use normal subscription authentication, replace the token option with
-`--interactive-subscription`. After the scan, pass the printed checkpoint instruction to the user. They activate or
-restore the test subscription in that same simulator, without resetting or relaunching. Acknowledge only after they
-report it ready, using the printed acknowledge path. The cancel path or Ctrl-C ends the attempt inconclusive.
-`checkpointTimeout` controls this wait and defaults to 900 seconds.
-
-This mode checks normal authentication and entitlement after acknowledgement. An opt-out without a supplied token or
-explicit interactive mode is rejected before launch. macOS unattended runs use supplied tokens; its agent has no
-subscription sign-in UI.
-
-## 5. Report the result
+## 4. Report the result
 
 Report pass, fail or inconclusive, the printed `report.md` path, failed checks, cleanup problems and unverified items.
 The attempt folder also contains machine-readable results, build and launch identity, input hashes, the exact broker
@@ -138,15 +129,18 @@ Tests without a simulator or live backend:
 python3 -m unittest discover -s .claude/skills/verify-pir/tests -p 'test_*.py'
 ```
 
-## 6. Verify persisted scans on macOS
+## 5. Verify persisted scans
 
 Choose the scheduler command by what should happen to the DEBUG profile:
 
-- `scheduler seed --profile-file <path>` saves a profile in an empty store and starts scans. An existing profile is a refusal.
-- `scheduler reseed --profile-file <path>` replaces the DEBUG PIR profile and job history, then starts scans. Obtain explicit
-  approval for that reset before invoking it.
-- `scheduler observe` watches work triggered separately through the app. Supply the UTC cutoff recorded before the
-  trigger and repeat `--job` with each exact broker URL and active profile query ID from the normal agent's `GET /api`.
+- `scheduler seed --profile-file <path>` on macOS saves a profile in an empty store and starts scans.
+  An existing profile is a refusal.
+- `scheduler reseed --profile-file <path>` on macOS replaces the DEBUG PIR profile and job history, then starts scans.
+  Obtain explicit approval for that reset before invoking it.
+- `scheduler observe` on macOS or an iOS simulator watches scans triggered separately through the app.
+  Use an app with an existing Freemium or subscription profile and its debug server enabled. In the iOS PIR debug
+  menu, turn on **Debug Server**. Record the UTC cutoff before triggering the scan, then repeat `--job` with each
+  exact broker URL and active profile query ID from `GET /api`.
 
 ```sh
 python3 .claude/skills/verify-pir/pir.py scheduler seed --platform macos --profile-file ~/pir-runs/profile.json
@@ -160,13 +154,15 @@ and starts its regular login item and debug server on port 8474. It reports the 
 These commands make live broker scans. The tool stops the browser it launched. The saved test profile and registered
 agent remain available after the attempt.
 
-Observation makes only GET requests. Evidence contains the agent identity, persisted scan histories and
+Observation makes only GET requests to the local app or agent, using its existing account and profile.
+For an iOS simulator, pass `--platform ios`. Use `--port` if the listener is on a port other than 8474.
+Evidence contains the listener identity, persisted scan histories and
 `scheduler.json`. A seeded attempt includes `scheduler-launch.json` with the native job plan. A pass requires a fresh
 `scanStarted` and a matching terminal `matchesFound` or `noMatchFound` for every expected job. A fresh terminal error
 fails. Missing, incomplete, or ambiguous evidence is inconclusive. For observe, choose a cutoff with room for the
 server's second-resolution timestamps. Recurring scheduler ticks and opt-out jobs are separate checks.
 
-## 7. Check the verifier without broker requests
+## 6. Check the verifier without broker requests
 
 After building, run a native startup check on each platform:
 
@@ -177,7 +173,7 @@ python3 .claude/skills/verify-pir/pir.py selftest --platform macos --evidence-di
 
 `selftest` uses the recorded build, forces staging with an internal dummy credential, checks correlated prerequisites,
 collects the native logs array and redacted application logs, writes the usual report and manifest, and stops its owned
-runtime. It only reads local HTTP endpoints. It rejects scenario, credential, interactive, check-config and keep options.
+runtime. It only reads local HTTP endpoints. It rejects scenario, credential, check-config and keep options.
 It does not establish real authentication, broker execution, captcha handling, email delivery or removal. Evidence and
 cleanup failures make the attempt inconclusive. Rebuild first if the source fingerprint has changed.
 

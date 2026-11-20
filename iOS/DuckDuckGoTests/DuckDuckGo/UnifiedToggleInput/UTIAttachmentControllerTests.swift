@@ -278,6 +278,34 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertFalse(view.imageButtonEnabled)
     }
 
+    func testUpdateAttachButtonPresentation_withOnlyTabAttachments_showsMenuAndReadsTabsOnce() {
+        config.model = makeModel(supportsImageUpload: false, supportedFileTypes: [])
+        config.limits = makeLimits()
+        enableTabAttachments()
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        XCTAssertFalse(view.imageButtonHidden)
+        XCTAssertTrue(view.imageButtonEnabled)
+        XCTAssertNotNil(view.attachmentMenu)
+        XCTAssertEqual(config.candidateReadCount, 1)
+    }
+
+    func testUpdateAttachButtonPresentation_whenEveryTabIsExcluded_hidesButton() {
+        config.model = makeModel(supportsImageUpload: false, supportedFileTypes: [])
+        config.limits = makeLimits()
+        enableTabAttachments()
+        config.tabs = [Tab(uid: "current", link: Link(title: "Duck.ai", url: URL(string: "https://duck.ai")!), fireTab: false),
+                       Tab(uid: "first", link: Link(title: "Home", url: URL(string: "https://duckduckgo.com/")!), fireTab: false)]
+        let sut = makeController()
+
+        sut.updateAttachButtonPresentation()
+
+        XCTAssertTrue(view.imageButtonHidden)
+        XCTAssertNil(view.attachmentMenu)
+    }
+
     // MARK: - Unsupported-attachment pruning
 
     func testRemoveUnsupportedAttachmentsForSelectedModel_removesImageWhenModelLosesImageSupport() {

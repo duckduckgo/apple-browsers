@@ -105,6 +105,23 @@ final class MultiTabAttachmentTests: XCTestCase {
         XCTAssertEqual(source.candidates().map(\.tabId), ["page"])
     }
 
+    func test_sourceExcludesDuckAIAndHomepageTabsAndKeepsOtherPages() {
+        let urls = [
+            "duck-ai": "https://duck.ai",
+            "bang": "https://duckduckgo.com/?q=!ai+x",
+            "chat-query": "https://duckduckgo.com/?q=x&ia=chat",
+            "homepage": "https://duckduckgo.com/",
+            "empty-query": "https://duckduckgo.com/?",
+            "serp": "https://duckduckgo.com/?q=x",
+            "other-site-bang": "https://example.com/?q=!ai",
+            "no-query": "https://example.com/page"
+        ]
+        let tabs = urls.keys.sorted().map { Tab(uid: $0, link: Link(title: $0, url: URL(string: urls[$0]!)!), fireTab: false) }
+        let source = MultiTabAttachmentSource(currentTabID: "none", mode: .normal, tabsProvider: { tabs })
+
+        XCTAssertEqual(Set(source.candidates().map(\.tabId)), ["serp", "other-site-bang", "no-query"])
+    }
+
     func test_sourcePinsCurrentTabThenSortsByRecencyWithStableTies() {
         let current = tab(id: "current", lastViewed: Date(timeIntervalSince1970: 1))
         let recent = tab(id: "recent", lastViewed: Date(timeIntervalSince1970: 20))

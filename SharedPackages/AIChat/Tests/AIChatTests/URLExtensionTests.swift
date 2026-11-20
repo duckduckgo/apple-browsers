@@ -346,6 +346,20 @@ final class URLExtensionTests: XCTestCase {
         XCTAssertTrue(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?ia=chat")!))
     }
 
+    func testIsDuckAIURLForQueryAndHostVariants() {
+        XCTAssertTrue(URL(string: "https://duck.ai")!.isDuckAIURL)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?q=!ai+x")!.isDuckAIURL)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/?q=x&ia=chat")!.isDuckAIURL)
+        XCTAssertTrue(URL(string: "https://duckduckgo.com/revoke-duckai-access")!.isDuckAIURL)
+        XCTAssertFalse(URL(string: "https://example.com/?q=!ai")!.isDuckAIURL)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?q=x")!.isDuckAIURL)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/")!.isDuckAIURL)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/?")!.isDuckAIURL)
+        XCTAssertFalse(URL(string: "https://example.com/page")!.isDuckAIURL)
+        XCTAssertFalse(URL(string: "https://example.com/?q=!ai")!.isDuckAIBang)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com/")!.isDuckAIBang)
+    }
+
     func testShouldExcludeFromTabPickerKeepsAttachableURLs() {
         // SERP — must remain attachable
         XCTAssertFalse(AIChatTabMetadata.shouldExcludeFromTabPicker(URL(string: "https://duckduckgo.com/?q=test")!))

@@ -21,9 +21,11 @@ import AppKitExtensions
 import Foundation
 import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import os.log
 import Persistence
+import PrivacyConfig
 
 /// Supplies whether a bundle identifier appears in the user Dock plist (`persistent-apps`).
 /// Injected so unit tests do not depend on the host machine’s Dock or whether the debug app is pinned.
@@ -82,6 +84,7 @@ protocol DockCustomization: AnyObject {
 final class DockCustomizer: DockCustomization {
     enum Keys {
         static let wasNotificationShownToUser = "was-dock-notification.show-to-users"
+        static let wasAppStoreNotificationShownToUser = "was-dock-notification.app-store.show-to-users"
     }
 
     var supportsAddingToDock: Bool {
@@ -89,6 +92,7 @@ final class DockCustomizer: DockCustomization {
     }
 
     private let applicationBuildType: ApplicationBuildType
+    private let featureFlagger: FeatureFlagger
     private let positionProvider: DockPositionProviding
     private let keyValueStore: KeyValueStoring
     private let dockMembershipProvider: DockMembershipProviding
@@ -100,17 +104,18 @@ final class DockCustomizer: DockCustomization {
     private var cancellables = Set<AnyCancellable>()
 
     init(applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
+         featureFlagger: FeatureFlagger,
          positionProvider: DockPositionProviding = DockPositionProvider(),
          keyValueStore: KeyValueStoring = UserDefaults.standard,
          dockMembershipProvider: DockMembershipProviding = DockPlistDockMembershipProvider()) {
         self.applicationBuildType = applicationBuildType
+        self.featureFlagger = featureFlagger
         self.positionProvider = positionProvider
         self.keyValueStore = keyValueStore
         self.dockMembershipProvider = dockMembershipProvider
     }
 
     func synchronizeNotificationVisibilityWithFirstLaunchDate() {
-        guard !applicationBuildType.isAppStoreBuild else { return }
         shouldShowNotificationPrivate = shouldShowNotification
         startTimer()
     }
@@ -132,12 +137,17 @@ final class DockCustomizer: DockCustomization {
             .store(in: &cancellables)
     }
 
+    private var notificationShownKey: String {
+        supportsAddingToDock ? Keys.wasNotificationShownToUser : Keys.wasAppStoreNotificationShownToUser
+    }
+
     private var didWeShowNotificationToUser: Bool {
-        keyValueStore.object(forKey: Keys.wasNotificationShownToUser) as? Bool ?? false
+        keyValueStore.object(forKey: notificationShownKey) as? Bool ?? false
     }
 
     var shouldShowNotification: Bool {
-        AppDelegate.twoDaysPassedSinceFirstLaunch
+        (supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA))
+            && AppDelegate.twoDaysPassedSinceFirstLaunch
             && !didWeShowNotificationToUser
             && !isAddedToDock
     }
@@ -148,14 +158,13 @@ final class DockCustomizer: DockCustomization {
     }
 
     func didCloseMoreOptionsMenu() {
-        if AppDelegate.twoDaysPassedSinceFirstLaunch {
-            shouldShowNotificationPrivate = false
-            keyValueStore.set(true, forKey: Keys.wasNotificationShownToUser)
-        }
+        guard shouldShowNotificationPrivate || shouldShowNotification else { return }
+        shouldShowNotificationPrivate = false
+        keyValueStore.set(true, forKey: notificationShownKey)
     }
 
     func resetData() {
-        keyValueStore.set(false, forKey: Keys.wasNotificationShownToUser)
+        keyValueStore.set(false, forKey: notificationShownKey)
         shouldShowNotificationPrivate = shouldShowNotification
     }
 

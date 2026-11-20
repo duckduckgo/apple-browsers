@@ -36,6 +36,12 @@ extension WebExtensionManager {
             return
         }
 
+        // A manifest's DDG identifier does not authorize access to the browser's internal handlers.
+        guard installingEmbeddedIdentifiers.contains(identifier)
+            || installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == true else {
+            return
+        }
+
         let handlers = handlerProvider.makeHandlers(for: context)
 
         for handler in handlers {

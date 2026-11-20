@@ -51,6 +51,7 @@ final class UserScripts: UserScriptsProvider {
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let pageContextUserScript: PageContextUserScript
     let internalFeedbackUserScript: InternalFeedbackUserScript
+    let duckAILoadingSkeletonUserScript: DuckAILoadingSkeletonUserScript?
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -87,12 +88,15 @@ final class UserScripts: UserScriptsProvider {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          sponsorBlockPreferences: SponsorBlockPreferences,
          sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = AppDependencyProvider.shared.sponsorBlockSegmentsProvider,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
         findInPageScript = findInPageImplementation == .legacy ? FindInPageUserScript() : nil
 
         selectionFrameScript = SelectionFrameUserScript()
+        duckAILoadingSkeletonUserScript = DuckAILoadingSkeletonUserScript(unifiedToggleInputFeature: unifiedToggleInputFeature,
+                                                                          debugSettings: aiChatDebugSettings)
         sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
                                                         preferences: sponsorBlockPreferences,
                                                         isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
@@ -163,7 +167,7 @@ final class UserScripts: UserScriptsProvider {
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
-                .exactOrSubdomain(hostname: "duck.ai"),
+                .exact(hostname: "duck.ai"),
             ]
             if let debugHostname = aiChatDebugSettings.messagePolicyHostname {
                 originRules.append(.exact(hostname: debugHostname))
@@ -171,6 +175,7 @@ final class UserScripts: UserScriptsProvider {
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
                 originRules: originRules,
+                framePolicy: aiChatDebugSettings.messagePolicyHostname == nil ? .secureMainFrame : .mainFrame,
                 pixelFiring: DuckAiNativeStoragePixelAdapter()
             )
         } else {
@@ -234,7 +239,8 @@ final class UserScripts: UserScriptsProvider {
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,
-            contentScopeUserScriptIsolated
+            contentScopeUserScriptIsolated,
+            duckAILoadingSkeletonUserScript
         ]
 
         if !isAutoconsentExtensionAvailable {

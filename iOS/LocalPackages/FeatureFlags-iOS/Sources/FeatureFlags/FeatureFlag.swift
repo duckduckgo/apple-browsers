@@ -409,8 +409,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
     case unifiedToggleInputKeyboardEdgeSweep
 
-    /// Simplifies the Duck.ai prompt box: one ⊕ attach menu that also holds the tools, and no tools button.
-    /// https://app.asana.com/0/0/1219231050400064/f
+    /// Simplifies the Duck.ai prompt box on iPhone: one ⊕ menu holds the attachments and tools, the tools button
+    /// and Customize Responses leave the input, and Chats gets a Duck.ai Settings button.
+    /// https://app.asana.com/0/0/1220262271015348/f
     case unifiedToggleInputSimplifiedPromptBox
 
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.

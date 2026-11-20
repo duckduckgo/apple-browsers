@@ -600,6 +600,23 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testCustomizeResponsesInSettingsIsSentOnlyOnIPhoneWithSimplifiedPromptBox() throws {
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        for isIphone in [true, false] {
+            MockDevicePlatform.isIphone = isIphone
+            for isFlagOn in [false, true] {
+                mockFeatureFlagger.enabledFeatureFlags = isFlagOn ? [.unifiedToggleInputSimplifiedPromptBox] : []
+                aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+                let config = try XCTUnwrap(aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues)
+                let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+
+                let value = json["supportsCustomizeResponsesInSettings"] as? Bool
+                XCTAssertEqual(value, isIphone && isFlagOn ? true : nil, "iPhone: \(isIphone), flag: \(isFlagOn)")
+            }
+        }
+    }
+
+    @MainActor
     func testAIChatMessagesAreOnlyAcceptedFromHTTPSMainFrame() {
         let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: MockAIChatDebugSettingsForTests())
 

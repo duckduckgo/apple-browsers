@@ -260,6 +260,25 @@ final class PrivacyStatsTests: XCTestCase {
         }
     }
 
+    func testWhenTrackerIsRecordedJustBeforeClearPrivacyStatsThenStatsStayCleared() async throws {
+        try databaseProvider.addObjects { context in
+            [DailyBlockedTrackersEntity.make(timestamp: Date(), companyName: "A", count: 37, context: context)]
+        }
+
+        // recreate database provider with existing location so that the current pack loads today's stored stats
+        databaseProvider = TestPrivacyStatsDatabaseProvider(databaseName: type(of: self).description(), location: databaseProvider.location)
+        privacyStats = PrivacyStats(databaseProvider: databaseProvider)
+
+        await privacyStats.recordBlockedTracker("B")
+        await privacyStats.clearPrivacyStats()
+
+        // Wait past the 1s commit debounce.
+        try await Task.sleep(nanoseconds: 2_000_000_000)
+
+        let stats = await privacyStats.fetchPrivacyStats()
+        XCTAssertEqual(stats, [:])
+    }
+
     // MARK: - handleAppTermination
 
     func testThatHandleAppTerminationSavesCurrentPack() async throws {

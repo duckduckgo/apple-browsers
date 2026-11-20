@@ -54,6 +54,7 @@ final class UnifiedSuggestionsHost {
     private var isLogoHeldForForeground = false
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
+    private var redesignedFocusedSurface: RedesignedFocusedSurface?
     private var redesignedPresentationCancellable: AnyCancellable?
     private var showsRedesignedSearchModules = false
 
@@ -144,7 +145,7 @@ final class UnifiedSuggestionsHost {
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
-            usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
+            usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
             mode: focusedMode,
             escapeHatch: escapeHatch,
@@ -232,8 +233,11 @@ final class UnifiedSuggestionsHost {
             .sink { [weak self] _ in self?.finishDeferredLogoReveal() }
     }
 
-    func setUsesRedesignedNewTabPageLayout(_ enabled: Bool) {
-        guard enabled != (redesignedSearchPresentation != nil) else { return }
+    /// - Parameter surface: The redesigned surface to mount, or nil for the legacy favorites.
+    func setRedesignedFocusedSurface(_ surface: RedesignedFocusedSurface?) {
+        guard surface != redesignedFocusedSurface else { return }
+        redesignedFocusedSurface = surface
+        let enabled = surface != nil
         stopModeChangeAnimator()
         viewModel.cancelLogoModeChange()
         viewModel.usesRedesignedNewTabPageLayout = enabled
@@ -555,7 +559,9 @@ final class UnifiedSuggestionsHost {
             return view
         }
         // The logo shares this host and would slide too, so only while it is off screen.
-        guard viewModel.escapeHatchPlacement == .embedded, viewModel.backdropLogoFrame == nil else { return nil }
+        // The web page surface has no embedded hatch, but its favorites still have to follow the bar.
+        let slidesWithBar = viewModel.escapeHatchPlacement == .embedded || redesignedFocusedSurface == .webPage
+        guard slidesWithBar, viewModel.backdropLogoFrame == nil else { return nil }
         return hostingController?.view
     }
 
@@ -608,6 +614,7 @@ final class UnifiedSuggestionsHost {
         viewModel.isLogoRevealDeferred = false
         redesignedPresentationCancellable = nil
         redesignedSearchPresentation = nil
+        redesignedFocusedSurface = nil
         cancellables.removeAll()
         onContentChanged = nil
         config.source.tearDown()
@@ -631,7 +638,7 @@ final class UnifiedSuggestionsHost {
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
-            usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
+            usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
             mode: focusedMode,
             escapeHatch: escapeHatch,

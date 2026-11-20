@@ -19,8 +19,8 @@ name: test_unified_input_send_prompt
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # Dismiss any launch-time modal BEFORE navigating the Browsing Menu.
 - runFlow:

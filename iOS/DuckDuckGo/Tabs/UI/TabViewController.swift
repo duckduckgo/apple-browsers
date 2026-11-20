@@ -167,6 +167,12 @@ class TabViewController: UIViewController {
     var webViewContainerBottomConstraint: NSLayoutConstraint?
     /// Holds the native Duck.ai chat input on iPad while this tab shows a full-tab chat.
     var fullTabChatInputContainer: FullTabChatInputContainerView?
+    /// Holds the native Duck.ai chats sidebar on iPad while this tab shows a full-tab chat.
+    var chatListSidebarContainer: IPadChatListSidebarContainerView?
+    /// Set once this tab's `sidebar=open` load has opened the chats sidebar, so later page URL changes don't reopen it.
+    var hasOpenedChatListSidebarFromURL = false
+    /// Opened for the iPad chats list, so its empty chat keeps the input down on every visit, as `sidebar=open` does.
+    var isOpenedForChatList = false
     private lazy var firstPaintCover = FirstPaintCover()
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
@@ -645,7 +651,7 @@ class TabViewController: UIViewController {
         }
     }
 
-    private let rulesCompilationMonitor = RulesCompilationMonitor.shared
+    var rulesCompilationMonitor = RulesCompilationMonitor.shared
     
     private var lastRenderedURL: URL?
 
@@ -841,7 +847,6 @@ class TabViewController: UIViewController {
     var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
 
     let sitePermissionsState = SitePermissionsState()
-    var sitePermissionsNavigationTimeout: TimeInterval = 10
     var contentBlockingWaitPixelTimeout: TimeInterval = 10
     var contentBlockingWaitNotificationCenter: NotificationCenter = .default
 
@@ -4270,47 +4275,31 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         // Geolocation must be installed before the first document, including SERP and content-blocking-off loads.
-        // Keep these wait tasks so tab teardown resolves WebKit's outstanding decisions.
+        // Like the legacy wait, this has no deadline: a slow rules compile means a slow load, not an error page.
+        // Stop, a replacing navigation and tab teardown cancel these tasks, which resolves WebKit's pending decisions.
         rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
         showProgressIndicator()
         let waitID = UUID()
-        let timeout = sitePermissionsNavigationTimeout
         let geolocationInstalled = userContentController.$contentBlockingAssets
             .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
         if isMainFrame {
             startContentBlockingWaitTimeoutPixel(until: geolocationInstalled)
         }
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
-            defer {
-                state?.contentBlockingWaitTasks[waitID] = nil
-                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
-            }
-            guard !Task.isCancelled else {
-                completion(false)
-                return
-            }
-            // Only readiness may reset the deadline; unrelated asset updates must not extend it.
-            let readiness = geolocationInstalled
-                .timeout(.seconds(timeout), scheduler: DispatchQueue.main)
-                .first()
-            var isReady = false
-            for await _ in readiness.values {
-                isReady = true
-                break
-            }
-            // Remove before completion: success re-enters the navigation policy delegate.
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
+            // The assets publisher never finishes, so this returns nil only when the wait is cancelled.
+            let isReady = await geolocationInstalled.values.first { _ in true } != nil
             let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
-            guard !Task.isCancelled, isCurrentWait else {
+            guard isReady, !Task.isCancelled, isCurrentWait else {
+                // Rules are not ready, so this is not a finished wait. Keep the tab's waiter: a replacing wait shares it.
                 completion(false)
                 return
             }
             if isMainFrame {
                 state?.contentBlockingWaitTimeoutPixel = nil
             }
-            if !isReady, isMainFrame {
-                self?.showSitePermissionsAssetsTimeout(for: url)
-            }
-            completion(isReady)
+            // Resuming navigation re-enters policy and can record a zero-second wait.
+            rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
+            completion(true)
         }
         return true
     }
@@ -4338,17 +4327,6 @@ extension TabViewController: WKNavigationDelegate {
             }, receiveValue: { [pixelFiring] in
                 pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
             })
-    }
-
-    private func showSitePermissionsAssetsTimeout(for failedURL: URL) {
-        let error = URLError(.timedOut, userInfo: [NSURLErrorFailingURLErrorKey: failedURL])
-        lastError = error
-        pendingNativeLoadURL = nil
-        shouldReloadOnError = false
-        url = failedURL
-        hideProgressIndicator()
-        showError(message: error.localizedDescription)
-        webpageDidFailToLoad()
     }
 
     private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (TabNavigationDecision) -> Void) {

@@ -27,6 +27,9 @@ public enum WebExtensionAppPermission: String, CaseIterable, Sendable {
     /// Lets an extension change the browser's privacy settings, including turning off DuckDuckGo's
     /// password manager so it can take autofill over.
     case privacy
+#if os(macOS)
+    case downloads
+#endif
 }
 
 @available(macOS 15.4, iOS 18.4, *)

@@ -2532,11 +2532,11 @@ public struct UserText {
             comment: "tab attachment selection count. First parameter is selected count; second is attachment limit.")
         return String(format: format, selectedCount, attachmentLimit)
     }
-    public static let aiChatChooseTabsCloseAccessibilityLabel = NotLocalizedString(
+    public static let aiChatChooseTabsCloseAccessibilityLabel = NSLocalizedString(
         "aichat.choose-tabs.close.accessibility-label",
         value: "Close",
         comment: "accessibility label for closing the tab attachment picker without applying changes")
-    public static let aiChatChooseTabsConfirmAccessibilityLabel = NotLocalizedString(
+    public static let aiChatChooseTabsConfirmAccessibilityLabel = NSLocalizedString(
         "aichat.choose-tabs.confirm.accessibility-label",
         value: "Attach selected tabs",
         comment: "accessibility label for applying the tab attachment selection")

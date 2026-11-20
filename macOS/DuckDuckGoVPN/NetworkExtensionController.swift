@@ -44,19 +44,29 @@ final class NetworkExtensionController {
 
 extension NetworkExtensionController {
 
-    func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws {
+    enum ActivationOutcome {
+        case activated
+        case requestCanceled
+    }
+
+    func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws -> ActivationOutcome {
+        let outcome: ActivationOutcome
         do {
             if let extensionVersion = try await systemExtensionManager.activate(waitingForUserApproval: waitingForUserApproval) {
 
                 NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = extensionVersion
             }
-
-            try await Task.sleep(nanoseconds: 300 * NSEC_PER_MSEC)
+            outcome = .activated
         } catch OSSystemExtensionError.requestCanceled {
-            // The user cancelled the system extension approval. Surface it as a cancellation so callers
-            // treat it as one rather than a system extension activation failure.
+#if DEBUG || REVIEW
+            outcome = .requestCanceled
+#else
             throw CancellationError()
+#endif
         }
+
+        try await Task.sleep(nanoseconds: 300 * NSEC_PER_MSEC)
+        return outcome
     }
 
     func deactivateSystemExtension() async throws {

@@ -478,7 +478,6 @@ final class SystemExtensionRequest: NSObject {
     private var continuation: CheckedContinuation<Void, Error>?
     private var timeoutTask: Task<Void, Never>?
     private var cancellationWasRequested = false
-    private var keptIdenticalActiveExtension = false
 
     private init(request: OSSystemExtensionRequest,
                  manager: any SystemExtensionRequestManaging,
@@ -606,9 +605,6 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
 
     /// Decides whether to replace the active extension with the one being activated.
     ///
-    /// When the build is identical, the active extension is kept and the request completes successfully
-    /// without reporting a new version.
-    ///
     /// - Parameters:
     ///   - existing: The installed extension.
     ///   - existingIsActive: Whether the installed extension is enabled, approved and not being uninstalled.
@@ -624,9 +620,6 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
         }
 
         Logger.systemExtensionManager.log("Keeping the active system extension \(new.shortVersion, privacy: .public) (\(new.version, privacy: .public)): the build being activated is identical")
-        lock.lock()
-        keptIdenticalActiveExtension = true
-        lock.unlock()
         return .cancel
     }
 
@@ -653,15 +646,6 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
-        lock.lock()
-        let keptIdenticalActiveExtension = keptIdenticalActiveExtension
-        lock.unlock()
-
-        if keptIdenticalActiveExtension, (error as? OSSystemExtensionError)?.code == .requestCanceled {
-            complete(with: .success(()))
-            return
-        }
-
         Self.logRequestFailure(error: error, request: request)
         complete(with: .failure(error))
     }

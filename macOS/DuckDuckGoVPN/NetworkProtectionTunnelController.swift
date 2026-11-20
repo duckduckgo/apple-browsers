@@ -559,7 +559,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             includeAppVersionParameter: true)
 
         do {
-            try await networkExtensionController.activateSystemExtension(waitingForUserApproval: waitingForUserApproval)
+            let outcome = try await networkExtensionController.activateSystemExtension(waitingForUserApproval: waitingForUserApproval)
+            guard outcome == .activated else { return }
 
             PixelKit.fire(
                 NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess,

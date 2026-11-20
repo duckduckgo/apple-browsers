@@ -96,7 +96,9 @@ final class ClientToolTestTool: BrowserTool {
     var onExecute: (() async -> Void)?
     var asksEveryTime = false
     var target: String?
+    var countsResults = false
     init(name: String) { self.name = name }
+    func resultCount(of value: JSONValue) -> Int? { countsResults ? value["items"]?.arrayValue?.count : nil }
     func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { target }
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         calls.append((arguments, context))

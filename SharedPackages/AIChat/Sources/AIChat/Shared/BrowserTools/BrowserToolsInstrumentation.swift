@@ -39,10 +39,13 @@ public struct BrowserToolCallTrace: Equatable, Sendable {
     public var permissionPath: BrowserToolPermissionPath
     /// Seconds the tool ran, without the wait for permission. Nil when it never ran.
     public var executionDuration: TimeInterval?
+    /// Items in a successful search or list result. Nil for other tools and failed calls.
+    public var resultCount: Int?
 
-    public init(permissionPath: BrowserToolPermissionPath = .beforePermission, executionDuration: TimeInterval? = nil) {
+    public init(permissionPath: BrowserToolPermissionPath = .beforePermission, executionDuration: TimeInterval? = nil, resultCount: Int? = nil) {
         self.permissionPath = permissionPath
         self.executionDuration = executionDuration
+        self.resultCount = resultCount
     }
 }
 

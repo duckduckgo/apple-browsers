@@ -612,6 +612,7 @@
 		3706FC16293F65D500E42796 /* PasswordManagementLoginModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE6547C271FCD4D008D1D63 /* PasswordManagementLoginModel.swift */; };
 		3706FC17293F65D500E42796 /* TabViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9FF95A24A1EFC20039E328 /* TabViewModel.swift */; };
 		3706FC18293F65D500E42796 /* TabDragAndDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */; };
+		CE70D881C23E4D39B515B85B /* VerticalTabDragSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA605DE385B84D408268F6AE /* VerticalTabDragSession.swift */; };
 		9480E1251F781C84C8B8E96E /* VerticalTabsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910855DFEB4B58C61470AA70 /* VerticalTabsViewController.swift */; };
 		F995848A9C6C4FDCBB43F4E0 /* VerticalTabsSidebarPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD8CDAAC1FA5105FFE12940 /* VerticalTabsSidebarPresenter.swift */; };
 		7FD8AC116075189C110B7CF8 /* VerticalTabsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E89C8ECEF6EC5012A4E5D978 /* VerticalTabsView.swift */; };
@@ -2190,6 +2191,7 @@
 		AA7E919F287872EA00AB6B62 /* VisitViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7E919E287872EA00AB6B62 /* VisitViewModel.swift */; };
 		AA97BF4625135DD30014931A /* ApplicationDockMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA97BF4525135DD30014931A /* ApplicationDockMenu.swift */; };
 		AA9E9A5E25A4867200D1959D /* TabDragAndDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */; };
+		D22FBD96FA2346649EDECA29 /* VerticalTabDragSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA605DE385B84D408268F6AE /* VerticalTabDragSession.swift */; };
 		91E5EC90DBBB8592571E7220 /* VerticalTabsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910855DFEB4B58C61470AA70 /* VerticalTabsViewController.swift */; };
 		B73DFA9710179D84F0648282 /* VerticalTabsSidebarPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFD8CDAAC1FA5105FFE12940 /* VerticalTabsSidebarPresenter.swift */; };
 		1B796749465FF67F343F57DD /* VerticalTabsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E89C8ECEF6EC5012A4E5D978 /* VerticalTabsView.swift */; };
@@ -4531,6 +4533,7 @@
 		AA7E919E287872EA00AB6B62 /* VisitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitViewModel.swift; sourceTree = "<group>"; };
 		AA97BF4525135DD30014931A /* ApplicationDockMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationDockMenu.swift; sourceTree = "<group>"; };
 		AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabDragAndDropManager.swift; sourceTree = "<group>"; };
+		BA605DE385B84D408268F6AE /* VerticalTabDragSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalTabDragSession.swift; sourceTree = "<group>"; };
 		910855DFEB4B58C61470AA70 /* VerticalTabsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalTabsViewController.swift; sourceTree = "<group>"; };
 		FFD8CDAAC1FA5105FFE12940 /* VerticalTabsSidebarPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalTabsSidebarPresenter.swift; sourceTree = "<group>"; };
 		E89C8ECEF6EC5012A4E5D978 /* VerticalTabsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalTabsView.swift; sourceTree = "<group>"; };
@@ -8143,6 +8146,7 @@
 				B5CCC06C2F649BAF003EB0A2 /* TabBackgroundView.swift */,
 				B5CCC06F2F649BB9003EB0A2 /* TabBackgroundShapeView.swift */,
 				AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */,
+				BA605DE385B84D408268F6AE /* VerticalTabDragSession.swift */,
 				910855DFEB4B58C61470AA70 /* VerticalTabsViewController.swift */,
 				FFD8CDAAC1FA5105FFE12940 /* VerticalTabsSidebarPresenter.swift */,
 				E89C8ECEF6EC5012A4E5D978 /* VerticalTabsView.swift */,
@@ -12208,6 +12212,7 @@
 				7B11B3062EF304B6005F0687 /* AutomationServer.swift in Sources */,
 				7B11B3072EF304B6005F0687 /* LaunchOptionsHandler.swift in Sources */,
 				3706FC18293F65D500E42796 /* TabDragAndDropManager.swift in Sources */,
+				CE70D881C23E4D39B515B85B /* VerticalTabDragSession.swift in Sources */,
 				9480E1251F781C84C8B8E96E /* VerticalTabsViewController.swift in Sources */,
 				F995848A9C6C4FDCBB43F4E0 /* VerticalTabsSidebarPresenter.swift in Sources */,
 				7FD8AC116075189C110B7CF8 /* VerticalTabsView.swift in Sources */,
@@ -13745,6 +13750,7 @@
 				AA9FF95B24A1EFC20039E328 /* TabViewModel.swift in Sources */,
 				1D26EBB02B74DB600002A93F /* TabSnapshotCleanupService.swift in Sources */,
 				AA9E9A5E25A4867200D1959D /* TabDragAndDropManager.swift in Sources */,
+				D22FBD96FA2346649EDECA29 /* VerticalTabDragSession.swift in Sources */,
 				91E5EC90DBBB8592571E7220 /* VerticalTabsViewController.swift in Sources */,
 				B73DFA9710179D84F0648282 /* VerticalTabsSidebarPresenter.swift in Sources */,
 				1B796749465FF67F343F57DD /* VerticalTabsView.swift in Sources */,

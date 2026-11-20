@@ -538,6 +538,10 @@ final class MainViewController: NSViewController {
         if isShown {
             let sidebarModel = VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel,
                                                     onCloseTab: tabBarViewController.requestCloseTab(at:),
+                                                    onTearOffTab: { [tabCollectionViewModel] index, point in
+                                                        tabCollectionViewModel.moveTabToNewWindow(at: .unpinned(index), droppingPoint: point)
+                                                    },
+                                                    refreshPreview: browserTabViewController.refreshDragPreview(for:),
                                                     openNewTab: tabBarViewController.openNewTab)
             let presenter = VerticalTabsSidebarPresenter(
                 mainView: mainView,

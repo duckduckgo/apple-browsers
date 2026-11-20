@@ -54,7 +54,7 @@ final class VerticalTabsViewModelTests: XCTestCase {
     func testSidebarCloseWaitsForTheWindowToHandleTheRequest() {
         let collection = tabCollectionViewModel(tabCount: 3, selectedIndex: 0)
         var requestedIndex: TabIndex?
-        let model = VerticalTabsViewModel(tabCollectionViewModel: collection, onCloseTab: { requestedIndex = $0 }, openNewTab: {})
+        let model = VerticalTabsViewModel(tabCollectionViewModel: collection, onCloseTab: { requestedIndex = $0 }, onTearOffTab: { _, _ in }, openNewTab: {})
         let originalIDs = tabIDs(of: collection)
 
         model.close(originalIDs[1])
@@ -74,6 +74,111 @@ final class VerticalTabsViewModelTests: XCTestCase {
         wait(for: [tabsUpdated], timeout: 1)
         XCTAssertEqual(tabIDs(of: tabCollectionViewModel), [originalIDs[1], originalIDs[2], originalIDs[0]])
         XCTAssertEqual(model.tabs.map(\.id), [originalIDs[1], originalIDs[2], originalIDs[0]])
+    }
+
+    func testTearOffUsesTheDraggedTabsCurrentIndexAndTheScreenDropPoint() {
+        let collection = tabCollectionViewModel(tabCount: 3, selectedIndex: 0)
+        let draggedID = tabIDs(of: collection)[1]
+        var requestedIndices: [Int] = []
+        var requestedPoints: [NSPoint] = []
+        let model = verticalTabsViewModel(for: collection) { index, point in
+            requestedIndices.append(index)
+            requestedPoints.append(point)
+        }
+        let dropPoint = NSPoint(x: -235, y: 502)
+
+        XCTAssertTrue(model.canTearOffTab(draggedID))
+        model.moveTab(draggedID, to: 2)
+        model.tearOffTab(draggedID, at: dropPoint)
+
+        XCTAssertEqual(requestedIndices, [2])
+        XCTAssertEqual(requestedPoints, [dropPoint])
+    }
+
+    func testTearOffIgnoresATabClosedDuringTheDrag() {
+        let collection = tabCollectionViewModel(tabCount: 3, selectedIndex: 0)
+        let model = verticalTabsViewModel(for: collection)
+        let originalIDs = tabIDs(of: collection)
+        let draggedID = originalIDs[1]
+        XCTAssertTrue(model.canTearOffTab(draggedID))
+
+        collection.close(at: .unpinned(1))
+        model.tearOffTab(draggedID, at: .zero)
+
+        XCTAssertFalse(model.canTearOffTab(draggedID))
+        XCTAssertEqual(tabIDs(of: collection), [originalIDs[0], originalIDs[2]])
+    }
+
+    func testTearOffKeepsTheLastTabInItsWindow() {
+        let collection = tabCollectionViewModel(tabCount: 2, selectedIndex: 0)
+        let model = verticalTabsViewModel(for: collection)
+        let draggedID = tabIDs(of: collection)[0]
+        XCTAssertTrue(model.canTearOffTab(draggedID))
+
+        collection.close(at: .unpinned(1))
+        model.tearOffTab(draggedID, at: .zero)
+
+        XCTAssertFalse(model.canTearOffTab(draggedID))
+        XCTAssertEqual(tabIDs(of: collection), [draggedID])
+    }
+
+    func testTearOffKeepsFireWindowTabsInTheirWindow() {
+        let collection = tabCollectionViewModel(tabCount: 2, selectedIndex: 0, burnerMode: BurnerMode(isBurner: true))
+        let model = verticalTabsViewModel(for: collection)
+        let originalIDs = tabIDs(of: collection)
+
+        XCTAssertFalse(model.canTearOffTab(originalIDs[1]))
+        model.tearOffTab(originalIDs[1], at: .zero)
+
+        XCTAssertEqual(tabIDs(of: collection), originalIDs)
+    }
+
+    func testDraggingOutsideShowsAPreviewAndReturningInsideDismissesItWithoutMovingTheTab() throws {
+        let collection = tabCollectionViewModel(tabCount: 2, selectedIndex: 0)
+        let model = verticalTabsViewModel(for: collection)
+        let window = makeDragSourceWindow()
+        defer { window.close() }
+        let session = VerticalTabDragSession(sidebarView: try XCTUnwrap(window.contentView), model: model)
+        let inside = NSPoint(x: window.frame.midX, y: window.frame.midY)
+        let outside = NSPoint(x: window.frame.minX - 20, y: window.frame.midY)
+
+        session.beginDragging(model.tabs[1].id)
+        session.update(at: inside)
+        XCTAssertTrue(window.childWindows?.isEmpty ?? true)
+
+        session.update(at: outside)
+        let preview = try XCTUnwrap(window.childWindows?.first as? NSPanel)
+        XCTAssertTrue(preview.ignoresMouseEvents)
+        session.update(at: inside)
+        XCTAssertTrue(window.childWindows?.isEmpty ?? true)
+
+        session.end(at: inside)
+        XCTAssertEqual(collection.tabs.count, 2)
+    }
+
+    func testDroppingOutsideRequestsOneNewWindowAndCancellingTheSameDragRequestsNone() throws {
+        let collection = tabCollectionViewModel(tabCount: 2, selectedIndex: 0)
+        var requestedPoints: [NSPoint] = []
+        let model = verticalTabsViewModel(for: collection) { _, point in requestedPoints.append(point) }
+        let window = makeDragSourceWindow()
+        defer { window.close() }
+        let session = VerticalTabDragSession(sidebarView: try XCTUnwrap(window.contentView), model: model)
+        let outside = NSPoint(x: window.frame.maxX + 15, y: window.frame.midY)
+        let tabID = model.tabs[1].id
+
+        session.beginDragging(tabID)
+        session.update(at: outside)
+        XCTAssertNotNil(window.childWindows?.first as? NSPanel)
+        session.cancel()
+        session.end(at: outside)
+        XCTAssertTrue(requestedPoints.isEmpty)
+        XCTAssertTrue(window.childWindows?.isEmpty ?? true)
+
+        session.beginDragging(tabID)
+        session.update(at: outside)
+        session.end(at: outside)
+        XCTAssertEqual(requestedPoints, [outside])
+        XCTAssertTrue(window.childWindows?.isEmpty ?? true)
     }
 
     func testDuplicatesRegularTabsAndRejectsSettingsTabs() {
@@ -124,16 +229,28 @@ final class VerticalTabsViewModelTests: XCTestCase {
         XCTAssertTrue(VerticalTab(source).activePermissions.isEmpty)
     }
 
-    private func tabCollectionViewModel(tabCount: Int, selectedIndex: Int) -> TabCollectionViewModel {
-        let tabs = (0..<tabCount).map { _ in Tab(content: .newtab) }
-        return TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs),
-                                      selectionIndex: .unpinned(selectedIndex),
-                                      pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
+    private func makeDragSourceWindow() -> NSWindow {
+        let window = NSWindow(contentRect: NSRect(x: 150, y: 150, width: 640, height: 480),
+                              styleMask: [.titled, .resizable],
+                              backing: .buffered,
+                              defer: false)
+        window.isReleasedWhenClosed = false
+        return window
     }
 
-    private func verticalTabsViewModel(for tabCollectionViewModel: TabCollectionViewModel) -> VerticalTabsViewModel {
+    private func tabCollectionViewModel(tabCount: Int, selectedIndex: Int, burnerMode: BurnerMode = .regular) -> TabCollectionViewModel {
+        let tabs = (0..<tabCount).map { _ in Tab(content: .newtab, burnerMode: burnerMode) }
+        return TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs),
+                                      selectionIndex: .unpinned(selectedIndex),
+                                      pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
+                                      burnerMode: burnerMode)
+    }
+
+    private func verticalTabsViewModel(for tabCollectionViewModel: TabCollectionViewModel,
+                                       onTearOffTab: @escaping (Int, NSPoint) -> Void = { _, _ in XCTFail("Unexpected tab tear-off") }) -> VerticalTabsViewModel {
         VerticalTabsViewModel(tabCollectionViewModel: tabCollectionViewModel,
                               onCloseTab: { tabCollectionViewModel.close(at: $0) },
+                              onTearOffTab: onTearOffTab,
                               openNewTab: { tabCollectionViewModel.insertOrAppendNewTab() })
     }
 

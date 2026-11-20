@@ -31,6 +31,7 @@ final class VerticalTabsViewController: NSViewController {
     private let viewModel: VerticalTabsViewModel
     private let themeManager: ThemeManager
     private let blurView = NSVisualEffectView()
+    private(set) lazy var dragSession = VerticalTabDragSession(sidebarView: blurView, model: viewModel)
     let newTabButtonAnchor = NSView()
     private var widthConstraint: NSLayoutConstraint?
     private var widthAtResizeStart: CGFloat = 0
@@ -61,7 +62,8 @@ final class VerticalTabsViewController: NSViewController {
         blurView.blendingMode = .behindWindow
         blurView.material = .sidebar
         blurView.state = .active
-        let hostingView = NSHostingView(rootView: VerticalTabsView(model: viewModel, themeManager: themeManager, newTabButtonAnchor: newTabButtonAnchor))
+        let hostingView = NSHostingView(rootView: VerticalTabsView(model: viewModel, themeManager: themeManager,
+                                                                  newTabButtonAnchor: newTabButtonAnchor, dragSession: dragSession))
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         hostingView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let resizeHandle = VerticalTabsResizeHandle(

@@ -107,6 +107,25 @@ class UnloadedTabViewModelTests: XCTestCase {
         XCTAssertNotNil(second)
     }
 
+    @MainActor
+    func testDragPreviewIncludesTheUnloadedTabsSavedPageAndFallsBackWhenItHasNoSnapshot() throws {
+        let snapshotID = UUID()
+        persistTestSnapshot(for: snapshotID)
+        let savedTab = makeViewModel(unloadedTab: makeUnloadedTab(tabSnapshotIdentifier: snapshotID.uuidString))
+        let unsavedTab = makeViewModel(unloadedTab: makeUnloadedTab())
+
+        let pagePreview = TabDragPreview.makeImage(for: savedTab)
+        let fallback = TabDragPreview.makeImage(for: unsavedTab)
+
+        XCTAssertGreaterThan(fallback.size.height, 0)
+        XCTAssertGreaterThan(pagePreview.size.height, fallback.size.height)
+        let data = try XCTUnwrap(pagePreview.tiffRepresentation)
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: data))
+        let center = try XCTUnwrap(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh / 2)?.usingColorSpace(.sRGB))
+        XCTAssertGreaterThan(center.redComponent - max(center.greenComponent, center.blueComponent), 0.6,
+                             "The center of the preview should contain the red saved page")
+    }
+
     // MARK: - Previewable: other properties
 
     func testShouldShowPreviewIsTrue() {

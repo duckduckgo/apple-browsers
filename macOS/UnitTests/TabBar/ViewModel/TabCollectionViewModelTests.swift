@@ -930,6 +930,53 @@ final class TabCollectionViewModelTests: XCTestCase {
     // MARK: - New Window Logic
 
     @MainActor
+    func testTearingOffATabOpensTheExistingTabAtTheDropPointAndReportsAMove() throws {
+        let remainingTab = Tab(content: .newtab)
+        let draggedTab = Tab(content: .newtab)
+        let source = TabCollectionViewModel(tabCollection: TabCollection(tabs: [remainingTab, draggedTab]), pinnedTabsManagerProvider: nil)
+        let delegate = TabCollectionViewModelDelegateMock()
+        source.delegate = delegate
+        let dropPoint = NSPoint(x: 360, y: 520)
+        var openedTab: Tab?
+        var openingPoint: NSPoint?
+        draggedTab.onClose = { XCTFail("Moving the tab should preserve its session") }
+
+        source.moveTabToNewWindow(at: .unpinned(1), droppingPoint: dropPoint) { tab, point in
+            openedTab = tab
+            openingPoint = point
+            return NSWindow()
+        }
+
+        XCTAssertIdentical(openedTab, draggedTab)
+        XCTAssertEqual(openingPoint, dropPoint)
+        XCTAssertEqual(source.tabs.map(\.uuid), [remainingTab.uuid])
+        XCTAssertIdentical(source.selectedTabViewModel?.tab, remainingTab)
+        XCTAssertEqual(delegate.webExtensionTabMoves.count, 1)
+        let move = try XCTUnwrap(delegate.webExtensionTabMoves.first)
+        XCTAssertIdentical(move.tab, draggedTab)
+        XCTAssertEqual(move.oldIndex, 1)
+    }
+
+    @MainActor
+    func testTearOffRestoresTheOriginalOrderAndSelectionIfOpeningTheWindowFails() {
+        let tabs = (0..<3).map { _ in Tab(content: .newtab) }
+        let source = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs), selectionIndex: .unpinned(1), pinnedTabsManagerProvider: nil)
+        let delegate = TabCollectionViewModelDelegateMock()
+        source.delegate = delegate
+        var attemptedTab: Tab?
+
+        source.moveTabToNewWindow(at: .unpinned(1)) { tab, _ in
+            attemptedTab = tab
+            return nil
+        }
+
+        XCTAssertIdentical(attemptedTab, tabs[1])
+        XCTAssertEqual(source.tabs.map(\.uuid), tabs.map(\.uuid))
+        XCTAssertIdentical(source.selectedTabViewModel?.tab, tabs[1])
+        XCTAssertTrue(delegate.webExtensionTabMoves.isEmpty)
+    }
+
+    @MainActor
     func testSingleUnpinnedTabCannotBeMovedToNewWindow() throws {
         let sourceTabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 

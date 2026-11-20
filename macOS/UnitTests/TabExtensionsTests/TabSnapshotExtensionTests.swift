@@ -314,6 +314,15 @@ class TabSnapshotExtensionTests: XCTestCase {
         XCTAssertEqual(mockWebViewSnapshotRenderer.lastDelay, 0.1)
     }
 
+    @MainActor
+    func testWebViewSnapshotRendererWithZeroDelayReturnsTheRequestedSnapshot() async {
+        let webView = SnapshotReturningWebView(frame: .zero, configuration: WKWebViewConfiguration())
+
+        let snapshot = await WebViewSnapshotRenderer().renderSnapshot(webView: webView, delay: 0)
+
+        XCTAssertIdentical(snapshot, webView.snapshotImage)
+    }
+
     // MARK: - renderSnapshotSync(from:)
 
     @MainActor
@@ -360,6 +369,15 @@ class TabSnapshotExtensionTests: XCTestCase {
         tabSnapshotExtension = nil
 
         XCTAssertFalse(mockTabSnapshotStore.clearedSnapshotIDs.contains(identifier))
+    }
+}
+
+private final class SnapshotReturningWebView: WKWebView {
+    let snapshotImage = NSImage(size: NSSize(width: 32, height: 24))
+
+    override func takeSnapshot(with snapshotConfiguration: WKSnapshotConfiguration?,
+                               completionHandler: @escaping @MainActor (NSImage?, (any Error)?) -> Void) {
+        completionHandler(snapshotImage, nil)
     }
 }
 

@@ -1279,9 +1279,26 @@ extension TabCollectionViewModel {
     }
 
     func canMoveTabToNewWindow(tabIndex: TabIndex) -> Bool {
-        let pinnedTabsCount = pinnedTabsCollection?.tabs.count ?? 0
-        let unpinnedTabsCount = tabCollection.tabs.count
+        changesEnabled && tabIndex.isUnpinnedTab && tabCollection.tabs.indices.contains(tabIndex.item) && allTabsCount > 1
+    }
 
-        return tabIndex.isUnpinnedTab && (unpinnedTabsCount > 1 || pinnedTabsCount > 0)
+    func moveTabToNewWindow(at sourceIndex: TabIndex, droppingPoint: NSPoint? = nil,
+                            openWindow: @MainActor (Tab, NSPoint?) -> NSWindow? = { WindowsManager.openNewWindow(with: $0, droppingPoint: $1) }) {
+        guard canMoveTabToNewWindow(tabIndex: sourceIndex),
+              let tab = materialize(at: sourceIndex),
+              let oldWebExtensionIndex = webExtensionIndex(for: sourceIndex) else { return }
+
+        let priorSelection = selectedTab
+        Self.withWebExtensionTabLifecycleEventsSuppressed {
+            remove(at: sourceIndex, published: false)
+            guard openWindow(tab, droppingPoint) != nil else {
+                insert(tab, at: .unpinned(min(sourceIndex.item, tabCollection.tabs.count)), selected: false)
+                if let priorSelection, let index = indexInAllTabs(of: priorSelection) {
+                    select(at: index)
+                }
+                return
+            }
+            notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
+        }
     }
 }

@@ -1511,6 +1511,32 @@ final class BrowserTabViewController: NSViewController {
         return shouldReplaceWebView
     }
 
+    func refreshDragPreview(for id: TabIdentifier) async -> NSImage? {
+        guard !tabCollectionViewModel.isBurner, let tabViewModel, tabViewModel.uuid == id,
+              tabViewModel.shouldShowPreview, let window = view.window else { return nil }
+
+        let content = tabViewModel.tabContent
+        let snapshot: NSImage?
+        if let webView, webView.window === window, !webView.bounds.isEmpty {
+            // The New Tab page, among others, presents a different web view from the tab's own.
+            snapshot = await WebViewSnapshotRenderer().renderSnapshot(webView: webView, delay: 0)
+        } else {
+            let nativeView: NSView?
+            switch content {
+            case .settings: nativeView = preferencesViewController?.view
+            case .bookmarks: nativeView = bookmarksViewController?.view
+            case .dataBrokerProtection: nativeView = dataBrokerProtectionHomeViewController?.view
+            default: return nil
+            }
+            guard let nativeView, nativeView.window === window, !nativeView.bounds.isEmpty else { return nil }
+            snapshot = await ViewSnapshotRenderer().renderSnapshot { [weak nativeView] in nativeView }
+        }
+
+        guard !Task.isCancelled, let snapshot, self.tabViewModel === tabViewModel, tabViewModel.tabContent == content,
+              tabViewModel.shouldShowPreview else { return nil }
+        return TabDragPreview.makeImage(for: tabViewModel, snapshot: snapshot)
+    }
+
     func generateNativePreviewIfNeeded() {
         guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.displaysContentInWebView, !tabViewModel.isShowingErrorPage else { return }
 

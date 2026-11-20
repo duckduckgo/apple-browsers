@@ -95,8 +95,12 @@ final class VerticalTabsSidebarPresenter {
             self?.setLayout(.peeking)
         }
         peekingHoverView.onMouseExited = { [weak self] in
-            guard self?.layout == .peeking else { return }
-            self?.setLayout(.collapsed)
+            guard let self, layout == .peeking, !sidebarViewController.dragSession.isDragging else { return }
+            setLayout(.collapsed)
+        }
+        sidebarViewController.dragSession.onDragEnded = { [weak self] in
+            guard let self, layout == .peeking, !sidebarViewController.dragSession.isPointerOverSidebar else { return }
+            setLayout(.collapsed)
         }
 
         let sidebarShownConstraint = sidebarView.leadingAnchor.constraint(equalTo: mainView.leadingAnchor)
@@ -128,6 +132,8 @@ final class VerticalTabsSidebarPresenter {
     }
 
     func uninstall() {
+        sidebarViewController.dragSession.onDragEnded = nil
+        sidebarViewController.dragSession.cancel()
         NSLayoutConstraint.deactivate(contentLeadingConstraintsToSidebar)
         NSLayoutConstraint.activate(mainView.contentLeadingConstraints)
         peekingHoverView.removeFromSuperview()
@@ -165,6 +171,9 @@ final class VerticalTabsSidebarPresenter {
     private func setLayout(_ newLayout: Layout, animated: Bool = true) {
         guard layout != newLayout else { return }
         layout = newLayout
+        if layout == .hidden {
+            sidebarViewController.dragSession.cancel()
+        }
         sidebarView.isHidden = layout == .hidden
         revealEdgeView.isHidden = layout == .hidden
         peekingHoverView.isHidden = layout == .hidden

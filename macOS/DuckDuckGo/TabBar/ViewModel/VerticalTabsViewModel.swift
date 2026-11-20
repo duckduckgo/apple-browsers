@@ -52,13 +52,21 @@ final class VerticalTabsViewModel: ObservableObject {
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let onCloseTab: (TabIndex) -> Void
+    private let onTearOffTab: (Int, NSPoint) -> Void
+    private let refreshPreview: (TabIdentifier) async -> NSImage?
     let openNewTab: () -> Void
     private var cancellables = Set<AnyCancellable>()
     private var tabSubscriptions: [TabIdentifier: (source: any TabBarViewModel, cancellable: AnyCancellable)] = [:]
 
-    init(tabCollectionViewModel: TabCollectionViewModel, onCloseTab: @escaping (TabIndex) -> Void, openNewTab: @escaping () -> Void) {
+    init(tabCollectionViewModel: TabCollectionViewModel,
+         onCloseTab: @escaping (TabIndex) -> Void,
+         onTearOffTab: @escaping (Int, NSPoint) -> Void,
+         refreshPreview: @escaping (TabIdentifier) async -> NSImage? = { _ in nil },
+         openNewTab: @escaping () -> Void) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.onCloseTab = onCloseTab
+        self.onTearOffTab = onTearOffTab
+        self.refreshPreview = refreshPreview
         self.openNewTab = openNewTab
 
         reloadTabs()
@@ -97,6 +105,31 @@ final class VerticalTabsViewModel: ObservableObject {
         guard let currentIndex = unpinnedIndex(of: id), currentIndex != index,
               tabCollectionViewModel.tabCollection.tabs.indices.contains(index) else { return }
         tabCollectionViewModel.moveTab(at: .unpinned(currentIndex), to: .unpinned(index))
+    }
+
+    func canTearOffTab(_ id: TabIdentifier) -> Bool {
+        tearOffIndex(of: id) != nil
+    }
+
+    func dragPreview(for id: TabIdentifier) -> NSImage? {
+        guard canTearOffTab(id), let viewModel = tabCollectionViewModel.tabViewModels[id] else { return nil }
+        return TabDragPreview.makeImage(for: viewModel)
+    }
+
+    func refreshDragPreview(for id: TabIdentifier) async -> NSImage? {
+        guard canTearOffTab(id), tabCollectionViewModel.selectedTab?.uuid == id else { return nil }
+        return await refreshPreview(id)
+    }
+
+    func tearOffTab(_ id: TabIdentifier, at screenPoint: NSPoint) {
+        guard let index = tearOffIndex(of: id) else { return }
+        onTearOffTab(index, screenPoint)
+    }
+
+    private func tearOffIndex(of id: TabIdentifier) -> Int? {
+        guard !tabCollectionViewModel.isBurner, let index = unpinnedIndex(of: id),
+              tabCollectionViewModel.canMoveTabToNewWindow(tabIndex: .unpinned(index)) else { return nil }
+        return index
     }
 
     private func unpinnedIndex(of id: TabIdentifier) -> Int? {

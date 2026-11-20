@@ -29,9 +29,10 @@ struct VerticalTabsView: View {
     @ObservedObject var model: VerticalTabsViewModel
     @ObservedObject var themeManager: ThemeManager
     let newTabButtonAnchor: NSView
+    let dragSession: VerticalTabDragSession
 
     var body: some View {
-        VerticalTabsList(model: model, newTabButtonAnchor: newTabButtonAnchor)
+        VerticalTabsList(model: model, newTabButtonAnchor: newTabButtonAnchor, dragSession: dragSession)
             .frame(minWidth: 0, maxWidth: .infinity)
             .environment(\.designSystemPalette, themeManager.designColorPalette)
     }
@@ -62,13 +63,15 @@ private struct VerticalTabsList: View {
         let tabID: TabIdentifier
         /// How far below the row's top the pointer grabbed it.
         let grabOffset: CGFloat
-        var pointerY: CGFloat
+        var pointerY: CGFloat?
     }
 
     @ObservedObject var model: VerticalTabsViewModel
     let newTabButtonAnchor: NSView
+    @ObservedObject var dragSession: VerticalTabDragSession
     @Environment(\.designSystemPalette) private var palette
     @State private var drag: TabDrag?
+    @GestureState private var isReordering = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -108,23 +111,28 @@ private struct VerticalTabsList: View {
                 .padding(Layout.listPadding)
         }
         .background(Color(designSystemColor: .surfaceBackdrop, palette: palette).opacity(VerticalTabsStyle.backgroundOpacity))
+        .onChange(of: isReordering) { isReordering in
+            if !isReordering {
+                withAnimation(Layout.reorderAnimation) { drag = nil }
+            }
+        }
     }
 
     private func reorderGesture(for tabID: TabIdentifier) -> some Gesture {
         DragGesture(minimumDistance: Layout.reorderDragThreshold, coordinateSpace: .named(Layout.listCoordinateSpace))
+            .updating($isReordering) { _, isReordering, _ in isReordering = true }
             .onChanged { value in
                 if drag == nil, let startIndex = index(of: tabID) {
                     drag = TabDrag(tabID: tabID, grabOffset: value.startLocation.y - rowTop(at: startIndex), pointerY: value.location.y)
                     model.select(tabID)
+                    dragSession.beginDragging(tabID)
                 }
-                guard var currentDrag = drag else { return }
-                currentDrag.pointerY = value.location.y
+                guard var currentDrag = drag, currentDrag.tabID == tabID else { return }
+                let canReorder = dragSession.isDragging && dragSession.isPointerOverSidebar
+                currentDrag.pointerY = canReorder ? value.location.y : nil
                 drag = currentDrag
-                model.moveTab(tabID, to: targetIndex(of: currentDrag))
-            }
-            .onEnded { _ in
-                withAnimation(Layout.reorderAnimation) {
-                    drag = nil
+                if canReorder {
+                    model.moveTab(tabID, to: targetIndex(pointerY: value.location.y, grabOffset: currentDrag.grabOffset))
                 }
             }
     }
@@ -138,15 +146,15 @@ private struct VerticalTabsList: View {
     }
 
     /// The place of the row that the middle of the dragged row is over.
-    private func targetIndex(of drag: TabDrag) -> Int {
-        let draggedRowMiddle = drag.pointerY - drag.grabOffset + Layout.rowHeight / 2
+    private func targetIndex(pointerY: CGFloat, grabOffset: CGFloat) -> Int {
+        let draggedRowMiddle = pointerY - grabOffset + Layout.rowHeight / 2
         let index = Int((draggedRowMiddle / (Layout.rowHeight + Layout.rowSpacing)).rounded(.down))
         return min(max(index, 0), model.tabs.count - 1)
     }
 
     private func dragOffset(of tabID: TabIdentifier, at index: Int) -> CGFloat {
-        guard let drag, drag.tabID == tabID else { return 0 }
-        return drag.pointerY - drag.grabOffset - rowTop(at: index)
+        guard dragSession.isDragging, let drag, drag.tabID == tabID, let pointerY = drag.pointerY else { return 0 }
+        return pointerY - drag.grabOffset - rowTop(at: index)
     }
 }
 

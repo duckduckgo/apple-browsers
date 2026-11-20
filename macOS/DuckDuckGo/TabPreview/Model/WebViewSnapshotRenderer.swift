@@ -40,7 +40,9 @@ final class WebViewSnapshotRenderer: WebViewSnapshotRendering {
         let configuration = WKSnapshotConfiguration.makePreviewSnapshotConfiguration()
 
         do {
-            try? await Task.sleep(interval: delay)
+            if delay > 0 {
+                try? await Task.sleep(interval: delay)
+            }
             let image = try await webView.takeSnapshot(configuration: configuration)
             Logger.tabSnapshots.debug("Preview rendered for \(String(describing: webView.url))")
 

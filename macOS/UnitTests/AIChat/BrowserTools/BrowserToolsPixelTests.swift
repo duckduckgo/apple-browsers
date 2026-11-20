@@ -70,6 +70,24 @@ struct BrowserToolsPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A finished requestAccess fires its counts and decision, then one result per known tool", .timeLimit(.minutes(1)))
+    func accessRequestFiresRequestedAndResults() {
+        instrumentation.accessRequestDidFinish(BrowserToolAccessRequestOutcome(
+            decision: .allow, requested: 3, asked: 2, removed: 1,
+            results: [("searchHistory", .granted), ("pinTab", .removed), ("https://example.com", .unavailable)]))
+        instrumentation.accessRequestDidFinish(BrowserToolAccessRequestOutcome(decision: .invalid))
+
+        #expect(pixels.actualFireCalls.map(\.pixel.name) == ["aichat_tools_access_requested_macos", "aichat_tools_access_result_macos",
+                                                             "aichat_tools_access_result_macos", "aichat_tools_access_requested_macos"])
+        #expect(pixels.actualFireCalls.map(\.pixel.parameters) == [
+            ["decision": "allow", "requested": "3", "asked": "2", "removed": "1"],
+            ["tool": "search_history", "access": "granted"],
+            ["tool": "pin_tab", "access": "removed"],
+            ["decision": "invalid"]
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Times to answer fall into the spec's buckets", .timeLimit(.minutes(1)),
           arguments: zip([0, 1.999, 2, 9.999, 10, 59.999, 60, 600], ["lt_2s", "lt_2s", "lt_10s", "lt_10s", "lt_60s", "lt_60s", "gte_60s", "gte_60s"]))
     func timeToAnswerBuckets(seconds: Double, bucket: String) {

@@ -137,7 +137,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             // The upsell reports through the experiment's own metrics instead.
             break
         case .thatsDuckAI:
-            // TODO: pixel
+            // Pixel to add.
             break
         }
     }
@@ -159,7 +159,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .subscriptionUpsell:
             break
         case .thatsDuckAI:
-            // TODO: pixel
+            // Pixel to add.
             break
         }
     }
@@ -189,7 +189,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .subscriptionUpsell:
             break
         case .thatsDuckAI:
-            // TODO: pixel
+            // Pixel to add.
             break
         }
     }
@@ -215,7 +215,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
                 .subscriptionUpsell:
             break
         case .thatsDuckAI:
-            // TODO: pixel
+            // Pixel to add.
             break
         }
     }

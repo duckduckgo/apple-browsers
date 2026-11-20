@@ -22,7 +22,6 @@ import Testing
 import PixelExperimentKit
 @testable import Core
 
-@available(iOS 16, macOS 13, *)
 @Suite("Onboarding VPN download-reason experiment metrics")
 final class OnboardingVPNDownloadReasonExperimentMetricsTests {
 
@@ -84,6 +83,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
 
     // MARK: - Per download reason
 
+    @available(iOS 16, macOS 13, *)
     @Test("App use fires per reason on D5-7 only", .timeLimit(.minutes(1)))
     func appUseByReason() {
         reasonToken = "vpn"
@@ -95,6 +95,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
         #expect(subfeatureIDs == ["onboardingVPNDownloadReasonExperiment"])
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Search fires per reason on D5-7 only, at every threshold", .timeLimit(.minutes(1)))
     func searchByReason() {
         reasonToken = "ad-blocking"
@@ -108,6 +109,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
         #expect(thresholdCalls.count == 6)
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("Without a download reason, nothing per reason fires", .timeLimit(.minutes(1)))
     func noReason() {
         reasonToken = nil
@@ -121,6 +123,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
 
     // MARK: - Search only
 
+    @available(iOS 16, macOS 13, *)
     @Test("Search only uses the standard search windows and thresholds", .timeLimit(.minutes(1)))
     func searchOnly() {
         makeSUT().fireSearchOnlyMetrics()
@@ -133,6 +136,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
 
     // MARK: - Subscribers
 
+    @available(iOS 16, macOS 13, *)
     @Test("A purchase sends subscribed for D0-4", .timeLimit(.minutes(1)))
     func purchaseSendsSubscribed() {
         makeSUT().recordSubscriptionPurchase(enrollmentDate: date(1), now: date(2))
@@ -140,6 +144,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
         #expect(valueCalls == [ValueCall(metric: "subscribed", window: 0...4, value: "1")])
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("A purchase on D0-4 adds the subscriber metrics to app use and search", .timeLimit(.minutes(1)),
           arguments: [1, 5])
     func purchaseWithinWindowMakesSubscriber(purchaseDay: Int) {
@@ -155,6 +160,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
         }
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("A purchase after D4 doesn't make the user a subscriber", .timeLimit(.minutes(1)))
     func purchaseAfterWindowDoesNotMakeSubscriber() {
         let sut = makeSUT()
@@ -166,6 +172,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
         #expect(!thresholdCalls.contains { $0.metric.hasPrefix("subscriber_") })
     }
 
+    @available(iOS 16, macOS 13, *)
     @Test("A purchase by a device that isn't enrolled doesn't make it a subscriber", .timeLimit(.minutes(1)))
     func purchaseWithoutEnrollmentDoesNotMakeSubscriber() {
         let sut = makeSUT()
@@ -178,6 +185,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
 
     // MARK: - VPN
 
+    @available(iOS 16, macOS 13, *)
     @Test("VPN activation and use fire in their windows", .timeLimit(.minutes(1)))
     func vpnMetrics() {
         let sut = makeSUT()

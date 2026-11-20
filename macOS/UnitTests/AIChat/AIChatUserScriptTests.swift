@@ -44,11 +44,35 @@ final class AIChatUserScriptTests: XCTestCase {
         super.tearDown()
     }
 
+    func testMessagesAreOnlyAcceptedFromHTTPSMainFrame() {
+        XCTAssertEqual(userScript.messageFramePolicy, .secureMainFrame)
+    }
+
+    func testWhenCustomURLIsSetThenHTTPMainFrameIsAccepted() {
+        var urlSettings = AIChatMockDebugSettings()
+        urlSettings.customURL = "http://localhost:3000"
+
+        let script = AIChatUserScript(handler: mockHandler, urlSettings: urlSettings)
+
+        XCTAssertEqual(script.messageFramePolicy, .mainFrame)
+    }
+
+    func testPageContextIsOnlyAcceptedFromMainFrame() {
+        XCTAssertEqual(PageContextUserScript().messageFramePolicy, .mainFrame)
+    }
+
     @MainActor func testOpenSettingsMessageTriggersOpenSettingsMethod() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.openAIChatSettings.rawValue))
         _ = try await handler([""], WKScriptMessage.mock())
 
         XCTAssertTrue(mockHandler.didOpenSettings, "openSettings should be called")
+    }
+
+    @MainActor func testResponseReceivedMessageReachesHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.responseReceived.rawValue))
+        _ = try await handler([:], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didReceiveResponse)
     }
 
     @MainActor func testGetAIChatNativeConfigValues() async throws {
@@ -604,6 +628,80 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertFalse(userScript.pendingOpenSettingsAction,
                        "Handshake must not re-arm itself after firing")
     }
+
+    // MARK: - Sync handlers sender check
+
+    @MainActor func testSyncHandlersRunForDuckAIMainFrame() async throws {
+        let webView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        webView.urlValue = URL(string: "https://duck.ai/chat")
+        let message = syncMessage(webView: webView, isMainFrame: true)
+
+        let encrypt = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.encryptWithSyncMasterKey.rawValue))
+        _ = try await encrypt(["data": "x"], message)
+        let token = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getScopedSyncAuthToken.rawValue))
+        _ = try await token([:], message)
+
+        XCTAssertTrue(mockHandler.didEncryptWithSyncMasterKey)
+        XCTAssertTrue(mockHandler.didGetScopedSyncAuthToken)
+    }
+
+    @MainActor func testSyncHandlersRunForDuckDuckGoChatURL() async throws {
+        let webView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        webView.urlValue = URL(string: "https://duckduckgo.com/?ia=chat")
+        let message = syncMessage(webView: webView, isMainFrame: true)
+
+        let decrypt = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.decryptWithSyncMasterKey.rawValue))
+        _ = try await decrypt(["data": "x"], message)
+
+        XCTAssertTrue(mockHandler.didDecryptWithSyncMasterKey)
+    }
+
+    @MainActor func testSyncHandlersRefuseNonDuckAIPage() async throws {
+        let webView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        webView.urlValue = URL(string: "https://duckduckgo.com/some-other-page")
+        let message = syncMessage(webView: webView, isMainFrame: true)
+
+        try await assertSyncHandlersRefuse(message)
+    }
+
+    @MainActor func testSyncHandlersRefuseSubframe() async throws {
+        let webView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        webView.urlValue = URL(string: "https://duck.ai/chat")
+        let message = syncMessage(webView: webView, isMainFrame: false)
+
+        try await assertSyncHandlersRefuse(message)
+    }
+
+    @MainActor func testSyncHandlersRefuseNonHTTPS() async throws {
+        let webView = WebViewMock(frame: .zero, configuration: WKWebViewConfiguration())
+        webView.urlValue = URL(string: "http://duck.ai/chat")
+        let message = syncMessage(webView: webView, isMainFrame: true)
+
+        try await assertSyncHandlersRefuse(message)
+    }
+
+    @MainActor private func syncMessage(webView: WKWebView, isMainFrame: Bool) -> WKScriptMessage {
+        let frameInfo = WKFrameInfo.mock(isMainFrame: isMainFrame, securityOriginHost: webView.url?.host ?? "", webView: webView)
+        return WKScriptMessage.mock(webView: webView, frameInfo: frameInfo)
+    }
+
+    @MainActor private func assertSyncHandlersRefuse(_ message: WKScriptMessage, file: StaticString = #filePath, line: UInt = #line) async throws {
+        let methods: [AIChatUserScriptMessages] = [
+            .getSyncStatus, .getScopedSyncAuthToken, .encryptWithSyncMasterKey, .decryptWithSyncMasterKey,
+            .sendToSetupSync, .sendToSyncSettings, .setAIChatHistoryEnabled
+        ]
+        for method in methods {
+            let handler = try XCTUnwrap(userScript.handler(forMethodNamed: method.rawValue), file: file, line: line)
+            let result = try await handler(["data": "x", "enabled": true], message)
+            XCTAssertEqual(result as? AIChatErrorResponse, AIChatErrorResponse(reason: "sync unavailable"), "\(method)", file: file, line: line)
+        }
+        XCTAssertFalse(mockHandler.didGetSyncStatus, file: file, line: line)
+        XCTAssertFalse(mockHandler.didGetScopedSyncAuthToken, file: file, line: line)
+        XCTAssertFalse(mockHandler.didEncryptWithSyncMasterKey, file: file, line: line)
+        XCTAssertFalse(mockHandler.didDecryptWithSyncMasterKey, file: file, line: line)
+        XCTAssertFalse(mockHandler.didSendToSetupSync, file: file, line: line)
+        XCTAssertFalse(mockHandler.didSendToSyncSettings, file: file, line: line)
+    }
 }
 
 // swiftlint:disable inclusive_language
@@ -631,6 +729,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didGetAIChatSelectionContext = false
     var didSubmitAIChatSelectionContext = false
     var didTogglePageContextTelemetry = false
+    var didReceiveResponse = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     var selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
@@ -823,6 +922,13 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         didTogglePageContextTelemetry = true
         return nil
     }
+
+    func responseReceived(params: Any, message: UserScriptMessage) -> Encodable? {
+        didReceiveResponse = true
+        return nil
+    }
+
+    var responseReceivedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
 
     // MARK: - Sync stubs
 

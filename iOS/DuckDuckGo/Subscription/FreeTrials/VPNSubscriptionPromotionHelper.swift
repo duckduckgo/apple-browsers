@@ -75,6 +75,8 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     /// The pixel firing service used to track user interactions with the promotion.
     private let pixelFiring: (any PixelKitFiring)?
 
+    private let origin: SubscriptionFunnelOrigin
+
     /// Initializes a new instance of the VPNSubscriptionPromotionHelper.
     ///
     /// - Parameters:
@@ -82,14 +84,17 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     ///   - subscriptionManager: The subscription manager. Defaults to the shared instance.
     ///   - freeTrialBadgePersistor: The persistor for tracking promotion views. Defaults to an instance using UserDefaults and a custom key prefix.
     ///   - pixelFiring: The pixel firing service. Defaults to PixelKit.shared.
+    ///   - origin: The menu entry point used for subscription attribution.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard, keyPrefix: "vpn-menu-item"),
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         origin: SubscriptionFunnelOrigin = .newTabMenu) {
         self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
         self.freeTrialBadgePersistor = freeTrialBadgePersistor
         self.pixelFiring = pixelFiring
+        self.origin = origin
     }
 
     /// Status of the subscription promotion
@@ -121,7 +126,7 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     ///
     /// - Returns: URL components for the experiment, or `nil` if not applicable.
     func subscriptionURLComponents() -> URLComponents? {
-        SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabMenu.rawValue)
+        SubscriptionURL.purchaseURLComponentsWithOrigin(origin.rawValue)
     }
 
     /// Records when the promotion has been shown to the user.

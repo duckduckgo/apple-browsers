@@ -30,6 +30,7 @@ final class WebExtensionPermissionsMessageHandlerTests: XCTestCase {
 
     private var handler: WebExtensionPermissionsMessageHandler!
     private var context: WKWebExtensionContext!
+    private var controller: WebExtensionPermissionController!
 
     override func setUp() async throws {
         try await super.setUp()
@@ -42,12 +43,12 @@ final class WebExtensionPermissionsMessageHandlerTests: XCTestCase {
         context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
         context.uniqueIdentifier = "bitwarden"
 
-        let controller = WebExtensionPermissionController(store: WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore()),
+        controller = WebExtensionPermissionController(store: WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore()),
                                                           installationStore: InstalledWebExtensionStoringMock(),
                                                           prompter: ApprovingPrompter())
         try await controller.prepare(context)
         handler = WebExtensionPermissionsMessageHandler()
-        handler.controller = { controller }
+        handler.controller = { [unowned self] in controller }
         handler.extensionContext = { [unowned self] url in
             url.host == Self.extensionHost ? context : nil
         }
@@ -56,10 +57,12 @@ final class WebExtensionPermissionsMessageHandlerTests: XCTestCase {
     override func tearDown() {
         handler = nil
         context = nil
+        controller = nil
         super.tearDown()
     }
 
     func testWhenTheExtensionAsks_ThenRequestGrantsAndContainsAndGetAllSeeIt() async {
+        controller.recordUserGesture(for: context)
         let request = await answer(["action": "request", "permissions": ["privacy"]])
         let contains = await answer(["action": "contains", "permissions": ["privacy"]])
         let all = await answer(["action": "getAll"])
@@ -70,6 +73,7 @@ final class WebExtensionPermissionsMessageHandlerTests: XCTestCase {
     }
 
     func testWhenTheExtensionRemovesPrivacy_ThenItIsNoLongerHeld() async {
+        controller.recordUserGesture(for: context)
         _ = await answer(["action": "request", "permissions": ["privacy"]])
 
         let removed = await answer(["action": "remove", "permissions": ["privacy"]])
@@ -106,6 +110,52 @@ final class WebExtensionPermissionsMessageHandlerTests: XCTestCase {
 
         XCTAssertEqual(request as? Bool, false)
         XCTAssertEqual(all as? [String], [])
+    }
+
+    func testRequestWithoutGestureIsRefusedEvenWithAClaimedGestureInTheBody() async {
+        let result = await answer(["action": "request", "permissions": ["privacy"], "userGesture": true])
+
+        XCTAssertEqual(result as? Bool, false)
+        XCTAssertFalse(controller.isGranted(.privacy, to: context.uniqueIdentifier))
+    }
+
+    func testPageWorldCannotRecordAGesture() async {
+        handler.recordUserGesture(originProtocol: "webkit-extension", originHost: Self.extensionHost, contentWorld: .page)
+
+        let result = await answer(["action": "request", "permissions": ["privacy"]])
+
+        XCTAssertEqual(result as? Bool, false)
+    }
+
+    func testWebsiteCannotRecordAGestureEvenInTheIsolatedWorld() async {
+        handler.recordUserGesture(originProtocol: "https", originHost: Self.extensionHost, contentWorld: .defaultClient)
+
+        let result = await answer(["action": "request", "permissions": ["privacy"]])
+
+        XCTAssertEqual(result as? Bool, false)
+    }
+
+    func testIsolatedGestureAuthorizesOneRequestForTheSameExtensionAcrossPages() async {
+        handler.recordUserGesture(originProtocol: "webkit-extension", originHost: Self.extensionHost, contentWorld: .defaultClient)
+
+        let result = await answer(["action": "request", "permissions": ["privacy"]])
+        let secondPage = await answer(["action": "request", "permissions": ["privacy"]])
+
+        XCTAssertEqual(result as? Bool, true)
+        XCTAssertEqual(secondPage as? Bool, false)
+    }
+
+    func testPreparedRequestIsCompletedWithItsIdentifierOnlyOnce() async throws {
+        handler.recordUserGesture(originProtocol: "webkit-extension", originHost: Self.extensionHost, contentWorld: .defaultClient)
+        let prepared = await answer(["action": "prepareRequest", "permissions": ["privacy"]])
+        let identifier = try XCTUnwrap(prepared as? String)
+
+        let request: [String: Any] = ["action": "request", "permissions": ["privacy"], "requestIdentifier": identifier]
+        let granted = await answer(request)
+        let replay = await answer(request)
+
+        XCTAssertEqual(granted as? Bool, true)
+        XCTAssertEqual(replay as? Bool, false)
     }
 
     private func answer(_ body: [String: Any]) async -> Any {

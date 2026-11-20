@@ -646,7 +646,7 @@ extension FaviconManager: Bookmarks.FaviconStoring {
     }
 
     func storeFavicon(_ imageData: Data, with url: URL?, for documentURL: URL) async throws {
-        guard let image = NSImage(data: imageData) else {
+        guard !imageData.containsSVGFilter, let image = NSImage(data: imageData) else {
             return
         }
 
@@ -692,13 +692,61 @@ extension NSImage {
      */
     convenience init?(dataUsingCIImage data: Data, maxPixelSize: CGFloat?) {
         guard let ciImage = CIImage(data: data) else {
+            guard !data.containsSVGFilter else { return nil }
+            // CIImage can't decode vector formats (SVG). `NSImage(data:)` would keep a lazy, vector-backed
+            // representation that CoreSVG rasterizes later, during `NSKeyedArchiver` encoding on the Core Data
+            // queue, where a CoreSVG crash can't be contained. Rasterize it here instead.
             self.init(data: data)
+            Self.rasterizeVectorRepresentations(of: self, maxPixelSize: maxPixelSize)
             return
         }
 
         let rep = NSImage.bitmapRep(from: ciImage, maxPixelSize: maxPixelSize)
         self.init(size: rep.size)
         addRepresentation(rep)
+    }
+
+    /// Longest side used when rasterizing a vector image that has no downscaling cap.
+    private static let maxVectorRasterizationPixelSize: CGFloat = 256
+
+    /// Replaces the lazy, non-bitmap representations of `image` (e.g. SVG) with a concrete bitmap rendered
+    /// at its intrinsic size, capped at `maxPixelSize` (or `maxVectorRasterizationPixelSize` when nil).
+    /// Leaves the image untouched if it is already bitmap-backed or can't be rendered.
+    private static func rasterizeVectorRepresentations(of image: NSImage, maxPixelSize: CGFloat?) {
+        guard !image.representations.isEmpty,
+              !image.representations.contains(where: { $0 is NSBitmapImageRep }) else { return }
+
+        let size = image.size
+        let longestSide = max(size.width, size.height)
+        guard longestSide.isFinite, longestSide > 0 else { return }
+
+        let cap = maxPixelSize ?? maxVectorRasterizationPixelSize
+        let scale = min(1, cap / longestSide)
+        let width = max(1, Int((size.width * scale).rounded()))
+        let height = max(1, Int((size.height * scale).rounded()))
+
+        guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil,
+                                         pixelsWide: width,
+                                         pixelsHigh: height,
+                                         bitsPerSample: 8,
+                                         samplesPerPixel: 4,
+                                         hasAlpha: true,
+                                         isPlanar: false,
+                                         colorSpaceName: .deviceRGB,
+                                         bytesPerRow: 0,
+                                         bitsPerPixel: 0),
+              let context = NSGraphicsContext(bitmapImageRep: rep) else { return }
+
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = context
+        image.draw(in: NSRect(x: 0, y: 0, width: width, height: height))
+        NSGraphicsContext.restoreGraphicsState()
+
+        // Keep points == pixels (1:1), see `bitmapRep(from:maxPixelSize:)`.
+        rep.size = NSSize(width: width, height: height)
+        image.representations.forEach(image.removeRepresentation)
+        image.addRepresentation(rep)
+        image.size = rep.size
     }
 
     /**
@@ -780,6 +828,15 @@ extension NSImage {
 }
 
 extension Data {
+
+    /// Returns whether the data references SVG filters (`<filter>`, `filter="..."` or CSS `filter:`).
+    ///
+    /// CoreSVG overflows the stack (`EXC_BAD_ACCESS` in `SVGFilter::draw`) on some filtered SVGs, e.g. when the root
+    /// `<svg>` and a child reference the same filter. The crash can't be caught, so such SVGs must never be rendered.
+    var containsSVGFilter: Bool {
+        // Latin-1 decodes any byte sequence, and `filter` is plain ASCII.
+        String(bytes: self, encoding: .isoLatin1)?.lowercased().contains("filter") ?? false
+    }
 
     /// Returns whether the data looks like an SVG document, based on its first bytes.
     var isSVGImageData: Bool {

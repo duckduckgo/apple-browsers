@@ -1,7 +1,6 @@
 name: Agent worker
 
-# Agent worker: applies a plan from the apple-agent-orchestrator and opens a PR ready for review when the change builds
-# and its tests pass on a clean runner
+# Agent worker: applies a plan from the apple-agent-orchestrator
 
 on:
   workflow_dispatch:
@@ -19,10 +18,9 @@ on:
         required: true
         type: string
       auto_sha256:
-        description: "SHA-256 of the auto plugin zip in the handoff. Empty runs the plan without auto"
-        required: false
+        description: "SHA-256 of the auto plugin zip in the handoff"
+        required: true
         type: string
-        default: ""
 
 permissions: {}
 
@@ -39,7 +37,6 @@ env:
   PLAN_BLOB: ${{ inputs.handoff }}/plan.md
   AUTO_BLOB: ${{ inputs.handoff }}/auto-claude.zip
   AUTO_SHA256: ${{ inputs.auto_sha256 }}
-  HANDOFF_PREFIX: ${{ inputs.handoff }}
   EVIDENCE_PREFIX: ${{ inputs.handoff }}/${{ github.repository }}/${{ github.run_id }}-${{ github.run_attempt }}
   DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
   # Agent Status field and its option gids in the agent project
@@ -50,13 +47,19 @@ jobs:
   agent:
     runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
     environment: agent-worker
-    timeout-minutes: 180
+    timeout-minutes: ${{ fromJSON(vars.WORKER_TIMEOUT_MINUTES || '300') }}
     permissions:
       contents: read
       id-token: write
     outputs:
       evidence_url: ${{ steps.evidence.outputs.url }}
+      decision_log_url: ${{ steps.evidence.outputs.decision_log_url }}
       changed: ${{ steps.export.outputs.changed }}
+      pr_urls: ${{ steps.audit.outputs.pr_urls }}
+      audit_flags: ${{ steps.audit.outputs.flags }}
+      tool_issues: ${{ steps.tools.outputs.issues }}
+      ok: ${{ steps.result.outputs.ok }}
+      failure: ${{ steps.result.outputs.failure }}
     steps:
       - name: Kill switch
         if: vars.AGENTS_ENABLED != 'true'
@@ -74,7 +77,7 @@ jobs:
           [[ "$TASK_GID" =~ ^[0-9]{1,20}$ ]] || { echo "::error::bad task_gid"; exit 1; }
           [[ "$HANDOFF" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$ ]] || { echo "::error::bad handoff"; exit 1; }
           [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::bad sha256"; exit 1; }
-          [[ "$AUTO_SHA256" =~ ^([0-9a-f]{64})?$ ]] || { echo "::error::bad auto_sha256"; exit 1; }
+          [[ "$AUTO_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "::error::bad auto_sha256"; exit 1; }
           [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" ]] ||
             { echo "::error::dispatch on the agent-worker branch, not $DEFAULT_BRANCH"; exit 1; }
 
@@ -116,7 +119,6 @@ jobs:
 
       # The orchestrator copies the pinned auto release here, since this runner can't reach where auto is released
       - name: Download auto plugin from artifacts.go
-        if: env.AUTO_SHA256 != ''
         run: worker/scripts/agent-worker/blobs.sh auto "$RUNNER_TEMP/auto-claude.zip" "$AUTO_SHA256"
 
       - name: Azure logout
@@ -157,7 +159,6 @@ jobs:
       # Unpacked outside the checkout and the agent's writable paths, so it can run auto's scripts but not change
       # them. Its npm packages are installed here, without install scripts, since the agent has no network
       - name: Set up auto plugin
-        if: env.AUTO_SHA256 != ''
         env:
           HOMEBREW_NO_AUTO_UPDATE: "1"
         run: |
@@ -174,9 +175,11 @@ jobs:
           echo "auto $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$auto/.claude-plugin/plugin.json") ready"
 
       - name: Write prompt
+        env:
+          TASK_GID: ${{ inputs.task_gid }}
         run: |
           python3 -I worker/scripts/agent-worker/prompt.py "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan.md" \
-            ${AUTO_DIR:+"$RUNNER_TEMP/worktrees"} > "$RUNNER_TEMP/prompt.md"
+            "$RUNNER_TEMP/worktrees" > "$RUNNER_TEMP/prompt.md"
 
       - name: Install Claude Code
         run: |
@@ -195,66 +198,26 @@ jobs:
           worker/scripts/agent-worker/anthropic_identity.sh "$RUNNER_TEMP/anthropic-identity"
           echo "identity-dir=$RUNNER_TEMP/anthropic-identity" >> "$GITHUB_OUTPUT"
 
+      - name: GitHub token for the agent
+        env:
+          APP_CLIENT_ID: ${{ vars.AGENT_APP_CLIENT_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+        run: |
+          command -v gh > /dev/null || brew install gh > /dev/null
+          worker/scripts/agent-worker/github_token.sh "$RUNNER_TEMP/gh"
+
       # Besides file tools, the agent can run xc (build, test, lint) and read-only git, so it can check its
       # change and fix it as it goes. Building and testing runs code the agent wrote, which is why the worker
-      # runs from the agent-worker branch and holds no Azure login while the agent runs.
-      # With auto, the agent also gets subagents, local git commits and worktrees, and auto's local scripts.
-      # Anything that needs a token or network (PRs, evidence upload, other models, reflect) stays denied
+      # runs from the agent-worker branch and holds no Azure login while the agent runs
       - name: Run coding agent
         working-directory: target
         env:
           IDENTITY_DIR: ${{ steps.anthropic.outputs.identity-dir }}
           DEST: ${{ steps.sim.outputs.destination }}
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/evidence" "$RUNNER_TEMP/bin"
-          ln -sf "$GITHUB_WORKSPACE/worker/scripts/agent-worker/xc.sh" "$RUNNER_TEMP/bin/xc"
-          git_ro="Bash(git log:*),Bash(git show:*),Bash(git blame:*),Bash(git diff:*),Bash(git status:*),Bash(git grep:*),Bash(git ls-files:*)"
-          allow="Read,Glob,Grep,Edit(./**),Write(./**),Bash(xc:*),$git_ro"
-          deny="WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**)"
-          plugin=()
-          if [[ -n "${AUTO_DIR:-}" ]]; then
-            A=$AUTO_DIR W=$RUNNER_TEMP/worktrees
-            allow+=",Agent,TodoWrite,Edit(/$W/**),Write(/$W/**),Write(~/.auto/**)"
-            allow+=",Bash(git worktree add $W/:*),Bash(git worktree list:*),Bash(git worktree remove:*)"
-            allow+=",Bash(git add:*),Bash(git commit:*),Bash(git cherry-pick:*),Bash(git rev-parse:*),Bash(git merge-base:*)"
-            for s in auto/scripts/resolve-models auto/scripts/check-plan auto/scripts/check-pr-body \
-              show-me-your-work/scripts/log show-me-your-work/scripts/snapshot show-me-your-work/scripts/new-evidence; do
-              allow+=",Bash(node $A/skills/$s.ts:*)"
-            done
-            allow+=",Bash(node $A/scripts/installation.ts verify:*),Bash(.claude/skills/verify-ios/bin/verify-ios:*)"
-            # The checkout's .claude and .git hold scripts the agent runs, so it can't change them
-            deny+=",Edit(./.claude/**),Write(./.claude/**),Edit(./.git/**),Write(./.git/**)"
-            deny+=",Bash(gh:*),Bash(git push:*),Bash(claude:*),Bash(codex:*)"
-            for s in auto/scripts/publish-pr auto/scripts/watch-pr auto/scripts/merge-strategy auto/scripts/pstack-runner \
-              show-me-your-work/scripts/upload-evidence show-me-your-work/scripts/evidence-url \
-              show-me-your-work/scripts/resolve-decision-log reflect/scripts/issue; do
-              deny+=",Bash(node $A/skills/$s.ts:*)"
-            done
-            plugin=(--plugin-dir "$A")
-          fi
-          echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-          rc=0
-          env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN -u SSH_AUTH_SOCK \
-            PATH="$RUNNER_TEMP/bin:$PATH" PACKAGES="$RUNNER_TEMP/packages" \
-            XC_DERIVED="$RUNNER_TEMP/derived" XC_LOGS="$RUNNER_TEMP/xc-logs" \
-            BASH_DEFAULT_TIMEOUT_MS=2700000 BASH_MAX_TIMEOUT_MS=2700000 \
-            GIT_AUTHOR_NAME="Apple Agent" GIT_AUTHOR_EMAIL="agent@localhost" \
-            GIT_COMMITTER_NAME="Apple Agent" GIT_COMMITTER_EMAIL="agent@localhost" \
-            claude -p "$(cat "$RUNNER_TEMP/prompt.md")" ${plugin[@]+"${plugin[@]}"} \
-              --permission-mode dontAsk \
-              --allowedTools "$allow" \
-              --disallowedTools "$deny" \
-              --model opus --max-turns 150 --max-budget-usd 30 --output-format json \
-              > "$RUNNER_TEMP/evidence/result.json" 2> "$RUNNER_TEMP/evidence/claude.err" || rc=$?
-          # auto's local decision log and snapshots go with the evidence
-          if [[ -d "$HOME/.auto" ]]; then cp -R "$HOME/.auto" "$RUNNER_TEMP/evidence/auto" || true; fi
-          # The full session as Markdown, so reviewers can see how the agent worked and tune auto or the prompt
-          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/transcript_md.py" \
-            "$RUNNER_TEMP/evidence/result.json" "$HOME/.claude/projects" "$RUNNER_TEMP/evidence" || true
-          python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/summary_md.py" \
-            "$RUNNER_TEMP/evidence/result.json" "$RUNNER_TEMP/evidence" "$rc" || true
-          echo "rc=$rc" >> "$GITHUB_ENV"
+          MAX_TURNS: ${{ vars.WORKER_MAX_TURNS || 250 }}
+          MAX_BUDGET_USD: ${{ vars.WORKER_MAX_BUDGET_USD || 50 }}
+        run: "$GITHUB_WORKSPACE/worker/scripts/agent-worker/run_agent.sh"
 
       - name: Export changes as a patch
         id: export
@@ -263,6 +226,49 @@ jobs:
         run: |
           "$GITHUB_WORKSPACE/worker/scripts/agent-worker/export_patch.sh" "$RUNNER_TEMP/evidence"
           echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      # How the agent's last xc build and xc test ended, recorded by xc.sh, for the summary and the Asana comment. Tests
+      # are optional, since not every change has one to run
+      - name: Result
+        id: result
+        if: steps.export.outcome == 'success'
+        run: |
+          s="$RUNNER_TEMP/xc-logs/status"
+          failure=""
+          if ! grep -qx "build=passed" "$s" 2> /dev/null; then failure="its last build failed or it never built"
+          elif grep -qx "tests=failed" "$s"; then failure="its last test run failed"
+          fi
+          build=$(sed -n 's/^build=//p' "$s" 2> /dev/null); tests=$(sed -n 's/^tests=//p' "$s" 2> /dev/null)
+          ran=$(sed -n 's/^tests_run=//p' "$s" 2> /dev/null)
+          printf '\n## Build and tests\n\nFrom the last xc build and xc test the agent ran. Build: %s. Tests: %s%s.\n' \
+            "${build:-not run}" "${tests:-not run}" "${ran:+ (\`${ran// /\`, \`}\`)}" >> "$RUNNER_TEMP/evidence/summary.md"
+          { echo "ok=$([[ -z $failure ]] && echo true || echo false)"; echo "failure=$failure"; } | tee -a "$GITHUB_OUTPUT"
+
+      # Denied tool calls and failed GitHub, git and auto script calls, each with how to fix it, for the Asana comment
+      - name: Tool report
+        id: tools
+        if: always() && steps.anthropic.outcome == 'success'
+        run: |
+          python3 -I worker/scripts/agent-worker/tool_report.py \
+            "$RUNNER_TEMP/evidence/result.json" "$HOME/.claude/projects" "$RUNNER_TEMP/evidence" || echo "issues=" >> "$GITHUB_OUTPUT"
+
+      # Nobody reads the PR before it's public, so check what went out: links, attached images, .github/
+      # changes and copied instructions. Findings go in the Asana comment
+      - name: Check what the agent published
+        id: audit
+        if: always() && steps.anthropic.outcome == 'success'
+        env:
+          TASK_GID: ${{ inputs.task_gid }}
+        run: |
+          GH="$GH_TOKEN_DIR/bin/gh" \
+          LEAK_CORPUS="$GITHUB_WORKSPACE/worker/scripts/agent-worker/prompts:$AUTO_DIR" \
+            python3 -I worker/scripts/agent-worker/pr_audit.py "$RUNNER_TEMP/evidence" target/.github/PULL_REQUEST_TEMPLATE.md
+
+      - name: Stop the GitHub token refresher
+        if: always() && env.GH_TOKEN_DIR != ''
+        run: |
+          kill "$(cat "$GH_TOKEN_DIR/refresher.pid")" 2> /dev/null || true
+          rm -rf "$GH_TOKEN_DIR"
 
       - name: Azure login again (GitHub OIDC)
         if: always() && steps.anthropic.outcome == 'success'
@@ -284,6 +290,13 @@ jobs:
           echo "Evidence (SSO): $url/"
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "- Agent (SSO): [summary.md]($url/summary.md), [changes.patch]($url/changes.patch), [result.json]($url/result.json), [transcript.md]($url/transcript.md)" >> "$GITHUB_STEP_SUMMARY"
+          # auto's evidence (decision log, proofs, screenshots) goes to <uuid>/ in the same container, where auto's
+          # own viewer links point
+          log=$(worker/scripts/agent-worker/auto_evidence.sh "$HOME/.auto/evidence" "$RUNNER_TEMP/auto-evidence") || true
+          if [[ -n $log ]]; then
+            echo "decision_log_url=$log" >> "$GITHUB_OUTPUT"
+            echo "- auto (SSO): [decision log]($log)" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Fail if the agent failed
         if: env.rc != '0'
@@ -291,249 +304,10 @@ jobs:
           echo "::error::claude exited with $rc"
           exit 1
 
-  # Builds the patch again on a fresh runner the agent's code never ran on, runs the agent's tests and records
-  # its Maestro flow, so publishing rests on results the agent couldn't change. Results go to
-  # evidence for the PR reviewer. A failed build or failed tests set ok=false, which sends the task to
-  # Needs attention instead of a PR. The Maestro flow is evidence only and never blocks. The Azure login is only held before and after the build, never while the agent's code runs
-  verify:
-    needs: agent
-    if: needs.agent.result == 'success'
-    runs-on: ${{ fromJSON(vars.WORKER_RUNNER || '["image:osx-27-edge", "general-purpose"]') }}
-    environment: agent-worker
-    timeout-minutes: 90
-    permissions:
-      contents: read
-      id-token: write
-    outputs:
-      url: ${{ steps.upload.outputs.url }}
-      ok: ${{ steps.result.outputs.ok }}
-      failure: ${{ steps.result.outputs.failure }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ env.DEFAULT_BRANCH }}
-          path: target
-          submodules: recursive
-          persist-credentials: false
-
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.sha }}
-          path: worker
-          sparse-checkout: scripts/agent-worker
-          persist-credentials: false
-
-      # Bitrise images don't ship the Azure CLI that azure/login and blobs.sh need
-      - name: Install Azure CLI
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: "1"
-        run: command -v az > /dev/null || brew install azure-cli > /dev/null
-
-      - name: Azure login (GitHub OIDC)
-        uses: azure/login@v3
-        with:
-          client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
-          tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
-          allow-no-subscriptions: true
-
-      - name: Download patch and evidence plan
-        run: |
-          set -euo pipefail
-          echo "VERIFY_URL=https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX/verify" >> "$GITHUB_ENV"
-          worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/plan" "$EVIDENCE_PREFIX" \
-            changes.patch tests.txt flow.yaml excluded.txt result.json pr.md plan-notes.txt
-          worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP/plan" "$HANDOFF_PREFIX" plan-stats.json
-          [[ -s "$RUNNER_TEMP/plan/changes.patch" ]] || { echo "::error::no patch"; exit 1; }
-
-      - name: Azure logout
-        if: always()
-        run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
-
-      # From main's manifests, before the patch is applied, and the key is removed before any agent code runs
-      - uses: webfactory/ssh-agent@v0.10.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
-
-      - name: Resolve packages
-        working-directory: target
-        run: |
-          set -o pipefail
-          for scheme in 'iOS Browser' 'macOS Browser'; do
-            xcodebuild -resolvePackageDependencies -scheme "$scheme" -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" \
-              -skipPackagePluginValidation -skipMacroValidation >> "$RUNNER_TEMP/resolve.log" 2>&1 && echo "resolved $scheme" || echo "resolve failed for $scheme"
-          done
-
-      - name: Remove the deploy key
-        run: |
-          ssh-add -D || true
-          ssh-agent -k || true
-          echo "SSH_AUTH_SOCK=" >> "$GITHUB_ENV"
-
-      - name: Select iOS Simulator
-        id: sim
-        uses: ./target/.github/actions/select-ios-simulator
-        with:
-          preferred-versions: "27.0,26.2,26.1,26.0"
-
-      - name: Install Maestro and ffmpeg
-        continue-on-error: true
-        run: |
-          curl -fsSL "https://get.maestro.mobile.dev" | bash > /dev/null
-          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
-          command -v ffmpeg > /dev/null || brew install ffmpeg > /dev/null
-
-      - name: Apply patch
-        working-directory: target
-        run: git apply --index "$RUNNER_TEMP/plan/changes.patch"
-
-      # The agent's code runs from here, without the OIDC request variables
-      - name: Build, test and record
-        continue-on-error: true
-        env:
-          DEST: ${{ steps.sim.outputs.destination }}
-          IOS_VERSION: ${{ steps.sim.outputs.ios-version }}
-        run: |
-          env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN PACKAGES="$RUNNER_TEMP/packages" \
-            bash "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify.sh" "$GITHUB_WORKSPACE/target" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
-
-      - name: Write verify.md
-        if: always()
-        env:
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          TASK_GID: ${{ inputs.task_gid }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/verify"
-          EVIDENCE_URL="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$EVIDENCE_PREFIX" \
-            python3 -I "$GITHUB_WORKSPACE/worker/scripts/agent-worker/verify_md.py" "$RUNNER_TEMP/plan" "$RUNNER_TEMP/verify"
-
-      # ok=false sends the task to Needs attention, and failure says why in the Asana comment. A failed
-      # Maestro flow shows on the verify page but doesn't set ok=false
-      - name: Result
-        id: result
-        if: always()
-        run: |
-          s="$RUNNER_TEMP/verify/status"
-          failure=""
-          if ! grep -qxE "build=yes" "$s" 2> /dev/null; then failure="the build failed"
-          elif grep -qx "tests=failed" "$s"; then failure="the tests failed"
-          fi
-          { echo "ok=$([[ -z $failure ]] && echo true || echo false)"; echo "failure=$failure"; } | tee -a "$GITHUB_OUTPUT"
-
-      - name: Azure login again (GitHub OIDC)
-        if: always()
-        uses: azure/login@v3
-        with:
-          client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
-          tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
-          allow-no-subscriptions: true
-
-      - name: Upload results to artifacts.go
-        id: upload
-        if: always()
-        run: |
-          set -euo pipefail
-          [[ -d "$RUNNER_TEMP/verify" ]] || { echo "nothing to upload"; exit 0; }
-          worker/scripts/agent-worker/blobs.sh put "$RUNNER_TEMP/verify" "$EVIDENCE_PREFIX/verify" > /dev/null
-          echo "url=$VERIFY_URL" >> "$GITHUB_OUTPUT"
-          echo "- Results (SSO): [verify.md]($VERIFY_URL/verify.md)" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Azure logout
-        if: always()
-        run: az logout > /dev/null 2>&1 || true; rm -rf "$HOME/.azure"
-
-  # Opens the PR once the clean verify passed, with no approval step. The agent-publish environment holds the
-  # GitHub App key and must have no required reviewers. The patch comes from artifacts.go, never a public artifact
-  publish:
-    needs: [agent, verify]
-    if: needs.verify.outputs.ok == 'true'
-    runs-on: ubuntu-latest
-    environment: agent-publish
-    timeout-minutes: 10
-    permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
-    env:
-      BRANCH: agent/worker-${{ github.run_id }}
-    outputs:
-      pr_url: ${{ steps.pr.outputs.url }}
-    steps:
-      # Pushes and PRs made with GITHUB_TOKEN don't start CI, so publish with the GitHub App when the
-      # agent-publish environment has it, scoped to this repo
-      - name: GitHub App token
-        id: app-token
-        if: vars.AGENT_APP_CLIENT_ID != ''
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ vars.AGENT_APP_CLIENT_ID }}
-          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-          permission-pull-requests: write
-
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ env.DEFAULT_BRANCH }}
-          token: ${{ steps.app-token.outputs.token || github.token }}
-
-      - name: Azure login (GitHub OIDC)
-        uses: azure/login@v3
-        with:
-          client-id: ${{ vars.ARTIFACTS_CLIENT_ID }}
-          tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
-          allow-no-subscriptions: true
-
-      # The worker's scripts, and the agent's title and description, or a fallback
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.sha }}
-          path: worker
-          sparse-checkout: scripts/agent-worker
-          persist-credentials: false
-
-      - name: Download patch from artifacts.go
-        run: |
-          set -euo pipefail
-          worker/scripts/agent-worker/blobs.sh get "$RUNNER_TEMP" "$EVIDENCE_PREFIX" changes.patch pr.md
-          [[ -s "$RUNNER_TEMP/changes.patch" ]] || { echo "::error::no patch"; exit 1; }
-
-      - name: PR text
-        env:
-          TASK_GID: ${{ inputs.task_gid }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: python3 -I worker/scripts/agent-worker/pr_text.py render "$RUNNER_TEMP/pr.md" "$RUNNER_TEMP" .github/PULL_REQUEST_TEMPLATE.md
-
-      - name: Apply, commit, push
-        run: |
-          set -euo pipefail
-          git switch -c "$BRANCH"
-          git apply --index "$RUNNER_TEMP/changes.patch"
-          if git diff --cached --name-only | grep -qE '^(\.github|scripts/agent-worker)/'; then
-            echo "::error::patch touches .github/ or scripts/agent-worker/; refusing"
-            exit 1
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -q -F "$RUNNER_TEMP/title.txt"
-          git push -q -u origin "$BRANCH"
-
-      # Filled from the repo's PR template: the Asana link, the agent's sections and the run link
-      - name: Open PR
-        id: pr
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
-        run: |
-          set -euo pipefail
-          gh pr create --base "$DEFAULT_BRANCH" --head "$BRANCH" \
-            --title "$(cat "$RUNNER_TEMP/title.txt")" --body-file "$RUNNER_TEMP/body.md" \
-            > "$RUNNER_TEMP/pr-url"
-          echo "url=$(tail -n 1 "$RUNNER_TEMP/pr-url")" >> "$GITHUB_OUTPUT"
-
-  # Sets the task's Agent Status from how the run ended: PR open with the PR link, or Needs attention. Acts as the Apple
+  # Sets the task's Agent Status from how the run ended: PR open with the agent's PR links, or Needs attention. Acts as the Apple
   # Agent Asana App Actor, on a fresh runner so nothing the agent wrote runs next to it
   status:
-    needs: [agent, verify, publish]
+    needs: agent
     if: always()
     runs-on: ubuntu-latest
     environment: agent-worker
@@ -555,12 +329,13 @@ jobs:
           ASANA_APP_REFRESH_TOKEN: ${{ secrets.ASANA_APP_REFRESH_TOKEN }}
           TASK_GID: ${{ inputs.task_gid }}
           AGENT: ${{ needs.agent.outputs.changed == 'true' && 'success' || 'failure' }}
-          VERIFY_OK: ${{ needs.verify.outputs.ok }}
-          CANCELLED: ${{ needs.agent.result == 'cancelled' || needs.verify.result == 'cancelled' }}
-          FAILURE: ${{ needs.verify.outputs.failure }}
+          BUILD_OK: ${{ needs.agent.outputs.ok }}
+          CANCELLED: ${{ needs.agent.result == 'cancelled' }}
+          FAILURE: ${{ needs.agent.outputs.failure }}
           EVIDENCE_URL: ${{ needs.agent.outputs.evidence_url }}
-          PUBLISH: ${{ needs.publish.result }}
-          PR_URL: ${{ needs.publish.outputs.pr_url }}
-          VERIFY_URL: ${{ needs.verify.outputs.url }}
+          DECISION_LOG_URL: ${{ needs.agent.outputs.decision_log_url }}
+          PR_URLS: ${{ needs.agent.outputs.pr_urls }}
+          AUDIT_FLAGS: ${{ needs.agent.outputs.audit_flags }}
+          TOOL_ISSUES: ${{ needs.agent.outputs.tool_issues }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: python3 -I worker/scripts/agent-worker/set_agent_status.py

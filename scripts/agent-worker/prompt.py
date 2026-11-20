@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Print the agent's prompt from prompts/worker.md with the repository path and the plan. With a
-worktrees dir, the prompt starts with prompts/auto.md, which runs it through the auto plugin
+"""Print the agent's prompt: prompts/auto.md, which runs it through the auto plugin, then prompts/worker.md with
+prompts/pr-auto.md as its PR section, the repository path and the plan
 
-Usage: prompt.py <repo dir> <plan.md> [<worktrees dir>]
+Usage: prompt.py <repo dir> <plan.md> <worktrees dir>
+Env: TASK_GID and DEFAULT_BRANCH, for the PR rules
 """
 
 import os
@@ -20,11 +21,11 @@ def read(path):
 
 
 def main():
-    repo, plan = sys.argv[1:3]
-    worktrees = sys.argv[3] if len(sys.argv) > 3 else ""
-    out = read(os.path.join(HERE, "worker.md"))
-    if worktrees:
-        out = read(os.path.join(HERE, "auto.md")).replace("{{WORKTREES}}", worktrees) + out
+    repo, plan, worktrees = sys.argv[1:4]
+    out = read(os.path.join(HERE, "worker.md")).replace("{{PR}}", read(os.path.join(HERE, "pr-auto.md")).rstrip())
+    out = read(os.path.join(HERE, "auto.md")).replace("{{WORKTREES}}", worktrees) + out
+    for key in ("TASK_GID", "DEFAULT_BRANCH"):
+        out = out.replace("{{" + key + "}}", os.environ.get(key, ""))
     out = out.replace("{{REPO_DIR}}", repo)
     sys.stdout.write(out.replace("{{PLAN}}", read(plan)))
 

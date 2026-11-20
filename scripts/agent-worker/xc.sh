@@ -4,13 +4,14 @@
 #
 # Usage (from the checkout):
 #   xc.sh build [ios|macos]          Build for testing. The platform defaults to the one the change touches
-#   xc.sh test [ios|macos] [<test>]  Run tests in xcodebuild -only-testing form, or .agent-evidence/tests.txt
+#   xc.sh test [ios|macos] <test>... Run the named tests, in xcodebuild -only-testing form
 #   xc.sh lint                       SwiftLint --strict on the changed Swift files
 #   xc.sh mv <from> <to>             Move or rename a file in the checkout
 #   xc.sh rm <path>...               Delete files in the checkout
 #
 # Env: DEST (iOS Simulator destination), PACKAGES (cloned source packages dir), XC_DERIVED (derived data dir,
-# outside the checkout so build products never go into the patch), XC_LOGS (where full logs go)
+# outside the checkout so build products never go into the patch), XC_LOGS (where full logs go). The result of the
+# last build and test goes to $XC_LOGS/status, which the worker reads to decide between a PR and Needs attention
 
 set -uo pipefail
 cmd=${1:-}
@@ -64,6 +65,9 @@ common=(-derivedDataPath "$XC_DERIVED/$platform" -clonedSourcePackagesDirPath "$
 logs=${XC_LOGS:-/tmp}
 mkdir -p "$logs"
 
+# Keeps only the latest build= or tests= line, so the worker sees how the agent's last run ended
+record() { local f="$logs/status"; { grep -v "^$1=" "$f" 2>/dev/null; echo "$1=$2"; } > "$f.new" && mv "$f.new" "$f"; }
+
 errors() { grep -E ": (error|warning: unreachable)|^error:|BUILD FAILED|Testing failed|failed \(" "$1" | grep -v "^ *export " | cut -c1-400 | sort -u | head -40; }
 
 case $cmd in
@@ -71,24 +75,25 @@ case $cmd in
     log="$logs/build-$platform.log"
     echo "Building $platform (full log: $log)"
     if SPM_FORCE_DEBUG=1 xcodebuild build-for-testing "${build[@]}" "${common[@]}" OTHER_CODE_SIGN_FLAGS=--timestamp=none > "$log" 2>&1; then
-      echo "BUILD SUCCEEDED"
+      echo "BUILD SUCCEEDED"; record build passed
     else
-      echo "BUILD FAILED"; errors "$log"; exit 1
+      echo "BUILD FAILED"; record build failed; errors "$log"; exit 1
     fi
     ;;
   test)
     tests=("$@")
-    if [[ ${#tests[@]} == 0 && -s .agent-evidence/tests.txt ]]; then
-      while read -r t; do [[ -n $t ]] && tests+=("$t"); done < .agent-evidence/tests.txt
-    fi
-    [[ ${#tests[@]} -gt 0 ]] || { echo "Name tests to run, or list them in .agent-evidence/tests.txt"; exit 2; }
+    [[ ${#tests[@]} -gt 0 ]] || { echo "Name the tests to run, like UnitTests/FooTests/testBar"; exit 2; }
     only=(); for t in "${tests[@]}"; do only+=("-only-testing:$t"); done
     log="$logs/test-$platform.log"
     echo "Testing $platform: ${tests[*]} (full log: $log). Run build first after changing code"
     if xcodebuild test-without-building "${build[@]}" "${common[@]}" "${only[@]}" \
         -test-timeouts-enabled YES -maximum-test-execution-time-allowance 120 > "$log" 2>&1; then r=0; else r=1; fi
     grep -E "^Test Case .*(passed|failed)|Executed [0-9]+ test|^Test .* (passed|failed)|TEST (EXECUTE )?(SUCCEEDED|FAILED)|: error:|XCTAssert|Fatal error" "$log" | cut -c1-600 | head -60
-    [[ $r == 0 ]] && echo "TESTS PASSED" || { echo "TESTS FAILED"; exit 1; }
+    if [[ $r == 0 ]]; then
+      echo "TESTS PASSED"; record tests passed; record tests_run "${tests[*]}"
+    else
+      echo "TESTS FAILED"; record tests failed; record tests_run "${tests[*]}"; exit 1
+    fi
     ;;
   lint)
     command -v swiftlint > /dev/null || { echo "SwiftLint isn't installed on this runner; the PR checks run it"; exit 0; }

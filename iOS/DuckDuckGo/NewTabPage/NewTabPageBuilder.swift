@@ -152,6 +152,7 @@ struct NewTabPageBuilder {
                                   rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel),
                                   usesLiquidGlass: usesLiquidGlass)
         ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel,
+           isStickyInputEnabled: redesignFeature.isStickyInputEnabled,
            onboardingCoordinator: NewTabPageOnboardingCoordinator(newTabDialogFactory: daxDialogFactory,
                                                                   daxDialogsManager: daxDialogsManager,
                                                                   onboardingFlowProvider: onboardingFlowProvider,

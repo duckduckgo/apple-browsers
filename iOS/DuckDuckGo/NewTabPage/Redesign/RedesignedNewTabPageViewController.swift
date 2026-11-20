@@ -30,6 +30,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         static let customizeButtonTrailingMargin: CGFloat = 20
         static let customizeButtonSize: CGFloat = 44
         static let portraitContentTopInset: CGFloat = 96
+        static let stickySearchInputTopMargin: CGFloat = 8
         static let entranceTranslation: CGFloat = 12
         static let entranceDuration: TimeInterval = 0.25
         static let focusedModulesHideDuration: TimeInterval = 0.1
@@ -59,6 +60,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private let pageModel: NewTabPageViewModel?
     private let messagesModel: NewTabPageMessagesModel?
     private let searchInputModel: NewTabPageSearchInputModel?
+    private let isStickyInputEnabled: Bool
     private let customizationStateReporter = NewTabPageCustomizationStateReporter()
     private var isRemoteMessageSurfacePresented = false
     private var areFavoritesHidden = false
@@ -75,11 +77,16 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private lazy var focusedModeSwitchSwipeController = ModeSwitchSwipeGestureController { [weak self] mode in
         self?.onFocusedModeSwitchSwipe?(mode)
     }
+    private var stickySearchInputTranslation: CGFloat = 0
+    private var focusedScrollInsetBottom: CGFloat = 0
 
     private struct InputEditingLayout {
         let contentOffset: CGPoint
         let inputFrameInWindow: CGRect?
         let windowBounds: CGRect?
+        let bottomSafeAreaInset: CGFloat
+        /// How far the input sat from its place in the page layout when focus began, because the page was scrolled.
+        let scrolledInputDistance: CGFloat
         var isGeometryValid = true
     }
 
@@ -136,6 +143,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
          pageModel: NewTabPageViewModel? = nil,
          messagesModel: NewTabPageMessagesModel? = nil,
          searchInputModel: NewTabPageSearchInputModel? = nil,
+         isStickyInputEnabled: Bool = false,
          onboardingCoordinator: NewTabPageOnboardingCoordinator? = nil) {
         self.onboardingCoordinator = onboardingCoordinator
         self.blocks = blocks
@@ -143,6 +151,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         self.pageModel = pageModel
         self.messagesModel = messagesModel
         self.searchInputModel = searchInputModel
+        self.isStickyInputEnabled = isStickyInputEnabled
         super.init(nibName: nil, bundle: nil)
         onboardingCoordinator?.page = self
         messagesModel?.onMessageVisibilityChanged = { [weak self] in
@@ -164,6 +173,12 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         installBlocks()
         focusedModeSwitchSwipeController.install(on: view)
         focusedModeSwitchSwipeController.isEnabled = false
+        scrollView.delegate = self
+        if isStickyInputEnabled {
+            // The bottom safe area is applied by hand, so it cannot change under the scroll view while the input is focused.
+            scrollView.contentInsetAdjustmentBehavior = .never
+            applyScrollInsets()
+        }
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -192,12 +207,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         onboardingCoordinator?.refreshContextualOnboardingDialogLayout()
+        applyScrollInsets()
         // Reattachment and keyboard transitions temporarily change the viewport and safe area.
         // Keep those layouts from changing the loaded page's resting scroll position.
         if let preservedOffset = pinnedEditingContentOffset ?? detachedContentOffset,
            scrollView.contentOffset != preservedOffset {
             scrollView.setContentOffset(preservedOffset, animated: false)
         }
+        updateStickySearchInput()
     }
 
     @objc private func customizeButtonTapped() {
@@ -247,10 +264,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.layoutIfNeeded()
         // Favorites or messages may have been removed while the page was detached or the input was focused.
         // Clamp once the resting viewport and content size are available.
+        scrollView.setContentOffset(clampedContentOffset(savedOffset), animated: false)
+    }
+
+    /// The offset moved into the scrollable range.
+    private func clampedContentOffset(_ offset: CGPoint) -> CGPoint {
         let minimumY = -scrollView.adjustedContentInset.top
         let maximumY = max(minimumY, scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
-        let restoredY = min(max(savedOffset.y, minimumY), maximumY)
-        scrollView.setContentOffset(CGPoint(x: savedOffset.x, y: restoredY), animated: false)
+        return CGPoint(x: offset.x, y: min(max(offset.y, minimumY), maximumY))
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -297,7 +318,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.addSubview(contentContainerView)
         contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
-        contentContainerView.addSubview(customizeButton)
+        let customizeButtonHost: UIView = isStickyInputEnabled ? scrollView : contentContainerView
+        let customizeButtonTopAnchor = isStickyInputEnabled
+            ? scrollView.contentLayoutGuide.topAnchor
+            : contentContainerView.safeAreaLayoutGuide.topAnchor
+        let customizeButtonTrailingAnchor = isStickyInputEnabled
+            ? scrollView.frameLayoutGuide.trailingAnchor
+            : contentContainerView.safeAreaLayoutGuide.trailingAnchor
+        customizeButtonHost.addSubview(customizeButton)
 
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -324,9 +352,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             // thing that can make the page scroll.
             blocksStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
 
-            customizeButton.topAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.topAnchor,
+            customizeButton.topAnchor.constraint(equalTo: customizeButtonTopAnchor,
                                                  constant: Metrics.customizeButtonTopMargin),
-            customizeButton.trailingAnchor.constraint(equalTo: contentContainerView.safeAreaLayoutGuide.trailingAnchor,
+            customizeButton.trailingAnchor.constraint(equalTo: customizeButtonTrailingAnchor,
                                                       constant: -Metrics.customizeButtonTrailingMargin),
             customizeButton.widthAnchor.constraint(equalToConstant: Metrics.customizeButtonSize),
             customizeButton.heightAnchor.constraint(equalToConstant: Metrics.customizeButtonSize)
@@ -341,6 +369,28 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             blocksStackView.addArrangedSubview(blockController.view)
             blockController.didMove(toParent: self)
         }
+        if isStickyInputEnabled, let searchInputView {
+            blocksStackView.bringSubviewToFront(searchInputView)
+        }
+    }
+
+    /// Keeps the search input just below the top of the visible page once scrolling would carry it offscreen, including while it is focused.
+    private func updateStickySearchInput() {
+        guard isStickyInputEnabled, let searchInputView else { return }
+        // Center and bounds ignore the pinning transform, so they give the resting position.
+        let pinning = StickyInputPinning(restingMinY: searchInputView.center.y - searchInputView.bounds.height / 2,
+                                         height: searchInputView.bounds.height,
+                                         containerHeight: blocksStackView.bounds.height)
+        let visibleTopInStack = blocksStackView.convert(CGPoint(x: 0, y: scrollView.bounds.minY + scrollView.adjustedContentInset.top - scrollView.contentInset.top),
+                                                        from: scrollView).y
+        stickySearchInputTranslation = pinning.translation(pinnedMinY: visibleTopInStack + Metrics.stickySearchInputTopMargin)
+        applySearchInputTransform()
+    }
+
+    /// Combines the sticky pinning with the focused pose's offset, which is measured from the pinned position.
+    private func applySearchInputTransform() {
+        let focusedOffset = focusedPose?.inputOffset ?? 0
+        searchInputView?.transform = CGAffineTransform(translationX: 0, y: stickySearchInputTranslation + focusedOffset)
     }
 
     func refreshSearchInputSettings() {
@@ -480,6 +530,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     private func visibleSearchInputFrameInWindow() -> CGRect? {
         guard let window = view.window, let searchInputView else { return nil }
         let frame = searchInputView.untransformedFrame(of: searchInputView.bounds, in: window)
+            .offsetBy(dx: 0, dy: stickySearchInputTranslation)
         let viewport = scrollView.convert(scrollView.bounds, to: window).intersection(window.bounds)
         // An offscreen resting card should not pull the editor beyond the visible page.
         return frame.intersects(viewport) ? frame : nil
@@ -522,7 +573,8 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         isFocusedPoseSettled = false
         focusedKeyboardObserver.map(NotificationCenter.default.removeObserver)
         focusedKeyboardObserver = nil
-        scrollView.contentInset.bottom = 0
+        focusedScrollInsetBottom = 0
+        applyScrollInsets()
         scrollView.keyboardDismissMode = .none
         scrollView.isScrollEnabled = inputEditingLayout == nil
     }
@@ -541,7 +593,44 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
 
     private func updateFocusedScrollInset(keyboardTop: CGFloat) {
         let keyboardOverlap = max(0, view.bounds.maxY - keyboardTop)
-        scrollView.contentInset.bottom = keyboardOverlap + (focusedPose?.modulesOffset ?? 0) + (focusedPose?.bottomInputHeight ?? 0)
+        focusedScrollInsetBottom = keyboardOverlap + (focusedPose?.modulesOffset ?? 0) + (focusedPose?.bottomInputHeight ?? 0)
+        applyScrollInsets()
+    }
+
+    /// The bottom safe area, such as the floating toolbar's, kept from shrinking below its pre-focus value while the input is focused.
+    private var scrollBottomSafeAreaInset: CGFloat {
+        guard isStickyInputEnabled else { return 0 }
+        if let inputEditingLayout, inputEditingLayout.isGeometryValid {
+            // A shrinking inset clamps the scroll offset and makes the page jump, while a growing one must apply.
+            return max(inputEditingLayout.bottomSafeAreaInset, view.safeAreaInsets.bottom)
+        }
+        return view.safeAreaInsets.bottom
+    }
+
+    /// While the input is focused the page cannot scroll back past where the modules sit right under the focused card.
+    private var editingTopContentInset: CGFloat {
+        guard isStickyInputEnabled, let inputEditingLayout, inputEditingLayout.isGeometryValid else { return 0 }
+        return -inputEditingLayout.scrolledInputDistance
+    }
+
+    private func applyScrollInsets() {
+        let bottomInset = focusedScrollInsetBottom + scrollBottomSafeAreaInset
+        if scrollView.contentInset.bottom != bottomInset {
+            scrollView.contentInset.bottom = bottomInset
+        }
+        let topInset = editingTopContentInset
+        guard scrollView.contentInset.top != topInset else { return }
+        // UIKit shifts the offset with the top inset, which would move the page under the user.
+        let preservedOffset = scrollView.contentOffset
+        scrollView.contentInset.top = topInset
+        if scrollView.contentOffset != preservedOffset {
+            scrollView.setContentOffset(preservedOffset, animated: false)
+        }
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        applyScrollInsets()
     }
 
     private var focusedModuleViews: [UIView] {
@@ -557,7 +646,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         let isFocused = focusedPose != nil
         focusedBackdropView.alpha = isFocused ? Metrics.focusedBackdropAlpha : 0
         let inputTransform = CGAffineTransform(translationX: 0, y: focusedPose?.inputOffset ?? 0)
-        searchInputView?.transform = inputTransform
+        applySearchInputTransform()
         let welcomeView = blocks.first { $0.id == .welcome }?.viewController.view
         welcomeView?.alpha = isFocused ? 0 : 1
         welcomeView?.transform = isFocused
@@ -609,14 +698,20 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         if isEditing, inputEditingLayout == nil {
             finishEntranceAnimation()
             view.layoutIfNeeded()
-            scrollView.setContentOffset(scrollView.contentOffset, animated: false)
+            // Focusing mid-bounce must not leave a rubber band release to move the page after the input frame is captured.
+            scrollView.setContentOffset(clampedContentOffset(scrollView.contentOffset), animated: false)
+            updateStickySearchInput()
             inputEditingLayout = InputEditingLayout(contentOffset: scrollView.contentOffset,
                                                     inputFrameInWindow: visibleSearchInputFrameInWindow(),
-                                                    windowBounds: view.window?.bounds)
+                                                    windowBounds: view.window?.bounds,
+                                                    bottomSafeAreaInset: view.safeAreaInsets.bottom,
+                                                    scrolledInputDistance: scrollView.contentOffset.y + scrollView.adjustedContentInset.top
+                                                        - stickySearchInputTranslation)
         } else if !isEditing, let savedLayout = inputEditingLayout {
             setFocusedPose(nil)
             inputEditingLayout = nil
-            restoreScrollPosition(savedLayout.isGeometryValid ? savedLayout.contentOffset : scrollView.contentOffset)
+            applyScrollInsets()
+            restoreScrollPosition(savedLayout.isGeometryValid && !isStickyInputEnabled ? savedLayout.contentOffset : scrollView.contentOffset)
         }
         searchInputView?.alpha = isEditing ? 0 : 1
         applyAccessibilityReach()
@@ -624,6 +719,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1
         customizeButton.isUserInteractionEnabled = !isEditing
+        updateStickySearchInput()
     }
 }
 
@@ -650,5 +746,12 @@ private final class TransformedBlocksStackView: UIStackView {
         super.point(inside: point, with: event) || arrangedSubviews.contains { blockView in
             !blockView.isHidden && blockView.alpha > 0 && blockView.bounds.contains(blockView.convert(point, from: self))
         }
+    }
+}
+
+extension RedesignedNewTabPageViewController: UIScrollViewDelegate {
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        updateStickySearchInput()
     }
 }

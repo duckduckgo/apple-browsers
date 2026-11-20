@@ -119,6 +119,15 @@ public extension SubJobWebRunning {
 
     // swiftlint:disable:next cyclomatic_complexity
     func runNextAction(_ action: Action) async {
+#if DEBUG
+        if capturesDebugSnapshots {
+            await captureDebugSnapshot(.before, action: action)
+            guard shouldRunNextStep() else {
+                await failAsCancelledAndTearDown()
+                return
+            }
+        }
+#endif
         let stepType = actionsHandler?.stepType
         await assistanceObserver?.attemptWillRun(action)
 
@@ -578,6 +587,11 @@ public extension SubJobWebRunning {
     }
 
     func onError(error: Error) async {
+#if DEBUG
+        if capturesDebugSnapshots {
+            await captureDebugSnapshot(.error, action: actionsHandler?.currentAction())
+        }
+#endif
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionsHandler?.currentAction()?.actionType,
                          details: errorDetails(error))

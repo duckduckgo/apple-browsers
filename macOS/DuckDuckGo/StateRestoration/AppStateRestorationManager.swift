@@ -195,12 +195,10 @@ final class AppStateRestorationManager: NSObject, AppStateRestorationManaging {
         detectUnexpectedAppTermination(didRestoreRegularTabs: restoreRegularTabs, updateStatus: updateStatus)
 
         stateChangedCancellable = Publishers.Merge(
-                Application.appDelegate.windowControllersManager.stateChanged,
+                Application.appDelegate.windowControllersManager.persistentStateChanged,
                 pinnedTabsManagerProvider.settingChangedPublisher
             )
             .debounce(for: .seconds(1), scheduler: RunLoop.main)
-            // There is a favicon assignment after a restored tab loads that triggered unnecessary
-            // saving of the state
             .sink { [weak self] _ in
                 self?.persistAppState()
             }

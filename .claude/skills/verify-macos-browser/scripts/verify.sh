@@ -335,7 +335,11 @@ build)
             if (( $(window_count "$pid") > 0 )); then ready=1; break; fi
             sleep 1
         done
-        (( ready )) || { echo "NOT READY: no window after 60 s${VM:+ (keychain dialog in $VM? see VM-SETUP.md)}"; exit 2; }
+        if (( ! ready )); then   # a prompt (keychain, notifications) in front of the app blocks its first window
+            front=$(on_target 'lsappinfo info -only name "$(lsappinfo front)" | sed -n "1s/^\"\([^\"]*\)\".*/\1/p"')
+            echo "NOT READY: no window after 60 s${front:+; $front is in front: answer its prompt (keychain, notifications), then rerun}${VM:+ (see VM-SETUP.md)}"
+            exit 2
+        fi
         echo "READY window"
     fi
     kill -0 "$(cat "$RUN_DIR/pixel_stream.pid")" 2>/dev/null || { echo "PIXEL STREAM FAILED: $(head -3 "$RUN_DIR/pixel_stream.err")"; exit 2; }
@@ -430,7 +434,8 @@ record)
         if [[ -z "$pid" ]] || ! on_target 'kill -0 "$1" 2>/dev/null' "$pid"; then
             stop_recorder > /dev/null 2>&1 || true
             [[ -z "$VM" ]] || scp -q "${SSH_OPTS[@]}" "$VM:verify/recording.log" "$RUN_DIR/recording.log" 2>/dev/null || true
-            echo "RECORDER EXITED: $(tail -c 300 "$RUN_DIR/recording.log" 2>/dev/null)"
+            if [[ -f "$RUN_DIR/recording.cut" ]]; then read -r _ why < "$RUN_DIR/recording.cut"; echo "CUT at the start: $why"
+            else echo "RECORDER EXITED: $(tail -c 300 "$RUN_DIR/recording.log" 2>/dev/null)"; fi
             exit 2
         fi
         echo "recording${VM:+ in $VM}"
@@ -446,7 +451,12 @@ record)
         fi
         [[ -s "$mov" ]] || { echo "NO MOVIE: the recorder wrote nothing: $(tail -c 300 "$RUN_DIR/recording.log" 2>/dev/null)"; exit 2; }
         trim=()
-        if [[ -f "$RUN_DIR/recording.cut" ]]; then read -r cut why < "$RUN_DIR/recording.cut"; trim=(--duration $(( cut > 0 ? cut : 0 ))); fi
+        if [[ -f "$RUN_DIR/recording.cut" ]]; then
+            read -r cut why < "$RUN_DIR/recording.cut"
+            # The cut keeps only whole seconds before it, minus the margin: nothing left means no movie, not a broken one.
+            (( cut > 0 )) || { rm -f "$mov"; echo "CUT: $why before a whole second could be kept; no movie"; exit 1; }
+            trim=(--duration "$cut")
+        fi
         # screencapture writes QuickTime whatever the extension; remuxing to mp4 also proves AVFoundation reads it.
         if ! avconvert -p PresetPassthrough -s "$mov" -o "$RUN_DIR/recording.mp4" --replace ${trim[@]+"${trim[@]}"} > /dev/null 2>&1; then
             rm -f "$RUN_DIR/recording.mp4"

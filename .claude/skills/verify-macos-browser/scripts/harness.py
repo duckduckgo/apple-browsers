@@ -218,8 +218,9 @@ class Mac:
         return [line for line in self._do("ax", "find", target).splitlines() if line.strip()]
 
     def tab_count(self):
+        """Tabs in the front window; other windows' tabs don't count."""
         # The id alone: each tab's close button is TabBarViewItem.closeButton.
-        return sum(" id=TabBarViewItem " in line for line in self.find("TabBarViewItem"))
+        return sum(" id=TabBarViewItem " in line for line in self._do("ax", "findmain", "TabBarViewItem").splitlines())
 
     def url(self):
         """The current tab's URL, through the AutomationServer (AUTOMATION = True)."""
@@ -354,8 +355,9 @@ def load(path):
 
 # ---------------------------------------------------------------- evidence folders
 def _new_attempt(stem):
-    stem = re.sub(r"[^a-z0-9-]+", "-", stem.lower()).strip("-")[:24] or "proof"
-    d = os.path.join(HOME, f"{stem}-{uuid.uuid4().hex[:4]}")   # the folder name is verify.sh's topic
+    # The folder name is verify.sh's topic, 14 characters at most (see verify.sh).
+    stem = re.sub(r"[^a-z0-9-]+", "-", stem.lower()).strip("-")[:9].strip("-") or "proof"
+    d = os.path.join(HOME, f"{stem}-{uuid.uuid4().hex[:4]}")
     os.makedirs(d)   # never exist_ok: two attempts never share a folder
     return d
 
@@ -386,6 +388,10 @@ def attempt_dir(path):
 # ---------------------------------------------------------------- prove
 def _on_signal(signum, _frame):
     raise _Stop(signal.Signals(signum).name)
+
+
+def _ignore(_signum, _frame):
+    pass
 
 
 def _alive(pid_file):
@@ -435,7 +441,8 @@ def prove(path, target):
                 f.write(traceback.format_exc())
     finally:
         for s in old:   # capture, cleanup and the report must not be interrupted
-            signal.signal(s, signal.SIG_IGN)
+            # A no-op handler, not SIG_IGN: children (ssh, log show) get the default back, so they stay killable.
+            signal.signal(s, _ignore)
     try:
         _finish(mac, rec, evidence)
         manifest = _manifest(evidence, rec, proof, rerun, running, getattr(mod, "LIVE", []), target)

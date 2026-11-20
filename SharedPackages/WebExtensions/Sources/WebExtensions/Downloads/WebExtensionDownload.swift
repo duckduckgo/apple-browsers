@@ -20,6 +20,7 @@
 
 import CoreServices
 import Foundation
+import FoundationExtensions
 
 /// Local attachment URLs supported by the macOS downloads bridge.
 struct WebExtensionDownload: Sendable {
@@ -143,10 +144,19 @@ struct WebExtensionDownload: Sendable {
                   quarantine[kLSQuarantineOriginURLKey as String] == nil else { throw DownloadError.saveFailed }
         }
 
-        func publish(to destination: URL) throws {
-            guard renamex_np(file.path, destination.path, UInt32(RENAME_EXCL)) == 0 else {
-                throw errno == EEXIST ? DownloadError.fileExists : DownloadError.saveFailed
+        @discardableResult
+        func publish(to destination: URL, uniquify: Bool = false) throws -> URL {
+            func publishExclusively(at url: URL) throws -> URL {
+                guard renamex_np(file.path, url.path, UInt32(RENAME_EXCL)) == 0 else {
+                    throw errno == EEXIST ? DownloadError.fileExists : DownloadError.saveFailed
+                }
+                return url
             }
+
+            guard uniquify else { return try publishExclusively(at: destination) }
+            return try FileManager.default.withNonExistentUrl(for: destination, incrementingIndexIfExistsUpTo: 10000,
+                                                              continueOn: { ($0 as? DownloadError) == .fileExists },
+                                                              perform: publishExclusively)
         }
 
         func cleanUp() {

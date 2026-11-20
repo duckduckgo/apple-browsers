@@ -28,6 +28,11 @@ struct WebExtensionConfigurationProvider: WebExtensionConfigurationProviding {
         UserAgent.webExtensionSuffix
     }
 
+    @MainActor var automaticDownloadDirectory: URL? {
+        let preferences = Application.appDelegate.downloadsPreferences
+        return preferences.alwaysRequestDownloadLocation ? nil : preferences.effectiveDownloadLocation
+    }
+
     var isInspectable: Bool {
 #if DEBUG
         return true

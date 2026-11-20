@@ -30,6 +30,8 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
     var permissionController: () -> WebExtensionPermissionController? = { nil }
 
     var presentationWindow: (WKWebView, WKWebExtensionContext) -> NSWindow? = { _, _ in nil }
+    var automaticDownloadDirectory: () -> URL? = { nil }
+    var canChooseDestination: (NSWindow) -> Bool = { NSApp.isActive && $0.isVisible && $0.attachedSheet == nil }
     var chooseDestination: @MainActor (String, String?, NSWindow) async -> URL? = WebExtensionDownloadMessageHandler.showSavePanel
     var downloadStartTimeout: Duration = .seconds(60)
     var backgroundRefreshInterval: Duration = .seconds(15)
@@ -89,11 +91,19 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                     throw WebExtensionDownload.DownloadError.invalid
                 }
                 try checkAuthorization()
-                guard let destination = await chooseDestination(download.filename, context.webExtension.displayName, window) else {
-                    throw WebExtensionDownload.DownloadError.canceled
+                guard canChooseDestination(window) else { throw WebExtensionDownload.DownloadError.canceled }
+                let directory = automaticDownloadDirectory()
+                let destination: URL
+                if let directory {
+                    destination = directory.appendingPathComponent(download.filename, isDirectory: false)
+                } else {
+                    guard let chosen = await chooseDestination(download.filename, context.webExtension.displayName, window) else {
+                        throw WebExtensionDownload.DownloadError.canceled
+                    }
+                    destination = chosen
                 }
-                // The Save panel starts security-scoped access to the selected URL.
-                defer { destination.stopAccessingSecurityScopedResource() }
+                // The panel grants access to its URL. Preferences own access to the configured directory.
+                defer { if directory == nil { destination.stopAccessingSecurityScopedResource() } }
                 try checkAuthorization()
                 let staged = try await Task.detached { try WebExtensionDownload.StagedFile(destination: destination) }.value
                 defer { staged.cleanUp() }
@@ -102,9 +112,9 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                 try await writer.write(source, from: webView, startTimeout: downloadStartTimeout)
                 try await Task.detached { try staged.prepareForPublication() }.value
                 try checkAuthorization()
-                try staged.publish(to: destination)
+                let saved = try staged.publish(to: destination, uniquify: directory != nil)
                 // Only return the basename. The directory selected by the user stays private.
-                replyHandler(["id": Int32.random(in: 1...Int32.max), "filename": destination.lastPathComponent], nil)
+                replyHandler(["id": Int32.random(in: 1...Int32.max), "filename": saved.lastPathComponent], nil)
             } catch WebExtensionDownload.DownloadError.canceled {
                 replyHandler(nil, "Download canceled")
             } catch WebExtensionDownload.DownloadError.fileExists {
@@ -138,7 +148,6 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
     }
 
     private static func showSavePanel(_ filename: String, extensionName: String?, window: NSWindow) async -> URL? {
-        guard NSApp.isActive, window.isVisible, window.attachedSheet == nil else { return nil }
         let panel = NSSavePanel()
         let validator = DestinationValidator()
         panel.delegate = validator

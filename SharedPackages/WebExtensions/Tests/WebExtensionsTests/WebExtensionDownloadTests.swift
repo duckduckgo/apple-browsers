@@ -153,6 +153,8 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         handler.contextForOrigin = { [unowned self] url in self.webKit.extensionContext(for: url) }
         handler.backgroundWebView = { $0.value(forKey: "_backgroundWebView") as? WKWebView }
         handler.presentationWindow = { [unowned self] _, _ in self.window }
+        handler.canChooseDestination = { _ in true }
+        handler.chooseDestination = { _, _, _ in nil }
         handler.permissionController = { [unowned self] in self.permissionController }
         let config = try XCTUnwrap(context.webViewConfiguration)
         view = DownloadTestWebView(frame: .zero, configuration: config)
@@ -186,6 +188,19 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
             """, arguments: ["options": request], contentWorld: .page) as? String
     }
 
+    private func downloadAndObserveCompletion(in webView: WKWebView) async throws -> String? {
+        try await webView.callAsyncJavaScript("""
+            const id = await browser.downloads.download(options);
+            return await new Promise(resolve => {
+                const timer = setTimeout(() => resolve("missing event"), 1000);
+                browser.downloads.onChanged.addListener(delta => {
+                    clearTimeout(timer);
+                    resolve(Number.isInteger(id) && id > 0 && id <= \(Int32.max) && delta.id === id && delta.filename.current);
+                });
+            });
+            """, arguments: ["options": options], contentWorld: .page) as? String
+    }
+
     func testAttachmentIsQuarantinedAndBothPromiseAndEventIdentifyTheDownload() async throws {
         await grant()
         let target = directory.appendingPathComponent("chosen.bin")
@@ -196,23 +211,42 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         // 1Password calls this from its background page after reading the decrypted vault attachment.
         try await context.loadBackgroundContent()
         let background = try XCTUnwrap(context.value(forKey: "_backgroundWebView") as? WKWebView)
-        let result = try await background.callAsyncJavaScript("""
-            const id = await browser.downloads.download(options);
-            return await new Promise(resolve => {
-                const timer = setTimeout(() => resolve("missing event"), 1000);
-                browser.downloads.onChanged.addListener(delta => {
-                    clearTimeout(timer);
-                    resolve(Number.isInteger(id) && id > 0 && id <= \(Int32.max) && delta.id === id && delta.filename.current);
-                });
-            });
-            """, arguments: ["options": options], contentWorld: .page)
-        XCTAssertEqual(result as? String, "chosen.bin")
+        let result = try await downloadAndObserveCompletion(in: background)
+        XCTAssertEqual(result, "chosen.bin")
         XCTAssertEqual(try Data(contentsOf: target), Data([0, 1, 2]))
         let properties = try XCTUnwrap(target.resourceValues(forKeys: [.quarantinePropertiesKey]).quarantineProperties)
         XCTAssertNil(properties[kLSQuarantineDataURLKey as String])
         XCTAssertNil(properties[kLSQuarantineOriginURLKey as String])
         XCTAssertEqual(getxattr(target.path, "com.apple.metadata:kMDItemWhereFroms", nil, 0, 0, XATTR_NOFOLLOW), -1)
         XCTAssertEqual(errno, ENOATTR)
+    }
+
+    func testAutomaticDownloadPreservesExistingFileAndReportsTheSavedFilename() async throws {
+        await grant()
+        let existing = directory.appendingPathComponent("sample.bin")
+        try Data([9]).write(to: existing)
+        handler.automaticDownloadDirectory = { [unowned self] in self.directory }
+        let result = try await downloadAndObserveCompletion(in: view)
+        XCTAssertEqual(result, "sample 1.bin")
+        XCTAssertEqual(try Data(contentsOf: existing), Data([9]))
+        XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("sample 1.bin")), Data([0, 1, 2]))
+    }
+
+    func testPopOutUsesItsOwnWindowAndRespectsPrivateAccess() {
+        let manager = WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
+                                          windowTabProvider: WebExtensionWindowTabProvidingMock(),
+                                          storageProvider: WebExtensionStorageProvidingMock())
+        let popup = DownloadTestWindow()
+        let controller = DownloadTestWindowController(window: popup)
+        popup.contentView = view
+        defer { withExtendedLifetime(controller) {} }
+
+        XCTAssertIdentical(manager.downloadPresentationWindow(for: view, context: context), popup)
+        controller.privateWindow = true
+        context.hasAccessToPrivateData = false
+        XCTAssertNil(manager.downloadPresentationWindow(for: view, context: context))
+        context.hasAccessToPrivateData = true
+        XCTAssertIdentical(manager.downloadPresentationWindow(for: view, context: context), popup)
     }
 
     func testBackgroundRefreshesWhileChoosingADestinationAndStopsAfterCancellation() async throws {
@@ -449,6 +483,17 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
         XCTAssertEqual(retry, "rejected")
         XCTAssertEqual(panels, 2)
     }
+}
+
+private final class DownloadTestWindow: NSWindow {
+    override var isKeyWindow: Bool { true }
+}
+
+@available(macOS 15.4, *)
+private final class DownloadTestWindowController: NSWindowController, WKWebExtensionWindow {
+    var privateWindow = false
+
+    func isPrivate(for context: WKWebExtensionContext) -> Bool { privateWindow }
 }
 
 @available(macOS 15.4, *)

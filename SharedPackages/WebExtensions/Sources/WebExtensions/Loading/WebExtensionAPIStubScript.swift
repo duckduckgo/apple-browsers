@@ -27,7 +27,7 @@ import Foundation
 /// reports calls to placeholders to the API compatibility log.
 ///
 /// Some namespaces are implemented rather than placeholders:
-/// - On macOS, `chrome.downloads.download` saves data and same-extension blob URLs through a browser-owned Save panel.
+/// - On macOS, `chrome.downloads.download` saves data and same-extension blob URLs using the browser's download preferences.
 ///   Its completion event is delivered to the page that requested the download.
 /// - `chrome.idle`, on macOS: the state (`locked`, `idle` or `active`) comes from the app through
 ///   `idleMessageHandlerName`, and `onStateChanged` polls while it has listeners.

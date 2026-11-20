@@ -413,6 +413,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             self?.extensionContext(for: url) != nil
         }
 
+        downloadHandler.automaticDownloadDirectory = { configuration.automaticDownloadDirectory }
         downloadHandler.contextForOrigin = { [weak self] in self?.extensionContext(for: $0) }
         downloadHandler.backgroundWebView = { [weak self] in self?.backgroundWebView(in: $0) }
         downloadHandler.presentationWindow = { [weak self] in self?.downloadPresentationWindow(for: $0, context: $1) }
@@ -1580,18 +1581,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
 #if os(macOS)
     @MainActor
-    private func downloadPresentationWindow(for webView: WKWebView, context: WKWebExtensionContext) -> NSWindow? {
-        guard let focused = windowTabProvider.focusedWindow(for: context),
-              let window = (focused as? NSWindowController)?.window,
-              window.isKeyWindow || window.isMainWindow,
-              focused.isPrivate?(for: context) == false || context.hasAccessToPrivateData else { return nil }
-        // Background pages have no presenting window. Bind their request to the focused browser
-        // window when it arrives. Visible extension pages must belong to that same window.
-        if backgroundWebView(in: context) === webView { return window }
-        var source = webView.window
-        while let current = source {
-            if current === window { return window }
-            source = current.parent
+    func downloadPresentationWindow(for webView: WKWebView, context: WKWebExtensionContext) -> NSWindow? {
+        // A background page has no window. A visible page, including a pop-out, belongs to its own window.
+        let source = backgroundWebView(in: context) === webView ? (NSApp.keyWindow ?? NSApp.mainWindow) : webView.window
+        guard let source else { return nil }
+        for window in sequence(first: source, next: { $0.parent ?? $0.sheetParent }) {
+            guard let controller = window.windowController as? any WKWebExtensionWindow else { continue }
+            guard window.isKeyWindow || window.isMainWindow,
+                  controller.isPrivate?(for: context) == false || context.hasAccessToPrivateData else { return nil }
+            return window
         }
         return nil
     }

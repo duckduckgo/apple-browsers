@@ -829,13 +829,26 @@ extension NSImage {
 
 extension Data {
 
-    /// Returns whether the data references SVG filters (`<filter>`, `filter="..."` or CSS `filter:`).
+    /// The largest SVG favicon (in bytes) that is scanned and decoded. Real favicons are a few KB; larger SVGs are
+    /// rejected by `containsSVGFilter` instead of being scanned or rendered.
+    static let maxSVGFaviconSize = 512 * 1024
+
+    /// Returns whether the data is an SVG that must not be rendered: it references filters (`<filter>`,
+    /// `filter="..."` or CSS `filter:`), or it is larger than `maxSVGFaviconSize`.
     ///
     /// CoreSVG overflows the stack (`EXC_BAD_ACCESS` in `SVGFilter::draw`) on some filtered SVGs, e.g. when the root
     /// `<svg>` and a child reference the same filter. The crash can't be caught, so such SVGs must never be rendered.
+    /// Non-SVG data (e.g. a large PNG) is never flagged.
     var containsSVGFilter: Bool {
-        // Latin-1 decodes any byte sequence, and `filter` is plain ASCII.
-        String(bytes: self, encoding: .isoLatin1)?.lowercased().contains("filter") ?? false
+        guard count <= Self.maxSVGFaviconSize else { return isSVGImageData }
+        let needle: [UInt8] = Array("filter".utf8)
+        return withUnsafeBytes { bytes in
+            guard bytes.count >= needle.count else { return false }
+            // `| 0x20` lowercases ASCII letters, and no other byte maps onto the needle's letters.
+            return (0...(bytes.count - needle.count)).contains { start in
+                needle.indices.allSatisfy { bytes[start + $0] | 0x20 == needle[$0] }
+            }
+        }
     }
 
     /// Returns whether the data looks like an SVG document, based on its first bytes.

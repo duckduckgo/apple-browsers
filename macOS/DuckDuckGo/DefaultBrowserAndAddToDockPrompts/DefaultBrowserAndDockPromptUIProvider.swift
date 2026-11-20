@@ -41,12 +41,12 @@ private extension BrowsersComparisonChart.Configuration {
                                               fontWeight: Metrics.fontWeight,
                                               showFeatureIcons: true,
                                               showBottomDivider: false,
-                                              rowStyle: .alternatingBackground(Color(designSystemColor: .accentAltGlowPrimary),
+                                              rowStyle: .alternatingBackground(Color(singleUseColor: .defaultBrowserAndDockPromptChartRowBackground),
                                                                                cornerRadius: Metrics.rowCornerRadius),
                                               rowHeight: Metrics.rowHeight,
-                                              availabilityIconStyle: .solid(available: Color(designSystemColor: .statusGreen),
-                                                                            partiallyAvailable: Color(designSystemColor: .statusYellowPrimary),
-                                                                            unavailable: Color(designSystemColor: .statusGray)))
+                                              availabilityIconStyle: .solid(available: Color(singleUseColor: .defaultBrowserAndDockPromptStatusAvailable),
+                                                                            partiallyAvailable: Color(singleUseColor: .defaultBrowserAndDockPromptStatusPartiallyAvailable),
+                                                                            unavailable: Color(singleUseColor: .defaultBrowserAndDockPromptStatusUnavailable)))
     }
 
     enum Metrics {

@@ -112,6 +112,12 @@ public enum SingleUseColor {
     case spinnerStart
     case spinnerFinal
 
+    case defaultBrowserAndDockPromptBackground
+    case defaultBrowserAndDockPromptChartRowBackground
+    case defaultBrowserAndDockPromptStatusAvailable
+    case defaultBrowserAndDockPromptStatusPartiallyAvailable
+    case defaultBrowserAndDockPromptStatusUnavailable
+
 #endif
 
 }

@@ -70,7 +70,7 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
             }
         }
         .frame(width: Metrics.width, height: Metrics.height)
-        .background(Color(designSystemColor: .surfaceTertiary))
+        .background(Color(singleUseColor: .defaultBrowserAndDockPromptBackground))
     }
 }
 

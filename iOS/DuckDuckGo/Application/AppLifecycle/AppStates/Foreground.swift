@@ -94,7 +94,6 @@ struct Foreground: ForegroundHandling {
             isToggleEnabled: { appDependencies.aiChatSettings.isAIChatSearchInputUserSettingsEnabled }
         )
         let keyboardPresenter = KeyboardPresenter(mainViewController: appDependencies.mainCoordinator.controller,
-                                                  featureFlagger: appDependencies.featureFlagger,
                                                   runOnceModalPromptCloses: { appDependencies.mainCoordinator.runOnceModalPromptCloses(while: $0, $1) })
         self.keyboardPresenter = keyboardPresenter
         launchActionHandler = LaunchActionHandler(
@@ -105,7 +104,6 @@ struct Foreground: ForegroundHandling {
             launchSourceService: appDependencies.launchSourceManager,
             idleReturnOutcome: appDependencies.idleReturnEvaluator.evaluateReturn(),
             drewNewTabPage: drewIdleReturnNewTabPage,
-            featureFlagger: appDependencies.featureFlagger,
             idleReturnDelegate: appDependencies.mainCoordinator
         )
         interactionManager = UIInteractionManager(

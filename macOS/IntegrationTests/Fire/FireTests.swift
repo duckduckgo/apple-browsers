@@ -210,7 +210,10 @@ final class FireTests: XCTestCase {
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
                         isAppActiveProvider: { true }, // App is active - should manage windows
-                        aIChatHistoryCleaner: MockAIChatHistoryCleaner())
+                        aIChatHistoryCleaner: MockAIChatHistoryCleaner(),
+                        replacementPinnedTabFactory: { [schemeHandler] content in
+                            Tab(content: content, webViewConfiguration: schemeHandler!.webViewConfiguration(), shouldLoadInBackground: true)
+                        })
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
         Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")

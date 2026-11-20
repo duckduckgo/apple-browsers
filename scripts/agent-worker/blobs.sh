@@ -5,7 +5,6 @@
 # Usage:
 #   blobs.sh plan <file> <sha256>          Download PLAN_BLOB, checking its size and hash
 #   blobs.sh auto <file> <sha256>          Download AUTO_BLOB (the auto plugin zip), checking its size and hash
-#   blobs.sh get <dir> <prefix> <path>...  Download the paths under a prefix that exist, into dir by basename
 #   blobs.sh put <dir> <prefix>            Upload dir under a prefix and print its SSO viewer URL
 # Env: ARTIFACTS_ACCOUNT, ARTIFACTS_CONTAINER, PLAN_BLOB for plan, AUTO_BLOB for auto
 
@@ -31,22 +30,13 @@ case ${1:-} in
     echo "$sha  $file" | shasum -a 256 -c --status || { echo "::error::auto plugin hash does not match; refusing to run"; exit 1; }
     echo "auto plugin downloaded and verified ($(wc -c < "$file") bytes)"
     ;;
-  get)
-    dir=$2 prefix=$3
-    shift 3
-    mkdir -p "$dir"
-    for f in "$@"; do
-      az_blob download --container-name "$ARTIFACTS_CONTAINER" --name "$prefix/$f" \
-        --file "$dir/$(basename "$f")" > /dev/null 2>&1 || echo "no $f"
-    done
-    ;;
   put)
     dir=$2 prefix=$3
     az_blob upload-batch --destination "$ARTIFACTS_CONTAINER" --destination-path "$prefix" --source "$dir" > /dev/null
     echo "https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$prefix"
     ;;
   *)
-    sed -n '2,10p' "$0" >&2
+    sed -n '2,9p' "$0" >&2
     exit 2
     ;;
 esac

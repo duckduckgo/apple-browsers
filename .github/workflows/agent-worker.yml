@@ -37,7 +37,6 @@ env:
   PLAN_BLOB: ${{ inputs.handoff }}/plan.md
   AUTO_BLOB: ${{ inputs.handoff }}/auto-claude.zip
   AUTO_SHA256: ${{ inputs.auto_sha256 }}
-  HANDOFF_PREFIX: ${{ inputs.handoff }}
   EVIDENCE_PREFIX: ${{ inputs.handoff }}/${{ github.repository }}/${{ github.run_id }}-${{ github.run_attempt }}
   DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
   # Agent Status field and its option gids in the agent project
@@ -240,8 +239,9 @@ jobs:
           elif grep -qx "tests=failed" "$s"; then failure="its last test run failed"
           fi
           build=$(sed -n 's/^build=//p' "$s" 2> /dev/null); tests=$(sed -n 's/^tests=//p' "$s" 2> /dev/null)
-          printf '\n## Build and tests\n\nFrom the last xc build and xc test the agent ran. Build: %s. Tests: %s.\n' \
-            "${build:-not run}" "${tests:-not run}" >> "$RUNNER_TEMP/evidence/summary.md"
+          ran=$(sed -n 's/^tests_run=//p' "$s" 2> /dev/null)
+          printf '\n## Build and tests\n\nFrom the last xc build and xc test the agent ran. Build: %s. Tests: %s%s.\n' \
+            "${build:-not run}" "${tests:-not run}" "${ran:+ (\`${ran// /\`, \`}\`)}" >> "$RUNNER_TEMP/evidence/summary.md"
           { echo "ok=$([[ -z $failure ]] && echo true || echo false)"; echo "failure=$failure"; } | tee -a "$GITHUB_OUTPUT"
 
       # Denied tool calls and failed GitHub, git and auto script calls, each with how to fix it, for the Asana comment

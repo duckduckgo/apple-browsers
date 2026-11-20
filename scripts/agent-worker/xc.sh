@@ -4,7 +4,7 @@
 #
 # Usage (from the checkout):
 #   xc.sh build [ios|macos]          Build for testing. The platform defaults to the one the change touches
-#   xc.sh test [ios|macos] [<test>]  Run tests in xcodebuild -only-testing form, or .agent-evidence/tests.txt
+#   xc.sh test [ios|macos] <test>... Run the named tests, in xcodebuild -only-testing form
 #   xc.sh lint                       SwiftLint --strict on the changed Swift files
 #   xc.sh mv <from> <to>             Move or rename a file in the checkout
 #   xc.sh rm <path>...               Delete files in the checkout
@@ -82,10 +82,7 @@ case $cmd in
     ;;
   test)
     tests=("$@")
-    if [[ ${#tests[@]} == 0 && -s .agent-evidence/tests.txt ]]; then
-      while read -r t; do [[ -n $t ]] && tests+=("$t"); done < .agent-evidence/tests.txt
-    fi
-    [[ ${#tests[@]} -gt 0 ]] || { echo "Name tests to run, or list them in .agent-evidence/tests.txt"; exit 2; }
+    [[ ${#tests[@]} -gt 0 ]] || { echo "Name the tests to run, like UnitTests/FooTests/testBar"; exit 2; }
     only=(); for t in "${tests[@]}"; do only+=("-only-testing:$t"); done
     log="$logs/test-$platform.log"
     echo "Testing $platform: ${tests[*]} (full log: $log). Run build first after changing code"
@@ -93,9 +90,9 @@ case $cmd in
         -test-timeouts-enabled YES -maximum-test-execution-time-allowance 120 > "$log" 2>&1; then r=0; else r=1; fi
     grep -E "^Test Case .*(passed|failed)|Executed [0-9]+ test|^Test .* (passed|failed)|TEST (EXECUTE )?(SUCCEEDED|FAILED)|: error:|XCTAssert|Fatal error" "$log" | cut -c1-600 | head -60
     if [[ $r == 0 ]]; then
-      echo "TESTS PASSED"; record tests passed
+      echo "TESTS PASSED"; record tests passed; record tests_run "${tests[*]}"
     else
-      echo "TESTS FAILED"; record tests failed; exit 1
+      echo "TESTS FAILED"; record tests failed; record tests_run "${tests[*]}"; exit 1
     fi
     ;;
   lint)

@@ -94,6 +94,24 @@ public enum CPMLastStage: Hashable, Sendable {
     }
 }
 
+/// Where the extension says the tab of a message is: its index in its window, that window, and the ids of all the
+/// windows the extension knows, ascending.
+@available(macOS 15.4, iOS 18.4, *)
+public struct CPMExtensionTabPosition: Sendable, Equatable {
+    public let tabIndex: Int
+    public let windowId: Int
+    public let windowIds: [Int]
+
+    public init(tabIndex: Int, windowId: Int, windowIds: [Int]) {
+        self.tabIndex = tabIndex
+        self.windowId = windowId
+        self.windowIds = windowIds
+    }
+
+    /// The window's place among all the windows the extension knows, from 0.
+    var windowRank: Int? { windowIds.sorted().firstIndex(of: windowId) }
+}
+
 /// Facts supplied by tabs, the native messaging handler, and the extension manager.
 @available(macOS 15.4, iOS 18.4, *)
 public enum CPMMessagingHealthEvent: Sendable {
@@ -103,10 +121,12 @@ public enum CPMMessagingHealthEvent: Sendable {
     case webContentProcessTerminated(tabIdentifier: String)
     /// The extension refreshed the dashboard of a page. `isAnswer` is false when it said it cannot answer the
     /// page's init (no configuration, no settings): the extension is running, but the page stays unanswered.
-    case dashboardResponse(url: URL, extensionIdentifier: String? = nil, isAnswer: Bool = true)
+    case dashboardResponse(url: URL, extensionIdentifier: String? = nil, isAnswer: Bool = true,
+                           position: CPMExtensionTabPosition? = nil)
     /// A progress mark for one main-frame init, sent by the extension. It never answers a page; it only tells how
     /// far the init got.
-    case initProgress(url: URL, stage: CPMInitStage, extensionIdentifier: String? = nil)
+    case initProgress(url: URL, stage: CPMInitStage, extensionIdentifier: String? = nil,
+                      position: CPMExtensionTabPosition? = nil)
     case extensionLifecycle(WebExtensionLifecycleEvent)
     /// The embedded extension was uninstalled, or replaced by a newer version: pages waiting for it will never be
     /// answered, and the extension is gone rather than broken.
@@ -148,6 +168,12 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     var onHealthyResponse: (() -> Void)?
     /// Old and new embedded versions can coexist during an upgrade; only the current sender is evidence.
     var isCurrentEmbeddedExtension: ((String) -> Bool)?
+
+    /// The app tab at `index` in one window: the window that is number `windowRank` (from 0, in the order WebKit got
+    /// the windows) of the `windowCount` windows the extension `extensionIdentifier` knows. The platform returns nil
+    /// when it cannot tell, for example when it has another number of windows.
+    public var tabIdentifierAtExtensionPosition: (@MainActor (_ extensionIdentifier: String, _ index: Int,
+                                                              _ windowRank: Int, _ windowCount: Int) -> String?)?
 
     /// Debug-only switch that makes dashboard responses invisible to the health algorithm.
     public private(set) var isCPMMessagingBreakageSimulationEnabled = false
@@ -222,9 +248,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             Logger.webExtensions.debug("[CPM Health Monitor] \(event.logDescription, privacy: .public) -> \(state, privacy: .public)")
         }
 
-        if case .dashboardResponse(let url, let extensionIdentifier, let isAnswer) = event {
+        if case .dashboardResponse(let url, let extensionIdentifier, let isAnswer, let position) = event {
             // The answer is applied before the check, so a slow answer is never counted as silence.
-            receiveResponse(url: url, extensionIdentifier: extensionIdentifier, isAnswer: isAnswer)
+            receiveResponse(url: url, extensionIdentifier: extensionIdentifier, isAnswer: isAnswer, position: position)
             reportSilentTabs()
             return
         }
@@ -255,8 +281,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             lastStages.removeValue(forKey: tabIdentifier)
         case .dashboardResponse:
             break
-        case .initProgress(let url, let stage, let extensionIdentifier):
-            receiveProgress(url: url, stage: stage, extensionIdentifier: extensionIdentifier)
+        case .initProgress(let url, let stage, let extensionIdentifier, let position):
+            receiveProgress(url: url, stage: stage, extensionIdentifier: extensionIdentifier, position: position)
         case .extensionLifecycle(let lifecycleEvent):
             handle(lifecycleEvent)
         case .embeddedExtensionRemoved:
@@ -287,26 +313,47 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         pendingCommits = pendingCommits.mapValues { $0 < start ? $0.addingTimeInterval(suspended) : resumedAt }
     }
 
-    private func receiveResponse(url: URL, extensionIdentifier: String?, isAnswer: Bool) {
+    private func receiveResponse(url: URL, extensionIdentifier: String?, isAnswer: Bool, position: CPMExtensionTabPosition?) {
         if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
         guard !isCPMMessagingBreakageSimulationEnabled else { return }
+        let tabs = tabs(for: url, at: position, extensionIdentifier: extensionIdentifier)
         if isAnswer {
-            answerPages(url: url)
+            answer(tabs)
         } else {
-            cannotBeAnsweredTabs.formUnion(waitingTabs(showing: url))
+            cannotBeAnsweredTabs.formUnion(tabs)
         }
         onHealthyResponse?()
     }
 
-    private func answerPages(url: URL) {
-        // A message that cannot be tied to one tab answers every waiting tab it could belong to.
-        for tabIdentifier in waitingTabs(showing: url) {
+    private func answer(_ tabs: [String]) {
+        for tabIdentifier in tabs {
             pendingCommits[tabIdentifier] = nil
             cannotBeAnsweredTabs.remove(tabIdentifier)
         }
         silentTabs.removeAll()
         didReportPersistentBreakage = false
     }
+
+    /// The tabs a message is about. The tab at the message's position in its window, when it shows the message's
+    /// page, is the one tab; a message about a tab that no longer waits is about no waiting tab. A message that
+    /// cannot be tied to one tab belongs to every waiting tab it could be about.
+    private func tabs(for url: URL, at position: CPMExtensionTabPosition?, extensionIdentifier: String?) -> [String] {
+        let waiting = waitingTabs(showing: url)
+        guard let tab = tab(at: position, extensionIdentifier: extensionIdentifier),
+              committedPages[tab]?.matchesCPMDashboardStatePage(url) == true else { return waiting }
+        return waiting.contains(tab) ? [tab] : []
+    }
+
+    /// The app tab at the position the extension reports, when the platform can tell the window and the index.
+    /// Window ids grow in the order WebKit first gets the windows, so the rank of the window's id among all ids is the
+    /// rank of the window among the platform's.
+    private func tab(at position: CPMExtensionTabPosition?, extensionIdentifier: String?) -> String? {
+        guard let position, let rank = position.windowRank, let extensionIdentifier else { return nil }
+        return tabIdentifierAtExtensionPosition?(extensionIdentifier, position.tabIndex, rank, position.windowIds.count)
+    }
+
+    /// The tabs still waiting for an answer.
+    var waitingTabIdentifiers: Set<String> { Set(pendingCommits.keys) }
 
     /// The tabs still waiting on the message's page. Two tabs on one page both get the message.
     private func waitingTabs(showing url: URL) -> [String] {
@@ -316,12 +363,12 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Records how far one page's init got. A mark is not an answer: the background can receive `init` and
     /// still never answer, which is the silence this metric reports. Two tabs on one page both get the mark.
     /// The Debug simulation drops only the answers, so the marks of a simulated silent tab are still recorded.
-    private func receiveProgress(url: URL, stage: CPMInitStage, extensionIdentifier: String?) {
+    private func receiveProgress(url: URL, stage: CPMInitStage, extensionIdentifier: String?, position: CPMExtensionTabPosition?) {
         if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
         // Kept for a page that commits next even when a tab already waits on this page: a reload or a second tab
         // starts a new wait that this mark belongs to.
         keepForCommit(RecentMark(url: url, stage: stage, date: now()))
-        waitingTabs(showing: url).forEach { raiseStage(of: $0, to: stage) }
+        tabs(for: url, at: position, extensionIdentifier: extensionIdentifier).forEach { raiseStage(of: $0, to: stage) }
     }
 
     private func lastStage(of tabIdentifier: String) -> CPMLastStage {
@@ -421,7 +468,7 @@ private extension CPMMessagingHealthEvent {
             return "webContentProcessTerminated tab=\(tabIdentifier)"
         case .dashboardResponse:
             return "dashboardResponse"
-        case .initProgress(_, let stage, _):
+        case .initProgress(_, let stage, _, _):
             return "initProgress stage=\(stage.rawValue)"
         case .extensionLifecycle(let event):
             return "extensionLifecycle \(event.logDescription)"

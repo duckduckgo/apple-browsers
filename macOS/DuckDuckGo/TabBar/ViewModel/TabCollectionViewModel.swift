@@ -1125,6 +1125,13 @@ extension TabCollectionViewModel {
         return webExtensionIndex(for: index)
     }
 
+    /// The tab at a web extension index, the inverse of `webExtensionIndex(of:)`: loaded pinned tabs first, then the
+    /// loaded tabs of this window.
+    func webExtensionTab(at index: Int) -> Tab? {
+        let tabs = pinnedTabs + tabCollection.loadedTabs
+        return tabs.indices.contains(index) ? tabs[index] : nil
+    }
+
     func notifyWebExtensionTabMoved(_ tab: Tab, from oldIndex: Int) {
         delegate?.tabCollectionViewModel(self, didMoveTab: tab, fromWebExtensionIndex: oldIndex)
     }

@@ -871,7 +871,7 @@ extension MainViewController {
             tabURL: tab.url,
             tabLinkURL: tab.link?.url,
             tabIsVoiceModeRequested: tab.isVoiceModeRequested,
-            tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested,
+            tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested || tab.isOpenedForChatList,
             tabRequestsNewChatInput: tab.tabModel.newChatInputRequest != nil,
             coordinatorIsAITabState: coordinator.isAITabState,
             keepsExpandedInputForNewChat: isNewTabTransitionEnabled && coordinator.isAITabExpanded,
@@ -1218,8 +1218,10 @@ extension MainViewController {
 
     /// Selects presentation only. The content controller and its view stay installed for the session.
     func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
-        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
-            presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
+        let surface = presentation.redesignedFocusedSurface(isOnAITab: isOnAITab, isOnWebPage: currentTab?.link != nil)
+        let isWebPageSurfaceAvailable = NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable
+        unifiedToggleInputCoordinator?.contentViewController.redesignedFocusedSurface =
+            surface == .webPage && !isWebPageSurfaceAvailable ? nil : surface
     }
 
     func installDuckAIKeyboardEdgeSweep() {

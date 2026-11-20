@@ -101,6 +101,7 @@ class Record:
         self.cancelled = False
         self.video = {}         # None when off (--no-video); else path, seconds, bytes once written, error if it failed
         self.hosts = None       # hosts the app loaded pages or resources from; None when not collected (AUTOMATION off)
+        self.tokens = []        # (token, prefix) issued this run, left out of prove --base's match keys
 
 
 # ---------------------------------------------------------------- hosts the app loaded
@@ -123,11 +124,12 @@ def undeclared(hosts, live):
 
 
 def evidence_kind(live, hosts):
-    """What the evidence rests on: declared or undeclared live services, local pages only, or unknown."""
+    """What the evidence rests on: declared or undeclared live services, none observed, or unknown. Hosts are read from
+    navigate(), url() and the last page, so a live page opened and left in between goes unseen."""
     services = list(live) + undeclared(hosts, live)
     if services:
         return "live: " + ", ".join(services)
-    return "local pages only" if hosts is not None else "unknown: hosts not collected (AUTOMATION is off)"
+    return "no live hosts observed" if hosts is not None else "unknown: hosts not collected (AUTOMATION is off)"
 
 
 def label(rec):
@@ -410,7 +412,9 @@ class Mac:
     # fixture pages ----------------------------------------------------------
     def token(self, prefix="t"):
         """A fresh token for this run, e.g. "t-1a2b3c4d"; never reuse one."""
-        return f"{prefix}-{uuid.uuid4().hex[:8]}"
+        token = f"{prefix}-{uuid.uuid4().hex[:8]}"
+        self.rec.tokens.append((token, prefix))
+        return token
 
     def fixture_url(self, token):
         """The skill's fixture page showing `token`, served for this run only at 127.0.0.1, for the app on this Mac

@@ -197,7 +197,9 @@ extension PromoServiceFactoryTests {
             notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
             uiHosting: { nil },
             isOnboardingCompletedProvider: { true },
-            dockCustomization: DockCustomizerMock()
+            dockCustomization: DockCustomizerMock(),
+            addToDockVideoFeatureFlagger: MockFeatureFlagger(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter()
         )
         let windowControllersManager = WindowControllersManagerMock()
         return PromoDependencies(
@@ -281,7 +283,6 @@ extension PromoServiceFactoryTests {
                 recordResult: { _, _ in }
             ),
             autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 isAnyCategoryEmptyProvider: { true },
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
                 syncService: nil,

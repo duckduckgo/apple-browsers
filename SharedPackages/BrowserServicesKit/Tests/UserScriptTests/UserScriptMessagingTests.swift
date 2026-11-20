@@ -189,6 +189,44 @@ class UserScriptMessagingTests: XCTestCase {
     }
 }
 
+class MessageFramePolicyTests: XCTestCase {
+
+    func testAnyAllowsEveryFrame() {
+        XCTAssertTrue(MessageFramePolicy.any.isAllowed(frame(isMainFrame: false, url: "http://duck.ai")))
+    }
+
+    func testMainFrameRejectsSubframe() {
+        XCTAssertTrue(MessageFramePolicy.mainFrame.isAllowed(frame(isMainFrame: true, url: "http://duck.ai")))
+        XCTAssertFalse(MessageFramePolicy.mainFrame.isAllowed(frame(isMainFrame: false, url: "https://duck.ai")))
+    }
+
+    func testSecureMainFrameRequiresHTTPSMainFrame() {
+        XCTAssertTrue(MessageFramePolicy.secureMainFrame.isAllowed(frame(isMainFrame: true, url: "https://duck.ai")))
+        XCTAssertFalse(MessageFramePolicy.secureMainFrame.isAllowed(frame(isMainFrame: true, url: "http://duck.ai")))
+        XCTAssertFalse(MessageFramePolicy.secureMainFrame.isAllowed(frame(isMainFrame: false, url: "https://duck.ai")))
+    }
+
+    func testBrokerRejectsMessageFromFrameOutsideFramePolicy() {
+        let broker = UserScriptMessageBroker(context: "any_context")
+        broker.registerSubfeature(delegate: TestDelegate(messageFramePolicy: .secureMainFrame))
+        let body: [String: Any] = ["context": "any_context", "featureName": "fooBarFeature", "method": "notifyExample"]
+
+        let subframeMessage = WKScriptMessage.mock(webView: nil, frameInfo: frame(isMainFrame: false, url: "https://duck.ai"), name: "any_context", body: body)
+        guard case .error(.policyRestriction) = broker.messageHandlerFor(subframeMessage) else {
+            return XCTFail("Expected a policy restriction for a subframe")
+        }
+
+        let mainFrameMessage = WKScriptMessage.mock(webView: nil, frameInfo: frame(isMainFrame: true, url: "https://duck.ai"), name: "any_context", body: body)
+        guard case .notify = broker.messageHandlerFor(mainFrameMessage) else {
+            return XCTFail("Expected the https main frame to be accepted")
+        }
+    }
+
+    private func frame(isMainFrame: Bool, url: String) -> WKFrameInfo {
+        WKFrameInfo.mock(isMainFrame: isMainFrame, securityOrigin: MockWKSecurityOrigin.new(url: URL(string: url)!))
+    }
+}
+
 class HostnameMatchingRuleTests: XCTestCase {
 
     func testMakingExactRuleBasedOnURL() throws {
@@ -269,6 +307,8 @@ struct TestDelegate: Subfeature {
     ///
     /// Some features may want to restrict the origin's that it accepts messages from
     var messageOriginPolicy: MessageOriginPolicy = .all
+
+    var messageFramePolicy: MessageFramePolicy = .any
 
     /// An example of how to provide different handlers bad on
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {

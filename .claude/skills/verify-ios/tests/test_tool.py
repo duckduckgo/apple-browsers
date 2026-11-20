@@ -1,7 +1,7 @@
 """Tests for verify-ios's own logic that need no simulator: locks, process ownership, state, preflight, telemetry
 parsing, evidence. Run: python3 -m unittest discover -s .claude/skills/verify-ios/tests -p 'test_*.py'
 """
-import json, multiprocessing, os, shlex, signal, subprocess, sys, tempfile, textwrap, time, unittest
+import json, multiprocessing, os, re, shlex, shutil, signal, struct, subprocess, sys, tempfile, textwrap, time, unittest, zlib
 from unittest import mock
 
 TMP = tempfile.mkdtemp(prefix="verify-ios-test-")
@@ -9,7 +9,7 @@ os.environ["VERIFY_IOS_HOME"] = TMP   # before importing: every path below lives
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from verify_ios import compare, device, env, harness, steps, telemetry, video, web  # noqa: E402
+from verify_ios import compare, device, env, gallery, harness, page, steps, telemetry, video, web  # noqa: E402
 from verify_ios.device import parse_locator  # noqa: E402
 
 
@@ -572,10 +572,22 @@ class HarnessTests(unittest.TestCase):
         harness.fixture_release = lambda user: {}
         harness.Pixels = FakePixels
         harness.WideEvents = lambda container: telemetry.WideEvents(container)
+        self.saved_compose, self.composed, self.compose_fails = gallery.compose, [], {}
+        gallery.compose = self.fake_compose
+
+    def fake_compose(self, jobs):
+        """Stands in for compose.swift: 'draws' each job as an empty file unless told it fails."""
+        self.composed += jobs
+        for j in jobs:
+            if os.path.basename(j["out"]) not in self.compose_fails:
+                open(j["out"], "w").close()
+        return {j["out"]: self.compose_fails[os.path.basename(j["out"])] for j in jobs
+                if os.path.basename(j["out"]) in self.compose_fails}
 
     def tearDown(self):
         harness.Device, harness.fixture, harness.Pixels, harness.WideEvents, harness.fixture_release, \
             harness.Video = self.saved
+        gallery.compose = self.saved_compose
 
     def run_proof(self, run, keep=False, video=True, **fake):
         self.fake.__dict__.update(fake)
@@ -612,6 +624,75 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual((r["status"], r["video"], r["problems"]), ("pass", None, []), r)
         self.assertEqual(FakeVideo.made, [])
 
+    def prove_file(self, body, devices='["iphone"]'):
+        proof = os.path.join(tempfile.mkdtemp(dir=TMP), "scenario.py")
+        with open(proof, "w") as f:
+            f.write(f'"""The thing works.\n\nMore about it."""\nDEVICES = {devices}\n\ndef run(ios):\n{body}')
+        return harness.prove(proof, evidence_dir=tempfile.mkdtemp(dir=TMP))
+
+    def test_an_image_not_drawn_is_an_evidence_problem_not_a_failed_proof(self):
+        self.compose_fails = {"key-frames.png": "cannot read shot.png"}
+        code, out = self.prove_file('    ios.shot("shot")\n    ios.check("the thing", True)\n')
+        self.assertEqual(code, 2, out)
+        self.assertEqual(out["results"][0]["status"], "pass")
+        problem = "could not draw iphone/key-frames.png: cannot read shot.png"
+        self.assertIn(problem, out["results"][0]["problems"])
+        with open(os.path.join(out["evidence"], "iphone", "result.json")) as f:
+            self.assertIn(problem, json.load(f)["problems"], "prove --base reads problems from result.json")
+        with open(out["report"]) as f:
+            report = f.read()
+        self.assertIn(problem, report)
+        self.assertIn('[<img src="iphone/final.png" width="200" alt="Key frames on iphone">]', report,
+                      "without a strip, the final screen stands in")
+
+    def test_a_page_that_fails_still_leaves_the_report(self):
+        with mock.patch.object(harness.page, "proof_page", side_effect=KeyError("boom")):
+            code, out = self.prove_file('    ios.check("the thing", True)\n')
+        self.assertEqual(code, 2, out)
+        self.assertIn("could not write index.html: KeyError: 'boom'", out["results"][0]["problems"])
+        self.assertTrue(os.path.isfile(out["report"]))
+
+    def test_a_shot_cannot_take_the_name_of_a_generated_image(self):
+        for name in ("poster", "key-frames", "final"):
+            r = self.run_proof(lambda ios, name=name: (ios.shot(name), ios.check("x", True)))
+            self.assertEqual(r["status"], "error", r)
+            self.assertIn("kept for an image prove writes itself", r["reason"])
+
+    def test_screenshots_are_recorded_in_the_order_taken(self):
+        code, out = self.prove_file('    ios.shot("second")\n    ios.shot("first")\n    ios.shot("second")\n'
+                                    '    ios.check("the thing", True)\n')
+        with open(os.path.join(out["evidence"], "iphone", "result.json")) as f:
+            self.assertEqual(json.load(f)["shots"], ["first.png", "second.png"], "a retaken shot moves to the end")
+
+    def test_index_page_puts_failures_first_and_links_only_inside_the_attempt(self):
+        code, out = self.prove_file('    ios.shot("menu")\n    ios.check("fine thing", True)\n'
+                                    '    try:\n        ios.check("broken thing", False)\n    except Exception:\n        pass\n'
+                                    '    ios.unverified("the other thing", "needs a live service")\n')
+        self.assertEqual(code, 1, out)
+        with open(os.path.join(out["evidence"], "index.html")) as f:
+            html = f.read()
+        self.assertIn("<h1>The thing works.</h1>", html)
+        self.assertIn('<span class="badge fail">iPhone: FAIL</span>', html)
+        self.assertIn('poster="iphone/poster.png" src="iphone/recording.mp4"', html)
+        self.assertIn('<a href="iphone/key-frames.png"><img src="iphone/key-frames.png"', html)
+        self.assertLess(html.index("broken thing"), html.index("fine thing"), "failures come first")
+        self.assertIn("iphone: the other thing: needs a live service", html)
+        self.assertIn('<a href="scenario.py">proof.py</a>', html)
+        links = re.findall(r'(?:src|href)="([^"]*)"', html)
+        self.assertTrue(links)
+        for link in links:
+            self.assertFalse(re.match(r"[a-z]+:|/", link), f"{link}: every link stays inside the attempt folder")
+            self.assertTrue(os.path.exists(os.path.join(out["evidence"], urllib_unquote(link))), link)
+        self.assertNotIn("<script", html)
+
+    def test_two_devices_get_a_side_by_side_image(self):
+        code, out = self.prove_file('    ios.check("the thing", True)\n', devices='["iphone", "ipad"]')
+        self.assertEqual(code, 0, out)
+        sides = [j for j in self.composed if j["out"].endswith("/devices.png")]
+        self.assertEqual([c["caption"] for c in sides[0]["rows"][0]["cells"]], ["iPhone", "iPad"])
+        with open(out["report"]) as f:
+            self.assertIn('[<img src="devices.png" width="200" alt="Final screen per device">](devices.png)', f.read())
+
     def test_report_is_one_scenario_with_relative_evidence_links(self):
         proof = os.path.join(tempfile.mkdtemp(dir=TMP), "scenario.py")
         with open(proof, "w") as f:
@@ -626,9 +707,13 @@ class HarnessTests(unittest.TestCase):
             report = f.read()
         sections = [line for line in report.splitlines() if line.startswith("## ")]
         self.assertEqual(sections, ["## Verified", "## Evidence", "## Outcome", "## Details", "## Unverified"])
-        for link in ("[recording.mp4](iphone/recording.mp4)", "[final.png](iphone/final.png)",
-                     "[after-tap.png](iphone/after-tap.png)", "[transcript.jsonl](iphone/transcript.jsonl)"):
+        for link in ("[▶ Watch video](iphone/recording.mp4)", "[final.png](iphone/final.png)",
+                     "[after-tap.png](iphone/after-tap.png)", "[transcript.jsonl](iphone/transcript.jsonl)",
+                     '[<img src="iphone/poster.png" width="200" alt="Recording on iphone">](iphone/recording.mp4)',
+                     '[<img src="iphone/key-frames.png" width="200" alt="Key frames on iphone">](iphone/key-frames.png)',
+                     "[index.html](index.html)"):
             self.assertIn(link, report)
+        self.assertTrue(os.path.isfile(os.path.join(out["evidence"], "index.html")))
         self.assertIn("More about what it covers.", report)
         self.assertIn("- iphone: the other thing: needs a live service", report)
         with open(os.path.join(out["evidence"], "manifest.json")) as f:
@@ -1283,6 +1368,151 @@ class CompareReportTests(unittest.TestCase):
         self.assertIn("### iphone: AS EXPECTED", text)
         self.assertIn("| hint \\| text | fail | fail | pass | as expected |", text)
         self.assertIn("[report](before/run1/report.md)", text)
+
+    def test_drawing_errors_become_one_line_problems(self):
+        proc = subprocess.CompletedProcess([], 0, json.dumps(dict(ok=[], failed={"/a/x.png": "Error (\n  Duration\n)"})), "")
+        with mock.patch.object(gallery.subprocess, "run", return_value=proc):
+            self.assertEqual(gallery.compose([dict(kind="poster", out="/a/x.png"), dict(kind="grid", out="/a/y.png")]),
+                             {"/a/x.png": "Error ( Duration )", "/a/y.png": "not drawn"})
+
+    def test_ctrl_c_while_drawing_the_comparison_still_writes_the_report(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        def compose(jobs):
+            os.kill(os.getpid(), signal.SIGINT)   # Ctrl-C lands while compose.swift draws
+            return {os.path.join(attempt, "before-after-iphone.png"): "interrupted"}
+        b = self.run_dir(attempt, "b/r", "fail", [check("hint", False, "fail")], [])
+        with mock.patch.object(compare.Device, "check_build_current", staticmethod(lambda: {})), \
+                mock.patch.object(compare, "_prove_base", return_value=(os.path.join(attempt, "b/r"), None)), \
+                mock.patch.object(compare, "_remove_worktree", return_value=[]), \
+                mock.patch.object(compare.harness, "prove", return_value=(0, dict(evidence=None))), \
+                mock.patch.object(compare.harness, "_new_attempt", return_value=attempt), \
+                mock.patch.object(gallery, "compose", compose), \
+                mock.patch.object(compare, "_result", return_value=b), \
+                mock.patch.object(page, "comparison_page", side_effect=KeyError("boom")):
+            proof = ProveAgainstBaseTests.proof()
+            compare.prove_against_base(proof, "HEAD", evidence_dir=tempfile.mkdtemp(dir=TMP))
+        with open(os.path.join(attempt, "report.md")) as f:
+            report = f.read()
+        self.assertIn("could not draw before-after-iphone.png: interrupted", report)
+        self.assertIn("could not write index.html: KeyError: 'boom'", report)
+        self.assertFalse(os.path.exists(os.path.join(attempt, "index.html")), "no empty page left behind")
+        self.assertTrue(os.path.isfile(os.path.join(attempt, "comparison.json")))
+
+    def test_comparison_page_and_report_lead_with_the_before_after_image(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        b = self.run_dir(attempt, "before/run1", "fail", [check("hint", False, "fail"), check("loads", True)], [])
+        a = self.run_dir(attempt, "after/run2", "pass", [check("hint", True, "fail"), check("loads", False)], [])
+        for name in ("before-after-iphone.png", "after/run2/iphone/poster.png"):
+            open(os.path.join(attempt, name), "w").close()
+        rows = compare.judge(b["checks"], a["checks"])
+        devices = dict(iphone=dict(verdict="UNEXPECTED", reason="x", rows=rows, before=b, after=a, captureDiffers=[]))
+        cmp = dict(base=dict(ref="origin/main", sha="a" * 40), before="before/run1", after="after/run2", problems=[],
+                   rerun="cd x && verify-ios prove p --base aaa")
+        mod = type("Proof", (), {"__doc__": "The hint names the demo."})
+        text = compare.report(mod, cmp, devices, attempt)
+        self.assertIn('[<img src="before-after-iphone.png" width="200" alt="Before and after on iphone">]'
+                      '(before-after-iphone.png)', text)
+        self.assertIn('| Video | [▶ Watch video](before/run1/iphone/recording.mp4) | [<img src="after/run2/iphone/poster.png" '
+                      'width="200" alt="Recording on iphone">](after/run2/iphone/recording.mp4) '
+                      '[▶ Watch video](after/run2/iphone/recording.mp4) |', text)
+        html = page.comparison_page(mod, cmp, devices, attempt)
+        self.assertIn('<span class="badge fail">iPhone: UNEXPECTED</span>', html)
+        self.assertIn('<img src="before-after-iphone.png"', html)
+        self.assertIn('src="before/run1/iphone/recording.mp4"', html)
+        self.assertIn('poster="after/run2/iphone/poster.png" src="after/run2/iphone/recording.mp4"', html)
+        self.assertLess(html.index("<td class=\"\">loads</td>"), html.index("<td class=\"\">hint</td>"),
+                        "the unexpected check comes first")
+        self.assertIn('<a href="before/run1/index.html">page</a>', html)
+
+
+def urllib_unquote(path):
+    import urllib.parse
+    return urllib.parse.unquote(path)
+
+
+def write_png(path, width, height, rgb=(200, 80, 40)):
+    """A solid-colour PNG, written without any imaging library."""
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xffffffff)
+    raw = b"".join(b"\x00" + bytes(rgb) * width for _ in range(height))
+    with open(path, "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+                + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+
+def png_size(path):
+    with open(path, "rb") as f:
+        head = f.read(24)
+    assert head[:8] == b"\x89PNG\r\n\x1a\n", f"{path} is not a PNG"
+    return struct.unpack(">II", head[16:24])
+
+
+class GalleryTests(unittest.TestCase):
+    @staticmethod
+    def device_dir(root, name, shots):
+        d = os.path.join(root, name)
+        os.makedirs(d)
+        for i, shot in enumerate(shots):   # taken in this order, whatever their names
+            open(os.path.join(d, shot), "w").close()
+            os.utime(os.path.join(d, shot), (1000 + i, 1000 + i))
+        return d
+
+    def test_key_frames_follow_the_order_taken_then_the_final_screen(self):
+        d = self.device_dir(tempfile.mkdtemp(dir=TMP), "iphone", ["z-first.png", "a-second.png", "final.png",
+                                                                  "key-frames.png", "poster.png"])
+        self.assertEqual(gallery.key_frames(d), ["z-first.png", "a-second.png", "final.png"])
+        self.assertEqual(gallery.key_frames(None), [])
+
+    def test_the_recorded_order_survives_a_copy_that_resets_file_times(self):
+        d = self.device_dir(tempfile.mkdtemp(dir=TMP), "iphone", ["b.png", "a.png", "final.png"])
+        self.assertEqual(gallery.key_frames(d, ["a.png", "b.png", "gone.png"]), ["a.png", "b.png", "final.png"])
+
+    def test_proof_jobs(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        phone = self.device_dir(attempt, "iphone", ["menu.png", "final.png", "recording.mp4"])
+        pad = self.device_dir(attempt, "ipad", ["final.png"])
+        jobs = {os.path.relpath(j["out"], attempt): j for j in gallery.proof_jobs(attempt, [
+            dict(device="iphone", evidence=phone, video="recording.mp4"), dict(device="ipad", evidence=pad, video=None),
+            dict(device="-", evidence=None)])}
+        self.assertEqual(sorted(jobs), ["devices.png", "iphone/key-frames.png", "iphone/poster.png"],
+                         "a single frame is no strip, and no video means no poster")
+        self.assertEqual([c["caption"] for c in jobs["iphone/key-frames.png"]["rows"][0]["cells"]], ["menu", "final"])
+        self.assertEqual(jobs["iphone/poster.png"]["video"], os.path.join(phone, "recording.mp4"))
+        self.assertEqual(gallery.proof_jobs(attempt, [dict(device="iphone", evidence=phone, video=None)])[0]["out"],
+                         os.path.join(phone, "key-frames.png"), "one device: no side-by-side image")
+
+    def test_before_after_lines_frames_up_by_name(self):
+        attempt = tempfile.mkdtemp(dir=TMP)
+        self.device_dir(attempt, "before/r1/iphone", ["menu.png", "gone.png", "final.png"])
+        self.device_dir(attempt, "after/r2/iphone", ["extra.png", "menu.png", "final.png"])
+        outcomes = dict(iphone=dict(before={}, after={}), ipad=dict(before={}, after={}))
+        [job] = gallery.comparison_jobs(attempt, "before/r1", "after/r2", outcomes)
+        self.assertEqual(job["out"], os.path.join(attempt, "before-after-iphone.png"))
+        before, after = job["rows"]
+        self.assertEqual((before["label"], after["label"]), ("Before\n(base build)", "After\n(this checkout)"))
+        self.assertEqual([c["caption"] for c in after["cells"]], ["extra", "menu", "gone", "final"])
+        self.assertEqual([c["path"] is not None for c in before["cells"]], [False, True, True, True])
+        self.assertEqual([c["path"] is not None for c in after["cells"]], [True, True, False, True])
+        self.assertEqual(gallery.comparison_jobs(attempt, None, "after/r2", outcomes), [], "no base run: no image")
+
+    @unittest.skipUnless(sys.platform == "darwin" and shutil.which("xcrun"), "compose.swift needs Xcode")
+    def test_compose_draws_with_xcode_alone_and_reports_each_failure(self):
+        d = tempfile.mkdtemp(dir=TMP)
+        write_png(os.path.join(d, "a.png"), 60, 130)
+        write_png(os.path.join(d, "b.png"), 90, 130, (40, 80, 200))
+        grid = os.path.join(d, "out dir", "grid.png")
+        os.makedirs(os.path.dirname(grid))
+        cells = lambda *paths: [dict(path=p and os.path.join(d, p), caption=f"c{i}") for i, p in enumerate(paths)]
+        failed = gallery.compose([
+            dict(kind="grid", out=grid, height=100, rows=[dict(label="Before", cells=cells("a.png", None)),
+                                                          dict(label="After", cells=cells("a.png", "b.png"))]),
+            dict(kind="poster", out=os.path.join(d, "poster.png"), video=os.path.join(d, "missing.mp4")),
+            dict(kind="grid", out=os.path.join(d, "bad.png"), rows=[dict(label=None, cells=cells("nope.png"))])])
+        self.assertEqual(sorted(os.path.basename(k) for k in failed), ["bad.png", "poster.png"], failed)
+        self.assertIn("cannot read", failed[os.path.join(d, "bad.png")])
+        width, height = png_size(grid)
+        self.assertGreater(height, 2 * 100, "two rows of 100 px frames")
+        self.assertGreater(width, 100 * 90 // 130 + 100 * 60 // 130, "two columns plus the row labels")
 
 
 class ProveAgainstBaseTests(unittest.TestCase):

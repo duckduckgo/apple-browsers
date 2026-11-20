@@ -321,7 +321,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             goToAddressBar()
             return
         }
-        // TODO: pixel (path chosen, from mode and source)
+        // To do: pixel (path chosen, from mode and source)
         switch query.mode {
         case .search:
             // Before the tab changes, so the results page already gets the search path's dialogs.

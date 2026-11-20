@@ -90,7 +90,7 @@ final class ContextualOnboardingDialogScheduler {
 
     /// Duck.ai's first answer arrived in the tab on screen.
     func firstDuckAIAnswerReceived() {
-        // TODO: pixel (dialog triggered by the first answer)
+        // To do: pixel (dialog triggered by the first answer)
         askAfterFirstDuckAIAnswer()
     }
 
@@ -140,7 +140,7 @@ final class ContextualOnboardingDialogScheduler {
     private func waitForFirstDuckAIAnswer(in tab: Tab) {
         tabWaitingForFirstDuckAIAnswer = tab
         firstDuckAIAnswerFailsafe = runAfter(Self.firstDuckAIAnswerFailsafeDelay) { [weak self] in
-            // TODO: pixel (dialog triggered by the failsafe)
+            // To do: pixel (dialog triggered by the failsafe)
             self?.askAfterFirstDuckAIAnswer()
         }
     }

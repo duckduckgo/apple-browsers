@@ -107,6 +107,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     /// The sidebar entry the menu last offered. The item's action reads it rather than the tab's state,
     /// so it does what the item said and what the menu-shown pixel reported.
     private var duckAIMenuSidebarEntry: AIChatMenuButtonSidebarEntry?
+    /// Set while the menu is open; cleared when its outcome is reported, so each open reports once.
+    private var duckAIMenuContext: AIChatMenuButtonContext?
     private lazy var duckAIChromeContextMenu: NSMenu = {
         let menu = NSMenu()
         menu.delegate = self
@@ -216,9 +218,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var browserToolPermissionIcon: NSImage?
     private var browserToolPermissionHover: AnyCancellable?
     private var isShowingBrowserToolUse = false
+    private var browserToolPermissionsPanel: NSPopover?
+    private var browserToolPermissionsPanelClose: AnyCancellable?
     private var browserToolUseSlideOut: DispatchWorkItem?
     private let browserToolPermissionCloseIcon: NSImage = {
-        let icon = DesignSystemImages.Glyphs.Size16.close
+        let icon = DesignSystemImages.Glyphs.Size16.closeSmall
         icon.isTemplate = true
         return icon
     }()
@@ -943,6 +947,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Duck.ai browser tool permission
 
     func showBrowserToolPermissionButton(icon: NSImage, title: String, action: @escaping (NSView) -> Void, shown: @escaping (NSView) -> Void) {
+        dismissBrowserToolPermissionsPanel()
         cancelBrowserToolUseSlideOut()
         isShowingBrowserToolUse = false
         browserToolPermissionAction = action
@@ -953,6 +958,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     func showBrowserToolUse(icon: NSImage, title: String) {
+        dismissBrowserToolPermissionsPanel()
         cancelBrowserToolUseSlideOut()
         isShowingBrowserToolUse = true
         browserToolPermissionAction = nil
@@ -1043,6 +1049,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     func hideBrowserToolPermissionButton() {
+        dismissBrowserToolPermissionsPanel()
         cancelBrowserToolUseSlideOut()
         browserToolPermissionAction = nil
         isShowingBrowserToolUse = false
@@ -1056,6 +1063,46 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             button.isHidden = true
         }
         applyDuckAIChromeButtonVisibility()
+    }
+
+    private func showBrowserToolPermissionsPanel() {
+        // A waiting prompt or a running tool owns the button.
+        guard browserToolPermissionAction == nil, !isShowingBrowserToolUse else {
+            openBrowserToolPermissionsSettings()
+            return
+        }
+        let popover = NSPopover()
+        popover.behavior = .transient
+        let content = NSHostingController(rootView: BrowserToolPermissionsPanelView { [weak self] in
+            self?.hideBrowserToolPermissionButton()
+            self?.openBrowserToolPermissionsSettings()
+        })
+        popover.contentViewController = content
+        popover.contentSize = content.view.fittingSize
+        if #available(macOS 13.0, *) {
+            // Resetting a row shrinks the panel.
+            content.sizingOptions = .preferredContentSize
+        }
+        browserToolPermissionsPanel = popover
+        browserToolPermissionsPanelClose = NotificationCenter.default.publisher(for: NSPopover.didCloseNotification, object: popover)
+            .sink { [weak self] _ in self?.hideBrowserToolPermissionButton() }
+        browserToolPermissionAction = { [weak self] _ in self?.hideBrowserToolPermissionButton() }
+        revealBrowserToolButton(icon: DesignSystemImages.Glyphs.Size16.options, title: UserText.browserToolPanelClose) { [weak self, weak popover] button in
+            guard let self, let popover, popover === browserToolPermissionsPanel, !popover.isShown else { return }
+            styleBrowserToolPermissionButton(button, filled: true)
+            popover.show(positionedBelow: button.bounds.insetFromLineOfDeath(flipped: button.isFlipped), in: button)
+        }
+    }
+
+    private func dismissBrowserToolPermissionsPanel() {
+        guard let popover = browserToolPermissionsPanel else { return }
+        browserToolPermissionsPanel = nil
+        browserToolPermissionsPanelClose = nil
+        popover.close()
+    }
+
+    private func openBrowserToolPermissionsSettings() {
+        (parent as? MainViewController)?.openSettings(at: .browserToolPermissions)
     }
 
     private func makeBrowserToolPermissionButton() -> MouseOverButton {
@@ -1536,7 +1583,33 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // Right-align: anchor the menu's top-right corner to the button's bottom-right.
         let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
         duckAIMenuButtonPixelFirer.fireMenuShown(sidebarEntry: sidebarEntry)
-        menu.popUp(positioning: nil, at: origin, in: sender)
+        duckAIMenuContext = makeDuckAIMenuContext()
+        if !menu.popUp(positioning: nil, at: origin, in: sender) {
+            fireDuckAIMenuOutcome(.none)
+        }
+    }
+
+    private func makeDuckAIMenuContext() -> AIChatMenuButtonContext {
+        guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else {
+            return AIChatMenuButtonContext(pageType: .other, chatState: .none)
+        }
+        let chatState: AIChatMenuButtonContext.ChatState
+        if aiChatCoordinator?.isSidebarOpen(for: tab.uuid) == true {
+            chatState = .sidebarOpen
+        } else if aiChatCoordinator?.isChatFloating(for: tab.uuid) == true {
+            chatState = .floating
+        } else if aiChatCoordinator?.hasHiddenChat(for: tab.uuid) == true {
+            chatState = .hidden
+        } else {
+            chatState = .none
+        }
+        return AIChatMenuButtonContext(pageType: .init(tab.content), chatState: chatState)
+    }
+
+    private func fireDuckAIMenuOutcome(_ choice: AIChatMenuButtonChoice) {
+        guard let duckAIMenuContext else { return }
+        self.duckAIMenuContext = nil
+        duckAIMenuButtonPixelFirer.fireMenuOutcome(choice, context: duckAIMenuContext)
     }
 
     private func subscribeToNativeChats() {
@@ -1598,6 +1671,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             menu.addItem(chatsItem)
         }
 
+        // Only once a browser tool has left its default.
+        let browserTools = NSApp.delegateTyped.aiChatBrowserToolsService
+        let enabledToolNames = Set(browserTools.catalog.enabledTools.map(\.name))
+        if browserTools.permissions.storedDecisions.keys.contains(where: enabledToolNames.contains) {
+            menu.addItem(.separator())
+
+            let permissionsItem = NSMenuItem(title: UserText.browserToolSettingsTitle, action: #selector(duckAIMenuBrowserPermissionsAction), keyEquivalent: "")
+            permissionsItem.target = self
+            permissionsItem.withImage(Self.contextMenuIcon(DesignSystemImages.Glyphs.Size24.options), visibleOnMacOS27: true)
+            menu.addItem(permissionsItem)
+        }
+
         return menu
     }
 
@@ -1647,6 +1732,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAIMenuNewChatAction() {
+        fireDuckAIMenuOutcome(.newChat)
         openNewDuckAIChatTabFromMenuButton(via: .menuItem)
     }
 
@@ -1659,7 +1745,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         mainViewController.openNewDuckAIChatTab()
     }
 
+    @objc private func duckAIMenuBrowserPermissionsAction() {
+        showBrowserToolPermissionsPanel()
+    }
+
     @objc private func duckAIMenuChatsAction() {
+        fireDuckAIMenuOutcome(.chats)
         PixelKit.fire(AIChatPixel.aiChatChatsTitleBarMenu, frequency: .dailyAndStandard)
         guard let mainViewController = parent as? MainViewController else {
             Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
@@ -1675,6 +1766,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             assertionFailure("The Duck.ai menu's sidebar item was picked before the menu resolved its entry")
             return
         }
+        fireDuckAIMenuOutcome(AIChatMenuButtonChoice(duckAIMenuSidebarEntry))
         switch duckAIMenuSidebarEntry.action {
         case .close:
             closeDuckAIChat()

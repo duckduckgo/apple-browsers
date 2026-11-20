@@ -1744,7 +1744,10 @@ final class NavigationBarViewController: NSViewController {
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
                                    dockCustomizer: dockCustomization,
-                                   defaultBrowserPreferences: defaultBrowserPreferences)
+                                   defaultBrowserPreferences: defaultBrowserPreferences,
+                                   addToDockMenuAction: AddToDockMenuAction(dockCustomization: dockCustomization,
+                                                                            featureFlagger: featureFlagger,
+                                                                            videoPresenter: Application.appDelegate.addToDockVideoPresenter))
 
         menu.actionDelegate = self
         let location = NSPoint(x: -menu.size.width + sender.bounds.width, y: sender.bounds.height + 4)

@@ -534,7 +534,8 @@ extension MainViewController {
                                                             aiChatBonusMessageLog: userScriptsDependencies.aiChatBonusOffer.messageLog,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
                                                             promoCoordinationCooldownResetter: promoCoordinationService,
-                                                            translationModels: translationModels)
+                                                            translationModels: translationModels,
+                                                            aiChatLocalModel: userScriptsDependencies.aiChatLocalModel)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
@@ -670,7 +671,8 @@ extension MainViewController {
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
             promoCoordinationCooldownResetter: self.promoCoordinationService,
             translationModels: self.translationModels,
-            daxGreetingDebugging: self.daxGreetingService))
+            daxGreetingDebugging: self.daxGreetingService,
+            aiChatLocalModel: self.userScriptsDependencies.aiChatLocalModel))
 
         let closeButton = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
         debug.navigationItem.rightBarButtonItem = closeButton

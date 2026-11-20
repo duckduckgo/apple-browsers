@@ -604,8 +604,8 @@ extension AIChatTabExtension {
             return
         }
         guard !navigationAction.navigationType.isSameDocumentNavigation else { return }
-        guard bootstrapRefresher.isInScope(url: navigationAction.url) else {
-            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: \(navigationAction.url.host ?? "<nil>") out of scope")
+        guard bootstrapRefresher.shouldRefresh(navigatingTo: navigationAction.url, isForMainFrame: navigationAction.isForMainFrame) else {
+            Logger.aiChat.debug("[NativeStorage] Skipping bootstrap refresh: \(navigationAction.url.host ?? "<nil>") out of scope or not main frame")
             return
         }
         guard let webView else {
@@ -627,7 +627,7 @@ extension AIChatTabExtension {
         aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
     ) -> DuckAiNativeStorageBootstrapScriptRefresher? {
         guard featureFlagger.isFeatureOn(.aiChatNativeStorage), let handler else { return nil }
-        var originRules: [HostnameMatchingRule] = [.exactOrSubdomain(hostname: "duck.ai")]
+        var originRules: [HostnameMatchingRule] = [.exact(hostname: "duck.ai")]
         if let customHostname = aiChatDebugURLSettings.customURLHostname {
             originRules.append(.exact(hostname: customHostname))
         }

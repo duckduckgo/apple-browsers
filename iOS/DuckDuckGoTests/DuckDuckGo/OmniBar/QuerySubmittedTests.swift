@@ -371,10 +371,9 @@ class QuerySubmittedTests: XCTestCase {
 final class NewTabPageAppOpenFocusTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test("Legacy input focus includes the iPad Duck.ai text view", .timeLimit(.minutes(1)), arguments: [false, true])
-    func legacyInputFocusIncludesIPadDuckAI(flagOn: Bool) throws {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
-        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+    @Test("Legacy input focus includes the iPad Duck.ai text view", .timeLimit(.minutes(1)))
+    func legacyInputFocusIncludesIPadDuckAI() throws {
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(),
                                                isFloatingUIEnabled: false)
         let removeWindow = hostInKeyWindow(sut, size: CGSize(width: 1024, height: 768))
         defer {
@@ -409,36 +408,28 @@ final class NewTabPageAppOpenFocusTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Automatic New Tab focus follows the keyboard flag as it changes at runtime", .timeLimit(.minutes(1)))
-    func automaticFocusFollowsFlagChanges() {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+    @Test("App-open New Tab focus goes through the unified input's app-open activation", .timeLimit(.minutes(1)))
+    func appOpenFocusUsesUnifiedInputActivation() {
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(),
                                                isFloatingUIEnabled: false)
         let activation = MockNewTabPageInputActivation()
         sut.unifiedToggleInputOmnibarActivating = activation
         let removeWindow = hostInKeyWindow(sut, size: CGSize(width: 390, height: 844))
         defer { removeWindow() }
+        var didFocus: Bool?
 
-        for flagOn in [false, true, false, true] {
-            featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
-            activation.usedAutomaticFocus = false
-            activation.usedOrdinaryFocus = false
-            var didFocus: Bool?
+        sut.beginEditingOnNewTabPageAppOpen(isRequestValid: { true }) { didFocus = $0 }
 
-            sut.beginEditingOnNewTabPageAppOpen(isRequestValid: { true }) { didFocus = $0 }
-
-            #expect(activation.usedAutomaticFocus == flagOn)
-            #expect(activation.usedOrdinaryFocus == !flagOn)
-            #expect(didFocus == flagOn)
-        }
+        #expect(activation.usedAutomaticFocus)
+        #expect(!activation.usedOrdinaryFocus)
+        #expect(didFocus == true)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("App-open fallback focuses mounted legacy input only for a valid request", .timeLimit(.minutes(1)),
-          arguments: [false, true], [false, true])
-    func appOpenFocusWithoutUnifiedInput(flagOn: Bool, isRequestValid: Bool) {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
-        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+          arguments: [false, true])
+    func appOpenFocusWithoutUnifiedInput(isRequestValid: Bool) {
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(),
                                                isFloatingUIEnabled: false)
         let removeWindow = hostInKeyWindow(sut, size: CGSize(width: 390, height: 844))
         defer {
@@ -455,11 +446,10 @@ final class NewTabPageAppOpenFocusTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Ordinary automatic focus waits for unified input across keyboard flag changes", .timeLimit(.minutes(1)),
-          arguments: [false, true], [false, true])
-    func ordinaryAutomaticFocusWaitsForAcceptance(flagOn: Bool, didFocus: Bool) {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
-        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+    @Test("Ordinary automatic focus waits for unified input to accept it", .timeLimit(.minutes(1)),
+          arguments: [false, true])
+    func ordinaryAutomaticFocusWaitsForAcceptance(didFocus: Bool) {
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(),
                                                isFloatingUIEnabled: false)
         let activation = MockNewTabPageInputActivation()
         sut.unifiedToggleInputOmnibarActivating = activation
@@ -473,7 +463,6 @@ final class NewTabPageAppOpenFocusTests {
         #expect(!activation.usedAutomaticFocus)
         #expect(results.isEmpty)
         #expect(activation.ordinaryFocusRequestIsValid?() == true)
-        featureFlagger.enabledFeatureFlags = flagOn ? [] : [.alwaysShowKeyboardOnNewTabPage]
         activation.ordinaryFocusCompletion?(didFocus)
         #expect(results == [didFocus])
         isRequestValid = false
@@ -482,10 +471,9 @@ final class NewTabPageAppOpenFocusTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Ordinary automatic legacy focus reports actual first responder", .timeLimit(.minutes(1)),
-          arguments: [false, true], [false, true])
-    func ordinaryAutomaticLegacyFocus(flagOn: Bool, mounted: Bool) {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.alwaysShowKeyboardOnNewTabPage] : [])
-        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(featureFlagger: featureFlagger),
+          arguments: [false, true])
+    func ordinaryAutomaticLegacyFocus(mounted: Bool) {
+        let sut = DefaultOmniBarViewController(dependencies: MockOmnibarDependency(),
                                                isFloatingUIEnabled: false)
         sut.loadViewIfNeeded()
         let removeWindow = mounted ? hostInKeyWindow(sut, size: CGSize(width: 390, height: 844)) : {}

@@ -61,7 +61,7 @@ Preconditions:
 
 Per sub-feature:
 
-- `duckai-tab-new-chat`: from one tab, `key("opt+cmd+n")`. Proof: two tabs, the new tab's `url()` contains
+- `duckai-tab-new-chat`: `key("opt+cmd+n")`. Proof: one more tab than before, the new tab's `url()` contains
   `duck.ai`, and Duck.ai's input ("Ask anything privately") shows. The URL changes while the page is still a grey
   skeleton: wait for the input before a screenshot. Proved by `examples/t6_duckai_tab.py`. The tab bar pill's New Chat and Cmd-click are covered by
   `macOS/UITests/AIChat/AIChatMenuButtonTests.swift` (`test_menu_newChat_opensNewTab`,

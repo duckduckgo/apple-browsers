@@ -38,6 +38,10 @@ on:
         required: true
       APPLE_API_KEY_BASE64:
         required: true
+      APPLE_GH_RO_PAT:
+        required: false
+      ASANA_ACCESS_TOKEN:
+        required: false
 
 defaults:
   run:

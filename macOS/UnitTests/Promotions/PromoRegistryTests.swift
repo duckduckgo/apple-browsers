@@ -43,7 +43,9 @@ final class PromoRegistryTests: XCTestCase {
             notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
             uiHosting: { nil },
             isOnboardingCompletedProvider: { true },
-            dockCustomization: DockCustomizerMock()
+            dockCustomization: DockCustomizerMock(),
+            addToDockVideoFeatureFlagger: MockFeatureFlagger(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter()
         )
         let windowControllersManager = WindowControllersManagerMock()
         let dependencies = PromoDependencies(

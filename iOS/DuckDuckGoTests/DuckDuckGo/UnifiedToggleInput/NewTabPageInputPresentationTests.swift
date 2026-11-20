@@ -90,6 +90,25 @@ final class NewTabPageInputPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.reservesAddressBarSpace)
     }
 
+    func testWhenOnWebPageWithBrowserPresentationThenWebPageSurfaceIsUsed() {
+        XCTAssertEqual(NewTabPageInputPresentation.browser.redesignedFocusedSurface(isOnAITab: false, isOnWebPage: true), .webPage)
+        XCTAssertNil(NewTabPageInputPresentation.browser.redesignedFocusedSurface(isOnAITab: false, isOnWebPage: false))
+        XCTAssertNil(NewTabPageInputPresentation.browser.redesignedFocusedSurface(isOnAITab: true, isOnWebPage: true))
+    }
+
+    func testWhenEditingUnifiedInputThenNewTabPageSurfaceIsUsed() {
+        XCTAssertEqual(NewTabPageInputPresentation.editing(usesUnifiedInput: true).redesignedFocusedSurface(isOnAITab: false, isOnWebPage: false),
+                       .newTabPage)
+    }
+
+    func testWhenInlineInputIsPresentOtherwiseThenNoSurfaceIsUsed() {
+        let presentations: [NewTabPageInputPresentation] = [.resting(usesUnifiedInput: true),
+                                                           .editing(usesUnifiedInput: false)]
+        for presentation in presentations {
+            XCTAssertNil(presentation.redesignedFocusedSurface(isOnAITab: false, isOnWebPage: false))
+        }
+    }
+
     private func resolve(usesUnifiedInput: Bool = true,
                          legacyEditing: Bool = false,
                          unifiedEditing: Bool = false,

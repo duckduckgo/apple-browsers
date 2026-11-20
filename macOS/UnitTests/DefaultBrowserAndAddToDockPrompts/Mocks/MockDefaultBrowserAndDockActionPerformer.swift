@@ -23,7 +23,14 @@ final class MockDefaultBrowserAndDockActionPerformer: DefaultBrowserAndDockActio
     var pendingPromptType: DefaultBrowserAndDockPromptType?
     private(set) var performPendingActionsCallCount = 0
 
-    func performPendingActions() {
+    var requestsSetAsDefault = true
+    private(set) var onSetAsDefaultRequested: (() -> Void)?
+
+    func performPendingActions(onSetAsDefaultRequested: (() -> Void)?) {
         performPendingActionsCallCount += 1
+        self.onSetAsDefaultRequested = onSetAsDefaultRequested
+        if requestsSetAsDefault {
+            onSetAsDefaultRequested?()
+        }
     }
 }

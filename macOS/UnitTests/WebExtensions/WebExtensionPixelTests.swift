@@ -42,7 +42,9 @@ final class WebExtensionPixelTests: XCTestCase {
             (.getClicked(extension: .catalog(.bitwarden)), "web_extension_get_clicked_macos"),
             (.detailsOpened(extension: .catalog(.bitwarden)), "web_extension_details_opened_macos"),
             (.publisherLinkClicked(extension: .catalog(.bitwarden)), "web_extension_publisher_link_clicked_macos"),
-            (.toolbarClicked(extension: .catalog(.bitwarden)), "web_extension_toolbar_clicked_macos")
+            (.toolbarClicked(extension: .catalog(.bitwarden)), "web_extension_toolbar_clicked_macos"),
+            (.nativeMessagingBlocked(extension: .catalog(.bitwarden)), "web_extension_native_messaging_blocked_macos"),
+            (.nativeMessagingAlertLearnMoreClicked(extension: .catalog(.bitwarden)), "web_extension_native_messaging_alert_learn_more_clicked_macos")
         ]
 
         for (pixel, name) in pixels {
@@ -50,6 +52,14 @@ final class WebExtensionPixelTests: XCTestCase {
             XCTAssertEqual(pixel.parameters, ["extension": "bitwarden"])
             XCTAssertEqual(pixel.namePrefix, .none)
         }
+    }
+
+    func testNativeMessagingAlertShownPixelSendsItsSource() {
+        let pixel = WebExtensionPixel.nativeMessagingAlertShown(extension: .catalog(.bitwarden), source: .toolbarClick)
+
+        XCTAssertEqual(pixel.name, "web_extension_native_messaging_alert_shown_macos")
+        XCTAssertEqual(pixel.parameters, ["extension": "bitwarden", "source": "toolbar_click"])
+        XCTAssertEqual(pixel.namePrefix, .none)
     }
 
     func testLearnMorePixels() {

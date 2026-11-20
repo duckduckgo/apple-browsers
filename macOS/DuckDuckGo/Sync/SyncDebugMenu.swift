@@ -43,6 +43,8 @@ final class SyncDebugMenu: NSMenu {
                 .withAccessibilityIdentifier("SyncDebugMenu.ensureAccountInfoKey")
             NSMenuItem(title: "Validate account_info key", action: #selector(validateAccountInfoKey), target: self)
                 .withAccessibilityIdentifier("SyncDebugMenu.validateAccountInfoKey")
+            NSMenuItem(title: "Fetch audit log", action: #selector(fetchAuditLog), target: self)
+                .withAccessibilityIdentifier("SyncDebugMenu.fetchAuditLog")
             NSMenuItem.separator()
 
             NSMenuItem(title: "Reset Favicons Fetcher Onboarding Dialog", action: #selector(resetFaviconsFetcherOnboardingDialog), target: self)
@@ -196,6 +198,19 @@ final class SyncDebugMenu: NSMenu {
                 await showAlert(title: "Account Info Key Validated", message: message)
             } catch {
                 await showAlert(title: "Unable to Validate Account Info Key", message: String(reflecting: error))
+            }
+        }
+    }
+
+    @objc private func fetchAuditLog() {
+        Task { @MainActor [weak self] in
+            guard let self, let syncService = NSApp.delegateTyped.syncService else { return }
+            do {
+                let summary = try await syncService.fetchAuditLogForDebug()
+                let message = "Fetched \(summary.entryCount) entries. Newer cursor: \(summary.hasAfterCursor ? "available" : "none"). Older page: \(summary.hasBeforeCursor ? "available" : "none")."
+                await showAlert(title: "Audit Log Fetch Succeeded", message: message)
+            } catch {
+                await showAlert(title: "Unable to Fetch Audit Log", message: String(reflecting: error))
             }
         }
     }

@@ -76,8 +76,13 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
             }
             do {
                 let data = try await Task.detached { try download.decode() }.value
-                guard authorized(), let destination = await chooseDestination(download.filename, context.webExtension.displayName, window),
-                      authorized() else {
+                guard authorized(), let destination = await chooseDestination(download.filename, context.webExtension.displayName, window) else {
+                    replyHandler(nil, "Download canceled")
+                    return
+                }
+                // The Save panel starts security-scoped access to the selected URL.
+                defer { destination.stopAccessingSecurityScopedResource() }
+                guard authorized() else {
                     replyHandler(nil, "Download canceled")
                     return
                 }
@@ -89,7 +94,7 @@ final class WebExtensionDownloadMessageHandler: NSObject, WKScriptMessageHandler
                 }
                 try staged.publish(to: destination)
                 // Only return the basename. The directory selected by the user stays private.
-                replyHandler(["id": Int.random(in: 1...9_007_199_254_740_991), "filename": destination.lastPathComponent], nil)
+                replyHandler(["id": Int32.random(in: 1...Int32.max), "filename": destination.lastPathComponent], nil)
             } catch WebExtensionDownload.DownloadError.fileExists {
                 replyHandler(nil, "A file with this name already exists. Choose another name.")
             } catch {

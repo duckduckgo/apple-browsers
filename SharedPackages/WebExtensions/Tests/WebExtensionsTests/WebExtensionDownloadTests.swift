@@ -152,7 +152,7 @@ final class WebExtensionDownloadIntegrationTests: XCTestCase, WKNavigationDelega
                 const timer = setTimeout(() => resolve("missing event"), 1000);
                 browser.downloads.onChanged.addListener(delta => {
                     clearTimeout(timer);
-                    resolve(Number.isSafeInteger(id) && id > 0 && delta.id === id && delta.filename.current);
+                    resolve(Number.isInteger(id) && id > 0 && id <= \(Int32.max) && delta.id === id && delta.filename.current);
                 });
             });
             """, arguments: ["options": options], contentWorld: .page)

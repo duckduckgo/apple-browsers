@@ -23,7 +23,6 @@ import Combine
 import PixelKit
 import Subscription
 import Networking
-import PrivacyConfig
 
 final class UnifiedFeedbackFormViewController: NSViewController {
     // Using a dynamic height in the form was causing layout problems and couldn't be completed in time for the release that needed this form.

@@ -18,7 +18,6 @@
 
 import Foundation
 import PixelKit
-import PrivacyConfig
 import Subscription
 
 extension VPNUpsellPopoverViewModel {

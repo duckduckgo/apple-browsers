@@ -25,7 +25,6 @@ protocol SubscriptionTierEventReporting {
     func reportTierOptionsRequested()
     func reportTierOptionsSuccess()
     func reportTierOptionsFailure(error: Error)
-    func reportTierOptionsUnexpectedProTier()
 }
 
 final class DefaultSubscriptionTierEventReporter: SubscriptionTierEventReporting {
@@ -39,9 +38,5 @@ final class DefaultSubscriptionTierEventReporter: SubscriptionTierEventReporting
 
     func reportTierOptionsFailure(error: Error) {
         PixelKit.fire(Pixel.Event.subscriptionTierOptionsFailure.withError(error))
-    }
-
-    func reportTierOptionsUnexpectedProTier() {
-        PixelKit.fire(Pixel.Event.subscriptionTierOptionsUnexpectedProTier)
     }
 }

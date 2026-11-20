@@ -24,7 +24,6 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import Common
 import FoundationExtensions
-import FeatureFlags_iOS
 
 struct SettingsOthersView: View {
 

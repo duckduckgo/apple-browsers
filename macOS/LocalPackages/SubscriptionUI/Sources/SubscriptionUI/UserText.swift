@@ -221,7 +221,6 @@ enum UserText {
     static let cancelDowngradeButton = NSLocalizedString("subscription.preferences.cancel.downgrade.button", bundle: Bundle.module, value: "Cancel Downgrade", comment: "Button to cancel a pending downgrade of the subscription")
 
     static let manageSubscriptionButton = NSLocalizedString("subscription.preferences.manage.subscription.button", bundle: Bundle.module, value: "Manage Subscription", comment: "Button to manage subscription")
-    static let updatePlanOrCancelButton = NSLocalizedString("subscription.preferences.update.plan.or.cancel.button", bundle: Bundle.module, value: "Update Plan or Cancel", comment: "Button to update subscription plan or cancel")
     static let managePaymentOrCancelButton = NSLocalizedString("subscription.preferences.manage.payment.or.cancel.button", bundle: Bundle.module, value: "Manage Payment or Cancel", comment: "Button to manage payment or cancel subscription")
     static let removeFromThisDeviceButton = NSLocalizedString("subscription.preferences.remove.from.this.device.button", bundle: Bundle.module, value: "Remove From This Device", comment: "Button to remove subscription from this device")
 

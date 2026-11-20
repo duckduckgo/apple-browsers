@@ -19,7 +19,6 @@
 import AppKit
 import SwiftUI
 import Foundation
-import PrivacyConfig
 import PixelKit
 import Subscription
 

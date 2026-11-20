@@ -390,7 +390,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     // MARK: - GetSubscriptionTierOptions Tests
 
-    func testGetSubscriptionTierOptions_PassesTrueToIncludeProTier() async throws {
+    func testGetSubscriptionTierOptions_ReturnsTierOptions() async throws {
         // Given
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
@@ -415,8 +415,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(subscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier")
-
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
             return
@@ -453,8 +451,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(subscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should still pass Pro tier flag correctly")
-
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
             return
@@ -484,7 +480,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     // MARK: - Stripe Tier Options Tests
 
     @MainActor
-    func testGetSubscriptionTierOptions_Stripe_PassesTrueToIncludeProTier() async throws {
+    func testGetSubscriptionTierOptions_Stripe_ReturnsTierOptions() async throws {
         // Given
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
@@ -542,8 +538,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let result = try await stripeSut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(stripeSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier for Stripe")
-
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
             return

@@ -21,7 +21,6 @@ import Combine
 import SwiftUI
 import PixelKit
 import Subscription
-import PrivacyConfig
 
 protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
     func feedbackViewModelDismissedView(_ viewModel: UnifiedFeedbackFormViewModel)

@@ -166,7 +166,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     // MARK: - GetSubscriptionTierOptions Tests
 
-    func testGetSubscriptionTierOptions_PassesTrueToIncludeProTier() async throws {
+    func testGetSubscriptionTierOptions_ReturnsTierOptions() async throws {
         // Given
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
         
@@ -191,8 +191,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(mockSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier")
-        
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
             return
@@ -229,8 +227,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(mockSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should still pass Pro tier flag correctly")
-        
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
             return
@@ -1591,7 +1587,6 @@ final class MockSubscriptionTierEventReporter: SubscriptionTierEventReporting {
     var successCalled = false
     var failureCalled = false
     var failureError: Error?
-    var unexpectedProTierCalled = false
 
     func reportTierOptionsRequested() {
         requestedCalled = true
@@ -1604,9 +1599,5 @@ final class MockSubscriptionTierEventReporter: SubscriptionTierEventReporting {
     func reportTierOptionsFailure(error: Error) {
         failureCalled = true
         failureError = error
-    }
-
-    func reportTierOptionsUnexpectedProTier() {
-        unexpectedProTierCalled = true
     }
 }

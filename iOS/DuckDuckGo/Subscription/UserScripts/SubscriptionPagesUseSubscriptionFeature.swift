@@ -440,7 +440,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         tierEventReporter.reportTierOptionsRequested()
 
-        let subscriptionTierOptionsResponse = await subscriptionManager.subscriptionTierOptions(includeProTier: true)
+        let subscriptionTierOptionsResponse = await subscriptionManager.subscriptionTierOptions()
 
         switch subscriptionTierOptionsResponse {
         case .success(let subscriptionTierOptions):
@@ -505,7 +505,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         let purchaseIsFreeTrial: Bool
 
         // 4: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: true) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
         case .success(let result):
             Logger.subscription.log("Subscription purchased successfully")
             purchaseTransactionJWS = result.transactionJWS

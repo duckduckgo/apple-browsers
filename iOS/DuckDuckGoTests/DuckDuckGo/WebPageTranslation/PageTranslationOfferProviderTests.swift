@@ -79,7 +79,7 @@ final class PageTranslationOfferProviderTests: XCTestCase {
     private func makeProvider(isEnabled: Bool = true,
                               manifest: TranslationManifest? = PageTranslationOfferProviderTests.manifest(),
                               deviceLanguages: [String] = ["en-US"]) throws -> PageTranslationOfferProvider {
-        return PageTranslationOfferProvider(detector: try PageLanguageDetector(),
+        return PageTranslationOfferProvider(detector: PageLanguageDetector(),
                                             manifest: { manifest },
                                             capability: MockCapability(isWebPageTranslationEnabled: isEnabled),
                                             settings: WebPageTranslationSettings(privacyConfigurationManager: MockPrivacyConfigurationManager()),

@@ -36,11 +36,7 @@ struct PageLanguageDetectorTests {
         Nous avons acheté du pain frais et nous nous sommes assis sur un banc pour regarder passer les bateaux.
         """
 
-    private let detector: PageLanguageDetector
-
-    init() throws {
-        detector = try PageLanguageDetector()
-    }
+    private let detector = PageLanguageDetector()
 
     @available(iOS 16, macOS 13, *)
     @Test("detects English", .timeLimit(.minutes(1)))

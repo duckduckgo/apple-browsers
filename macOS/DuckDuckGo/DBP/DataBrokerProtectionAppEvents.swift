@@ -21,6 +21,9 @@ import LoginItems
 import Common
 import FoundationExtensions
 import DataBrokerProtection_macOS
+#if DEBUG
+import DataBrokerProtectionCore
+#endif
 import os.log
 
 struct DataBrokerProtectionAppEvents {

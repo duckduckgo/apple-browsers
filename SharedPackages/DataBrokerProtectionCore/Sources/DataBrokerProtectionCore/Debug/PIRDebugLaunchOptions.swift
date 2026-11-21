@@ -17,42 +17,92 @@
 //
 
 #if DEBUG
-import DataBrokerProtectionCore
 import DDGError
 import Foundation
 
-struct PIRDebugLaunchOptions {
-    struct ProfileSetup {
-        let profile: DataBrokerProtectionProfile
-        let resetBeforeSeeding: Bool
+public struct PIRDebugLaunchOptions {
+    public struct ProfileSetup {
+        public let profile: DataBrokerProtectionProfile
+        public let resetBeforeSeeding: Bool
     }
 
-    struct ManagedSeed {
-        enum Mode: String, Codable {
+    public struct DebugScanJob: Codable, Equatable {
+        public let brokerURL: String
+        public let profileQueryId: Int64
+
+        public init(brokerURL: String, profileQueryId: Int64) {
+            self.brokerURL = brokerURL
+            self.profileQueryId = profileQueryId
+        }
+    }
+
+    public struct ManagedSeed {
+        public enum Mode: String, Codable {
             case seed
             case reseed
         }
 
-        let mode: Mode
-        let instanceID: String
-        let receiptURL: URL
+        public let mode: Mode
+        public let instanceID: String
+        public let receiptURL: URL
 
-        var resetBeforeSeeding: Bool { mode == .reseed }
+        public var resetBeforeSeeding: Bool { mode == .reseed }
 
-        func validateAccount(rawAuthenticated: Bool, pirAuthenticated: Bool) throws {
+        public func validateAccount(rawAuthenticated: Bool, pirAuthenticated: Bool) throws {
             guard !rawAuthenticated, !pirAuthenticated else { throw ParseError.authenticatedAccount }
         }
 
-        func validateExistingProfile(_ hasProfile: Bool) throws {
+        public func validateExistingProfile(_ hasProfile: Bool) throws {
             guard mode == .reseed || !hasProfile else { throw ParseError.existingProfile }
+        }
+
+        /// Uses the same active broker, profile query, and Freemium scan selection as the manual scan scheduler.
+        public func scanJobs(database: DataBrokerProtectionRepository) throws -> [DebugScanJob] {
+            let queries = try database.fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: false)
+                .filter { !$0.profileQuery.deprecated }
+            let jobs = BrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: queries, jobType: .manualScan, priorityDate: nil)
+                .compactMap { job -> DebugScanJob? in
+                    guard let scan = job as? ScanJobData, scan.scanType() != .maintenance, scan.profileQueryId > 0,
+                          let query = queries.first(where: { $0.dataBroker.id == scan.brokerId && $0.profileQuery.id == scan.profileQueryId }) else {
+                        return nil
+                    }
+                    return DebugScanJob(brokerURL: query.dataBroker.url, profileQueryId: scan.profileQueryId)
+                }
+            guard !jobs.isEmpty else { throw ParseError.emptyScanPlan }
+            return jobs
+        }
+
+        private struct Receipt: Encodable {
+            let instanceID: String
+            let mode: Mode
+            let status: String
+            let since: Date
+            let jobs: [DebugScanJob]
+            let errorCode: String?
+        }
+
+        public func writeReceipt(since: Date, jobs: [DebugScanJob] = [], error: Error? = nil) throws {
+            let code: String?
+            if let error = error as? ParseError {
+                code = error.receiptErrorCode
+            } else if let error {
+                code = "launch_\((error as NSError).code)"
+            } else {
+                code = nil
+            }
+            let receipt = Receipt(instanceID: instanceID, mode: mode, status: error == nil ? "ready" : "error",
+                                  since: since, jobs: jobs, errorCode: code)
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            try encoder.encode(receipt).write(to: receiptURL, options: .atomic)
         }
     }
 
-    let profileSetup: ProfileSetup?
-    let startServer: Bool
-    let managedSeed: ManagedSeed?
+    public let profileSetup: ProfileSetup?
+    public let startServer: Bool
+    public let managedSeed: ManagedSeed?
 
-    enum ParseError: DDGError {
+    public enum ParseError: DDGError {
         case invalidProfile
         case resetRequiresProfile
         case invalidManagedRequest
@@ -60,10 +110,11 @@ struct PIRDebugLaunchOptions {
         case conflictingReset
         case authenticatedAccount
         case existingProfile
+        case emptyScanPlan
 
-        static var errorDomain: String { "com.duckduckgo.pir.debug-launch-options" }
+        public static var errorDomain: String { "com.duckduckgo.pir.debug-launch-options" }
 
-        var errorCode: Int {
+        public var errorCode: Int {
             switch self {
             case .invalidProfile: return 0
             case .resetRequiresProfile: return 1
@@ -72,10 +123,11 @@ struct PIRDebugLaunchOptions {
             case .conflictingReset: return 4
             case .authenticatedAccount: return 5
             case .existingProfile: return 6
+            case .emptyScanPlan: return 7
             }
         }
 
-        var description: String {
+        public var description: String {
             switch self {
             case .invalidProfile: return "Invalid PIR profile JSON or required profile fields."
             case .resetRequiresProfile: return "PIR reset requires valid profile JSON."
@@ -84,10 +136,11 @@ struct PIRDebugLaunchOptions {
             case .conflictingReset: return "PIR scheduler mode cannot be combined with the legacy reset option."
             case .authenticatedAccount: return "PIR scheduler seeding requires an unauthenticated account."
             case .existingProfile: return "PIR scheduler seed requires an empty profile store; use reseed to replace it."
+            case .emptyScanPlan: return "PIR scheduler seeding produced no eligible scan jobs."
             }
         }
 
-        var receiptErrorCode: String {
+        public var receiptErrorCode: String {
             switch self {
             case .invalidProfile: return "invalidProfile"
             case .resetRequiresProfile: return "resetRequiresProfile"
@@ -96,15 +149,16 @@ struct PIRDebugLaunchOptions {
             case .conflictingReset: return "conflictingReset"
             case .authenticatedAccount: return "authenticatedAccount"
             case .existingProfile: return "profileAlreadyExists"
+            case .emptyScanPlan: return "emptyScanPlan"
             }
         }
     }
 
-    static func hasManagedRequest(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+    public static func hasManagedRequest(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
         ["PIR_SCHEDULER_MODE", "PIR_SCHEDULER_INSTANCE_ID", "PIR_SCHEDULER_RECEIPT"].contains { environment[$0] != nil }
     }
 
-    static func managedSeed(environment: [String: String] = ProcessInfo.processInfo.environment) throws -> ManagedSeed? {
+    public static func managedSeed(environment: [String: String] = ProcessInfo.processInfo.environment) throws -> ManagedSeed? {
         guard hasManagedRequest(environment: environment) else { return nil }
         guard let modeValue = environment["PIR_SCHEDULER_MODE"], let mode = ManagedSeed.Mode(rawValue: modeValue),
               let instanceID = environment["PIR_SCHEDULER_INSTANCE_ID"], UUID(uuidString: instanceID) != nil else {
@@ -125,7 +179,7 @@ struct PIRDebugLaunchOptions {
         return ManagedSeed(mode: mode, instanceID: instanceID, receiptURL: url)
     }
 
-    static func parse(
+    public static func parse(
         arguments: [String] = ProcessInfo.processInfo.arguments,
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) throws -> PIRDebugLaunchOptions? {

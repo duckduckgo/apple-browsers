@@ -302,7 +302,9 @@ class Runtime:
             if self.platform == "macos":
                 browser = self._browser_path(settings)
                 if any(executable.resolve().is_relative_to(browser) for executable in self._running_executables()):
-                    raise RuntimeError("The deployed DEBUG browser or agent is running; refusing to replace its code")
+                    raise RuntimeError("The deployed DEBUG browser or agent is running; refusing to replace its code. Quit the "
+                                       "DEBUG browser. A scheduler seed leaves its agent registered with launchd, so stop it with "
+                                       f"`launchctl bootout gui/{os.getuid()}/{BUNDLES['macos']}`")
             before = self._source()
             self.state.unlink(missing_ok=True)
             log = self.base / f"build-{self.instance}.log"

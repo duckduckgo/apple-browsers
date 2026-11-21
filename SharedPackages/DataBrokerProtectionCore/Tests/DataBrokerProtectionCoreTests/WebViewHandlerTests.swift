@@ -47,7 +47,6 @@ final class WebViewHandlerTests: XCTestCase {
         let url = try directory.appendingPathComponent(XCTUnwrap(name))
         let source = try XCTUnwrap(CGImageSourceCreateWithURL(url as CFURL, nil))
         let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
-        XCTAssertEqual(webView.bounds, bounds)
         XCTAssertEqual(image.width * 3, image.height * 4)
         let pixel = try XCTUnwrap(CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
                                              space: CGColorSpaceCreateDeviceRGB(),

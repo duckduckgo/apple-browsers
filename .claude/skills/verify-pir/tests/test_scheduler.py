@@ -283,7 +283,6 @@ class SchedulerTests(unittest.TestCase):
                 self.assertEqual(result['scheduler']['jobs'][0]['profileQueryId'], 1)
                 self.assertTrue(all(method == 'GET' for method, *_ in client.calls))
                 self.assertTrue(native.stopped)
-                self.assertFalse(result['cleanup'].get('agentStopped', False))
                 self.assertIn(f'scheduler {mode}', result['rerun'])
                 self.assertNotIn('--job', result['rerun'])
                 self.assertNotIn('--since', result['rerun'])

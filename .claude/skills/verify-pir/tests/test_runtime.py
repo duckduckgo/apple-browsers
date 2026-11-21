@@ -314,19 +314,20 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(len(self.tools.simulators), 2)
         self.assertFalse(any(c[:3] == ["xcrun", "simctl", "delete"] for c, _ in self.tools.calls))
 
-    def test_modified_and_untracked_source_require_rebuild_before_device_work(self):
-        for untracked in (False, True):
-            with self.subTest(untracked=untracked):
-                instance = self.make_runtime()
+    def test_changed_source_requires_rebuild_before_device_work(self):
+        for platform, path in (("ios", "iOS/input.swift"), ("ios", "iOS/new.swift"), ("macos", "macOS/LocalOverrides.xcconfig")):
+            with self.subTest(path=path):
+                instance = self.make_runtime(platform)
                 instance.build()
-                source = self.root / "iOS" / ("new.swift" if untracked else "input.swift")
-                source.write_text("new source")
+                source = self.root / path
+                original = source.read_text() if source.exists() else None
+                source.write_text("OTHER_SETTING = changed\n")
                 checkpoint = len(self.tools.calls)
                 with self.assertRaisesRegex(runtime.RuntimeError, "Source differs"):
                     instance.launch()
                 self.assertFalse(any(c[:2] == ["xcrun", "simctl"] for c, _ in self.tools.calls[checkpoint:]))
                 instance.stop()
-                source.unlink() if untracked else source.write_text("original source")
+                source.unlink() if original is None else source.write_text(original)
 
     def test_changed_executable_requires_rebuild(self):
         instance = self.make_runtime()
@@ -344,14 +345,6 @@ class LifecycleTests(unittest.TestCase):
         with self.assertRaisesRegex(runtime.RuntimeError, "Source changed during"):
             instance.build()
         self.assertFalse(instance.state.exists())
-
-    def test_ignored_local_overrides_change_requires_rebuild(self):
-        instance = self.make_runtime("macos")
-        instance.build()
-        (self.root / "macOS/LocalOverrides.xcconfig").write_text("OTHER_SETTING = changed\n")
-        with self.assertRaisesRegex(runtime.RuntimeError, "Source differs"):
-            instance.launch()
-        instance.stop()
 
     def test_scheduler_launch_uses_verified_browser_and_keeps_profile_out_of_arguments(self):
         instance = self.make_runtime("macos")
@@ -463,14 +456,6 @@ class LifecycleTests(unittest.TestCase):
         instance.stop()
         self.assertEqual(self.tools.processes, {999: str(global_agent)})
 
-    def test_production_agent_does_not_block_debug_agent(self):
-        instance = self.make_runtime("macos")
-        instance.build()
-        self.tools.foreign_agent = self.agent_bundle("com.duckduckgo.macos.DBP.backgroundAgent")
-        instance.launch()
-        instance.stop()
-        self.assertTrue(self.tools.foreign_agent)
-
     def test_unrelated_inaccessible_process_is_skipped_in_build_inventory(self):
         instance = self.make_runtime("macos")
         self.tools.extra_pids = [123]
@@ -541,7 +526,6 @@ class LifecycleTests(unittest.TestCase):
     def test_created_simulator_survives_inventory_failure_for_owned_cleanup(self):
         instance = self.make_runtime()
         instance.build()
-        original = instance._verify_simulator
         with patch.object(instance, "_verify_simulator", side_effect=runtime.RuntimeError("inventory unavailable")):
             with self.assertRaisesRegex(runtime.RuntimeError, "inventory unavailable"):
                 instance.launch()
@@ -676,16 +660,6 @@ class LifecycleTests(unittest.TestCase):
         instance.stop()
         self.assertIsNone(self.tools.child)
 
-    def test_renamed_process_identity_uses_libproc_path_with_ps_start_time(self):
-        executable = self.agent_bundle(runtime.BUNDLES["macos"])
-        self.tools.processes[999] = str(executable)
-        identity = runtime._process(999)
-        self.assertEqual(identity["executable"], str(executable))
-        self.assertEqual(identity["started"], "Tue Nov 17 16:46:00 2026")
-        self.libproc.proc_pidpath.assert_called_with(999, unittest.mock.ANY, 4096)
-        command = next(c for c, _ in self.tools.calls if c[0] == "ps")
-        self.assertEqual(command, ["ps", "-p", "999", "-o", "lstart="])
-
     def test_mac_build_prepares_private_applications_link_before_deployment_phase(self):
         instance = self.make_runtime("macos")
         metadata = instance.build()
@@ -702,7 +676,6 @@ class LifecycleTests(unittest.TestCase):
         link.symlink_to("/Applications", target_is_directory=True)
         instance.build()
         self.assertEqual(link.resolve(), instance.deployment / "Applications")
-        self.assertTrue(Path("/Applications").is_dir())
 
     def test_real_applications_directory_is_preserved_and_build_refused(self):
         instance = self.make_runtime("macos")

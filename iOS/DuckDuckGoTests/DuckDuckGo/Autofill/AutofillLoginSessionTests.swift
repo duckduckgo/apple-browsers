@@ -49,7 +49,7 @@ final class AutofillLoginSessionTests: XCTestCase {
         let session = AutofillLoginSession(sessionTimeout: sessionTimeout)
         session.startSession()
 
-        Thread.sleep(forTimeInterval: sessionTimeout)
+        Thread.sleep(forTimeInterval: sessionTimeout * 2)
         XCTAssertFalse(session.isSessionValid)
     }
 

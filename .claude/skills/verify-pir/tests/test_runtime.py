@@ -544,17 +544,6 @@ class LifecycleTests(unittest.TestCase):
         instance.stop()
         self.assertEqual(len(self.tools.simulators), 1)
 
-    def test_logs_copy_owned_stdout_stderr_without_launching_another_process(self):
-        instance = self.make_runtime()
-        instance.base.mkdir(parents=True)
-        instance.stdout.write_text("stdout\n")
-        instance.stderr.write_text("stderr\n")
-        checkpoint = len(self.tools.calls)
-        path = Path(self.directory.name) / "logs.txt"
-        instance.logs(path)
-        self.assertEqual(path.read_text(), "stdout\nstderr\n")
-        self.assertEqual(len(self.tools.calls), checkpoint)
-
     def test_failed_simulator_launch_after_start_retains_pid_for_keep_cleanup(self):
         instance = self.make_runtime(keep=True)
         instance.build()
@@ -636,7 +625,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertIn(412, self.tools.processes)
         self.assertFalse(any(c[:3] == ["xcrun", "simctl", "shutdown"] for c, _ in self.tools.calls))
 
-    def test_successful_stop_removes_only_instance_raw_logs_after_they_are_copied(self):
+    def test_successful_stop_removes_only_instance_raw_logs(self):
         instance = self.make_runtime()
         instance.build()
         instance.launch()
@@ -644,13 +633,10 @@ class LifecycleTests(unittest.TestCase):
         instance.stderr.write_text("private native error")
         other_log = instance.base / "native-other-instance.stdout.log"
         other_log.write_text("preserve another run")
-        copied = Path(self.directory.name) / "copied.log"
-        instance.logs(copied)
         instance.stop()
         self.assertFalse(instance.stdout.exists())
         self.assertFalse(instance.stderr.exists())
         self.assertEqual(other_log.read_text(), "preserve another run")
-        self.assertEqual(copied.read_text(), "private native outputprivate native error")
 
     def test_private_deployment_override_is_used_for_settings_and_build(self):
         instance = self.make_runtime("macos")

@@ -70,11 +70,6 @@ class WorkflowTests(unittest.TestCase):
                     raise RuntimeError(test.launch_error)
                 return dict(instanceID=self.instance, source="source-sha", app="build-path", pid=42)
 
-            def logs(self, path):
-                if test.log_error:
-                    raise RuntimeError(test.log_error)
-                Path(path).write_text("app log " + test.token + " " + json.dumps(test.token))
-
             def collect_snapshots(self):
                 test.assertTrue(self.snapshots_enabled)
                 test.assertFalse(self.stopped)
@@ -165,6 +160,8 @@ class WorkflowTests(unittest.TestCase):
             self.event("Opt-out Confirmed")
             return 202, self.run_state()
         if path.startswith("/api/logs"):
+            if self.log_error:
+                return 500, dict(error=self.log_error)
             return 200, [dict(timestamp="2026-01-01T00:00:00Z", level="info", category="PIR", subsystem="test",
                               process="test-app", message=self.token + " " + json.dumps(self.token))]
         return 200, self.run_state()
@@ -202,7 +199,7 @@ class WorkflowTests(unittest.TestCase):
         evidence = Path(result["evidence"])
         self.assertEqual((evidence / "pir-broker.json").read_bytes(), self.broker_bytes)
         self.assertEqual(result["inputs"]["brokerFile"]["sha256"], pir.sha256(self.broker_bytes))
-        for name in ("result.json", "report.md", "manifest.json", "pir-final-run.json", "launch.json", "pir-app.log", "pir-native-logs.json"):
+        for name in ("result.json", "report.md", "manifest.json", "pir-final-run.json", "launch.json", "pir-native-logs.json"):
             self.assertTrue((evidence / name).exists(), name)
         self.assertTrue(self.instances[-1].stopped)
 
@@ -573,7 +570,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.calls, [])
 
     def test_cancellation_stops_owned_runtime_and_writes_result(self):
-        for target, name in ((pir, "workflow"), (self.Runtime, "logs")):
+        for target, name in ((pir, "workflow"), (self.Runtime, "collect_snapshots")):
             with self.subTest(interrupted=name), patch.object(target, name, side_effect=KeyboardInterrupt):
                 result = self.execute()
             self.assertEqual(result["status"], "inconclusive")

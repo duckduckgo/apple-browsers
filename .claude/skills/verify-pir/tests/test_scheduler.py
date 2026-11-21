@@ -385,9 +385,6 @@ class FakeSeedRuntime:
         (self.evidence / 'scheduler-launch.json').write_text(json.dumps(receipt))
         return receipt
 
-    def logs(self, path):
-        path.write_text('')
-
     def stop(self):
         self.stopped = True
         return dict(stopped=True)

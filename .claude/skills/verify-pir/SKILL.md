@@ -30,6 +30,10 @@ An opt-out sends real broker requests and cannot be undone. Run scan-only first 
 matches, `expectedFile` must name the exact `profileUrl` to select. The app performs profile matching; this runner does
 not implement another matcher.
 
+A child broker, whose opt-out step is `parentSiteOptOut`, opts out through its `parent`. The app skips its opt-out as
+production does, so the run reports the scan verdict and leaves the opt-out unverified. To test the removal, run the
+opt-out against the parent broker.
+
 ## 2. Prepare inputs and credentials
 
 Keep a configuration, complete broker JSON and profile JSON in a durable folder outside the checkout, such as

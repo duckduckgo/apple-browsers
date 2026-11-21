@@ -323,6 +323,12 @@ def workflow(context, inputs, client, token):
     client.request("POST", f"{path}/optouts/{result_id}")
     opted = client.idle(run_id, config["activityTimeout"])
     result = selected(opted, result_id=result_id)
+    if result.get("optOutStatus") == "optsOutInParent":
+        context.check("app skipped the opt-out because the broker opts out in its parent",
+                      not history(opted, "Opt-out Started", result.get("profileQuery")))
+        context.unverified("PIR opt-out", f"{broker['name']} opts out in its parent {broker.get('parent') or 'site'}; "
+                           "run the opt-out against the parent broker")
+        return
     context.check("selected record emitted Opt-out Started", history(opted, "Opt-out Started", result.get("profileQuery")))
     if config["emailConfirmation"]:
         context.check("selected record awaits email confirmation", result.get("optOutStatus") == "awaitingEmailConfirmation")

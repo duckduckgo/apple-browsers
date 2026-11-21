@@ -51,7 +51,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("log", type=Path)
     scope = parser.add_mutually_exclusive_group(required=True)
-    scope.add_argument("sources", type=Path, nargs="*", help="source directories to check")
+    scope.add_argument("sources", type=Path, nargs="*", default=[], help="source directories to check")
     scope.add_argument("--package", type=Path, help="check targets opted in by this package")
     scope.add_argument("--package-roots", type=Path, nargs="+", default=[],
                        help="check opted-in targets in packages under these directories")

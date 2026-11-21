@@ -311,9 +311,6 @@ jobs:
         enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
         mode: deactivate
 
-    - name: Scan app build for strict concurrency warnings
-      run: python3 ../scripts/check-swift-concurrency-warnings.py ${{ matrix.flavor }}-build-for-testing-xcodebuild.log --package-roots LocalPackages ../SharedPackages
-
     - name: Run unit tests
       id: run-unit-tests
       env:
@@ -486,6 +483,10 @@ jobs:
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
+
+    - name: Scan app build for strict concurrency warnings
+      if: ${{ !cancelled() && steps.build-for-testing.outcome == 'success' }}
+      run: python3 ../scripts/check-swift-concurrency-warnings.py ${{ matrix.flavor }}-build-for-testing-xcodebuild.log --package-roots LocalPackages ../SharedPackages
 
     - name: Upload failed build log
       uses: actions/upload-artifact@v6

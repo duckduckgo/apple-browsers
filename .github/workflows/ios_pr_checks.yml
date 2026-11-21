@@ -239,9 +239,6 @@ jobs:
           2>&1 | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 
-    - name: Scan app build for strict concurrency warnings
-      run: python3 ../scripts/check-swift-concurrency-warnings.py xcodebuild.log --package-roots LocalPackages ../SharedPackages
-
     - name: Check strict concurrency in iOS packages
       env:
         DESTINATION: ${{ steps.select-simulator.outputs.destination }}
@@ -264,6 +261,10 @@ jobs:
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-unit-tests-${{ steps.compilation-cache-hash.outputs.hash }}
+
+    - name: Scan app build for strict concurrency warnings
+      if: ${{ !cancelled() && steps.run-unit-tests.outcome == 'success' }}
+      run: python3 ../scripts/check-swift-concurrency-warnings.py xcodebuild.log --package-roots LocalPackages ../SharedPackages
 
     - name: Process test results
       if: always()

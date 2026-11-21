@@ -492,7 +492,7 @@ class LifecycleTests(unittest.TestCase):
         instance = self.make_runtime("macos")
         app = self.tools.materialize(True)
         self.tools.processes[999] = str(app / "Contents/MacOS/DuckDuckGo")
-        with self.assertRaisesRegex(runtime.RuntimeError, "deployed DEBUG browser or agent is running"):
+        with self.assertRaisesRegex(runtime.RuntimeError, "deployed DEBUG browser or agent is running.*launchctl bootout gui/"):
             instance.build()
         self.assertFalse(any(c[0] == "xcodebuild" and c[-1] == "build" for c, _ in self.tools.calls))
         self.assertIn(999, self.tools.processes)

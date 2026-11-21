@@ -2228,6 +2228,89 @@ extension AIChatUserScriptHandlerTests {
     }
 }
 
+// MARK: - aiChatPromoVisibility Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    @MainActor
+    private func reportPromo(_ params: Any) async {
+        _ = await aiChatUserScriptHandler.aiChatPromoVisibility(params: params, message: MockUserScriptMessage(name: "test", body: [:]))
+    }
+
+    @MainActor
+    func testWhenThePageHasNotReportedItsPromosThenTheInputBoxKnowsNothing() {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        XCTAssertNil(inputBox.isAIChatPromoVisible)
+    }
+
+    @MainActor
+    func testWhenTheFullTabPageReportsItsPromosThenTheInputBoxLearnsTheLatestValue() async {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.displayMode = .fullTab
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        await reportPromo(["visible": true])
+        XCTAssertEqual(inputBox.isAIChatPromoVisible, true)
+
+        await reportPromo(["visible": false])
+        XCTAssertEqual(inputBox.isAIChatPromoVisible, false)
+    }
+
+    @MainActor
+    func testWhenTheContextualSheetReportsItsPromosThenTheInputBoxIgnoresThem() async {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.displayMode = .contextual
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        await reportPromo(["visible": false])
+
+        XCTAssertNil(inputBox.isAIChatPromoVisible)
+    }
+
+    @MainActor
+    func testWhenThePromoReportIsUnreadableThenTheLastValueStands() async {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.displayMode = .fullTab
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+        await reportPromo(["visible": false])
+
+        await reportPromo(["visible": "no"])
+        await reportPromo([String: Any]())
+
+        XCTAssertEqual(inputBox.isAIChatPromoVisible, false)
+    }
+
+    /// The page doesn't repeat an unchanged value, so a new chat on it, or the input coming back to the tab, must keep it.
+    @MainActor
+    func testWhenTheInputBoxBindsAgainThenItLearnsThePagesLastPromoValue() async {
+        aiChatUserScriptHandler.displayMode = .fullTab
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(MockAIChatInputBox())
+        await reportPromo(["visible": false])
+        let inputBox = MockAIChatInputBox()
+
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        XCTAssertEqual(inputBox.isAIChatPromoVisible, false)
+    }
+
+    /// A reload makes the page report its promos again once they settle, so the old value must not stand meanwhile.
+    @MainActor
+    func testWhenThePageLoadsAgainThenItsPromoValueIsForgotten() async {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.displayMode = .fullTab
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+        await reportPromo(["visible": false])
+
+        requestHandoffData()
+
+        XCTAssertNil(inputBox.isAIChatPromoVisible)
+    }
+}
+
 // MARK: - handleTermsAcceptedIfNeeded Tests
 
 extension AIChatUserScriptHandlerTests {
@@ -2862,6 +2945,7 @@ private final class MockAIChatInputBox: AIChatInputBoxHandling {
 
     var isSubmitBlockedByRecoveryCard = false
     var isTermsOfServiceShownOnPage = false
+    var isAIChatPromoVisible: Bool?
 
     @Published var attachmentUsage: AIChatAttachmentUsage?
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }

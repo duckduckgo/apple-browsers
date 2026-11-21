@@ -46,6 +46,10 @@ public protocol AIChatInputBoxHandling {
     /// behind its own Terms of Service card, which a native disclaimer would only repeat.
     var isTermsOfServiceShownOnPage: Bool { get set }
 
+    /// What the page last said about its promos (`aiChatPromoVisibility`): `nil` until it says anything, which
+    /// counts as a promo that may still appear. Kept for the page, so a new chat on it doesn't clear it.
+    var isAIChatPromoVisible: Bool? { get set }
+
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { get }
     var attachmentUsage: AIChatAttachmentUsage? { get set }
 

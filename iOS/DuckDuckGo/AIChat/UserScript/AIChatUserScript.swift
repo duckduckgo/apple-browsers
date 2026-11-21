@@ -473,6 +473,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.disableChatInput
         case .enableChatInput:
             return handler.enableChatInput
+        case .aiChatPromoVisibility:
+            return handler.aiChatPromoVisibility
         case .focusChatInput:
             return handler.focusChatInput
         case .editPrompt:
@@ -559,6 +561,12 @@ final class AIChatUserScript: NSObject, Subfeature {
     var isTermsOfServiceShownOnPage: Bool {
         get { handler.isTermsOfServiceShownOnPage }
         set { handler.isTermsOfServiceShownOnPage = newValue }
+    }
+
+    @MainActor
+    var isAIChatPromoVisible: Bool? {
+        get { handler.isAIChatPromoVisible }
+        set { handler.isAIChatPromoVisible = newValue }
     }
 
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {

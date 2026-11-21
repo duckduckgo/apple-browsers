@@ -176,6 +176,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func willHandOff(_ payload: AIChatPayload)
     /// Whether the page holds a handed-off prompt behind its own Terms of Service card.
     @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
+    /// What the page last said about its promos (`aiChatPromoVisibility`), `nil` until it says anything.
+    @MainActor var isAIChatPromoVisible: Bool? { get set }
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?)
     @MainActor func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
@@ -201,6 +203,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func aiChatPromoVisibility(params: Any, message: UserScriptMessage) async -> Encodable?
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -271,6 +274,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var termsOfServicePageLoadState: DuckAiTermsOfServicePageLoadState = .unknown
     @MainActor var isTermsOfServiceShownOnPage = false {
         didSet { inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage }
+    }
+    /// Per page: a load clears it, since the page reports its promos again once they settle.
+    @MainActor var isAIChatPromoVisible: Bool? {
+        didSet { inputBoxHandler?.isAIChatPromoVisible = isAIChatPromoVisible }
     }
 
     private var isAttachmentPrivacyEnabled: Bool {
@@ -701,6 +708,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
         let payload = payloadHandler?.consumeData() as? AIChatPayload
         updateTermsOfServiceShownOnPage(for: payload, when: "Page load")
+        isAIChatPromoVisible = nil
         return AIChatNativeHandoffData.defaultValuesWithPayload(payload)
     }
 
@@ -745,6 +753,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {
         self.inputBoxHandler = inputBoxHandler
         self.inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage
+        self.inputBoxHandler?.isAIChatPromoVisible = isAIChatPromoVisible
     }
 
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {
@@ -920,6 +929,25 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
         inputBoxHandler?.isSubmitBlockedByRecoveryCard = false
+        return nil
+    }
+
+    // MARK: - Promo Visibility
+
+    private struct PromoVisibility: Decodable {
+        let visible: Bool
+    }
+
+    /// Only the full-tab input shows new chat hints, so the contextual sheet's page is ignored.
+    @MainActor
+    func aiChatPromoVisibility(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard displayMode == .fullTab else { return nil }
+        guard let visibility: PromoVisibility = DecodableHelper.decode(from: params) else {
+            Logger.aiChat.debug("[NewChatHints] aiChatPromoVisibility ignored: unreadable params")
+            return nil
+        }
+        Logger.aiChat.debug("[NewChatHints] aiChatPromoVisibility visible=\(visibility.visible, privacy: .public)")
+        isAIChatPromoVisible = visibility.visible
         return nil
     }
 

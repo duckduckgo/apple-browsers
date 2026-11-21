@@ -212,6 +212,18 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertTrue(replacement.isTermsOfServiceShownOnPage)
     }
 
+    /// The page reports its promos once per load, so a script rebuilt under it must keep what it said.
+    func testWhenTheUserScriptIsReplacedThenTheReplacementKeepsThePagesPromoVisibility() {
+        let original = MockAIChatUserScript()
+        handler.setup(with: original, webView: WKWebView(), displayMode: .fullTab)
+        original.isAIChatPromoVisible = false
+        let replacement = MockAIChatUserScript()
+
+        handler.setup(with: replacement, webView: WKWebView(), displayMode: .fullTab)
+
+        XCTAssertEqual(replacement.isAIChatPromoVisible, false)
+    }
+
     /// A new tab is given the payload before its user scripts are installed.
     func testWhenAPayloadIsSetBeforeTheUserScriptThenTheHandoffIsAnnouncedOnceTheScriptArrives() {
         handler.setPayload(payload: ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": true] as AIChatPayload)
@@ -1149,6 +1161,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     }
 
     var isTermsOfServiceShownOnPage = false
+    var isAIChatPromoVisible: Bool?
 
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         openLinkHandlerSet = true
@@ -1268,6 +1281,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {}
     func willHandOff(_ payload: AIChatPayload) {}
     var isTermsOfServiceShownOnPage = false
+    var isAIChatPromoVisible: Bool?
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?) {}
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {}
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {}
@@ -1313,6 +1327,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func aiChatPromoVisibility(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

@@ -1,0 +1,192 @@
+//
+//  UnifiedToggleInputCoordinatorNewChatTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import Combine
+import Foundation
+import Testing
+@testable import DuckDuckGo
+
+@MainActor
+@Suite("Full-tab input: guaranteed new chat")
+final class UnifiedToggleInputCoordinatorNewChatTests {
+
+    private enum IPhone: DevicePlatformProviding { static let isIphone = true }
+    private enum IPad: DevicePlatformProviding { static let isIphone = false }
+
+    private func makeSUT(host: UnifiedToggleInputHost = .omnibar,
+                         devicePlatform: DevicePlatformProviding.Type = IPhone.self,
+                         isFlagOn: Bool = true) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(
+            host: host,
+            isToggleEnabled: true,
+            preferences: NewChatTestPreferences(),
+            toggleModeStorage: NewChatTestToggleModeStorage(),
+            stateStore: NewChatTestStateStore(),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : []),
+            devicePlatform: devicePlatform
+        )
+    }
+
+    /// The input holds its tab's script weakly, as the tab owns it.
+    private let script = makeTestUserScript()
+
+    /// The Duck.ai tab is on screen with a blank chat, and the page has shown its input.
+    private func openBlankChat(_ sut: UnifiedToggleInputCoordinator, hasExistingChat: Bool = false) {
+        sut.activateForTab("tab-A")
+        sut.bindToTab(script, hasExistingChat: hasExistingChat)
+        sut.showCollapsed()
+        sut.aiChatInputBoxVisibility = .visible
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A blank chat in the selected Duck.ai tab is a guaranteed new chat", .timeLimit(.minutes(1)))
+    func blankChat() {
+        let sut = makeSUT()
+        openBlankChat(sut)
+        #expect(sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Not before the page shows its input", .timeLimit(.minutes(1)))
+    func beforeInputReady() {
+        let sut = makeSUT()
+        openBlankChat(sut)
+        sut.aiChatInputBoxVisibility = .hidden
+        #expect(!sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Not on a chat from history", .timeLimit(.minutes(1)))
+    func existingChat() {
+        let sut = makeSUT()
+        openBlankChat(sut, hasExistingChat: true)
+        #expect(!sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Never on iPad", .timeLimit(.minutes(1)))
+    func iPad() {
+        let sut = makeSUT(devicePlatform: IPad.self)
+        openBlankChat(sut)
+        #expect(!sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Never in the contextual sheet", .timeLimit(.minutes(1)))
+    func contextualSheet() {
+        let sut = makeSUT(host: .contextualChat)
+        openBlankChat(sut)
+        #expect(!sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Never with the flag off", .timeLimit(.minutes(1)))
+    func flagOff() {
+        let sut = makeSUT(isFlagOn: false)
+        openBlankChat(sut)
+        #expect(!sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Not once the tab is no longer bound", .timeLimit(.minutes(1)))
+    func unbound() {
+        let sut = makeSUT()
+        openBlankChat(sut)
+        sut.unbind()
+        #expect(!sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Not while a tab waits for voice to start", .timeLimit(.minutes(1)))
+    func voiceRequested() {
+        let sut = makeSUT()
+        openBlankChat(sut)
+        sut.holdNewChatForVoice()
+        #expect(!sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Not during voice, nor right after it closes, but once the hold passes", .timeLimit(.minutes(1)))
+    func voiceSession() async throws {
+        let sut = makeSUT()
+        sut.newChatVoiceHoldAfterClose = 0.05
+        openBlankChat(sut)
+        sut.isVoiceSessionActive = true
+        #expect(!sut.isGuaranteedNewChat)
+
+        sut.isVoiceSessionActive = false
+        #expect(!sut.isGuaranteedNewChat)
+
+        try await Task.sleep(nanoseconds: 300_000_000)
+        #expect(sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new chat button ends a voice hold", .timeLimit(.minutes(1)))
+    func newChatEndsVoiceHold() {
+        let sut = makeSUT()
+        openBlankChat(sut)
+        sut.holdNewChatForVoice()
+        sut.startNewChat()
+        #expect(sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The promo is clear only once the page says so", .timeLimit(.minutes(1)))
+    func promoClear() {
+        let sut = makeSUT()
+        openBlankChat(sut)
+        #expect(!sut.isAIChatPromoClear)
+
+        sut.isAIChatPromoVisible = true
+        #expect(!sut.isAIChatPromoClear)
+
+        sut.isAIChatPromoVisible = false
+        #expect(sut.isAIChatPromoClear)
+    }
+}
+
+@MainActor
+private final class NewChatTestStateStore: UnifiedInputStateStoring {
+    private var states: [TabUID: TabInputState] = [:]
+    let lastUsed = LastUsedInputDefaults(toggleMode: .aiChat, selectedModelID: nil, selectedReasoningMode: nil, selectedTool: nil)
+
+    func state(for uid: TabUID) -> TabInputState { states[uid] ?? TabInputState(toggleMode: .aiChat) }
+    func update(_ state: TabInputState, for uid: TabUID) { states[uid] = state }
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID, isNewChatContext: Bool) { states[uid] = state }
+    func commitToggleMode(_ mode: TextEntryMode) {}
+    func remove(for uid: TabUID) { states.removeValue(forKey: uid) }
+}
+
+private final class NewChatTestPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
+    var selectedModelId: String?
+    var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+}
+
+private final class NewChatTestToggleModeStorage: ToggleModeStoring {
+    private var storedMode: TextEntryMode?
+    func save(_ mode: TextEntryMode) { storedMode = mode }
+    func restore() -> TextEntryMode? { storedMode }
+}

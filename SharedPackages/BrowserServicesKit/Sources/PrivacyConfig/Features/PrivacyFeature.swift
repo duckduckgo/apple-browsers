@@ -1058,9 +1058,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
     case bookmarksBarSyncPromo
 
-    /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
-    case bookmarkAddedSyncPromo
-
     /// Kill switch for the default browser win-back modal.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
     case defaultBrowserWinBackPromo

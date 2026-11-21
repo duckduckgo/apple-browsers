@@ -161,6 +161,13 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(context.files['scheduler.json']['polls'], 2)
         self.assertEqual(context.result['scheduler']['jobs'][0]['startedAt'], event('scanStarted', 3)['date'])
 
+    def test_overlapping_scans_are_judged_by_the_last_terminal_event(self):
+        started = [event('scanStarted', 1), event('scanStarted', 2), event('error', 2, 'Cancelled')]
+        outcome, context = self.run_observer(Client([started, started + [event('error', 5, 'actionFailed')]]), timeout=5)
+        self.assertEqual(outcome['status'], 'pass')
+        self.assertEqual(context.result['scheduler']['jobs'][0]['brokerError'], 'actionFailed')
+        self.assertEqual(context.files['scheduler.json']['polls'], 2)
+
     def test_ambiguous_history_does_not_pass(self):
         for history in ([event('scanStarted'), event('noMatchFound'), event('matchesFound')],
                         [event('scanStarted', 2), event('noMatchFound', 1)]):

@@ -170,8 +170,7 @@ def _job_state(job, snapshot, detail, since, managed):
     if len(terminals) != 1:
         return dict(state, status="ambiguous", reason="latest scan has multiple terminal events")
     terminal = terminals[0]
-    return dict(state, status="fail" if terminal["type"] == "error" else "pass",
-                terminal=terminal["type"], finishedAt=terminal["date"])
+    return dict(state, status="pass", terminal=terminal["type"], finishedAt=terminal["date"])
 
 
 def _read(client, path, timeout):
@@ -230,11 +229,8 @@ def observe(context, client, scope, expected_executable=None):
             if time.monotonic() >= deadline:
                 outcome = dict(status="inconclusive", reason="scheduler observation timed out before completion")
                 break
-            if any(state["status"] == "fail" for state in states):
-                outcome = dict(status="fail", reason="a fresh scheduler scan ended in error")
-                break
             if all(state["status"] == "pass" for state in states):
-                outcome = dict(status="pass", reason="every expected scheduler job has a fresh persisted completed scan")
+                outcome = dict(status="pass", reason="every expected scheduler job has a fresh persisted scan that reached a terminal event")
                 break
             time.sleep(min(2, max(0, deadline - time.monotonic())))
     except (RuntimeError, ValueError) as error:

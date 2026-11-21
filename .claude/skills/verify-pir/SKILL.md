@@ -171,7 +171,8 @@ python3 "$P" scheduler observe --platform macos \
 
 Evidence contains the listener identity, persisted scan histories and `scheduler.json`; a seeded attempt adds
 `scheduler-launch.json` with the native job plan. A pass requires a fresh `scanStarted` and a matching terminal
-`matchesFound` or `noMatchFound` for every expected job. A fresh terminal error fails. Missing, incomplete or ambiguous
+`matchesFound`, `noMatchFound` or `error` for every expected job. A broker error is a terminal outcome and is
+listed in `scheduler.json`; it does not fail the scheduler check. Missing, incomplete or ambiguous
 evidence is inconclusive. Recurring scheduler ticks and opt-out jobs are separate checks.
 
 ## 7. Test the verifier

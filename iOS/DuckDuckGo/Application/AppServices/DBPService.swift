@@ -179,6 +179,39 @@ final class DBPService: NSObject {
             Logger.dataBrokerProtection.log("PIR debug server started from launch option on port \(dbpIOSManager.debugServerPort ?? 0, privacy: .public)")
         }
     }
+
+    private enum ManagedSeedError: Error {
+        case pirUnavailable
+        case debugServerUnavailable
+    }
+
+    func seedProfileIfRequestedAtLaunch() async {
+        guard PIRDebugLaunchOptions.hasManagedRequest() else { return }
+        // Receipts use whole seconds, so the exclusive fresh profile scope includes this second in Python.
+        let since = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
+        do {
+            guard let options = try PIRDebugLaunchOptions.parse(), let managedSeed = options.managedSeed,
+                  let profile = options.profileSetup?.profile else { return }
+            do {
+                guard let dbpIOSManager else { throw ManagedSeedError.pirUnavailable }
+                let contentBlocking = DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+                guard await dbpIOSManager.startDebugServer(contentBlocking: contentBlocking) else {
+                    throw ManagedSeedError.debugServerUnavailable
+                }
+                let rawAuthenticated = AppDependencyProvider.shared.subscriptionManager.isUserAuthenticated
+                let jobs = try await dbpIOSManager.seedProfileForDebugLaunch(profile, managedSeed: managedSeed,
+                                                                             rawAuthenticated: rawAuthenticated)
+                try managedSeed.writeReceipt(since: since, jobs: jobs)
+                Logger.dataBrokerProtection.log("PIR scheduler \(managedSeed.mode.rawValue, privacy: .public) ready with \(jobs.count, privacy: .public) scan jobs")
+            } catch {
+                try? managedSeed.writeReceipt(since: since, error: error)
+                Logger.dataBrokerProtection.error("PIR scheduler seeding failed: \(String(describing: error), privacy: .public)")
+            }
+        } catch {
+            try? PIRDebugLaunchOptions.managedSeed()?.writeReceipt(since: since, error: error)
+            Logger.dataBrokerProtection.error("PIR scheduler launch options rejected: \(String(describing: error), privacy: .public)")
+        }
+    }
 #endif
 }
 

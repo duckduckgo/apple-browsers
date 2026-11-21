@@ -961,6 +961,43 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
     }
 }
 
+#if DEBUG
+extension DataBrokerProtectionIOSManager {
+    /// Mirrors `saveProfile`, capturing the scan plan between the save and the initial scans that change it.
+    @MainActor
+    public func seedProfileForDebugLaunch(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile,
+                                          managedSeed: PIRDebugLaunchOptions.ManagedSeed,
+                                          rawAuthenticated: Bool) async throws -> [PIRDebugLaunchOptions.DebugScanJob] {
+        try managedSeed.validateAccount(rawAuthenticated: rawAuthenticated,
+                                        pirAuthenticated: await authenticationManager.isUserAuthenticated)
+        let resources = try await vaultResources(reason: .dashboard)
+        try managedSeed.validateExistingProfile(try resources.database.fetchProfile() != nil)
+        if managedSeed.resetBeforeSeeding {
+            try deleteAllUserProfileData()
+            freemiumDBPUserStateManager.resetAllState()
+        }
+        // A fresh install's first broker update can remove bundled brokers after the plan names them.
+        try? await refreshRemoteBrokerJSON()
+        try await saveProfileAndPrepareForInitialScans(profile)
+        let jobs = try managedSeed.scanJobs(database: resources.database)
+
+        if shouldUseContinuedProcessingForInitialRun() {
+            do {
+                if let scanPlan = try makeContinuedProcessingInitialRunPlan() {
+                    try await continuedProcessingCoordinator.startInitialRun(scanPlan: scanPlan)
+                }
+                return jobs
+            } catch {
+                Logger.dataBrokerProtection.error("Continued processing start failed after preparation, falling back to immediate scans. Error: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        await startImmediateScanOperations()
+        return jobs
+    }
+}
+#endif
+
 // MARK: - Debug HTTP server read access
 
 extension DataBrokerProtectionIOSManager: DataBrokerProtectionDebugReadProviding {

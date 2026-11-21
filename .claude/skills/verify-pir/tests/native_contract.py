@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 SPEC = importlib.util.spec_from_file_location("pir", Path(__file__).resolve().parents[1] / "pir.py")
 pir = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(pir)

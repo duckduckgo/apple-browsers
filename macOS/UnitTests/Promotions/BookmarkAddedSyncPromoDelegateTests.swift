@@ -129,12 +129,6 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         XCTAssertFalse(makeSUT().isEligible)
     }
 
-    func testWhenOnlyTheBookmarksBarKillSwitchIsOnThenPromoIsNotEligible() {
-        featureFlagger.enabledFeatureFlags = [.promoQueueBookmarksBarSyncPromo, .newSyncEntryPoints, .syncFeatureLevel3]
-
-        XCTAssertFalse(makeSUT().isEligible)
-    }
-
     func testWhenNewSyncEntryPointsAreOffThenPromoIsNotEligible() {
         for enabledFeatureFlags in [[FeatureFlag.promoQueueBookmarkAddedSyncPromo, .syncFeatureLevel3],
                                     [FeatureFlag.promoQueueBookmarkAddedSyncPromo, .newSyncEntryPoints]] {

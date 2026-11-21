@@ -6,39 +6,38 @@ disable-model-invocation: true
 
 # verify-pir
 
-Run one broker against a test profile on iOS or macOS. The standalone Python runner starts jobs through the PIR debug
-API, checks their results and history, saves evidence, and stops its app or agent. It needs Python 3 and Xcode's command
-line tools.
+Runs one broker against a test profile on iOS or macOS. The Python runner starts jobs through the PIR debug API, checks
+results and history, saves evidence and stops the app or agent it launched. It needs Python 3 and Xcode's command line
+tools.
 
-The `run` command verifies the broker flow through the shared native `DebugModeRunner`. It does not verify the
-dashboard, profile editor, subscription sign-in, production scheduler or their entry points. Confirmed opt-out means
-submission and confirmation completed. Removal requires a later scan.
+`run` exercises the broker flow through the shared native `DebugModeRunner`, not the dashboard, profile editor,
+subscription sign-in or production scheduler. A confirmed opt-out means submission and confirmation completed; removal
+needs a later scan.
 
-Work in this order: choose the scenario, prepare inputs, build, run `selftest` and `--check-config`, run scan-only, then
-run the opt-out after the user authorizes it. The checks before the scan send no broker requests.
+Order: choose the scenario, prepare inputs, build, run `selftest` and `--check-config` (no broker requests), run
+scan-only, then the opt-out once the user authorizes it.
 
 ## 1. Choose the scenario
 
-- **Scan only**, `"optOut": false`: pass when the app matches at least one record. No match is inconclusive. Supply a
-  token if the broker's scan needs the captcha service and the app has no saved subscription.
-- **Scan and opt-out**, `"optOut": true`: scan, select one matched record, submit its opt-out and, when configured,
-  complete email confirmation. Use a saved subscription with PIR entitlement or supply a token.
+- **Scan only**, `"optOut": false`: passes when the app matches at least one record. No match is inconclusive. Supply a
+  token if the scan needs the captcha service and the app has no saved subscription.
+- **Scan and opt-out**, `"optOut": true`: scans, selects one matched record, submits its opt-out and, when configured,
+  completes email confirmation. Needs a saved subscription with PIR entitlement or a supplied token.
 
-Before submitting an opt-out, obtain the user's authorization for the broker, profile, selected record and scenario.
-An opt-out sends real broker requests and cannot be undone. Run scan-only first to identify the record. With several
-matches, `expectedFile` must name the exact `profileUrl` to select. The app performs profile matching; this runner does
-not implement another matcher.
+An opt-out sends real broker requests and cannot be undone. Run scan-only first, then get the user's authorization for
+the broker, profile, selected record and scenario. With several matches, `expectedFile` must name the exact
+`profileUrl`. The app does the matching; the runner has no matcher of its own.
 
-A child broker, whose opt-out step is `parentSiteOptOut`, opts out through its `parent`. The app skips its opt-out as
-production does, so the run reports the scan verdict and leaves the opt-out unverified. To test the removal, run the
-opt-out against the parent broker.
+A child broker (opt-out step `parentSiteOptOut`) opts out through its `parent`. The app skips its opt-out as production
+does, so the run reports the scan verdict and leaves the opt-out unverified. Test removal against the parent broker.
 
 ## 2. Prepare inputs and credentials
 
-Keep a configuration, complete broker JSON and profile JSON in a durable folder outside the checkout, such as
-`~/pir-runs/example/`. Paths in the configuration are relative to that file. The profile uses the `-pirProfileJSON`
-shape. `expectedFile` is optional and contains only `{"profileUrl": "..."}`. For scan-only runs it checks that the
-expected record was found.
+Keep the configuration, broker JSON and profile JSON in a folder outside the checkout, such as `~/pir-runs/example/`.
+Configuration paths are relative to the configuration file. Unless the user supplies a broker JSON, copy the bundled one
+from `SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/` (for example
+`peoplefinders.com.json`). The profile uses the `-pirProfileJSON` shape. The optional `expectedFile` holds only
+`{"profileUrl": "..."}`; on scan-only runs it checks that record was found.
 
 ```json
 {
@@ -55,21 +54,18 @@ expected record was found.
 }
 ```
 
-A scan-only run without a token needs only `brokerFile`, `profileFile` and `"optOut": false`. An opt-out or a run with a
-supplied token also needs the environment and endpoint fields, and a supplied token requires `subscriptionEnvironment`
-and `pirEnvironment` to match. For an opt-out, set `emailConfirmation` to `true` or `false`.
+A scan-only run without a token needs only `brokerFile`, `profileFile` and `"optOut": false`. An opt-out or a supplied
+token also needs the environment and endpoint fields, and a supplied token requires matching `subscriptionEnvironment`
+and `pirEnvironment`. An opt-out sets `emailConfirmation` explicitly.
 
-Without a supplied token, the native prerequisite check verifies that the saved subscription is signed in, has PIR
-entitlement and matches the configured environment before any broker requests. The macOS agent can use its saved
-subscription. The iOS runner creates a fresh simulator, so an iOS opt-out needs a supplied token.
+Without a token, the native prerequisite check confirms the saved subscription is signed in, entitled and on the
+configured environment before any broker request. The macOS agent can use its saved subscription; iOS uses a fresh
+simulator, so an iOS opt-out needs a token.
 
-Supply an existing access token with `--token-file /local/path/to/token` (the file contains only the token) or
-`--token-env ENVIRONMENT_VARIABLE_NAME`. Do not ask the user to paste it into chat, and keep it out of configuration
-files; the runner rejects inputs that contain it. The runner uses the token as given and passes it only through the
-launch environment, never in arguments, logs or evidence.
-
-A supplied token replaces saved-account authentication for that launch only. A malformed token or an authentication
-failure fails the run. Reports mark token authentication and leave normal sign-in unverified.
+Supply the token with `--token-file <path>` (a file containing only the token) or `--token-env <NAME>`. Never ask the user
+to paste it, and keep it out of configuration files; the runner rejects inputs that contain it. The runner passes it only
+through the launch environment, never in arguments, logs or evidence. It replaces saved-account authentication for that
+launch; a malformed token or authentication failure fails the run, and the report leaves normal sign-in unverified.
 
 ## 3. Build and check
 
@@ -83,22 +79,20 @@ python3 "$P" run --platform ios --config ~/pir-runs/example/config.json \
   --token-file /local/path/to/token --check-config
 ```
 
-Use `--platform macos` for the macOS PIR agent. Use `--device ipad` on the iOS build and run commands for an iPad run.
+Use `--platform macos` for the macOS PIR agent and `--device ipad` on iOS build and run commands for an iPad.
 
-`build` records the app's source fingerprint and executable hash; later commands reject a stale or changed build, so
-rebuild after source changes. On macOS, `build` enables debug deployment with
-`scripts/toggle-macos-debug-deployment.sh on`, builds a private DEBUG browser bundle under
-`DerivedData/verify-pir/macos/` and discovers its embedded PIR agent. It preserves unrelated local overrides, leaves
-`/Applications/DEBUG` intact, and does not change a saved simulator selection.
+`build` records the source fingerprint and executable hash; later commands reject a stale build, so rebuild after source
+changes. On macOS it turns on debug deployment (`scripts/toggle-macos-debug-deployment.sh on`, preserving other local
+overrides), builds a private DEBUG browser under `DerivedData/verify-pir/macos/` and finds its embedded PIR agent. It
+leaves `/Applications/DEBUG` alone and refuses while the private browser or agent runs; its error names the command to
+stop an agent a scheduler seed left registered.
 
-`selftest` uses the recorded build, forces staging with an internal dummy credential, checks correlated prerequisites,
-collects native and redacted application logs, writes the usual report and manifest, and stops its runtime. It only
-reads local HTTP endpoints and rejects scenario, credential, check-config and keep options. It does not establish real
-authentication, broker execution, captcha handling, email delivery or removal. Evidence and cleanup failures make it
-inconclusive.
+`selftest` launches the recorded build in staging with a dummy credential, checks the prerequisites and native logs,
+writes the usual report and stops the runtime. It only reads local endpoints, takes no scenario, credential,
+check-config or keep options, and proves nothing about authentication, brokers, captcha, email or removal. Evidence or
+cleanup failures make it inconclusive.
 
-`--check-config` validates the configuration, inputs and token source without building, launching or submitting
-requests.
+`--check-config` validates the configuration, inputs and token source without building, launching or sending requests.
 
 ## 4. Run
 
@@ -107,97 +101,81 @@ python3 "$P" run --platform ios --config ~/pir-runs/example/config.json \
   --token-file /local/path/to/token --evidence-dir ~/pir-runs/evidence
 ```
 
-`--evidence-dir` defaults to `~/pir-evidence` and must be outside the checkout; each attempt gets a unique child folder.
-Run long scans in the background and follow their printed history events.
+`--evidence-dir` defaults to `~/pir-evidence`, must be outside the checkout, and gets a new child folder per attempt.
+Run long scans in the background and follow the printed history events.
 
-Run each platform separately: WebKit behavior and broker user agents differ, so a pass on one proves nothing for the
-other. Each run uses an isolated debug launch and
-a correlated server instance. iOS uses a dedicated simulator. macOS launches only the private bundle's embedded PIR
-agent, without starting production scheduling or registering a login item; existing browser and agent processes keep
-running. Do not run another debug client against an attempt in progress.
+Run each platform separately: WebKit and broker user agents differ, so a pass on one proves nothing for the other. Each
+run gets an isolated debug launch and server instance. iOS uses a dedicated simulator. macOS launches only the private
+bundle's embedded agent, without production scheduling or a login item, and leaves existing browser and agent processes
+running. Don't point another debug client at an attempt in progress.
 
-Cleanup stops the owned app or agent even with `--keep`, which only preserves the simulator for inspection. Cleanup
-cannot undo a broker request already submitted.
+Cleanup stops the owned app or agent even with `--keep`, which only keeps the simulator. It cannot undo a broker request.
 
-### Inspecting a running or stalled job
-
-The runner prints the live `snapshots/` directory before launch. macOS writes PNGs there directly; iOS copies them from
-the simulator on each status poll and once before cleanup. Filenames give the capture sequence, scan or opt-out phase,
-action type and capture point (`before`, `result` or `error`). Open the newest PNG and read the action events in the
-latest `pir-http-*.json` next to it, then earlier PNGs to see when the page changed. Captures happen at action
-boundaries, so the page can change between them. A `.unavailable` marker records a capture that produced no image.
-Screenshots can show unredacted broker records and form values; keep them in the local attempt folder.
+To inspect a running or stalled job, open the `snapshots/` folder the runner prints before launch (macOS writes PNGs
+directly; iOS copies them on each poll and before cleanup). Filenames give sequence, phase, action and capture point
+(`before`, `result`, `error`); a `.unavailable` marker means no image. Read the newest PNG with the latest
+`pir-http-*.json`, then earlier ones. Screenshots can show unredacted records and form values; keep them local.
 
 ## 5. Report the result
 
 Report pass, fail or inconclusive, the printed `report.md` path, failed checks, cleanup problems and unverified items.
-The attempt folder also contains machine-readable results, build and launch identity, input hashes, the exact broker
-bytes, changed HTTP responses, final run state, native PIR logs from the debug server (`pir-native-logs.json`), and a
-rerun command that uses credential references.
-The report links available snapshots in capture order and notes collection errors. Missing screenshots leave the broker
-verdict intact.
+The attempt folder also holds machine-readable results, build and launch identity, input hashes, the exact broker bytes,
+changed HTTP responses, the final run state, native PIR logs (`pir-native-logs.json`), linked snapshots and a rerun
+command with credential references. Missing screenshots don't change the verdict.
 
-No match remains inconclusive in either scenario, and an error never counts as an empty scan. A broker breaking
-(`httpError`, such as a 410 or 429, or `actionFailed`) is a legitimate terminal outcome: the run passes and names the
-error. Any other error, including captcha, email, authentication and `jobTimeout`, and any activity timeout, is our
-failure and fails the run. An accepted HTTP request is not job completion; the runner polls the same run ID and checks
-the selected result and history.
+No match is inconclusive, and an error never counts as an empty scan. A broker breaking (`httpError`, such as a 410 or
+429, or `actionFailed`) is a legitimate terminal outcome: the run passes and names it. Any other error, including
+captcha, email, authentication and `jobTimeout`, and any activity timeout, is our failure and fails the run. An accepted
+HTTP request is not completion; the runner polls the run ID and checks the selected result and history.
 
 ## 6. Verify persisted scans
 
-Choose the scheduler command by what should happen to the DEBUG profile:
+Choose by what should happen to the DEBUG profile:
 
-- `scheduler seed --profile-file <path>` saves a profile in an empty store and starts scans.
-  An existing profile is a refusal.
-- `scheduler reseed --profile-file <path>` replaces the DEBUG PIR profile and job history, then starts scans.
-  Obtain explicit approval for that reset before invoking it.
-- `scheduler observe` on macOS or an iOS simulator watches scans triggered separately through the app.
+- `scheduler seed --profile-file <path>` saves a profile into an empty store and starts scans; an existing profile is a
+  refusal.
+- `scheduler reseed --profile-file <path>` replaces the DEBUG PIR profile and job history, then starts scans. Get
+  explicit approval for the reset first.
+- `scheduler observe` watches scans triggered separately in the app, on macOS or an iOS simulator.
 
-Before seed or reseed, build the private macOS DEBUG browser, close any running DEBUG browser, and use a signed-out
-DEBUG test account so the normal agent takes its Freemium scan path. The browser saves through the real PIR data manager
-and starts its regular login item and debug server on port 8474. The tool reports the cutoff and eligible jobs, stops
-the browser it launched, and leaves the saved test profile and registered agent in place. These commands make live
-broker scans.
+These make live broker scans. On macOS, close any DEBUG browser and use a signed-out DEBUG account so the agent takes the
+Freemium path. The private browser saves through the real PIR data manager, starts its login item and debug server on
+port 8474, and the tool reports the cutoff and planned jobs, stops the browser and leaves the profile and registered agent
+in place. macOS seeds run one at a time.
 
-On iOS, seed and reseed use the recorded `build --platform ios`, create a fresh simulator per attempt, and launch the
-app signed out with the profile in its launch environment. The app refreshes broker JSON, saves the profile, records
-the scan plan, and starts the same initial scans as a profile saved in the app. Its debug server listens on a free port
-the tool picks.
-The tool reads the receipt from the app's data container, then stops the app and deletes the simulator unless `--keep`.
-Each attempt owns its simulator, port and receipt, so iOS seeds can run in parallel; macOS seeds run one at a time.
+On iOS, each attempt creates a fresh simulator, launches the recorded build signed out with the profile in its launch
+environment, and picks a free port. The app refreshes broker JSON, saves the profile, records the plan and starts the
+same initial scans as a profile saved in the app. The tool reads the receipt from the app's container, then stops the
+app and deletes the simulator unless `--keep`. Attempts share nothing, so iOS seeds can run in parallel.
 
-Before observe, use an app with an existing Freemium or subscription profile and its debug server enabled (on iOS, turn
-on **Debug Server** in the PIR debug menu). Record the UTC cutoff before triggering the scan, leaving room for the
-server's second-resolution timestamps, then repeat `--job` with each exact broker URL and active profile query ID from
-`GET /api`. Observation makes only GET requests to the local app or agent. Pass `--platform ios` for a simulator and
-`--port` if the listener is not on 8474.
+For observe, use an app with a saved profile and its debug server on (on iOS, **Debug Server** in the PIR debug menu).
+Record a UTC cutoff before triggering the scan, allowing for second-resolution timestamps, and pass `--job` for each
+exact broker URL and active profile query ID from `GET /api`. Observe only makes GET requests. Add `--platform ios` for a
+simulator and `--port` if the listener isn't on 8474.
 
 ```sh
 python3 "$P" scheduler seed --platform macos --profile-file ~/pir-runs/profile.json
-python3 "$P" scheduler seed --platform ios --device ipad --profile-file ~/pir-runs/profile.json
+python3 "$P" scheduler seed --platform ios --profile-file ~/pir-runs/profile.json
 python3 "$P" scheduler observe --platform macos \
   --since 2026-11-20T15:00:00Z --job example.com 42 --timeout 600
 ```
 
-Evidence contains the listener identity, persisted scan histories and `scheduler.json`; a seeded attempt adds
-`scheduler-launch.json` with the native job plan. A pass requires a fresh `scanStarted` and a matching terminal
-`matchesFound`, `noMatchFound` or broker `error` (`httpError` or `actionFailed`) for every expected job; broker errors
-are listed in `scheduler.json`. A broker that a broker update removes during the run is reported as `removed` and
-not awaited, because removed brokers are not scanned; if every expected broker is removed the run is inconclusive.
-Any other terminal error fails, and so does a timeout with jobs still missing,
-incomplete or ambiguous. Listener or HTTP setup problems are inconclusive. Recurring scheduler ticks and opt-out jobs are separate checks.
+Evidence holds the listener identity, persisted histories and `scheduler.json`, plus `scheduler-launch.json` with the
+native plan for a seed. A pass needs, for every expected job, a fresh `scanStarted` and a terminal `matchesFound`,
+`noMatchFound` or broker `error` (`httpError`, `actionFailed`); broker errors are listed. A broker removed by a broker
+update during the run is reported as `removed` and not awaited; if all are removed the run is inconclusive. Any other
+terminal error fails, and so does a timeout with jobs missing, incomplete or ambiguous. Listener or HTTP setup problems
+are inconclusive. Recurring scheduler ticks and opt-outs are separate checks.
 
 ## 7. Test the verifier
 
-Unit tests, without a simulator or live backend:
+Unit tests, without a simulator or backend:
 
 ```sh
 python3 -m unittest discover -s .claude/skills/verify-pir/tests -p 'test_*.py'
 ```
 
-The native contract test connects the real Python client to the real Swift HTTP server with stub run and log services.
-It checks response shapes, HTTP statuses, instance ownership, web-origin rejection, request parsing and redaction without
-executing broker jobs:
+The native contract test runs the real Python client against the real Swift HTTP server with stub services:
 
 ```sh
 xcodebuild -workspace DuckDuckGo.xcworkspace -scheme DataBrokerProtectionCore -configuration Debug \

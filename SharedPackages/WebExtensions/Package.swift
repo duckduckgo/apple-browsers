@@ -67,7 +67,8 @@ let package = Package(
             name: "WebExtensionsTestSupport",
             dependencies: [
                 "WebExtensions",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "WebExtensionsTests",

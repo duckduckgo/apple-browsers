@@ -6,6 +6,7 @@ Other warnings, including concurrency advisories, retain their normal severity.
 """
 
 import argparse
+from functools import cache
 import json
 from pathlib import Path
 import re
@@ -13,6 +14,7 @@ import subprocess
 import sys
 
 
+@cache
 def strict_package_sources(package):
     command = ["swift", "package", "--package-path", str(package)]
     manifest = json.loads(subprocess.check_output([*command, "dump-package"]))
@@ -33,15 +35,30 @@ def strict_package_sources(package):
     }
 
 
+def belongs_to_strict_target(file, roots):
+    # Resolve manifests only for packages that actually emitted a matching diagnostic.
+    for root in roots:
+        if file.is_relative_to(root):
+            for directory in file.parents:
+                if (directory / "Package.swift").is_file():
+                    return file in strict_package_sources(directory)
+                if directory == root:
+                    break
+    return False
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("log", type=Path)
     scope = parser.add_mutually_exclusive_group(required=True)
     scope.add_argument("sources", type=Path, nargs="*", help="source directories to check")
     scope.add_argument("--package", type=Path, help="check targets opted in by this package")
+    scope.add_argument("--package-roots", type=Path, nargs="+", default=[],
+                       help="check opted-in targets in packages under these directories")
     args = parser.parse_args()
     sources = [path.resolve() for path in args.sources]
-    if not args.log.is_file() or any(not path.is_dir() for path in sources):
+    roots = [path.resolve() for path in args.package_roots]
+    if not args.log.is_file() or any(not path.is_dir() for path in sources + roots):
         parser.error("the compiler log and source directories must exist")
     if args.log.stat().st_size == 0:
         parser.error("the compiler log must not be empty")
@@ -63,7 +80,9 @@ def main():
         if not swift6_error.search(message) or not concurrency.search(message):
             continue
         file = Path(path).resolve()
-        if file in owned_files or any(file.is_relative_to(source) for source in sources):
+        if (file in owned_files
+                or any(file.is_relative_to(source) for source in sources)
+                or belongs_to_strict_target(file, roots)):
             failures.append(line)
 
     if failures:

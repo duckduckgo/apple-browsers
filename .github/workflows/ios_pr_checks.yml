@@ -236,8 +236,11 @@ jobs:
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          | tee xcodebuild.log \
+          2>&1 | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
+
+    - name: Scan app build for strict concurrency warnings
+      run: python3 ../scripts/check-swift-concurrency-warnings.py xcodebuild.log --package-roots LocalPackages ../SharedPackages
 
     - name: Check strict concurrency in iOS packages
       env:

@@ -63,7 +63,16 @@ def main():
     assert client.last_status == 202 and email["results"][0]["hasEmailConfirmationLink"] is True, email
     confirmed = client.request("POST", f"{path}/optouts/record/continue")
     assert client.last_status == 202 and confirmed["results"][0]["optOutStatus"] == "confirmed", confirmed
-    assert client.idle("contract-run", 5)["results"][0]["optOutStatus"] == "confirmed"
+    confirmed = client.idle("contract-run", 5)
+    assert confirmed["results"][0]["optOutStatus"] == "confirmed"
+    assert pir.selected(confirmed, profile_url="https://record.invalid")["id"] == "record"
+    for failed_run in ("scan-error-run", "opt-out-error-run", "opt-out-failed-run", "error-event-run", "email-failure-run"):
+        try:
+            client.idle(failed_run, 5)
+        except pir.Failed as error:
+            assert "PIR run contains" in str(error), str(error)
+        else:
+            raise AssertionError(f"{failed_run} was accepted as a clean run")
     records = [json.loads(path.read_text()) for path in args.evidence_dir.glob("pir-http-*.json")]
     saved_logs = [record for record in records if record["path"] == "/api/logs?limit=1"]
     assert saved_logs[0]["response"][0]["message"] == "log canary [REDACTED]", saved_logs

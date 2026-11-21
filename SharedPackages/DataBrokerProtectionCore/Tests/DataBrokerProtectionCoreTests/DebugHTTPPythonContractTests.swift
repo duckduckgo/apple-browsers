@@ -130,7 +130,17 @@ private final class ContractServices: DataBrokerProtectionDebugReadProviding, De
     }
 
     func run(id: String) -> DebugModeRun? {
-        lock.withLock { id == "contract-run" ? snapshot() : nil }
+        lock.withLock {
+            switch id {
+            case "contract-run": return snapshot()
+            case "scan-error-run": return snapshot(id: id, scanErrors: ["scan failed"])
+            case "opt-out-error-run": return snapshot(id: id, optOutError: "opt-out failed")
+            case "opt-out-failed-run": return snapshot(id: id, failedStatus: true)
+            case "error-event-run": return snapshot(id: id, eventSummary: "Error: contract")
+            case "email-failure-run": return snapshot(id: id, eventSummary: "Email confirmation check failed")
+            default: return nil
+            }
+        }
     }
 
     func startOptOut(runId: String, resultId: String) throws -> DebugModeRun {
@@ -157,12 +167,17 @@ private final class ContractServices: DataBrokerProtectionDebugReadProviding, De
         }
     }
 
-    private func snapshot(activity: DebugModeRun.Activity? = nil) -> DebugModeRun {
-        DebugModeRun(id: "contract-run", createdAt: .distantPast, broker: .init(name: "Contract", url: "https://broker.invalid"),
-                     profileQueries: ["Contract Person"], activity: activity, scanErrors: [],
-                     results: [.init(id: "record", profileQuery: "Contract Person", name: "Contract Person", age: nil,
-                                     addresses: [], profileUrl: "https://record.invalid", optOutStatus: status,
-                                     optOutError: nil, hasEmailConfirmationLink: hasLink)], events: [])
+    private func snapshot(id: String = "contract-run", activity: DebugModeRun.Activity? = nil, scanErrors: [String] = [],
+                          optOutError: String? = nil, failedStatus: Bool = false, eventSummary: String? = nil) -> DebugModeRun {
+        let events = eventSummary.map {
+            [DebugModeRun.Event(timestamp: .distantPast, kind: "History", profileQuery: "Contract Person", summary: $0, details: "")]
+        } ?? []
+        return DebugModeRun(id: id, createdAt: .distantPast, broker: .init(name: "Contract", url: "https://broker.invalid"),
+                            profileQueries: ["Contract Person"], activity: activity, scanErrors: scanErrors,
+                            results: [.init(id: "record", profileQuery: "Contract Person", name: "Contract Person", age: nil,
+                                            addresses: [], profileUrl: "https://record.invalid",
+                                            optOutStatus: failedStatus ? .failed : status, optOutError: optOutError,
+                                            hasEmailConfirmationLink: hasLink)], events: events)
     }
 }
 #endif

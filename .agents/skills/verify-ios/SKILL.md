@@ -60,8 +60,8 @@ removing the worktree removes them.
 
 `build` targets a concrete simulator: a `generic/platform=iOS Simulator` build fails in the WebKit-workaround phase.
 One app build serves both devices. `build` records a fingerprint of the source it built from (HEAD plus every
-uncommitted change outside `.claude/`); `prove` refuses to run (exit 2) when the source has changed since, so a proof
-can't pass against a stale build. It records the runner's source the same way. After changing app code,
+uncommitted change outside `.claude/` and `.agents/`); `prove` refuses to run (exit 2) when the source has changed
+since, so a proof can't pass against a stale build. It records the runner's source the same way. After changing app code,
 `build --app-only`; after pulling runner changes, `build --runner-only`. The error names which one.
 
 ## Write and run a proof

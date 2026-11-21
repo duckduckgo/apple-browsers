@@ -52,8 +52,9 @@ struct WebPageTranslationSettings {
         return value
     }
 
-    /// False on sites listed in the feature's exceptions, where the C-S-S script doesn't run either.
+    /// False on sites in the feature's exceptions, the only per-site rule the C-S-S script follows:
+    /// it runs without a config entry and on sites with protections off.
     func isEnabled(forDomain domain: String?) -> Bool {
-        privacyConfigurationManager.privacyConfig.isFeature(.pageTranslation, enabledForDomain: domain)
+        !privacyConfigurationManager.privacyConfig.isInExceptionList(domain: domain, forFeature: .pageTranslation)
     }
 }

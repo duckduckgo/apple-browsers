@@ -27,7 +27,11 @@ struct WebPageTranslationSettings {
 
     private enum Constants {
         static let defaultSampleLength = 4096
-        static let sampleLengthKey = "sampleLength"
+    }
+
+    /// The settings JSON; every field is optional so a missing one falls back on its own.
+    private struct RemoteSettings: Decodable {
+        let sampleLength: Int?
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -39,9 +43,8 @@ struct WebPageTranslationSettings {
     /// How many characters of the page's text language detection reads (default 4096).
     var sampleLength: Int {
         guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.webPageTranslation),
-              let data = json.data(using: .utf8),
-              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let value = dict[Constants.sampleLengthKey] as? Int,
+              let settings = try? JSONDecoder().decode(RemoteSettings.self, from: Data(json.utf8)),
+              let value = settings.sampleLength,
               value > 0 else {
             return Constants.defaultSampleLength
         }

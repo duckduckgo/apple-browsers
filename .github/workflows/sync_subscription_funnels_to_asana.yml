@@ -1,0 +1,134 @@
+name: Sync new subscription funnels to Asana
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+    paths:
+      - 'iOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift'
+      - 'macOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift'
+
+jobs:
+  sync-funnels:
+    if: github.event.pull_request.merged == true
+    name: "Create Asana tasks for new subscription funnels"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Create Asana tasks for new funnel names
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ASANA_PARENT_TASK_GID: "1209784982258586"
+          ASANA_TEMPLATE_TASK_GID: "1213541048287202"
+          ASANA_WORKSPACE_GID: "137249556945"
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Fetch template task and extract body below the "---" separator
+          template_notes=$(curl -s \
+            -H "Authorization: Bearer $ASANA_ACCESS_TOKEN" \
+            "https://app.asana.com/api/1.0/tasks/$ASANA_TEMPLATE_TASK_GID?opt_fields=notes" \
+            | jq -r '.data.notes')
+          template_body=$(echo "$template_notes" | awk '/^-{10,}/{found=1; next} found{print}')
+
+          # Resolve PR author's Asana user GID via their commit email
+          author_email=$(curl -s \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO/commits/$PR_HEAD_SHA" \
+            | jq -r '.commit.author.email // empty')
+
+          asana_assignee_gid=""
+          if [ -n "$author_email" ]; then
+            asana_assignee_gid=$(curl -s \
+              -H "Authorization: Bearer $ASANA_ACCESS_TOKEN" \
+              "https://app.asana.com/api/1.0/workspaces/$ASANA_WORKSPACE_GID/users?opt_fields=gid,email" \
+              | jq -r --arg email "$author_email" '.data[] | select(.email == $email) | .gid' | head -1)
+            echo "Author email: $author_email → Asana GID: ${asana_assignee_gid:-not found}"
+          else
+            echo "Could not resolve commit email for $PR_AUTHOR; task will be unassigned"
+          fi
+
+          create_task() {
+            local funnel_name="$1"
+            local platform="$2"
+
+            # Fill template body: substitute "insert origins here" with the actual funnel name
+            local filled_body
+            filled_body=$(echo "$template_body" | awk -v name="$funnel_name" '{gsub("insert origins here", name); print}')
+
+            local notes
+            notes=$(printf 'GitHub: @%s | Platform: %s | PR: %s\n%s' \
+              "$PR_AUTHOR" "$platform" "$PR_URL" "$filled_body")
+
+            local payload
+            if [ -n "$asana_assignee_gid" ]; then
+              payload=$(jq -n \
+                --arg name "$funnel_name" \
+                --arg notes "$notes" \
+                --arg parent "$ASANA_PARENT_TASK_GID" \
+                --arg assignee "$asana_assignee_gid" \
+                '{data: {name: $name, notes: $notes, parent: $parent, assignee: $assignee}}')
+            else
+              payload=$(jq -n \
+                --arg name "$funnel_name" \
+                --arg notes "$notes" \
+                --arg parent "$ASANA_PARENT_TASK_GID" \
+                '{data: {name: $name, notes: $notes, parent: $parent}}')
+            fi
+
+            local response http_code
+            response=$(curl -s -w "\n%{http_code}" -X POST \
+              "https://app.asana.com/api/1.0/tasks" \
+              -H "Authorization: Bearer $ASANA_ACCESS_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$payload")
+            http_code=$(echo "$response" | tail -n1)
+
+            if [ "$http_code" -eq 201 ]; then
+              echo "✅ Created Asana task: ${funnel_name} (${platform})"
+            else
+              echo "❌ Failed to create task for ${funnel_name} (${platform}): HTTP ${http_code}"
+              echo "$response" | head -n -1
+              exit 1
+            fi
+          }
+
+          process_file() {
+            local file="$1"
+            local platform="$2"
+
+            local new_funnels
+            new_funnels=$(
+              git diff "$BASE_SHA" HEAD -- "$file" \
+                | grep '^+' \
+                | grep -v '^+++' \
+                | grep -oP '"funnel_[^"]+"' \
+                | tr -d '"'
+            )
+
+            if [ -z "$new_funnels" ]; then
+              echo "No new funnel names detected in $file"
+              return
+            fi
+
+            while IFS= read -r funnel_name; do
+              [ -n "$funnel_name" ] && create_task "$funnel_name" "$platform"
+            done <<< "$new_funnels"
+          }
+
+          process_file \
+            "iOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift" \
+            "iOS"
+
+          process_file \
+            "macOS/DuckDuckGo/Subscription/SubscriptionFunnelOrigin.swift" \
+            "macOS"

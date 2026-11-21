@@ -632,13 +632,6 @@ def execute(args, runtime_factory=None):
                             context.check("native debug logs returned a JSON array", isinstance(logs, list))
                 except (Exception, KeyboardInterrupt) as error:
                     context.result["evidenceErrors"].append(f"debug logs: {type(error).__name__}: {error}")
-                try:
-                    with tempfile.TemporaryDirectory(prefix="pir-log-") as scratch:
-                        log = Path(scratch) / "app.log"
-                        runtime.logs(log)
-                        (evidence / "pir-app.log").write_text(redactor.text(log.read_text(errors="replace")))
-                except (Exception, KeyboardInterrupt) as error:
-                    context.result["evidenceErrors"].append(f"application logs: {type(error).__name__}: {error}")
             if args.command == "run" and client and client.collect_snapshots:
                 try:
                     collect_snapshots()

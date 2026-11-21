@@ -549,12 +549,6 @@ class Runtime:
             finally:
                 temporary.unlink(missing_ok=True)
 
-    def logs(self, path: Path):
-        with Path(path).open("wb") as output:
-            for source in (self.stdout, self.stderr):
-                if source.exists():
-                    output.write(source.read_bytes())
-
     def stop(self):
         if self._closed:
             return {"stopped": True, "alreadyStopped": True, "simulatorKept": bool(self.simulator and self.keep)}

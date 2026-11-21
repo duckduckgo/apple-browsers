@@ -118,10 +118,10 @@ class SchedulerTests(unittest.TestCase):
                 self.assertEqual(outcome['status'], 'inconclusive')
                 self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'missing')
 
-    def test_error_terminal_fails(self):
+    def test_error_terminal_counts_as_completed_scan(self):
         outcome, context = self.run_observer(Client([[event('scanStarted'), event('error', 2)]]))
-        self.assertEqual(outcome['status'], 'fail')
-        self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'fail')
+        self.assertEqual(outcome['status'], 'pass')
+        self.assertEqual(context.result['scheduler']['jobs'][0]['terminal'], 'error')
 
     def test_retry_uses_latest_start_and_records_completed_polls(self):
         histories = [[event('scanStarted'), event('error', 2), event('scanStarted', 3)],

@@ -41,6 +41,7 @@ class WorkflowTests(unittest.TestCase):
         self.token = 'private"\\token/é'
         self.log_error = self.stop_error = self.launch_error = None
         self.no_matches = False
+        self.opts_out_in_parent = False
         self.error = None
         self.foreign = False
         self.auth_diagnostics = {}
@@ -145,6 +146,10 @@ class WorkflowTests(unittest.TestCase):
                 self.event("No Match")
             return 202, self.run_state()
         if path.endswith("/optouts/record"):
+            if self.opts_out_in_parent:
+                self.opt_status = "optsOutInParent"
+                self.event("Opt-out skipped: broker opts out in parent")
+                return 202, self.run_state()
             self.opt_status = "awaitingEmailConfirmation" if self.config["emailConfirmation"] else "confirmed"
             self.event("Opt-out Started")
             if self.opt_status == "confirmed":
@@ -388,6 +393,14 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("/api/debug/runs/run/optouts/record", paths)
         evidence = Path(result["evidence"])
         self.assertEqual(json.loads((evidence / "pir-inputs.json").read_text())["authentication"], "saved-subscription")
+
+    def test_child_broker_optout_passes_on_scan_and_reports_skip(self):
+        self.opts_out_in_parent = True
+        result = self.execute(*self.auth_options())
+        self.assertEqual(result["status"], "pass", result)
+        self.assertFalse(any(path.endswith(("/email-confirmation/check", "/continue")) for _, path, *_ in self.calls))
+        self.assertIn("PIR opt-out", [item["what"] for item in result["unverified"]])
+        self.assertNotIn("selected record opt-out flow confirmed", [check["check"] for check in result["checks"]])
 
     def test_optout_without_injected_token_requires_ready_saved_subscription_before_scan(self):
         self.configure_auth()

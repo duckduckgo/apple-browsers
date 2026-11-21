@@ -36,7 +36,7 @@ FIX = {
         "": "fix the first error in host/build.log; after switching branches, 'has no member' for code that is there is a "
             "stale module: move DerivedData aside and rerun",
     },
-    "unit tests": "python3 -I -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py' and fix what fails",
+    "unit tests": "python3 -I -m unittest discover -s .agents/skills/verify-macos-browser/tests -p 'test_*.py' and fix what fails",
     "ssh without a prompt": f"{STEPS_DOC} section 3 (ssh config entry and key; `ssh <vm> true` must not prompt). In Claude "
                             "Code, ssh runs outside the sandbox",
     "VM free and reserved": "another run holds it: wait, or `verify.sh cleanup <topic>` for the topic named, or remove "

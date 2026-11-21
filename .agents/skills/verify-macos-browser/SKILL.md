@@ -30,7 +30,7 @@ evidence, no verdict.
 ## 1. Write and run a proof
 
 ```
-V=.claude/skills/verify-macos-browser/bin/verify-macos-browser   # from the worktree root
+V=.agents/skills/verify-macos-browser/bin/verify-macos-browser   # from the worktree root
 $V new-proof cmd-t-tab [--evidence-dir <dir>]   # prints <dir>/<stamp>-<name>-<id>/proof.py; edit it
 $V check <proof>                                 # compile, shape, FLAGS; no app, no build
 $V prove <proof> --target vm-1 [--evidence-dir <dir>]   # vm, vm-1, vm-2 or mac
@@ -138,7 +138,7 @@ couldn't drive is `unverified`, never "verified through another path". Never fal
 The low-level layer `prove` calls, for finding ids and trying steps before writing the proof:
 
 ```
-S=.claude/skills/verify-macos-browser/scripts/verify.sh
+S=.agents/skills/verify-macos-browser/scripts/verify.sh
 $S vm <topic> [vm-1|vm-2|auto]; $S flag <topic> <Case> on|off; $S build <topic> . [--automation]
 $S doctor <topic>; $S ax <topic> dump|find|press|clickel|click|type|key …; $S shot <topic> <name>; $S record <topic> start|stop
 $S mark|expect-pixel|expect-no-pixel|expect-wide-event <topic> …; $S web <topic> url; $S cleanup <topic>
@@ -164,7 +164,7 @@ for code that is there is a stale module in DerivedData: move it out and rebuild
   the app is quit by its name, which carries this run's topic.
 
 Changed the harness, `verify.sh`, `vhelp.py` or `ax.swift`? Run `tests/`, then
-`$V prove .claude/skills/verify-macos-browser/tests/must_fail.py --target vm-1` (PASS: every refusal it covers still refuses;
+`$V prove .agents/skills/verify-macos-browser/tests/must_fail.py --target vm-1` (PASS: every refusal it covers still refuses;
 the `--base` refusals are covered by `tests/test_base.py`),
 then each `examples/*.py` must PASS.
 

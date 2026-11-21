@@ -1,6 +1,6 @@
 """Tests for fixture pages and live hosts: serving the fixture for a run, which hosts count as live, and what the report
 says about them. Loopback only: no app, build, VM or network.
-Run: python3 -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py'
+Run: python3 -m unittest discover -s .agents/skills/verify-macos-browser/tests -p 'test_*.py'
 """
 import os
 import socket

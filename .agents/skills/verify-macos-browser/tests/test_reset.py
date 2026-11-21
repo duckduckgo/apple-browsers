@@ -1,7 +1,7 @@
 """Tests for the reset between runs: what a VM reset reports, what this Mac's reset parks, restores and moves to the Trash,
 how a failed reset reaches Problems, and what the --base manifest says differs between the runs. No app, build or VM;
 this Mac's reset runs against a temporary home with its system commands faked.
-Run: python3 -I -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py'
+Run: python3 -I -m unittest discover -s .agents/skills/verify-macos-browser/tests -p 'test_*.py'
 """
 import json
 import os

@@ -1,5 +1,5 @@
 """Tests for prove --base's pure parts: base expectations, the combined verdict, report.md and the kept base worktree.
-No app, build or VM. Run: python3 -I -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py'
+No app, build or VM. Run: python3 -I -m unittest discover -s .agents/skills/verify-macos-browser/tests -p 'test_*.py'
 """
 import os
 import subprocess

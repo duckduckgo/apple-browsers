@@ -405,8 +405,10 @@ def rerun_command(args):
     command = ["python3", str(Path(__file__).resolve()), args.command]
     if args.scheduler_mode:
         command.append(args.scheduler_mode)
-    command += ["--platform", args.platform, "--device", args.device,
-                "--evidence-dir", str(args.evidence_dir.expanduser().resolve())]
+    command += ["--platform", args.platform]
+    if args.platform == "ios":
+        command += ["--device", args.device]
+    command += ["--evidence-dir", str(args.evidence_dir.expanduser().resolve())]
     if args.config:
         command += ["--config", str(args.config.expanduser().resolve())]
     if args.token_file:

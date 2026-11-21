@@ -393,6 +393,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("/api/debug/runs/run/optouts/record", paths)
         evidence = Path(result["evidence"])
         self.assertEqual(json.loads((evidence / "pir-inputs.json").read_text())["authentication"], "saved-subscription")
+        self.assertNotIn("--device", result["rerun"])
 
     def test_child_broker_optout_passes_on_scan_and_reports_skip(self):
         self.opts_out_in_parent = True
@@ -447,6 +448,7 @@ class WorkflowTests(unittest.TestCase):
             result = self.execute("--token-env", "PIR_TEST_CREDENTIAL")
         self.assertEqual(result["status"], "pass")
         self.assertIn("--token-env PIR_TEST_CREDENTIAL", result["rerun"])
+        self.assertIn("--device iphone", result["rerun"])
 
     def test_dry_validation_and_help_need_no_runtime_import(self):
         result = pir.execute(self.args("--check-config"), lambda *_: self.fail("runtime called"))

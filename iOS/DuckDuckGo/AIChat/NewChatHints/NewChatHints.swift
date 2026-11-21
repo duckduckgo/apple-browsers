@@ -56,7 +56,7 @@ struct NewChatState: Equatable {
     var isFullTabInput = false
     /// This tab is the one on screen.
     var isTabSelected = false
-    /// The page has shown its input, so it has settled on what it displays.
+    /// The page reported it is ready for a prompt and hasn't hidden its input (voice does).
     var isInputReady = false
     /// The URL names a chat, or a prompt was already sent on this one.
     var hasChat = false

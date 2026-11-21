@@ -275,7 +275,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor var isTermsOfServiceShownOnPage = false {
         didSet { inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage }
     }
-    /// Per page: a load clears it, since the page reports its promos again once they settle.
+    /// Per page: the tab clears it when a new document commits, since that page reports its promos again.
     @MainActor var isAIChatPromoVisible: Bool? {
         didSet { inputBoxHandler?.isAIChatPromoVisible = isAIChatPromoVisible }
     }
@@ -708,7 +708,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
         let payload = payloadHandler?.consumeData() as? AIChatPayload
         updateTermsOfServiceShownOnPage(for: payload, when: "Page load")
-        isAIChatPromoVisible = nil
         return AIChatNativeHandoffData.defaultValuesWithPayload(payload)
     }
 

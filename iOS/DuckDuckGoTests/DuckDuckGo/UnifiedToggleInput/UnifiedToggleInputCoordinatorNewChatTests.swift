@@ -47,12 +47,12 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     /// The input holds its tab's script weakly, as the tab owns it.
     private let script = makeTestUserScript()
 
-    /// The Duck.ai tab is on screen with a blank chat, and the page has shown its input.
+    /// The Duck.ai tab is on screen with a blank chat, and the page is ready for a prompt.
     private func openBlankChat(_ sut: UnifiedToggleInputCoordinator, hasExistingChat: Bool = false) {
         sut.activateForTab("tab-A")
         sut.bindToTab(script, hasExistingChat: hasExistingChat)
         sut.showCollapsed()
-        sut.aiChatInputBoxVisibility = .visible
+        sut.aiChatStatus = .ready
     }
 
     @available(iOS 16, macOS 13, *)
@@ -64,8 +64,17 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Not before the page shows its input", .timeLimit(.minutes(1)))
+    @Test("Not before the page is ready for a prompt", .timeLimit(.minutes(1)))
     func beforeInputReady() {
+        let sut = makeSUT()
+        openBlankChat(sut)
+        sut.aiChatStatus = .unknown
+        #expect(!sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Not while the page hides its input", .timeLimit(.minutes(1)))
+    func inputHidden() {
         let sut = makeSUT()
         openBlankChat(sut)
         sut.aiChatInputBoxVisibility = .hidden

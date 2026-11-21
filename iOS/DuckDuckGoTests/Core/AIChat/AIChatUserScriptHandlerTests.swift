@@ -2297,15 +2297,28 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(inputBox.isAIChatPromoVisible, false)
     }
 
-    /// A reload makes the page report its promos again once they settle, so the old value must not stand meanwhile.
+    /// The page's load messages can arrive after its first promo report, so they must not clear it.
     @MainActor
-    func testWhenThePageLoadsAgainThenItsPromoValueIsForgotten() async {
+    func testWhenThePageAsksForItsHandoffAfterReportingPromosThenTheReportStands() async {
         let inputBox = MockAIChatInputBox()
         aiChatUserScriptHandler.displayMode = .fullTab
         aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
         await reportPromo(["visible": false])
 
         requestHandoffData()
+
+        XCTAssertEqual(inputBox.isAIChatPromoVisible, false)
+    }
+
+    /// The tab clears the value when a new document commits; the bound input box learns it at once.
+    @MainActor
+    func testWhenThePromoValueIsClearedThenTheInputBoxLearnsNothingIsKnown() async {
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.displayMode = .fullTab
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+        await reportPromo(["visible": false])
+
+        aiChatUserScriptHandler.isAIChatPromoVisible = nil
 
         XCTAssertNil(inputBox.isAIChatPromoVisible)
     }

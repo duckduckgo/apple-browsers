@@ -114,7 +114,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         (promptSubmissionModelId, nil)
     }
 
-    @Published var aiChatStatus: AIChatStatusValue = .unknown
+    @Published var aiChatStatus: AIChatStatusValue = .unknown {
+        didSet {
+            guard oldValue != aiChatStatus else { return }
+            refreshNewChatState()
+        }
+    }
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
@@ -1214,7 +1219,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isIPhone: isIPhone,
             isFullTabInput: host == .omnibar && isAITabState,
             isTabSelected: currentTabUID != nil && boundUserScript != nil,
-            isInputReady: aiChatInputBoxVisibility == .visible,
+            // The page reports `ready` once it can take a prompt; it never sends `showChatInput` on a plain load.
+            isInputReady: aiChatStatus == .ready && aiChatInputBoxVisibility != .hidden,
             hasChat: hasSubmittedPrompt || url?.duckAIChatID != nil,
             carriesPrompt: url.map(Self.autoSubmitsPrompt) ?? false,
             isVoiceHeld: isVoiceSessionActive || isVoiceRequestedForPage || url?.isDuckAIVoiceMode == true,

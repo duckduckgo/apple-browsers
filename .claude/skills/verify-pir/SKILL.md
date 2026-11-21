@@ -1,6 +1,6 @@
 ---
 name: verify-pir
-description: Run a live PIR broker scan and optional opt-out through the shared debug API on iOS or macOS, run a native selftest without broker requests, or verify persisted scheduler scans. Supports a supplied access token for unattended captcha and email flows. Invoke explicitly because it submits real broker requests.
+description: Run a live PIR broker scan and optional opt-out through the debug API on iOS or macOS, a native selftest, or a persisted scheduler check. Accepts a supplied access token for captcha and email flows. Invoke explicitly because it sends real broker requests.
 disable-model-invocation: true
 ---
 
@@ -8,8 +8,7 @@ disable-model-invocation: true
 
 Run one broker against a test profile on iOS or macOS. The standalone Python runner starts jobs through the PIR debug
 API, checks their results and history, saves evidence, and stops its app or agent. It needs Python 3 and Xcode's command
-line tools. Builds and simulator operations use `xcodebuild` and `xcrun simctl` directly.
-It has no dependency on verify-ios, a UI runner, or a Python proof file.
+line tools.
 
 The `run` command verifies the broker flow through the shared native `DebugModeRunner`. It does not verify the
 dashboard, profile editor, subscription sign-in, production scheduler or their entry points. Confirmed opt-out means
@@ -111,8 +110,8 @@ python3 "$P" run --platform ios --config ~/pir-runs/example/config.json \
 `--evidence-dir` defaults to `~/pir-evidence` and must be outside the checkout; each attempt gets a unique child folder.
 Run long scans in the background and follow their printed history events.
 
-Run each platform separately; success on one does not establish success on the other. The broker workflow and checks
-are shared, while native WebKit behavior and broker user agents can differ. Each run uses an isolated debug launch and
+Run each platform separately: WebKit behavior and broker user agents differ, so a pass on one proves nothing for the
+other. Each run uses an isolated debug launch and
 a correlated server instance. iOS uses a dedicated simulator. macOS launches only the private bundle's embedded PIR
 agent, without starting production scheduling or registering a login item; existing browser and agent processes keep
 running. Do not run another debug client against an attempt in progress.

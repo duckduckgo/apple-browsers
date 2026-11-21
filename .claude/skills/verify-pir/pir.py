@@ -22,6 +22,10 @@ class Failed(Exception):
     """The broker flow or an assertion failed."""
 
 
+class BrokerOutcome(Exception):
+    pass
+
+
 class SetupFailed(Exception):
     """The requested flow could not be verified."""
 
@@ -234,12 +238,17 @@ class Client:
             time.sleep(min(.5, max(0, deadline - time.monotonic())))
         raise Failed("PIR activity timed out; cleanup must stop the owned runtime")
 def assert_clean(run):
+    from scheduler import BROKER_ERRORS
+    summaries = [event.get("summary", "") for event in run.get("events", [])]
+    if "Email confirmation check failed" in summaries:
+        raise Failed("PIR run contains an error event; see raw responses")
+    errors = [summary for summary in summaries if summary.startswith("Error:")]
+    if any(summary.removeprefix("Error: ").split(" - ", 1)[0] not in BROKER_ERRORS for summary in errors):
+        raise Failed("PIR run contains an error event; see raw responses")
+    if errors:
+        raise BrokerOutcome(errors[0])
     if run.get("scanErrors") or any(r.get("optOutError") or r.get("optOutStatus") == "failed" for r in run.get("results", [])):
         raise Failed("PIR run contains scan or opt-out errors; see raw responses")
-    for event in run.get("events", []):
-        summary = event.get("summary", "")
-        if summary.startswith("Error:") or summary == "Email confirmation check failed":
-            raise Failed("PIR run contains an error event; see raw responses")
 
 
 def selected(run, profile_url=None, result_id=None):
@@ -600,6 +609,9 @@ def execute(args, runtime_factory=None):
     except KeyboardInterrupt:
         context.result.update(status="inconclusive", reason="scheduler attempt interrupted" if args.command == "scheduler" else
                               "cancelled; submitted broker requests cannot be undone")
+    except BrokerOutcome as outcome:
+        context.result["checks"].append(dict(check=f"broker ended the job with a terminal error: {outcome}", passed=True))
+        context.result.update(status="pass", brokerError=str(outcome))
     except Failed as error:
         context.result.update(status="fail", reason=str(error))
     except Exception as error:

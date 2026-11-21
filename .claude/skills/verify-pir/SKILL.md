@@ -137,9 +137,11 @@ bytes, changed HTTP responses, final run state, application logs, and a rerun co
 The report links available snapshots in capture order and notes collection errors. Missing screenshots leave the broker
 verdict intact.
 
-No match remains inconclusive in either scenario. Site, rate-limit, captcha, authentication and email errors cannot
-become a successful empty scan. An accepted HTTP request is not job completion; the runner polls the same run ID and
-checks the selected result and history.
+No match remains inconclusive in either scenario, and an error never counts as an empty scan. A broker breaking
+(`httpError`, such as a 410 or 429, or `actionFailed`) is a legitimate terminal outcome: the run passes and names the
+error. Any other error, including captcha, email, authentication and `jobTimeout`, and any activity timeout, is our
+failure and fails the run. An accepted HTTP request is not job completion; the runner polls the same run ID and checks
+the selected result and history.
 
 ## 6. Verify persisted scans
 
@@ -171,9 +173,9 @@ python3 "$P" scheduler observe --platform macos \
 
 Evidence contains the listener identity, persisted scan histories and `scheduler.json`; a seeded attempt adds
 `scheduler-launch.json` with the native job plan. A pass requires a fresh `scanStarted` and a matching terminal
-`matchesFound`, `noMatchFound` or `error` for every expected job. A broker error is a terminal outcome and is
-listed in `scheduler.json`; it does not fail the scheduler check. Missing, incomplete or ambiguous
-evidence is inconclusive. Recurring scheduler ticks and opt-out jobs are separate checks.
+`matchesFound`, `noMatchFound` or broker `error` (`httpError` or `actionFailed`) for every expected job; broker errors
+are listed in `scheduler.json`. Any other terminal error fails, and so does a timeout with jobs still missing,
+incomplete or ambiguous. Listener or HTTP setup problems are inconclusive. Recurring scheduler ticks and opt-out jobs are separate checks.
 
 ## 7. Test the verifier
 

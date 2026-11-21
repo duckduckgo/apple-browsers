@@ -28,7 +28,7 @@ import LoginItems
 import NetworkProtectionIPC
 import PixelKit
 import Subscription
-#if DEBUG
+#if DEBUG && PIR_DEBUG_TOOLING
 import DDGError
 import os.log
 #endif
@@ -37,7 +37,7 @@ public final class DataBrokerProtectionManager {
 
     static let shared = DataBrokerProtectionManager()
 
-#if DEBUG
+#if DEBUG && PIR_DEBUG_TOOLING
     @MainActor private var debugLaunchTask: Task<Void, Never>?
 #endif
 
@@ -186,7 +186,7 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
     }
 }
 
-#if DEBUG
+#if DEBUG && PIR_DEBUG_TOOLING
 @MainActor
 extension DataBrokerProtectionManager {
     enum DebugLaunchError: DDGError {

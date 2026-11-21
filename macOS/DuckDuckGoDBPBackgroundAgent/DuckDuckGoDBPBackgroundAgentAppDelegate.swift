@@ -50,7 +50,7 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
         let userAgent = UserAgent.duckDuckGoUserAgent()
 
         let standaloneDebugLaunch: Bool
-        #if DEBUG
+        #if DEBUG && PIR_DEBUG_TOOLING
         standaloneDebugLaunch = DebugModeLaunchConfiguration.isRequested()
         #else
         standaloneDebugLaunch = false
@@ -101,7 +101,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     private var statusBarMenu: StatusBarMenu?
     private let subscriptionManager: any SubscriptionManager
     private var manager: DataBrokerProtectionAgentManager?
-    #if DEBUG
+    #if DEBUG && PIR_DEBUG_TOOLING
     private var standaloneDebugServer: StandalonePIRDebugServer?
     #endif
 
@@ -122,7 +122,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     @MainActor
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         Logger.dbpBackgroundAgent.log("DuckDuckGoAgent started")
-        #if DEBUG
+        #if DEBUG && PIR_DEBUG_TOOLING
         if DebugModeLaunchConfiguration.isRequested() {
             do {
                 guard let configuration = try DebugModeLaunchConfiguration.parse() else {

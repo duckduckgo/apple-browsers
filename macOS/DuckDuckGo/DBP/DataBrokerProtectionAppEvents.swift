@@ -21,7 +21,7 @@ import LoginItems
 import Common
 import FoundationExtensions
 import DataBrokerProtection_macOS
-#if DEBUG
+#if DEBUG && PIR_DEBUG_TOOLING
 import DataBrokerProtectionCore
 #endif
 import os.log
@@ -48,11 +48,11 @@ struct DataBrokerProtectionAppEvents {
         self.loginItemInterface = loginItemInterface
     }
 
-#if DEBUG
+#if DEBUG && PIR_DEBUG_TOOLING
     @MainActor
 #endif
     func applicationDidFinishLaunching() {
-#if DEBUG
+#if DEBUG && PIR_DEBUG_TOOLING
         if DataBrokerProtectionManager.shared.handleDebugLaunch() { return }
 #endif
         let loginItemsManager = LoginItemsManager()
@@ -79,7 +79,7 @@ struct DataBrokerProtectionAppEvents {
 
         // Check feature prerequisites and disable the login item if they are not satisfied
         Task { @MainActor in
-#if DEBUG
+#if DEBUG && PIR_DEBUG_TOOLING
             if PIRDebugLaunchOptions.hasManagedRequest() { return }
             await DataBrokerProtectionManager.shared.waitForDebugLaunch()
 #endif

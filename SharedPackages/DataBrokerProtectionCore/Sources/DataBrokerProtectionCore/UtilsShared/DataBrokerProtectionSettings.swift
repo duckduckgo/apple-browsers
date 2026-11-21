@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import Common
 import BrowserServicesKit
+import DDGError
 
 public protocol AppRunTypeProviding: AnyObject {
     var runType: AppVersion.AppRunType { get }
@@ -182,8 +183,28 @@ public final class DataBrokerProtectionSettings {
 #if DEBUG
 /// Nonsecret launch settings can cross LaunchServices through arguments when environment inheritance is unavailable.
 public struct DebugModeLaunchConfiguration {
-    public enum ConfigurationError: String, Error {
+    public enum ConfigurationError: String, DDGError {
         case invalidInstanceID, invalidPort, invalidEnvironment, serverNotRequested
+
+        public static var errorDomain: String { "com.duckduckgo.pir.debug-launch-configuration" }
+
+        public var errorCode: Int {
+            switch self {
+            case .invalidInstanceID: return 0
+            case .invalidPort: return 1
+            case .invalidEnvironment: return 2
+            case .serverNotRequested: return 3
+            }
+        }
+
+        public var description: String {
+            switch self {
+            case .invalidInstanceID: return "PIR debug launch requires a UUID instance ID."
+            case .invalidPort: return "PIR debug launch requires a valid port."
+            case .invalidEnvironment: return "PIR debug launch requires production or staging."
+            case .serverNotRequested: return "PIR debug launch did not request the debug server."
+            }
+        }
     }
 
     public let instanceID: String

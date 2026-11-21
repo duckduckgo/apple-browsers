@@ -23,6 +23,7 @@ import Core
 import Common
 import FoundationExtensions
 import BrowserServicesKit
+import DDGError
 import PixelKit
 import Networking
 import Subscription
@@ -180,9 +181,25 @@ final class DBPService: NSObject {
         }
     }
 
-    private enum ManagedSeedError: Error {
+    private enum ManagedSeedError: DDGError {
         case pirUnavailable
         case debugServerUnavailable
+
+        static var errorDomain: String { "com.duckduckgo.pir.managed-seed" }
+
+        var errorCode: Int {
+            switch self {
+            case .pirUnavailable: return 0
+            case .debugServerUnavailable: return 1
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .pirUnavailable: return "PIR is unavailable for the scheduler seed."
+            case .debugServerUnavailable: return "The PIR debug server did not start for the scheduler seed."
+            }
+        }
     }
 
     func seedProfileIfRequestedAtLaunch() async {

@@ -21,10 +21,8 @@ import Combine
 import Common
 import DesignResourcesKitIcons
 import FoundationExtensions
-import FeatureFlags_macOS
 import History
 import os.log
-import PrivacyConfig
 
 final class HistoryMenu: NSMenu {
 
@@ -60,34 +58,30 @@ final class HistoryMenu: NSMenu {
         .withAccessibilityIdentifier("HistoryMenu.clearAllHistory")
         .withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: location == .moreOptionsMenu)
     private let clearAllHistorySeparator = NSMenuItem.separator()
-    private let importHistorySeparator = NSMenuItem.separator()
     private lazy var importHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryImportHistory, action: #selector(AppDelegate.openImportBrowserDataWindow))
         .withAccessibilityIdentifier("HistoryMenu.importHistory")
         .withImage(DesignSystemImages.Glyphs.Size12.import, visibleOnMacOS27: location == .moreOptionsMenu)
 
     private let historyGroupingProvider: HistoryGroupingProvider
     private let recentlyClosedCoordinator: RecentlyClosedCoordinating
-    private let featureFlagger: FeatureFlagger
     @MainActor
     private let reopenMenuItemKeyEquivalentManager = ReopenMenuItemKeyEquivalentManager()
     private let location: Location
 
     @MainActor
-    convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, recentlyClosedCoordinator: RecentlyClosedCoordinating, featureFlagger: FeatureFlagger) {
+    convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, recentlyClosedCoordinator: RecentlyClosedCoordinating) {
         self.init(
             location: location,
             historyGroupingProvider: .init(dataSource: historyGroupingDataSource),
-            recentlyClosedCoordinator: recentlyClosedCoordinator,
-            featureFlagger: featureFlagger
+            recentlyClosedCoordinator: recentlyClosedCoordinator
         )
     }
 
     @MainActor
-    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider, recentlyClosedCoordinator: RecentlyClosedCoordinating, featureFlagger: FeatureFlagger) {
+    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider, recentlyClosedCoordinator: RecentlyClosedCoordinating) {
         self.location = location
         self.historyGroupingProvider = historyGroupingProvider
         self.recentlyClosedCoordinator = recentlyClosedCoordinator
-        self.featureFlagger = featureFlagger
 
         super.init(title: UserText.mainMenuHistory)
 
@@ -111,7 +105,7 @@ final class HistoryMenu: NSMenu {
             if location == .mainMenu {
                 showHistorySeparator
                 showHistoryMenuItem
-                importHistorySeparator
+                NSMenuItem.separator()
                 importHistoryMenuItem
             }
             clearAllHistorySeparator
@@ -135,7 +129,6 @@ final class HistoryMenu: NSMenu {
         updateReopenLastClosedMenuItem()
 
         updateRecentlyVisited()
-        updateImportHistoryMenuItem()
 
         alignItemTextWithIcons()
     }
@@ -160,12 +153,6 @@ final class HistoryMenu: NSMenu {
         let recentlyClosedMenu = RecentlyClosedMenu(recentlyClosedCoordinator: recentlyClosedCoordinator)
         recentlyClosedMenuItem.submenu = recentlyClosedMenu
         recentlyClosedMenuItem.isEnabled = !recentlyClosedMenu.items.isEmpty
-    }
-
-    private func updateImportHistoryMenuItem() {
-        let isImportHistoryHidden = !featureFlagger.isFeatureOn(.dataImportHistory)
-        importHistorySeparator.isHidden = isImportHistoryHidden
-        importHistoryMenuItem.isHidden = isImportHistoryHidden
     }
 
     // MARK: - Recently Visited

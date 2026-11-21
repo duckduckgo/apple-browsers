@@ -656,8 +656,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 HistoryMenu(
                     location: .moreOptionsMenu,
                     historyGroupingDataSource: historyCoordinator,
-                    recentlyClosedCoordinator: recentlyClosedCoordinator,
-                    featureFlagger: featureFlagger
+                    recentlyClosedCoordinator: recentlyClosedCoordinator
                 )
             )
 

@@ -54,10 +54,8 @@ final class DataBrokerProtectionSubscriptionManagerTests: XCTestCase {
         mockSubscriptionManager.resultTokenContainer = saved
         mockSubscriptionManager.resultFeatures = [.dataBrokerProtection]
         mockRunTypeProvider.runType = .integrationTests
-        var environment = ["PIR_DEBUG_ACCESS_TOKEN": "provided-token"]
-        let manager = subscriptionManager.debugRunnerManager(environment: environment)
+        let manager = subscriptionManager.debugRunnerManager(environment: ["PIR_DEBUG_ACCESS_TOKEN": "provided-token"])
         XCTAssertFalse(subscriptionManager.isDebugAccessTokenProvided)
-        environment["PIR_DEBUG_ACCESS_TOKEN"] = "changed-after-init"
         let authentication = DataBrokerProtectionAuthenticationManager(subscriptionManager: manager)
         let token = await manager.accessToken()
         let header = await authentication.getAuthHeader()

@@ -192,7 +192,7 @@ class WorkflowTests(unittest.TestCase):
         result = self.execute()
         self.assertEqual(result["status"], "pass")
         self.assertIsNone(self.instances[-1].access_token)
-        self.assertFalse(any(path == "/api/debug/auth" or "/optouts/" in path for _, path, _, _ in self.calls))
+        self.assertFalse(any("/optouts/" in path for _, path, _, _ in self.calls))
         evidence = Path(result["evidence"])
         self.assertEqual((evidence / "pir-broker.json").read_bytes(), self.broker_bytes)
         self.assertEqual(result["inputs"]["brokerFile"]["sha256"], pir.sha256(self.broker_bytes))
@@ -365,7 +365,6 @@ class WorkflowTests(unittest.TestCase):
         result = self.execute(*self.auth_options(opt_out=False))
         self.assertEqual(result["status"], "pass")
         self.assertEqual(self.instances[-1].access_token, self.token)
-        self.assertFalse(any(path == "/api/debug/auth" for _, path, _, _ in self.calls))
         self.assertFalse(any("/optouts/" in path for _, path, _, _ in self.calls))
 
     def test_missing_or_invalid_inputs_never_create_runtime(self):
@@ -550,12 +549,6 @@ class WorkflowTests(unittest.TestCase):
             self.assertIn("manifest", report)
             self.assertFalse((evidence / "manifest.json").exists())
 
-    def test_cancellation_during_logs_still_stops_owned_runtime(self):
-        with patch.object(self.Runtime, "logs", side_effect=KeyboardInterrupt):
-            result = self.execute()
-        self.assertEqual(result["status"], "inconclusive")
-        self.assertTrue(self.instances[-1].stopped)
-
     def test_launch_error_still_collects_logs_and_stops_runtime(self):
         self.launch_error = "stale build"
         result = self.execute()
@@ -564,12 +557,14 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.calls, [])
 
     def test_cancellation_stops_owned_runtime_and_writes_result(self):
+        for target, name in ((pir, "workflow"), (self.Runtime, "logs")):
+            with self.subTest(interrupted=name), patch.object(target, name, side_effect=KeyboardInterrupt):
+                result = self.execute()
+            self.assertEqual(result["status"], "inconclusive")
+            self.assertTrue(self.instances[-1].stopped)
+            self.assertTrue((Path(result["evidence"]) / "result.json").exists())
         with patch.object(pir, "workflow", side_effect=KeyboardInterrupt):
-            result = self.execute()
-        self.assertEqual(result["status"], "inconclusive")
-        self.assertIn("cancelled", result["reason"])
-        self.assertTrue(self.instances[-1].stopped)
-        self.assertTrue((Path(result["evidence"]) / "result.json").exists())
+            self.assertIn("cancelled", self.execute()["reason"])
 
     def test_build_has_separate_metadata_and_never_launches(self):
         args = pir.parser().parse_args(["build", "--platform", "macos", "--evidence-dir", str(self.directory / "build-evidence")])

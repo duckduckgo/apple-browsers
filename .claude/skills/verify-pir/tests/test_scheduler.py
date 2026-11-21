@@ -22,8 +22,9 @@ BROKER = 'example.test/path?key=value'
 IDENTITY = dict(pid=42, started='Fri Nov 20 12:00:00 2026', executable='/tmp/Agent.app/Contents/MacOS/Agent')
 
 
-def event(kind, second=1):
-    return dict(type=kind, date=f'2026-11-20T12:00:{second:02d}Z')
+def event(kind, second=1, error=None):
+    value = dict(type=kind, date=f'2026-11-20T12:00:{second:02d}Z')
+    return dict(value, error=dict(name=error, code=0, description='')) if error else value
 
 
 def arguments(**kwargs):
@@ -107,7 +108,7 @@ class SchedulerTests(unittest.TestCase):
                         [event('scanStarted', 1), event('matchesFound', 2), event('scanStarted', 3)]):
             with self.subTest(history=history):
                 outcome, context = self.run_observer(Client([history]))
-                self.assertEqual(outcome['status'], 'inconclusive')
+                self.assertEqual(outcome['status'], 'fail')
                 self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'pending')
 
     def test_missing_removed_inactive_and_alias_broker_are_not_completion(self):
@@ -115,17 +116,26 @@ class SchedulerTests(unittest.TestCase):
         for options in (dict(missing=True), dict(active=False), dict(removed=True), dict(broker='alias')):
             with self.subTest(options=options):
                 outcome, context = self.run_observer(Client(history, **options))
-                self.assertEqual(outcome['status'], 'inconclusive')
+                self.assertEqual(outcome['status'], 'fail')
                 self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'missing')
 
-    def test_error_terminal_counts_as_completed_scan(self):
-        outcome, context = self.run_observer(Client([[event('scanStarted'), event('error', 2)]]))
-        self.assertEqual(outcome['status'], 'pass')
-        self.assertEqual(context.result['scheduler']['jobs'][0]['terminal'], 'error')
+    def test_broker_error_terminal_counts_as_completed_scan(self):
+        for name in ('httpError', 'actionFailed'):
+            with self.subTest(name=name):
+                outcome, context = self.run_observer(Client([[event('scanStarted'), event('error', 2, name)]]))
+                self.assertEqual(outcome['status'], 'pass')
+                self.assertEqual(context.result['scheduler']['jobs'][0]['brokerError'], name)
+
+    def test_non_broker_error_terminal_fails(self):
+        for name in ('jobTimeout', 'noActionFound', 'parsingErrorObjectFailed', 'captchaServiceError', None):
+            with self.subTest(name=name):
+                outcome, context = self.run_observer(Client([[event('scanStarted'), event('error', 2, name)]]))
+                self.assertEqual(outcome['status'], 'fail')
+                self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'fail')
 
     def test_retry_uses_latest_start_and_records_completed_polls(self):
-        histories = [[event('scanStarted'), event('error', 2), event('scanStarted', 3)],
-                     [event('scanStarted'), event('error', 2), event('scanStarted', 3), event('noMatchFound', 4)]]
+        histories = [[event('scanStarted'), event('error', 2, 'httpError'), event('scanStarted', 3)],
+                     [event('scanStarted'), event('error', 2, 'httpError'), event('scanStarted', 3), event('noMatchFound', 4)]]
         outcome, context = self.run_observer(Client(histories), timeout=5)
         self.assertEqual(outcome['status'], 'pass')
         self.assertEqual(context.files['scheduler.json']['polls'], 2)
@@ -135,7 +145,7 @@ class SchedulerTests(unittest.TestCase):
         for history in ([event('scanStarted'), event('noMatchFound'), event('matchesFound')],
                         [event('scanStarted', 2), event('noMatchFound', 1)]):
             outcome, context = self.run_observer(Client([history]))
-            self.assertEqual(outcome['status'], 'inconclusive')
+            self.assertEqual(outcome['status'], 'fail')
             self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'ambiguous')
 
     def test_standalone_and_listener_restart_reject(self):
@@ -160,16 +170,16 @@ class SchedulerTests(unittest.TestCase):
                 patch.object(scheduler.time, 'monotonic', side_effect=lambda: clock[0]), \
                 patch.object(scheduler.time, 'sleep', side_effect=lambda seconds: clock.__setitem__(0, clock[0] + seconds)):
             outcome = scheduler.observe(context, Client([[event('scanStarted'), event('noMatchFound')]]), scope)
-        self.assertEqual(outcome['status'], 'inconclusive')
+        self.assertEqual(outcome['status'], 'fail')
         self.assertEqual([job['status'] for job in context.result['scheduler']['jobs']], ['pass', 'missing'])
 
-    def test_completion_after_deadline_is_inconclusive(self):
+    def test_completion_after_deadline_fails(self):
         context = Context()
         scope = scheduler.parse_scope(arguments(scheduler_timeout=.5))
         with patch.object(scheduler, '_identity', return_value=IDENTITY), \
                 patch.object(scheduler.time, 'monotonic', side_effect=[0, .1, .2, .6]):
             outcome = scheduler.observe(context, Client([[event('scanStarted'), event('noMatchFound')]]), scope)
-        self.assertEqual(outcome['status'], 'inconclusive')
+        self.assertEqual(outcome['status'], 'fail')
 
     def test_identity_requires_unique_debug_agent_listener(self):
         completed = subprocess.CompletedProcess([], 0, '42\n', '')

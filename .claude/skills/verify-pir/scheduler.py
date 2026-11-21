@@ -8,6 +8,8 @@ from urllib.parse import quote
 
 import runtime
 
+BROKER_ERRORS = frozenset({"httpError", "actionFailed"})
+
 
 @dataclass(frozen=True)
 class Job:
@@ -170,7 +172,13 @@ def _job_state(job, snapshot, detail, since, managed):
     if len(terminals) != 1:
         return dict(state, status="ambiguous", reason="latest scan has multiple terminal events")
     terminal = terminals[0]
-    return dict(state, status="pass", terminal=terminal["type"], finishedAt=terminal["date"])
+    state.update(terminal=terminal["type"], finishedAt=terminal["date"])
+    if terminal["type"] != "error":
+        return dict(state, status="pass")
+    name = (terminal.get("error") or {}).get("name")
+    if name in BROKER_ERRORS:
+        return dict(state, status="pass", brokerError=name)
+    return dict(state, status="fail", reason=f"scan ended in a non-broker error: {name}")
 
 
 def _read(client, path, timeout):
@@ -205,7 +213,7 @@ def observe(context, client, scope, expected_executable=None):
                 raise RuntimeError("scheduler listener identity changed during observation")
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                outcome = dict(status="inconclusive", reason="expected scheduler scans did not complete before timeout")
+                outcome = dict(status="fail", reason="expected scheduler scans did not complete before timeout")
                 break
             snapshot = _read(client, "/api", min(10, remaining)).get("snapshot", {})
             if not isinstance(snapshot, dict):
@@ -227,7 +235,10 @@ def observe(context, client, scope, expected_executable=None):
             if _identity(scope.platform, scope.port, deadline) != summary["identity"]:
                 raise RuntimeError("scheduler listener identity changed while collecting jobs")
             if time.monotonic() >= deadline:
-                outcome = dict(status="inconclusive", reason="scheduler observation timed out before completion")
+                outcome = dict(status="fail", reason="scheduler observation timed out before completion")
+                break
+            if any(state["status"] == "fail" for state in states):
+                outcome = dict(status="fail", reason="a fresh scheduler scan ended in a non-broker error")
                 break
             if all(state["status"] == "pass" for state in states):
                 outcome = dict(status="pass", reason="every expected scheduler job has a fresh persisted scan that reached a terminal event")

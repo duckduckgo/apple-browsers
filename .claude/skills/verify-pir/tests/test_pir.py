@@ -14,6 +14,7 @@ from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 SPEC = importlib.util.spec_from_file_location("pir", Path(__file__).resolve().parents[1] / "pir.py")
 pir = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(pir)
@@ -603,9 +604,17 @@ class WorkflowTests(unittest.TestCase):
 
     def test_email_site_optout_errors_are_never_no_match(self):
         runs = [dict(scanErrors=["site error"], results=[]), dict(results=[dict(optOutStatus="failed")]),
-                dict(events=[dict(summary="Email confirmation check failed")]), dict(events=[dict(summary="Error: rate limited")])]
+                dict(events=[dict(summary="Email confirmation check failed")]), dict(events=[dict(summary="Error: rate limited")]),
+                dict(events=[dict(summary="Error: jobTimeout - timed out")]), dict(events=[dict(summary="Error: noActionFound - none")]),
+                dict(events=[dict(summary="Error: httpError - HTTP 429"), dict(summary="Error: captchaServiceError - failed")])]
         for run in runs:
             with self.subTest(run=run), self.assertRaises(pir.Failed):
+                pir.assert_clean(run)
+
+    def test_broker_errors_end_the_run_as_a_terminal_outcome(self):
+        for summary in ("Error: httpError - HTTP 410", "Error: actionFailed - expectation failed"):
+            run = dict(scanErrors=["query: site error"], results=[], events=[dict(summary=summary)])
+            with self.subTest(summary=summary), self.assertRaisesRegex(pir.BrokerOutcome, summary):
                 pir.assert_clean(run)
 
     def test_202_keeps_polling_and_run_identity_must_match(self):

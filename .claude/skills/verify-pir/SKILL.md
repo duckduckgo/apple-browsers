@@ -174,7 +174,9 @@ python3 "$P" scheduler observe --platform macos \
 Evidence contains the listener identity, persisted scan histories and `scheduler.json`; a seeded attempt adds
 `scheduler-launch.json` with the native job plan. A pass requires a fresh `scanStarted` and a matching terminal
 `matchesFound`, `noMatchFound` or broker `error` (`httpError` or `actionFailed`) for every expected job; broker errors
-are listed in `scheduler.json`. Any other terminal error fails, and so does a timeout with jobs still missing,
+are listed in `scheduler.json`. A broker that a broker update removes during the run is reported as `removed` and
+not awaited, because removed brokers are not scanned; if every expected broker is removed the run is inconclusive.
+Any other terminal error fails, and so does a timeout with jobs still missing,
 incomplete or ambiguous. Listener or HTTP setup problems are inconclusive. Recurring scheduler ticks and opt-out jobs are separate checks.
 
 ## 7. Test the verifier

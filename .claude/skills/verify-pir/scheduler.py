@@ -11,6 +11,10 @@ import runtime
 BROKER_ERRORS = frozenset({"httpError", "actionFailed"})
 
 
+class _DeadlineReached(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class Job:
     broker_url: str
@@ -146,8 +150,12 @@ def _job_state(job, snapshot, detail, since, managed):
     active = [query for query in queries if type(query.get("id")) is int and query["id"] == job.query_id]
     if len(active) != 1 or active[0].get("deprecated") is not False:
         return dict(state, status="missing", reason="expected profile query is missing or inactive")
-    if detail.get("url") != job.broker_url or detail.get("isRemoved") is not False:
-        return dict(state, status="missing", reason="exact broker is missing or removed")
+    if detail.get("url") != job.broker_url:
+        return dict(state, status="missing", reason="exact broker is missing")
+    if detail.get("isRemoved") is True:
+        return dict(state, status="removed", reason="broker removed by a broker update; removed brokers are not scanned")
+    if detail.get("isRemoved") is not False:
+        return dict(state, status="missing", reason="broker removal state is missing")
     matches = [query for query in _rows(detail, "profileQueries")
                if type(query.get("profileQueryId")) is int and query["profileQueryId"] == job.query_id]
     if len(matches) != 1:
@@ -181,10 +189,12 @@ def _job_state(job, snapshot, detail, since, managed):
     return dict(state, status="fail", reason=f"scan ended in a non-broker error: {name}")
 
 
-def _read(client, path, timeout):
+def _read(client, path, timeout, deadline):
     try:
         value = client.request("GET", path, timeout=timeout)
     except Exception as error:
+        if time.monotonic() >= deadline:
+            raise _DeadlineReached from error
         raise RuntimeError("scheduler HTTP read failed; see request evidence") from error
     if not isinstance(value, dict):
         raise ValueError("scheduler API response must be an object")
@@ -215,7 +225,7 @@ def observe(context, client, scope, expected_executable=None):
             if remaining <= 0:
                 outcome = dict(status="fail", reason="expected scheduler scans did not complete before timeout")
                 break
-            snapshot = _read(client, "/api", min(10, remaining)).get("snapshot", {})
+            snapshot = _read(client, "/api", min(10, remaining), deadline).get("snapshot", {})
             if not isinstance(snapshot, dict):
                 raise ValueError("scheduler snapshot must be an object")
             if snapshot.get("schedulerState") not in ("idle", "running"):
@@ -227,7 +237,7 @@ def observe(context, client, scope, expected_executable=None):
                     raise RuntimeError("scheduler observation timed out while collecting jobs")
                 if job.broker_url not in details:
                     details[job.broker_url] = _read(client, "/api/brokers/" + quote(job.broker_url, safe=""),
-                                                    min(10, remaining))
+                                                    min(10, remaining), deadline)
             states = [_job_state(job, snapshot, details[job.broker_url], scope.since, scope.managed) for job in scope.jobs]
             summary.update(observedAt=datetime.now(timezone.utc).isoformat(),
                            schedulerState=snapshot["schedulerState"], jobs=states, polls=summary["polls"] + 1)
@@ -240,10 +250,18 @@ def observe(context, client, scope, expected_executable=None):
             if any(state["status"] == "fail" for state in states):
                 outcome = dict(status="fail", reason="a fresh scheduler scan ended in a non-broker error")
                 break
-            if all(state["status"] == "pass" for state in states):
-                outcome = dict(status="pass", reason="every expected scheduler job has a fresh persisted scan that reached a terminal event")
+            if all(state["status"] == "removed" for state in states):
+                outcome = dict(status="inconclusive", reason="every expected broker was removed before it was scanned")
+                break
+            if all(state["status"] in ("pass", "removed") for state in states):
+                reason = "every expected scheduler job has a fresh persisted scan that reached a terminal event"
+                if any(state["status"] == "removed" for state in states):
+                    reason += ", except brokers removed during the run"
+                outcome = dict(status="pass", reason=reason)
                 break
             time.sleep(min(2, max(0, deadline - time.monotonic())))
+    except _DeadlineReached:
+        outcome = dict(status="fail", reason="expected scheduler scans did not complete before timeout")
     except (RuntimeError, ValueError) as error:
         outcome = dict(status="inconclusive", reason=str(error))
         raise

@@ -263,6 +263,7 @@ import Subscription
         XCTAssertNil(viewModel.error)
     }
 
+    @MainActor
     func testControllerError_isNotClearedBySessionErrorObserverEmittingNil() async {
         let controllerErrorSubject = CurrentValueSubject<String?, Never>(nil)
         let errorObserver = MockConnectionErrorObserver()
@@ -273,10 +274,15 @@ import Subscription
             controllerErrorSubject.send(UserText.vpnErrorAuthenticationFailed)
         }
 
-        // A session status change that resolves to no error must not clear a live controller start failure.
-        await waitFor(viewModel.$error, matching: { $0?.message == UserText.vpnErrorAuthenticationFailed }) {
-            errorObserver.subject.send(nil)
+        errorObserver.subject.send(nil)
+
+        // The observer receives on the main queue. Check the banner after it handles nil.
+        let sessionUpdateProcessed = expectation(description: "Session error update processed")
+        DispatchQueue.main.async {
+            sessionUpdateProcessed.fulfill()
         }
+        await fulfillment(of: [sessionUpdateProcessed], timeout: 20)
+
         XCTAssertEqual(viewModel.error?.title, UserText.netPStatusViewErrorConnectionFailedTitle)
         XCTAssertEqual(viewModel.error?.message, UserText.vpnErrorAuthenticationFailed)
     }

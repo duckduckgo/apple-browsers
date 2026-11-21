@@ -202,7 +202,7 @@ class WorkflowTests(unittest.TestCase):
         evidence = Path(result["evidence"])
         self.assertEqual((evidence / "pir-broker.json").read_bytes(), self.broker_bytes)
         self.assertEqual(result["inputs"]["brokerFile"]["sha256"], pir.sha256(self.broker_bytes))
-        for name in ("result.json", "report.md", "manifest.json", "pir-final-run.json", "launch.json", "pir-app.log"):
+        for name in ("result.json", "report.md", "manifest.json", "pir-final-run.json", "launch.json", "pir-app.log", "pir-native-logs.json"):
             self.assertTrue((evidence / name).exists(), name)
         self.assertTrue(self.instances[-1].stopped)
 

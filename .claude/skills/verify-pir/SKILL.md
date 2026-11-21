@@ -133,7 +133,9 @@ Screenshots can show unredacted broker records and form values; keep them in the
 
 Report pass, fail or inconclusive, the printed `report.md` path, failed checks, cleanup problems and unverified items.
 The attempt folder also contains machine-readable results, build and launch identity, input hashes, the exact broker
-bytes, changed HTTP responses, final run state, application logs, and a rerun command that uses credential references.
+bytes, changed HTTP responses, final run state, native PIR logs from the debug server (`pir-native-logs.json`), and a
+rerun command that uses credential references. `pir-app.log` holds only process stdout and stderr, which the app
+normally leaves empty.
 The report links available snapshots in capture order and notes collection errors. Missing screenshots leave the broker
 verdict intact.
 

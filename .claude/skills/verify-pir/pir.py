@@ -625,8 +625,9 @@ def execute(args, runtime_factory=None):
                     context.result["evidenceErrors"].append(f"final run: {type(error).__name__}: {error}")
             if runtime and args.command in ("run", "selftest", "scheduler"):
                 try:
-                    if args.command in ("run", "selftest") and client and client.owned:
+                    if client and (args.command == "scheduler" or client.owned):
                         logs = client.request("GET", "/api/logs?limit=1000")
+                        context.write("pir-native-logs.json", logs)
                         if is_selftest:
                             context.check("native debug logs returned a JSON array", isinstance(logs, list))
                 except (Exception, KeyboardInterrupt) as error:

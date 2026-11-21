@@ -51,8 +51,10 @@ class Client:
         self.state, self.active, self.removed, self.broker, self.missing = state, active, removed, broker, missing
         self.calls, self.sample = [], -1
 
-    def request(self, method, path, timeout):
+    def request(self, method, path, timeout=None):
         self.calls.append((method, path, timeout))
+        if path.startswith('/api/logs'):
+            return [dict(message='native log line')]
         if path == '/api':
             self.sample += 1
             return dict(snapshot=dict(schedulerState=self.state,
@@ -328,6 +330,8 @@ class SchedulerTests(unittest.TestCase):
                 with patch.object(scheduler, '_identity', return_value=IDENTITY), patch.object(pir, 'Client', return_value=client):
                     result = pir.execute(args, runtime_factory=native.create)
                 self.assertEqual(result['status'], 'pass', result)
+                self.assertEqual(json.loads((Path(result['evidence']) / 'pir-native-logs.json').read_text()),
+                                 [dict(message='native log line')])
                 self.assertEqual(native.launch_values, (mode, profile.read_text()))
                 self.assertEqual(result['scheduler']['jobs'][0]['profileQueryId'], 1)
                 self.assertTrue(all(method == 'GET' for method, *_ in client.calls))

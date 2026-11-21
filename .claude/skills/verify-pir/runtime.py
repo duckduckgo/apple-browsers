@@ -140,6 +140,7 @@ class Runtime:
         self._build_destination = None
         self.snapshots_enabled = False
         self._simulator_snapshots = None
+        self._receipt = self.evidence / "scheduler-launch.json"
         self.stdout = self.base / f"native-{instance}.stdout.log"
         self.stderr = self.base / f"native-{instance}.stderr.log"
 
@@ -426,10 +427,52 @@ class Runtime:
             with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w"):
                 pass
 
+    def _reserve_port(self):
+        with socket.socket() as probe:
+            try:
+                probe.bind(("127.0.0.1", self.port))
+            except OSError as error:
+                raise RuntimeError("The PIR debug port is unavailable or already in use") from error
+
+    def _install_simulator_app(self, product):
+        identifier = self._create_simulator()
+        self._simctl("install", identifier, product["path"])
+        container = Path(self._simctl("get_app_container", identifier, product["bundleId"], "data").strip())
+        if not container.is_absolute():
+            raise RuntimeError("Unable to locate the installed simulator app's data container")
+        return identifier, container
+
+    def _launch_simulator_app(self, identifier, product, environment):
+        env = {**_child_environment(), **{f"SIMCTL_CHILD_{key}": value for key, value in environment.items()}}
+        self._launch_attempted = True
+        try:
+            output = self._simctl("launch", f"--stdout={self.stdout}", f"--stderr={self.stderr}",
+                                  identifier, product["bundleId"], *FLAGS, env=env)
+        except RuntimeError as error:
+            # simctl can fail after starting the process. Retain its PID for owned cleanup.
+            try:
+                self._capture(self._simulator_pid(error._diagnostics["stdout"], product), product)
+            except RuntimeError:
+                pass
+            raise
+        self._capture(self._simulator_pid(output, product), product)
+
     def launch_scheduler(self, mode, profile_json):
-        if self.platform != "macos" or mode not in ("seed", "reseed"):
-            raise RuntimeError("Managed scheduler seeding requires the macOS DEBUG browser")
+        if mode not in ("seed", "reseed"):
+            raise RuntimeError("Managed scheduler launches require seed or reseed")
         metadata, product = self._verified_build()
+        environment = {"PIR_SCHEDULER_MODE": mode, "PIR_SCHEDULER_INSTANCE_ID": self.instance, "PIR_PROFILE_JSON": profile_json}
+        if self.platform == "ios":
+            self._reserve_port()
+            self._secure_launch_logs()
+            identifier, container = self._install_simulator_app(product)
+            (container / "tmp").mkdir(exist_ok=True)
+            self._receipt = container / "tmp" / f"pir-scheduler-{self.instance}.json"
+            self._launch_simulator_app(identifier, product, {
+                **environment, "PIR_SCHEDULER_RECEIPT": str(self._receipt),
+                "PIR_DEBUG_PORT": str(self.port), "PIR_DEBUG_INSTANCE_ID": self.instance})
+            return {"platform": "ios", "instanceID": self.instance, "port": self.port, "process": self.identity,
+                    "product": product, "simulator": self.simulator, "sourceSHA256": metadata["sourceSHA256"]}
         descriptor = os.open(SCHEDULER_LOCK, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
         lock = os.fdopen(descriptor, "r+")
         try:
@@ -450,8 +493,7 @@ class Runtime:
                 bundle = next((parent for parent in executable.parents if parent.suffix == ".app"), None)
                 if bundle and _info(bundle).get("CFBundleIdentifier") == BROWSER_BUNDLE:
                     raise RuntimeError("A DEBUG browser is already running; close it before seeding")
-        environment = {"PIR_SCHEDULER_MODE": mode, "PIR_SCHEDULER_INSTANCE_ID": self.instance,
-                       "PIR_SCHEDULER_RECEIPT": str(self.evidence / "scheduler-launch.json"), "PIR_PROFILE_JSON": profile_json}
+        environment["PIR_SCHEDULER_RECEIPT"] = str(self._receipt)
         self._secure_launch_logs()
         with self.stdout.open("ab") as stdout, self.stderr.open("ab") as stderr:
             self._child = subprocess.Popen([str(browser)], cwd=self.root,
@@ -462,16 +504,20 @@ class Runtime:
                 "product": product, "sourceSHA256": metadata["sourceSHA256"]}
 
     def scheduler_receipt(self):
-        path = self.evidence / "scheduler-launch.json"
         deadline = time.monotonic() + 60
         while time.monotonic() < deadline:
             try:
-                return json.loads(path.read_bytes())
+                raw = self._receipt.read_bytes()
             except FileNotFoundError:
-                if self._child.poll() is not None:
-                    raise RuntimeError("The DEBUG browser exited before reporting scheduler setup")
+                exited = self._child.poll() is not None if self._child else _process(self.identity["pid"]) != self.identity
+                if exited:
+                    raise RuntimeError("The DEBUG app exited before reporting scheduler setup")
                 time.sleep(.2)
-        raise RuntimeError("The DEBUG browser did not report scheduler setup within 60 seconds")
+                continue
+            if self._receipt != self.evidence / "scheduler-launch.json":
+                (self.evidence / "scheduler-launch.json").write_bytes(raw)
+            return json.loads(raw)
+        raise RuntimeError("The DEBUG app did not report scheduler setup within 60 seconds")
 
     def launch(self, access_token=None):
         if access_token is not None and (not isinstance(access_token, str) or not access_token
@@ -479,11 +525,7 @@ class Runtime:
                 or any(c.isspace() or ord(c) < 32 or 127 <= ord(c) <= 159 for c in access_token)):
             raise RuntimeError("Invalid supplied PIR credential")
         metadata, product = self._verified_build()
-        with socket.socket() as probe:
-            try:
-                probe.bind(("127.0.0.1", self.port))
-            except OSError as error:
-                raise RuntimeError("The PIR debug port is unavailable or already in use") from error
+        self._reserve_port()
         environment = {"PIR_DEBUG_SERVER": "true", "PIR_DEBUG_PORT": str(self.port),
                        "PIR_DEBUG_INSTANCE_ID": self.instance, "PIR_DEBUG_ENVIRONMENT": self.pir_environment}
         if access_token is not None:
@@ -496,26 +538,10 @@ class Runtime:
                 environment["PIR_DEBUG_SNAPSHOT_DIRECTORY"] = str(directory)
         self._secure_launch_logs()
         if self.platform == "ios":
-            identifier = self._create_simulator()
-            self._simctl("install", identifier, product["path"])
+            identifier, container = self._install_simulator_app(product)
             if self.snapshots_enabled:
-                container = self._simctl("get_app_container", identifier, product["bundleId"], "data").strip()
-                if not Path(container).is_absolute():
-                    raise RuntimeError("Unable to locate the installed simulator app's data container")
-                self._simulator_snapshots = Path(container) / "tmp" / f"pir-snapshots-{self.instance}"
-            env = {**_child_environment(), **{f"SIMCTL_CHILD_{key}": value for key, value in environment.items()}}
-            self._launch_attempted = True
-            try:
-                output = self._simctl("launch", f"--stdout={self.stdout}", f"--stderr={self.stderr}",
-                                      identifier, product["bundleId"], *FLAGS, env=env)
-            except RuntimeError as error:
-                # simctl can fail after starting the process. Retain its PID for owned cleanup.
-                try:
-                    self._capture(self._simulator_pid(error._diagnostics["stdout"], product), product)
-                except RuntimeError:
-                    pass
-                raise
-            self._capture(self._simulator_pid(output, product), product)
+                self._simulator_snapshots = container / "tmp" / f"pir-snapshots-{self.instance}"
+            self._launch_simulator_app(identifier, product, environment)
         else:
             arguments = [*FLAGS, "-pirDebugServer", "true", "-pirDebugPort", str(self.port),
                          "-pirDebugInstanceID", self.instance, "-pirDebugEnvironment", self.pir_environment]

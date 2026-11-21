@@ -309,12 +309,34 @@ class SchedulerTests(unittest.TestCase):
                 server.shutdown()
                 thread.join()
 
-    def test_ios_rejects_managed_seeding_before_launch(self):
-        for mode in ('seed', 'reseed'):
-            with self.subTest(mode=mode):
-                args = pir.parser().parse_args(['scheduler', mode, '--platform', 'ios', '--profile-file', '/profile.json'])
-                with self.assertRaisesRegex(ValueError, 'seed and reseed require macOS'):
-                    pir.execute(args, runtime_factory=lambda *a, **kw: self.fail('launched runtime'))
+    def test_ios_seed_observes_its_own_simulator_app_on_a_private_port(self):
+        with tempfile.TemporaryDirectory() as directory:
+            profile = Path(directory) / 'profile.json'
+            profile.write_text(json.dumps(dict(names=[dict(firstName='Test', lastName='Fixture')],
+                                               addresses=[dict(city='Test City', state='CA')], phones=[], birthYear=1980)))
+            args = pir.parser().parse_args(['scheduler', 'seed', '--platform', 'ios', '--device', 'ipad', '--keep',
+                                            '--profile-file', str(profile), '--evidence-dir', directory])
+            installed = '/Simulator/Devices/UDID/DuckDuckGo.app/DuckDuckGo'
+            native = FakeSeedRuntime(process=dict(IDENTITY, executable=installed))
+            client = Client([[event('scanStarted', 0), event('noMatchFound', 0)]])
+            with patch.object(scheduler, '_identity', return_value=dict(IDENTITY, executable=installed)) as identity, \
+                    patch.object(pir, 'Client', return_value=client) as make_client:
+                result = pir.execute(args, runtime_factory=native.create)
+            self.assertEqual(result['status'], 'pass', result)
+            self.assertEqual(native.platform, 'ios')
+            self.assertEqual(native.options, dict(device='ipad', keep=True))
+            self.assertNotEqual(native.port, 8474)
+            self.assertEqual(identity.call_args.args[:2], ('ios', native.port))
+            self.assertEqual(make_client.call_args.args[1], native.port)
+            self.assertEqual(result['scheduler']['platform'], 'ios')
+            self.assertEqual(result['cleanup']['mode'], 'managed-simulator')
+            self.assertTrue(native.stopped)
+
+    def test_keep_is_limited_to_ios_seeding(self):
+        for argv in (['scheduler', 'seed', '--platform', 'macos', '--profile-file', '/profile.json', '--keep'],
+                     ['scheduler', 'observe', '--platform', 'ios', '--since', CUTOFF, '--job', BROKER, '1', '--keep']):
+            with self.subTest(argv=argv), self.assertRaisesRegex(ValueError, '--keep applies only'):
+                pir.execute(pir.parser().parse_args(argv), runtime_factory=lambda *a, **kw: self.fail('launched runtime'))
 
     def test_managed_modes_take_scope_from_the_owned_native_receipt(self):
         for mode in ('seed', 'reseed'):
@@ -365,18 +387,18 @@ class SchedulerTests(unittest.TestCase):
 
 
 class FakeSeedRuntime:
-    def __init__(self, receipt_changes=None):
+    def __init__(self, receipt_changes=None, process=None):
         self.receipt_changes = receipt_changes or {}
+        self.process = process
         self.stopped = False
 
-    def create(self, platform, evidence, instance, port):
-        self.evidence = evidence
-        self.instance = instance
+    def create(self, platform, evidence, instance, port, **options):
+        self.platform, self.evidence, self.instance, self.port, self.options = platform, evidence, instance, port, options
         return self
 
     def launch_scheduler(self, mode, profile_json):
         self.launch_values = (mode, profile_json)
-        return dict(product=dict(executable=IDENTITY['executable']))
+        return dict(product=dict(executable=IDENTITY['executable']), process=self.process)
 
     def scheduler_receipt(self):
         receipt = dict(instanceID=self.instance, mode=self.launch_values[0], status='ready', since=CUTOFF,

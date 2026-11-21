@@ -148,9 +148,9 @@ the selected result and history.
 
 Choose the scheduler command by what should happen to the DEBUG profile:
 
-- `scheduler seed --profile-file <path>` on macOS saves a profile in an empty store and starts scans.
+- `scheduler seed --profile-file <path>` saves a profile in an empty store and starts scans.
   An existing profile is a refusal.
-- `scheduler reseed --profile-file <path>` on macOS replaces the DEBUG PIR profile and job history, then starts scans.
+- `scheduler reseed --profile-file <path>` replaces the DEBUG PIR profile and job history, then starts scans.
   Obtain explicit approval for that reset before invoking it.
 - `scheduler observe` on macOS or an iOS simulator watches scans triggered separately through the app.
 
@@ -160,6 +160,13 @@ and starts its regular login item and debug server on port 8474. The tool report
 the browser it launched, and leaves the saved test profile and registered agent in place. These commands make live
 broker scans.
 
+On iOS, seed and reseed use the recorded `build --platform ios`, create a fresh simulator per attempt, and launch the
+app signed out with the profile in its launch environment. The app refreshes broker JSON, saves the profile, records
+the scan plan, and starts the same initial scans as a profile saved in the app. Its debug server listens on a free port
+the tool picks.
+The tool reads the receipt from the app's data container, then stops the app and deletes the simulator unless `--keep`.
+Each attempt owns its simulator, port and receipt, so iOS seeds can run in parallel; macOS seeds run one at a time.
+
 Before observe, use an app with an existing Freemium or subscription profile and its debug server enabled (on iOS, turn
 on **Debug Server** in the PIR debug menu). Record the UTC cutoff before triggering the scan, leaving room for the
 server's second-resolution timestamps, then repeat `--job` with each exact broker URL and active profile query ID from
@@ -168,6 +175,7 @@ server's second-resolution timestamps, then repeat `--job` with each exact broke
 
 ```sh
 python3 "$P" scheduler seed --platform macos --profile-file ~/pir-runs/profile.json
+python3 "$P" scheduler seed --platform ios --device ipad --profile-file ~/pir-runs/profile.json
 python3 "$P" scheduler observe --platform macos \
   --since 2026-11-20T15:00:00Z --job example.com 42 --timeout 600
 ```

@@ -5523,7 +5523,6 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: pageTranslationBridge)
         self.pageTranslationBridge?.cancelPending()
         self.pageTranslationBridge = pageTranslationBridge
-        // The new scripts' broker has a new secret, so the bundle is injected again.
         isPageTranslationInjected = false
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)

@@ -147,6 +147,21 @@ final class PageTranslationBridgeTests: XCTestCase {
         }
     }
 
+    func testNonObjectReplyFailsTheRequest() async throws {
+        let bridge = makeBridge()
+        let extraction = Task { try await bridge.extract() }
+        await waitForPush()
+
+        // What the broker hands over for a script that notifies with `params: null`.
+        try await reply(bridge, "extractResult", NSNull())
+
+        do {
+            _ = try await extraction.value
+            XCTFail("Expected an error")
+        } catch {
+        }
+    }
+
     func testReplyToAnotherRequestIsIgnored() async throws {
         let bridge = makeBridge()
         let extraction = Task { try await bridge.extract() }

@@ -159,6 +159,10 @@ final class PageTranslationBridge: NSObject, Subfeature {
     }
 
     private static func decode<T: Decodable>(_ type: T.Type, from params: Any) throws -> T {
+        // Serializing anything else raises an Objective-C exception, which crashes instead of throwing.
+        guard JSONSerialization.isValidJSONObject(params) else {
+            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Reply params aren't a JSON object"))
+        }
         let data = try JSONSerialization.data(withJSONObject: params)
         return try JSONDecoder().decode(type, from: data)
     }

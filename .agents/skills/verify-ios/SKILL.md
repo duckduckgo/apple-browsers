@@ -13,7 +13,7 @@ never committed. `prove` checks it, runs it on each device, captures evidence, a
 from one command line, so any agent or person with a shell on a Mac with Xcode can use it.
 
 ```bash
-V=.claude/skills/verify-ios/bin/verify-ios      # from the worktree root; every example below uses $V
+V=.agents/skills/verify-ios/bin/verify-ios      # from the worktree root; every example below uses $V
 ```
 
 **How it gets used.** Agents don't pick this skill on their own (`disable-model-invocation`), so name it when you start
@@ -277,9 +277,9 @@ and fails if the running binary is not this worktree's build.
 After changing the runner, the driver or the library, run both test suites:
 
 ```bash
-python3 -m unittest discover -s .claude/skills/verify-ios/tests -p 'test_*.py'   # no simulator
-$V prove .claude/skills/verify-ios/tests/must_fail.py                                # every refusal, both devices
-$V prove .claude/skills/verify-ios/examples/*.py                                     # the worked proofs still pass
+python3 -m unittest discover -s .agents/skills/verify-ios/tests -p 'test_*.py'   # no simulator
+$V prove .agents/skills/verify-ios/tests/must_fail.py                                # every refusal, both devices
+$V prove .agents/skills/verify-ios/examples/*.py                                     # the worked proofs still pass
 ```
 
 ## Known environment issues (not product bugs)
@@ -306,7 +306,7 @@ $V prove .claude/skills/verify-ios/examples/*.py                                
 | `fixture/` | local test pages |
 | `features/` | the feature map: shared steps, Duck.ai |
 
-Swift under `runner/` must pass `mint run swiftlint lint --strict --force-exclude .claude/skills/verify-ios/runner/Sources`.
+Swift under `runner/` must pass `mint run swiftlint lint --strict --force-exclude .agents/skills/verify-ios/runner/Sources`.
 Keep the runner's fixes: the animation-idle swizzle, the `record(_:)` override, the alert handler (app + SpringBoard),
 loopback-only binding and the token check.
 

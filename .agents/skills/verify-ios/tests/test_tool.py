@@ -1,5 +1,5 @@
 """Tests for verify-ios's own logic that need no simulator: locks, process ownership, state, preflight, telemetry
-parsing, evidence. Run: python3 -m unittest discover -s .claude/skills/verify-ios/tests -p 'test_*.py'
+parsing, evidence. Run: python3 -m unittest discover -s .agents/skills/verify-ios/tests -p 'test_*.py'
 """
 import json, multiprocessing, os, re, shlex, shutil, signal, struct, subprocess, sys, tempfile, textwrap, time, unittest, zlib
 from unittest import mock

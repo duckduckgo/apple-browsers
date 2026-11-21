@@ -1,6 +1,6 @@
 """Tests for vhelp.py and verify.sh, run as commands the way the harness runs them: pixel and wide-event matching from
 a mark, flag validation against FeatureFlag.swift, DerivedData resolution and VM locks. No app, build, VM or network.
-Run: python3 -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py'
+Run: python3 -m unittest discover -s .agents/skills/verify-macos-browser/tests -p 'test_*.py'
 """
 import json
 import os

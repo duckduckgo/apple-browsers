@@ -1,7 +1,7 @@
 """Tests for cleanup's process signals: it signals a recorded process only while its identity (pid, start time and
 command) still matches what was recorded when it started. Runs `verify.sh cleanup` against a temporary run folder with
 `sleep` processes standing in for the streams. No app, build or VM.
-Run: python3 -I -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py'
+Run: python3 -I -m unittest discover -s .agents/skills/verify-macos-browser/tests -p 'test_*.py'
 """
 import os
 import subprocess

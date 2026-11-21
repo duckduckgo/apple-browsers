@@ -15,7 +15,7 @@ import time
 import urllib.parse
 import urllib.request
 
-VERIFY_SH = ".claude/skills/verify-macos-browser/scripts/verify.sh"   # from the worktree root
+VERIFY_SH = ".agents/skills/verify-macos-browser/scripts/verify.sh"   # from the worktree root
 FEATURE_FLAG_SWIFT = "macOS/LocalPackages/FeatureFlags-macOS/Sources/FeatureFlags/FeatureFlag.swift"
 PIXEL = re.compile(r"👾\[(?P<frequency>.+?)-(?P<status>Fired\(dryRun\)|Fired|Skipped)\] (?P<name>\S+)(?: \[(?P<params>.*)\])?\s*$")
 PARAM = re.compile(r'"((?:[^"\\]|\\.)*)": "((?:[^"\\]|\\.)*)"')

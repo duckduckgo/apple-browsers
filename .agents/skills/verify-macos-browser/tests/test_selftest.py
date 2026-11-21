@@ -1,6 +1,6 @@
 """Tests for selftest's pure parts: step order and stop-at-first-failure, the why and fix of each failure from canned
 command output, and the JSON result. No build, VM or app.
-Run: python3 -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py'
+Run: python3 -m unittest discover -s .agents/skills/verify-macos-browser/tests -p 'test_*.py'
 """
 import os
 import plistlib

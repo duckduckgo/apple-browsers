@@ -161,25 +161,27 @@ def _job_state(job, snapshot, detail, since, managed):
     if len(matches) != 1:
         return dict(state, status="missing", reason="broker has no unique expected query")
     history = _rows(matches[0].get("scan"), "history")
-    previous, start, terminals = None, None, []
+    previous, start, starts, terminals = None, None, 0, []
     for event in history:
         date = _date(event.get("date"))
         if previous is not None and date < previous:
             return dict(state, status="ambiguous", reason="scan history is not chronological")
         previous = date
         if event.get("type") == "scanStarted":
-            fresh = date >= since if managed else date > since
-            start, terminals = event if fresh else None, []
+            if date >= since if managed else date > since:
+                start, starts = event, starts + 1
+            else:
+                start, starts, terminals = None, 0, []
         elif start is not None and event.get("type") in ("matchesFound", "noMatchFound", "error"):
             terminals.append(event)
     if start is None:
         return dict(state, reason="no persisted scan start after cutoff")
     state["startedAt"] = start["date"]
-    if not terminals:
+    if len(terminals) < starts:
         return dict(state, reason="latest fresh scan has no terminal event")
-    if len(terminals) != 1:
-        return dict(state, status="ambiguous", reason="latest scan has multiple terminal events")
-    terminal = terminals[0]
+    if len(terminals) > starts:
+        return dict(state, status="ambiguous", reason="fresh scans have more terminal events than starts")
+    terminal = terminals[-1]
     state.update(terminal=terminal["type"], finishedAt=terminal["date"])
     if terminal["type"] != "error":
         return dict(state, status="pass")

@@ -690,13 +690,12 @@ final class MainCoordinator {
     private static func makeTranslationOfferProvider(translationModels: TranslationModels?,
                                                      featureFlagger: FeatureFlagger,
                                                      privacyConfig: PrivacyConfigurationManaging) -> PageTranslationOfferProvider? {
-        guard let translationModels,
-              let detector = try? PageLanguageDetector() else {
+        guard let translationModels else {
             return nil
         }
         let capability = WebPageTranslationCapability.create(featureFlagger: featureFlagger)
         let settings = WebPageTranslationSettings(privacyConfigurationManager: privacyConfig)
-        return PageTranslationOfferProvider(detector: detector,
+        return PageTranslationOfferProvider(detector: PageLanguageDetector(),
                                             manifest: { translationModels.manifest },
                                             capability: capability,
                                             settings: settings)

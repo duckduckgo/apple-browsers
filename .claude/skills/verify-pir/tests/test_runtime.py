@@ -329,6 +329,17 @@ class LifecycleTests(unittest.TestCase):
                 instance.stop()
                 source.unlink() if original is None else source.write_text(original)
 
+    def test_commit_with_uninitialized_submodule_keeps_build_current(self):
+        git = ["git", "-C", str(self.root), "-c", "user.name=test", "-c", "user.email=test@example.com"]
+        (self.root / "iOS/submodule").mkdir()
+        REAL_RUN([*git, "update-index", "--add", "--cacheinfo", f"160000,{'1' * 40},iOS/submodule"], check=True)
+        REAL_RUN([*git, "commit", "-q", "-m", "base"], check=True)
+        instance = self.make_runtime()
+        instance.build()
+        REAL_RUN([*git, "commit", "-q", "--allow-empty", "-m", "unrelated"], check=True)
+        instance.launch()
+        instance.stop()
+
     def test_changed_executable_requires_rebuild(self):
         instance = self.make_runtime()
         metadata = instance.build()

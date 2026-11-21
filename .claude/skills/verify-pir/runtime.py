@@ -174,7 +174,12 @@ class Runtime:
             if path.is_file():
                 digest.update(_sha(path).encode())
             elif path.is_dir():
-                digest.update(_run(["git", "-C", str(path), "rev-parse", "HEAD"], self.root).encode())
+                top = _run(["git", "-C", str(path), "rev-parse", "--show-toplevel"], self.root).strip()
+                if Path(top).resolve() == path.resolve():
+                    digest.update(_run(["git", "-C", str(path), "rev-parse", "HEAD"], self.root).encode())
+                else:
+                    # An uninitialized submodule resolves to the superproject's HEAD, which changes on every commit.
+                    digest.update(_run(["git", "ls-files", "-s", "--", name], self.root).encode())
             else:
                 digest.update(b"deleted")
         return digest.hexdigest()

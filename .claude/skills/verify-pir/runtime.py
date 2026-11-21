@@ -29,6 +29,7 @@ BUNDLES = {"ios": "com.duckduckgo.mobile.ios",
            "macos": "com.duckduckgo.macos.DBP.backgroundAgent.debug"}
 BROWSER_BUNDLE = "com.duckduckgo.macos.browser.debug"
 SCHEDULER_LOCK = Path(f"/tmp/verify-pir-scheduler-{os.getuid()}.lock")
+SCHEDULER_SETUP_TIMEOUT = 180
 FLAGS = ["isRunningUITests", "-ff.dbpCustomWebViewUserAgent", "true",
          "-ff.dbpExtractedProfileRefresh", "true"]
 
@@ -504,7 +505,7 @@ class Runtime:
                 "product": product, "sourceSHA256": metadata["sourceSHA256"]}
 
     def scheduler_receipt(self):
-        deadline = time.monotonic() + 60
+        deadline = time.monotonic() + SCHEDULER_SETUP_TIMEOUT
         while time.monotonic() < deadline:
             try:
                 raw = self._receipt.read_bytes()
@@ -517,7 +518,7 @@ class Runtime:
             if self._receipt != self.evidence / "scheduler-launch.json":
                 (self.evidence / "scheduler-launch.json").write_bytes(raw)
             return json.loads(raw)
-        raise RuntimeError("The DEBUG app did not report scheduler setup within 60 seconds")
+        raise RuntimeError(f"The DEBUG app did not report scheduler setup within {SCHEDULER_SETUP_TIMEOUT} seconds")
 
     def launch(self, access_token=None):
         if access_token is not None and (not isinstance(access_token, str) or not access_token

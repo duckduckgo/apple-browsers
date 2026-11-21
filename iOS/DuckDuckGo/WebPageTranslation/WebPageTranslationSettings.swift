@@ -19,10 +19,9 @@
 
 import Foundation
 import PrivacyConfig
-import FeatureFlags_iOS
 
-/// Remotely-configured tuning for web page translation, read from the `webPageTranslation`
-/// subfeature settings. Falls back to defaults when the setting is absent or malformed.
+/// Remote config for web page translation, read from the top-level `pageTranslation` feature that
+/// also gates the C-S-S script. Settings fall back to defaults when absent or malformed.
 struct WebPageTranslationSettings {
 
     private enum Constants {
@@ -42,12 +41,20 @@ struct WebPageTranslationSettings {
 
     /// How many characters of the page's text language detection reads (default 4096).
     var sampleLength: Int {
-        guard let json = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.webPageTranslation),
-              let settings = try? JSONDecoder().decode(RemoteSettings.self, from: Data(json.utf8)),
-              let value = settings.sampleLength,
+        let settings = privacyConfigurationManager.privacyConfig.settings(for: .pageTranslation)
+        guard JSONSerialization.isValidJSONObject(settings),
+              let data = try? JSONSerialization.data(withJSONObject: settings),
+              let decoded = try? JSONDecoder().decode(RemoteSettings.self, from: data),
+              let value = decoded.sampleLength,
               value > 0 else {
             return Constants.defaultSampleLength
         }
         return value
+    }
+
+    /// False on sites in the feature's exceptions, the only per-site rule the C-S-S script follows:
+    /// it runs without a config entry and on sites with protections off.
+    func isEnabled(forDomain domain: String?) -> Bool {
+        !privacyConfigurationManager.privacyConfig.isInExceptionList(domain: domain, forFeature: .pageTranslation)
     }
 }

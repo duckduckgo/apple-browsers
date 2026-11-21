@@ -183,6 +183,13 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
 
     private func optOut(_ scanResult: DebugScanResult, resultId: String, showWebView: Bool, runId: String) async {
         let label = DebugModeRunner.profileQueryText(for: scanResult.profileQuery)
+        guard !scanResult.dataBroker.performsOptOutWithinParent() else {
+            setOptOutStatus(.optsOutInParent, resultId: resultId, runId: runId)
+            addEvent(runId, kind: .history, profileQuery: label,
+                     summary: "Opt-out skipped: broker opts out in parent",
+                     details: scanResult.dataBroker.parent ?? "")
+            return
+        }
         addHistoryEvent(.optOutStarted, runId: runId, profileQuery: label)
         do {
             let requiresEmailConfirmation = try await runner.optOut(scanResult,

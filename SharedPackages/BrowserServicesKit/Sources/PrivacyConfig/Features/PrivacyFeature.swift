@@ -1043,9 +1043,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
 
-    /// Kill switch for the "Update available" promo.
-    case updateAvailablePromo
-
     /// Kill switch for the VPN toolbar upsell button and dot badge promos.
     case vpnUpsellPromo
 

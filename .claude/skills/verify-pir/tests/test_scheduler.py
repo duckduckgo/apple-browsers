@@ -111,13 +111,33 @@ class SchedulerTests(unittest.TestCase):
                 self.assertEqual(outcome['status'], 'fail')
                 self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'pending')
 
-    def test_missing_removed_inactive_and_alias_broker_are_not_completion(self):
+    def test_missing_inactive_and_alias_broker_are_not_completion(self):
         history = [[event('scanStarted'), event('noMatchFound')]]
-        for options in (dict(missing=True), dict(active=False), dict(removed=True), dict(broker='alias')):
+        for options in (dict(missing=True), dict(active=False), dict(broker='alias')):
             with self.subTest(options=options):
                 outcome, context = self.run_observer(Client(history, **options))
                 self.assertEqual(outcome['status'], 'fail')
                 self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'missing')
+
+    def test_broker_removed_during_run_stops_waiting_without_passing(self):
+        outcome, context = self.run_observer(Client([[]], removed=True), timeout=5)
+        self.assertEqual(outcome['status'], 'inconclusive')
+        self.assertEqual(context.files['scheduler.json']['polls'], 1)
+        self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'removed')
+
+    def test_removed_broker_does_not_block_other_jobs(self):
+        class MixedClient(Client):
+            def request(self, method, path, timeout):
+                value = super().request(method, path, timeout)
+                return dict(value, url='other', isRemoved=True) if path.endswith('other') else value
+        context, clock = Context(), [0.0]
+        scope = scheduler.parse_scope(arguments(scheduler_jobs=[[BROKER, '1'], ['other', '1']], scheduler_timeout=5))
+        with patch.object(scheduler, '_identity', return_value=IDENTITY), \
+                patch.object(scheduler.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(scheduler.time, 'sleep', side_effect=lambda seconds: clock.__setitem__(0, clock[0] + seconds)):
+            outcome = scheduler.observe(context, MixedClient([[event('scanStarted'), event('noMatchFound')]]), scope)
+        self.assertEqual(outcome['status'], 'pass')
+        self.assertEqual([job['status'] for job in context.result['scheduler']['jobs']], ['pass', 'removed'])
 
     def test_broker_error_terminal_counts_as_completed_scan(self):
         for name in ('httpError', 'actionFailed'):
@@ -161,6 +181,18 @@ class SchedulerTests(unittest.TestCase):
         with patch.object(client, 'request', side_effect=Exception('private HTTP response')):
             with self.assertRaisesRegex(RuntimeError, '^scheduler HTTP read failed; see request evidence$'):
                 self.run_observer(client)
+
+    def test_read_failing_at_deadline_is_timeout(self):
+        client, clock = Client([[]]), [0.0]
+        def request(method, path, timeout):
+            clock[0] += timeout
+            raise TimeoutError
+        with patch.object(client, 'request', side_effect=request):
+            context, scope = Context(), scheduler.parse_scope(arguments(scheduler_timeout=.5))
+            with patch.object(scheduler, '_identity', return_value=IDENTITY), \
+                    patch.object(scheduler.time, 'monotonic', side_effect=lambda: clock[0]):
+                outcome = scheduler.observe(context, client, scope)
+        self.assertEqual(outcome, dict(status='fail', reason='expected scheduler scans did not complete before timeout'))
 
     def test_partial_scope_does_not_pass(self):
         context = Context()

@@ -874,6 +874,9 @@ class TabViewController: UIViewController {
 
     var pageTranslationOfferProvider: PageTranslationOfferProvider?
     private lazy var translationBannerPresenter = TranslationBannerPresenter(appSettings: appSettings)
+    private var pageTranslationBridge: PageTranslationBridge?
+    /// The `pageTranslation` bundle is injected once per document.
+    private var isPageTranslationInjected = false
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -3024,6 +3027,8 @@ extension TabViewController: WKNavigationDelegate {
             browserToolsService?.ownerDidNavigate(tabID: tabModel.uid, url: webView.url)
             firstPaintCover.didCommit(navigation)
             signpostSearchCommit(url: webView.url)
+            isPageTranslationInjected = false
+            pageTranslationBridge?.documentDidChange()
         }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
@@ -3161,7 +3166,37 @@ extension TabViewController: WKNavigationDelegate {
         if floatingUIManager.isFloatingUIEnabled, let chromeDelegate {
             translationBannerPresenter.chromeInsets = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
         }
-        translationBannerPresenter.present(offer, in: self, nextTo: addressBar)
+        translationBannerPresenter.present(offer, in: self, nextTo: addressBar) { [weak self] in
+            self?.translatePage()
+        }
+    }
+
+    // TODO: - Translate the extracted units (next task); for now, check extraction from the isolated world works.
+    private func translatePage() {
+        guard let webView, let userScripts, let bridge = pageTranslationBridge else { return }
+        Task { [weak self] in
+            do {
+                if self?.isPageTranslationInjected == false {
+                    _ = try await webView.evaluateJavaScript(try userScripts.pageTranslationSource(), in: nil, contentWorld: .defaultClient)
+                    self?.isPageTranslationInjected = true
+                }
+                let units = try await bridge.extract()
+                
+                // TODO: - Replace debug logs below by actual translation.
+                Logger.webPageTranslation.info("Page translation: extracted \(units.count, privacy: .public) units")
+                // Page text stays private: Xcode's console shows it, Console.app redacts it.
+                let sample = units.filter(\.isVisible) + units.filter { !$0.isVisible }.prefix(50)
+                for unit in sample {
+                    Logger.webPageTranslation.debug("""
+                        Page translation unit \(unit.id, privacy: .public) \
+                        html: \(unit.html, privacy: .public) visible: \(unit.isVisible, privacy: .public) \
+                        text: \(String(unit.text.prefix(120)), privacy: .private)
+                        """)
+                }
+            } catch {
+                Logger.webPageTranslation.error("Page translation failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.
@@ -5482,6 +5517,14 @@ extension TabViewController: UserContentControllerDelegate {
 
         siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: siteLoadingPerformanceSubfeature!)
+
+        let pageTranslationBridge = PageTranslationBridge()
+        pageTranslationBridge.webView = webView
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: pageTranslationBridge)
+        self.pageTranslationBridge?.cancelPending()
+        self.pageTranslationBridge = pageTranslationBridge
+        // The new scripts' broker has a new secret, so the bundle is injected again.
+        isPageTranslationInjected = false
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         

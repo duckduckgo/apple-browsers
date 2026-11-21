@@ -76,6 +76,11 @@ final class UserScripts: UserScriptsProvider {
 
     private let isAutoconsentExtensionAvailable: Bool
 
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let contentScopeProperties: ContentScopeProperties
+    private let isolatedConfigGenerator: ContentScopePrivacyConfigurationJSONGenerator
+    private var pageTranslationSourceCache: String?
+
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
@@ -107,15 +112,17 @@ final class UserScripts: UserScriptsProvider {
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
+        privacyConfigurationManager = sourceProvider.privacyConfigurationManager
+        contentScopeProperties = sourceProvider.contentScopeProperties
+        isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                                                                                excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures
+                                                                                    + [PrivacyFeature.aiChatBrowserTools.rawValue])
         do {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                                                                                 excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue,
                                                                                                    PrivacyFeature.aiChatBrowserTools.rawValue])
-            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                                                                        privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                                                                                        excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures
-                                                                                            + [PrivacyFeature.aiChatBrowserTools.rawValue])
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData,
@@ -227,6 +234,21 @@ final class UserScripts: UserScriptsProvider {
     /// handler and calls this each time it is handed a new instance of us.
     func registerEventHubSubfeature(_ handler: WebEventsHandler) {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: handler)
+    }
+
+    /// C-S-S's `pageTranslation` bundle, injected only when the user translates a page. It messages
+    /// through the isolated script's handler, so it gets that broker's config. Built on first use.
+    func pageTranslationSource() throws -> String {
+        if let pageTranslationSourceCache {
+            return pageTranslationSourceCache
+        }
+        let source = try ContentScopeUserScript.generateSource(privacyConfigurationManager,
+                                                               properties: contentScopeProperties,
+                                                               scriptContext: .pageTranslation,
+                                                               config: contentScopeUserScriptIsolated.broker.messagingConfig(),
+                                                               privacyConfigurationJSONGenerator: isolatedConfigGenerator)
+        pageTranslationSourceCache = source
+        return source
     }
 
     lazy var userScripts: [UserScript] = {

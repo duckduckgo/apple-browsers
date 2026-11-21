@@ -18,7 +18,6 @@
 //
 
 import ConcurrencyExtensions
-import os.log
 import SwiftUI
 import UIKit
 import WebPageTranslation
@@ -66,15 +65,19 @@ final class TranslationBannerPresenter {
         hostingController != nil
     }
 
-    /// - Parameter addressBar: the bar the banner sits under (bar at the top) or above (bar at the bottom).
-    func present(_ offer: TranslationOffer, in host: UIViewController, nextTo addressBar: UIView) {
+    /// - Parameters:
+    ///   - addressBar: the bar the banner sits under (bar at the top) or above (bar at the bottom).
+    ///   - onTranslate: called when the user taps Translate; the banner then goes away.
+    func present(_ offer: TranslationOffer,
+                 in host: UIViewController,
+                 nextTo addressBar: UIView,
+                 onTranslate: @escaping () -> Void = {}) {
         dismiss(animated: false)
 
         let banner = SwipeableTranslationBanner(offer: offer,
                                                 onTranslate: { [weak self] in
-                                                    // TODO: - Implement translation
-                                                    Logger.webPageTranslation.info("Translation banner: Translate tapped")
                                                     self?.dismiss(animated: true)
+                                                    onTranslate()
                                                 },
                                                 onDismiss: { [weak self] animated in
                                                     self?.dismiss(animated: animated)

@@ -36,6 +36,7 @@ class SeedRequest:
     mode: str
     profile_path: Path
     timeout: float
+    platform: str = "macos"
     port: int = 8474
 
 
@@ -89,7 +90,8 @@ def parse_seed(args):
         raise ValueError("seed and reseed discover the agent, cutoff and jobs automatically")
     if args.scheduler_profile is None:
         raise ValueError("seed and reseed require --profile-file")
-    return SeedRequest(args.scheduler_mode, args.scheduler_profile.expanduser().resolve(), _timeout(args.scheduler_timeout))
+    return SeedRequest(args.scheduler_mode, args.scheduler_profile.expanduser().resolve(), _timeout(args.scheduler_timeout),
+                       args.platform)
 
 
 def receipt_scope(receipt, request, instance):
@@ -101,9 +103,9 @@ def receipt_scope(receipt, request, instance):
             raise RuntimeError("The DEBUG PIR store already has a profile. Use observe or explicitly choose reseed.")
         if error == "authenticatedAccount":
             raise RuntimeError("Scheduler seeding requires a signed-out DEBUG account for Freemium scans")
-        raise RuntimeError("The DEBUG browser did not complete scheduler setup; see scheduler-launch.json")
+        raise RuntimeError("The DEBUG app did not complete scheduler setup; see scheduler-launch.json")
     jobs = _jobs((job.get("brokerURL"), job.get("profileQueryId")) for job in _rows(receipt, "jobs"))
-    return Scope("macos", request.port, _date(receipt.get("since")), jobs, request.timeout, managed=True)
+    return Scope(request.platform, request.port, _date(receipt.get("since")), jobs, request.timeout, managed=True)
 
 
 def _remaining(deadline):
@@ -219,7 +221,7 @@ def observe(context, client, scope, expected_executable=None):
     try:
         summary["identity"] = _identity(scope.platform, scope.port, deadline)
         if expected_executable and Path(summary["identity"]["executable"]).resolve() != Path(expected_executable).resolve():
-            raise RuntimeError("The normal PIR listener is not the agent embedded in this attempt's DEBUG build")
+            raise RuntimeError("The scheduler listener is not the PIR app from this attempt's DEBUG build")
         while True:
             if _identity(scope.platform, scope.port, deadline) != summary["identity"]:
                 raise RuntimeError("scheduler listener identity changed during observation")

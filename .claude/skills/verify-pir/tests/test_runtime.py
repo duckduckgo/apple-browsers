@@ -124,6 +124,7 @@ class FakeTools:
                 pass
             elif args[0] == "install":
                 self.installed = Path(args[2])
+                (self.root / "SimulatorDevices" / OWNED_SIM / "app-data").mkdir(parents=True, exist_ok=True)
             elif args == ["get_app_container", OWNED_SIM, runtime.BUNDLES["ios"], "data"]:
                 output = str(self.root / "SimulatorDevices" / OWNED_SIM / "app-data") + "\n"
             elif args[0] == "launch":
@@ -377,6 +378,44 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(instance.scheduler_receipt()["status"], "ready")
             self.assertTrue(instance.stop()["stopped"])
             self.assertFalse(self.tools.processes)
+
+    def test_ios_scheduler_launch_uses_its_own_simulator_port_and_container_receipt(self):
+        instance = self.make_runtime("ios", device="ipad")
+        instance.evidence.mkdir()
+        instance.build()
+        fixture = '{"synthetic":"fixture"}'
+        lock = Path(self.directory.name) / "scheduler.lock"
+        with patch.object(runtime, "SCHEDULER_LOCK", lock), lock.open("w") as held:
+            runtime.fcntl.flock(held, runtime.fcntl.LOCK_EX)
+            launched = instance.launch_scheduler("reseed", fixture)
+        self.assertEqual(launched["simulator"]["udid"], OWNED_SIM)
+        self.assertIn("verify-pir-ipad-", launched["simulator"]["name"])
+        command, options = next((c, o) for c, o in self.tools.calls if c[:3] == ["xcrun", "simctl", "launch"])
+        self.assertNotIn(fixture, command)
+        env = options["env"]
+        self.assertEqual(env["SIMCTL_CHILD_PIR_PROFILE_JSON"], fixture)
+        self.assertEqual(env["SIMCTL_CHILD_PIR_SCHEDULER_MODE"], "reseed")
+        self.assertEqual(env["SIMCTL_CHILD_PIR_DEBUG_PORT"], str(instance.port))
+        self.assertEqual(env["SIMCTL_CHILD_PIR_DEBUG_INSTANCE_ID"], instance.instance)
+        self.assertNotIn("SIMCTL_CHILD_PIR_DEBUG_SERVER", env)
+        receipt = Path(env["SIMCTL_CHILD_PIR_SCHEDULER_RECEIPT"])
+        self.assertEqual(receipt.parent, self.root / "SimulatorDevices" / OWNED_SIM / "app-data" / "tmp")
+        receipt.write_text(json.dumps({"status": "ready"}))
+        self.assertEqual(instance.scheduler_receipt()["status"], "ready")
+        self.assertEqual(json.loads((instance.evidence / "scheduler-launch.json").read_text()), {"status": "ready"})
+        self.assertTrue(instance.stop()["stopped"])
+        self.assertEqual([s["udid"] for s in self.tools.simulators], ["USER-SIM"])
+        self.assertFalse(self.tools.processes)
+
+    def test_ios_scheduler_reports_an_app_that_exits_before_its_receipt(self):
+        instance = self.make_runtime("ios")
+        instance.evidence.mkdir()
+        instance.build()
+        instance.launch_scheduler("seed", "{}")
+        self.tools.processes.pop(412)
+        with self.assertRaisesRegex(runtime.RuntimeError, "exited before reporting"):
+            instance.scheduler_receipt()
+        instance.stop()
 
     def test_scheduler_refuses_a_changed_browser_or_an_existing_debug_browser(self):
         instance = self.make_runtime("macos")

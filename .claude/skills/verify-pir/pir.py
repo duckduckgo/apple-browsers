@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Verify live PIR broker flows or observe persisted scheduler scans."""
 import argparse
+import dataclasses
 import hashlib
 import json
 import math
@@ -484,16 +485,16 @@ def execute(args, runtime_factory=None):
     is_selftest = args.command == "selftest"
     scope, seed = None, None
     if args.command == "scheduler":
-        if args.config or args.token_file or args.token_env or args.check_config or args.keep:
-            raise ValueError("scheduler commands do not accept scenario, credential, check-config or keep options")
+        if args.config or args.token_file or args.token_env or args.check_config:
+            raise ValueError("scheduler commands do not accept scenario, credential or check-config options")
+        if args.keep and (args.platform != "ios" or args.scheduler_mode not in ("seed", "reseed")):
+            raise ValueError("--keep applies only to iOS scheduler seed and reseed")
         import scheduler
         if args.scheduler_mode == "observe":
             if args.scheduler_profile is not None:
                 raise ValueError("scheduler observe does not take a profile file")
             scope = scheduler.parse_scope(args)
         elif args.scheduler_mode in ("seed", "reseed"):
-            if args.platform != "macos":
-                raise ValueError("scheduler seed and reseed require macOS")
             seed = scheduler.parse_seed(args)
         else:
             raise ValueError("Choose scheduler observe, seed or reseed")
@@ -530,13 +531,15 @@ def execute(args, runtime_factory=None):
     context = Context(evidence, redactor)
     if scope:
         instance, port = None, scope.port
-    elif seed:
+    elif seed and seed.platform == "macos":
         instance, port = str(uuid.uuid4()), seed.port
     else:
         instance = str(uuid.uuid4())
         with socket.socket() as reserved:
             reserved.bind(("127.0.0.1", 0))
             port = reserved.getsockname()[1]
+        if seed:
+            seed = dataclasses.replace(seed, port=port)
     context.result.update(platform=args.platform, command=args.command, instanceID=instance, port=port,
                           startedAt=time.time(), rerun=rerun_command(args), evidence=str(evidence))
     runtime, client = None, None
@@ -550,7 +553,7 @@ def execute(args, runtime_factory=None):
     try:
         if seed:
             context.result["schedulerMode"] = seed.mode
-            context.result["cleanup"] = {"mode": "managed-browser"}
+            context.result["cleanup"] = {"mode": "managed-browser" if seed.platform == "macos" else "managed-simulator"}
             with seed.profile_path.open("rb") as profile_file:
                 profile = profile_file.read(65_537)
             if len(profile) > 65_536:
@@ -561,13 +564,15 @@ def execute(args, runtime_factory=None):
             if runtime_factory is None:
                 from runtime import Runtime
                 runtime_factory = Runtime
-            runtime = runtime_factory("macos", evidence, instance, port)
+            options = {} if seed.platform == "macos" else dict(device=args.device, keep=args.keep)
+            runtime = runtime_factory(seed.platform, evidence, instance, port, **options)
             launch = runtime.launch_scheduler(seed.mode, profile_json)
             context.result["launch"] = launch
             context.write("launch.json", launch)
             scope = scheduler.receipt_scope(runtime.scheduler_receipt(), seed, instance)
             client = Client(evidence, port, None, redactor)
-            context.result.update(scheduler.observe(context, client, scope, expected_executable=launch["product"]["executable"]))
+            listener = launch["product"] if seed.platform == "macos" else launch["process"]
+            context.result.update(scheduler.observe(context, client, scope, expected_executable=listener["executable"]))
         elif scope:
             context.result["schedulerMode"] = "observe"
             context.result["cleanup"] = {"mode": "attached"}

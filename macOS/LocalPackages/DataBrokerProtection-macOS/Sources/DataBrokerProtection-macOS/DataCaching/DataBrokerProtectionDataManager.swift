@@ -217,23 +217,8 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
     }
 
 #if DEBUG
-    public struct DebugScanJob: Codable {
-        public let brokerURL: String
-        public let profileQueryId: Int64
-    }
-
-    /// Uses the same active broker, profile query, and Freemium scan selection as the manual scan scheduler.
-    public func scanJobsForDebugLaunch() throws -> [DebugScanJob] {
-        let queries = try database.fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: false)
-            .filter { !$0.profileQuery.deprecated }
-        return BrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: queries, jobType: .manualScan, priorityDate: nil)
-            .compactMap { job in
-                guard let scan = job as? ScanJobData, scan.scanType() != .maintenance, scan.profileQueryId > 0,
-                      let query = queries.first(where: { $0.dataBroker.id == scan.brokerId && $0.profileQuery.id == scan.profileQueryId }) else {
-                    return nil
-                }
-                return DebugScanJob(brokerURL: query.dataBroker.url, profileQueryId: scan.profileQueryId)
-            }
+    public func scanJobsForDebugLaunch(_ managedSeed: PIRDebugLaunchOptions.ManagedSeed) throws -> [PIRDebugLaunchOptions.DebugScanJob] {
+        try managedSeed.scanJobs(database: database)
     }
 #endif
 

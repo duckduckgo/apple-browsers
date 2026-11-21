@@ -196,7 +196,6 @@ extension DataBrokerProtectionManager {
         case agentNotReady
         case commandFailed
         case commandTimedOut
-        case emptyManagedPlan
 
         static var errorDomain: String { "com.duckduckgo.pir.debug-launch" }
 
@@ -208,7 +207,6 @@ extension DataBrokerProtectionManager {
             case .agentNotReady: return 3
             case .commandFailed: return 4
             case .commandTimedOut: return 5
-            case .emptyManagedPlan: return 6
             }
         }
 
@@ -220,41 +218,8 @@ extension DataBrokerProtectionManager {
             case .agentNotReady: return "PIR background agent did not become ready."
             case .commandFailed: return "PIR debug command failed."
             case .commandTimedOut: return "PIR debug command timed out."
-            case .emptyManagedPlan: return "PIR scheduler seeding produced no eligible scan jobs."
             }
         }
-    }
-
-    private struct ManagedSeedReceipt: Encodable {
-        let instanceID: String
-        let mode: PIRDebugLaunchOptions.ManagedSeed.Mode
-        let status: String
-        let since: Date
-        let jobs: [DataBrokerProtectionDataManager.DebugScanJob]
-        let errorCode: String?
-    }
-
-    private static func writeManagedSeedReceipt(
-        _ managedSeed: PIRDebugLaunchOptions.ManagedSeed?,
-        since: Date,
-        jobs: [DataBrokerProtectionDataManager.DebugScanJob] = [],
-        error: Error? = nil
-    ) throws {
-        guard let managedSeed else { return }
-        let code: String?
-        if let error = error as? PIRDebugLaunchOptions.ParseError {
-            code = error.receiptErrorCode
-        } else if let error {
-            let failure = error as NSError
-            code = "launch_\(failure.code)"
-        } else {
-            code = nil
-        }
-        let receipt = ManagedSeedReceipt(instanceID: managedSeed.instanceID, mode: managedSeed.mode,
-                                         status: error == nil ? "ready" : "error", since: since, jobs: jobs, errorCode: code)
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        try encoder.encode(receipt).write(to: managedSeed.receiptURL, options: .atomic)
     }
 
     func handleDebugLaunch() -> Bool {
@@ -269,7 +234,7 @@ extension DataBrokerProtectionManager {
                     Logger.dataBrokerProtection.log("PIR debug launch completed; agent event delivered.")
                 } catch {
                     if let managedSeed = options.managedSeed {
-                        try? Self.writeManagedSeedReceipt(managedSeed, since: since, error: error)
+                        try? managedSeed.writeReceipt(since: since, error: error)
                     }
                     let failure = error as NSError
                     Logger.dataBrokerProtection.error("PIR debug launch failed: \(failure.domain, privacy: .public), code \(failure.code, privacy: .public).")
@@ -277,7 +242,7 @@ extension DataBrokerProtectionManager {
             }
         } catch {
             if let managedSeed = try? PIRDebugLaunchOptions.managedSeed() {
-                try? Self.writeManagedSeedReceipt(managedSeed, since: since, error: error)
+                try? managedSeed.writeReceipt(since: since, error: error)
             }
             Logger.dataBrokerProtection.error("PIR debug launch options rejected: \(String(describing: error), privacy: .public)")
             return PIRDebugLaunchOptions.hasManagedRequest()
@@ -331,7 +296,7 @@ extension DataBrokerProtectionManager {
                 try await dataManager.saveProfile(profileToSave)
             }
 
-            return try managedScanJobs(options.managedSeed, dataManager: dataManager)
+            return try options.managedSeed.map(dataManager.scanJobsForDebugLaunch) ?? []
         }
 
         // 5. Enable the background agent and wait for it to answer XPC.
@@ -358,7 +323,7 @@ extension DataBrokerProtectionManager {
             }
         }
         guard delivered else { throw DebugLaunchError.commandFailed }
-        try Self.writeManagedSeedReceipt(options.managedSeed, since: since, jobs: managedJobs)
+        try options.managedSeed?.writeReceipt(since: since, jobs: managedJobs)
     }
 
     private func validateManagedSeedAccount(_ managedSeed: PIRDebugLaunchOptions.ManagedSeed?) async throws {
@@ -366,16 +331,6 @@ extension DataBrokerProtectionManager {
         let pirAuthenticated = await authenticationManager.isUserAuthenticated
         try managedSeed.validateAccount(rawAuthenticated: Application.appDelegate.subscriptionManager.isUserAuthenticated,
                                         pirAuthenticated: pirAuthenticated)
-    }
-
-    private func managedScanJobs(
-        _ managedSeed: PIRDebugLaunchOptions.ManagedSeed?,
-        dataManager: DataBrokerProtectionDataManager
-    ) throws -> [DataBrokerProtectionDataManager.DebugScanJob] {
-        guard managedSeed != nil else { return [] }
-        let jobs = try dataManager.scanJobsForDebugLaunch()
-        guard !jobs.isEmpty else { throw DebugLaunchError.emptyManagedPlan }
-        return jobs
     }
 
     /// Re-enables the agent if `body` fails, so a failed debug launch doesn't leave PIR stopped.

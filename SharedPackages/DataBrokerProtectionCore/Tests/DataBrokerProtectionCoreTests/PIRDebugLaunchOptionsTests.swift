@@ -19,7 +19,7 @@
 #if DEBUG
 import XCTest
 
-@testable import DuckDuckGo_Privacy_Browser
+import DataBrokerProtectionCore
 
 final class PIRDebugLaunchOptionsTests: XCTestCase {
     private var pirProfileJSON: String {
@@ -168,6 +168,29 @@ final class PIRDebugLaunchOptionsTests: XCTestCase {
         XCTAssertThrowsError(try PIRDebugLaunchOptions.parse(arguments: [], environment: environment))
         let managed = try XCTUnwrap(PIRDebugLaunchOptions.managedSeed(environment: environment))
         XCTAssertEqual(managed.instanceID, environment["PIR_SCHEDULER_INSTANCE_ID"])
+    }
+
+    func testManagedReceiptRecordsReadyJobsAndErrorCodes() throws {
+        let environment = managedEnvironment(mode: "reseed")
+        let managed = try XCTUnwrap(PIRDebugLaunchOptions.managedSeed(environment: environment))
+        defer { try? FileManager.default.removeItem(at: managed.receiptURL) }
+        let since = Date(timeIntervalSince1970: 1_800_000_000)
+        let job = PIRDebugLaunchOptions.DebugScanJob(brokerURL: "example.com", profileQueryId: 7)
+
+        try managed.writeReceipt(since: since, jobs: [job])
+        let ready = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: managed.receiptURL)) as? [String: Any])
+        XCTAssertEqual(ready["instanceID"] as? String, environment["PIR_SCHEDULER_INSTANCE_ID"])
+        XCTAssertEqual(ready["mode"] as? String, "reseed")
+        XCTAssertEqual(ready["status"] as? String, "ready")
+        XCTAssertEqual(ready["since"] as? String, "2027-01-15T08:00:00Z")
+        XCTAssertEqual(ready["jobs"] as? [[String: AnyHashable]], [["brokerURL": "example.com", "profileQueryId": 7]])
+        XCTAssertNil(ready["errorCode"])
+
+        try managed.writeReceipt(since: since, error: PIRDebugLaunchOptions.ParseError.existingProfile)
+        let failed = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: managed.receiptURL)) as? [String: Any])
+        XCTAssertEqual(failed["status"] as? String, "error")
+        XCTAssertEqual(failed["errorCode"] as? String, "profileAlreadyExists")
+        XCTAssertEqual((failed["jobs"] as? [Any])?.count, 0)
     }
 }
 #endif

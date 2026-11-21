@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import Combine
 import Foundation
 import Testing
@@ -123,6 +124,31 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Back on a blank chat from another tab, it is a new chat again", .timeLimit(.minutes(1)))
+    func switchBack() async {
+        let sut = makeSUT()
+        let blankChat = PageScript()
+        let otherTab = PageScript()
+        sut.activateForTab("tab-A")
+        sut.bindToTab(blankChat.script)
+        sut.showCollapsed()
+        await blankChat.reportResponseState("ready")
+        #expect(sut.isGuaranteedNewChat)
+
+        sut.activateForTab("tab-B")
+        sut.bindToTab(otherTab.script)
+        #expect(!sut.isGuaranteedNewChat)
+
+        sut.activateForTab("tab-A")
+        sut.bindToTab(blankChat.script)
+        #expect(sut.isGuaranteedNewChat)
+
+        sut.unbind()
+        sut.bindToTab(blankChat.script)
+        #expect(sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Not while a tab waits for voice to start", .timeLimit(.minutes(1)))
     func voiceRequested() {
         let sut = makeSUT()
@@ -169,6 +195,26 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
 
         sut.isAIChatPromoVisible = false
         #expect(sut.isAIChatPromoClear)
+    }
+}
+
+/// A tab's script with the real handler, so it remembers what the page reported.
+@MainActor
+private final class PageScript {
+    let handler: AIChatUserScriptHandler
+    let script: AIChatUserScript
+
+    init() {
+        let featureFlagger = MockFeatureFlagger()
+        handler = AIChatUserScriptHandler(experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
+                                          syncHandler: MockAIChatSyncHandling(),
+                                          bonusHandler: MockAIChatBonusHandling(),
+                                          featureFlagger: featureFlagger)
+        script = AIChatUserScript(handler: handler, debugSettings: MockAIChatDebugSettingsForTests())
+    }
+
+    func reportResponseState(_ status: String) async {
+        _ = await handler.getResponseState(params: ["status": status], message: MockUserScriptMessage(name: "test", body: [:]))
     }
 }
 

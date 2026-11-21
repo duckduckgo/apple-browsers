@@ -569,6 +569,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         set { handler.isAIChatPromoVisible = newValue }
     }
 
+    @MainActor
+    var aiChatStatusOnPage: AIChatStatusValue? {
+        get { handler.aiChatStatusOnPage }
+        set { handler.aiChatStatusOnPage = newValue }
+    }
+
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         handler.setOpenLinkHandler(openLinkHandler)
     }

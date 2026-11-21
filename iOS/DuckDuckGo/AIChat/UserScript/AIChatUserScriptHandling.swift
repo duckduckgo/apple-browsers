@@ -178,6 +178,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
     /// What the page last said about its promos (`aiChatPromoVisibility`), `nil` until it says anything.
     @MainActor var isAIChatPromoVisible: Bool? { get set }
+    /// What the page last said about its response state (`responseState`), `nil` until it says anything.
+    @MainActor var aiChatStatusOnPage: AIChatStatusValue? { get set }
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?)
     @MainActor func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
@@ -278,6 +280,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     /// Per page: the tab clears it when a new document commits, since that page reports its promos again.
     @MainActor var isAIChatPromoVisible: Bool? {
         didSet { inputBoxHandler?.isAIChatPromoVisible = isAIChatPromoVisible }
+    }
+    /// Per page, like the promo value: the page reports a state only when it changes, so a returning input box needs the last one.
+    @MainActor var aiChatStatusOnPage: AIChatStatusValue? {
+        didSet {
+            guard let aiChatStatusOnPage else { return }
+            inputBoxHandler?.aiChatStatus = aiChatStatusOnPage
+        }
     }
 
     private var isAttachmentPrivacyEnabled: Bool {
@@ -640,7 +649,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: params, options: [])
             let decodedStatus = try JSONDecoder().decode(AIChatStatus.self, from: jsonData)
-            inputBoxHandler?.aiChatStatus = decodedStatus.status
+            aiChatStatusOnPage = decodedStatus.status
             chatStatusHandler?(decodedStatus.status)
             if let attachments = decodedStatus.attachments {
                 inputBoxHandler?.attachmentUsage = attachments
@@ -753,6 +762,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.inputBoxHandler = inputBoxHandler
         self.inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage
         self.inputBoxHandler?.isAIChatPromoVisible = isAIChatPromoVisible
+        if let aiChatStatusOnPage {
+            self.inputBoxHandler?.aiChatStatus = aiChatStatusOnPage
+        }
     }
 
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {

@@ -737,10 +737,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = userScript
         boundUserScriptIdentifier = newIdentifier
-        userScript.inputBoxHandler = self
         if hadPreviousScript {
             resetSessionState()
         }
+        // After the reset: attaching pushes the page's last reported state, which the reset must not wipe.
+        userScript.inputBoxHandler = self
         syncChipVisibility(hasExistingChat: hasExistingChat)
         refreshToolsPresentation()
         refreshNewChatState()

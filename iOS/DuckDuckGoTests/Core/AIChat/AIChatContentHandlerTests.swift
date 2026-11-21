@@ -224,6 +224,18 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(replacement.isAIChatPromoVisible, false)
     }
 
+    /// The page reports its state only when it changes, so a script rebuilt under it must keep the last one.
+    func testWhenTheUserScriptIsReplacedThenTheReplacementKeepsThePagesResponseState() {
+        let original = MockAIChatUserScript()
+        handler.setup(with: original, webView: WKWebView(), displayMode: .fullTab)
+        original.aiChatStatusOnPage = .ready
+        let replacement = MockAIChatUserScript()
+
+        handler.setup(with: replacement, webView: WKWebView(), displayMode: .fullTab)
+
+        XCTAssertEqual(replacement.aiChatStatusOnPage, .ready)
+    }
+
     /// A new tab is given the payload before its user scripts are installed.
     func testWhenAPayloadIsSetBeforeTheUserScriptThenTheHandoffIsAnnouncedOnceTheScriptArrives() {
         handler.setPayload(payload: ["aiChatPrompt": "More bread recipes", "aiChatAutoPrompt": true] as AIChatPayload)
@@ -1162,6 +1174,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     var isTermsOfServiceShownOnPage = false
     var isAIChatPromoVisible: Bool?
+    var aiChatStatusOnPage: AIChatStatusValue?
 
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         openLinkHandlerSet = true
@@ -1282,6 +1295,7 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func willHandOff(_ payload: AIChatPayload) {}
     var isTermsOfServiceShownOnPage = false
     var isAIChatPromoVisible: Bool?
+    var aiChatStatusOnPage: AIChatStatusValue?
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?) {}
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {}
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {}

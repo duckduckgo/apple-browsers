@@ -2322,6 +2322,35 @@ extension AIChatUserScriptHandlerTests {
 
         XCTAssertNil(inputBox.isAIChatPromoVisible)
     }
+
+    @MainActor
+    private func reportStatus(_ status: String) async {
+        _ = await aiChatUserScriptHandler.getResponseState(params: ["status": status], message: MockUserScriptMessage(name: "test", body: [:]))
+    }
+
+    /// The page reports its state only when it changes, so the input coming back to the tab must learn the last one.
+    @MainActor
+    func testWhenTheInputBoxBindsAgainThenItLearnsThePagesLastResponseState() async {
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(MockAIChatInputBox())
+        await reportStatus("ready")
+        let inputBox = MockAIChatInputBox()
+
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        XCTAssertEqual(inputBox.aiChatStatus, .ready)
+    }
+
+    /// The tab clears the state when a new document commits, so a stale one never reaches the input.
+    @MainActor
+    func testWhenTheResponseStateIsClearedThenAnInputBoxThatBindsLearnsNothing() async {
+        await reportStatus("ready")
+
+        aiChatUserScriptHandler.aiChatStatusOnPage = nil
+        let inputBox = MockAIChatInputBox()
+        aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
+
+        XCTAssertEqual(inputBox.aiChatStatus, .unknown)
+    }
 }
 
 // MARK: - handleTermsAcceptedIfNeeded Tests

@@ -95,6 +95,16 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         XCTAssertEqual(otherDecision, .banner(TranslationOffer(source: "fr", target: "en")))
     }
 
+    func testOffersWhenTheFlagIsOnButTheConfigHasNoPageTranslationEntry() async throws {
+        let manager = MockPrivacyConfigurationManager()
+        manager.privacyConfig = try WebPageTranslationSettingsTests.config(settings: nil)
+        let provider = try makeProvider(settings: WebPageTranslationSettings(privacyConfigurationManager: manager))
+
+        let page = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!])
+        let decision = await provider.decision(in: page)
+        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en")))
+    }
+
     func testEligibility() {
         XCTAssertTrue(PageTranslationOfferProvider.isEligible(URL(string: "https://example.fr/article")!))
         XCTAssertTrue(PageTranslationOfferProvider.isEligible(URL(string: "http://example.fr/")!))

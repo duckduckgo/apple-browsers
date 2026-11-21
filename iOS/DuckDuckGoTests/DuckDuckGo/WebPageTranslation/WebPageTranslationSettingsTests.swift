@@ -64,6 +64,19 @@ final class WebPageTranslationSettingsTests: XCTestCase {
         XCTAssertTrue(sut.isEnabled(forDomain: "example.com"))
     }
 
+    func testBlocksNoSiteWhenTheFeatureIsMissing() throws {
+        let sut = try makeSUT(settings: nil)
+        XCTAssertTrue(sut.isEnabled(forDomain: "example.fr"))
+        XCTAssertTrue(sut.isEnabled(forDomain: nil))
+    }
+
+    func testBlocksNoSiteWhereProtectionsAreOff() throws {
+        let manager = MockPrivacyConfigurationManager()
+        manager.privacyConfig = try Self.config(settings: "{}", unprotectedDomains: ["example.fr"])
+        let sut = WebPageTranslationSettings(privacyConfigurationManager: manager)
+        XCTAssertTrue(sut.isEnabled(forDomain: "example.fr"))
+    }
+
     private func makeSUT(settings: String?) throws -> WebPageTranslationSettings {
         let manager = MockPrivacyConfigurationManager()
         manager.privacyConfig = try Self.config(settings: settings)
@@ -71,7 +84,9 @@ final class WebPageTranslationSettingsTests: XCTestCase {
     }
 
     /// A real config with `features.pageTranslation` carrying `settings`; nil leaves the feature out.
-    static func config(settings: String?, exceptions: [String] = []) throws -> PrivacyConfiguration {
+    static func config(settings: String?,
+                       exceptions: [String] = [],
+                       unprotectedDomains: Set<String> = []) throws -> PrivacyConfiguration {
         let exceptionsJSON = exceptions.map { #"{"domain": "\#($0)"}"# }.joined(separator: ",")
         let feature = settings.map {
             #", "pageTranslation": {"state": "enabled", "exceptions": [\#(exceptionsJSON)], "settings": \#($0)}"#
@@ -79,7 +94,7 @@ final class WebPageTranslationSettingsTests: XCTestCase {
         let json = #"{"features": {"contentBlocking": {"state": "enabled", "exceptions": []}\#(feature)}, "unprotectedTemporary": []}"#
         return AppPrivacyConfiguration(data: try PrivacyConfigurationData(data: Data(json.utf8)),
                                        identifier: "",
-                                       localProtection: MockDomainsProtectionStore(),
+                                       localProtection: MockDomainsProtectionStore(unprotectedDomains: unprotectedDomains),
                                        internalUserDecider: DefaultInternalUserDecider(store: InternalUserStore()))
     }
 }

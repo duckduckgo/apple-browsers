@@ -1,0 +1,5 @@
+[
+  {"path": "AppRouting", "testTargets": ["AppRoutingTests"]},
+  {"path": "InstallStatistics", "testTargets": ["InstallStatisticsTests"]},
+  {"path": "SystemSettingsPiPTutorial", "scheme": "SystemSettingsPiPTutorial-Package", "testTargets": ["SystemSettingsPiPTutorialTests"]}
+]

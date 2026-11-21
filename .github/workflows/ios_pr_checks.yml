@@ -10,6 +10,8 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/check-swift-concurrency-warnings.py'
+      - 'scripts/run-shared-package-checks.sh'
       - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
@@ -69,6 +71,8 @@ jobs:
         .xcode-version
         SharedPackages/**
         iOS/**
+        scripts/check-swift-concurrency-warnings.py
+        scripts/run-shared-package-checks.sh
         scripts/translation-pr-checks/**
 
   shellcheck:
@@ -232,8 +236,16 @@ jobs:
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          | tee xcodebuild.log \
+          2>&1 | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
+
+    - name: Scan app build for strict concurrency warnings
+      run: python3 ../scripts/check-swift-concurrency-warnings.py xcodebuild.log --package-roots LocalPackages ../SharedPackages
+
+    - name: Check strict concurrency in iOS packages
+      env:
+        DESTINATION: ${{ steps.select-simulator.outputs.destination }}
+      run: ../scripts/run-shared-package-checks.sh ios "$DESTINATION" iOS/LocalPackages iOS/LocalPackages/strict-concurrency-checks.json
 
     - name: Compute Compilation Cache hash
       if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
@@ -270,6 +282,7 @@ jobs:
         name: ios-unittests.xml
         path: |
           iOS/unittests.xml
+          iOS/LocalPackages/*/ios-unittests.xml
           iOS/unittests-crash-details.json
         retention-days: 7
 
@@ -280,6 +293,8 @@ jobs:
         name: BuildLogs
         path: |
           iOS/xcodebuild.log
+          iOS/LocalPackages/*/ios-build-log.txt
+          iOS/LocalPackages/*/DerivedData/Logs/Test/*.xcresult
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 

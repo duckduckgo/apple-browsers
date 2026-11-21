@@ -107,11 +107,11 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Never with the flag off", .timeLimit(.minutes(1)))
+    @Test("Detected with the flag off too, so new chats are counted either way", .timeLimit(.minutes(1)))
     func flagOff() {
         let sut = makeSUT(isFlagOn: false)
         openBlankChat(sut)
-        #expect(!sut.isGuaranteedNewChat)
+        #expect(sut.isGuaranteedNewChat)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -660,6 +660,7 @@ class MainViewController: UIViewController {
         didSet { remoteMessageImpressionReporter.observeInputVisibility(unifiedToggleInputCoordinator) }
     }
     var browserTabMentionSuggestionsController: BrowserTabMentionSuggestionsController?
+    var newChatHintsPresenter: NewChatHintsPresenter?
     var unifiedInputStateStore: UnifiedInputStateStore?
     var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
@@ -4390,6 +4391,7 @@ class MainViewController: UIViewController {
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
         browserTabMentionSuggestionsController?.updateLayout()
+        newChatHintsPresenter?.updateLayout()
         updateWindowedAddressBarCorners()
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
         bringFindInPageToFrontIfNeeded()

@@ -130,7 +130,7 @@ extension Tab {
     }
 }
 
-private enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
+enum UnifiedPromptSubmittedSelectedToolPixelValue: String {
     case webSearch = "web_search"
     case imageGeneration = "image_generation"
     case none

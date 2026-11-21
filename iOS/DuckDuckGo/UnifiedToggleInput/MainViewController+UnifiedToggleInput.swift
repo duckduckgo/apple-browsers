@@ -138,6 +138,10 @@ extension MainViewController {
         let mentions = BrowserTabMentionSuggestionsController(coordinator: coordinator, parentView: view)
         browserTabMentionSuggestionsController = mentions
         coordinator.onTabMentionSuggestionsChanged = { [weak mentions] in mentions?.show($0) }
+        newChatHintsPresenter = NewChatHintsPresenter(coordinator: coordinator,
+                                                      parentView: view,
+                                                      headerView: viewCoordinator.aiChatTabChatHeaderContainer,
+                                                      below: viewCoordinator.unifiedToggleInputContainer)
         installFloatingReturnKeyViewController()
         installDuckAIKeyboardEdgeSweep()
         installSwipeTabsGesturesForUnifiedInput()

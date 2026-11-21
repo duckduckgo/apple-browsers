@@ -10,215 +10,185 @@ Prove the change on the running app, not by reading code. A proof is: the action
 state, and a second, independent read that shows it (AX state, page URL, a log line, a pixel). No
 evidence, no verdict.
 
-Bundle id (Debug, DeveloperID): `com.duckduckgo.macos.browser.debug`
-
-**How it gets used.** Agents don't pick this skill on their own (`disable-model-invocation`), so name it when you
-start a task ("… and verify it with verify-macos-browser"), or invoke `/verify-macos-browser`.
+**How it gets used.** Agents don't pick this skill on their own: name it in the task, or invoke `/verify-macos-browser`.
 
 ## 0. Before you start
 
 - **Ask the user where to run it**, unless they already said:
-  - **On this Mac:** drives the user's screen; they can't use the Mac meanwhile.
-  - **In a VM:** runs in a macOS VM over ssh, never touching their screen. Offer it only when one is set up
-    (`ssh vm-1 true` works); otherwise mention `VM-SETUP.md` once. In a VM, run `verify.sh vm <topic>` first;
-    every later step then runs there, and the screen and grant points below don't apply.
-- On this Mac, tell the user you're about to take over the screen and wait for an OK (unless a harness's
-  approved plan covers it). Ask them not to switch apps while you drive.
-- On this Mac, the process that runs `verify.sh ax` needs the Accessibility and Screen Recording grants. An
-  agent's own shell often has neither (`osascript`: "not allowed assistive access"; `screencapture`: "could not
-  create image from display"): drive with computer use, or put the `ax` steps in a script and run it from a
-  terminal that holds both grants, output to a file. The other commands need no grant.
-- Pick a short `<topic>` (e.g. `ntp-promo`): it names the build, the log filter and the evidence folder.
+  - **In a VM** (`--target vm`, or `vm-1`/`vm-2`): never touches their screen. Offer it when one is set up
+    (`ssh vm-1 true` works); otherwise mention `VM-SETUP.md` once.
+  - **On this Mac** (`--target mac`): drives their screen; tell them and wait for an OK. The process running it
+    needs the Accessibility and Screen Recording grants; an agent's shell often has neither.
+- **New Mac, checkout, Xcode or macOS, or a new VM?** `bin/verify-macos-browser selftest [--target vm-1|vm-2|mac]`
+  checks each step in order and names the first that fails, why, and the fix.
 - Read `features/README.md`, then `features/<feature>.md` for the area you're touching. Every entry point your
-  change touches needs its own check or an Unverified line.
+  change touches needs its own check or an `unverified` line.
+- For state, timing or geometry claims, add temporary logs with one tag (`os.Logger` with public interpolation;
+  `NSLog` doesn't reach the unified log): `Logger(subsystem: "verify", category: "verify").notice("[VERIFY] …")`.
+  They land in `log.txt`; remove every `[VERIFY]` line before commit (cleanup fails while any is left).
 
-## 1. Instrument (only if needed)
-
-For state, timing or geometry claims, add temporary logs with one fixed tag. Use `os.Logger` with
-public interpolation; `NSLog` lines don't reach the unified log in this app.
-
-```swift
-import os
-Logger(subsystem: "verify", category: "verify").notice("[VERIFY] <what>: \(String(describing: value), privacy: .public)")
-```
-
-Remove every `[VERIFY]` line before commit (step 6).
-
-## Run every step through `verify.sh`
-
-Every shell step below goes through one script, so one permission rule covers the whole run:
+## 1. Write and run a proof
 
 ```
-.claude/skills/verify-macos-browser/scripts/verify.sh <command> <topic> [args]   # from the worktree root
+V=.claude/skills/verify-macos-browser/bin/verify-macos-browser   # from the worktree root
+$V new-proof cmd-t-tab [--evidence-dir <dir>]   # prints <dir>/<stamp>-<name>-<id>/proof.py; edit it
+$V check <proof>                                 # compile, shape, FLAGS; no app, no build
+$V prove <proof> --target vm-1 [--evidence-dir <dir>]   # vm, vm-1, vm-2 or mac
 ```
 
-Call it as a single command: no `&&`, `;`, pipes, `cd`, variables or redirects around it. Anything
-compound, or any command you write by hand, asks the user for approval again. If you need something
-the script can't do, add a subcommand to it instead of a one-off command. Evidence lands in
-`~/.ddg-verify-macos/<topic>/`, outside the checkout (`VERIFY_MACOS_HOME` overrides the root). Exit codes:
-`0` ok, `1` a check failed, `2` error or can't tell.
+**Copy the closest example.** `examples/` are worked proofs of the harness, kept passing, not recipes:
+`t1_launch_doctor`, `t2_tabs` (Cmd+T, Cmd+W, tab count), `t3_fixture_page` (local page, no live service),
+`t4_pixel` (`mark`, `expect_pixel`, `expect_no_pixel`), `t5_dark_window` (`CONDITIONS`), `t6_duckai_tab` and
+`t7_duckai_sidebar` (see `features/`). The docstring is the claim
+(report.md's Verified line); the `new-proof` template explains the rest.
 
-## 2. Set state (before build: the app reads it at launch)
+**Conditions.** So screenshots compare between runs and with `--base`, declare
+`CONDITIONS = dict(appearance="dark", window=(40, 60, 1280, 800), language="de", locale="de_DE")`: each is set, read
+back, recorded and undone after the proof. Appearance: a VM's system setting, and every VM run starts light; on this
+Mac, the app's own theme setting, and an undeclared run keeps the engineer's.
 
-- **Feature flags:** pin every flag the behavior depends on, on or off. Never rely on what the
-  remote privacy configuration says today.
-  ```
-  verify.sh flag <topic> <FeatureFlagCaseName> on|off
-  ```
-  It reads `FeatureFlag.swift` in the checkout (run it from the worktree root, or set
-  `VERIFY_WORKTREE`) and refuses an unknown case or one with `supportsLocalOverriding: false`, whose
-  override the app would ignore.
-- **Other state:** `verify.sh set-default <topic> <key> <type> <value>` with the exact key; it is
-  remembered for cleanup. Never `defaults delete` the whole domain.
-  Most preferences are read once at launch (e.g. `TabsPreferences` is `@Published`, loaded in `AppDelegate`):
-  a `defaults write` while the app runs doesn't reach it. To change one mid-run, set it and run `build` again
-  (a no-change build only relaunches), or change it through Settings.
-- Never use `UITEST_MODE=1`: it switches the app's run type and changes behavior in over 100 places.
+`prove` reserves the VM, pins `FLAGS`, builds (incremental; uncommitted edits included), launches as an internal user
+(en-US by default), skips onboarding in a VM, runs `doctor`, runs the proof, takes `final.png`, writes the logs and
+`report.md`, and always cleans up: on pass, fail and Ctrl-C. A proof is throwaway: it stays with its evidence,
+never in the repo (only `examples/` are kept).
 
-## 3. Build and launch
+What `mac` gives you (`scripts/harness.py`):
+- **Act:** `press(target)` (AX press), `click(target)` (real click), `type(text)`, `key("cmd+t")`. A target is an AX
+  id (prefer `AccessibilityIdentifiers` in `macOS/UITests/Common/XCUIApplicationExtension.swift`) or a title;
+  `nth=` picks one of several. It never guesses.
+- **Read:** `find(target)`, `tab_count()` (the front window's), `url()`.
+- **Assert (they wait):** `expect_tab_count(n)`, `expect_url_contains(text)`, `eventually(what, fn)`, `check(what, ok)`.
+- **Telemetry:** `mark()` right before the action, then `expect_pixel(name, params=)`, `expect_no_pixel(name)`,
+  `expect_wide_event(feature, status=)`. Name a pixel as it fires: a `.daily` one fires as `<name>_daily`, so a
+  negative check on the plain name can't fail. Pick a negative check the action could plausibly trigger.
+- **Evidence:** `shot(name)`, `note(text)`, `unverified(what, why)`. **Setup only:** `navigate(url)`.
 
-```
-verify.sh build <topic> <path-to-checkout> [--automation]
-```
-
-- Quits this topic's previous build, builds with `xcodebuild` (uncommitted edits included), records the source
-  fingerprint and the binaries' sha256, and launches with `-AppleLanguages (en) -AppleLocale en_US
-  -isInternalUser true`. Locators match English; pass `--language <l> --locale <l>` only to test localization.
-- Waits until the app is ready (a main window, or the content blocker with `--automation`) and starts the
-  PixelKit stream. Full output in `build.log`.
-- `--automation` starts the AutomationServer so `web` can read the URL, run JS and `web navigate <url>` for
-  setup (never the action under proof). It **turns off popup blocking and the quit survey**: never use it to
-  verify either.
-- DerivedData is found, not configured: this checkout's Xcode folder, else the main checkout's, else a new
-  `<checkout>/.build/DerivedData` (full build). `VERIFY_DERIVED_DATA=<path>` forces one.
-- About 23–40 s incremental. Don't build in Xcode at the same time. On a build failure, report the first error
-  and stop; don't fix unrelated build issues. Exception: after switching branches, "type X has no member Y"
-  for code that is there is a stale module in DerivedData: move that module out and rebuild.
-
-## 4. Doctor (always, before driving)
-
-```
-verify.sh doctor <topic>
-```
-
-It checks three things against what `build` recorded and fails (exit 2) on any mismatch:
-- the worktree's source fingerprint (HEAD plus every uncommitted change): `STALE SOURCE`;
-- the sha256 of the binary and its `.debug.dylib` (Debug keeps the app code there): `REBUILT`;
-- the process started after the build ended: `OLD PROCESS`.
-
-It also counts `[VERIFY]` strings in the `.debug.dylib`: above 0 if you instrumented. Never drive a
-stale build; rebuild.
-
-## 5. Drive and capture
-
-- Drive the `DuckDuckGo - verify-<topic>` window only: computer use, or `verify.sh ax <topic> …` (`dump`,
-  `find`, `press`, `clickel`, `click <x> <y> [cmd|shift|opt|ctrl|middle]`, `type`, `key`; see
-  `scripts/ax.swift`). `find` matches across windows: pick the element inside the window you mean by its frame.
-- Prefer AX ids (`AccessibilityIdentifiers` in `macOS/UITests/Common/XCUIApplicationExtension.swift`) over
-  titles, and titles over coordinates.
-- Take the user's real path: menus, clicks, shortcuts. `web` reads back and never stands in for the action
-  being proved. Never debug setters or internal URLs.
-- Confirm every end state with a second, independent read. An action that returned ok proves nothing.
-  `ax press` prints AX's code, which isn't the outcome: a press on the tab bar's new-tab button reports
-  `-25200` and still opens the tab.
-- Screenshots only for visual or layout claims: `verify.sh shot <topic> NN-<step>`, the app's window only;
-  it refuses when another app is in front. Capture before and after the action.
+Proof rules:
+- Act through the user's path: menus, clicks, shortcuts. `url()` reads back; `navigate` sets up; neither
+  stands in for the action under proof. Never debug setters or internal URLs.
+- Pin every flag the behavior depends on. Never rely on the live privacy configuration.
+- Select pixels by name and order, never by the params you expect. `Skipped` is not `Fired`.
 - Shortcuts inside an `NSPopover` (Esc, Return) only fire when its window is key: test them explicitly.
-- Deadlines: `verify.sh wait <topic> <seconds>`, then read AX state and logs.
-- `verify.sh logs <topic>`: the run's `[VERIFY]` lines to `log.txt`, the app's log since launch to `app.log`.
 
-### Telemetry
+**Fixture pages and LIVE.** Prefer a local page to a live site: `mac.navigate(mac.fixture_url(mac.token("x")))`
+(`AUTOMATION = True`) opens `fixture/index.html`, served for this run only on 127.0.0.1 (in a VM, via an ssh tunnel to
+its loopback). It shows the token, writes localStorage, links to `target.html` and a download, and has a disabled
+button, two buttons sharing a label and a long list. Name every live service the proof needs in `LIVE`. With `AUTOMATION`, the report
+lists the hosts the app loaded (navigated, read by `url()`, and the front tab's resources at the end; not other tabs
+or the app's own requests), says "no live hosts observed" or "live: …" (hosts are read at `navigate()`, `url()` and the last page), and flags in bold any host `LIVE` doesn't cover.
 
-Debug builds send nothing: pixels are dry-run and logged on subsystem `PixelKit`
-(`👾[<freq>-Fired] <name> [params]`, or `Skipped` when a frequency rule suppressed it); wide events go
-to `wide-event-validation-log.jsonl`. Setup fires pixels too, so:
-
-```
-verify.sh mark <topic>                       # right before the action under test
-verify.sh expect-pixel <topic> <name> [key=value…] [--timeout 10]
-verify.sh expect-no-pixel <topic> <name> [--within 3]
-verify.sh expect-wide-event <topic> <feature> [--status SUCCESS]
-```
-
-- Without a mark they fail. A dead pixel stream fails (exit 2); it never passes `expect-no-pixel`.
-- Select by name and order, never by the params you expect. `Skipped` is not `Fired`; a failed
-  `expect-pixel` lists the skipped ones.
-- Raw payloads are kept: `pixels.ndjson`, `pixels.json`, `wide-events.json`.
-
-## 6. Cleanup
-
-1. `verify.sh cleanup <topic>`: writes `app.log` and `manifest.json` (revision, dirty flag, source
-   fingerprint, build hashes, launch args, flags and defaults, macOS and Xcode versions, skill hash,
-   rerun command), stops the pixel stream, kills this topic's build by PID, deletes every default
-   it wrote, and fails while `[VERIFY]` lines are left in the checkout.
-2. Remove those `[VERIFY]` lines and run cleanup again until it passes.
-3. Confirm the evidence folder still exists.
-
-## 7. Report
-
-Write `report.md` in the evidence folder as one PR verification scenario, in this order:
+**Before and after (bug fixes).** Show the bug on the base revision with the same proof, then the fix. Wrap the
+checks that show the bug in `with mac.on_base("fail"):`; every other check must come out the same on both.
 
 ```
-## Verified
-<one line a reviewer reads: what the user sees, under which conditions>
-
-## Evidence
-<relative links: screenshots, log.txt, app.log, pixels.json, wide-events.json>
-
-## Outcome
-Passed: <each check, with its evidence line>
-Failed: <each check>
-Problems: <cleanup or evidence failures; never hide them>
-
-## Details
-revision <sha> (dirty: yes/no) · flags · language · automation on/off · macOS · rerun command
-(from manifest.json)
-
-## Unverified
-- <entry point or claim> — <why>
+$V prove <proof> --target vm-1 --base "$(git merge-base HEAD origin/main)" [--evidence-dir <dir>]
 ```
 
-- **Pass** needs at least one passing check, no failing check, and the app still running at the end.
-- A problem before the action under test (build, doctor, launch, readiness, a permission prompt) is
-  **INCONCLUSIVE**: it couldn't tell either way, which is never a pass.
-- An entry point you couldn't drive goes to Unverified, never "verified through another path".
-- Never fall back to "the code looks right".
+It proves the base in a worktree kept at `~/.ddg-verify-macos/base/<sha12>` (its own DerivedData: the first build is
+cold, 5 to 20+ min, then incremental; each `--base` run removes the others unused for 3 days, `$V clean-base` all of
+them), then this checkout, with
+the same VM, flags and conditions (any that differ: INCONCLUSIVE), each from a reset. On the base a check declared `fail` is recorded and the proof carries on; any
+other error there is INCONCLUSIVE. **PASS** needs this checkout to pass and the base to do what each check declares,
+with at least one declared `fail`; a `fail` check that passes on the base is **FAIL**: the proof doesn't reproduce
+the bug. `report.md` shows each check and screenshot Before | After; each run's evidence is in `base/` and `change/`.
+Checks match across the runs by name, with `token()` values and local ports left out. On the base a `FLAGS` entry
+its revision doesn't define is skipped, and the report says so. Different macOS versions: INCONCLUSIVE.
+An element the bug removes can't be pressed on the base (an action error, INCONCLUSIVE): declare that with
+`eventually("…", lambda: mac.find(x))` inside `on_base("fail")` and press it only after.
+By hand: `git worktree add --detach <dir> <ref>`, then `$V prove <proof> --target vm-1 --checkout <dir>`.
 
-Tell the user the passed, failed and unverified behavior, the revision, the rerun command and the
-evidence folder. Look at the screenshots before claiming anything about appearance.
+## 2. Evidence and report
+
+**Where evidence goes.** Each run writes one attempt folder, `<stamp>-<name>-<id>/`, in `--evidence-dir <dir>`
+(pass the directory your tooling publishes from) or by default in `~/.ddg-verify-macos/`
+(`VERIFY_MACOS_HOME` overrides it). A directory inside a git checkout is refused (exit 2), symlinks resolved: this
+repo is public. A finished attempt is never overwritten. `prove` without `--evidence-dir` keeps a proof made with `new-proof --evidence-dir <dir>` in that directory; the
+manifest and rerun command record it.
+
+The attempt folder holds `proof.py`, `report.md`, `manifest.json` (revision, dirty flag, source fingerprint, build and running-binary
+hashes, launch args, flags, macOS and Xcode, VM, skill hash, checks, rerun command), your screenshots,
+`final.png`, `app.log`, `log.txt`, `pixels.json`, `wide-events.json`, `transcript.jsonl` (every `verify.sh` call),
+and `recording.mp4`, from after launch to `final.png`: a VM's whole screen, or on this Mac only the app's window,
+cut where another app came in front or the window moved, resized or closed (Problems: "cut short"). `prove --no-video` turns it off; the report says so.
+
+`report.md` is one PR verification scenario: **Verified** (the docstring), **Evidence**, **Outcome** (label,
+passed, failed, problems, warnings, notes), **Details** (revision, build and running binary, target and its
+macOS, flags, conditions, rerun), **Unverified**. The verdict comes from what ran, by fixed rules:
+- **PASS** (exit 0): at least one passing check, no failing check, the app still running at the end.
+- **FAIL** (exit 1): a check failed, or the app was gone at the end.
+- **INCONCLUSIVE** (exit 2): setup broke (VM, build, doctor, launch, readiness), an action or read failed, or
+  nothing was checked. Never a pass. Ctrl-C exits 130; the report is still written.
+- **Problems** (screenshot or recording failed, dead pixel stream, VM not released, cleanup failed) are always listed;
+  a pass with problems exits 2.
+
+Report to the user from `report.md`: passed, failed and unverified behavior, the revision, the rerun command and
+the evidence folder. Look at the screenshots before claiming anything about appearance, and watch the recording
+before claiming what the app did.
+
+**Publishing for a PR.** Upload the whole attempt folder: `report.md` links its screenshots and telemetry by
+relative path. Paths in `report.md` and `manifest.json` show your home folder as `~`; `app.log`, `log.txt` and
+`transcript.jsonl` are raw and may name local paths, so check them before sharing. In the PR's verification
+section, link `report.md` as the entry point, with the verdict, and the screenshots that show the claim. An entry point you
+couldn't drive is `unverified`, never "verified through another path". Never fall back to "the code looks right".
+
+**Run it in a subagent** briefed with the claim, target and evidence folder; the lead reads `report.md` and the screenshots.
+
+## Exploring by hand: `verify.sh`
+
+The low-level layer `prove` calls, for finding ids and trying steps before writing the proof:
+
+```
+S=.claude/skills/verify-macos-browser/scripts/verify.sh
+$S vm <topic> [vm-1|vm-2|auto]; $S flag <topic> <Case> on|off; $S build <topic> . [--automation]
+$S doctor <topic>; $S ax <topic> dump|find|press|clickel|click|type|key …; $S shot <topic> <name>; $S record <topic> start|stop
+$S mark|expect-pixel|expect-no-pixel|expect-wide-event <topic> …; $S web <topic> url; $S cleanup <topic>
+```
+
+A `<topic>` is 14 characters at most (`prove` derives one): a longer app name quits at launch until #8345 lands.
+
+Call it as a single command (one permission rule covers it). Exit codes: `0` ok, `1` a check failed, `2` error.
+Other state: `set-default <topic> <key> <type> <value>` before `build` (most preferences are read at launch). Never use
+`UITEST_MODE=1`. On a build failure, report the first error; after switching branches, "type X has no member Y"
+for code that is there is a stale module in DerivedData: move it out and rebuild. Don't build in Xcode meanwhile.
+
+## Trust guarantees (keep them)
+
+- The build is this source: `doctor` refuses a changed source or binary, or an older process.
+- Missing, ambiguous (unless `nth=`), disabled and off-window targets are refused; typing with nothing focused that
+  takes text is refused; a refused action changes nothing.
+- Nothing is read or acted on while the app isn't running and in front (`APP NOT RUNNING`, `NOT FRONTMOST`), so
+  "gone" can't pass on a crashed app or a popover closed by losing the front.
+- Every action reports whether it changed the accessibility tree; no-ops are listed under Warnings.
+- Telemetry counts only after `mark()`, from a stream checked to be alive.
+- Cleanup signals a recorder or log stream only while its recorded identity (pid, start time, command) still matches;
+  the app is quit by its name, which carries this run's topic.
+
+Changed the harness, `verify.sh`, `vhelp.py` or `ax.swift`? Run `tests/`, then
+`$V prove .claude/skills/verify-macos-browser/tests/must_fail.py --target vm-1` (PASS: every refusal it covers still refuses;
+the `--base` refusals are covered by `tests/test_base.py`),
+then each `examples/*.py` must PASS.
+
+## Running in a VM
+
+- `vm` reserves a free VM (a lock per VM in `~/.ddg-verify-macos/.vm-locks/`), resets the app, its data,
+  Downloads, pasteboard (keychain kept) and copies `ax`. `cleanup` releases it. `NO VM FREE` lists who holds each lock.
+- `build` compiles here (one build at a time), copies the app with `tar`, checks its hashes, launches it in the VM
+  and presses Debug → Skip Onboarding (`--keep-onboarding` to test onboarding). Pixels stream back over ssh.
+- ssh goes to the local network, which Claude Code's sandbox blocks: run it unsandboxed.
+- `NOT LAUNCHED` in a VM is usually AMFI: its Provisioning UDID isn't in the profile (VM-SETUP.md step 4).
+  `NOT READY` with no window: a keychain dialog waits in the VM (VM-SETUP.md step 5).
 
 ## Stop and ask the user
 
-(When a harness runs this unattended: don't stop. Mark the claim Unverified with the reason and
-return.)
+(When a harness runs this unattended: don't stop. Mark the claim Unverified with the reason and return.)
 
-- A TCC prompt appears (Screen Recording, Accessibility, Notifications, etc.).
-- On this Mac, nothing in the session holds the Accessibility and Screen Recording grants: ask the user, or
-  offer a VM.
+- A TCC prompt appears, or on this Mac nothing in the session holds the grants: ask, or offer a VM.
 - A sign-in, payment or subscription purchase is required.
 - The build fails in code you didn't touch.
 - The same claim stays unverified after 2 attempts. Then question the premise; don't retry blindly.
 
-## Running in a VM
-
-```
-verify.sh vm <topic> [vm-1|vm-2|auto]      # before flag/set-default/build
-```
-
-- Reserves a free VM (a lock per VM in `~/.ddg-verify-macos/.vm-locks/`), wipes the Debug app's data
-  there (the keychain stays) and copies `ax`. `cleanup` releases it. `NO VM FREE` lists who holds each lock.
-- `flag` and `set-default` write the VM's defaults. `build` compiles on this Mac (one build at a time across
-  topics: they share DerivedData), copies the app with `tar` and checks its hashes, launches it in the VM and
-  presses Debug → Skip Onboarding (pass `--keep-onboarding` to test onboarding).
-- `ax`, `shot` and `logs` run in the VM. Pixels stream back over ssh; wide events are mirrored with `tail -F`;
-  `web` goes through an ssh tunnel. `doctor` compares the VM's process start with the VM's launch time.
-- Every ssh call goes to the local network, which Claude Code's sandbox blocks: run `verify.sh` outside it.
-- `NOT LAUNCHED` in a VM is usually AMFI: that VM's Provisioning UDID isn't in the development profile
-  (VM-SETUP.md step 4). `NOT READY` with no window: a keychain dialog waits in the VM; ask the user to
-  answer it (VM-SETUP.md step 5).
-- A window can be frontmost without keyboard focus after the VM boots: `clickel` the field before `type`.
-
 ## Feature map
 
-`features/` holds one file per area, with a fixed contract (see `features/README.md`). Update the
+`features/` holds only maintained files, each with a fixed contract (see `features/README.md`); today Duck.ai's tab
+and sidebar. Update the
 file when a run teaches something new about reaching or observing the feature.

@@ -47,6 +47,9 @@ extension WebExtensionManager {
                 Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
             },
             disabledExtensionIDsDidChange: featureFlagger.updatesPublisher,
+            isExtensionsEnabled: { [featureFlagger] in
+                featureFlagger.isFeatureOn(.webExtensions)
+            },
             pixelFiring: MacOSWebExtensionPixelFiring()
         )
     }

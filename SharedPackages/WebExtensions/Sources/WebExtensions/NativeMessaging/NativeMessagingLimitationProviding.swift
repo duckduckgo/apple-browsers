@@ -24,4 +24,6 @@ public protocol NativeMessagingLimitationProviding: AnyObject {
     @MainActor func hasHitNativeMessagingLimitation(identifier: String) -> Bool
     @MainActor func isNativeMessagingAlertSuppressed(identifier: String) -> Bool
     @MainActor func suppressNativeMessagingAlert(identifier: String)
+    /// The bounded value extension pixels report for the extension.
+    @MainActor func pixelExtension(identifier: String) -> WebExtensionPixelExtension
 }

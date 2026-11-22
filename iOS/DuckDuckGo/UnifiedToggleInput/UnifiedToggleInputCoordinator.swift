@@ -1294,7 +1294,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         publishNewChatHints(inputs.visibleHints)
     }
 
-    /// The row put `hints` on screen. Only then do they count as shown: it can hide them when there's no room.
+    /// The row put `hints` on screen, so they count as shown.
     /// Passed in rather than read back, as the row hears of new hints before `newChatHints` is set.
     func newChatHintsDidAppear(_ hints: [NewChatHint]) {
         guard let currentTabUID else { return }

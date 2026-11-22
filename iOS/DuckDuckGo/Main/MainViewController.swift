@@ -4391,7 +4391,6 @@ class MainViewController: UIViewController {
         omniBar.refreshCustomizableButton()
         reanchorAITabCollapsedFooterIfNeeded()
         browserTabMentionSuggestionsController?.updateLayout()
-        newChatHintsPresenter?.updateLayout()
         updateWindowedAddressBarCorners()
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
         bringFindInPageToFrontIfNeeded()

@@ -21,13 +21,7 @@ import Core
 import Foundation
 import PixelKit
 
-protocol FireButtonDeleteAllChatsInstrumentation {
-    func shown(layout: FireButtonDeleteAllChatsPixel.Layout, context: FireButtonDeleteAllChatsPixel.Context)
-    func executed(layout: FireButtonDeleteAllChatsPixel.Layout, browsingMode: BrowsingMode, context: FireButtonDeleteAllChatsPixel.Context)
-    func countUnavailable(reason: NativeChatsReadFailure)
-}
-
-struct DefaultFireButtonDeleteAllChatsInstrumentation: FireButtonDeleteAllChatsInstrumentation {
+struct FireButtonDeleteAllChatsInstrumentation {
     let pixelFiring: (any PixelKitFiring)?
 
     init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {

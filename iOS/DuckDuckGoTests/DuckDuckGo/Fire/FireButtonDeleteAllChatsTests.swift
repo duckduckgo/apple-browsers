@@ -147,7 +147,7 @@ final class FireButtonDeleteAllChatsTests: XCTestCase {
 
     func testShownFiresForEachContextWithItsLayout() {
         let pixels = PixelKitMock()
-        let instrumentation = DefaultFireButtonDeleteAllChatsInstrumentation(pixelFiring: pixels)
+        let instrumentation = FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixels)
 
         instrumentation.shown(layout: .withThisChat, context: .tab)
         instrumentation.shown(layout: .allChatsOnly, context: .contextual)
@@ -164,7 +164,7 @@ final class FireButtonDeleteAllChatsTests: XCTestCase {
 
     func testExecutedFiresDailyAndCountForEachContextWithItsLayoutAndMode() {
         let pixels = PixelKitMock()
-        let instrumentation = DefaultFireButtonDeleteAllChatsInstrumentation(pixelFiring: pixels)
+        let instrumentation = FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixels)
 
         instrumentation.executed(layout: .allChatsOnly, browsingMode: .normal, context: .tab)
         instrumentation.executed(layout: .withThisChat, browsingMode: .fire, context: .contextual)
@@ -181,7 +181,7 @@ final class FireButtonDeleteAllChatsTests: XCTestCase {
 
     func testCountUnavailableHasOnlyTheBoundedReasonAndNoErrorParameters() {
         let pixels = PixelKitMock()
-        let instrumentation = DefaultFireButtonDeleteAllChatsInstrumentation(pixelFiring: pixels)
+        let instrumentation = FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixels)
         let reasons: [(NativeChatsReadFailure, String)] = [
             (.storageUnavailable, "storage_unavailable"), (.notMigrated, "not_migrated"),
             (.timeout, "timeout"), (.readFailed, "read_failed")

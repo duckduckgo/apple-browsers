@@ -192,7 +192,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             FireChatConfirmationPreparation(browsingMode: .normal,
                                             deleteAllChats: .init(chatCount: 1, isChatSyncEnabled: false, onDelete: onDeleteAllChatsSucceeded),
                                             context: .contextual,
-                                            instrumentation: DefaultFireButtonDeleteAllChatsInstrumentation(pixelFiring: nil))
+                                            instrumentation: FireButtonDeleteAllChatsInstrumentation(pixelFiring: nil))
         }
 
         var deletedChatIDs: [String] = []

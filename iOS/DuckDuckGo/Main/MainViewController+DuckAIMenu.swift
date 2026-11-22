@@ -43,7 +43,7 @@ extension MainViewController {
             present(FireChatConfirmationPreparation(browsingMode: tabManager.currentBrowsingMode,
                                                     deleteAllChats: nil,
                                                     context: .tab,
-                                                    instrumentation: DefaultFireButtonDeleteAllChatsInstrumentation(pixelFiring: pixelFiring)))
+                                                    instrumentation: FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixelFiring)))
             return
         }
         Task { @MainActor [weak self] in
@@ -68,7 +68,7 @@ extension MainViewController {
                                      onDeleteAllChatsSucceeded: (() -> Void)? = nil) async -> FireChatConfirmationPreparation? {
         let browsingMode = tab?.mode ?? tabManager.currentBrowsingMode
         let isFireMode = browsingMode == .fire
-        let instrumentation = DefaultFireButtonDeleteAllChatsInstrumentation(pixelFiring: pixelFiring)
+        let instrumentation = FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixelFiring)
 
         guard tab === tabManager.currentTabsModel.currentTab, browsingMode == tabManager.currentBrowsingMode else { return nil }
 

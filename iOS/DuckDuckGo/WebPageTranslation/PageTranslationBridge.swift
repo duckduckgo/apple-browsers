@@ -22,9 +22,10 @@ import UserScript
 import WebKit
 import WebPageTranslation
 
-/// Talks to C-S-S's `pageTranslation` bundle in the isolated world. The bundle answers each push
-/// with a separate notification that carries no request id, so only one request is in flight, and
-/// once a reply may still arrive late (timeout, cancel) the bridge asks nothing more of that document.
+/// Talks to C-S-S's `pageTranslation` bundle in the isolated world, injecting it once per document.
+/// The bundle answers each push with a separate notification that carries no request id, so only one
+/// request is in flight, and once a reply may still arrive late (timeout, cancel) the bridge asks
+/// nothing more of that document.
 final class PageTranslationBridge: NSObject, Subfeature {
 
     enum Error: Swift.Error {
@@ -60,15 +61,25 @@ final class PageTranslationBridge: NSObject, Subfeature {
     weak var webView: WKWebView?
 
     private let timeout: TimeInterval
+    private let inject: @MainActor () async throws -> Void
     private let customPush: ((String, Encodable) -> Void)?
 
+    @MainActor private var isRequesting = false
     @MainActor private var pending: (reply: Reply, continuation: CheckedContinuation<Any, Swift.Error>)?
     @MainActor private var timeoutTask: Task<Void, Never>?
     @MainActor private var isEnded = false
+    @MainActor private var isInjected = false
+    /// Changes with every document, so a request can tell the page changed while it was injecting.
+    @MainActor private var document = 0
 
-    /// - Parameter push: sends a message to the bundle; the broker's push into `webView` when `nil`.
-    init(timeout: TimeInterval = 30, push: ((String, Encodable) -> Void)? = nil) {
+    /// - Parameters:
+    ///   - inject: puts the bundle into the current document.
+    ///   - push: sends a message to the bundle; the broker's push into `webView` when `nil`.
+    init(timeout: TimeInterval = 30,
+         inject: @escaping @MainActor () async throws -> Void,
+         push: ((String, Encodable) -> Void)? = nil) {
         self.timeout = timeout
+        self.inject = inject
         self.customPush = push
         super.init()
     }
@@ -99,24 +110,36 @@ final class PageTranslationBridge: NSObject, Subfeature {
         return try Self.decode(ApplyResult.self, from: params).count
     }
 
-    /// Fails the pending request with `CancellationError`. Its reply may still come, so the bridge ends.
+    /// Fails the request in progress with `CancellationError`. A reply may still come, so the bridge ends.
     @MainActor
     func cancelPending() {
-        guard pending != nil else { return }
+        guard isRequesting else { return }
         finish(.failure(CancellationError()), ending: true)
     }
 
-    /// A new document has no late replies to wait for.
+    /// A new document has no late replies to wait for, and doesn't have the bundle yet.
     @MainActor
     func documentDidChange() {
         finish(.failure(CancellationError()), ending: false)
         isEnded = false
+        isInjected = false
+        document += 1
     }
 
     @MainActor
     private func request(_ method: String, params: Encodable, reply: Reply) async throws -> Any {
         guard !isEnded else { throw Error.ended }
-        guard pending == nil else { throw Error.busy }
+        guard !isRequesting else { throw Error.busy }
+        isRequesting = true
+        defer { isRequesting = false }
+
+        if !isInjected {
+            let document = document
+            try await inject()
+            // The bundle went into a page that's gone, or the request was cancelled meanwhile.
+            guard document == self.document, !isEnded else { throw CancellationError() }
+            isInjected = true
+        }
 
         return try await withCheckedThrowingContinuation { continuation in
             pending = (reply, continuation)

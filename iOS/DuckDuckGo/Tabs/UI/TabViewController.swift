@@ -875,8 +875,6 @@ class TabViewController: UIViewController {
     var pageTranslationOfferProvider: PageTranslationOfferProvider?
     private lazy var translationBannerPresenter = TranslationBannerPresenter(appSettings: appSettings)
     private var pageTranslationBridge: PageTranslationBridge?
-    /// The `pageTranslation` bundle is injected once per document.
-    private var isPageTranslationInjected = false
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -3027,7 +3025,6 @@ extension TabViewController: WKNavigationDelegate {
             browserToolsService?.ownerDidNavigate(tabID: tabModel.uid, url: webView.url)
             firstPaintCover.didCommit(navigation)
             signpostSearchCommit(url: webView.url)
-            isPageTranslationInjected = false
             pageTranslationBridge?.documentDidChange()
         }
         pageSignalsDidCommitNavigation(to: webView.url)
@@ -3171,15 +3168,23 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
+    /// The bridge belongs to these user scripts' broker, so new scripts get a new bridge.
+    private func installPageTranslationBridge(in userScripts: UserScripts) {
+        let bridge = PageTranslationBridge(inject: { [weak webView, weak userScripts] in
+            guard let webView, let userScripts else { return }
+            _ = try await webView.evaluateJavaScript(try userScripts.pageTranslationSource(), in: nil, contentWorld: .defaultClient)
+        })
+        bridge.webView = webView
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: bridge)
+        pageTranslationBridge?.cancelPending()
+        pageTranslationBridge = bridge
+    }
+
     // TODO: - Translate the extracted units (next task); for now, check extraction from the isolated world works.
     private func translatePage() {
-        guard let webView, let userScripts, let bridge = pageTranslationBridge else { return }
-        Task { [weak self] in
+        guard let bridge = pageTranslationBridge else { return }
+        Task {
             do {
-                if self?.isPageTranslationInjected == false {
-                    _ = try await webView.evaluateJavaScript(try userScripts.pageTranslationSource(), in: nil, contentWorld: .defaultClient)
-                    self?.isPageTranslationInjected = true
-                }
                 let units = try await bridge.extract()
                 
                 // TODO: - Replace debug logs below by actual translation.
@@ -5518,12 +5523,7 @@ extension TabViewController: UserContentControllerDelegate {
         siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: siteLoadingPerformanceSubfeature!)
 
-        let pageTranslationBridge = PageTranslationBridge()
-        pageTranslationBridge.webView = webView
-        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: pageTranslationBridge)
-        self.pageTranslationBridge?.cancelPending()
-        self.pageTranslationBridge = pageTranslationBridge
-        isPageTranslationInjected = false
+        installPageTranslationBridge(in: userScripts)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         

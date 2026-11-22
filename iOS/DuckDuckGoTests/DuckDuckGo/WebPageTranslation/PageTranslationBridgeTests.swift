@@ -27,11 +27,21 @@ import XCTest
 final class PageTranslationBridgeTests: XCTestCase {
 
     private var pushes: [(method: String, params: Encodable)] = []
+    private var injections = 0
+    /// Set while an injection is suspended, see `makeBridge(suspendingInjection:)`.
+    private var resumeInjection: CheckedContinuation<Void, Never>?
 
-    private func makeBridge(timeout: TimeInterval = 30) -> PageTranslationBridge {
-        PageTranslationBridge(timeout: timeout) { [weak self] method, params in
-            self?.pushes.append((method, params))
-        }
+    private func makeBridge(timeout: TimeInterval = 30, suspendingInjection: Bool = false) -> PageTranslationBridge {
+        PageTranslationBridge(timeout: timeout,
+                              inject: { [weak self] in
+                                  self?.injections += 1
+                                  if suspendingInjection {
+                                      await withCheckedContinuation { self?.resumeInjection = $0 }
+                                  }
+                              },
+                              push: { [weak self] method, params in
+                                  self?.pushes.append((method, params))
+                              })
     }
 
     /// Waits for the request's push, so a reply never arrives before the request is pending.
@@ -160,6 +170,62 @@ final class PageTranslationBridgeTests: XCTestCase {
             XCTFail("Expected an error")
         } catch {
         }
+    }
+
+    func testInjectsOncePerDocument() async throws {
+        let bridge = makeBridge()
+
+        for count in 1...2 {
+            let extraction = Task { try await bridge.extract() }
+            await waitForPush(count: count)
+            try await reply(bridge, "extractResult", ["units": []])
+            _ = try await extraction.value
+        }
+        XCTAssertEqual(injections, 1)
+
+        bridge.documentDidChange()
+        let extraction = Task { try await bridge.extract() }
+        await waitForPush(count: 3)
+        try await reply(bridge, "extractResult", ["units": []])
+        _ = try await extraction.value
+        XCTAssertEqual(injections, 2)
+    }
+
+    func testRequestDuringInjectionThrowsBusy() async throws {
+        let bridge = makeBridge(suspendingInjection: true)
+        let extraction = Task { try await bridge.extract() }
+        while resumeInjection == nil {
+            await Task.yield()
+        }
+
+        do {
+            _ = try await bridge.extract()
+            XCTFail("Expected busy")
+        } catch PageTranslationBridge.Error.busy {
+        }
+
+        bridge.documentDidChange()
+        resumeInjection?.resume()
+        _ = try? await extraction.value
+    }
+
+    func testNavigationDuringInjectionSendsNothing() async throws {
+        let bridge = makeBridge(suspendingInjection: true)
+        let extraction = Task { try await bridge.extract() }
+        while resumeInjection == nil {
+            await Task.yield()
+        }
+
+        // The script went into the page that's now gone; the new one doesn't have it.
+        bridge.documentDidChange()
+        resumeInjection?.resume()
+
+        do {
+            _ = try await extraction.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+        }
+        XCTAssertTrue(pushes.isEmpty)
     }
 
     func testReplyToAnotherRequestIsIgnored() async throws {

@@ -236,17 +236,34 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: handler)
     }
 
+    enum PageTranslationSourceError: Error {
+        case empty
+    }
+
     /// C-S-S's `pageTranslation` bundle, injected only when the user translates a page. It messages
     /// through the isolated script's handler, so it gets that broker's config. Built on first use.
+    ///
+    /// Running it again in a page that has it does nothing: a page restored from the back-forward
+    /// cache, or one whose user scripts were rebuilt, keeps the bundle, and a second copy would
+    /// answer every request too.
     func pageTranslationSource() throws -> String {
         if let pageTranslationSourceCache {
             return pageTranslationSourceCache
         }
-        let source = try ContentScopeUserScript.generateSource(privacyConfigurationManager,
+        let bundle = try ContentScopeUserScript.generateSource(privacyConfigurationManager,
                                                                properties: contentScopeProperties,
                                                                scriptContext: .pageTranslation,
                                                                config: contentScopeUserScriptIsolated.broker.messagingConfig(),
                                                                privacyConfigurationJSONGenerator: isolatedConfigGenerator)
+        guard !bundle.isEmpty else { throw PageTranslationSourceError.empty }
+        // The isolated world's globals are invisible to the page, so the page can't set the marker.
+        let source = """
+            "use strict";
+            if (!globalThis.__ddgPageTranslation) {
+            globalThis.__ddgPageTranslation = true;
+            \(bundle)
+            }
+            """
         pageTranslationSourceCache = source
         return source
     }

@@ -141,18 +141,9 @@ class FireButtonAnimator {
                  onOverlayRemoved: (() -> Void)? = nil) {
         removePreBurnSnapshot()
 
-        guard let window = UIApplication.shared.firstKeyWindow,
+        guard let composition = preLoadedComposition,
+              let window = UIApplication.shared.firstKeyWindow,
               let snapshot = window.snapshotView(afterScreenUpdates: false) else {
-            onOverlayRemoved?()
-            Task { @MainActor in
-                await onAnimationStart()
-                await onTransitionCompleted()
-                await completion()
-            }
-            return
-        }
-        
-        guard let composition = preLoadedComposition else {
             onOverlayRemoved?()
             Task { @MainActor in
                 await onAnimationStart()

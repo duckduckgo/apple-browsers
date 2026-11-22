@@ -25,13 +25,18 @@ import XCTest
 @MainActor
 final class FireButtonAnimatorTests: XCTestCase {
 
-    func testCompletedAnimationReportsBurnStillRunning() async throws {
-        _ = try XCTUnwrap(UIApplication.shared.firstKeyWindow)
+    func testCompletedAnimationUncoversWindowAndReportsBurnStillRunning() async throws {
+        let window = try XCTUnwrap(UIApplication.shared.firstKeyWindow)
         let pixels = PixelKitMock()
         let instrumentation = DefaultFireAnimationInstrumentation(
             request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .browsing),
             pixelFiring: pixels)
-        let animator = FireButtonAnimator(appSettings: AppSettingsMock())
+        let settings = AppSettingsMock()
+        settings.currentFireButtonAnimation = .fireRising
+        let animator = FireButtonAnimator(appSettings: settings)
+        let existingSubviews = window.subviews
+        var overlayViews: [UIView] = []
+        let overlayRemoved = expectation(description: "Overlay removed")
         let animationFinished = expectation(description: "Animation finished")
 
         animator.animate(instrumentation: instrumentation) {
@@ -39,9 +44,16 @@ final class FireButtonAnimatorTests: XCTestCase {
         } onTransitionCompleted: {
         } completion: {
             animationFinished.fulfill()
+        } onOverlayRemoved: {
+            XCTAssertFalse(overlayViews.isEmpty)
+            XCTAssertTrue(overlayViews.allSatisfy { $0.window == nil })
+            overlayRemoved.fulfill()
         }
 
-        await fulfillment(of: [animationFinished], timeout: 5)
+        overlayViews = window.subviews.filter { subview in
+            !existingSubviews.contains(where: { $0 === subview })
+        }
+        await fulfillment(of: [overlayRemoved, animationFinished], timeout: 5, enforceOrder: true)
 
         pixels.expectedFireCalls = [
             .init(pixel: FireAnimationPixels.animationCompleted(
@@ -51,7 +63,8 @@ final class FireButtonAnimatorTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, pixels.expectedFireCalls)
     }
 
-    func testDisabledAnimationDoesNotReportAnimationMetrics() async {
+    func testDisabledAnimationUncoversBeforeBurnWithoutReportingMetrics() async throws {
+        _ = try XCTUnwrap(UIApplication.shared.firstKeyWindow)
         let pixels = PixelKitMock()
         let instrumentation = DefaultFireAnimationInstrumentation(
             request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .browsing),
@@ -59,30 +72,13 @@ final class FireButtonAnimatorTests: XCTestCase {
         let settings = AppSettingsMock()
         settings.currentFireButtonAnimation = .none
         let animator = FireButtonAnimator(appSettings: settings)
+        var events: [String] = []
         let completed = expectation(description: "Completed without animation")
 
         animator.animate(instrumentation: instrumentation) {
+            events.append("burn")
             instrumentation.burnDidStart()
             instrumentation.burnDidFinish()
-        } onTransitionCompleted: {
-        } completion: {
-            completed.fulfill()
-        }
-
-        await fulfillment(of: [completed], timeout: 1)
-
-        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
-    }
-
-    func testWhenNoAnimationPlaysThenOverlayIsRemovedBeforeTheBurnFinishes() async {
-        let settings = AppSettingsMock()
-        settings.currentFireButtonAnimation = .none
-        let animator = FireButtonAnimator(appSettings: settings)
-        var events: [String] = []
-        let completed = expectation(description: "Completed")
-
-        animator.animate {
-            events.append("burn")
         } onTransitionCompleted: {
         } completion: {
             completed.fulfill()
@@ -90,31 +86,10 @@ final class FireButtonAnimatorTests: XCTestCase {
             events.append("overlayRemoved")
         }
 
-        // Nothing covers the screen, so it is uncovered before the burn work even starts.
         XCTAssertEqual(events, ["overlayRemoved"])
         await fulfillment(of: [completed], timeout: 1)
         XCTAssertEqual(events, ["overlayRemoved", "burn"])
-    }
-
-    func testWhenAnimationPlaysThenOverlayIsRemovedOnceItEnds() async throws {
-        let window = try XCTUnwrap(UIApplication.shared.firstKeyWindow)
-        let animator = FireButtonAnimator(appSettings: AppSettingsMock())
-        let existingSubviews = window.subviews
-        var overlayRemovals = 0
-        let completed = expectation(description: "Completed")
-
-        animator.animate {
-        } onTransitionCompleted: {
-        } completion: {
-            completed.fulfill()
-        } onOverlayRemoved: {
-            overlayRemovals += 1
-        }
-
-        XCTAssertEqual(overlayRemovals, 0)
-        await fulfillment(of: [completed], timeout: 5)
-        XCTAssertEqual(overlayRemovals, 1)
-        XCTAssertTrue(window.subviews.allSatisfy { subview in existingSubviews.contains(where: { $0 === subview }) })
+        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
     }
 
     func testWhenApplicationWillResignActiveThenRetainedPreBurnSnapshotIsRemoved() throws {

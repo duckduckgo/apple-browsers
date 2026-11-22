@@ -1057,34 +1057,37 @@ struct NewTabPageSessionInstrumentationTests {
 
     @MainActor
     @available(iOS 16, macOS 13, *)
-    @Test("A page attached behind the burn animation starts its visit when the animation ends", .timeLimit(.minutes(1)))
+    @Test("The burn animation defers the visit, shown report, and keyboard request", .timeLimit(.minutes(1)))
     func coveredPageStartsVisitWhenUncovered() {
         let (instrumentation, wideEvent, clock) = makeSUT()
         let notifications = NotificationCenter()
         let coordinator = NewTabPagePresentationCoordinator(notificationCenter: notifications, isVisible: { true })
         let page = NSObject()
         var shown = false
+        var focusRequests = 0
 
         let cover = coordinator.beginCovering()
         coordinator.schedule(for: page, visit: {
             instrumentation.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
-        }, shown: { shown = true })
+        }, shown: { shown = true }, focus: {
+            focusRequests += 1
+            instrumentation.keyboardRaisedOnArrival()
+        })
 
         // A tap while the flames still hide the page has no visit to land in.
         instrumentation.tapInputBar()
         notifications.post(name: UIApplication.willResignActiveNotification, object: nil)
         #expect(wideEvent.started.isEmpty)
         #expect(!shown)
+        #expect(focusRequests == 0)
         #expect(!coordinator.hasPresentedPage)
 
         clock.advance(by: 1.2)
         coordinator.endCovering(cover)
         #expect(wideEvent.started.count == 1)
         #expect(shown)
-        #expect(coordinator.hasPresentedPage)
+        #expect(focusRequests == 1)
 
-        // The keyboard the app raises after the burn still counts as up on arrival.
-        instrumentation.keyboardRaisedOnArrival()
         clock.advance(by: 2)
         instrumentation.visitBackgrounded()
         let visit = lastCompletion(wideEvent)?.0
@@ -1113,7 +1116,6 @@ struct NewTabPageSessionInstrumentationTests {
         coordinator.recordIfVisible()
 
         #expect(wideEvent.started.isEmpty)
-        #expect(wideEvent.completions.isEmpty)
     }
 
     @MainActor

@@ -36,21 +36,23 @@ def sha256(raw):
 
 
 def validate_profile(profile):
-    if not isinstance(profile, dict) or not all(k in profile for k in ("names", "addresses", "phones", "birthYear")):
-        raise ValueError("profileFile needs names, addresses, phones, and birthYear")
+    if not isinstance(profile, dict) or not all(k in profile for k in ("names", "addresses", "birthYear")):
+        raise ValueError("profileFile needs names, addresses, and birthYear")
     if (not isinstance(profile["names"], list) or not profile["names"]
             or not isinstance(profile["addresses"], list) or not profile["addresses"]
-            or not isinstance(profile["phones"], list) or type(profile["birthYear"]) is not int
+            or type(profile["birthYear"]) is not int
             or not 1900 <= profile["birthYear"] <= time.localtime().tm_year):
-        raise ValueError("profileFile needs a name, address, phones array and valid birthYear")
+        raise ValueError("profileFile needs a name, address and valid birthYear")
     for field, required, optional in (("names", ("firstName", "lastName"), ("middleName", "suffix")),
                                       ("addresses", ("city", "state"), ("street", "zipCode"))):
         for entry in profile[field]:
             if (not isinstance(entry, dict) or any(not isinstance(entry.get(key), str) or not entry[key] for key in required)
                     or any(entry.get(key) is not None and not isinstance(entry[key], str) for key in optional)):
                 raise ValueError(f"profileFile {field} must match the native profile fields")
-    if any(not isinstance(phone, str) for phone in profile["phones"]):
-        raise ValueError("profileFile phones must contain strings")
+    if profile.get("phones", []) != []:
+        raise ValueError("profileFile phones are unsupported; leave them out")
+    # The native profile decoder requires the key, though PIR never searches by phone.
+    return {**profile, "phones": []}
 
 
 def load_inputs(path, needs_auth=False):
@@ -77,7 +79,7 @@ def load_inputs(path, needs_auth=False):
     expected = json.loads(raw["expectedFile"]) if "expectedFile" in raw else {}
     if not isinstance(broker, dict) or not all(broker.get(k) for k in ("name", "url", "version", "steps")):
         raise ValueError("brokerFile needs complete broker JSON including name, url, version, and steps")
-    validate_profile(profile)
+    profile = validate_profile(profile)
     if not isinstance(expected, dict) or set(expected) - {"profileUrl"} or not isinstance(expected.get("profileUrl", ""), str):
         raise ValueError("expectedFile may only name the profileUrl of one scan result")
     if not isinstance(config.get("optOut"), bool):
@@ -558,8 +560,7 @@ def execute(args, runtime_factory=None):
                 profile = profile_file.read(65_537)
             if len(profile) > 65_536:
                 raise ValueError("scheduler profile JSON must be at most 65536 bytes")
-            profile_json = profile.decode()
-            validate_profile(json.loads(profile_json))
+            profile_json = json.dumps(validate_profile(json.loads(profile.decode())))
             context.write("pir-inputs.json", dict(profile=dict(reference=str(seed.profile_path), sha256=sha256(profile))))
             if runtime_factory is None:
                 from runtime import Runtime

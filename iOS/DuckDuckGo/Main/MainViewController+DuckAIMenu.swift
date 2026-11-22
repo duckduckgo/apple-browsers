@@ -257,7 +257,7 @@ extension MainViewController {
         )
     }
 
-    func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource, onSuccess: (() -> Void)? = nil) {
+    private func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource, onSuccess: (() -> Void)? = nil) {
         let fireExecutor = self.fireExecutor
         guard featureFlagger.isFeatureOn(.fireButtonDeleteAllChats) else {
             fireButtonAnimator.animate { [weak self] in
@@ -308,7 +308,7 @@ extension MainViewController {
     }
 
     /// Reloads loaded Duck.ai tabs and Duck.ai sidebars so they stop showing deleted chats.
-    func reloadOpenChats(isFireMode: Bool) {
+    private func reloadOpenChats(isFireMode: Bool) {
         for tab in tabManager.tabsModel(for: isFireMode ? .fire : .normal).tabs {
             guard let controller = tabManager.controller(for: tab) else { continue }
             controller.reloadFullModeAIChatIfNeeded()

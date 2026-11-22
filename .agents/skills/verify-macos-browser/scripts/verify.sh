@@ -628,7 +628,7 @@ cleanup)
     if [[ -f "$RUN_DIR/build.json" ]]; then
         worktree=$(json_get "$RUN_DIR/build.json" 'd["worktree"]')
         # This skill's own files mention the tag; only the app's code matters here.
-        leftovers=$(git -C "$worktree" grep -n "\[VERIFY\]" -- . ':(exclude).claude' || true)
+        leftovers=$(git -C "$worktree" grep -n "\[VERIFY\]" -- . ':(exclude).claude' ':(exclude).agents' || true)
         if [[ -n "$leftovers" ]]; then echo "[VERIFY] lines left:"; echo "$leftovers"; exit 1; fi
     fi
     echo "evidence: $RUN_DIR"

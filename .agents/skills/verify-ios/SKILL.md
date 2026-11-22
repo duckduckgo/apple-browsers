@@ -13,7 +13,7 @@ never committed. `prove` checks it, runs it on each device, captures evidence, a
 from one command line, so any agent or person with a shell on a Mac with Xcode can use it.
 
 ```bash
-V=.claude/skills/verify-ios/bin/verify-ios      # from the worktree root; every example below uses $V
+V=.agents/skills/verify-ios/bin/verify-ios      # from the worktree root; every example below uses $V
 ```
 
 **How it gets used.** Agents don't pick this skill on their own (`disable-model-invocation`), so name it when you start
@@ -60,8 +60,8 @@ removing the worktree removes them.
 
 `build` targets a concrete simulator: a `generic/platform=iOS Simulator` build fails in the WebKit-workaround phase.
 One app build serves both devices. `build` records a fingerprint of the source it built from (HEAD plus every
-uncommitted change outside `.claude/`); `prove` refuses to run (exit 2) when the source has changed since, so a proof
-can't pass against a stale build. It records the runner's source the same way. After changing app code,
+uncommitted change outside `.claude/` and `.agents/`); `prove` refuses to run (exit 2) when the source has changed
+since, so a proof can't pass against a stale build. It records the runner's source the same way. After changing app code,
 `build --app-only`; after pulling runner changes, `build --runner-only`. The error names which one.
 
 ## Write and run a proof
@@ -277,9 +277,9 @@ and fails if the running binary is not this worktree's build.
 After changing the runner, the driver or the library, run both test suites:
 
 ```bash
-python3 -m unittest discover -s .claude/skills/verify-ios/tests -p 'test_*.py'   # no simulator
-$V prove .claude/skills/verify-ios/tests/must_fail.py                                # every refusal, both devices
-$V prove .claude/skills/verify-ios/examples/*.py                                     # the worked proofs still pass
+python3 -m unittest discover -s .agents/skills/verify-ios/tests -p 'test_*.py'   # no simulator
+$V prove .agents/skills/verify-ios/tests/must_fail.py                                # every refusal, both devices
+$V prove .agents/skills/verify-ios/examples/*.py                                     # the worked proofs still pass
 ```
 
 ## Known environment issues (not product bugs)
@@ -306,7 +306,7 @@ $V prove .claude/skills/verify-ios/examples/*.py                                
 | `fixture/` | local test pages |
 | `features/` | the feature map: shared steps, Duck.ai |
 
-Swift under `runner/` must pass `mint run swiftlint lint --strict --force-exclude .claude/skills/verify-ios/runner/Sources`.
+Swift under `runner/` must pass `mint run swiftlint lint --strict --force-exclude .agents/skills/verify-ios/runner/Sources`.
 Keep the runner's fixes: the animation-idle swizzle, the `record(_:)` override, the alert handler (app + SpringBoard),
 loopback-only binding and the token check.
 

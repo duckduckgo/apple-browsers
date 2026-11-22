@@ -10,7 +10,7 @@ so the steps can be ported to Swift from this map when the app's XCUITest UI tes
 
 ## Baseline preconditions
 
-- `V=.claude/skills/verify-ios/bin/verify-ios`, run from the root of the worktree under test.
+- `V=.agents/skills/verify-ios/bin/verify-ios`, run from the root of the worktree under test.
 - The app build is current (`$V build --app-only` after app changes; `prove` refuses a stale build). `prove` creates
   the simulator it needs and deletes it when it ends.
 - Every proof starts from a known state with `steps.fresh_start(ios)`: reinstalled app, onboarding skipped, one

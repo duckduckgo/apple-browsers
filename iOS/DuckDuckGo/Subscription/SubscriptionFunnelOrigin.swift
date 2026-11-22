@@ -50,6 +50,9 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1212891971534036
     case newTabMenu = "funnel_appmenu_ios"
 
+    /// User entered the funnel via the VPN menu item in the Duck.ai tab app menu.
+    case aiChatMenu = "funnel_appmenu_ios__chat"
+
     /// User entered the funnel by tapping a gated model in the Unified Toggle Input model picker from the address bar.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860310
     case addressBarModelPicker = "funnel_addressbar_ios__modelpicker"
@@ -168,7 +171,8 @@ extension SubscriptionFunnelOrigin {
         switch self {
         case .newTabMenu:
             return .newTabPage
-        case .addressBarModelPicker,
+        case .aiChatMenu,
+                .addressBarModelPicker,
                 .addressBarReasoningPicker,
                 .addressBarUsageLimit,
                 .duckAIModelPicker,

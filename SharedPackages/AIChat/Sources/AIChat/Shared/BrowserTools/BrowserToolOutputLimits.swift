@@ -41,4 +41,21 @@ public enum BrowserToolOutputLimits {
     public static func fits(_ value: String, within limit: Int) -> Bool {
         value.unicodeScalars.count <= limit
     }
+
+    // Userinfo, query and fragment can hold credentials or tokens.
+    public static func redactedURL(_ url: String) -> String {
+        var redacted = String(url[..<(url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex)])
+        if let scheme = redacted.range(of: "://") {
+            let authorityEnd = redacted[scheme.upperBound...].firstIndex(of: "/") ?? redacted.endIndex
+            if let at = redacted[scheme.upperBound..<authorityEnd].lastIndex(of: "@") {
+                redacted.removeSubrange(scheme.upperBound...at)
+            }
+        }
+        return clip(redacted, to: self.url)
+    }
+
+    public static func redactedURL(_ value: JSONValue?) -> JSONValue? {
+        guard case .string(let text)? = value else { return value }
+        return .string(redactedURL(text))
+    }
 }

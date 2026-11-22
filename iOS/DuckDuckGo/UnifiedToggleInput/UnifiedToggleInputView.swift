@@ -733,6 +733,18 @@ final class UnifiedToggleInputView: UIView {
     /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
     var aiTabFireButton: UIButton { aiTabCollapsedFireButton }
 
+    private lazy var aiTabCollapsedChatsButton: UIButton = {
+        let button = Self.makeAITabAccessoryButton(image: DesignSystemImages.Glyphs.Size24.chats,
+                                                   traitCollection: traitCollection,
+                                                   usesFloatingAIChrome: usesFloatingUI)
+        button.isHidden = true
+        button.accessibilityLabel = UserText.aiChatHistorySidebarShowAccessibilityLabel
+        return button
+    }()
+
+    /// The collapsed AI-tab Chats button; the host adds its action.
+    var aiTabChatsButton: UIButton { aiTabCollapsedChatsButton }
+
     func setMenuAlertVisible(_ isVisible: Bool, animated: Bool) {
         aiTabCollapsedMenuButton.setMenuAlertVisible(isVisible, animated: animated)
     }
@@ -965,7 +977,7 @@ final class UnifiedToggleInputView: UIView {
     private func refreshGlassAITabAccessoryConfigurations() {
         guard #available(iOS 26, *) else { return }
         // Rebuilds config from scratch — re-apply any per-button tweaks here if added later.
-        for button in [aiTabCollapsedFireButton, aiTabCollapsedMenuButton] {
+        for button in [aiTabCollapsedFireButton, aiTabCollapsedChatsButton, aiTabCollapsedMenuButton] {
             guard let currentImage = button.configuration?.image else { continue }
             var config = Self.glassAccessoryConfiguration(for: traitCollection)
             config.image = currentImage
@@ -1209,6 +1221,7 @@ final class UnifiedToggleInputView: UIView {
             $0 !== cardView &&
             $0 !== expandedShadowView &&
             $0 !== aiTabCollapsedFireButton &&
+            $0 !== aiTabCollapsedChatsButton &&
             $0 !== aiTabCollapsedMenuButton
         }
     }
@@ -1318,7 +1331,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private var flankingButtons: [(accessory: UnifiedToggleInputFlankingAccessories, button: UIButton)] {
-        [(.fire, aiTabCollapsedFireButton), (.menu, aiTabCollapsedMenuButton)]
+        [(.fire, aiTabCollapsedFireButton), (.chats, aiTabCollapsedChatsButton), (.menu, aiTabCollapsedMenuButton)]
     }
 
     private var visibleFlankingAccessories: UnifiedToggleInputFlankingAccessories {
@@ -1351,7 +1364,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     private func setCardFlanked(by accessories: UnifiedToggleInputFlankingAccessories) {
-        let flanksLeading = accessories.contains(.fire)
+        let flanksLeading = !accessories.isDisjoint(with: [.fire, .chats])
         let flanksTrailing = accessories.contains(.menu)
         cardLeadingConstraint.isActive = !flanksLeading
         cardLeadingFlankedConstraint.isActive = flanksLeading
@@ -2037,6 +2050,7 @@ private extension UnifiedToggleInputView {
         footerCard.spacing = -UTIFooterCardView.overlap
         insertSubview(footerCard, belowSubview: editReplaceDisclaimerCard)
         addSubview(aiTabCollapsedFireButton)
+        addSubview(aiTabCollapsedChatsButton)
         addSubview(aiTabCollapsedMenuButton)
 
         expandedShadowBottomConstraint = expandedShadowView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
@@ -2252,6 +2266,11 @@ private extension UnifiedToggleInputView {
             aiTabCollapsedFireButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
             aiTabCollapsedFireButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
             aiTabCollapsedFireButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
+
+            aiTabCollapsedChatsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.flankedCardHorizontalMargin),
+            aiTabCollapsedChatsButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
+            aiTabCollapsedChatsButton.widthAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
+            aiTabCollapsedChatsButton.heightAnchor.constraint(equalToConstant: Constants.aiTabCollapsedAccessorySize),
 
             aiTabCollapsedMenuButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.flankedCardHorizontalMargin),
             aiTabCollapsedMenuButton.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),

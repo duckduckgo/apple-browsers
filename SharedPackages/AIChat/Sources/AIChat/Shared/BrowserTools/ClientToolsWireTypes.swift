@@ -29,8 +29,17 @@ public struct ClientToolCapability: Codable, Equatable, Sendable {
     public static let readTabContent = Self(canonicalName: "readTabContent", version: 1)
     public static let findInPage = Self(canonicalName: "findInPage", version: 1)
     public static let highlightInPage = Self(canonicalName: "highlightInPage", version: 1)
+    public static let pinTab = Self(canonicalName: "pinTab", version: 1)
+    public static let openTab = Self(canonicalName: "openTab", version: 1)
+    public static let closeTabs = Self(canonicalName: "closeTabs", version: 1)
+    public static let bookmarkTab = Self(canonicalName: "bookmarkTab", version: 1)
+    public static let searchDownloads = Self(canonicalName: "searchDownloads", version: 1)
+    public static let searchBookmarks = Self(canonicalName: "searchBookmarks", version: 1)
 
-    public static let browserTools: [Self] = [.listOpenTabs, .switchToTab, .searchHistory, .readTabContent, .findInPage, .highlightInPage]
+    /// Not a browser tool: asks once for the ones a chat expects to use. Offered behind its own flag.
+    public static let requestAccess = Self(canonicalName: "requestAccess", version: 1)
+
+    public static let browserTools: [Self] = [.listOpenTabs, .switchToTab, .searchHistory, .readTabContent, .findInPage, .highlightInPage, .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks]
 
     public init(name: String, version: Int) throws {
         try ClientToolWireValidation.validateIdentifier(name, maximumLength: ClientToolWireValidation.maximumCapabilityNameLength, field: "name")
@@ -116,9 +125,11 @@ public struct ExecuteClientToolRequest: Decodable, Equatable, Sendable {
     public let callId: String
     public let capability: ClientToolCapability
     public let input: JSONValue
+    /// The Duck.ai chat's own ID, sent while native offers `requestAccess`. Scopes its grants.
+    public let chatId: String?
 
     private enum CodingKeys: String, CodingKey, CaseIterable {
-        case callId, capability, input
+        case callId, capability, input, chatId
     }
 
     public init(from decoder: Decoder) throws {
@@ -128,6 +139,10 @@ public struct ExecuteClientToolRequest: Decodable, Equatable, Sendable {
         try ClientToolWireValidation.validateIdentifier(callId, maximumLength: ClientToolWireValidation.maximumIdentifierLength, field: "callId")
         capability = try container.decode(ClientToolCapability.self, forKey: .capability)
         input = try container.decode(JSONValue.self, forKey: .input)
+        chatId = try container.decodeIfPresent(String.self, forKey: .chatId)
+        if let chatId {
+            try ClientToolWireValidation.validateIdentifier(chatId, maximumLength: ClientToolWireValidation.maximumIdentifierLength, field: "chatId")
+        }
     }
 
     /// Reads a bridge payload; nil when it is oversized or invalid.

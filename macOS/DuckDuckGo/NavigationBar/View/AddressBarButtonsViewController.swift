@@ -1174,7 +1174,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
         // Check if there are any persisted permissions for the current domain
         let domain = tabViewModel.tab.permissions.permissionDomain(for: (tabViewModel.tab.content.urlForWebView ?? .empty).securityOrigin)
-        let hasAnyPersistedPermissions = permissionManager.hasAnyPermissionPersisted(forDomain: domain)
+        // Browser tool decisions are hidden from the Permission Center, so they don't count.
+        let hasAnyPersistedPermissions = permissionManager.persistedPermissionTypes(forDomain: domain).contains { !$0.isBrowserTool }
 
         let isPermissionCenterPopoverShown = permissionCenterPopover?.isShown == true
         // A pending permission authorization query — e.g. getUserMedia with no prior decision, or
@@ -1226,7 +1227,7 @@ final class AddressBarButtonsViewController: NSViewController {
         DuckAiVoiceChatShieldScope.isOnlyMicInPlay(
             domain: domain,
             usedPermissions: tabViewModel.usedPermissions,
-            persistedPermissionTypes: permissionManager.persistedPermissionTypes(forDomain: domain),
+            persistedPermissionTypes: permissionManager.persistedPermissionTypes(forDomain: domain).filter { !$0.isBrowserTool },
             featureFlagger: featureFlagger
         )
     }

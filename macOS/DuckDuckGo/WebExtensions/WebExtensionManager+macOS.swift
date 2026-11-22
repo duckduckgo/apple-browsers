@@ -47,6 +47,9 @@ extension WebExtensionManager {
                 Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
             },
             disabledExtensionIDsDidChange: featureFlagger.updatesPublisher,
+            isExtensionsEnabled: { [featureFlagger] in
+                featureFlagger.isFeatureOn(.webExtensions)
+            },
             pixelFiring: MacOSWebExtensionPixelFiring()
         )
     }
@@ -74,6 +77,12 @@ extension WebExtensionManager {
 
 @available(macOS 15.4, *)
 enum WebExtensionManagerFactory {
+
+    /// Catalog extensions this macOS version can't run.
+    private static var unsupportedExtensionIDs: Set<String> {
+        if #available(macOS 26, *) { return [] }
+        return [ChromeWebStoreID.iCloudPasswords.rawValue]
+    }
 
     private static var extensionsDirectory: URL {
         URL.sandboxApplicationSupportURL.appendingPathComponent("WebExtensions", isDirectory: true)
@@ -106,12 +115,28 @@ enum WebExtensionManagerFactory {
             NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification).map { _ in () }.eraseToAnyPublisher(),
             windowTabProvider.updateActivityPublisher
         ).eraseToAnyPublisher()
+        // Prompts attach to the browser window the user works in, including an extension's popup window. A prompt on
+        // another window makes that window key, and extensions that later close `windows.getCurrent()` close it instead.
+        let promptWindowProvider: () -> NSWindow? = {
+            if let keyWindow = NSApp.keyWindow, keyWindow.windowController is MainWindowController {
+                return keyWindow
+            }
+            return Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
+        }
+        let permissionPrompt = WebExtensionPermissionPrompt(
+            windowProvider: promptWindowProvider,
+            themeManager: themeManager,
+            nativeMessagingAlertPresenter: NativeMessagingAlertPresenter(
+                limitationProvider: { Application.appDelegate.webExtensionManager },
+                alertPresenter: WebExtensionAlertPresenter(windowProvider: promptWindowProvider, themeManager: themeManager),
+                windowControllersManager: Application.appDelegate.windowControllersManager
+            )
+        )
 #if DEBUG && WEB_EXTENSION_UPDATE_TESTING
         if buildType.isDebugBuild, buildType.isSparkleBuild, ChromeWebStoreManualUpdateTesting.isEnabled {
             let manager = ChromeWebStoreManualUpdateTesting().makeManager(
                 configuration: WebExtensionConfigurationProvider(), windowTabProvider: windowTabProvider,
-                permissionPrompter: WebExtensionPermissionPrompt(
-                    windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager),
+                permissionPrompter: permissionPrompt,
                 presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
                 internalSiteHandler: internalSiteHandler,
                 isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
@@ -122,12 +147,15 @@ enum WebExtensionManagerFactory {
         }
 #endif
         let pixelFiring = MacOSWebExtensionPixelFiring()
-        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { $0.isDuckPlayer })
+        let isInitProgressEnabled = { privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AutoconsentSubfeature.cpmInitProgress) }
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring,
+                                                                  isUnmeasuredPage: { $0.isDuckPlayer },
+                                                                  isInitProgressEnabled: isInitProgressEnabled)
         let installationStore = InstalledWebExtensionStore()
         let permissionController = WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
             installationStore: installationStore,
-            prompter: WebExtensionPermissionPrompt(windowProvider: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window }, themeManager: themeManager)
+            prompter: permissionPrompt
         )
         // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
         let nativeMessagingHandler = buildType.isSparkleBuild
@@ -161,6 +189,8 @@ enum WebExtensionManagerFactory {
                 eventHub: eventHub
             ),
             nativeMessagingHandler: nativeMessagingHandler,
+            unavailablePermissions: buildType.isAppStoreBuild ? [.nativeMessaging] : [],
+            nativeMessagingLimitationStore: buildType.isAppStoreBuild ? NativeMessagingLimitationStore(keyValueStore: keyValueStore) : nil,
             keyValueStore: keyValueStore,
             retentionStore: WebExtensionRetentionStore(storage: keyValueStore.throwingKeyedStoring()),
             scriptletConfiguration: scriptletConfiguration
@@ -169,9 +199,10 @@ enum WebExtensionManagerFactory {
         internalSiteHandler.dataSource = manager
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
-            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager, isAppStoreBuild: buildType.isAppStoreBuild),
+            catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager,
+                                           isAppStoreBuild: buildType.isAppStoreBuild,
+                                           unsupportedExtensionIDs: unsupportedExtensionIDs),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
-            supportsUpdateDiscovery: buildType.isSparkleBuild,
             isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
             updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             canApplyUpdatesWhileInactive: updateApplicationPolicy(for: manager),

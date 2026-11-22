@@ -75,8 +75,8 @@ class ContextualDialogsManagerTests {
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
         let tab = await Tab(content: .newtab)
 
-        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .highFive)
-        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .subscriptionUpsell)
+        #expect(manager.dialogTypeForTab(tab) == .highFive)
+        #expect(manager.dialogTypeForTab(tab) == .subscriptionUpsell)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -126,7 +126,7 @@ class ContextualDialogsManagerTests {
         manager.gotItPressed()
 
         let tab = await Tab(content: .newtab)
-        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+        #expect(manager.dialogTypeForTab(tab) == nil)
         #expect(manager.state == .onboardingCompleted)
         #expect(manager.lastDialog == nil)
     }
@@ -140,7 +140,7 @@ class ContextualDialogsManagerTests {
         manager.gotItPressed()
         let otherTab = await Tab(content: .newtab)
 
-        #expect(manager.dialogTypeForTab(otherTab, privacyInfo: nil) == nil)
+        #expect(manager.dialogTypeForTab(otherTab) == nil)
         #expect(manager.state == .onboardingCompleted)
         #expect(manager.lastDialog == nil)
     }
@@ -156,7 +156,7 @@ class ContextualDialogsManagerTests {
         let relaunched = makeManager()
         let tab = await Tab(content: .newtab)
 
-        #expect(relaunched.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+        #expect(relaunched.dialogTypeForTab(tab) == nil)
         #expect(relaunched.state == .onboardingCompleted)
     }
 
@@ -189,7 +189,7 @@ class ContextualDialogsManagerTests {
         manager.state = .notStarted
         let tab = await Tab(content: .newtab)
 
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
 
         XCTAssertEqual(dialog, .tryASearch)
     }
@@ -200,7 +200,7 @@ class ContextualDialogsManagerTests {
         manager.state = .notStarted
         let tab = await Tab(content: .newtab)
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .tryASearch)
     }
 
@@ -210,7 +210,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .newtab)
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .tryASite)
     }
 
@@ -220,7 +220,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .newtab)
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .highFive)
     }
 
@@ -230,7 +230,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .newtab)
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == nil)
     }
 
@@ -242,7 +242,7 @@ class ContextualDialogsManagerTests {
         manager.state = .notStarted
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .tryASearch)
     }
 
@@ -253,7 +253,7 @@ class ContextualDialogsManagerTests {
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         searchPathStorage.blockedTrackerSeen = true
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .highFive)
     }
 
@@ -264,7 +264,7 @@ class ContextualDialogsManagerTests {
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         searchPathStorage.blockedTrackerSeen = true
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .tryFireButton)
     }
 
@@ -275,7 +275,7 @@ class ContextualDialogsManagerTests {
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         searchPathStorage.blockedTrackerSeen = false
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
@@ -286,7 +286,7 @@ class ContextualDialogsManagerTests {
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         searchPathStorage.blockedTrackerSeen = false
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: false))
     }
 
@@ -299,11 +299,11 @@ class ContextualDialogsManagerTests {
 
         // First Site Visit
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
 
         // Second Site Visit
-        let dialog2 = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog2 = manager.dialogTypeForTab(tab)
         #expect(dialog2 != .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
@@ -317,11 +317,11 @@ class ContextualDialogsManagerTests {
         // First Site Visit
         trackerProvider.trackerType = .majorTracker
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
 
         // Second Site Visit
-        let dialog2 = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog2 = manager.dialogTypeForTab(tab)
         #expect(dialog2 != .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
@@ -335,12 +335,12 @@ class ContextualDialogsManagerTests {
         // First Site Visit
         trackerProvider.trackerType = .majorTracker
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
 
         // Second Site Visit
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
-        let dialog2 = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog2 = manager.dialogTypeForTab(tab)
         #expect(dialog2 == .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
@@ -350,7 +350,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == nil)
     }
 
@@ -362,7 +362,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .searchDone(shouldFollowUp: true))
     }
 
@@ -372,7 +372,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .searchDone(shouldFollowUp: false))
     }
 
@@ -382,7 +382,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .highFive)
     }
 
@@ -392,7 +392,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == nil)
     }
 
@@ -511,7 +511,7 @@ class MockBlockedTrackerStoring: BlockedTrackerStoring {
 }
 
 extension ContextualDialogsManager {
-    /// The manager with the real search path, backed by storage the test controls instead of UserDefaults.
+    /// The manager with the real paths, the search path backed by storage the test controls instead of UserDefaults.
     static func withSearchPath(trackerMessageProvider: TrackerMessageProviding,
                                subscriptionManager: any SubscriptionManager,
                                stateStorage: ContextualOnboardingStateStoring,
@@ -521,11 +521,16 @@ extension ContextualDialogsManager {
                                  subscriptionManager: subscriptionManager,
                                  stateStorage: stateStorage,
                                  settings: settings,
-                                 makePath: { _, progress in
-                                     SearchOnboardingPath(progress: progress,
-                                                          storage: searchPathStorage,
-                                                          subscriptionManager: subscriptionManager,
-                                                          trackerMessageProvider: trackerMessageProvider)
+                                 makePath: { kind, progress in
+                                     switch kind {
+                                     case .search:
+                                         SearchOnboardingPath(progress: progress,
+                                                              storage: searchPathStorage,
+                                                              subscriptionManager: subscriptionManager,
+                                                              trackerMessageProvider: trackerMessageProvider)
+                                     case .duckAI:
+                                         DuckAIOnboardingPath(progress: progress, subscriptionManager: subscriptionManager)
+                                     }
                                  })
     }
 }

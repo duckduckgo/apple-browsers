@@ -1,0 +1,32 @@
+name: macOS - verify-macos-browser Skill Tests
+
+on:
+  pull_request:
+    # opened, synchronize, reopened are the default triggering events for a pull request
+    # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.agents/skills/verify-macos-browser/**'
+      - '.github/workflows/verify_macos_browser_skill_tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  should-run-checks:
+    name: Determine if checks should run
+    uses: ./.github/workflows/should_run_pr_checks.yml
+
+  tests:
+    name: verify-macos-browser skill tests
+    needs: should-run-checks
+    if: needs.should-run-checks.outputs.should_run == 'true'
+    # The skill only runs on macOS (PlistBuddy, stat -f, pgrep), so its tests run there too. They need no build or VM.
+    runs-on: macos-26
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run tests
+        run: python3 -m unittest discover -s .agents/skills/verify-macos-browser/tests -p 'test_*.py' -v

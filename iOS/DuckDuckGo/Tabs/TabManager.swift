@@ -187,7 +187,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     let isSitePermissionsEnabled: Bool
     let sitePermissionsPixelHandler = SitePermissionsPixelHandler()
 
-    @MainActor private(set) lazy var browserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger)
+    @MainActor private(set) lazy var browserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger, historyManager: historyManager)
 
     @MainActor
     lazy var sitePermissionsStore = SitePermissionsStore(storage: UserDefaults.app.keyedStoring())

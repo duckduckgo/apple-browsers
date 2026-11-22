@@ -47,7 +47,7 @@ struct SearchOnboardingPathTests {
     func choosingDoesNotMarkSeen() async {
         let tab = await Tab(content: .newtab)
 
-        #expect(sut.dialog(for: tab, privacyInfo: nil) == .next(.tryASearch))
+        #expect(sut.dialog(for: tab) == .next(.tryASearch))
         #expect(storage.contextualDialogsSeen.isEmpty)
     }
 
@@ -58,7 +58,7 @@ struct SearchOnboardingPathTests {
         progress.markSeen(.highFive)
         let tab = await Tab(content: .newtab)
 
-        #expect(sut.dialog(for: tab, privacyInfo: nil) == .next(.subscriptionUpsell))
+        #expect(sut.dialog(for: tab) == .next(.subscriptionUpsell))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -69,7 +69,7 @@ struct SearchOnboardingPathTests {
         progress.markSeen(.tryFireButton)
         let tab = await Tab(content: .newtab)
 
-        #expect(sut.dialog(for: tab, privacyInfo: nil) == .next(.highFive))
+        #expect(sut.dialog(for: tab) == .next(.highFive))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -79,7 +79,7 @@ struct SearchOnboardingPathTests {
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
         let tab = await Tab(content: .url(try #require(URL(string: "https://example.com")), credential: nil, source: .ui))
 
-        guard case .next(.trackers(_, shouldFollowUp: true)) = sut.dialog(for: tab, privacyInfo: nil) else {
+        guard case .next(.trackers(_, shouldFollowUp: true)) = sut.dialog(for: tab) else {
             Issue.record("Expected the trackers dialog with the Fire follow-up")
             return
         }

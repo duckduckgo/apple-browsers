@@ -27,6 +27,11 @@ public enum WebExtensionAppPermission: String, CaseIterable, Sendable {
     /// Lets an extension change the browser's privacy settings, including turning off DuckDuckGo's
     /// password manager so it can take autofill over.
     case privacy
+#if os(macOS)
+    /// Lets an extension read plain text from the system clipboard without a paste gesture.
+    case clipboardRead
+    case downloads
+#endif
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -37,17 +42,22 @@ public struct WebExtensionPermissionRequest {
     public let appPermissions: Set<WebExtensionAppPermission>
     /// The manifest's required permissions, including the ones WebKit doesn't support. Set on installation; listed, never granted.
     public let manifestPermissions: Set<WebExtensionManifestPermission>
+    /// Permissions the extension asked for that this build can't grant, such as `nativeMessaging` in the
+    /// App Store build. The prompt explains them; they are never granted.
+    public let unavailablePermissions: Set<WKWebExtension.Permission>
 
     public init(permissions: Set<WKWebExtension.Permission> = [],
                 matchPatterns: Set<WKWebExtension.MatchPattern> = [],
                 urls: Set<URL> = [],
                 appPermissions: Set<WebExtensionAppPermission> = [],
-                manifestPermissions: Set<WebExtensionManifestPermission> = []) {
+                manifestPermissions: Set<WebExtensionManifestPermission> = [],
+                unavailablePermissions: Set<WKWebExtension.Permission> = []) {
         self.permissions = permissions
         self.matchPatterns = matchPatterns
         self.urls = urls
         self.appPermissions = appPermissions
         self.manifestPermissions = manifestPermissions
+        self.unavailablePermissions = unavailablePermissions
     }
 
     var asksWebKit: Bool {
@@ -99,6 +109,16 @@ public final class WebExtensionPermissionController {
     private var grantedAppPermissions: [String: [String: Date]] = [:]
     /// An automatic replacement may restore saved approval, but must never start the initial-install prompt.
     private var updatingInstallations: [String: Bool] = [:]
+
+    private var userGestures: [String: (context: WKWebExtensionContext, expires: TimeInterval)] = [:]
+    private struct AppPermissionRequest {
+        let identifier = UUID().uuidString
+        let context: WKWebExtensionContext
+        let permissions: Set<WebExtensionAppPermission>
+        var started = false
+    }
+    private var pendingAppPermissionRequests: [String: AppPermissionRequest] = [:]
+    var uptime: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
 
     /// Called when a loaded extension gains or loses an app permission, with its identifier.
     public var appPermissionsDidChange: @MainActor (_ identifier: String) -> Void = { _ in }
@@ -214,6 +234,7 @@ public final class WebExtensionPermissionController {
         lastSavedSettings.removeValue(forKey: identifier)
         grantedAppPermissions.removeValue(forKey: identifier)
         contexts.removeValue(forKey: identifier)
+        clearUserGesture(for: identifier)
     }
 
     /// Captures effective incumbent grants before unloading, including changes whose notification has not arrived yet.
@@ -230,6 +251,60 @@ public final class WebExtensionPermissionController {
         }
     }
 
+    /// A real interaction authorizes one app-permission request, including a request forwarded to
+    /// the extension's background page. Cancel never renews this authorization.
+    func recordUserGesture(for context: WKWebExtensionContext) {
+        let identifier = context.uniqueIdentifier
+        guard contexts[identifier] === context, pendingAppPermissionRequests[identifier]?.started != true else { return }
+        // A fresh interaction replaces an unfinished request whose originating page may have closed.
+        pendingAppPermissionRequests.removeValue(forKey: identifier)
+        userGestures[identifier] = (context, uptime() + 5)
+    }
+
+    /// Reserve before WebKit asks for the other permissions in a combined request. Reading that
+    /// dialog must not expire the interaction that started the request.
+    func prepareAppPermissionRequest(_ permissions: Set<WebExtensionAppPermission>, for context: WKWebExtensionContext) -> String? {
+        let identifier = context.uniqueIdentifier
+        guard contexts[identifier] === context,
+              pendingAppPermissionRequests[identifier] == nil,
+              let gesture = userGestures.removeValue(forKey: identifier),
+              gesture.context === context, uptime() < gesture.expires,
+              !permissions.isEmpty,
+              permissions.allSatisfy({ context.webExtension.declaresPermission($0.rawValue) }) else { return nil }
+        let request = AppPermissionRequest(context: context, permissions: permissions)
+        pendingAppPermissionRequests[identifier] = request
+        return request.identifier
+    }
+
+    func cancelAppPermissionRequest(_ requestIdentifier: String, for context: WKWebExtensionContext) {
+        guard let request = pendingAppPermissionRequests[context.uniqueIdentifier],
+              request.context === context, request.identifier == requestIdentifier, !request.started else { return }
+        pendingAppPermissionRequests.removeValue(forKey: context.uniqueIdentifier)
+    }
+
+    func requestAppPermissions(_ permissions: Set<WebExtensionAppPermission>, for context: WKWebExtensionContext,
+                               requestIdentifier: String? = nil) async -> Bool {
+        let identifier = context.uniqueIdentifier
+        guard contexts[identifier] === context,
+              let requestIdentifier = requestIdentifier ?? prepareAppPermissionRequest(permissions, for: context),
+              var pending = pendingAppPermissionRequests[identifier],
+              pending.identifier == requestIdentifier, pending.context === context,
+              pending.permissions == permissions, !pending.started else { return false }
+        pending.started = true
+        pendingAppPermissionRequests[identifier] = pending
+        defer {
+            if pendingAppPermissionRequests[identifier]?.identifier == requestIdentifier {
+                pendingAppPermissionRequests.removeValue(forKey: identifier)
+            }
+        }
+        return await request(WebExtensionPermissionRequest(appPermissions: permissions), for: context)
+    }
+
+    private func clearUserGesture(for identifier: String) {
+        userGestures.removeValue(forKey: identifier)
+        pendingAppPermissionRequests.removeValue(forKey: identifier)
+    }
+
     /// Asks the user for `request`, and grants it if they approve. App permissions the manifest doesn't
     /// declare are refused, as in Chrome, and ones the extension already holds aren't asked for again.
     func request(_ request: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> Bool {
@@ -242,8 +317,15 @@ public final class WebExtensionPermissionController {
         let prompt = WebExtensionPermissionRequest(permissions: request.permissions,
                                                    matchPatterns: request.matchPatterns,
                                                    urls: request.urls,
-                                                   appPermissions: missingAppPermissions)
-        guard prompt.asksWebKit || !prompt.appPermissions.isEmpty else { return true }
+                                                   appPermissions: missingAppPermissions,
+                                                   unavailablePermissions: request.unavailablePermissions)
+        let asksForGrantablePermissions = prompt.asksWebKit || !prompt.appPermissions.isEmpty
+        guard asksForGrantablePermissions || !prompt.unavailablePermissions.isEmpty else { return true }
+        guard asksForGrantablePermissions else {
+            // Nothing the user could allow, so the prompt only explains why the extension can't have it.
+            _ = await prompter.confirmPermissions(prompt, for: context)
+            return false
+        }
         guard await prompter.confirmPermissions(prompt, for: context) == .granted,
               contexts[identifier] === context else { return false }
 
@@ -336,6 +418,7 @@ public final class WebExtensionPermissionController {
     }
 
     func forget(_ identifier: String) throws {
+        clearUserGesture(for: identifier)
         // Invalidate pending prompts and notifications even if disk cleanup fails.
         observations.removeValue(forKey: identifier)
         lastSavedSettings.removeValue(forKey: identifier)
@@ -345,6 +428,7 @@ public final class WebExtensionPermissionController {
     }
 
     func didUnload(_ identifier: String) {
+        clearUserGesture(for: identifier)
         // Invalidate pending prompts without forgetting consent on reload or data clearing.
         if let context = contexts[identifier] {
             do {

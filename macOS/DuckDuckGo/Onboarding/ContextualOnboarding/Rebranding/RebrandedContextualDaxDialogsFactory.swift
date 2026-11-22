@@ -123,6 +123,9 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             return AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .subscriptionUpsell:
             return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+        case .thatsDuckAI:
+            // To do: replace with the That's Duck.ai! dialog. Placeholder: the Fire dialog.
+            return AnyView(tryFireButtonDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         }
     }
 
@@ -175,7 +178,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             return Image(.contextualBgTrySite)
         case .trackers:
             return Image(.contextualBgTrackers)
-        case .tryFireButton:
+        case .tryFireButton, .thatsDuckAI:
             return Image(.contextualBgFire)
         case .highFive:
             return Image(.contextualBgEndOfJourney)

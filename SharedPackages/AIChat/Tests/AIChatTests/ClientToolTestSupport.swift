@@ -58,7 +58,8 @@ final class ClientToolTestHarness {
 
     func answer(_ prompt: ClientToolPermissionPrompt, decision: ClientToolPermissionDecision,
                 source: ClientToolTestSource? = nil, callID: String? = nil, requestID: String? = nil) {
-        let answered = ClientToolPermissionPrompt(requestID: requestID ?? prompt.requestID, callID: callID ?? prompt.callID, toolName: prompt.toolName)
+        let answered = ClientToolPermissionPrompt(requestID: requestID ?? prompt.requestID, callID: callID ?? prompt.callID, toolName: prompt.toolName,
+                                                  targetsOtherTab: prompt.targetsOtherTab)
         coordinator.respond(to: answered, decision: decision, from: source ?? self.source)
     }
 }
@@ -74,8 +75,9 @@ final class ClientToolTestConfiguration: BrowserToolsConfiguration {
 final class ClientToolTestPermissions: BrowserToolPermissionStoring {
     var storedDecisions: [String: BrowserToolPermissionState] = [:]
     var writes = 0
-    func state(forToolNamed name: String) -> BrowserToolPermissionState { storedDecisions[name] ?? .ask }
-    func setState(_ state: BrowserToolPermissionState, forToolNamed name: String) {
+    var appliesDecisionsToAutoTools = true
+    func state(forToolNamed name: String) -> BrowserToolPermissionState? { storedDecisions[name] }
+    func setState(_ state: BrowserToolPermissionState?, forToolNamed name: String) {
         writes += 1
         storedDecisions[name] = state
     }
@@ -86,13 +88,15 @@ final class ClientToolTestPermissions: BrowserToolPermissionStoring {
 final class ClientToolTestTool: BrowserTool {
     let name: String
     var permissionMode: BrowserToolPermissionMode = .ask
-    var permissionReason = "Read this page?"
-    var inputSchema: JSONValue { ["type": "object", "properties": ["key": ["type": "array"]]] }
+    var inputSchema: JSONValue { ["type": "object", "properties": ["key": ["type": "array"], "tabId": ["type": "string"]]] }
     var result: BrowserToolResult = .success(["content": "page"])
     var clientResult: ((JSONValue) -> BrowserToolResult)?
     var calls: [(JSONValue?, BrowserToolCallContext)] = []
     var onExecute: (() async -> Void)?
+    var asksEveryTime = false
+    var target: String?
     init(name: String) { self.name = name }
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { target }
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         calls.append((arguments, context))
         await onExecute?()
@@ -107,11 +111,20 @@ final class ClientToolTestTool: BrowserTool {
 final class ClientToolTestSource: ClientToolPermissionPrompting {
     var prompts: [ClientToolPermissionPrompt] = []
     var withdrawn: [String] = []
+    var uses: [String] = []
     var onPush: ((ClientToolPermissionPrompt) -> Bool)?
     private var waiters: [(Int, CheckedContinuation<Void, Never>)] = []
 
     func withdrawClientToolPermissionPrompt(requestID: String) {
         withdrawn.append(requestID)
+    }
+
+    func clientToolUseDidStart(requestID: String, toolName: String) {
+        uses.append("start \(toolName)")
+    }
+
+    func clientToolUseDidEnd(requestID: String, completed: Bool) {
+        uses.append(completed ? "end" : "end cancelled")
     }
 
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {

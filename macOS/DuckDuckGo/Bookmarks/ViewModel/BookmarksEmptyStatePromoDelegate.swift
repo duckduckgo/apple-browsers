@@ -18,9 +18,7 @@
 
 import Combine
 import DDGSync
-import FeatureFlags_macOS
 import Foundation
-import PrivacyConfig
 
 protocol ImportSyncEmptyStatePromoPresenting: AnyObject {
     var isPromoActive: Bool { get }
@@ -34,7 +32,6 @@ protocol ImportSyncEmptyStatePromoPresenting: AnyObject {
 /// Shows the message and import/sync CTAs of the "No bookmarks yet" empty state through the promo queue.
 final class BookmarksEmptyStatePromoDelegate: InternalPromoDelegate, ImportSyncEmptyStatePromoPresenting {
 
-    private let featureFlagger: FeatureFlagger
     private let hasTopLevelEntitiesProvider: () -> Bool
     private let syncService: DDGSyncing?
     private let recordResult: @MainActor (_ promoID: String, PromoResult) -> Void
@@ -52,19 +49,16 @@ final class BookmarksEmptyStatePromoDelegate: InternalPromoDelegate, ImportSyncE
     ///   - bookmarksChangedPublisher: Emits whenever bookmarks are added or removed.
     ///   - dataImportCompletedPublisher: Emits when an import of every selected data type succeeds.
     ///   - recordResult: Records a result with the promo queue, including after the promo has been hidden.
-    init(featureFlagger: FeatureFlagger,
-         hasTopLevelEntitiesProvider: @escaping () -> Bool,
+    init(hasTopLevelEntitiesProvider: @escaping () -> Bool,
          bookmarksChangedPublisher: AnyPublisher<Void, Never>,
          dataImportCompletedPublisher: AnyPublisher<Void, Never>,
          syncService: DDGSyncing?,
          recordResult: @escaping @MainActor (_ promoID: String, PromoResult) -> Void) {
-        self.featureFlagger = featureFlagger
         self.hasTopLevelEntitiesProvider = hasTopLevelEntitiesProvider
         self.syncService = syncService
         self.recordResult = recordResult
 
-        featureFlagger.updatesPublisher
-            .merge(with: bookmarksChangedPublisher)
+        bookmarksChangedPublisher
             .receive(on: eligibilityQueue)
             .sink { [weak self] in
                 self?.refreshEligibility()
@@ -111,7 +105,7 @@ final class BookmarksEmptyStatePromoDelegate: InternalPromoDelegate, ImportSyncE
     }
 
     func refreshEligibility() {
-        isEligibleSubject.send(featureFlagger.isFeatureOn(.promoQueueBookmarksEmptyStatePromo) && !hasTopLevelEntitiesProvider())
+        isEligibleSubject.send(!hasTopLevelEntitiesProvider())
     }
 
     // MARK: - Promo queue result

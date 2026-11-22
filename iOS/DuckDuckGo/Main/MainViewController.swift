@@ -6099,6 +6099,8 @@ extension MainViewController: BrowserChromeDelegate {
         if currentTab?.isLoading == true { return false }
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
+        // Keep bars shown under a contextual onboarding dialog. The classic UI keeps hiding the bars on scroll.
+        if isFloatingUIEnabled, currentTab?.daxContextualOnboardingController != nil { return false }
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
     }
 

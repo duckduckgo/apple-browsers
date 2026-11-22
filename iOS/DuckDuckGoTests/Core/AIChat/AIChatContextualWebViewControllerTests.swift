@@ -25,6 +25,7 @@ import Combine
 import JavaScriptCore
 import UserScript
 import WebKit
+@_spi(Testing) import WideEvent
 @testable import Core
 @testable import DuckDuckGo
 
@@ -200,6 +201,43 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         let freshInvocation = await fixture.handler.executeClientTool(params: fixture.params(), source: freshScript)
         XCTAssertEqual(freshInvocation, fixture.success)
         freshController.detachBrowserTools()
+    }
+
+    /// New Chat loads a new document in the same web view. The old chat's last state must not reach the input that binds
+    /// for the first prompt: it would show the stop button and end that prompt's wide event before the answer arrives.
+    @MainActor
+    func testNewDocumentDoesNotHandTheOldChatsStateToTheNextPrompt() async throws {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [])
+        defer { fixture.cleanUp() }
+        let wideEvent = WideEventMock()
+        let instrumentation = DefaultDuckAIWideEventInstrumentation(wideEvent: wideEvent, usageContextProvider: UsageContextProvider(),
+                                                                    addressBarPosition: { nil })
+        let scope = DuckAIWideEventFlowScope.contextual(UUID())
+        let input = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,
+                                                  preferences: StubInputPreferences(), toggleModeStorage: StubToggleModeStorage(),
+                                                  duckAIWideEventInstrumentation: instrumentation, duckAIWideEventFlowScope: scope,
+                                                  contextualStart: .expandedPreSubmit, featureFlagger: fixture.flags)
+        let sut = makeAttachmentSubmissionController()
+        let script = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.configureContentHandler(with: script)
+        let webView = try XCTUnwrap(script.webView)
+        input.bindToTab(script)
+        fixture.handler.isAIChatPromoVisible = true
+        _ = await fixture.handler.getResponseState(params: ["status": "streaming"], message: MockUserScriptMessage(name: "test", body: [:]))
+        XCTAssertTrue(input.viewController.isGenerating)
+
+        input.unbind()
+        sut.webView(webView, didCommit: nil)
+        instrumentation.submissionStarted(scope: scope, modelId: nil, userTier: .free, reasoningEffort: nil, entryPoint: .contextualChat,
+                                          inputMode: .keyboard, fireMode: false, isFirstPrompt: true,
+                                          frontendDeliveryPath: .contextualNativeInput, hasPageContext: false,
+                                          toolsSelected: false, attachmentsSelected: false)
+        input.bindToTab(script)
+        XCTAssertFalse(input.viewController.isGenerating)
+        XCTAssertNil(input.isAIChatPromoVisible)
+
+        _ = await fixture.handler.getResponseState(params: ["status": "ready"], message: MockUserScriptMessage(name: "test", body: [:]))
+        XCTAssertTrue(wideEvent.completions.isEmpty)
     }
 
     @MainActor
@@ -821,6 +859,21 @@ private final class LocalTaskRecordingWebView: WKWebView {
         }
         completionHandler?(nil, nil)
     }
+}
+
+private final class StubInputPreferences: AIChatPreferencesPersisting {
+    var selectedReasoningEffort: String?
+    var selectedModelId: String?
+    var selectedModelShortName: String?
+    var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
+    var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+    var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
+}
+
+private final class StubToggleModeStorage: ToggleModeStoring {
+    func save(_ mode: TextEntryMode) {}
+    func restore() -> TextEntryMode? { nil }
 }
 
 private final class StubDownloadHandler: NSObject, DownloadHandling {

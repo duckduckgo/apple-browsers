@@ -277,7 +277,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor var isTermsOfServiceShownOnPage = false {
         didSet { inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage }
     }
-    /// Per page: the tab clears it when a new document commits, since that page reports its promos again.
+    /// Per page: the tab or contextual sheet clears it when a new document commits, since that page reports its promos again.
     @MainActor var isAIChatPromoVisible: Bool? {
         didSet { inputBoxHandler?.isAIChatPromoVisible = isAIChatPromoVisible }
     }

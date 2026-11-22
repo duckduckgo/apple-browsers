@@ -300,7 +300,6 @@ private extension AIChatQuickActionChipView {
         NSLayoutConstraint.activate([
             height,
 
-
             highlightOverlay.topAnchor.constraint(equalTo: topAnchor),
             highlightOverlay.bottomAnchor.constraint(equalTo: bottomAnchor),
             highlightOverlay.leadingAnchor.constraint(equalTo: leadingAnchor),

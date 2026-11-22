@@ -167,8 +167,22 @@ final class PageTranslationBridgeTests: XCTestCase {
 
         do {
             _ = try await extraction.value
-            XCTFail("Expected an error")
-        } catch {
+            XCTFail("Expected malformedReply")
+        } catch PageTranslationBridge.Error.malformedReply {
+        }
+    }
+
+    func testReplyMissingFieldsFailsTheRequest() async throws {
+        let bridge = makeBridge()
+        let application = Task { try await bridge.apply([], from: "es", to: "en") }
+        await waitForPush()
+
+        try await reply(bridge, "applyResult", ["counted": 2])
+
+        do {
+            _ = try await application.value
+            XCTFail("Expected malformedReply")
+        } catch PageTranslationBridge.Error.malformedReply {
         }
     }
 

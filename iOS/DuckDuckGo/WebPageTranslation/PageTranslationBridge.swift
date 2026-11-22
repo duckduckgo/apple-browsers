@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import UserScript
 import WebKit
@@ -34,6 +35,8 @@ final class PageTranslationBridge: NSObject, Subfeature {
         case busy
         /// A reply may still arrive for an abandoned request, so this document gets no more requests.
         case ended
+        /// The bundle's reply didn't have the expected shape.
+        case malformedReply
     }
 
     private enum Reply: String {
@@ -182,11 +185,9 @@ final class PageTranslationBridge: NSObject, Subfeature {
     }
 
     private static func decode<T: Decodable>(_ type: T.Type, from params: Any) throws -> T {
-        // Serializing anything else raises an Objective-C exception, which crashes instead of throwing.
-        guard JSONSerialization.isValidJSONObject(params) else {
-            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Reply params aren't a JSON object"))
+        guard let decoded: T = CodableHelper.decode(from: params) else {
+            throw Error.malformedReply
         }
-        let data = try JSONSerialization.data(withJSONObject: params)
-        return try JSONDecoder().decode(type, from: data)
+        return decoded
     }
 }

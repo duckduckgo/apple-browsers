@@ -18,6 +18,7 @@
 //
 
 import Common
+import DDGError
 import Foundation
 import UserScript
 import WebKit
@@ -29,7 +30,7 @@ import WebPageTranslation
 /// nothing more of that document.
 final class PageTranslationBridge: NSObject, Subfeature {
 
-    enum Error: Swift.Error {
+    enum Error: DDGError {
         case timeout
         /// A request is already waiting for its reply.
         case busy
@@ -37,6 +38,26 @@ final class PageTranslationBridge: NSObject, Subfeature {
         case ended
         /// The bundle's reply didn't have the expected shape.
         case malformedReply
+
+        static var errorDomain: String { "com.duckduckgo.pageTranslationBridge" }
+
+        var errorCode: Int {
+            switch self {
+            case .timeout: return 1
+            case .busy: return 2
+            case .ended: return 3
+            case .malformedReply: return 4
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .timeout: return "The page translation script didn't reply in time"
+            case .busy: return "A page translation request is already in progress"
+            case .ended: return "The page translation script may still reply to an abandoned request"
+            case .malformedReply: return "The page translation script's reply didn't have the expected shape"
+            }
+        }
     }
 
     private enum Reply: String {

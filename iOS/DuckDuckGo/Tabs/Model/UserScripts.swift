@@ -21,6 +21,7 @@ import AIChat
 import BrowserServicesKit
 import Common
 import Core
+import DDGError
 import EventHub
 import Foundation
 import FoundationExtensions
@@ -236,8 +237,22 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: handler)
     }
 
-    enum PageTranslationSourceError: Error {
+    enum PageTranslationSourceError: DDGError {
         case empty
+
+        static var errorDomain: String { "com.duckduckgo.pageTranslationSource" }
+
+        var errorCode: Int {
+            switch self {
+            case .empty: return 1
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .empty: return "The page translation script couldn't be generated"
+            }
+        }
     }
 
     /// C-S-S's `pageTranslation` bundle, injected only when the user translates a page. It messages

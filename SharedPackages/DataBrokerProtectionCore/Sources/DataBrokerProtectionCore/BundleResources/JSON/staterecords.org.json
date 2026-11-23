@@ -1,0 +1,794 @@
+{
+  "name": "StateRecords.org",
+  "url": "staterecords.org",
+  "version": "0.2.0",
+  "parent": "infotracer.com",
+  "addedDatetime": 1793298777243,
+  "optOutUrl": "https://members.staterecords.org/removeMyData",
+  "mirrorSites": [
+    {
+      "name": "Alabama StateRecords",
+      "url": "alabama.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Alaska StateRecords",
+      "url": "alaska.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Arizona StateRecords",
+      "url": "arizona.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Arkansas StateRecords",
+      "url": "arkansas.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "California StateRecords",
+      "url": "california.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Colorado StateRecords",
+      "url": "colorado.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Connecticut StateRecords",
+      "url": "connecticut.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Delaware StateRecords",
+      "url": "delaware.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "District of Columbia StateRecords",
+      "url": "districtofcolumbia.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Florida StateRecords",
+      "url": "florida.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Georgia StateRecords",
+      "url": "georgia.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Hawaii StateRecords",
+      "url": "hawaii.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Idaho StateRecords",
+      "url": "idaho.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Illinois StateRecords",
+      "url": "illinois.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Indiana StateRecords",
+      "url": "indiana.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Iowa StateRecords",
+      "url": "iowa.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Kansas StateRecords",
+      "url": "kansas.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Kentucky StateRecords",
+      "url": "kentucky.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Louisiana StateRecords",
+      "url": "louisiana.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Maine StateRecords",
+      "url": "maine.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Maryland StateRecords",
+      "url": "maryland.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Massachusetts StateRecords",
+      "url": "massachusetts.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Michigan StateRecords",
+      "url": "michigan.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Minnesota StateRecords",
+      "url": "minnesota.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Mississippi StateRecords",
+      "url": "mississippi.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Missouri StateRecords",
+      "url": "missouri.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Montana StateRecords",
+      "url": "montana.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Nebraska StateRecords",
+      "url": "nebraska.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Nevada StateRecords",
+      "url": "nevada.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "New Hampshire StateRecords",
+      "url": "newhampshire.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "New Jersey StateRecords",
+      "url": "newjersey.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "New Mexico StateRecords",
+      "url": "newmexico.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "New York StateRecords",
+      "url": "newyork.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "North Carolina StateRecords",
+      "url": "northcarolina.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "North Dakota StateRecords",
+      "url": "northdakota.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Ohio StateRecords",
+      "url": "ohio.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Oklahoma StateRecords",
+      "url": "oklahoma.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Oregon StateRecords",
+      "url": "oregon.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Pennsylvania StateRecords",
+      "url": "pennsylvania.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Rhode Island StateRecords",
+      "url": "rhodeisland.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "South Carolina StateRecords",
+      "url": "southcarolina.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "South Dakota StateRecords",
+      "url": "southdakota.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Tennessee StateRecords",
+      "url": "tennessee.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Texas StateRecords",
+      "url": "texas.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Utah StateRecords",
+      "url": "utah.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Vermont StateRecords",
+      "url": "vermont.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Virginia StateRecords",
+      "url": "virginia.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Washington StateRecords",
+      "url": "washington.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "West Virginia StateRecords",
+      "url": "westvirginia.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Wisconsin StateRecords",
+      "url": "wisconsin.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Wyoming StateRecords",
+      "url": "wyoming.staterecords.org",
+      "addedAt": 1793298777243,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Alabama Arrest Records",
+      "url": "alabamaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Alaska Arrest Records",
+      "url": "alaskaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Arizona Arrest Records",
+      "url": "arizonaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Arkansas Arrest Records",
+      "url": "arkansasarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Colorado Arrest Records",
+      "url": "coloradoarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Connecticut Arrest Records",
+      "url": "connecticutarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Delaware Arrest Records",
+      "url": "delawarearrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Florida Arrest Records",
+      "url": "floridaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Georgia Arrest Records",
+      "url": "georgiaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Hawaii Arrest Records",
+      "url": "hawaiiarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Idaho Arrest Records",
+      "url": "idahoarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Illinois Arrest Records",
+      "url": "illinoisarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Indiana Arrest Records",
+      "url": "indianaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Iowa Arrest Records",
+      "url": "iowaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Kansas Arrest Records",
+      "url": "kansasarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Kentucky Arrest Records",
+      "url": "kentuckyarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Louisiana Arrest Records",
+      "url": "louisianaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Maine Arrest Records",
+      "url": "mainearrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Maryland Arrest Records",
+      "url": "marylandarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Massachusetts Arrest Records",
+      "url": "massachusettsarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Michigan Arrest Records",
+      "url": "michiganarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Mississippi Arrest Records",
+      "url": "mississippiarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Missouri Arrest Records",
+      "url": "missouriarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Montana Arrest Records",
+      "url": "montanaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Nebraska Arrest Records",
+      "url": "nebraskaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Nevada Arrest Records",
+      "url": "nevadaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "New Hampshire Arrest Records",
+      "url": "newhampshirearrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "New Jersey Arrest Records",
+      "url": "newjerseyarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "New Mexico Arrest Records",
+      "url": "newmexicoarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "North Dakota Arrest Records",
+      "url": "northdakotaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Ohio Arrest Records",
+      "url": "ohioarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Oklahoma Arrest Records",
+      "url": "oklahomaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Oregon Arrest Records",
+      "url": "oregonarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Pennsylvania Arrest Records",
+      "url": "pennsylvaniaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Rhode Island Arrest Records",
+      "url": "rhodeislandarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "South Carolina Arrest Records",
+      "url": "southcarolinaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "South Dakota Arrest Records",
+      "url": "southdakotaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Tennessee Arrest Records",
+      "url": "tennesseearrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Utah Arrest Records",
+      "url": "utaharrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Vermont Arrest Records",
+      "url": "vermontarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Virginia Arrest Records",
+      "url": "virginiaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Washington Arrest Records",
+      "url": "washingtonarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "West Virginia Arrest Records",
+      "url": "westvirginiaarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Wisconsin Arrest Records",
+      "url": "wisconsinarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    },
+    {
+      "name": "Wyoming Arrest Records",
+      "url": "wyomingarrestrecords.org",
+      "addedAt": 1793352000000,
+      "removedAt": 1795033566426,
+      "optOutUrl": "https://members.staterecords.org/removeMyData"
+    }
+  ],
+  "steps": [
+    {
+      "stepType": "scan",
+      "scanType": "templatedUrl",
+      "actions": [
+        {
+          "actionType": "navigate",
+          "url": "https://members.staterecords.org/removeMyData",
+          "id": "e462e647-b716-4a8c-8628-3cccc057408c"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#optoutform"
+            }
+          ],
+          "id": "267cf171-7083-4bc0-889d-b55bb21b5029"
+        },
+        {
+          "actionType": "fillForm",
+          "dataSource": "userProfile",
+          "selector": "#optoutform",
+          "elements": [
+            {
+              "type": "firstName",
+              "selector": "#DataRemovalServiceModel_fname"
+            },
+            {
+              "type": "lastName",
+              "selector": "#DataRemovalServiceModel_lname"
+            },
+            {
+              "type": "state",
+              "selector": "#DataRemovalServiceModel_state"
+            },
+            {
+              "type": "city",
+              "selector": "#DataRemovalServiceModel_city"
+            }
+          ],
+          "id": "4d5d8a3c-4d48-4ede-bcc2-9777fa0344d8"
+        },
+        {
+          "_comment": "Turnstile auto-completes. Wait for the hidden token before submitting.",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//form[@id='optoutform']//input[@name='cf-turnstile-response' and @value and @value != '']"
+            }
+          ],
+          "id": "cft-7cb1bd0c-a500-456e-882b-3b5dcdd4e8a9"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "#optoutform button.form-submit-btn"
+            }
+          ],
+          "id": "7290d62b-709e-4339-ae0c-d1ac4637bbf4"
+        },
+        {
+          "_comment": "The site submits 2s after the click and the reply takes 15-20s.",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//form[@id='rmdTableForm']|//div[contains(., 'No data was found')]"
+            }
+          ],
+          "id": "6743f9a8-7e0e-4a33-84fc-6d167dfe035b"
+        },
+        {
+          "actionType": "extract",
+          "selector": "//form[@id='rmdTableForm']//tr[td]",
+          "noResultsSelector": "//div[contains(@class,'alert') and contains(., 'No data was found')]",
+          "profile": {
+            "name": {
+              "selector": ".//td[3]"
+            },
+            "age": {
+              "selector": ".//td[4]"
+            },
+            "addressCityStateList": {
+              "selector": ".//td[5]",
+              "findElements": true
+            },
+            "profileUrl": {
+              "identifierType": "hash"
+            }
+          },
+          "id": "530925bf-3647-4c8f-8648-8b0d48abe8e1"
+        }
+      ]
+    },
+    {
+      "stepType": "optOut",
+      "optOutType": "parentSiteOptOut",
+      "actions": []
+    }
+  ],
+  "schedulingConfig": {
+    "retryError": 48,
+    "confirmOptOutScan": 72,
+    "maintenanceScan": 240,
+    "maxAttempts": -1
+  },
+  "removedAt": 1795033566426
+}

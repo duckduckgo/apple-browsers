@@ -84,6 +84,13 @@ class BudgetTests(RepoTestCase):
         config = {**CONFIG, "budgets": {**CONFIG["budgets"], "always-loaded-total": always}}
         self.assertEqual(self.errors(config), [])
 
+    def testWhenSkillLivesInAgentsSkillsBehindAClaudeSymlinkThenItIsMeasuredOnce(self):
+        self.write(".agents/skills/verify-widget/SKILL.md",
+                   "---\nname: verify-widget\ndescription: " + "v" * 60 + "\n---\n")
+        os.symlink("../../.agents/skills/verify-widget", self.root / ".claude/skills/verify-widget")
+        self.assertEqual(self.errors(), [
+            ".agents/skills/verify-widget/SKILL.md#description: ~75 tokens, budget 50 (skill-description)"])
+
     def testWhenAlwaysLoadedTotalExceedsBudgetThenItFails(self):
         config = {**CONFIG, "budgets": {**CONFIG["budgets"], "always-loaded-total": 10}}
         self.assertTrue(any(e.startswith("always-loaded total") for e in self.errors(config)))
@@ -130,7 +137,12 @@ class ReferenceTests(RepoTestCase):
 
     def testWhenReferencedSkillIsMissingThenItFails(self):
         self.write("AGENTS.md", "- Use the `ddg-gadget` skill.\n")
-        self.assertEqual(self.errors(), ["AGENTS.md: skill `ddg-gadget` isn't in .claude/skills/"])
+        self.assertEqual(self.errors(), ["AGENTS.md: skill `ddg-gadget` isn't in .claude/skills/ or .agents/skills/"])
+
+    def testWhenReferencedSkillIsInAgentsSkillsThenItPasses(self):
+        self.write(".agents/skills/verify-widget/SKILL.md", "---\nname: verify-widget\ndescription: Verify.\n---\n")
+        self.write("AGENTS.md", "- Use the `verify-widget` skill.\n")
+        self.assertEqual(self.errors(), [])
 
     def testWhenReferenceIsIgnoredThenItPasses(self):
         self.write("AGENTS.md", "- Never commit `Sources/Generated/Out.swift`.\n")

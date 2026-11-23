@@ -65,6 +65,7 @@ public enum WebExtensionAPIStubScript {
     /// optional: a page with no handler of this name hears `active`.
     public static let idleMessageHandlerName = "ddgWebExtensionIdle"
 
+    public static let clipboardReadMessageHandlerName = "ddgWebExtensionClipboardRead"
     public static let downloadMessageHandlerName = "ddgWebExtensionDownload"
 
     /// Name of the script message handler `chrome.privacy.services` settings go through. It is
@@ -139,8 +140,8 @@ public enum WebExtensionAPIStubScript {
         // `browser_specific_settings.duckduckgo` and need no Chrome shims. Keep in sync with
         // `WKWebExtension.needsChromeCompatibility`.
         try {
-            var settings = api.runtime && typeof api.runtime.getManifest === "function"
-                ? api.runtime.getManifest().browser_specific_settings : undefined;
+            var manifest = api.runtime && typeof api.runtime.getManifest === "function" ? api.runtime.getManifest() : undefined;
+            var settings = manifest && manifest.browser_specific_settings;
             if (settings && settings.duckduckgo) {
                 return;
             }
@@ -1107,6 +1108,25 @@ public enum WebExtensionAPIStubScript {
         // `privacy` lets an extension take over DuckDuckGo autofill.
         var appPermissionNames = \(jsArray(WebExtensionAppPermission.allCases.map(\.rawValue)));
         var permissionsMessageHandlerName = "\(Self.permissionsMessageHandlerName)";
+
+        // Bitwarden reads text from its background or offscreen extension document when its clear timer fires.
+        var clipboardReadPermission = "\(WebExtensionManifestPermission.clipboardRead.rawValue)";
+        if (isAppPermission(clipboardReadPermission) && manifest &&
+            [manifest.permissions, manifest.optional_permissions].some(function(names) {
+                return Array.isArray(names) && names.includes(clipboardReadPermission);
+            })) {
+            var clipboard = globalThis.navigator && globalThis.navigator.clipboard;
+            var clipboardHandlers = globalThis.webkit && globalThis.webkit.messageHandlers;
+            var clipboardHandler = clipboardHandlers && clipboardHandlers["\(Self.clipboardReadMessageHandlerName)"];
+            if (clipboard && typeof clipboard.readText === "function" && clipboardHandler) {
+                var originalReadText = clipboard.readText.bind(clipboard);
+                define(clipboard, "readText", async function() {
+                    var text = await clipboardHandler.postMessage(null);
+                    // Without an app grant, WebKit still handles a user-initiated paste under its own rules.
+                    return typeof text === "string" ? text : originalReadText();
+                });
+            }
+        }
 
         function isLocalPermission(name) {
             return localPermissionNames.indexOf(name) !== -1;

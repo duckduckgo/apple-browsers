@@ -89,12 +89,16 @@ public final class AssistedOptOutQueue {
 
     public func start(id: AssistedOptOutID) async throws {
         guard let candidates = try await availableCandidates() else { return }
-        if let session {
+        if let session, session.phase != .submitted || session.id == id {
             presenter?.present(session)
             return
         }
         guard let candidate = candidates.first(where: { $0.id == id && needsUser($0) }),
               let actions = candidate.data.dataBroker.optOutStep()?.actions else { return }
+        if let finished = self.session {
+            self.session = nil
+            presenter?.dismiss(finished)
+        }
         let session = AssistedOptOutSession(id: id,
                                             broker: .init(name: candidate.data.dataBroker.name, url: candidate.data.dataBroker.url),
                                             steps: AssistedOptOutSteps(actions: actions),
@@ -144,8 +148,10 @@ public final class AssistedOptOutQueue {
             self.runningTask = nil
             self.runningCancellation = nil
             session.finish(outcome: outcome)
-            self.session = nil
-            self.presenter?.dismiss(session)
+            if outcome != .submitted {
+                self.session = nil
+                self.presenter?.dismiss(session)
+            }
             self.invalidate()
         }
     }

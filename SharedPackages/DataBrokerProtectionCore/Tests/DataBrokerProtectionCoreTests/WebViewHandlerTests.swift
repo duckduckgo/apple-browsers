@@ -74,6 +74,57 @@ final class WebViewHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenNavigationFinishesWithNoPendingLoad_thenNothingHappens() throws {
+        // Given
+        let sut = try makeWebViewHandler()
+
+        // When / Then: no pending load to complete, so this must be a no-op
+        sut.webView(WKWebView(), didFinish: nil)
+        sut.webView(WKWebView(), didFinish: nil)
+    }
+
+    @MainActor
+    func testWhenNavigationFinishesTwiceWhileWaitingForWebViewLoad_thenLoadSucceedsOnce() async throws {
+        // Given
+        let sut = try makeWebViewHandler()
+        let loadTask = Task { @MainActor in
+            try await sut.waitForWebViewLoad()
+        }
+        try await Task.sleep(interval: 0.01)
+
+        // When
+        sut.webView(WKWebView(), didFinish: nil)
+        sut.webView(WKWebView(), didFinish: nil)
+
+        // Then
+        let result = await loadTask.result
+        if case .failure(let error) = result {
+            XCTFail("Expected success, got \(error)")
+        }
+    }
+
+    @MainActor
+    func testWhenNavigationFailsAfterFinishing_thenLoadKeepsFirstResult() async throws {
+        // Given
+        let sut = try makeWebViewHandler()
+        let loadTask = Task { @MainActor in
+            try await sut.waitForWebViewLoad()
+        }
+        try await Task.sleep(interval: 0.01)
+
+        // When
+        sut.webView(WKWebView(), didFinish: nil)
+        sut.webView(WKWebView(), didFail: nil, withError: URLError(.cancelled))
+        sut.webViewWebContentProcessDidTerminate(WKWebView())
+
+        // Then
+        let result = await loadTask.result
+        if case .failure(let error) = result {
+            XCTFail("Expected success, got \(error)")
+        }
+    }
+
+    @MainActor
     func testWhenCustomUserAgentIsProvided_thenWebViewUsesIt() async throws {
         let customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:142.0) Gecko/20100101 Firefox/142.0"
         let sut = try makeWebViewHandler(customUserAgent: customUserAgent)

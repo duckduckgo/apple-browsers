@@ -219,7 +219,7 @@ struct Launching: LaunchingHandling {
                                     onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
                                         keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
+        let crashCollectionService = CrashCollectionService()
         let launchTimeMetricsService = LaunchTimeMetricsService()
         let hangMetricsService = HangMetricsService()
         let statisticsService = StatisticsService()

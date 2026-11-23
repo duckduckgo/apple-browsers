@@ -180,13 +180,16 @@ final class AIChatDebugMenu: NSMenu {
         DuckAiLauncherPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
     }
 
+    /// Back to a Mac that never set up local summaries, so the pop-up shows again whichever engine is active.
     @MainActor
     @objc private func resetLocalSummaries() {
-        NSApp.delegateTyped.localModelService.optOut()
+        let service = NSApp.delegateTyped.localModelService
+        service.optOut()
+        service.uninstallDownloadableModel()
     }
 
     /// Runs `requestAIChatLocalModelAccess` the way Duck.ai would, until Duck.ai sends it. It shows the
-    /// active engine's pop-up: Turn On for Apple Intelligence, Install for the downloadable model.
+    /// active engine's pop-up, Connect or Install, and nothing once that engine is set up.
     @MainActor
     @objc private func showLocalModelAccessPrompt() {
         let service = NSApp.delegateTyped.localModelService

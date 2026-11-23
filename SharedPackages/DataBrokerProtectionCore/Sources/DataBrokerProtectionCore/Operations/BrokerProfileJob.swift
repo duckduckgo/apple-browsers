@@ -269,8 +269,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                 jobType: jobType,
                                 priorityDate: priorityDate,
                                 sortPredicate: jobDependencies.jobSortPredicate)
-            .excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: brokerProfileQueriesData,
-                                                 runningAttempts: jobDependencies.runningAssistedOptOuts)
+            .excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: brokerProfileQueriesData)
             .filter { jobData in
                 guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
                     return true
@@ -324,17 +323,12 @@ private extension Array where Element == BrokerJobData {
 }
 
 extension Array where Element == BrokerJobData {
-    /// Drops opt-outs for brokers that need the user, and any record an assisted run is already working on.
+    /// Drops opt-outs for brokers that need the user.
     /// A scheduled run can't finish them, so they wait for the user even while user assistance is off.
-    func excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: [BrokerProfileQueryData],
-                                              runningAttempts: RunningAssistedOptOuts) -> [BrokerJobData] {
+    func excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: [BrokerProfileQueryData]) -> [BrokerJobData] {
         filter { jobData in
-            guard let optOut = jobData as? OptOutJobData else { return true }
-            if let extractedProfileId = optOut.extractedProfile.id,
-               runningAttempts.contains(AssistedOptOutID(brokerId: optOut.brokerId,
-                                                        profileQueryId: optOut.profileQueryId,
-                                                        extractedProfileId: extractedProfileId)) { return false }
-            guard let broker = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker else { return true }
+            guard jobData is OptOutJobData,
+                  let broker = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker else { return true }
             return !broker.requiresUserAssistance
         }
     }

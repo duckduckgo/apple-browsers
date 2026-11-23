@@ -128,6 +128,10 @@ No match is inconclusive, and an error never counts as an empty scan. A broker b
 captcha, email, authentication and `jobTimeout`, and any activity timeout, is our failure and fails the run. An accepted
 HTTP request is not completion; the runner polls the run ID and checks the selected result and history.
 
+Then have a fresh subagent review the evidence of every run as `.claude/skills/verify-pir/verify.md` describes, and
+report its `confirmed` or `disputed` next to the verdict. To run a batch of scenarios, follow
+`.claude/skills/verify-pir/scenarios/README.md`.
+
 ## 6. Verify persisted scans
 
 Choose by what should happen to the DEBUG profile:

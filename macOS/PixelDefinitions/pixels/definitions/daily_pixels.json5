@@ -38,7 +38,7 @@
         "description": "Daily pixel reporting whether the other distribution of the browser (App Store for DMG builds, DMG for App Store builds) is installed in /Applications",
         "owners": ["jotaemepereira"],
         "privacyReview": ["https://app.asana.com/0/0/1220490277131209/f"],
-        "triggers": ["scheduled"],
+        "triggers": ["startup"],
         "suffixes": ["daily"],
         "parameters": [
             "appVersion",

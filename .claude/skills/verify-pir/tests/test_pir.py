@@ -271,6 +271,13 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaises(pir.SetupFailed):
             pir.verify_auth(snapshot, self.config, provided=True)
 
+    def test_scenario_title_is_recorded_and_kept_in_the_rerun(self):
+        result = self.execute("--scenario", "Scan finds the profile's record")
+        self.assertEqual(result["scenario"], "Scan finds the profile's record")
+        self.assertIn("--scenario", result["rerun"])
+        with self.assertRaisesRegex(ValueError, "--scenario applies only to run and scheduler"):
+            pir.execute(pir.parser().parse_args(["selftest", "--platform", "macos", "--scenario", "x"]))
+
     def test_native_log_array_preserves_success_report_and_redacts_evidence(self):
         result = self.execute(*self.auth_options())
         self.assertEqual(result["status"], "pass", result.get("evidenceErrors"))

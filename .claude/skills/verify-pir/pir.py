@@ -392,6 +392,7 @@ def parser():
     token.add_argument("--token-env", metavar="NAME", help="read token from this environment variable")
     cli.add_argument("--check-config", action="store_true", help="validate inputs without building or launching")
     cli.add_argument("--keep", action="store_true", help="retain simulator after stopping owned app and agent")
+    cli.add_argument("--scenario", help="title of the scenario this attempt runs; recorded in result.json")
     scheduler = cli.add_argument_group("scheduler")
     scheduler.add_argument("--profile-file", dest="scheduler_profile", type=Path, help="profile JSON for seed or reseed")
     scheduler.add_argument("--port", dest="scheduler_port", type=int, help="observe: local PIR debug server port (default: 8474)")
@@ -432,6 +433,8 @@ def rerun_command(args):
         command += ["--token-env", args.token_env]
     if args.keep:
         command += ["--keep"]
+    if args.scenario:
+        command += ["--scenario", args.scenario]
     if args.command == "scheduler":
         if args.scheduler_mode == "observe":
             command += ["--since", args.scheduler_since]
@@ -489,6 +492,8 @@ def finish(context, include_manifest=True):
 def execute(args, runtime_factory=None):
     is_selftest = args.command == "selftest"
     scope, seed = None, None
+    if args.scenario is not None and args.command not in ("run", "scheduler"):
+        raise ValueError("--scenario applies only to run and scheduler")
     if args.command == "scheduler":
         if args.config or args.token_file or args.token_env or args.check_config:
             raise ValueError("scheduler commands do not accept scenario, credential or check-config options")
@@ -547,6 +552,8 @@ def execute(args, runtime_factory=None):
             seed = dataclasses.replace(seed, port=port)
     context.result.update(platform=args.platform, command=args.command, instanceID=instance, port=port,
                           startedAt=time.time(), rerun=rerun_command(args), evidence=str(evidence))
+    if args.scenario:
+        context.result["scenario"] = args.scenario
     runtime, client = None, None
 
     def collect_snapshots():

@@ -170,7 +170,9 @@ extension MainViewController {
               let currentPose = transitionSource.focusedPose,
               let coordinator = unifiedToggleInputCoordinator else { return }
         view.layoutIfNeeded()
-        guard let pose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource), pose != currentPose else { return }
+        let pose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource)
+            ?? poseKeepingOffsets(of: currentPose, coordinator: coordinator)
+        guard pose != currentPose else { return }
         guard !UIAccessibility.isReduceMotionEnabled else {
             transitionSource.setFocusedPose(pose)
             return
@@ -180,6 +182,14 @@ extension MainViewController {
                        options: [.beginFromCurrentState, .curveEaseInOut]) {
             transitionSource.setFocusedPose(pose)
         }
+    }
+
+    /// With the resting card scrolled out of view there is nothing to measure the offsets against, but the
+    /// modules must still hide or show with the mode.
+    private func poseKeepingOffsets(of pose: NewTabPageFocusedPose, coordinator: UnifiedToggleInputCoordinator) -> NewTabPageFocusedPose {
+        var updatedPose = pose
+        updatedPose.showsModules = coordinator.contentViewController.isShowingRedesignedSearchModules
+        return updatedPose
     }
 
     private func measureFocusedPose(coordinator: UnifiedToggleInputCoordinator,

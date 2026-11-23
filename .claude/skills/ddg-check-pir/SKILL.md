@@ -1,10 +1,10 @@
 ---
-name: verify-pir
+name: ddg-check-pir
 description: Run a live PIR broker scan and optional opt-out through the debug API on iOS or macOS, a native selftest, or a persisted scheduler check. Accepts a supplied access token for captcha and email flows. Invoke explicitly because it sends real broker requests.
 disable-model-invocation: true
 ---
 
-# verify-pir
+# ddg-check-pir
 
 Runs one broker against a test profile on iOS or macOS. The Python runner starts jobs through the PIR debug API, checks
 results and history, saves evidence and stops the app or agent it launched. It needs Python 3 and Xcode's command line
@@ -72,7 +72,7 @@ launch; a malformed token or authentication failure fails the run, and the repor
 From the worktree root:
 
 ```sh
-P=.claude/skills/verify-pir/pir.py
+P=.claude/skills/ddg-check-pir/pir.py
 python3 "$P" build --platform ios
 python3 "$P" selftest --platform ios --evidence-dir ~/pir-runs/evidence
 python3 "$P" run --platform ios --config ~/pir-runs/example/config.json \
@@ -83,7 +83,7 @@ Use `--platform macos` for the macOS PIR agent and `--device ipad` on iOS build 
 
 `build` records the source fingerprint and executable hash; later commands reject a stale build, so rebuild after source
 changes. On macOS it turns on debug deployment (`scripts/toggle-macos-debug-deployment.sh on`, preserving other local
-overrides), builds a private DEBUG browser under `DerivedData/verify-pir/macos/` and finds its embedded PIR agent. It
+overrides), builds a private DEBUG browser under `DerivedData/ddg-check-pir/macos/` and finds its embedded PIR agent. It
 leaves `/Applications/DEBUG` alone and refuses while the private browser or agent runs; its error names the command to
 stop an agent a scheduler seed left registered.
 
@@ -172,13 +172,13 @@ are inconclusive. Recurring scheduler ticks and opt-outs are separate checks.
 Unit tests, without a simulator or backend:
 
 ```sh
-python3 -m unittest discover -s .claude/skills/verify-pir/tests -p 'test_*.py'
+python3 -m unittest discover -s .claude/skills/ddg-check-pir/tests -p 'test_*.py'
 ```
 
 The native contract test runs the real Python client against the real Swift HTTP server with stub services:
 
 ```sh
 xcodebuild -workspace DuckDuckGo.xcworkspace -scheme DataBrokerProtectionCore -configuration Debug \
-  -destination 'platform=macOS' -derivedDataPath DerivedData/verify-pir/core-tests \
+  -destination 'platform=macOS' -derivedDataPath DerivedData/ddg-check-pir/core-tests \
   -only-testing:DataBrokerProtectionCoreTests/DebugHTTPPythonContractTests test
 ```

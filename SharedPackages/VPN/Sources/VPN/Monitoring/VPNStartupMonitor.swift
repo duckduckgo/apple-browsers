@@ -26,6 +26,18 @@ public final class VPNStartupMonitor {
         case startTunnelDisconnectedSilently(underlyingError: Error?)
         case startTunnelTimedOut
 
+        public var disconnectErrorCode: Int? {
+            guard case .startTunnelDisconnectedSilently(let underlyingError?) = self else { return nil }
+            let error = underlyingError as NSError
+            // A generic provider failure wraps the error that actually stopped startup.
+            if error.domain == PacketTunnelProvider.TunnelError.errorDomain,
+               error.code == PacketTunnelProvider.TunnelError.Code.otherTunnelStartError.rawValue,
+               let cause = error.userInfo[NSUnderlyingErrorKey] as? Error {
+                return (cause as NSError).code
+            }
+            return error.code
+        }
+
         var errorDescription: String? {
             switch self {
             case .startTunnelDisconnectedSilently:

@@ -19,6 +19,13 @@
 import Foundation
 
 final class UserText {
+    static func vpnConnectionFailed(errorCode: Int) -> String {
+        let format = NSLocalizedString("vpn.connection.failed.error-code",
+                                       value: "VPN couldn’t connect (error %ld).",
+                                       comment: "VPN connection failure message showing the numeric reason for the disconnect.")
+        return String(format: format, errorCode)
+    }
+
     // MARK: - VPN Status View submenu (legacy)
 
     static let networkProtectionStatusMenuVPNSettings = NSLocalizedString("network.protection.status.menu.vpn.settings", value: "VPN Settings…", comment: "The status menu 'VPN Settings' menu item")

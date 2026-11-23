@@ -57,6 +57,7 @@ extension MainViewController {
             coordinator?.contentViewController.switchMode(to: mode)
         }
         let focusedPose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource)
+            ?? unmeasuredFocusedPose(coordinator: coordinator, transitionSource: transitionSource)
         if !showsFocusedSurfaceDirectly, !UIAccessibility.isReduceMotionEnabled, let focusedPose {
             inputContainer.transform = focusedPose.focusedInputRestingTransform
         }
@@ -196,6 +197,16 @@ extension MainViewController {
         var updatedPose = pose
         updatedPose.showsModules = coordinator.contentViewController.isShowingRedesignedSearchModules
         return updatedPose
+    }
+
+    /// Editing that starts with the resting card scrolled out of view keeps the page where it is, so its modules
+    /// still show and take taps. An onboarding dialog keeps the page at rest.
+    private func unmeasuredFocusedPose(coordinator: UnifiedToggleInputCoordinator,
+                                       transitionSource: NewTabPageInputTransitionSource?) -> NewTabPageFocusedPose? {
+        guard let page = transitionSource as? RedesignedNewTabPageViewController, page.canAnimateSearchInput else { return nil }
+        return NewTabPageFocusedPose(inputOffset: 0,
+                                     modulesOffset: 0,
+                                     showsModules: coordinator.contentViewController.isShowingRedesignedSearchModules)
     }
 
     private func measureFocusedPose(coordinator: UnifiedToggleInputCoordinator,

@@ -457,21 +457,35 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     }
 
     func searchInputTransitionFrame(in targetView: UIView) -> CGRect? {
+        searchInputFrame(in: targetView, scrolledBy: 0)
+    }
+
+    func focusedPoseSearchInputFrame(in targetView: UIView) -> CGRect? {
+        searchInputFrame(in: targetView, scrolledBy: scrollDistanceSinceEditingBegan)
+    }
+
+    private func searchInputFrame(in targetView: UIView, scrolledBy scrollDistance: CGFloat) -> CGRect? {
         guard canAnimateSearchInput else { return nil }
         guard let window = view.window else { return nil }
         if let inputEditingLayout, inputEditingLayout.isGeometryValid, inputEditingLayout.windowBounds == window.bounds {
             return inputEditingLayout.inputFrameInWindow.map { targetView.convert($0, from: window) }
         }
-        guard let frame = visibleSearchInputFrameInWindow() else { return nil }
+        guard let frame = visibleSearchInputFrameInWindow(scrolledBy: scrollDistance) else { return nil }
         return targetView.convert(frame, from: window)
     }
 
-    private func visibleSearchInputFrameInWindow() -> CGRect? {
+    private func visibleSearchInputFrameInWindow(scrolledBy scrollDistance: CGFloat = 0) -> CGRect? {
         guard let window = view.window, let searchInputView else { return nil }
         let frame = searchInputView.untransformedFrame(of: searchInputView.bounds, in: window)
+            .offsetBy(dx: 0, dy: scrollDistance)
         let viewport = scrollView.convert(scrollView.bounds, to: window).intersection(window.bounds)
         // An offscreen resting card should not pull the editor beyond the visible page.
         return frame.intersects(viewport) ? frame : nil
+    }
+
+    private var scrollDistanceSinceEditingBegan: CGFloat {
+        guard let inputEditingLayout else { return 0 }
+        return scrollView.contentOffset.y - inputEditingLayout.contentOffset.y
     }
 
     func setFocusedPose(_ pose: NewTabPageFocusedPose?) {

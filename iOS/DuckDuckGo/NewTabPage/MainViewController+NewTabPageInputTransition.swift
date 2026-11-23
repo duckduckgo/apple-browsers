@@ -176,7 +176,7 @@ extension MainViewController {
               let currentPose = transitionSource.focusedPose,
               let coordinator = unifiedToggleInputCoordinator else { return }
         view.layoutIfNeeded()
-        let pose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource)
+        let pose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource, ignoresFocusedScroll: true)
             ?? poseKeepingOffsets(of: currentPose, coordinator: coordinator)
         guard pose != currentPose else { return }
         guard !UIAccessibility.isReduceMotionEnabled else {
@@ -209,8 +209,13 @@ extension MainViewController {
     }
 
     private func measureFocusedPose(coordinator: UnifiedToggleInputCoordinator,
-                                    transitionSource: NewTabPageInputTransitionSource?) -> NewTabPageFocusedPose? {
-        guard let transitionSource, let restingFrame = transitionSource.searchInputTransitionFrame(in: view) else { return nil }
+                                    transitionSource: NewTabPageInputTransitionSource?,
+                                    ignoresFocusedScroll: Bool = false) -> NewTabPageFocusedPose? {
+        guard let transitionSource else { return nil }
+        let restingFrame = ignoresFocusedScroll
+            ? transitionSource.focusedPoseSearchInputFrame(in: view)
+            : transitionSource.searchInputTransitionFrame(in: view)
+        guard let restingFrame else { return nil }
         let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
         let focusedFrame = inputContainer.untransformedFrame(of: coordinator.viewController.inputCardFrame(in: inputContainer), in: view)
         return NewTabPageFocusedPose(restingInputFrame: restingFrame,

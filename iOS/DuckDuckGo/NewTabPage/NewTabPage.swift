@@ -142,6 +142,8 @@ protocol NewTabPageInputTransitionSource: AnyObject {
     var searchInputView: UIView? { get }
     /// The resting card's frame, without any focused pose transform.
     func searchInputTransitionFrame(in view: UIView) -> CGRect?
+    /// The resting card's frame at the scroll offset editing began from, so a refreshed pose ignores scrolling while focused.
+    func focusedPoseSearchInputFrame(in view: UIView) -> CGRect?
     func setSearchInputEditing(_ isEditing: Bool)
     var focusedPose: NewTabPageFocusedPose? { get }
     /// Moves the live blocks to the pose, or back to rest with nil. Call inside an animation to animate.

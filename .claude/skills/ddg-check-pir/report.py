@@ -283,7 +283,7 @@ def render(batch, rows, baseline=None):
         if counted and r["review"] == "not reviewed":
             pending.append(r)
         r["reasons"] = reasons
-        r["state"] = "fail" if reasons else ("warn" if r["review"] != "confirmed" or known or r["findings"] else "ok")
+        r["state"] = "fail" if reasons else ("warn" if r["review"] != "confirmed" or known else "ok")
         file, title = scenario_parts(r["scenario"]) if r["scenario"] else ("", f"({r['command']})")
         r["file"], r["title"] = file, title
         verdict = (f"expected {r['expected']}, got {r['status']}" if r["expected"] != "pass" or not as_expected else r["status"])

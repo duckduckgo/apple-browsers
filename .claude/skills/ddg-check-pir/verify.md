@@ -47,8 +47,10 @@ Write `verification.md` in the attempt folder. Its first line is `confirmed` whe
 support the run, and `disputed` when any of them doesn't. Then answer each question in one or two lines, naming the
 evidence file behind each answer.
 
-List anything else worth knowing under a `## Findings` heading, one bullet each, naming the evidence file. For example,
-an extract that misses a field the page shows on every card. Findings don't change the first line.
+List problems outside what the scenario checks under a `## Findings` heading, one bullet each, naming the evidence
+file. A finding is something someone may need to fix or follow up, such as an extract that misses a field the page shows
+on every card. Observations that something went as expected, or details that didn't affect the run, aren't findings.
+Leave them out or put them in the answers. Findings don't change the first line.
 
 Report the reviewer's result next to the runner's verdict. In a baseline, keep a `disputed` run with its finding: it
 records a failure the baseline build already has, so a later run that shows the same failure isn't a regression.

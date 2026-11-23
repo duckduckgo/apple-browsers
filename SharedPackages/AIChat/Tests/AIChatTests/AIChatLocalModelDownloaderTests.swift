@@ -184,11 +184,16 @@ final class AIChatLocalModelDownloaderTests {
         try writePart(Data(repeating: 0xFF, count: 400))
         StubModelServer.respond { _ in .init(status: 200, body: self.model) }
         let downloader = makeDownloader()
+        var states: [AIChatLocalModelInstallState] = []
+        let subscription = downloader.statePublisher.sink { states.append($0) }
 
         downloader.install()
         await waitUntil { downloader.state.isInstalled }
+        subscription.cancel()
 
         #expect(try Data(contentsOf: installedURL) == model)
+        let restart = try #require(states.firstIndex(of: .downloading(receivedBytes: 400, totalBytes: 1_000)))
+        #expect(states[restart...].contains(.downloading(receivedBytes: 0, totalBytes: 1_000)))
     }
 
     @available(iOS 16, macOS 13, *)

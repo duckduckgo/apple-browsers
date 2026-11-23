@@ -473,6 +473,9 @@ final class ModelFileDownload: NSObject, URLSessionDataDelegate, @unchecked Send
                 handle = try FileHandle(forWritingTo: partURL)
                 try handle?.truncate(atOffset: 0)
                 received = 0
+                // Without this, progress would stay at the old size until the new bytes passed it.
+                lastReported = 0
+                onProgress?(0)
             case 416:
                 failure = .rangeNotSatisfiable
             default:

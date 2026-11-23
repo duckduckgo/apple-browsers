@@ -92,11 +92,12 @@ public enum BrowserToolAccessLevel: String, Sendable {
 
 public enum ClientToolPermissionAuthorization {
     case granted(BrowserToolPermissionPath, performExecution: @MainActor (@escaping @MainActor () async -> BrowserToolResult) async -> BrowserToolResult?)
-    case refused(ClientToolError, BrowserToolPermissionPath)
+    /// `answer` says how the prompt closed; nil when none was shown.
+    case refused(ClientToolError, BrowserToolPermissionPath, answer: BrowserToolPromptAnswer?)
 
     public var permissionPath: BrowserToolPermissionPath {
         switch self {
-        case .granted(let path, _), .refused(_, let path): path
+        case .granted(let path, _), .refused(_, let path, _): path
         }
     }
 }
@@ -128,6 +129,10 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let cancellation: ClientToolCancellationSignal
         var state: State = .queued
         var permissionPath = BrowserToolPermissionPath.beforePermission
+        /// Set while a prompt is shown, for `promptDidClose`.
+        var promptShownAt: TimeInterval?
+        var promptAnswer: BrowserToolPromptAnswer?
+        var promptNumberInChat: Int?
         var continuation: CheckedContinuation<ClientToolPermissionAuthorization, Never>?
         var executionContinuation: CheckedContinuation<BrowserToolResult?, Never>?
         var executionTask: Task<Void, Never>?
@@ -166,6 +171,10 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
     private var isCancellingPrompter = false
     /// Tools allowed per Duck.ai chat through `requestAccess`. Memory only: they end at quit or Fire.
     private var chatGrants: [String: Set<String>] = [:]
+    /// Single-tool prompts shown per Duck.ai chat, for `promptNumberInChat`. Cleared with the grants.
+    private var promptCounts: [String: Int] = [:]
+
+    public var instrumentation: (any BrowserToolsInstrumentation)?
 
     public convenience init(permissions: BrowserToolPermissionStoring) {
         self.init(permissions: permissions,
@@ -196,7 +205,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let requestID = UUID().uuidString
         let deadline = now() + Self.permissionTimeout
         return await withTaskCancellationHandler {
-            guard !Task.isCancelled, !cancellation.isCancelled else { return .refused(.cancelled, .beforePermission) }
+            guard !Task.isCancelled, !cancellation.isCancelled else { return .refused(.cancelled, .beforePermission, answer: nil) }
             return await withCheckedContinuation { continuation in
                 let entry = Entry(requestID: requestID, callID: callID, tool: tool, targetsOtherTab: targetsOtherTab, target: target,
                                   chatID: chatID, accessToolNames: accessToolNames, prompter: prompter,
@@ -233,10 +242,12 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
             return
         }
         guard !entry.isCancelled else {
+            closePrompt(entry, answer: .withdrawn)
             finish(entry.requestID, error: .cancelled, withdrawingPrompt: false)
             return
         }
         guard now() < entry.deadline else {
+            closePrompt(entry, answer: .timeout)
             finish(entry.requestID, error: .denied, withdrawingPrompt: false)
             return
         }
@@ -246,6 +257,15 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         case (.never, .some): .dontAllow
         default: decision
         }
+        let answer: BrowserToolPromptAnswer = switch decision {
+        // `allowAccess` and `dontAllow` are offered only by `requestAccess` prompts.
+        case .allowOnce, .allowAccess: .allowOnce
+        case .allowForChat: .allowForChat
+        case .always: .always
+        case .never, .dontAllow: .never
+        case .dismiss: .dismiss
+        }
+        closePrompt(entry, answer: answer)
         switch decision {
         case .always:
             if !entry.tool.asksEveryTime {
@@ -293,6 +313,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
 
     public func revokeChatGrants() {
         chatGrants.removeAll()
+        promptCounts.removeAll()
     }
 
     public func cancelRequests(from prompter: any ClientToolPermissionPrompting) {
@@ -387,6 +408,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         guard let entry = entries.removeValue(forKey: requestID) else { return }
         switch entry.state {
         case .awaitingDecision where withdrawingPrompt:
+            closePrompt(entry, answer: now() >= entry.deadline ? .timeout : .withdrawn)
             entry.prompter?.withdrawClientToolPermissionPrompt(requestID: requestID)
         case .granted, .executing:
             entry.prompter?.clientToolUseDidEnd(requestID: requestID, completed: false)
@@ -400,7 +422,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         releaseQueue(entry)
         let continuation = entry.continuation
         entry.continuation = nil
-        continuation?.resume(returning: .refused(error, entry.permissionPath))
+        continuation?.resume(returning: .refused(error, entry.permissionPath, answer: entry.promptAnswer))
         executionContinuation?.resume(returning: nil)
         processPendingPermissionQueues()
     }
@@ -459,6 +481,13 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         }
         entry.state = .awaitingDecision
         entry.permissionPath = .prompt
+        entry.promptShownAt = now()
+        if entry.accessToolNames == nil {
+            if let chatID = entry.chatID {
+                promptCounts[chatID, default: 0] += 1
+                entry.promptNumberInChat = promptCounts[chatID]
+            }
+        }
         let shown = prompter.presentClientToolPermissionPrompt(.init(requestID: entry.requestID, callID: entry.callID,
                                                                     toolName: entry.tool.name, targetsOtherTab: entry.targetsOtherTab,
                                                                     target: entry.target, offersAlways: !entry.tool.asksEveryTime,
@@ -467,8 +496,20 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
                                                                         && !entry.tool.asksEveryTime))
         if !shown, entries[entry.requestID] === entry, case .awaitingDecision = entry.state {
             entry.permissionPath = .beforePermission
+            entry.promptShownAt = nil
+            if let chatID = entry.chatID, entry.promptNumberInChat != nil { promptCounts[chatID, default: 1] -= 1 }
             finish(entry.requestID, error: .cancelled, withdrawingPrompt: false)
         }
+    }
+
+    /// Records how a prompt closed, once, and reports it for a single-tool prompt.
+    private func closePrompt(_ entry: Entry, answer: BrowserToolPromptAnswer) {
+        guard let shownAt = entry.promptShownAt else { return }
+        entry.promptShownAt = nil
+        entry.promptAnswer = answer
+        guard entry.accessToolNames == nil else { return }
+        instrumentation?.promptDidClose(tool: entry.tool.name, answer: answer, promptNumberInChat: entry.promptNumberInChat,
+                                        timeToAnswer: now() - shownAt)
     }
 }
 

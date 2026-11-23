@@ -86,6 +86,11 @@ enum UnifiedSuggestionsContentResolver {
         }
     }
 
+    /// Whether the focused layer may draw the empty-state Dax logo. The redesigned New Tab Page shows its own greeting instead.
+    static func allowsFocusedLogo(usesRedesignedNewTabPageLayout: Bool, embedsRedesignedModules: Bool) -> Bool {
+        !usesRedesignedNewTabPageLayout || embedsRedesignedModules
+    }
+
     static func resolve(_ inputs: UnifiedSuggestionsInputs,
                         previous: UnifiedSuggestionsContentKind?) -> UnifiedSuggestionsContentKind {
         switch inputs.mode {

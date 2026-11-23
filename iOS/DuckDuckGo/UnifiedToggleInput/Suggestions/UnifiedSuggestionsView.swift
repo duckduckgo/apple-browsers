@@ -195,7 +195,8 @@ struct UnifiedSuggestionsView: View {
             let isFadingLogo = viewModel.logoModeChange?.isFadingOut == true
             let retainedSource = !usesRedesignedNewTabPageLayout && (isPreparingLogo || isFadingLogo || !destinationShowsLogo) ? source : nil
             let showsLogo = (isPreparingLogo || (viewModel.isShowingLogo && !isFadingLogo)) && !viewModel.isFireTab && !viewModel.isLandscape
-                && !usesRedesignedNewTabPageLayout
+                && UnifiedSuggestionsContentResolver.allowsFocusedLogo(usesRedesignedNewTabPageLayout: usesRedesignedNewTabPageLayout,
+                                                                       embedsRedesignedModules: embedsRedesignedModules)
             let targetCenterY = retainedSource?.frame.midY ?? geometry.centerY
             let offsetY = targetCenterY - frame.midY
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil

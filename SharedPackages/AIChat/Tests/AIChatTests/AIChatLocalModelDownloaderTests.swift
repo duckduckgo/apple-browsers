@@ -233,6 +233,25 @@ final class AIChatLocalModelDownloaderTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A connection that keeps dropping but adds bytes each time isn't stopped by the retry limit", .timeLimit(.minutes(1)))
+    func progressKeepsTheDownloadGoing() async {
+        // Each response ends after 100 bytes, which the download treats like a dropped connection.
+        StubModelServer.respond { request in
+            let start = request.value(forHTTPHeaderField: "Range")
+                .flatMap { Int($0.dropFirst("bytes=".count).dropLast()) } ?? 0
+            let end = min(start + 100, self.model.count)
+            return .init(status: start == 0 ? 200 : 206, body: self.model.subdata(in: start..<end))
+        }
+        let downloader = makeDownloader(retryDelays: [0.01])
+
+        downloader.install()
+        await waitUntil { downloader.state.isInstalled }
+
+        #expect(downloader.state.isInstalled)
+        #expect(StubModelServer.requests.count == 10)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("The network coming back retries without waiting", .timeLimit(.minutes(1)))
     func networkComingBackRetriesNow() async throws {
         StubModelServer.respond { _ in .init(status: 200, body: Data(), error: URLError(.notConnectedToInternet)) }
@@ -345,6 +364,7 @@ final class AIChatLocalModelDownloaderTests {
 
         #expect(!FileManager.default.fileExists(atPath: otherModel.path))
     }
+
 }
 
 // MARK: - Remote config

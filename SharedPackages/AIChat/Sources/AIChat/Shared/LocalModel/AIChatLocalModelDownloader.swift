@@ -58,7 +58,9 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
     private let retryDelays: [TimeInterval]
     private var download: ModelFileDownload?
     private var retry: Task<Void, Never>?
+    /// Attempts in a row that added nothing. A connection that drops often but keeps adding bytes carries on.
     private var failedAttempts = 0
+    private var receivedAtAttemptStart: Int64 = 0
     /// Hashing a finished download takes a second or two. Starting another download meanwhile would
     /// ask for bytes past the end, and the server's 416 would delete the file being checked.
     private var isVerifying = false
@@ -171,6 +173,7 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         }
 
         state = .downloading(receivedBytes: received, totalBytes: spec.bytes)
+        receivedAtAttemptStart = received
         let download = ModelFileDownload(url: spec.url, partURL: partURL, expectedBytes: spec.bytes)
         self.download = download
         download.start(in: session,
@@ -214,6 +217,9 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         case .failure(.http(let status)) where !(500...599).contains(status):
             fail(.unknown)
         case .failure(.http), .failure(.network):
+            if (Self.fileSize(at: partURL) ?? 0) > receivedAtAttemptStart {
+                failedAttempts = 0
+            }
             scheduleRetry()
         }
     }

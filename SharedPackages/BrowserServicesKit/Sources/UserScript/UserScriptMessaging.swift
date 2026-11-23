@@ -47,6 +47,9 @@ public protocol Subfeature {
     /// This allows the feature to be selective about which domains/origins it accepts messages from
     var messageOriginPolicy: MessageOriginPolicy { get }
 
+    /// This allows the feature to be selective about which frames it accepts messages from, on top of `messageOriginPolicy`
+    var messageFramePolicy: MessageFramePolicy { get }
+
     /// The top-level name of the feature. For example, if Duck Player was delivered through C-S-S, the
     /// "featureName" would still be "duckPlayer" and the "context" would be related to the shared UserScript, in this
     /// case that's "contentScopeScripts"
@@ -70,6 +73,9 @@ extension Subfeature {
     public func with(broker: UserScriptMessageBroker) {
         // nothing
     }
+
+    /// Most features accept messages from any frame that passes `messageOriginPolicy`
+    public var messageFramePolicy: MessageFramePolicy { .any }
 }
 
 public protocol UserScriptMessaging: UserScript {
@@ -189,11 +195,12 @@ public final class UserScriptMessageBroker: NSObject {
             return .error(.notFoundFeature(featureName))
         }
 
-        /// Check if the selected delegate accepts messages from this origin
+        /// Check if the selected delegate accepts messages from this origin and frame
         let messageHost = hostProvider.hostForMessage(message)
-        guard delegate.messageOriginPolicy.isAllowed(messageHost) else {
+        guard delegate.messageOriginPolicy.isAllowed(messageHost),
+              delegate.messageFramePolicy.isAllowed(message.frameInfo) else {
             if isNativeStorage {
-                Logger.nativeStorageDebug.error("[NativeStorage] Broker: origin '\(messageHost)' REJECTED by policy for method '\(method)'")
+                Logger.nativeStorageDebug.error("[NativeStorage] Broker: origin '\(messageHost)' or its frame REJECTED by policy for method '\(method)'")
             }
             return .error(.policyRestriction)
         }
@@ -320,6 +327,29 @@ public enum HostnameMatchingRule {
             return .exact(hostname: host + ":\(port)")
         } else {
             return .exact(hostname: host)
+        }
+    }
+}
+
+/// Limits which frames a feature accepts messages from.
+///
+/// `MessageOriginPolicy` only compares hostnames, so on its own it accepts any scheme
+/// and any frame, including an iframe that happens to share an allowed hostname.
+public enum MessageFramePolicy {
+    case any
+    /// Only the top-level frame
+    case mainFrame
+    /// Only the top-level frame of an https page
+    case secureMainFrame
+
+    public func isAllowed(_ frame: WKFrameInfo) -> Bool {
+        switch self {
+        case .any:
+            return true
+        case .mainFrame:
+            return frame.isMainFrame
+        case .secureMainFrame:
+            return frame.isMainFrame && frame.securityOrigin.protocol == "https"
         }
     }
 }

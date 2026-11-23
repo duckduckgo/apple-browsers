@@ -38,7 +38,9 @@ final class DefaultBrowserAndDockPromptServiceTests: XCTestCase {
                                                  notificationPresenter: notificationPresenterMock,
                                                  uiHosting: { nil },
                                                  isOnboardingCompletedProvider: { true },
-                                                 dockCustomization: DockCustomizerMock())
+                                                 dockCustomization: DockCustomizerMock(),
+                                                 addToDockVideoFeatureFlagger: MockFeatureFlagger(),
+                                                 addToDockVideoPresenter: MainActor.assumeIsolated { CapturingAddToDockVideoPresenter() })
     }
 
     override func tearDownWithError() throws {

@@ -204,6 +204,9 @@ extension Preferences {
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
+                PreferencesBrowserToolPermissionsView()
+                    .visibility(model.shouldShowAIFeatures ? .visible : .gone)
+
                 if isLocalModelAccessShown {
                     PreferencePaneSection(UserText.localModelSettingsSectionTitle, spacing: 8) {
                         VStack(alignment: .leading, spacing: 0) {

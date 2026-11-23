@@ -186,10 +186,10 @@ struct SubscriptionCancellationInstrumentationTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Tapping Cancel Subscription fires the click pixel", .timeLimit(.minutes(1)))
-    func cancelClickedFiresPixel() {
+    func cancelSubscriptionTappedFiresPixel() {
         let pixelKit = PixelKitMock()
 
-        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit).cancelClicked()
+        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit).cancelSubscriptionTapped(subscription: nil)
 
         #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SubscriptionPixel.subscriptionCancellationCancelClick, frequency: .standard)])
     }

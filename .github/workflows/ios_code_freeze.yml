@@ -113,6 +113,18 @@ jobs:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
     secrets: inherit
 
+  ui_tests:
+    name: UI Tests
+
+    needs: create_release_branch
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/ios_ui_tests.yml
+    with:
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+    secrets: inherit
+
   sync_end_to_end_tests:
     name: Sync End-to-End Tests
 

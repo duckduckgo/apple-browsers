@@ -56,7 +56,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
     private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
     private let syncService: DDGSyncing?
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
-    private let isAppStoreBuild: Bool
 
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
@@ -167,7 +166,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
          subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
          syncService: DDGSyncing?,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
          scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()) {
         self.cardActionHandler = cardActionHandler
         self.pixelHandler = pixelHandler
@@ -184,7 +182,6 @@ final class NewTabPageNextStepsSingleCardProvider: NewTabPageNextStepsCardsProvi
         self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
         self.syncService = syncService
         self.adBlockingAvailability = adBlockingAvailability
-        self.isAppStoreBuild = applicationBuildType.isAppStoreBuild
         self.scheduler = scheduler
 
         observeCardVisibilityChanges()
@@ -396,7 +393,7 @@ private extension NewTabPageNextStepsSingleCardProvider {
         case .bringStuff:
             return !dataImportProvider.didImport
         case .addAppToDockMac:
-            return !isAppStoreBuild && !dockCustomizer.isAddedToDock
+            return (dockCustomizer.supportsAddingToDock || featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA)) && !dockCustomizer.isAddedToDock
         case .duckplayer:
             return false
         case .emailProtection:

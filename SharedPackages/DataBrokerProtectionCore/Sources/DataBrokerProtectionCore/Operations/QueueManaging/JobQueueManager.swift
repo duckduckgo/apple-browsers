@@ -290,12 +290,6 @@ private extension JobQueueManager {
             return
         }
 
-        guard !stopIfPaused(jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion) else {
-            // Added after the running jobs are cancelled, so the delegate's broker update check runs and reports the revoked key
-            addWillEnqueueBarrierIfNeeded()
-            return
-        }
-
         addWillEnqueueBarrierIfNeeded()
         cancelCurrentModeAndResetIfNeeded()
         mode = newMode

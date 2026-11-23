@@ -36,6 +36,7 @@ class OnboardingManagerTests: XCTestCase {
     private var originalOnboardingFinished: Bool!
     var manager: OnboardingActionsManaging!
     var navigationDelegate: CapturingOnboardingNavigation!
+    var pathStarter: CapturingPathStarter!
     var dockCustomization: CapturingDockCustomizer!
     var defaultBrowserProvider: CapturingDefaultBrowserProvider!
     var appearancePreferences: AppearancePreferences!
@@ -52,6 +53,7 @@ class OnboardingManagerTests: XCTestCase {
         originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
         OnboardingActionsManager.isOnboardingFinished = false
         navigationDelegate = CapturingOnboardingNavigation()
+        pathStarter = CapturingPathStarter()
         dockCustomization = CapturingDockCustomizer()
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
         appearancePersistor = MockAppearancePreferencesPersistor()
@@ -75,11 +77,13 @@ class OnboardingManagerTests: XCTestCase {
         chromeExtensionInstaller = MockThirdPartyBrowserExtensionInstalling()
         manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
+            aiChatURL: { URL(string: "https://duckduckgo.com/?ia=chat&duckai=5")! },
             featureFlagger: MockFeatureFlagger(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
@@ -94,6 +98,7 @@ class OnboardingManagerTests: XCTestCase {
                                         fire: { _, _, _ in })
         manager = nil
         navigationDelegate = nil
+        pathStarter = nil
         dockCustomization = nil
         defaultBrowserProvider = nil
         appearancePreferences = nil
@@ -168,6 +173,7 @@ class OnboardingManagerTests: XCTestCase {
         dockCustomization.supportsAddingToDock = false
         let appStoreManager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -221,6 +227,67 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertTrue(navigationDelegate.updatePreventUserInteractionCalled)
         XCTAssertFalse(navigationDelegate.preventUserInteraction ?? true)
         XCTAssertTrue(isOnboardingFinished.wrappedValue)
+        // Without the junction no path is saved, so contextual onboarding runs as before.
+        XCTAssertTrue(pathStarter.startedPaths.isEmpty)
+    }
+
+    func testSubmitQuery_Search_StartsSearchPathAndOpensResults() {
+        // Given
+        let isOnboardingFinished = UserDefaultsWrapper(key: .onboardingFinished, defaultValue: true)
+        isOnboardingFinished.wrappedValue = false
+        var tabReplacedWhenPathStarted: Bool?
+        pathStarter.onStart = { [navigationDelegate] _ in tabReplacedWhenPathStarted = navigationDelegate?.replaceTabCalled }
+
+        // When
+        manager.submitQuery(.init(mode: .search, query: "best pizza", source: .typed))
+
+        // Then
+        XCTAssertEqual(pathStarter.startedPaths, [.search])
+        XCTAssertEqual(tabReplacedWhenPathStarted, false)
+        XCTAssertEqual(navigationDelegate.tab?.url, URL.makeSearchUrl(from: "best pizza"))
+        XCTAssertFalse(navigationDelegate.preventUserInteraction ?? true)
+        XCTAssertTrue(isOnboardingFinished.wrappedValue)
+    }
+
+    func testSubmitQuery_DuckAI_OpensDuckAIInOnboardingModeThenStartsDuckAIPath() throws {
+        // Given
+        let isOnboardingFinished = UserDefaultsWrapper(key: .onboardingFinished, defaultValue: true)
+        isOnboardingFinished.wrappedValue = false
+        var tabReplacedWhenPathStarted: Bool?
+        pathStarter.onStart = { [navigationDelegate] _ in tabReplacedWhenPathStarted = navigationDelegate?.replaceTabCalled }
+
+        // When
+        manager.submitQuery(.init(mode: .duckAi, query: "Plan a day in London", source: .suggestion))
+
+        // Then
+        guard case .aiChat(let url, _) = navigationDelegate.tab?.content else {
+            return XCTFail("Expected a Duck.ai tab")
+        }
+        let queryItems = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "Plan a day in London")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "flow", value: "desktop-app-onboarding")))
+        XCTAssertEqual(pathStarter.startedPaths, [.duckAI])
+        XCTAssertEqual(tabReplacedWhenPathStarted, true)
+        XCTAssertFalse(navigationDelegate.preventUserInteraction ?? true)
+        XCTAssertTrue(isOnboardingFinished.wrappedValue)
+    }
+
+    func testSubmitQuery_EmptyQuery_LeavesOnboardingWithoutStartingAPath() {
+        // When
+        manager.submitQuery(.init(mode: .duckAi, query: "   ", source: .typed))
+
+        // Then
+        XCTAssertTrue(pathStarter.startedPaths.isEmpty)
+        XCTAssertEqual(navigationDelegate.tab?.url, URL.duckDuckGo)
+    }
+
+    func testSubmitQuery_Search_DoesNotFocusAddressBar() {
+        // When
+        manager.submitQuery(.init(mode: .search, query: "best pizza", source: .typed))
+        navigationDelegate.fireNavigationDidEnd()
+
+        // Then
+        XCTAssertFalse(navigationDelegate.focusOnAddressBarCalled)
     }
 
     func testGoToAddressBar_NavigatesToSearch_AndFocusOnBar() {
@@ -662,6 +729,7 @@ class OnboardingManagerTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
         let manager = OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -730,6 +798,7 @@ class OnboardingManagerTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = enabledFlags
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -796,6 +865,7 @@ private extension OnboardingManagerTests {
         chromeExtensionInstaller.canInstallDDGExtension = canInstall
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
+            pathStarter: { [unowned self] in self.pathStarter },
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,

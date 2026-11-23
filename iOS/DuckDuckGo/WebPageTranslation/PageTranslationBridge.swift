@@ -34,7 +34,7 @@ protocol PageTranslationBridging: AnyObject {
 /// Talks to C-S-S's `pageTranslation` bundle in the isolated world, injecting it once per document.
 /// The bundle answers each push with a separate notification that echoes the push's `requestId`, so a
 /// late reply to a request that timed out or was cancelled is ignored. One request is in flight at a time.
-final class PageTranslationBridge: NSObject, Subfeature, PageTranslationBridging {
+final class PageTranslationBridge: NSObject, Subfeature {
 
     enum Error: DDGError {
         case timeout
@@ -215,3 +215,6 @@ final class PageTranslationBridge: NSObject, Subfeature, PageTranslationBridging
         return decoded
     }
 }
+
+// In an extension, so the protocol's @MainActor isn't inferred for the whole class.
+extension PageTranslationBridge: PageTranslationBridging {}

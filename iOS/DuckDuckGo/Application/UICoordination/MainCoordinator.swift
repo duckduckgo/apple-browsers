@@ -221,7 +221,7 @@ final class MainCoordinator {
                                                                          featureFlagger: featureFlagger,
                                                                          privacyConfig: privacyConfigurationManager)
         // One translator for every tab, so only one model is ever in memory.
-        let pageTranslator = translationModels.map { PageTranslator(models: $0) }
+        let pageTranslator = translationModels.map { PageTranslator(modelsProvider: $0) }
 
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,

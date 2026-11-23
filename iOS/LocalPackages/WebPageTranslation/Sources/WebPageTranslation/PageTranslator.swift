@@ -59,17 +59,19 @@ public enum PageTranslatorError: DDGError {
     }
 }
 
+/// Where a pair's model is installed.
+public protocol TranslationModelsProviding: Sendable {
+    /// The manifest pair for a pair id and the folder its files are installed in; nil when it isn't installed.
+    func installedPair(_ pairID: String) -> (pair: TranslationManifest.Pair, folder: URL)?
+}
+
 /// Translates page units with an installed model. One instance is shared by all tabs, so only one
 /// model is in memory: the most recently used pair's.
 public final class PageTranslator: @unchecked Sendable {
 
-    /// The manifest pair for a pair id and the folder its files are installed in; nil when it isn't installed.
-    public typealias InstalledPairFinder = @Sendable (_ pairID: String) -> (pair: TranslationManifest.Pair, folder: URL)?
-
     /// TranslateKit blocks and isn't thread-safe, so every call, loading included, goes through this queue.
     private let queue = DispatchQueue(label: "com.duckduckgo.webPageTranslation.translation", qos: .userInitiated)
-    /// Finds what to load for a pair id, so loading never reads the manifest or the disk directly.
-    private let findInstalledPair: InstalledPairFinder
+    private let modelsProvider: TranslationModelsProviding
     private let customLoadEngine: (@Sendable (ModelSpec) throws -> TranslationEngine)?
     /// Set up on first use, so launch never waits on TranslateKit, and kept: the models it loads live in its
     /// context. A failed setup isn't retried. Touched only on `queue`.
@@ -78,21 +80,10 @@ public final class PageTranslator: @unchecked Sendable {
     private var loaded: (pairID: String, engine: TranslationEngine)?
 
     /// - Parameter loadEngine: loads a model; TranslateKit's `loadModel` when `nil`.
-    public init(findInstalledPair: @escaping InstalledPairFinder,
+    public init(modelsProvider: TranslationModelsProviding,
                 loadEngine: (@Sendable (ModelSpec) throws -> TranslationEngine)? = nil) {
-        self.findInstalledPair = findInstalledPair
+        self.modelsProvider = modelsProvider
         self.customLoadEngine = loadEngine
-    }
-
-    /// Finds pairs in the cached manifest and the installed models.
-    public convenience init(models: TranslationModels) {
-        self.init(findInstalledPair: { pairID in
-            guard let pair = models.manifest?.models[pairID],
-                  let installed = models.installed().first(where: { $0.id == pairID }) else {
-                return nil
-            }
-            return (pair, installed.folder)
-        })
     }
 
     /// Plain units come back as `text`; HTML units as `tree`, minus those TranslateKit found malformed.
@@ -133,7 +124,7 @@ public final class PageTranslator: @unchecked Sendable {
         if let loaded, loaded.pairID == pairID {
             return loaded.engine
         }
-        guard let (pair, folder) = findInstalledPair(pairID) else { throw PageTranslatorError.notInstalled(pairID) }
+        guard let (pair, folder) = modelsProvider.installedPair(pairID) else { throw PageTranslatorError.notInstalled(pairID) }
         // Drop the previous model first, so two are never in memory at once.
         loaded = nil
         let engine = try loadEngine(try pair.modelSpec(in: folder))

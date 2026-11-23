@@ -40,24 +40,30 @@ struct PageTranslatorTests {
         var specs: [ModelSpec] = []
     }
 
+    struct FakeModelsProvider: TranslationModelsProviding {
+        let installed: Set<String>
+
+        func installedPair(_ pairID: String) -> (pair: TranslationManifest.Pair, folder: URL)? {
+            guard installed.contains(pairID) else { return nil }
+            let languages = pairID.split(separator: "-").map(String.init)
+            return (PageTranslatorTests.pair(from: languages[0], to: languages[1]), URL(fileURLWithPath: "/models/\(pairID)"))
+        }
+    }
+
     private let engine = StubEngine()
     private let loads = Loads()
 
     private func makeTranslator(installed: Set<String> = ["fr-en", "de-en"]) -> PageTranslator {
         let engine = engine
         let loads = loads
-        return PageTranslator(findInstalledPair: { pairID in
-                                  guard installed.contains(pairID) else { return nil }
-                                  let languages = pairID.split(separator: "-").map(String.init)
-                                  return (Self.pair(from: languages[0], to: languages[1]), URL(fileURLWithPath: "/models/\(pairID)"))
-                              },
+        return PageTranslator(modelsProvider: FakeModelsProvider(installed: installed),
                               loadEngine: { spec in
                                   loads.specs.append(spec)
                                   return engine
                               })
     }
 
-    private static func pair(from source: String, to target: String) -> TranslationManifest.Pair {
+    static func pair(from source: String, to target: String) -> TranslationManifest.Pair {
         let file = { (path: String) in TranslationManifest.File(path: path, bytes: 0, sha256: "", decompressedSize: 0, decompressedHash: "") }
         return TranslationManifest.Pair(sourceLanguage: source, targetLanguage: target, version: "1.0", totalBytes: 0,
                                         files: ["model": file("model.bin"), "vocab": file("vocab.spm"), "lexicalShortlist": file("lex.bin")])

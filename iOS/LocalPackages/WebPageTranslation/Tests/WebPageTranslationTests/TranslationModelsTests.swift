@@ -100,6 +100,19 @@ extension StubbedNetworkTests {
         }
 
         @available(iOS 16, macOS 13, *)
+        @Test("an installed pair is found with its manifest entry and folder", .timeLimit(.minutes(1)))
+        func installedPairIsFound() async throws {
+            let models = try makeModels(manifest: manifest(), file: zst)
+            await models.refreshManifest()
+            for try await _ in models.install("fr-en") {}
+
+            let installed = try #require(models.installedPair("fr-en"))
+            #expect(installed.pair.sourceLanguage == "fr")
+            #expect(installed.folder == models.installed().first?.folder)
+            #expect(models.installedPair("de-en") == nil)
+        }
+
+        @available(iOS 16, macOS 13, *)
         @Test("refreshing deletes installed pairs the manifest no longer lists", .timeLimit(.minutes(1)))
         func refreshPrunesDroppedPairs() async throws {
             let models = try makeModels(manifest: manifest(), file: zst)

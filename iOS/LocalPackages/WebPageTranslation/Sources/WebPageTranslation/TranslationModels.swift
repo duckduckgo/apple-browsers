@@ -56,7 +56,7 @@ public enum TranslationModelsError: DDGError {
 }
 
 /// The translation models on this device: which pairs the server offers, and installing and removing them.
-public final class TranslationModels: @unchecked Sendable {
+public final class TranslationModels: TranslationModelsProviding, @unchecked Sendable {
 
     private let store: ModelStore
     private let manifestStore: TranslationManifestStore
@@ -112,6 +112,15 @@ public final class TranslationModels: @unchecked Sendable {
 
     public func delete(_ pairID: String) throws {
         try store.delete(pairID)
+    }
+
+    /// Looks the pair up in the cached manifest and the installed models.
+    public func installedPair(_ pairID: String) -> (pair: TranslationManifest.Pair, folder: URL)? {
+        guard let pair = manifest?.models[pairID],
+              let installed = installed().first(where: { $0.id == pairID }) else {
+            return nil
+        }
+        return (pair, installed.folder)
     }
 
     /// Decompresses each downloaded `.zst` and checks the result's size and sha256 against the manifest.

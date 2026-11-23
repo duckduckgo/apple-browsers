@@ -20,16 +20,21 @@ import Foundation
 
 extension VPNStartupMonitor.StartupError {
     public var disconnectReasonDescription: String? {
+        guard let reason = disconnectReason else { return nil }
+        // Omitting userInfo lets Foundation display the domain and code even for errors with custom descriptions.
+        return NSError(domain: reason.domain, code: reason.code).localizedDescription
+    }
+
+    public var disconnectReason: (domain: String, code: Int)? {
         guard case .startTunnelDisconnectedSilently(let underlyingError?) = self else { return nil }
 
         let disconnectError = underlyingError as NSError
-        var reason = XPCErrorSanitizer.originalDomainAndCode(of: disconnectError)
+        let reason = XPCErrorSanitizer.originalDomainAndCode(of: disconnectError)
         if reason.domain == PacketTunnelProvider.TunnelError.errorDomain,
            reason.code == PacketTunnelProvider.TunnelError.Code.otherTunnelStartError.rawValue,
            let cause = disconnectError.userInfo[NSUnderlyingErrorKey] as? Error {
-            reason = XPCErrorSanitizer.originalDomainAndCode(of: cause as NSError)
+            return XPCErrorSanitizer.originalDomainAndCode(of: cause as NSError)
         }
-        // Omitting userInfo lets Foundation display the domain and code even for errors with custom descriptions.
-        return NSError(domain: reason.domain, code: reason.code).localizedDescription
+        return reason
     }
 }

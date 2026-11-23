@@ -70,13 +70,23 @@ import Subscription
         XCTAssertEqual(VPNConnectionError(nsError: error), .connectionFailed)
     }
 
-    func testControllerBannerDisplaysUnderlyingStartupError() {
+    func testControllerBannerAppendsUnderlyingStartupErrorToConnectionFailureMessage() {
         let cause = NSError(domain: "com.duckduckgo.networking.OAuthClientError", code: 11003)
         let provider = PacketTunnelProvider.TunnelError.otherTunnelStartError(internalError: cause)
         let startupError = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: provider)
         let failure = NetworkProtectionTunnelController.StartError.startVPNFailed(startupError)
 
-        XCTAssertEqual(NetworkProtectionTunnelController.userFacingControllerErrorMessage(for: failure), cause.localizedDescription)
+        XCTAssertEqual(NetworkProtectionTunnelController.userFacingControllerErrorMessage(for: failure),
+                       "\(UserText.vpnErrorConnectionFailed) (com.duckduckgo.networking.OAuthClientError: 11003)")
+    }
+
+    func testControllerBannerAppendsSystemDisconnectReasonToUnknownErrorMessage() {
+        let cause = NSError(domain: "NEVPNConnectionErrorDomain", code: 14)
+        let startupError = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: cause)
+        let failure = NetworkProtectionTunnelController.StartError.startVPNFailed(startupError)
+
+        XCTAssertEqual(NetworkProtectionTunnelController.userFacingControllerErrorMessage(for: failure),
+                       "\(UserText.vpnErrorUnknown) (NEVPNConnectionErrorDomain: 14)")
     }
 
     func testControllerDefersToSessionForSubscriptionExpiryCancellationAndMissingReason() {

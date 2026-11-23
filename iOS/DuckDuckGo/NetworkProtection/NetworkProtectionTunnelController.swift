@@ -257,11 +257,13 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
             connectionError = .connectionFailed
         case .startVPNFailed(let error):
             guard let startupError = error as? VPNStartupMonitor.StartupError,
-                  case .startTunnelDisconnectedSilently(let cause?) = startupError else { return nil }
-            switch VPNConnectionError(nsError: cause as NSError) {
+                  case .startTunnelDisconnectedSilently(let cause?) = startupError,
+                  let connectionError = VPNConnectionError(nsError: cause as NSError),
+                  let reason = startupError.disconnectReason else { return nil }
+            switch connectionError {
             case .connectionFailed, .unknown:
-                return startupError.disconnectReasonDescription
-            case .authenticationFailed, .subscriptionExpired, nil:
+                return "\(connectionError.localizedMessage) (\(reason.domain): \(reason.code))"
+            case .authenticationFailed, .subscriptionExpired:
                 return nil
             }
         case .configSystemPermissionsDenied:

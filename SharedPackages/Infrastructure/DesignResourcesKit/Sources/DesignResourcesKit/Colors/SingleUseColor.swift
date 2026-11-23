@@ -112,6 +112,9 @@ public enum SingleUseColor {
     case spinnerStart
     case spinnerFinal
 
+    /// Duck.ai web view background color (#FFFFFF light / #111111 dark)
+    case duckAIWebViewBackground
+
 #endif
 
 }

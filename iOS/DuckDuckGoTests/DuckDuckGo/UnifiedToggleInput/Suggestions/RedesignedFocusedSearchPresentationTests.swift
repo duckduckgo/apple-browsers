@@ -72,6 +72,15 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertTrue(host.isShowingLogo)
     }
 
+    func testWhenFocusedOverWebPageWithSavedFavoritesThenHostShowsModules() {
+        let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
+
+        host.setRedesignedFocusedSurface(.webPage)
+
+        XCTAssertTrue(host.isShowingRedesignedSearchModules)
+        XCTAssertFalse(host.isShowingLogo)
+    }
+
     func testWhenMessagesRemainWithFavoritesSectionHiddenThenModulesStayVisible() {
         let presentation = makePresentation()
         let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())

@@ -39,7 +39,7 @@ final class RedesignedFocusedSearchPresentation: ObservableObject {
                 // The favorites section shows Add Favorite and placeholders when empty, and the page's
                 // escape hatch travels with the input, so either keeps the modules without saved favorites.
                 let showsSearchModules = inputs.mode == .search && !inputs.isTyping && !isFireTab
-                    && (showsFavoritesSection || inputs.hasMessages || showsEscapeHatch)
+                    && (inputs.hasFavorites || showsFavoritesSection || inputs.hasMessages || showsEscapeHatch)
                 guard self.showsSearchModules != showsSearchModules else { return }
                 self.showsSearchModules = showsSearchModules
             }

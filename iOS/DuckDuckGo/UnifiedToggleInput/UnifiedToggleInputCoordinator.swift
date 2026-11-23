@@ -1543,12 +1543,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // together; otherwise the content snaps while the toolbar is still growing.
         let applyModeChange = { [self] in
             viewController.performInputModeChanges {
-                // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
-                // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
-                refreshFooterSuppression()
-                if needsViewSync {
-                    viewController.setInputMode(effectiveMode, animated: animated)
-                }
+                applyFooterAndViewInputMode(effectiveMode, syncsView: needsViewSync, animated: animated)
             }
             if didModeChange {
                 modeChangeSubject.send(effectiveMode)
@@ -1573,6 +1568,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             recordUserChoiceToStore()
             syncInputOutcomeMeasurement()
         }
+    }
+
+    /// Shows or suppresses the Duck.ai footer and applies `mode` to the input view, in the order the mode change needs.
+    private func applyFooterAndViewInputMode(_ mode: TextEntryMode, syncsView: Bool, animated: Bool) {
+        // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
+        // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
+        // Leaving Duck.ai, it goes after the mode: the mode moves focus to another text control, and the
+        // keyboard reload lays the window out unanimated, which would stretch the card into the footer's room.
+        let footerChangesFirst = mode == .aiChat
+        if footerChangesFirst { refreshFooterSuppression() }
+        if syncsView {
+            viewController.setInputMode(mode, animated: animated)
+        }
+        if !footerChangesFirst { refreshFooterSuppression() }
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {

@@ -83,9 +83,9 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
         onBeginRequested?(self)
     }
 
-    /// Called when the user stops the attempt. The queue then cancels it.
+    /// Called when the user stops the attempt or closes the window of a finished one. The queue then drops it.
     public func requestCancel() {
-        guard !isCancelled, phase != .submitted else { return }
+        guard !isCancelled else { return }
         isCancelled = true
         onCancelRequested?(self)
     }

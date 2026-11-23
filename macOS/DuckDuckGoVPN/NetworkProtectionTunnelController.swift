@@ -619,7 +619,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             case .simulateControllerFailureError:
                 return "Simulated a controller error as requested"
             case .startTunnelFailure(let error):
-                return vpnStartupErrorDescription(for: error)
+                return (error as? VPNStartupMonitor.StartupError)?.disconnectReasonDescription ?? error.localizedDescription
             case .failedToFetchAuthToken(let error):
                 return error.localizedDescription
             }

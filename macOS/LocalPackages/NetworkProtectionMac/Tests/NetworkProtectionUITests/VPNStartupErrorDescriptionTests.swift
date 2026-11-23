@@ -30,7 +30,7 @@ final class VPNStartupErrorDescriptionTests: XCTestCase {
         let error = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: providerError)
 
         let expected = NSError(domain: "com.duckduckgo.networking.OAuthClientError", code: 11003)
-        XCTAssertEqual(vpnStartupErrorDescription(for: error), expected.localizedDescription)
+        XCTAssertEqual(error.disconnectReasonDescription, expected.localizedDescription)
     }
 
     func testSystemDisconnectDisplaysSystemDomainAndCode() {
@@ -39,11 +39,15 @@ final class VPNStartupErrorDescriptionTests: XCTestCase {
         let error = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: systemError)
 
         let expected = NSError(domain: "NEVPNConnectionErrorDomain", code: 14)
-        XCTAssertEqual(vpnStartupErrorDescription(for: error), expected.localizedDescription)
+        XCTAssertEqual(error.disconnectReasonDescription, expected.localizedDescription)
     }
 
-    func testDisconnectWithoutReasonKeepsOriginalMessage() {
+    func testDisconnectWithoutUnderlyingErrorHasNoReasonDescription() {
         let error = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: nil)
-        XCTAssertEqual(vpnStartupErrorDescription(for: error), error.localizedDescription)
+        XCTAssertNil(error.disconnectReasonDescription)
+    }
+
+    func testTimeoutHasNoDisconnectReasonDescription() {
+        XCTAssertNil(VPNStartupMonitor.StartupError.startTunnelTimedOut.disconnectReasonDescription)
     }
 }

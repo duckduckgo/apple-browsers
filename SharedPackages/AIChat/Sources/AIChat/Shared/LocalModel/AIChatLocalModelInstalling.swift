@@ -49,6 +49,9 @@ public protocol AIChatLocalModelInstalling: AnyObject {
     var spec: AIChatLocalModelSpec { get }
     var state: AIChatLocalModelInstallState { get }
     var statePublisher: AnyPublisher<AIChatLocalModelInstallState, Never> { get }
+    /// Bytes are arriving or the downloaded file is being checked. `state` stays `downloading` while
+    /// paused or waiting to retry, when this is false.
+    var isActive: Bool { get }
 
     /// Starts or continues the download, and remembers the request so it continues after a relaunch.
     func install()

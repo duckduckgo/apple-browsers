@@ -244,6 +244,7 @@ struct AIChatLlamaEngineTests {
 
         engine.prepare()
 
+        // Reading `isModelLoaded` waits for the engine's queue, so `prepare` has run by the next line.
         #expect(!engine.isModelLoaded)
         #expect(runtime.openLibraryCount == 1)
         #expect(runtime.loadCount == 0)

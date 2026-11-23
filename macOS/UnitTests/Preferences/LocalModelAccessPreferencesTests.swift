@@ -225,6 +225,7 @@ private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalMod
 @MainActor
 private final class RecordingInstaller: AIChatLocalModelInstalling {
     let spec = AIChatLocalModelSpec.granite
+    let isActive = false
     private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
     private(set) var userCalls: [String] = []
 

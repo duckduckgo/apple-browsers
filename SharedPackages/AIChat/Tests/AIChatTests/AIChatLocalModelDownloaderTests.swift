@@ -215,6 +215,25 @@ final class AIChatLocalModelDownloaderTests {
         #expect(try Data(contentsOf: installedURL) == model)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Only a running request counts as active, not a pause or a wait to retry", .timeLimit(.minutes(1)))
+    func activeOnlyWhileARequestRuns() async {
+        StubModelServer.respond { _ in .init(status: 200, body: Data(), error: URLError(.networkConnectionLost)) }
+        let downloader = makeDownloader(retryDelays: [100])
+        #expect(!downloader.isActive)
+
+        downloader.install()
+        #expect(downloader.isActive)
+
+        await waitUntil { !downloader.isActive }
+        #expect(downloader.state.isDownloading)
+        #expect(!downloader.isActive)
+
+        downloader.pause()
+        #expect(downloader.state.isDownloading)
+        #expect(!downloader.isActive)
+    }
+
     // MARK: - Failing
 
     @available(iOS 16, macOS 13, *)

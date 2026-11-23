@@ -167,7 +167,7 @@ final class LocalModelAccessSettingsViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Install, Cancel and Uninstall reach the installer, and Uninstall frees the model first", .timeLimit(.minutes(1)))
+    @Test("Install, Cancel and Uninstall reach the installer, and Uninstall frees the model", .timeLimit(.minutes(1)))
     func rowActionsReachTheInstaller() {
         engine.availability = .deviceNotEligible
         let viewModel = LocalModelAccessSettingsViewModel(service: serviceWithDownloadableModel)
@@ -244,6 +244,7 @@ private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalMod
 
 private final class RecordingInstaller: AIChatLocalModelInstalling {
     let spec = AIChatLocalModelSpec.granite
+    let isActive = false
     private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
     private(set) var userCalls: [String] = []
 

@@ -107,6 +107,8 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
     }
 
     private var partURL: URL { directory.appendingPathComponent(spec.fileName + ".part") }
+
+    public var isActive: Bool { download != nil || isVerifying }
     private var isWaitingToRetry: Bool { retry != nil }
     private var isRequested: Bool { defaults.string(forKey: Self.installRequestKey) == spec.sha256 }
 

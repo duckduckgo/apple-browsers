@@ -58,10 +58,15 @@ final class DownloadableLocalModelLifecycleTests {
         _ = lifecycle
     }
 
+    private func startDownloading() {
+        installer.state = .downloading(receivedBytes: 1, totalBytes: 10)
+        installer.isActive = true
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("A download keeps going in the background, and pauses when that time runs out", .timeLimit(.minutes(1)))
     func downloadPausesWhenBackgroundTimeRunsOut() {
-        installer.state = .downloading(receivedBytes: 1, totalBytes: 10)
+        startDownloading()
         let lifecycle = makeLifecycle()
 
         enterBackground()
@@ -78,7 +83,7 @@ final class DownloadableLocalModelLifecycleTests {
     @available(iOS 16, macOS 13, *)
     @Test("Coming back ends the background time without pausing", .timeLimit(.minutes(1)))
     func comingBackEndsTheBackgroundTask() {
-        installer.state = .downloading(receivedBytes: 1, totalBytes: 10)
+        startDownloading()
         let lifecycle = makeLifecycle()
         enterBackground()
 
@@ -92,7 +97,7 @@ final class DownloadableLocalModelLifecycleTests {
     @available(iOS 16, macOS 13, *)
     @Test("A finished download opens llama.cpp and ends the background time", .timeLimit(.minutes(1)))
     func finishedDownloadOpensTheRuntime() {
-        installer.state = .downloading(receivedBytes: 1, totalBytes: 10)
+        startDownloading()
         let lifecycle = makeLifecycle()
         enterBackground()
 
@@ -100,6 +105,19 @@ final class DownloadableLocalModelLifecycleTests {
 
         #expect(openRuntimeCount == 1)
         #expect(backgroundTasks.ended.count == 1)
+        _ = lifecycle
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A paused download, or one waiting to retry, gets no background time", .timeLimit(.minutes(1)))
+    func idleDownloadGetsNoBackgroundTime() {
+        installer.state = .downloading(receivedBytes: 1, totalBytes: 10)
+        installer.isActive = false
+        let lifecycle = makeLifecycle()
+
+        enterBackground()
+
+        #expect(backgroundTasks.begun.isEmpty)
         _ = lifecycle
     }
 
@@ -126,6 +144,7 @@ final class DownloadableLocalModelLifecycleTests {
 
 private final class LifecycleInstaller: AIChatLocalModelInstalling {
     let spec = AIChatLocalModelSpec.granite
+    var isActive = false
     private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
     private(set) var pauseCount = 0
 

@@ -66,9 +66,11 @@ public final class DownloadableLocalModelLifecycle {
 
     private func didEnterBackground() {
         // About 700 MB in a suspended app would make it one of the first iOS ends. Loading it again takes under a second.
+        // A summary in progress keeps the model until it ends: it pauses with the app and finishes when the app
+        // is back, which on an iPhone beat stopping it and losing the summary.
         unloadModel()
 
-        guard installer.state.isDownloading, backgroundTask == .invalid else { return }
+        guard installer.isActive, backgroundTask == .invalid else { return }
         // The download gets the extra time iOS allows. Pausing before the app is suspended keeps the
         // dropped connection from counting as a failed attempt.
         backgroundTask = backgroundTasks.beginBackgroundTask(withName: Self.backgroundTaskName) { [weak self] in

@@ -298,6 +298,7 @@ private final class FakeInstaller: AIChatLocalModelInstalling {
     }
 
     let spec = AIChatLocalModelSpec.granite
+    let isActive = false
     private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
     var calls: [Call] = []
 

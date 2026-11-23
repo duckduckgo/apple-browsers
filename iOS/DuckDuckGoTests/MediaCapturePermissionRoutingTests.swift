@@ -981,7 +981,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     func testGeolocationActivationRejectsEmptyOpaqueAndInsecureNativeOrigins() throws {
         let sut = makeSUT(committedURL: URL(string: "https://www.example.com/page")!)
-        let userScript = GeolocationUserScript(installImmediately: true)
+        let userScript = GeolocationUserScript()
         sut.configureSitePermissionsGeolocation(with: userScript)
         let activationHandler = try XCTUnwrap(userScript.activationHandler)
         let secureFrame = geolocationFrame(on: sut.webView,
@@ -1085,7 +1085,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                 sut.webView(sut.webView, didCommit: nil)
             }
 
-            let userScript = GeolocationUserScript(installImmediately: true)
+            let userScript = GeolocationUserScript()
             sut.configureSitePermissionsGeolocation(with: userScript)
             let delegate = try XCTUnwrap(userScript.delegate)
             let frame = geolocationFrame(on: sut.webView, originURL: frameURL)
@@ -1154,7 +1154,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             promptCount += 1
             completion(.denyOnce)
         }
-        let userScript = GeolocationUserScript(installImmediately: true)
+        let userScript = GeolocationUserScript()
         sut.configureSitePermissionsGeolocation(with: userScript)
         let delegate = try XCTUnwrap(userScript.delegate)
         let frame = geolocationFrame(on: sut.webView, originURL: committedURL, isMainFrame: true)
@@ -1207,7 +1207,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                               eventHandler: { events.append($0) })
             let tabDelegate = MockTabDelegate()
             sut.delegate = tabDelegate
-            let userScript = GeolocationUserScript(installImmediately: true)
+            let userScript = GeolocationUserScript()
             sut.configureSitePermissionsGeolocation(with: userScript)
             let delegate = try XCTUnwrap(userScript.delegate)
             let frame = geolocationFrame(on: sut.webView,
@@ -1288,7 +1288,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let sut = makeSUT(systemPermissionClient: systemPermissionClient,
                           store: store,
                           committedURL: committedURL)
-        let userScript = GeolocationUserScript(installImmediately: true)
+        let userScript = GeolocationUserScript()
         sut.configureSitePermissionsGeolocation(with: userScript)
         let provider = try XCTUnwrap(userScript.delegate as? GeolocationProvider)
         let frame = geolocationFrame(on: sut.webView,
@@ -1331,7 +1331,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let sut = makeSUT(systemPermissionClient: systemPermissionClient,
                           committedURL: URL(string: "https://www.example.com/page")!)
         sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.allowOnce) }
-        let userScript = GeolocationUserScript(installImmediately: true)
+        let userScript = GeolocationUserScript()
         sut.configureSitePermissionsGeolocation(with: userScript)
         let delegate = try XCTUnwrap(userScript.delegate)
         let frame = geolocationFrame(on: sut.webView,
@@ -1374,7 +1374,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let sut = makeSUT(systemPermissionClient: systemPermissionClient,
                               committedURL: URL(string: "https://www.example.com/page")!)
             sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.allowOnce) }
-            let userScript = GeolocationUserScript(installImmediately: true)
+            let userScript = GeolocationUserScript()
             sut.configureSitePermissionsGeolocation(with: userScript)
             let delegate = try XCTUnwrap(userScript.delegate)
             let frame = geolocationFrame(on: sut.webView,
@@ -1436,7 +1436,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                 promptCount += 1
                 completion(.allowOnce)
             }
-            let userScript = GeolocationUserScript(installImmediately: true)
+            let userScript = GeolocationUserScript()
             sut.configureSitePermissionsGeolocation(with: userScript, notificationCenter: notificationCenter)
             let delegate = try XCTUnwrap(userScript.delegate)
             let frame = geolocationFrame(on: sut.webView, originURL: URL(string: "https://top-level.example/frame")!)
@@ -1660,7 +1660,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                                   if event == .permissionDialogImpression(type: .geolocation) { impression.fulfill() }
                               })
             sut.sitePermissionsUptimeProvider = { 100 }
-            let userScript = GeolocationUserScript(installImmediately: true)
+            let userScript = GeolocationUserScript()
             sut.configureSitePermissionsGeolocation(with: userScript)
             let delegate = try XCTUnwrap(userScript.delegate)
             let originURL = URL(string: "https://www.example.com/frame")!
@@ -1982,7 +1982,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         var settingsOpenCount = 0
         let sut = makeSUT(featureEnabled: true, eventHandler: { events.append($0) })
         defer { sut.closeSitePermissions() }
-        sut.configureSitePermissionsGeolocation(with: GeolocationUserScript(installImmediately: true))
+        sut.configureSitePermissionsGeolocation(with: GeolocationUserScript())
         sut.sitePermissionsSystemSettingsOpenerOverride = { settingsOpenCount += 1 }
 
         sut.openSitePermissionsSystemSettings(for: [.camera, .location])
@@ -1996,7 +1996,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         var settingsOpenCount = 0
         let sut = makeSUT(featureEnabled: true, eventHandler: { events.append($0) })
         defer { sut.closeSitePermissions() }
-        sut.configureSitePermissionsGeolocation(with: GeolocationUserScript(installImmediately: true))
+        sut.configureSitePermissionsGeolocation(with: GeolocationUserScript())
         sut.sitePermissionsSystemSettingsOpenerOverride = { settingsOpenCount += 1 }
 
         sut.openSitePermissionsSystemSettings(for: [.location])
@@ -2268,7 +2268,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.neverAllow) }
         let url = URL(string: "https://top-level.example")!
         let site = try XCTUnwrap(SitePermissionKey(committedURL: url))
-        let userScript = GeolocationUserScript(installImmediately: true)
+        let userScript = GeolocationUserScript()
         sut.configureSitePermissionsGeolocation(with: userScript)
         let delegate = try XCTUnwrap(userScript.delegate)
         let frame = geolocationFrame(on: sut.webView, originURL: url)

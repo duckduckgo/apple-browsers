@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "6b608f032c26fb34e5ab27aff6bc606b9f79bbe4",
-        "version" : "21.4.0"
+        "branch" : "pr-releases/bartosz/ios-site-permissions-features",
+        "revision" : "f0d2362a767c509a2cfdfd124e7748ba348defd3"
       }
     },
     {

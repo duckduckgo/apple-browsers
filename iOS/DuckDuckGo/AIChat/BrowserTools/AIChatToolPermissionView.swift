@@ -482,6 +482,8 @@ private struct PermissionBadge: View {
                     .foregroundStyle(Color(designSystemColor: .accentContentPrimary))
                     .frame(width: 32, height: 32)
                     .background(Color(designSystemColor: .accentPrimary), in: RoundedRectangle(cornerRadius: 9))
+                    .padding(.trailing, 3)
+                    .padding(.bottom, 7)
             } else {
                 let badgeSize: CGFloat = 24
                 let cutoutMargin: CGFloat = 2

@@ -50,12 +50,63 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
         fatalError("init(coder:) has not been implemented")
     }
 
+    private enum Metrics {
+        static let bottomPadding: CGFloat = 16
+    }
+
+    private var fittingContentHeight: CGFloat?
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         if let sheet = sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
+            if #available(iOS 16, *) {
+                let fittingDetent = UISheetPresentationController.Detent.custom(identifier: .init("fittingContent")) { [weak self] context in
+                    guard let fittingContentHeight = self?.fittingContentHeight else { return context.maximumDetentValue / 2 }
+                    return min(fittingContentHeight, context.maximumDetentValue)
+                }
+                sheet.detents = [fittingDetent]
+            } else {
+                sheet.detents = [.medium(), .large()]
+            }
             sheet.prefersGrabberVisible = true
         }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateFittingContentHeight()
+    }
+
+    /// Reads the list's laid out height, since a SwiftUI `List` reports no intrinsic height of its own.
+    /// The list's `contentSize` includes trailing padding, so this measures to the bottom of the last row.
+    /// The sheet adds the bottom safe area on top of the detent height, so it is not counted here.
+    private func updateFittingContentHeight() {
+        guard let collectionView = view.firstDescendant(ofType: UICollectionView.self) else { return }
+        let contentBounds = CGRect(origin: .zero, size: collectionView.collectionViewLayout.collectionViewContentSize)
+        let lastRowBottom = collectionView.collectionViewLayout.layoutAttributesForElements(in: contentBounds)?
+            .filter { $0.representedElementCategory == .cell }
+            .map(\.frame.maxY)
+            .max()
+        guard let lastRowBottom else { return }
+        let listTop = collectionView.convert(CGPoint.zero, to: view).y
+        let height = ceil(listTop + lastRowBottom + Metrics.bottomPadding)
+        guard abs(height - (fittingContentHeight ?? 0)) > 0.5 else { return }
+        fittingContentHeight = height
+        if #available(iOS 16, *) {
+            sheetPresentationController?.invalidateDetents()
+        }
+    }
+}
+
+private extension UIView {
+
+    func firstDescendant<T: UIView>(ofType type: T.Type) -> T? {
+        for subview in subviews {
+            if let match = subview as? T ?? subview.firstDescendant(ofType: type) {
+                return match
+            }
+        }
+        return nil
     }
 }

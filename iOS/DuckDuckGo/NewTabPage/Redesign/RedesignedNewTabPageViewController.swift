@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
@@ -94,6 +95,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     private let backgroundImageView = UIImageView(image: UIImage(resource: .backgroundPond))
+    private var backgroundIllustrationCancellable: AnyCancellable?
 
     private let contentContainerView: UIView = {
         let view = UIView()
@@ -177,6 +179,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             scrollView.contentInsetAdjustmentBehavior = .never
             applyScrollInsets()
         }
+        observeBackgroundIllustrationVisibility()
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -307,6 +310,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         entranceAnimator?.stopAnimation(true)
         entranceAnimator = nil
         restoreEntrancePose()
+    }
+
+    private func observeBackgroundIllustrationVisibility() {
+        backgroundIllustrationCancellable = NewTabPageCustomizationStore().backgroundIllustrationVisibilityPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isVisible in
+                self?.backgroundImageView.isHidden = !isVisible
+            }
     }
 
     private func addSubviews() {

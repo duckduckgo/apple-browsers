@@ -18,6 +18,7 @@
 //
 
 import Bookmarks
+import Combine
 import Foundation
 import Testing
 @testable import DuckDuckGo
@@ -109,9 +110,75 @@ struct NewTabPageRedesignPixelTests {
     }
 }
 
+@Suite("New Tab Page background illustration setting")
+@MainActor
+struct NewTabPageBackgroundIllustrationTests {
+
+    private func makeStore() throws -> NewTabPageCustomizationStore {
+        let suiteName = "NewTabPageBackgroundIllustrationTests-\(UUID().uuidString)"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        userDefaults.removePersistentDomain(forName: suiteName)
+        return NewTabPageCustomizationStore(keyValueStore: userDefaults)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The illustration is visible by default", .timeLimit(.minutes(1)))
+    func illustrationIsVisibleByDefault() throws {
+        #expect(try makeStore().isBackgroundIllustrationVisible)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The illustration preference persists", .timeLimit(.minutes(1)), arguments: [false, true])
+    func illustrationPreferencePersists(isVisible: Bool) throws {
+        var store = try makeStore()
+
+        store.isBackgroundIllustrationVisible = isVisible
+
+        #expect(store.isBackgroundIllustrationVisible == isVisible)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The publisher emits the current value, then every change", .timeLimit(.minutes(1)))
+    func publisherEmitsCurrentValueThenChanges() throws {
+        var store = try makeStore()
+        var received: [Bool] = []
+        let cancellable = store.backgroundIllustrationVisibilityPublisher.sink { received.append($0) }
+
+        store.isBackgroundIllustrationVisible = false
+        store.isBackgroundIllustrationVisible = true
+
+        #expect(received == [true, false, true])
+        cancellable.cancel()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The model starts from the stored value and writes changes through", .timeLimit(.minutes(1)))
+    func modelWritesChangesThrough() {
+        let persistor = ReferenceNewTabPageCustomizationPersistor(isBackgroundIllustrationVisible: false)
+        let model = NewTabPageCustomizationModel(persistor: persistor, pixelFiring: nil)
+        #expect(!model.isBackgroundIllustrationVisible)
+
+        model.isBackgroundIllustrationVisible = true
+
+        #expect(model.isBackgroundIllustrationVisible)
+        #expect(persistor.isBackgroundIllustrationVisible)
+    }
+}
+
+private final class ReferenceNewTabPageCustomizationPersistor: NewTabPageCustomizationPersisting {
+    var isFavoritesSectionVisible = true
+    var isMessagesSectionVisible = true
+    var isBackgroundIllustrationVisible: Bool
+
+    init(isBackgroundIllustrationVisible: Bool) {
+        self.isBackgroundIllustrationVisible = isBackgroundIllustrationVisible
+    }
+}
+
 private struct MockNewTabPageCustomizationPersistor: NewTabPageCustomizationPersisting {
     var isFavoritesSectionVisible = true
     var isMessagesSectionVisible = true
+    var isBackgroundIllustrationVisible = true
 }
 
 private final class MockAddFavoriteBookmarks: MenuBookmarksInteracting {

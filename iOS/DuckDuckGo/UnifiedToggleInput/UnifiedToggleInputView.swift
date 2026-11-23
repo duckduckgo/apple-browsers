@@ -702,6 +702,7 @@ final class UnifiedToggleInputView: UIView {
     private let handler: UnifiedToggleInputHandler
     private let textEntryView: SwitchBarTextEntryView
     private var cancellables = Set<AnyCancellable>()
+    private let newTabPageCustomizationStore = NewTabPageCustomizationStore()
 
     // MARK: - UI
 
@@ -904,7 +905,13 @@ final class UnifiedToggleInputView: UIView {
         if isFireTab {
             return UIColor(singleUseColor: .fireModeCardBackground)
         }
-        return UIColor(singleUseColor: usesNewTabPageCardBackground ? .newTabPageSearchCardBackground : .unifiedToggleInputCardBackground)
+        guard usesNewTabPageCardBackground else {
+            return UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        }
+        // The dark card tint is tuned for the illustration, so the plain background uses the legacy surface.
+        return newTabPageCustomizationStore.isBackgroundIllustrationVisible
+            ? UIColor(singleUseColor: .newTabPageSearchCardBackground)
+            : UIColor(designSystemColor: .surface)
     }
 
     // MARK: - Constraints
@@ -2302,6 +2309,15 @@ private extension UnifiedToggleInputView {
     }
 
     func setupSubscriptions() {
+        newTabPageCustomizationStore.backgroundIllustrationVisibilityPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, usesNewTabPageCardBackground else { return }
+                applyFireModeAppearance(isFireTab: handler.isFireTab)
+            }
+            .store(in: &cancellables)
+
         handler.textSubmissionPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in

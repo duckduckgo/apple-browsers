@@ -39,6 +39,13 @@ final class NewTabPageCustomizationModel: ObservableObject {
         }
     }
 
+    @Published var isBackgroundIllustrationVisible: Bool {
+        didSet {
+            guard oldValue != isBackgroundIllustrationVisible else { return }
+            persistor.isBackgroundIllustrationVisible = isBackgroundIllustrationVisible
+        }
+    }
+
     @Published var isKeyboardShownOnNewTab: Bool {
         didSet {
             guard oldValue != isKeyboardShownOnNewTab else { return }
@@ -63,6 +70,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
         isFavoritesSectionVisible = persistor.isFavoritesSectionVisible
         isMessagesSectionVisible = persistor.isMessagesSectionVisible
+        isBackgroundIllustrationVisible = persistor.isBackgroundIllustrationVisible
         isKeyboardShownOnNewTab = keyboardSettings.onNewTab
     }
 

@@ -388,7 +388,7 @@ class Runtime:
             raise RuntimeError("Simulator launch did not report the app PID") from error
 
     def _ready(self):
-        deadline = time.monotonic() + 60
+        deadline = time.monotonic() + 180
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         check_id = str(uuid.uuid4())
         while time.monotonic() < deadline:

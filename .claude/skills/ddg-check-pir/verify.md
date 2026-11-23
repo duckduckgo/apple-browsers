@@ -1,4 +1,4 @@
-# Verify a verify-pir result
+# Verify a ddg-check-pir result
 
 The runner's verdict comes from the app's own history events. This review checks that the evidence supports that
 verdict and, for a scenario run, each of the scenario's expectations. Review every run.

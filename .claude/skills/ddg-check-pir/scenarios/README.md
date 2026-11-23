@@ -17,7 +17,7 @@ paths must be absolute or relative to the config file.
 | Scenario line | Becomes |
 | --- | --- |
 | `platform: iOS, macOS` | One run per platform, `--platform ios` and `--platform macos`. iOS runs can go in parallel; macOS runs go one at a time. |
-| A profile fixture, such as `john-smith-dallas` | `"profileFile"`: `.claude/skills/verify-pir/scenarios/fixtures/profiles/john-smith-dallas.json` |
+| A profile fixture, such as `john-smith-dallas` | `"profileFile"`: `.claude/skills/ddg-check-pir/scenarios/fixtures/profiles/john-smith-dallas.json` |
 | A broker, such as `peoplefinders.com` | `"brokerFile"`: the bundled `<broker>.json` in `SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/` |
 | `staging-token` | `--token-file` with the path the user gives, plus `"subscriptionEnvironment": "staging"`, `"pirEnvironment": "staging"` and `"pirEndpoint": "https://dbp-staging.duckduckgo.com"` |
 | `fresh-simulator` | Nothing to add. iOS runs always create one. |
@@ -32,7 +32,7 @@ For example, "Opt-out is submitted" on macOS:
 ```json
 {
   "brokerFile": "<worktree>/SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/peoplefinders.com.json",
-  "profileFile": "<worktree>/.claude/skills/verify-pir/scenarios/fixtures/profiles/john-smith-dallas.json",
+  "profileFile": "<worktree>/.claude/skills/ddg-check-pir/scenarios/fixtures/profiles/john-smith-dallas.json",
   "expectedFile": "expected.json",
   "optOut": true,
   "emailConfirmation": true,
@@ -43,7 +43,7 @@ For example, "Opt-out is submitted" on macOS:
 ```
 
 ```sh
-P=.claude/skills/verify-pir/pir.py
+P=.claude/skills/ddg-check-pir/pir.py
 python3 "$P" run --platform macos --config ~/pir-runs/<batch>/configs/optout-peoplefinders.json \
   --token-file <token file> --check-config
 python3 "$P" run --platform macos --config ~/pir-runs/<batch>/configs/optout-peoplefinders.json \
@@ -62,7 +62,7 @@ These steps need judgment and aren't in the mapping:
 After the runs and their reviews, write the batch's HTML report next to its evidence:
 
 ```sh
-python3 .claude/skills/verify-pir/report.py ~/pir-runs/<batch>
+python3 .claude/skills/ddg-check-pir/report.py ~/pir-runs/<batch>
 ```
 
 Compare against an earlier batch only when the user names one: add `--baseline <that batch's folder>`. Don't pick a

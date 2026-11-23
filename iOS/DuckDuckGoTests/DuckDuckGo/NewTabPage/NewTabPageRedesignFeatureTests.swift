@@ -23,14 +23,17 @@ import Testing
 
 struct NewTabPageRedesignFeatureTests {
 
-    private final class MockDevicePlatform: DevicePlatformProviding {
-        static var isIphone = true
+    private enum IphonePlatform: DevicePlatformProviding {
+        static let isIphone = true
+    }
+
+    private enum IPadPlatform: DevicePlatformProviding {
+        static let isIphone = false
     }
 
     private func makeFeature(enabledFlags: [FeatureFlag], isIphone: Bool = true) -> NewTabPageRedesignFeature {
-        MockDevicePlatform.isIphone = isIphone
-        return NewTabPageRedesignFeature(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: enabledFlags),
-                                         devicePlatform: MockDevicePlatform.self)
+        NewTabPageRedesignFeature(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: enabledFlags),
+                                  devicePlatform: isIphone ? IphonePlatform.self : IPadPlatform.self)
     }
 
     @available(iOS 16, *)

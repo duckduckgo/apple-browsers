@@ -87,6 +87,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         /// How far the input sat from its place in the page layout when focus began, because the page was scrolled.
         let scrolledInputDistance: CGFloat
         var isGeometryValid = true
+        /// Whether the focused pose has started leaving, after which the page keeps the offset the user scrolled to.
+        var isLeavingFocus = false
     }
 
     private let backgroundImageView = UIImageView(image: UIImage(resource: .backgroundPond))
@@ -106,7 +108,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         return scrollView
     }()
 
-    private let blocksStackView: UIStackView = {
+    private let blocksStackView: TransformedBlocksStackView = {
         let stackView = TransformedBlocksStackView()
         stackView.axis = .vertical
         return stackView
@@ -165,6 +167,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         focusedModeSwitchSwipeController.install(on: view)
         focusedModeSwitchSwipeController.isEnabled = false
         scrollView.delegate = self
+        blocksStackView.onLayout = { [weak self] in
+            self?.updateStickySearchInput()
+        }
         if isStickyInputEnabled {
             // The bottom safe area is applied by hand, so it cannot change under the scroll view while the input is focused.
             scrollView.contentInsetAdjustmentBehavior = .never
@@ -539,6 +544,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     }
 
     func setFocusedPose(_ pose: NewTabPageFocusedPose?) {
+        inputEditingLayout?.isLeavingFocus = isStickyInputEnabled && pose == nil
         if pose == nil {
             UIView.performWithoutAnimation { unsettleFocusedPose() }
             restorePinnedEditingContentOffset()
@@ -589,7 +595,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     }
 
     private var pinnedEditingContentOffset: CGPoint? {
-        guard !isFocusedPoseSettled, let inputEditingLayout, inputEditingLayout.isGeometryValid else { return nil }
+        guard !isFocusedPoseSettled, let inputEditingLayout, inputEditingLayout.isGeometryValid, !inputEditingLayout.isLeavingFocus else { return nil }
         return inputEditingLayout.contentOffset
     }
 
@@ -742,6 +748,14 @@ enum RedesignedNewTabPageAccessibilityReach: Equatable {
 
 /// A stack view whose blocks stay tappable after a focused pose transform moves them outside its bounds.
 private final class TransformedBlocksStackView: UIStackView {
+
+    /// Called after each layout pass, when the stack's height is current.
+    var onLayout: (() -> Void)?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        onLayout?()
+    }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         super.point(inside: point, with: event) || arrangedSubviews.contains { blockView in

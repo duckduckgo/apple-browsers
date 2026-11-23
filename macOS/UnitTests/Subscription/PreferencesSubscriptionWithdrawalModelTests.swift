@@ -175,6 +175,15 @@ final class PreferencesSubscriptionWithdrawalModelTests {
     }
 
     @available(macOS 13, *)
+    @Test("When Duck.ai is the only feature, the feature paragraph starts with a capital letter", .timeLimit(.minutes(1)))
+    func confirmationMessageCapitalizesLeadingDuckAI() {
+        let model = makeModel()
+        let offer = SubscriptionWithdrawalOffer(eligibleUntil: nil, refundAmount: "£9.99", tierName: "Plus", entitlements: [.paidAIChat])
+
+        #expect(model.confirmationMessage(for: offer).hasSuffix("\n\nAdvanced Duck.ai models stop working once you confirm."))
+    }
+
+    @available(macOS 13, *)
     @Test("Without entitlements, the confirmation message omits the feature paragraph", .timeLimit(.minutes(1)))
     func confirmationMessageWithoutEntitlements() {
         let model = makeModel()

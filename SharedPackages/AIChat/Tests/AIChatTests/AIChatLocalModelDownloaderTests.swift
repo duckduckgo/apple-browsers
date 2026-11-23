@@ -92,7 +92,7 @@ final class AIChatLocalModelDownloaderTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Requests carry no cookies, no range on a fresh start and a generic user agent", .timeLimit(.minutes(1)))
+    @Test("Requests carry no cookies or languages, no range on a fresh start and a generic user agent", .timeLimit(.minutes(1)))
     func requestsAreAnonymous() async throws {
         StubModelServer.respond { _ in .init(status: 200, body: self.model) }
         let downloader = makeDownloader()
@@ -103,6 +103,7 @@ final class AIChatLocalModelDownloaderTests {
         let request = try #require(StubModelServer.requests.first)
         #expect(request.value(forHTTPHeaderField: "User-Agent") == "DuckDuckGo")
         #expect(request.value(forHTTPHeaderField: "Cookie") == nil)
+        #expect(request.value(forHTTPHeaderField: "Accept-Language") == "")
         #expect(request.value(forHTTPHeaderField: "Range") == nil)
     }
 

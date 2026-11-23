@@ -358,7 +358,9 @@ public extension URLSession {
         configuration.httpCookieAcceptPolicy = .never
         configuration.urlCache = nil
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        configuration.httpAdditionalHeaders = ["User-Agent": "DuckDuckGo"]
+        // URLSession always sends Accept-Language, which would name the user's languages. An empty
+        // value is the closest to dropping it.
+        configuration.httpAdditionalHeaders = ["User-Agent": "DuckDuckGo", "Accept-Language": ""]
         configuration.timeoutIntervalForRequest = 60
         if let protocolClasses {
             configuration.protocolClasses = protocolClasses

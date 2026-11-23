@@ -85,14 +85,16 @@ struct DuckAiUsageLimitsStore {
         makeLimitsProvider()?.currentSnapshot().overLimitNewChatDefault ?? .unavailable
     }
 
-    /// The current over-limit default, then each different one web writes.
+    /// The current over-limit default, then each different one web writes. Reads nothing until subscribed.
     func overLimitNewChatDefaultPublisher<S: Scheduler>(receivingUpdatesOn scheduler: S) -> AnyPublisher<AIChatNewChatDefault, Never> {
-        (usageLimitsEntryUpdates ?? Empty().eraseToAnyPublisher())
-            .receive(on: scheduler)
-            .map { self.overLimitNewChatDefault }
-            .prepend(overLimitNewChatDefault)
-            .removeDuplicates()
-            .eraseToAnyPublisher()
+        Deferred {
+            (usageLimitsEntryUpdates ?? Empty().eraseToAnyPublisher())
+                .receive(on: scheduler)
+                .map { self.overLimitNewChatDefault }
+                .prepend(overLimitNewChatDefault)
+                .removeDuplicates()
+        }
+        .eraseToAnyPublisher()
     }
 
     private var usageLimitsEntryUpdates: AnyPublisher<Void, Never>? {

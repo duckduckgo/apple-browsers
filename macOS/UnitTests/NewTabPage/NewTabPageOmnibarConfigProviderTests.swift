@@ -1394,17 +1394,18 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     private func makeNewChatDefaultProvider(persistor: AIChatPreferencesPersisting) throws -> NewTabPageOmnibarConfigProvider {
         let flagger = flaggerWithReasoningOn()
         flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
+        let models = [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
+                      makeModel(id: "terra", supportedReasoningEffort: [.none, .high])]
+        let newChatDefaults = AIChatNewChatDefaultSource()
+        newChatDefaults.update(models: models, userTier: .free, serverDefault: .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none))
         return NewTabPageOmnibarConfigProvider(
             keyValueStore: try makeStore(),
             aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             featureFlagger: flagger,
             aiChatPreferencesPersistor: persistor,
             searchPreferences: makeSearchPreferences(),
-            availableModelsProvider: { [self] in
-                [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
-                 makeModel(id: "terra", supportedReasoningEffort: [.none, .high])]
-            },
-            newChatDefaultProvider: { .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none) },
+            availableModelsProvider: { models },
+            newChatDefaults: newChatDefaults,
             firePixel: { _ in }
         )
     }

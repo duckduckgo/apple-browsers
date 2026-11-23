@@ -160,7 +160,7 @@ public struct DuckAiUsageSnapshot: Equatable {
         return DuckAiUsageSnapshot(notice: notice,
                                    cta: cta(from: root["cta"]),
                                    signature: signature(for: entryValue),
-                                   overLimitNewChatDefault: AIChatNewChatDefault.make(from: root["newChatDefault"]))
+                                   overLimitNewChatDefault: AIChatNewChatDefault.overLimitDefault(from: root["newChatDefault"]))
     }
 
     // MARK: - Notice

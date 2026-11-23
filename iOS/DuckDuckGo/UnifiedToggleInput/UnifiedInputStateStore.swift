@@ -27,7 +27,7 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     private var states: [TabUID: TabInputState] = [:]
     private var preferences: AIChatPreferencesPersisting
     private let toggleModeStorage: ToggleModeStoring
-    private let startsNewChatsOnDefault: Bool
+    private let pickStore: UTIModelPickStoring
     private var trackedLastUsed: LastUsedInputDefaults
     private var modelSnapshots: [ObjectIdentifier: [Tab]] = [:]
     private var tabsCancellables = Set<AnyCancellable>()
@@ -41,11 +41,12 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     ) {
         self.preferences = preferences
         self.toggleModeStorage = toggleModeStorage
-        self.startsNewChatsOnDefault = startsNewChatsOnDefault
+        let pickStore = makeModelPickStore(startsNewChatsOnDefault: startsNewChatsOnDefault, preferences: preferences)
+        self.pickStore = pickStore
         self.trackedLastUsed = LastUsedInputDefaults(
             toggleMode: toggleModeStorage.restore() ?? .search,
-            selectedModelID: startsNewChatsOnDefault ? nil : preferences.selectedModelId,
-            selectedReasoningMode: startsNewChatsOnDefault ? nil : preferences.selectedReasoningMode,
+            selectedModelID: pickStore.newChatModelId,
+            selectedReasoningMode: pickStore.reasoningMode,
             selectedTool: preferences.selectedTool
         )
     }
@@ -72,21 +73,22 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
         // Toggle mode is committed on submit only (see `commitToggleMode`), not on every
         // in-flight toggle change — otherwise a non-committed toggle would leak into
         // `toggleModeStorage` and dirty the next UTI activation on the same tab.
-        let lastUsedPick = persistedPick(modelID: isNewChatContext ? state.selectedModelID : trackedLastUsed.selectedModelID,
-                                         reasoningMode: state.selectedReasoningMode)
+        let lastUsedPick = pickStore.pickKeptBeyondTab(UTIModelSelection(
+            modelID: isNewChatContext ? state.selectedModelID : trackedLastUsed.selectedModelID,
+            reasoningMode: state.selectedReasoningMode
+        ))
         trackedLastUsed = LastUsedInputDefaults(
             toggleMode: trackedLastUsed.toggleMode,
             selectedModelID: lastUsedPick.modelID,
             selectedReasoningMode: lastUsedPick.reasoningMode,
             selectedTool: state.selectedTool
         )
-        if !startsNewChatsOnDefault {
-            preferences.selectedReasoningMode = state.selectedReasoningMode
-        }
+        pickStore.reasoningMode = lastUsedPick.reasoningMode
         preferences.selectedTool = state.selectedTool
 
         if let tab = tabsByUID[uid] {
-            let tabPick = persistedPick(modelID: state.selectedModelID, reasoningMode: state.selectedReasoningMode)
+            let tabPick = pickStore.pickKeptBeyondTab(UTIModelSelection(modelID: state.selectedModelID,
+                                                                        reasoningMode: state.selectedReasoningMode))
             var inputState = tab.unifiedInputState
             inputState.selectedModelID = tabPick.modelID
             inputState.selectedReasoningMode = tabPick.reasoningMode
@@ -94,11 +96,6 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
             tab.unifiedInputState = inputState
         }
         Logger.unifiedInputState.debug("recordUserChoice for tab [\(uid)] (newChat=\(isNewChatContext)): \(state.summary)")
-    }
-
-    /// With new chats on the default, a model or effort pick stays in memory on its tab only.
-    private func persistedPick(modelID: String?, reasoningMode: AIChatReasoningMode?) -> (modelID: String?, reasoningMode: AIChatReasoningMode?) {
-        startsNewChatsOnDefault ? (nil, nil) : (modelID, reasoningMode)
     }
 
     func commitToggleMode(_ mode: TextEntryMode) {
@@ -152,8 +149,10 @@ final class UnifiedInputStateStore: UnifiedInputStateStoring {
     // A tool is per-composition intent, never seeded from last-used: only submission clears
     // the last-used tool, so a never-submitted selection would leak into every new tab.
     private func seededState(from inputState: UnifiedInputTabState) -> TabInputState {
-        let pick = persistedPick(modelID: inputState.selectedModelID ?? trackedLastUsed.selectedModelID,
-                                 reasoningMode: inputState.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode)
+        let pick = pickStore.pickKeptBeyondTab(UTIModelSelection(
+            modelID: inputState.selectedModelID ?? trackedLastUsed.selectedModelID,
+            reasoningMode: inputState.selectedReasoningMode ?? trackedLastUsed.selectedReasoningMode
+        ))
         return TabInputState(
             text: "",
             toggleMode: trackedLastUsed.toggleMode,

@@ -111,8 +111,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
     var voicePromptSubmissionConfiguration: (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
         let modelId = promptSubmissionModelId
-        let sendsEffort = startsNewChatsOnDefault && modelId != nil
-        return (modelId, sendsEffort ? persistedReasoningEffort : nil)
+        return (modelId, modelId == nil ? nil : modelStore.voicePromptReasoningEffort)
     }
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown
@@ -358,7 +357,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private let featureFlagger: FeatureFlagger
-    private let startsNewChatsOnDefault: Bool
     private var openingChatModelId: String?
     /// The explicit model this chat was opened with, kept until its first prompt for the pixel.
     private var openedWithModelId: String?
@@ -446,7 +444,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
         self.stateMachine = UTIStateMachine(host: host, hidesToggleOnDuckAITab: hidesToggleOnDuckAITab)
         let startsNewChatsOnDefault = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
-        self.startsNewChatsOnDefault = startsNewChatsOnDefault
         self.stateStore = stateStore ?? UnifiedInputStateStore(
             preferences: preferences,
             toggleModeStorage: toggleModeStorage,
@@ -460,7 +457,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             preferences: preferences,
             subscriptionManager: subscriptionManager,
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
-            startsNewChatsOnDefault: startsNewChatsOnDefault
+            startsNewChatsOnDefault: startsNewChatsOnDefault,
+            overLimitNewChatDefaults: usageLimitsStore?.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
         )
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
@@ -495,7 +493,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             ?? DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)).isAvailable
         setUpFooter(subscriptionManager: subscriptionManager,
                     termsOfServiceStore: isNativeTermsOfServiceAvailable ? termsOfServiceStore : nil)
-        setUpOverLimitNewChatDefault()
         textModel = UTITextModel(sideEffects: .init(
             applyTextToView: { [weak self] in self?.viewController.text = $0 },
             persistDraft: { [weak self] in self?.persistDraftToStore() },
@@ -888,12 +885,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
     }
 
-    /// A new chat keeps only the tab's own pick, so the default still follows later default changes.
     private var modelSelectionForTabState: UTIModelSelection {
-        guard startsNewChatsOnDefault, isNewChatContext else {
-            return UTIModelSelection(modelID: modelStore.persistedModelId, reasoningMode: modelStore.selectedReasoningMode)
-        }
-        return modelStore.liveSelection
+        isNewChatContext ? modelStore.newChatSelectionKeptOnTab : modelStore.shownSelection
     }
 
     /// A committed navigation replaces the tab's FE document: FE-asserted visibility/voice state
@@ -908,7 +901,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 if !currentText.isEmpty { setText("") }
                 clearAttachments()
                 if toolsController.selectedTool != nil { resetToolsSelection() }
-                resetLiveModelSelectionForNewChatIfNeeded()
+                resetModelSelectionForNewChat()
             }
         }
         let current = stateStore.state(for: tabUID)
@@ -918,7 +911,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if didChangeChat {
             updated.clearDraft()
             let isCurrentTab = tabUID == currentTabUID
-            if startsNewChatsOnDefault { updated.startNewChat(modelID: isCurrentTab ? openingChatModelId : nil) }
+            if let pick = modelStore.pickForNewChat(openedWithModelId: isCurrentTab ? openingChatModelId : nil) {
+                updated.startNewChat(on: pick)
+            }
             if isCurrentTab { openingChatModelId = nil }
         }
         if updated != current {
@@ -927,9 +922,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     /// A different chat starts on the model it was opened with, else the default; an existing chat's own model is restored after this.
-    private func resetLiveModelSelectionForNewChatIfNeeded() {
-        guard startsNewChatsOnDefault else { return }
-        modelStore.applyPersistedSelection(modelID: openingChatModelId, reasoningMode: nil)
+    private func resetModelSelectionForNewChat() {
+        guard let pick = modelStore.pickForNewChat(openedWithModelId: openingChatModelId) else { return }
+        modelStore.applyPersistedSelection(modelID: pick.modelID, reasoningMode: pick.reasoningMode)
         handleModelsUpdated()
         Logger.unifiedInputState.debug("chat changed — model selection reset to '\(self.openingChatModelId ?? "new-chat default", privacy: .public)'")
     }
@@ -966,7 +961,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// Only the first prompt of a new chat reports where its model came from; image generation picks its own model.
     private var newChatModelSourceForSubmitPixel: DuckAINewChatModelSource? {
-        guard startsNewChatsOnDefault, isNewChatContext, toolsController.selectedTool != .imageGeneration else { return nil }
+        guard isNewChatContext, toolsController.selectedTool != .imageGeneration else { return nil }
         return modelStore.newChatModelSource(openedWithModelId: openedWithModelId)
     }
 
@@ -1240,13 +1235,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         usageLimitsStore?.snapshotUpdates?
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.footerController?.refresh() }
-            .store(in: &cancellables)
-    }
-
-    private func setUpOverLimitNewChatDefault() {
-        guard startsNewChatsOnDefault, let usageLimitsStore else { return }
-        usageLimitsStore.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
-            .sink { [weak self] in self?.modelStore.overLimitNewChatDefault = $0 }
             .store(in: &cancellables)
     }
 
@@ -1960,10 +1948,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// - Parameter persistsSelection: When `false`, `modelId` applies to the current chat only and is not
     ///   saved as the model that new chats start on.
     func updateSelectedModel(_ modelId: String, persistsSelection: Bool = true) {
-        if startsNewChatsOnDefault {
-            openingChatModelId = modelId
-            openedWithModelId = modelId
-        }
+        openingChatModelId = modelId
+        openedWithModelId = modelId
         Logger.unifiedInputState.debug("opening chat with explicit model '\(modelId, privacy: .public)'")
         modelSelector.updateSelectedModel(modelId, persistsSelection: persistsSelection)
     }

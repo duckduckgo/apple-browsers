@@ -116,10 +116,8 @@ final class AIChatOmnibarController {
         windowControllersManager: Application.appDelegate.windowControllersManager
     )
     private let preferences: AIChatPreferencesPersisting
-    /// With the flag on, new chats start on the `/models` default and a pick stays on its draft.
-    private let startsNewChatsOnDefault: Bool
-    private var newChatDefault: AIChatNewChatDefault = .unavailable
-    private var overLimitNewChatDefault: AIChatNewChatDefault = .unavailable
+    /// Set while new chats start on the default; a pick then stays on its draft.
+    private let newChatDefaults: AIChatNewChatDefaultSource?
     private lazy var modelPick: DuckAIModelPickStoring = makeModelPickStore()
     private var cancellables = Set<AnyCancellable>()
     private var draftStoreCancellable: AnyCancellable?
@@ -413,7 +411,7 @@ final class AIChatOmnibarController {
         self.suggestionsReader = suggestionsReader
         self.isBurner = isBurner
         self.preferences = preferences
-        self.startsNewChatsOnDefault = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
+        self.newChatDefaults = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel) ? AIChatNewChatDefaultSource() : nil
         self.modelsService = modelsService ?? AIChatModelsService(baseURL: AIChatModelsService.baseURL(forChatURL: AIChatRemoteSettings().aiChatURL),
                                                                   accessTokenProvider: subscriptionManager)
         self.subscriptionManager = subscriptionManager
@@ -430,11 +428,11 @@ final class AIChatOmnibarController {
         subscribeToTextChangesForSuggestions()
         subscribeToToolModeChangesForDraftStore()
         setUpUsageWarnings()
-        setUpOverLimitNewChatDefault()
+        observeNewChatDefaults()
     }
 
     private func makeModelPickStore() -> DuckAIModelPickStoring {
-        guard startsNewChatsOnDefault else { return PersistedModelPickStore(preferences: preferences) }
+        guard newChatDefaults != nil else { return PersistedModelPickStore(preferences: preferences) }
         return DraftModelPickStore(currentDraftStore: { [weak self] in self?.draftStore })
     }
 
@@ -470,16 +468,14 @@ final class AIChatOmnibarController {
             .store(in: &cancellables)
     }
 
-    private func setUpOverLimitNewChatDefault() {
-        guard startsNewChatsOnDefault, let usageLimitsStore else { return }
-        usageLimitsStore.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
-            .sink { [weak self] overLimitDefault in
-                guard let self else { return }
-                let previousSelection = self.selectionSnapshot
-                self.overLimitNewChatDefault = overLimitDefault
-                self.notifySelectedModelChangedIfNeeded(since: previousSelection)
-            }
+    private func observeNewChatDefaults() {
+        guard let newChatDefaults else { return }
+        newChatDefaults.overLimitDefaultChanges
+            .sink { [weak self] in self?.onSelectedModelChanged?() }
             .store(in: &cancellables)
+        if let usageLimitsStore {
+            newChatDefaults.observeOverLimitDefaults(usageLimitsStore.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main))
+        }
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;
@@ -597,8 +593,9 @@ final class AIChatOmnibarController {
                 self.hasActiveSubscription = userTier != .free
                 self.userTier = userTier
                 self.attachmentLimits = response.attachmentLimits?.limits(for: userTier)
-                self.models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
-                self.newChatDefault = response.newChatDefault
+                let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
+                self.newChatDefaults?.update(models: models, userTier: userTier, serverDefault: response.newChatDefault)
+                self.models = models
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()
                 self.deactivateWebSearchIfUnsupported()
@@ -676,24 +673,18 @@ final class AIChatOmnibarController {
         return models.first(where: { $0.entityHasAccess })?.id ?? ""
     }
 
-    /// The model and effort a new chat starts on when nothing was picked; `nil` with the flag off.
+    /// The model and effort a new chat starts on when nothing was picked; `nil` while new chats start on the last pick.
     var newChatDefaultSelection: AIChatNewChatSelection? {
-        guard startsNewChatsOnDefault else { return nil }
-        return AIChatNewChatDefaultResolver.resolve(newChatDefault,
-                                                    overLimitDefault: overLimitNewChatDefault,
-                                                    models: models,
-                                                    userTier: userTier)
+        newChatDefaults?.selection
     }
 
-    /// The default effort applies only while the input is on the default model.
     private var newChatDefaultReasoningEffort: AIChatReasoningEffort? {
-        guard let selection = newChatDefaultSelection, selection.modelId == persistedModelId else { return nil }
-        return selection.reasoningEffort
+        newChatDefaultSelection?.reasoningEffort(onModelId: persistedModelId)
     }
 
     /// Sent only while new chats start on the default. Every prompt from this input opens a new chat.
     private var newChatModelPixelParameters: DuckAINewChatModelPixelParameters? {
-        guard startsNewChatsOnDefault else { return nil }
+        guard newChatDefaults != nil else { return nil }
         return DuckAINewChatModelPixelParameters(sentModelId: effectiveModelId,
                                                  sentReasoningEffort: effectiveReasoningEffort?.rawValue,
                                                  isModelPicked: modelPick.modelId != nil,

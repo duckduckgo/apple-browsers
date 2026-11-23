@@ -150,7 +150,7 @@ extension NewTabPageActionsManager {
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },
             availableModelsProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastFetchedModels ?? [] },
-            newChatDefaultProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastNewChatDefault ?? .unavailable },
+            newChatDefaults: omnibarModelsProvider.newChatDefaults,
             isTrialEligibleProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.isEligibleForFreeTrial ?? false },
             allowsSubscriptionUpsellProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.allowsSubscriptionUpsell ?? false }
         )

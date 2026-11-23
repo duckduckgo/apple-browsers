@@ -1616,7 +1616,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         let coordinator = makeNewChatDefaultCoordinator()
         coordinator.activateForTab("tab-B")
 
-        coordinator.modelStore.overLimitNewChatDefault = .model(id: "gpt-5.6-terra", reasoningEffort: nil)
+        coordinator.modelStore.newChatDefaults?.overLimitDefault = .model(id: "gpt-5.6-terra", reasoningEffort: nil)
         coordinator.activateForTab("tab-A")
 
         XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")

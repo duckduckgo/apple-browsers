@@ -137,5 +137,54 @@
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_permission_changed_macos": {
+        "description": "Fired when the user changes a Duck.ai browser tool's permission in Settings or in the tab bar panel. Resetting one tool counts as a change to its default. Not fired when the choice stays the same.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "The tool whose permission changed",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks"
+                ]
+            },
+            {
+                "key": "from",
+                "description": "The permission shown before the change",
+                "enum": ["ask", "allow", "deny"]
+            },
+            {
+                "key": "to",
+                "description": "The permission shown after the change",
+                "enum": ["ask", "allow", "deny"]
+            },
+            {
+                "key": "source",
+                "description": "Where the user changed it: settings = the Duck.ai Settings page, panel = the browser tools panel in the tab bar",
+                "enum": ["settings", "panel"]
+            }
+        ]
+    },
+    "aichat_tools_permissions_reset_macos": {
+        "description": "Fired when the user resets every Duck.ai browser tool permission to its default in Settings.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

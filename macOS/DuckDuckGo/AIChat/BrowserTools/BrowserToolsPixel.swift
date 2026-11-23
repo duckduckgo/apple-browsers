@@ -33,6 +33,16 @@ enum BrowserToolsPixel: PixelKit.Event {
     /// Event Trigger: A call to this tool succeeded. Fired daily. `tool` is a slug from `toolSlugs`.
     case usedTool(String)
 
+    /// Event Trigger: The user changed a tool's permission in Settings or in the tab bar panel, including a row reset.
+    case permissionChanged(tool: String, from: BrowserToolPermissionState, to: BrowserToolPermissionState, source: PermissionSource)
+
+    /// Event Trigger: The user reset every tool permission in Settings.
+    case permissionsReset
+
+    enum PermissionSource: String {
+        case settings, panel
+    }
+
     /// Catalog names to pixel slugs. Any other name came from the page and is never sent.
     static let toolSlugs = [
         "listOpenTabs": "list_open_tabs",
@@ -56,15 +66,23 @@ enum BrowserToolsPixel: PixelKit.Event {
         case .call: "aichat_tools_call_macos"
         case .used: "aichat_tools_used_macos"
         case .usedTool(let tool): "aichat_tools_used_\(tool)_macos"
+        case .permissionChanged: "aichat_tools_permission_changed_macos"
+        case .permissionsReset: "aichat_tools_permissions_reset_macos"
         }
     }
 
     var parameters: [String: String]? {
-        guard case .call(let tool, let result, let permissionPath, let duration, let resultCount) = self else { return nil }
-        var parameters = ["tool": tool, "result": result?.rawValue ?? "success", "permission_path": permissionPath.rawValue]
-        parameters["duration"] = duration.map(Self.durationBucket)
-        parameters["result_count"] = resultCount.map(Self.resultCountBucket)
-        return parameters
+        switch self {
+        case .call(let tool, let result, let permissionPath, let duration, let resultCount):
+            var parameters = ["tool": tool, "result": result?.rawValue ?? "success", "permission_path": permissionPath.rawValue]
+            parameters["duration"] = duration.map(Self.durationBucket)
+            parameters["result_count"] = resultCount.map(Self.resultCountBucket)
+            return parameters
+        case .permissionChanged(let tool, let from, let to, let source):
+            return ["tool": tool, "from": from.rawValue, "to": to.rawValue, "source": source.rawValue]
+        case .used, .usedTool, .permissionsReset:
+            return nil
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }

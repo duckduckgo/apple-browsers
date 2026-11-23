@@ -31,6 +31,7 @@ struct UnifiedSuggestionsView: View {
     var usesScrollableEscapeHatch = true
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
+    var embedsRedesignedModules = false
     var usesLiquidGlass = false
     var mode: TextEntryMode = .search
     var escapeHatch: EscapeHatchModel?
@@ -72,7 +73,14 @@ struct UnifiedSuggestionsView: View {
         }
     }
 
-    private var focusedLayerEscapeHatch: EscapeHatchModel? { showsRedesignedSearchModules ? nil : escapeHatch }
+    private var focusedLayerEscapeHatch: EscapeHatchModel? { showsRedesignedSearchModules && !embedsRedesignedModules ? nil : escapeHatch }
+
+    private var embeddedModules: RedesignedFocusedSearchModulesView.EmbeddedModules? {
+        guard embedsRedesignedModules else { return nil }
+        return .init(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
+                     messagesModel: favoritesPresentation.viewController?.messagesModel,
+                     isVisible: showsRedesignedSearchModules)
+    }
 
     /// The active typing states (the search / duck.ai suggestion lists); recents and empty states aren't.
     private var isTypingList: Bool {
@@ -87,7 +95,8 @@ struct UnifiedSuggestionsView: View {
         ZStack {
             listLayer
             if usesRedesignedNewTabPageLayout {
-                RedesignedFocusedSearchModulesView(recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
+                RedesignedFocusedSearchModulesView(embeddedModules: embeddedModules,
+                                                   recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
                                                    escapeHatch: focusedLayerEscapeHatch,
                                                    syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
                                                    isAddressBarAtBottom: isAddressBarAtBottom,

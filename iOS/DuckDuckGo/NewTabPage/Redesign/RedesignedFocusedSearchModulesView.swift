@@ -21,6 +21,8 @@ import DesignResourcesKit
 import SwiftUI
 
 struct RedesignedFocusedSearchModulesView: View {
+    /// Set when no live page sits behind the editor (a loaded web page), so this view draws the modules itself.
+    var embeddedModules: EmbeddedModules?
     var recentChats: SuggestionsListViewModel?
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
@@ -33,11 +35,19 @@ struct RedesignedFocusedSearchModulesView: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 0) {
+                    if let embeddedModules {
+                        RedesignedNewTabPageModulesView(favoritesModel: embeddedModules.favoritesModel)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(height: embeddedModules.isVisible ? nil : 0)
+                            .opacity(embeddedModules.isVisible ? 1 : 0)
+                            .allowsHitTesting(embeddedModules.isVisible)
+                            .accessibilityHidden(!embeddedModules.isVisible)
+                    }
                     if let escapeHatch {
                         RedesignedEscapeHatchView(model: escapeHatch)
                             .modifier(EmbeddedEscapeHatchGeometryReader())
                             .frame(maxWidth: .infinity)
-                            .padding(.top, RedesignedNewTabPageModulesView.topPadding)
+                            .padding(.top, hatchTopPadding)
                             .padding(.horizontal, 16)
                     }
                     if let recentChats {
@@ -50,7 +60,15 @@ struct RedesignedFocusedSearchModulesView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, FocusedChromeView.Metrics.bottomInset)
                     }
+                    if let embeddedModules, let messagesModel = embeddedModules.messagesModel {
+                        RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
+                            .frame(height: embeddedModules.isVisible ? nil : 0)
+                            .opacity(embeddedModules.isVisible ? 1 : 0)
+                            .allowsHitTesting(embeddedModules.isVisible)
+                            .accessibilityHidden(!embeddedModules.isVisible)
+                    }
                 }
+                .animation(nil, value: embeddedModules?.isVisible)
                 .animation(nil, value: recentChats != nil)
                 .modifier(FocusedContentGeometryGroup(isEnabled: usesScrollableEscapeHatch))
                 .modifier(FocusedContentTopInset(topInset: contentTopInset,
@@ -65,5 +83,20 @@ struct RedesignedFocusedSearchModulesView: View {
             .modifier(FocusedContentVerticalBounce(isEnabled: usesScrollableEscapeHatch))
             .scrollDismissesKeyboardIfAvailable()
         }
+    }
+
+    private var hatchTopPadding: CGFloat {
+        guard embeddedModules?.isVisible == true else { return RedesignedNewTabPageModulesView.topPadding }
+        return 0
+    }
+}
+
+extension RedesignedFocusedSearchModulesView {
+
+    /// The favorites and messages drawn inside the focused layer.
+    struct EmbeddedModules {
+        let favoritesModel: FavoritesViewModel?
+        let messagesModel: NewTabPageMessagesModel?
+        let isVisible: Bool
     }
 }

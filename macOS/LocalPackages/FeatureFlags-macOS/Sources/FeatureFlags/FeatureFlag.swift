@@ -817,7 +817,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensions), category: .webExtensions)
         case .webExtensionsInternal:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.isLaunchedExtensionsInternal), category: .webExtensions)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensionsInternal), category: .webExtensions)
         case .webExtensionUpdateDiscovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
         case .webExtensionLightweightReload:

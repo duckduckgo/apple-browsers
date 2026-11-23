@@ -27868,6 +27868,30 @@
         }
       }
     },
+    "contextual.onboarding.thats-duck-ai.message" : {
+      "comment" : "Message of the contextual onboarding dialog shown on Duck.ai after its first answer, inviting the user to delete the chat with the Fire Button (do not remove the *).",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Private AI chats you can delete anytime with the *Fire Button*. Give it a try! 🔥"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.thats-duck-ai.title" : {
+      "comment" : "Title of the contextual onboarding dialog shown on Duck.ai after its first answer.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That’s Duck.ai!"
+          }
+        }
+      }
+    },
     "contextual.onboarding.try-a-search.message" : {
       "comment" : "Message of a popover on the browser that invites the user to try a search explaining that their searches are anonymous",
       "extractionState" : "extracted_with_value",

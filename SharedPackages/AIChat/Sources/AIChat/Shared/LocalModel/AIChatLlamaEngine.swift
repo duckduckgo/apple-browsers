@@ -18,14 +18,18 @@
 
 import Foundation
 import LlamaRuntime
-import os.log
+import os
 
 /// Runs Duck.ai tasks with a downloaded GGUF model through llama.cpp, for devices without Apple Intelligence.
 public final class AIChatLlamaEngine: AIChatLocalModelEngine {
 
-    /// A page Duck.ai sends is at most 9,500 characters: about 2,500 tokens in English, but up to
-    /// 9,500 in Chinese or Japanese, which then get cut.
+    /// A page Duck.ai sends is at most 9,500 characters: about 2,100 tokens in English, but more
+    /// than one token per character in Chinese, which then gets cut.
     public static let contextSize = 8_192
+
+    /// Free memory a load needs on iOS. A model with this context took about 700 MB on an iPhone;
+    /// the rest leaves the app room to work.
+    static let minimumAvailableMemory: UInt64 = 1_000_000_000
 
     /// Granite 4.0 1B repeated one bullet until it ran out of tokens on plain greedy decoding;
     /// this mild penalty stopped it.
@@ -40,6 +44,7 @@ public final class AIChatLlamaEngine: AIChatLocalModelEngine {
     private let runtime: AIChatLlamaRuntime
     private let modelFileURL: () -> URL?
     private let idleUnloadDelay: TimeInterval
+    private let availableMemory: () -> UInt64?
     private let queue = DispatchQueue(label: "com.duckduckgo.aiChat.llamaEngine", qos: .userInitiated)
     private let memoryPressure: DispatchSourceMemoryPressure
 
@@ -49,14 +54,18 @@ public final class AIChatLlamaEngine: AIChatLocalModelEngine {
 
     /// - Parameters:
     ///   - idleUnloadDelay: How long the model stays in memory after a run.
+    ///   - availableMemory: How much more memory the app may use before the system ends it, or nil
+    ///     where there's no such limit.
     ///   - modelFileURL: The installed model file, or nil when there is none. Called from `run`.
     public init(model: AIChatLocalModelInfo,
                 runtime: AIChatLlamaRuntime,
                 idleUnloadDelay: TimeInterval = 300,
+                availableMemory: @escaping () -> UInt64? = AIChatLlamaEngine.availableMemory,
                 modelFileURL: @escaping () -> URL?) {
         self.model = model
         self.runtime = runtime
         self.idleUnloadDelay = idleUnloadDelay
+        self.availableMemory = availableMemory
         self.modelFileURL = modelFileURL
         memoryPressure = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical], queue: queue)
         memoryPressure.setEventHandler { [weak self] in
@@ -71,6 +80,27 @@ public final class AIChatLlamaEngine: AIChatLocalModelEngine {
 
     public var availability: AIChatLocalModelAvailability {
         runtime.isSupported ? .available : .deviceNotEligible
+    }
+
+    /// How much more memory the app may use before iOS ends it. Nil on macOS, which has no such limit.
+    public static func availableMemory() -> UInt64? {
+#if os(iOS)
+        UInt64(os_proc_available_memory())
+#else
+        nil
+#endif
+    }
+
+    /// Opens llama.cpp ahead of the first run. The first open on a device compiles llama.cpp's GPU
+    /// code, which took 18 s on an iPhone; later opens reuse it.
+    public func prepare() {
+        queue.async { [runtime] in
+            do {
+                try runtime.openLibrary()
+            } catch {
+                Logger.aiChat.error("[LocalModel] Opening llama.cpp failed")
+            }
+        }
     }
 
     /// Frees the model's memory once any run in progress ends, for example before the file is deleted.
@@ -146,6 +176,10 @@ public final class AIChatLlamaEngine: AIChatLocalModelEngine {
         }
         // Free the old model before mapping another, so two never share memory.
         loaded = nil
+        if let available = availableMemory(), available < Self.minimumAvailableMemory {
+            Logger.aiChat.error("[LocalModel] Not enough memory to load the model")
+            throw AIChatLocalModelEngineError(code: .outOfMemory)
+        }
         let model = try runtime.loadModel(at: fileURL, contextSize: Self.contextSize)
         loaded = (fileURL, model)
         return model

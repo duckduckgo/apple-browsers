@@ -25,6 +25,8 @@ struct RedesignedFocusedSearchModulesView: View {
     var embeddedModules: EmbeddedModules?
     var recentChats: SuggestionsListViewModel?
     var escapeHatch: EscapeHatchModel?
+    /// Whether the escape hatch shows here. It stays laid out while hidden, so a mode switch never animates it in.
+    var showsEscapeHatch = true
     var syncPromo: AnyView?
     var isAddressBarAtBottom = false
     var contentTopInset: CGFloat = 0
@@ -49,6 +51,9 @@ struct RedesignedFocusedSearchModulesView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.top, hatchTopPadding)
                             .padding(.horizontal, 16)
+                            .opacity(showsEscapeHatch ? 1 : 0)
+                            .allowsHitTesting(showsEscapeHatch)
+                            .accessibilityHidden(!showsEscapeHatch)
                     }
                     if let recentChats {
                         VStack(spacing: FocusedChromeView.Metrics.bottomInset) {
@@ -69,6 +74,7 @@ struct RedesignedFocusedSearchModulesView: View {
                     }
                 }
                 .animation(nil, value: embeddedModules?.isVisible)
+                .animation(nil, value: showsEscapeHatch)
                 .animation(nil, value: recentChats != nil)
                 .modifier(FocusedContentGeometryGroup(isEnabled: usesScrollableEscapeHatch))
                 .modifier(FocusedContentTopInset(topInset: contentTopInset,

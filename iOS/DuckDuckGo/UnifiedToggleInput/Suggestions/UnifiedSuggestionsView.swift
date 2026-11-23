@@ -71,7 +71,8 @@ struct UnifiedSuggestionsView: View {
         }
     }
 
-    private var focusedLayerEscapeHatch: EscapeHatchModel? { showsRedesignedSearchModules && !embedsRedesignedModules ? nil : escapeHatch }
+    /// The page draws its own escape hatch while it shows the search modules.
+    private var showsFocusedLayerEscapeHatch: Bool { !showsRedesignedSearchModules || embedsRedesignedModules }
 
     private var embeddedModules: RedesignedFocusedSearchModulesView.EmbeddedModules? {
         guard embedsRedesignedModules else { return nil }
@@ -95,7 +96,8 @@ struct UnifiedSuggestionsView: View {
             if usesRedesignedNewTabPageLayout {
                 RedesignedFocusedSearchModulesView(embeddedModules: embeddedModules,
                                                    recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
-                                                   escapeHatch: focusedLayerEscapeHatch,
+                                                   escapeHatch: escapeHatch,
+                                                   showsEscapeHatch: showsFocusedLayerEscapeHatch,
                                                    syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
                                                    isAddressBarAtBottom: isAddressBarAtBottom,
                                                    contentTopInset: viewModel.contentTopInset,

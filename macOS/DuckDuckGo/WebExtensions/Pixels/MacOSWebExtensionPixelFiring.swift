@@ -111,6 +111,7 @@ enum WebExtensionPixel: PixelKit.Event {
     case enabled(extension: WebExtensionPixelExtension)
     case disabled(extension: WebExtensionPixelExtension)
     case remotelyDisabled(extension: WebExtensionPixelExtension)
+    case killSwitchDisabled(count: Int)
     case retained14Days(extension: WebExtensionPixelExtension)
     case churned14Days(extension: WebExtensionPixelExtension)
     case installedCount(installed: Int, enabled: Int)
@@ -121,6 +122,12 @@ enum WebExtensionPixel: PixelKit.Event {
     case learnMoreRemoteDisableClicked
     /// An extension's toolbar button, when the click performs its action rather than closing its popup.
     case toolbarClicked(extension: WebExtensionPixelExtension)
+
+    // MARK: - Native messaging in the App Store build
+
+    case nativeMessagingBlocked(extension: WebExtensionPixelExtension)
+    case nativeMessagingAlertShown(extension: WebExtensionPixelExtension, source: NativeMessagingAlertSource)
+    case nativeMessagingAlertLearnMoreClicked(extension: WebExtensionPixelExtension)
 
     // MARK: - CPM messaging breakage
 
@@ -256,10 +263,18 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_churned_14d_macos"
         case .remotelyDisabled:
             return "web_extension_remotely_disabled_macos"
+        case .killSwitchDisabled:
+            return "web_extension_kill_switch_disabled_macos"
         case .installedCount:
             return "web_extension_installed_count_macos"
         case .toolbarClicked:
             return "web_extension_toolbar_clicked_macos"
+        case .nativeMessagingBlocked:
+            return "web_extension_native_messaging_blocked_macos"
+        case .nativeMessagingAlertShown:
+            return "web_extension_native_messaging_alert_shown_macos"
+        case .nativeMessagingAlertLearnMoreClicked:
+            return "web_extension_native_messaging_alert_learn_more_clicked_macos"
         }
     }
 
@@ -326,10 +341,16 @@ enum WebExtensionPixel: PixelKit.Event {
              .getClicked(let pixelExtension),
              .detailsOpened(let pixelExtension),
              .publisherLinkClicked(let pixelExtension),
-             .toolbarClicked(let pixelExtension):
+             .toolbarClicked(let pixelExtension),
+             .nativeMessagingBlocked(let pixelExtension),
+             .nativeMessagingAlertLearnMoreClicked(let pixelExtension):
             return [Self.extensionParameterKey: pixelExtension.parameterValue]
+        case .nativeMessagingAlertShown(let pixelExtension, let source):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue, "source": source.rawValue]
         case .installedCount(let installed, let enabled):
             return ["count": Self.countBucket(installed), "enabled_count": Self.countBucket(enabled)]
+        case .killSwitchDisabled(let count):
+            return ["count": Self.countBucket(count)]
         case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
             return ["extension_version": version,
                     "missing_api_count": String(missingAPICount),
@@ -352,8 +373,9 @@ enum WebExtensionPixel: PixelKit.Event {
         case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
              .updateApplied, .updateInstallFailed,
              .cpmMessagingBreakage, .cpmMessagingBreakagePersistent, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
-             .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount,
-             .getClicked, .detailsOpened, .publisherLinkClicked, .learnMoreClicked, .learnMoreRemoteDisableClicked, .toolbarClicked:
+             .enabled, .disabled, .remotelyDisabled, .killSwitchDisabled, .retained14Days, .churned14Days, .installedCount,
+             .getClicked, .detailsOpened, .publisherLinkClicked, .learnMoreClicked, .learnMoreRemoteDisableClicked, .toolbarClicked,
+             .nativeMessagingBlocked, .nativeMessagingAlertShown, .nativeMessagingAlertLearnMoreClicked:
             return .none
         default:
             return .platformDefault
@@ -363,6 +385,14 @@ enum WebExtensionPixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? {
         return [.pixelSource]
     }
+}
+
+/// Where the native messaging alert was shown from.
+enum NativeMessagingAlertSource: String {
+    /// The extension asked for the native messaging permission at runtime, such as Bitwarden for biometrics.
+    case permissionRequest = "permission_request"
+    /// The toolbar button of an extension that requires native messaging, such as 1Password.
+    case toolbarClick = "toolbar_click"
 }
 
 @available(macOS 15.4, *)
@@ -503,8 +533,12 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .churned14Days(extension: pixelExtension)
         case .remotelyDisabled(let pixelExtension):
             pixel = .remotelyDisabled(extension: pixelExtension)
+        case .killSwitchDisabled(let count):
+            pixel = .killSwitchDisabled(count: count)
         case .installedCount(let installed, let enabled):
             pixel = .installedCount(installed: installed, enabled: enabled)
+        case .nativeMessagingBlocked(let pixelExtension):
+            pixel = .nativeMessagingBlocked(extension: pixelExtension)
         }
         switch event {
         case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
@@ -512,9 +546,9 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             frequency = .dailyAndCount
         case .bitwardenDailyActive, .apiCompatibilityGaps, .installedCount:
             frequency = .daily
-        case .enabled, .disabled, .remotelyDisabled, .cpmMessagingBreakage, .cpmMessagingBreakagePersistent:
+        case .enabled, .disabled, .remotelyDisabled, .killSwitchDisabled, .cpmMessagingBreakage, .cpmMessagingBreakagePersistent:
             frequency = .dailyAndCount
-        case .defaultPasswordManagerSet, .retained14Days, .churned14Days:
+        case .defaultPasswordManagerSet, .retained14Days, .churned14Days, .nativeMessagingBlocked:
             frequency = .standard
         default:
             frequency = Self.frequency(of: event)

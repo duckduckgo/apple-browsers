@@ -341,7 +341,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncService: syncService,
         pinningManager: pinningManager,
         promoService: promoService,
-        dockCustomization: dockCustomization
+        dockCustomization: dockCustomization,
+        addToDockVideoPresenter: addToDockVideoPresenter
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -639,6 +640,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var updateController: UpdateController?
     private var updateNotificationPromoBridge: UpdateNotificationPromoBridge?
     let dockCustomization: DockCustomization
+    let addToDockVideoPresenter: AddToDockVideoPresenting
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
     static var firstLaunchDate: Date
@@ -671,7 +673,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
-    init(dockCustomization: DockCustomization) {
+    override init() {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
@@ -679,7 +681,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         self.startupProfiler = startupProfiler
-        self.dockCustomization = dockCustomization
 
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {
             keyStore = (NSClassFromString("MockEncryptionKeyStore") as? EncryptionKeyStoring.Type)!.init()
@@ -847,6 +848,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        self.dockCustomization = DockCustomizer(featureFlagger: featureFlagger)
+        self.addToDockVideoPresenter = AddToDockVideoPresenter()
         webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
@@ -1292,11 +1295,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             trackerMessageProvider: TrackerMessageProvider(
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
             ),
-            subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
-                featureFlagger: featureFlagger,
-                subscriptionManager: subscriptionManager
-            ),
-            settings: keyValueStore.throwingKeyedStoring()
+            subscriptionManager: subscriptionManager,
+            settings: keyValueStore.throwingKeyedStoring(),
+            uiLocker: windowControllersManager
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -1306,7 +1307,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                 notificationPresenter: notificationPresenter,
                                                                                 uiHosting: { windowControllersManager.activeViewController },
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted },
-                                                                                dockCustomization: dockCustomization)
+                                                                                dockCustomization: dockCustomization,
+                                                                                addToDockVideoFeatureFlagger: featureFlagger,
+                                                                                addToDockVideoPresenter: addToDockVideoPresenter)
         // Dedicated store: EventHub flushes often and `KeyValueFileStore.set` rewrites the whole file.
         // `try?` — telemetry runs in memory rather than failing launch.
         eventHubIntegration = MacOSEventHubIntegration(
@@ -2298,6 +2301,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        // No new windows while onboarding locks the UI.
+        guard !windowControllersManager.userInteractionLock.isLocked else { return nil }
         return ApplicationDockMenu(internalUserDecider: internalUserDecider, isFireWindowDefault: visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled)
     }
 
@@ -2390,7 +2395,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             themeManager: themeManager,
             darkReaderExcludedDomainsProvider: darkReaderSettings,
             scriptletConfiguration: makeScriptletConfiguration(),
-            eventHub: eventHubIntegration.eventHub
+            eventHub: eventHubIntegration.eventHub,
+            isAppleSurrogateRedirectionEnabled: { [webExtensionAvailability] in webExtensionAvailability.isAppleSurrogateRedirectionEnabled }
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager

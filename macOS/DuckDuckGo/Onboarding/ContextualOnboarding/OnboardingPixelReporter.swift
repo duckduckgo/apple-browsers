@@ -36,6 +36,8 @@ protocol OnboardingDialogsReporting: AnyObject {
     func measureDialogDismissed(dialogType: ContextualDialogType)
     func measureDialogManuallyDismissed(dialogType: ContextualDialogType)
     func measureGotItPressed(dialogType: ContextualDialogType)
+    func measureSubscriptionUpsellAccepted()
+    func measureSubscriptionUpsellDeclined()
 }
 
 protocol OnboardingFireReporting: AnyObject {
@@ -134,7 +136,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .highFive:
             fire(ContextualOnboardingPixel.finalDialogDismissed, .uniqueByName)
         case .subscriptionUpsell:
-            // The upsell reports through the experiment's own metrics instead.
+            // No legacy pixel; the upsell reports through the shared `subscriptionPromo` event.
             break
         case .thatsDuckAI:
             // To do: pixel
@@ -157,7 +159,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .highFive:
             sharedPixelHandler.fire(.end(.clicked(.dismiss)))
         case .subscriptionUpsell:
-            break
+            sharedPixelHandler.fire(.subscriptionPromo(.clicked(.dismiss)))
         case .thatsDuckAI:
             // To do: pixel
             break
@@ -187,7 +189,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .highFive:
             sharedPixelHandler.fire(.end(.shown))
         case .subscriptionUpsell:
-            break
+            sharedPixelHandler.fire(.subscriptionPromo(.shown))
         case .thatsDuckAI:
             // To do: pixel
             break
@@ -213,11 +215,21 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .tryASearch,
                 .tryASite,
                 .subscriptionUpsell:
+            // The upsell's buttons all advance through got-it, so they report through
+            // `measureSubscriptionUpsellAccepted()` and `measureSubscriptionUpsellDeclined()` instead.
             break
         case .thatsDuckAI:
             // To do: pixel
             break
         }
+    }
+
+    func measureSubscriptionUpsellAccepted() {
+        sharedPixelHandler.fire(.subscriptionPromo(.clicked(.engage)))
+    }
+
+    func measureSubscriptionUpsellDeclined() {
+        sharedPixelHandler.fire(.subscriptionPromo(.clicked(.dismiss)))
     }
 
     func measureSuggestionPressed() {

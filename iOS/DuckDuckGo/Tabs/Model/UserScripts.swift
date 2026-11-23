@@ -118,7 +118,8 @@ final class UserScripts: UserScriptsProvider {
                                                                                             + [PrivacyFeature.aiChatBrowserTools.rawValue])
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
-                                                                scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
+                                                                scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData,
+                                                                                             disableScriptSurrogateInjection: sourceProvider.webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true),
                                                                 allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue,
                                                                                              SelectionFrameUserScript.featureName],
                                                                 privacyConfigurationJSONGenerator: configGenerator)

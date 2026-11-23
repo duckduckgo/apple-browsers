@@ -3465,8 +3465,13 @@ class MainViewController: UIViewController {
     }
 
     func loadUrl(_ url: URL, fromExternalLink: Bool = false) {
+        let chatListRequest = nativeChatListRequest(for: url)
+        if chatListRequest.requestsChatList {
+            openIPadChatListSidebarOnNextInstall()
+        }
         prepareTabForRequest {
-            self.currentTab?.load(url: url)
+            self.currentTab?.isOpenedForChatList = chatListRequest.requestsChatList
+            self.currentTab?.load(url: chatListRequest.url)
             if fromExternalLink {
                 self.currentTab?.inferredOpenerContext = .external
             }
@@ -3512,10 +3517,15 @@ class MainViewController: UIViewController {
     @discardableResult
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
         captureForSwipeBack(tabManager.currentTabsModel.currentTab)
-        let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
+        let chatListRequest = url.map(nativeChatListRequest(for:))
+        if chatListRequest?.requestsChatList == true {
+            openIPadChatListSidebarOnNextInstall()
+        }
+        let tab = tabManager.add(url: chatListRequest?.url ?? url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
         tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIChatProtectionOpen == true
+        tab.isOpenedForChatList = chatListRequest?.requestsChatList == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -5653,9 +5663,9 @@ class MainViewController: UIViewController {
     }
 
     private func updateAIChatSelectedModel(for request: AIChatOpeningRequest) {
-        if request.shouldPresent, let modelID = request.modelID {
-            unifiedToggleInputCoordinator?.updateSelectedModel(modelID)
-        }
+        guard request.shouldPresent, let modelID = request.modelID else { return }
+        // The model picked in onboarding applies to the onboarding chat only, so new chats don't start on it.
+        unifiedToggleInputCoordinator?.updateSelectedModel(modelID, persistsSelection: request.source != .onboarding)
     }
 
     /// Tags the tab about to load Duck.ai with its door, any address-bar hand-over and the native prompt flow.
@@ -6089,6 +6099,8 @@ extension MainViewController: BrowserChromeDelegate {
         if currentTab?.isLoading == true { return false }
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
+        // Keep bars shown under a contextual onboarding dialog. The classic UI keeps hiding the bars on scroll.
+        if isFloatingUIEnabled, currentTab?.daxContextualOnboardingController != nil { return false }
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
     }
 

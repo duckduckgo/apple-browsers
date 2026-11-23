@@ -292,7 +292,7 @@ final class AIChatHistoryViewController: UIViewController {
     }
 
     @objc private func duckAISettingsButtonTapped() {
-        viewModel.openDuckAISettings()
+        viewModel.openDuckAISettings(source: .headerButton)
     }
 
     private func makeSelectionDoneItem() -> UIBarButtonItem {
@@ -332,7 +332,7 @@ final class AIChatHistoryViewController: UIViewController {
                 if self.viewModel.showsDuckAISettingsButton {
                     items.append(UIAction(title: UserText.actionAIChatSettings,
                                           image: DesignSystemImages.Glyphs.Size16.aiChatSettings) { [weak self] _ in
-                        self?.viewModel.openDuckAISettings()
+                        self?.viewModel.openDuckAISettings(source: .overflowMenu)
                     })
                 }
                 completion(items)

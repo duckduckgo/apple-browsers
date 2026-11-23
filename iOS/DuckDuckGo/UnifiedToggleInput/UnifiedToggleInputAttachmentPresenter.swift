@@ -64,6 +64,8 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
     /// Supplies the UTI surface for attachment pixels. Set by the coordinator; defaults to `.addressBar`.
     var pixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface)?
+    /// Supplies the temporary `simplified_prompt_box` param for attachment pixels. Nil omits the param.
+    var simplifiedPromptBoxProvider: (() -> Bool)?
     var isFireTabProvider: (() -> Bool)?
 
     nonisolated static func recoverFileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
@@ -173,15 +175,21 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
                           tabActionHandler: tabActionHandler)
         }
 
-        actions.append(contentsOf: Self.makeToolsSection(tools))
+        actions.append(contentsOf: Self.makeToolsSection(tools, onItemSelected: onItemSelected))
 
         return UIMenu(children: actions)
     }
 
     /// The tools sit below a divider, after the attachment rows.
-    private static func makeToolsSection(_ tools: UTIAttachMenuTools?) -> [UIMenuElement] {
+    private static func makeToolsSection(_ tools: UTIAttachMenuTools?,
+                                         onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void) -> [UIMenuElement] {
         guard let tools, !tools.menu.items.isEmpty else { return [] }
-        return [UTIToolsMenuFactory().makeAttachMenuSection(tools.menu, onSelect: tools.onSelect)]
+        return [UTIToolsMenuFactory().makeAttachMenuSection(tools.menu) { identifier in
+            if let item = UnifiedToggleInputAttachMenuItem(tool: identifier) {
+                onItemSelected(item)
+            }
+            tools.onSelect(identifier)
+        }]
     }
 
     /// Recent tabs lead the menu as shortcuts (unless the simplified menu drops them); Add Tabs follows the attachment rows.
@@ -512,10 +520,9 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
                 let image = AIChatImageAttachment.resizedForAttachment(picked)
 
                 Task { @MainActor in
-                    let surface = self?.pixelSurfaceProvider?() ?? .addressBar
                     PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
                                   frequency: .dailyAndCount,
-                                  options: .parameters(["source": "photo_library", "surface": surface.rawValue]))
+                                  options: .parameters(self?.imageAttachedPixelParameters(source: "photo_library") ?? [:]))
                     callbacks.onImagePicked?(image, suggestedName)
                 }
             }
@@ -525,6 +532,13 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
 
 extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
+    func imageAttachedPixelParameters(source: String) -> [String: String] {
+        typealias Keys = UnifiedToggleInputCoordinatorPixelHelper
+        var parameters = ["source": source, "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]
+        parameters[Keys.simplifiedPromptBoxKey] = Keys.simplifiedPromptBoxValue(simplifiedPromptBoxProvider?())
+        return parameters
+    }
+
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         let callbacks = takeCallbacks(for: picker)
         picker.dismiss(animated: true)
@@ -532,7 +546,7 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
         guard let photo = info[.originalImage] as? UIImage else { return }
         PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
                       frequency: .dailyAndCount,
-                      options: .parameters(["source": "camera", "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]))
+                      options: .parameters(imageAttachedPixelParameters(source: "camera")))
         Task {
             let image = await Task.detached { AIChatImageAttachment.resizedForAttachment(photo) }.value
             callbacks.onImagePicked?(image, "photo")

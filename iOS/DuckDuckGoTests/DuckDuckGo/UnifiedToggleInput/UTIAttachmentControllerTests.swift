@@ -784,7 +784,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
         let call = try XCTUnwrap(pixelKitMock.actualFireCalls.last)
         XCTAssertEqual(call.pixel.name, "m_aichat_unified_input_attach_menu_item_selected")
-        XCTAssertEqual(call.pixel.parameters, ["surface": "address_bar", "item": "photo_library"])
+        XCTAssertEqual(call.pixel.parameters, ["surface": "address_bar", "item": "photo_library", "simplified_prompt_box": "off"])
         XCTAssertEqual(call.frequency, .dailyAndCount)
     }
 

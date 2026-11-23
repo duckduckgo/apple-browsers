@@ -99,7 +99,8 @@ enum WebExtensionManagerFactory {
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil,
-        eventHub: EventHubManaging
+        eventHub: EventHubManaging,
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool = { false }
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
         let windowTabProvider = WebExtensionWindowTabProvider()
@@ -186,7 +187,8 @@ enum WebExtensionManagerFactory {
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
-                eventHub: eventHub
+                eventHub: eventHub,
+                isAppleSurrogateRedirectionEnabled: isAppleSurrogateRedirectionEnabled
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             unavailablePermissions: buildType.isAppStoreBuild ? [.nativeMessaging] : [],

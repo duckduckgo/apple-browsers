@@ -214,7 +214,6 @@ public final class DataBrokerProtectionAgentManager {
     /// Runs the user's assisted opt-out attempts one at a time. Created on first use once the user is signed in.
     @MainActor private var assistedOptOutQueue: AssistedOptOutQueue?
     private let assistedOptOutPresenter: AssistedOptOutPresenting?
-    private var assistedOptOutRefreshTimer: Timer?
     private var assistedOptOutSubscriptions: Set<AnyCancellable> = []
 
     private var didStartActivityScheduler = false
@@ -282,10 +281,6 @@ public final class DataBrokerProtectionAgentManager {
         self.sweepWideEvents()
     }
 
-    deinit {
-        assistedOptOutRefreshTimer?.invalidate()
-    }
-
     public func agentFinishedLaunching() {
 
         Task { @MainActor in
@@ -303,7 +298,6 @@ public final class DataBrokerProtectionAgentManager {
             let operationPreferredDateUpdater = OperationPreferredDateUpdater(database: jobDependencies.database,
                                                                               featureFlagger: jobDependencies.featureFlagger)
             operationPreferredDateUpdater.runPreferredRunDateNilMigrationIfNeeded(settings: jobDependencies.dataBrokerProtectionSettings)
-            await refreshAssistedOptOuts()
             await checkForEmailConfirmationData()
 
             startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
@@ -359,7 +353,7 @@ private extension DataBrokerProtectionAgentManager {
                                                         completion: (() -> Void)?) {
         Task {
             let isAuthenticated = await refreshIsAuthenticatedState()
-            await refreshAssistedOptOuts()
+            if !isAuthenticated { await cancelAssistedOptOuts() }
             if isAuthenticated {
                 queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView,
                                                                     isAuthenticatedUser: true,
@@ -457,7 +451,7 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
     public func profileSaved() async {
-        await invalidateAssistedOptOuts()
+        await cancelAssistedOptOuts()
         let database = jobDependencies.database
         let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
         eventPixels.markInitialScansStarted()
@@ -689,8 +683,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
             .sink { [weak self] in
                 Task { @MainActor [weak self] in
                     self?.assistedOptOutQueue?.configurationDidChange()
-                    self?.updateAssistedOptOutRefreshTimer()
-                    await self?.refreshAssistedOptOuts()
                 }
             }.store(in: &assistedOptOutSubscriptions)
         Publishers.Merge(
@@ -699,22 +691,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
         ).sink { [weak self] _ in
             Task { await self?.invalidateAssistedOptOuts() }
         }.store(in: &assistedOptOutSubscriptions)
-        updateAssistedOptOutRefreshTimer()
-    }
-
-    @MainActor
-    private func updateAssistedOptOutRefreshTimer() {
-        guard jobDependencies.userAssistanceConfig.isEnabled else {
-            assistedOptOutRefreshTimer?.invalidate()
-            assistedOptOutRefreshTimer = nil
-            return
-        }
-        guard assistedOptOutRefreshTimer == nil else { return }
-        let timer = Timer(timeInterval: 30, repeats: true) { [weak self] _ in
-            Task { await self?.refreshAssistedOptOuts() }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        assistedOptOutRefreshTimer = timer
     }
 
     @MainActor
@@ -723,28 +699,19 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
     }
 
     @MainActor
-    func refreshAssistedOptOuts() async {
-        guard await authenticationManager.isUserAuthenticated else {
-            assistedOptOutQueue?.cancelAll()
-            return
-        }
-        setUpAssistedOptOuts()
-        do {
-            try await assistedOptOutQueue?.refresh()
-        } catch {
-            Logger.dataBrokerProtection.error("Assisted opt-out refresh failed")
-        }
+    func cancelAssistedOptOuts() {
+        assistedOptOutQueue?.cancelAll()
     }
 
     @MainActor
-    public func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList? {
+    public func getAssistedOptOuts() async -> AssistedOptOutList? {
         guard await authenticationManager.isUserAuthenticated else {
             assistedOptOutQueue?.cancelAll()
             return AssistedOptOutList(optOuts: [])
         }
         setUpAssistedOptOuts()
         do {
-            return AssistedOptOutList(optOuts: try await assistedOptOutQueue?.assistedOptOuts(droppingSubmitted: droppingSubmitted) ?? [])
+            return AssistedOptOutList(optOuts: try await assistedOptOutQueue?.assistedOptOuts() ?? [])
         } catch {
             Logger.dataBrokerProtection.error("Assisted opt-out list failed")
             return nil
@@ -753,8 +720,12 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
 
     public func assistedOptOutDataDidChange() {
         Task { @MainActor [weak self] in
-            self?.invalidateAssistedOptOuts()
-            await self?.refreshAssistedOptOuts()
+            guard let self else { return }
+            if (try? self.jobDependencies.database.fetchProfile()) == nil {
+                self.cancelAssistedOptOuts()
+            } else {
+                self.invalidateAssistedOptOuts()
+            }
         }
     }
 

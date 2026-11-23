@@ -173,9 +173,9 @@ final class MockDataBrokerProtectionDataManager: DataBrokerProtectionDataManagin
 
 final class MockIPCServer: DataBrokerProtectionIPCServer {
     func assistedOptOutDataDidChange() {}
-    func getAssistedOptOuts(droppingSubmitted: Bool, completion: @escaping (Data?) -> Void) {
+    func getAssistedOptOuts(completion: @escaping (Data?) -> Void) {
         Task {
-            let list = await serverDelegate?.getAssistedOptOuts(droppingSubmitted: droppingSubmitted)
+            let list = await serverDelegate?.getAssistedOptOuts()
             completion(list.flatMap { try? JSONEncoder().encode($0) })
         }
     }

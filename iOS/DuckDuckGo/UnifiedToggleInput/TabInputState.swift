@@ -79,10 +79,9 @@ struct TabInputState: Equatable {
         selectedTool = nil
     }
 
-    /// A new chat starts on `modelID` when an entry point opened it with one, else on the default.
-    mutating func startNewChat(modelID: String?) {
-        selectedModelID = modelID
-        selectedReasoningMode = nil
+    mutating func startNewChat(on pick: UTIModelSelection) {
+        selectedModelID = pick.modelID
+        selectedReasoningMode = pick.reasoningMode
     }
 
     /// Compact, privacy-aware description for debug logs. Reports text length and

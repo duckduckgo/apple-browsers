@@ -38,8 +38,12 @@ struct UTIModelSelection: Equatable {
 @MainActor
 final class UTIModelStore {
 
-    var models: [AIChatModel] = []
-    var subscriptionState: SubscriptionState = .free
+    var models: [AIChatModel] = [] {
+        didSet { newChatDefaults?.models = models }
+    }
+    var subscriptionState: SubscriptionState = .free {
+        didSet { newChatDefaults?.userTier = subscriptionState.userTier }
+    }
     var attachmentLimits: AIChatAttachmentTierLimits?
     private(set) var freeTrialEligibility: FreeTrialEligibility = .unknown
 
@@ -59,23 +63,15 @@ final class UTIModelStore {
     }
 
     private let modelsService: AIChatModelsProviding
-    private(set) var preferences: AIChatPreferencesPersisting
     private let subscriptionManager: any SubscriptionManager
     private let isUpdatedModelPickerEnabled: Bool
-    private let startsNewChatsOnDefault: Bool
-    private var newChatDefault: AIChatNewChatDefault = .unavailable
-    /// From the usage-limits snapshot; the owner refreshes it when web writes a new one.
-    var overLimitNewChatDefault: AIChatNewChatDefault = .unavailable {
-        didSet {
-            guard overLimitNewChatDefault != oldValue else { return }
-            onModelsUpdated?()
-        }
-    }
+    private let pickStore: UTIModelPickStoring
+    /// `nil` while new chats start on the last pick instead of the default.
+    let newChatDefaults: AIChatNewChatDefaultSource?
     private var modelsFetchTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
     private var liveModelId: String?
-    private var liveReasoningMode: AIChatReasoningMode?
 
     var onModelsUpdated: (() -> Void)?
 
@@ -84,18 +80,30 @@ final class UTIModelStore {
         preferences: AIChatPreferencesPersisting,
         subscriptionManager: any SubscriptionManager,
         isUpdatedModelPickerEnabled: Bool,
-        startsNewChatsOnDefault: Bool = false
+        startsNewChatsOnDefault: Bool = false,
+        overLimitNewChatDefaults: AnyPublisher<AIChatNewChatDefault, Never>? = nil
     ) {
         self.modelsService = modelsService
-        self.preferences = preferences
         self.subscriptionManager = subscriptionManager
         self.upsellPolicy = DuckAISubscriptionUpsellPolicy(subscriptionManager: subscriptionManager)
         self.isUpdatedModelPickerEnabled = isUpdatedModelPickerEnabled
-        self.startsNewChatsOnDefault = startsNewChatsOnDefault
+        self.pickStore = makeModelPickStore(startsNewChatsOnDefault: startsNewChatsOnDefault, preferences: preferences)
+        self.newChatDefaults = startsNewChatsOnDefault ? AIChatNewChatDefaultSource() : nil
         if isUpdatedModelPickerEnabled {
             updateFreeTrialEligibilityFromSubscriptionCache()
         }
         subscribeToAppStoreProductAvailability()
+        observeNewChatDefaults(overLimitDefaults: overLimitNewChatDefaults)
+    }
+
+    private func observeNewChatDefaults(overLimitDefaults: AnyPublisher<AIChatNewChatDefault, Never>?) {
+        guard let newChatDefaults else { return }
+        newChatDefaults.overLimitDefaultChanges
+            .sink { [weak self] in self?.onModelsUpdated?() }
+            .store(in: &cancellables)
+        if let overLimitDefaults {
+            newChatDefaults.observeOverLimitDefaults(overLimitDefaults)
+        }
     }
 
     var persistedModelId: String? {
@@ -106,65 +114,69 @@ final class UTIModelStore {
 
     /// The model and effort a new chat starts on when nothing was picked on this tab.
     var newChatDefaultSelection: AIChatNewChatSelection? {
-        guard !models.isEmpty else { return AIChatNewChatDefaultResolver.resolveBeforeModelsLoad(userTier: subscriptionState.userTier) }
-        return AIChatNewChatDefaultResolver.resolve(newChatDefault,
-                                             overLimitDefault: overLimitNewChatDefault,
-                                             models: models,
-                                             userTier: subscriptionState.userTier)
+        newChatDefaults?.selectionOrLocalDefaultBeforeModelsLoad
     }
 
     private var newChatModelId: String? {
-        startsNewChatsOnDefault ? newChatDefaultSelection?.modelId : preferences.selectedModelId
+        pickStore.newChatModelId ?? newChatDefaultSelection?.modelId
     }
 
     var currentModelId: String? {
         liveModelId
     }
 
-    /// Where a new chat's first prompt model came from; `fallback` while the default isn't known yet.
+    /// Where a new chat's first prompt model came from; `nil` while new chats don't start on the default.
     func newChatModelSource(openedWithModelId: String?) -> DuckAINewChatModelSource? {
-        guard let sentModelId = persistedModelId else { return nil }
+        guard let sentModelId = persistedModelId, let newChatDefault = newChatDefaultSelection else { return nil }
         return DuckAINewChatModelSource.resolve(sentModelId: sentModelId,
                                                 sendsDefaultEffort: sendsNewChatDefaultEffort,
                                                 isPicked: hasLivePick,
                                                 openedWithModelId: openedWithModelId,
-                                                newChatDefault: newChatDefaultSelection) ?? .fallback
+                                                newChatDefault: newChatDefault)
+    }
+
+    /// Voice prompts carry the effort only for chats that start on the new-chat default.
+    var voicePromptReasoningEffort: AIChatReasoningEffort? {
+        guard newChatDefaults != nil else { return nil }
+        return submissionReasoningEffort
     }
 
     private var hasLivePick: Bool {
-        liveModelId != nil || liveReasoningMode != nil
+        liveModelId != nil || pickStore.reasoningMode != nil
     }
 
     private var sendsNewChatDefaultEffort: Bool {
-        guard let liveReasoningMode, let selectedModel else { return true }
-        return selectedModel.resolvedReasoningEffort(from: liveReasoningMode) == selectedModel.resolvedReasoningEffort(from: newChatDefaultReasoningMode)
+        guard let pickedMode = pickStore.reasoningMode, let selectedModel else { return true }
+        return selectedModel.resolvedReasoningEffort(from: pickedMode) == selectedModel.resolvedReasoningEffort(from: newChatDefaultReasoningMode)
     }
 
     /// The tab's own pick, without the new-chat default filled in.
     var liveSelection: UTIModelSelection {
-        UTIModelSelection(modelID: liveModelId, reasoningMode: storedReasoningMode)
+        UTIModelSelection(modelID: liveModelId, reasoningMode: pickStore.reasoningMode)
+    }
+
+    /// The model and reasoning mode the input shows, with any default filled in.
+    var shownSelection: UTIModelSelection {
+        UTIModelSelection(modelID: persistedModelId, reasoningMode: selectedReasoningMode)
+    }
+
+    /// What a tab keeps of a new chat's selection.
+    var newChatSelectionKeptOnTab: UTIModelSelection {
+        pickStore.newChatSelectionKeptOnTab(ownPick: liveSelection, shown: shownSelection)
+    }
+
+    /// The pick a different chat on this tab starts on; `nil` keeps the current one.
+    func pickForNewChat(openedWithModelId modelId: String?) -> UTIModelSelection? {
+        pickStore.pickForNewChat(openedWithModelId: modelId)
     }
 
     var selectedReasoningMode: AIChatReasoningMode? {
-        startsNewChatsOnDefault ? (liveReasoningMode ?? newChatDefaultReasoningMode) : preferences.selectedReasoningMode
+        pickStore.reasoningMode ?? newChatDefaultReasoningMode
     }
 
-    private var storedReasoningMode: AIChatReasoningMode? {
-        startsNewChatsOnDefault ? liveReasoningMode : preferences.selectedReasoningMode
-    }
-
-    private func storeReasoningMode(_ mode: AIChatReasoningMode?) {
-        if startsNewChatsOnDefault {
-            liveReasoningMode = mode
-        } else {
-            preferences.selectedReasoningMode = mode
-        }
-    }
-
-    /// The default effort applies only while the chat is on the default model.
     private var newChatDefaultReasoningMode: AIChatReasoningMode? {
-        guard let selection = newChatDefaultSelection, let selectedModel, selectedModel.id == selection.modelId else { return nil }
-        return selectedModel.reasoningMode(for: selection.reasoningEffort)
+        guard let selectedModel, let selection = newChatDefaultSelection else { return nil }
+        return selectedModel.reasoningMode(for: selection.reasoningEffort(onModelId: selectedModel.id))
     }
 
     var submissionReasoningEffort: AIChatReasoningEffort? {
@@ -183,10 +195,11 @@ final class UTIModelStore {
            let shortName = models.first(where: { $0.id == liveModelId })?.shortName {
             return shortName
         }
-        if startsNewChatsOnDefault {
-            return selectedModel?.shortName
-        }
-        return preferences.selectedModelShortName
+        return pickStore.newChatModelShortName ?? newChatDefaultModel?.shortName
+    }
+
+    private var newChatDefaultModel: AIChatModel? {
+        models.first { $0.id == newChatDefaultSelection?.modelId }
     }
 
     var selectedModelSupportsImageUpload: Bool {
@@ -240,7 +253,7 @@ final class UTIModelStore {
                 guard !Task.isCancelled else { return }
                 self.models = Self.resolveModels(from: response.models, userTier: state.userTier)
                 self.attachmentLimits = response.attachmentLimits?.limits(for: state.userTier)
-                self.newChatDefault = response.newChatDefault
+                self.newChatDefaults?.serverDefault = response.newChatDefault
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningModeIfNeeded()
                 self.onModelsUpdated?()
@@ -280,16 +293,15 @@ final class UTIModelStore {
 
     func updateSelectedModel(_ modelId: String, isNewChatContext: Bool) {
         liveModelId = modelId
-        if isNewChatContext && !startsNewChatsOnDefault {
-            preferences.selectedModelId = modelId
-            preferences.selectedModelShortName = models.first(where: { $0.id == modelId })?.shortName
+        if isNewChatContext {
+            pickStore.saveNewChatModel(id: modelId, shortName: models.first(where: { $0.id == modelId })?.shortName)
         }
         clearStaleReasoningModeIfNeeded()
     }
 
     func updateSelectedReasoningMode(_ mode: AIChatReasoningMode) {
         guard selectedModel?.availableReasoningModes.contains(mode) == true else { return }
-        storeReasoningMode(mode)
+        pickStore.reasoningMode = mode
     }
 
     /// Applies a reasoning mode coming from a trusted source (e.g. a stored chat
@@ -298,12 +310,12 @@ final class UTIModelStore {
     /// has finished loading. `clearStaleReasoningModeIfNeeded()` in `fetchModels`
     /// will null this out if the resolved model turns out not to support `mode`.
     func applyChatPersistedReasoningMode(_ mode: AIChatReasoningMode?) {
-        storeReasoningMode(mode)
+        pickStore.reasoningMode = mode
     }
 
     func applyPersistedSelection(modelID: String?, reasoningMode: AIChatReasoningMode?) {
         liveModelId = modelID
-        storeReasoningMode(reasoningMode)
+        pickStore.reasoningMode = reasoningMode
     }
 
     static func resolveModels(from remoteModels: [AIChatRemoteModel], userTier: AIChatUserTier) -> [AIChatModel] {
@@ -355,23 +367,22 @@ final class UTIModelStore {
             liveModelId = nil
         }
 
-        if let preferredId = preferences.selectedModelId,
-           !models.contains(where: { $0.id == preferredId && $0.entityHasAccess }) {
-            preferences.selectedModelId = nil
-            preferences.selectedModelShortName = nil
+        if let newChatModelId = pickStore.newChatModelId,
+           !models.contains(where: { $0.id == newChatModelId && $0.entityHasAccess }) {
+            pickStore.saveNewChatModel(id: nil, shortName: nil)
         }
     }
 
     func clearStaleReasoningModeIfNeeded() {
-        guard let storedReasoningMode else { return }
+        guard let pickedMode = pickStore.reasoningMode else { return }
 
         guard let selectedModel else {
-            storeReasoningMode(nil)
+            pickStore.reasoningMode = nil
             return
         }
 
-        if !selectedModel.availableReasoningModes.contains(storedReasoningMode) {
-            storeReasoningMode(nil)
+        if !selectedModel.availableReasoningModes.contains(pickedMode) {
+            pickStore.reasoningMode = nil
         }
     }
 }

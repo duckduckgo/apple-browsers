@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import Combine
 import Foundation
 
 /// A model and reasoning effort picked in one input. `nil` fields fall back to the new-chat default.
@@ -29,7 +30,6 @@ struct DuckAIModelPick: Equatable {
 }
 
 /// Where a Duck.ai input keeps the user's model and reasoning-effort pick.
-@MainActor
 protocol DuckAIModelPickStoring: AnyObject {
     var modelId: String? { get set }
     var modelShortName: String? { get set }
@@ -37,9 +37,15 @@ protocol DuckAIModelPickStoring: AnyObject {
     var reasoningEffort: String? { get set }
 }
 
+/// A pick store an input follows through publishers and ends once its prompt is sent, as the New Tab Page does.
+protocol DuckAIPublishingModelPickStoring: DuckAIModelPickStoring {
+    var modelIdPublisher: AnyPublisher<String?, Never> { get }
+    var reasoningEffortPublisher: AnyPublisher<String?, Never> { get }
+    func promptSent()
+}
+
 /// One pick shared by every input and kept across launches.
-@MainActor
-final class PersistedModelPickStore: DuckAIModelPickStoring {
+final class PersistedModelPickStore: DuckAIPublishingModelPickStoring {
 
     private var preferences: AIChatPreferencesPersisting
 
@@ -61,10 +67,57 @@ final class PersistedModelPickStore: DuckAIModelPickStoring {
         get { preferences.selectedReasoningEffort }
         set { preferences.selectedReasoningEffort = newValue }
     }
+
+    var modelIdPublisher: AnyPublisher<String?, Never> {
+        preferences.selectedModelIdPublisher
+    }
+
+    var reasoningEffortPublisher: AnyPublisher<String?, Never> {
+        preferences.selectedReasoningEffortPublisher
+    }
+
+    /// The persisted pick is what every new chat starts on, so sending a prompt keeps it.
+    func promptSent() {}
+}
+
+/// An unsent pick kept in memory only, so it never seeds another input or launch.
+final class InMemoryModelPickStore: DuckAIPublishingModelPickStoring {
+
+    private let modelIdSubject = PassthroughSubject<String?, Never>()
+    private let reasoningEffortSubject = PassthroughSubject<String?, Never>()
+
+    var modelId: String? {
+        didSet {
+            guard modelId != oldValue else { return }
+            modelIdSubject.send(modelId)
+        }
+    }
+
+    var modelShortName: String?
+
+    var reasoningEffort: String? {
+        didSet {
+            guard reasoningEffort != oldValue else { return }
+            reasoningEffortSubject.send(reasoningEffort)
+        }
+    }
+
+    var modelIdPublisher: AnyPublisher<String?, Never> {
+        modelIdSubject.eraseToAnyPublisher()
+    }
+
+    var reasoningEffortPublisher: AnyPublisher<String?, Never> {
+        reasoningEffortSubject.eraseToAnyPublisher()
+    }
+
+    func promptSent() {
+        modelId = nil
+        modelShortName = nil
+        reasoningEffort = nil
+    }
 }
 
 /// The pick lives on the draft currently in effect, so it stays on its tab (or Prompt Bar) and resets with the draft.
-@MainActor
 final class DraftModelPickStore: DuckAIModelPickStoring {
 
     private let currentDraftStore: () -> DuckAIPromptDraftStoring?

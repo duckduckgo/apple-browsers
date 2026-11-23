@@ -88,7 +88,9 @@ struct AIChatNewChatDefaultResolverTests {
                          overLimit: AIChatNewChatDefault = .unavailable,
                          models: [AIChatModel]? = nil,
                          tier: AIChatUserTier = .free) -> AIChatNewChatSelection? {
-        AIChatNewChatDefaultResolver.resolve(newChatDefault, overLimitDefault: overLimit, models: models ?? self.models, userTier: tier)
+        AIChatNewChatDefaultResolver.resolve([.init(overLimit, origin: .server), .init(newChatDefault, origin: .server)],
+                                             models: models ?? self.models,
+                                             userTier: tier)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -198,6 +200,13 @@ struct AIChatOverLimitNewChatDefaultSnapshotTests {
     @Test("Over-limit default is ignored without a live notice", .timeLimit(.minutes(1)))
     func ignoredWithoutNotice() {
         let value = snapshot(notice: false, newChatDefault: #"{"modelId": "gpt-6-luna"}"#)
+        #expect(value.overLimitNewChatDefault == .unavailable)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Null over-limit default leaves the regular default", .timeLimit(.minutes(1)))
+    func nullLeavesRegularDefault() {
+        let value = snapshot(notice: true, newChatDefault: "null")
         #expect(value.overLimitNewChatDefault == .unavailable)
     }
 }

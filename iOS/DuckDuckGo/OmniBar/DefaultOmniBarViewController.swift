@@ -60,7 +60,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
     private let featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     private var modelPickerController: IPadOmnibarModelPickerController?
-    private var overLimitNewChatDefaultCancellable: AnyCancellable?
     private var reasoningPickerController: IPadOmnibarReasoningPickerController?
     private var toolPickerController: IPadOmnibarToolPickerController?
     private var attachmentController: IPadOmnibarAttachmentController?
@@ -727,22 +726,21 @@ extension DefaultOmniBarViewController {
 extension DefaultOmniBarViewController {
 
     /// Over the usage limit, new chats start on the default web sends in the usage-limits snapshot.
-    private func observeOverLimitNewChatDefault(for controller: IPadOmnibarModelPickerController) {
-        guard controller.startsNewChatsOnDefault,
-              let storageHandler = dependencies.duckAiNativeStorageHandler else { return }
-        let usageLimitsStore = DuckAiUsageLimitsStore(storageHandler: storageHandler, featureFlagger: dependencies.featureFlagger)
-        overLimitNewChatDefaultCancellable = usageLimitsStore.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
-            .sink { [weak controller] in controller?.modelStore.overLimitNewChatDefault = $0 }
+    private var overLimitNewChatDefaults: AnyPublisher<AIChatNewChatDefault, Never>? {
+        dependencies.duckAiNativeStorageHandler.map {
+            DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: dependencies.featureFlagger)
+                .overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
+        }
     }
 
     private func setUpModelPickerIfNeeded() {
         guard dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled else { return }
 
         let controller = IPadOmnibarModelPickerController(
-            startsNewChatsOnDefault: dependencies.featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
+            startsNewChatsOnDefault: dependencies.featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel),
+            overLimitNewChatDefaults: overLimitNewChatDefaults
         )
         modelPickerController = controller
-        observeOverLimitNewChatDefault(for: controller)
 
         // The reasoning and tool pickers share the model picker's store so all chips reflect the
         // same selected model and a single `/models` fetch.
@@ -1075,9 +1073,8 @@ extension DefaultOmniBarViewController {
 
     /// An address-bar prompt always starts a new chat. Image generation picks its own model, so it reports no source.
     private var iPadNewChatModelSourceForSubmitPixel: DuckAINewChatModelSource? {
-        guard let modelPickerController, modelPickerController.startsNewChatsOnDefault,
-              toolPickerController?.selectedTool != .imageGeneration else { return nil }
-        return modelPickerController.modelStore.newChatModelSource(openedWithModelId: nil)
+        guard toolPickerController?.selectedTool != .imageGeneration else { return nil }
+        return modelPickerController?.modelStore.newChatModelSource(openedWithModelId: nil)
     }
 
     private var iPadReasoningModeForSubmitPixel: AIChatReasoningMode? {

@@ -42,10 +42,8 @@ extension AIChatNewChatDefault {
         return .model(id: wire.modelId, reasoningEffort: wire.reasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:)))
     }
 
-    /// Same shape as `/models`, read from an already-parsed JSON object such as the usage-limits snapshot.
-    static func make(from value: Any?) -> AIChatNewChatDefault {
-        guard let value else { return .unavailable }
-        if value is NSNull { return .noDefault }
+    /// The usage-limits snapshot's default, which only ever names a model: without one the regular default applies.
+    static func overLimitDefault(from value: Any?) -> AIChatNewChatDefault {
         guard let object = value as? [String: Any], let modelId = object["modelId"] as? String else { return .unavailable }
         let effort = (object["reasoningEffort"] as? String).flatMap(AIChatReasoningEffort.init(rawValue:))
         return .model(id: modelId, reasoningEffort: effort)
@@ -69,29 +67,44 @@ public struct AIChatNewChatSelection: Equatable, Sendable {
         self.reasoningEffort = reasoningEffort
         self.origin = origin
     }
+
+    /// The default effort applies only while the input is on the default model.
+    public func reasoningEffort(onModelId selectedModelId: String?) -> AIChatReasoningEffort? {
+        selectedModelId == modelId ? reasoningEffort : nil
+    }
 }
 
 public enum AIChatNewChatDefaultResolver {
 
-    /// `overLimitDefault` wins while the user is over their usage limit, if they can use it.
-    public static func resolve(_ newChatDefault: AIChatNewChatDefault,
-                               overLimitDefault: AIChatNewChatDefault = .unavailable,
+    /// One source of a new-chat default, such as the over-limit or the `/models` default.
+    public struct Candidate: Equatable, Sendable {
+        public let newChatDefault: AIChatNewChatDefault
+        public let origin: AIChatNewChatSelection.Origin
+
+        public init(_ newChatDefault: AIChatNewChatDefault, origin: AIChatNewChatSelection.Origin) {
+            self.newChatDefault = newChatDefault
+            self.origin = origin
+        }
+    }
+
+    /// The first candidate the user can use wins, then the local tier default, then the first accessible model.
+    /// A candidate that deliberately has no default skips straight to the first accessible model.
+    public static func resolve(_ candidates: [Candidate],
                                models: [AIChatModel],
                                userTier: AIChatUserTier) -> AIChatNewChatSelection? {
-        if case let .model(id, reasoningEffort) = overLimitDefault,
-           let selection = selection(modelId: id, reasoningEffort: reasoningEffort, origin: .server, in: models) {
-            return selection
+        for candidate in candidates {
+            switch candidate.newChatDefault {
+            case .unavailable:
+                continue
+            case .noDefault:
+                return firstAccessibleSelection(in: models)
+            case let .model(id, reasoningEffort):
+                if let selection = selection(modelId: id, reasoningEffort: reasoningEffort, origin: candidate.origin, in: models) {
+                    return selection
+                }
+            }
         }
-        switch newChatDefault {
-        case .noDefault:
-            return firstAccessibleSelection(in: models)
-        case .unavailable:
-            return localDefaultSelection(for: userTier, in: models) ?? firstAccessibleSelection(in: models)
-        case let .model(id, reasoningEffort):
-            return selection(modelId: id, reasoningEffort: reasoningEffort, origin: .server, in: models)
-                ?? localDefaultSelection(for: userTier, in: models)
-                ?? firstAccessibleSelection(in: models)
-        }
+        return localDefaultSelection(for: userTier, in: models) ?? firstAccessibleSelection(in: models)
     }
 
     /// What a new chat starts on before `/models` has loaded, from the local tier defaults.

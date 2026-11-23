@@ -656,7 +656,7 @@ final class UTIModelStoreTests: XCTestCase {
     func test_newChatDefault_whenOverLimit_startsOnTheOverLimitDefault() async {
         let sut = await makeSUTWithFetchedDefault(.model(id: "gpt-5.6-terra", reasoningEffort: AIChatReasoningEffort.none))
 
-        sut.overLimitNewChatDefault = .model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none)
+        sut.newChatDefaults?.overLimitDefault = .model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none)
 
         XCTAssertEqual(sut.persistedModelId, "gpt-6-luna")
     }
@@ -753,25 +753,30 @@ final class UTIModelStoreTests: XCTestCase {
     }
 
     func test_overLimitNewChatDefault_whenItChanges_notifiesModelsUpdated() {
-        let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true)
+        let overLimitDefaults = CurrentValueSubject<AIChatNewChatDefault, Never>(.unavailable)
+        let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true,
+                          overLimitNewChatDefaults: overLimitDefaults.eraseToAnyPublisher())
         var updateCount = 0
         sut.onModelsUpdated = { updateCount += 1 }
 
-        sut.overLimitNewChatDefault = .model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none)
-        sut.overLimitNewChatDefault = .model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none)
+        overLimitDefaults.send(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none))
+        overLimitDefaults.send(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none))
 
         XCTAssertEqual(updateCount, 1)
     }
 
     // MARK: - Helpers
 
-    private func makeSUT(isUpdatedModelPickerEnabled: Bool, startsNewChatsOnDefault: Bool = false) -> UTIModelStore {
+    private func makeSUT(isUpdatedModelPickerEnabled: Bool,
+                         startsNewChatsOnDefault: Bool = false,
+                         overLimitNewChatDefaults: AnyPublisher<AIChatNewChatDefault, Never>? = nil) -> UTIModelStore {
         UTIModelStore(
             modelsService: modelsService,
             preferences: preferences,
             subscriptionManager: subscriptionManager,
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
-            startsNewChatsOnDefault: startsNewChatsOnDefault
+            startsNewChatsOnDefault: startsNewChatsOnDefault,
+            overLimitNewChatDefaults: overLimitNewChatDefaults
         )
     }
 

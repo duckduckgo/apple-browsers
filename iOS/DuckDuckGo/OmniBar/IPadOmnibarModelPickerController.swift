@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import Subscription
 import UIKit
 
@@ -52,7 +53,8 @@ final class IPadOmnibarModelPickerController {
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
         upsellPresenter: DuckAISubscriptionUpselling? = nil,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
-        startsNewChatsOnDefault: Bool = false
+        startsNewChatsOnDefault: Bool = false,
+        overLimitNewChatDefaults: AnyPublisher<AIChatNewChatDefault, Never>? = nil
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.startsNewChatsOnDefault = startsNewChatsOnDefault
@@ -67,7 +69,8 @@ final class IPadOmnibarModelPickerController {
             preferences: preferences,
             subscriptionManager: subscriptionManager,
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
-            startsNewChatsOnDefault: startsNewChatsOnDefault
+            startsNewChatsOnDefault: startsNewChatsOnDefault,
+            overLimitNewChatDefaults: overLimitNewChatDefaults
         )
         store.onModelsUpdated = { [weak self] in
             self?.onModelsUpdated?()

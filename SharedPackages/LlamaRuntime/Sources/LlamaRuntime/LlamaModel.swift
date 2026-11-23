@@ -186,6 +186,11 @@ public final class LlamaContext: @unchecked Sendable {
         api.llama_free!(pointer)
     }
 
+    /// The last position the context's memory holds, or -1 when it holds nothing.
+    var lastPositionInMemory: Int32 {
+        api.llama_memory_seq_pos_max!(api.llama_get_memory!(pointer), 0)
+    }
+
     /// Reads `prompt`, then writes up to `maxTokens` tokens. Text goes to `onText` as it's written,
     /// never split inside a character.
     /// - Parameter shouldStop: Checked between prompt batches and between tokens. Returning true
@@ -200,7 +205,11 @@ public final class LlamaContext: @unchecked Sendable {
         guard !prompt.isEmpty, prompt.count < size else {
             throw LlamaRuntimeError.contextFull
         }
-        api.llama_memory_clear!(api.llama_get_memory!(pointer), true)
+        let memory = api.llama_get_memory!(pointer)
+        api.llama_memory_clear!(memory, true)
+        // The prompt is page text. Without this it would stay in memory, however the run ended,
+        // until the next run or the model unloads.
+        defer { api.llama_memory_clear!(memory, true) }
 
         var promptTokens = prompt
         var start = 0

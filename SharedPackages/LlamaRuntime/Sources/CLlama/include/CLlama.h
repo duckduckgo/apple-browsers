@@ -46,6 +46,7 @@
     X(llama_n_batch) \
     X(llama_get_memory) \
     X(llama_memory_clear) \
+    X(llama_memory_seq_pos_max) \
     X(llama_chat_apply_template) \
     X(llama_tokenize) \
     X(llama_token_to_piece) \

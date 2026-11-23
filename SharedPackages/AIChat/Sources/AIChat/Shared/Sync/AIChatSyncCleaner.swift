@@ -260,7 +260,6 @@ private actor AIChatSyncState {
     }
 
     func setLastClear(timestamp: Double) {
-        if let lastClear = readLastClear(), lastClear >= timestamp { return }
         try? store.set(timestamp, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
     }
 
@@ -269,7 +268,7 @@ private actor AIChatSyncState {
             return
         }
 
-        setLastClear(timestamp: timestampValue)
+        try? store.set(timestampValue, forKey: AIChatSyncCleaner.Keys.lastClearTimestamp)
         try? store.removeObject(forKey: AIChatSyncCleaner.Keys.autoClearBackgroundTimestamp)
     }
 

@@ -159,26 +159,6 @@ final class AIChatSyncCleanerTests: XCTestCase {
         XCTAssertEqual(storedValue, expectedTimestamp, "Current timestamp from dateProvider should be stored")
     }
 
-    func testWhenAnEarlierClearFinishesLast_ThenSyncStillDeletesUpToTheLaterClear() async {
-        mockFeatureFlagProvider.isAIChatSyncEnabledResult = true
-        mockFeatureFlagProvider.supportsSyncChatsDeletionResult = true
-        mockSync.authState = .active
-        mockSync.isAIChatHistoryEnabled = true
-        sut = makeSUT()
-
-        await sut.recordLocalClear(date: fixedDate)
-        await sut.recordLocalClear(date: fixedDate.addingTimeInterval(-1))
-
-        let storedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp) as? Double
-        XCTAssertEqual(storedValue, fixedDate.timeIntervalSince1970)
-
-        await sut.recordAutoClearBackgroundTimestamp(date: fixedDate.addingTimeInterval(-1))
-        await sut.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
-
-        let promotedValue = try? mockKeyValueStore.object(forKey: AIChatSyncCleaner.Keys.lastClearTimestamp) as? Double
-        XCTAssertEqual(promotedValue, fixedDate.timeIntervalSince1970)
-    }
-
     // MARK: - recordLocalClearFromAutoClearBackgroundTimestampIfPresent Tests
 
     func testGivenNoAutoClearTimestamp_WhenRecordLocalClearFromAutoClear_ThenNothingHappens() async {

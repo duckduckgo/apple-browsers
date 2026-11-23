@@ -8928,11 +8928,8 @@ extension MainViewController: TabDelegate {
     }
 
     @MainActor
-    func tabPrepareContextualFireChatConfirmation(_ tab: TabViewController,
-                                                  onDeleteAllChatsSucceeded: @escaping () -> Void) async -> FireChatConfirmationPreparation? {
-        await prepareFireChatConfirmation(for: tab.tabModel,
-                                          context: .contextual,
-                                          onDeleteAllChatsSucceeded: onDeleteAllChatsSucceeded)
+    func tabPrepareContextualFireChatConfirmation(_ tab: TabViewController) async -> FireChatConfirmationPreparation? {
+        await prepareFireChatConfirmation(for: tab.tabModel, context: .contextual)
     }
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String) {
@@ -9800,7 +9797,7 @@ extension MainViewController: FireExecutorDelegate {
         case .normalMode:
             PixelKit.fire(Pixel.Event.normalModeBurnExecuted, frequency: .dailyAndCount, options: .parameters(params))
         case .allChats:
-            break
+            pixelFiring?.fire(FireButtonDeleteAllChatsPixel.executed(burnParameters: params), frequency: .dailyAndCount)
         }
     }
     

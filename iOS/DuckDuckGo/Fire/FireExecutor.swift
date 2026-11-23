@@ -104,8 +104,6 @@ protocol FireExecuting {
     /// True for the duration of a `burn(...)` call. Read it to avoid re-entering the executor from a delegate callback.
     var burnInProgress: Bool { get }
 
-    @MainActor var fireModeDataStoreID: UUID? { get }
-
     /// Burn a single Duck.ai chat by id. Peer to `burn(request:)` so the chat-history
     /// sheet's swipe-to-delete can stay on the same execution path as fire-mode clears.
     @discardableResult
@@ -122,15 +120,11 @@ protocol FireExecuting {
     /// "Delete All" stays off `burn(request:)` (no tab/data orchestration, no delegate).
     @discardableResult
     @MainActor
-    func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error>
+    func burnAllChats(isFireMode: Bool) async -> Result<Void, Error>
 
     /// Flush a pending chat deletion to sync now, so it isn't re-pulled on the next sync cycle.
     @MainActor
     func scheduleSync()
-}
-
-extension FireExecuting {
-    @MainActor var fireModeDataStoreID: UUID? { nil }
 }
 
 class FireExecutor: FireExecuting {
@@ -158,7 +152,6 @@ class FireExecutor: FireExecuting {
 
     weak var delegate: FireExecutorDelegate?
     private(set) var burnInProgress = false
-    @MainActor var fireModeDataStoreID: UUID? { idManager.currentFireModeID }
     private let dataStoreWarmupWorker: DataStoreWarmupWorker
     private let backgroundTask: FireBackgroundTasking
     private let historyCleanerProvider: HistoryCleanerProvider
@@ -457,12 +450,12 @@ class FireExecutor: FireExecuting {
 
     @discardableResult
     @MainActor
-    func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error> {
+    func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
         let browserToolsToken = isFireMode ? nil : beginBrowserToolsClearing(.all)
         defer {
             if let browserToolsToken { tabManager.browserToolsService.endClearing(browserToolsToken) }
         }
-        let result = await aiChatDeleter.deleteAllChats(isFireMode: isFireMode, source: source)
+        let result = await aiChatDeleter.deleteAllChats(isFireMode: isFireMode)
         if case .success = result, let browserToolsToken { tabManager.browserToolsService.didClear(browserToolsToken) }
         return await clearAppSwitcherSnapshotsIfNeeded(after: result)
     }
@@ -659,18 +652,29 @@ class FireExecutor: FireExecuting {
             result = await burnTabAIHistory(tabViewModel: viewModel, browserToolsToken: browserToolsToken)
         case .fireMode:
             if !request.options.contains(.data) { // Invalidating the fire mode datastore makes deleting chats redundant.
-                result = await burnFireModeAIHistory(trigger: request.trigger, applicationState: applicationState)
+                result = await burnFireModeAIHistory(trigger: request.trigger,
+                                                     source: AIChatDeletePixelSource(trigger: request.trigger),
+                                                     applicationState: applicationState)
             } else {
                 result = .success(())
             }
         case .normalMode:
-            result = await burnNormalModeAIHistory(trigger: request.trigger, applicationState: applicationState, browserToolsToken: browserToolsToken)
+            result = await burnNormalModeAIHistory(trigger: request.trigger,
+                                                   source: AIChatDeletePixelSource(trigger: request.trigger),
+                                                   applicationState: applicationState,
+                                                   browserToolsToken: browserToolsToken)
         case .all:
             result = await burnAllAIHistory(trigger: request.trigger, options: request.options, applicationState: applicationState, browserToolsToken: browserToolsToken)
         case .allChats(.normal):
-            result = await burnNormalModeAIHistory(trigger: request.trigger, applicationState: applicationState, browserToolsToken: browserToolsToken)
+            result = await burnNormalModeAIHistory(trigger: request.trigger,
+                                                   source: .fireButtonAll,
+                                                   applicationState: applicationState,
+                                                   browserToolsToken: browserToolsToken)
         case .allChats(.fire):
-            result = await burnFireModeAIHistory(trigger: request.trigger, applicationState: applicationState)
+            result = await burnFireModeAIHistory(trigger: request.trigger, source: .fireButtonAll, applicationState: applicationState)
+        }
+        if case .allChats(let mode) = request.scope, case .success = result {
+            tabManager.reloadOpenChats(in: mode)
         }
         dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }
@@ -680,9 +684,10 @@ class FireExecutor: FireExecuting {
                                   options: FireRequest.Options,
                                   applicationState: DataStoreWarmup.ApplicationState,
                                   browserToolsToken: AIChatBrowserToolsClearingToken?) async -> Result<Void, Error> {
-        async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger, applicationState: applicationState, browserToolsToken: browserToolsToken)
+        let source = AIChatDeletePixelSource(trigger: trigger)
+        async let normalBurnTask = burnNormalModeAIHistory(trigger: trigger, source: source, applicationState: applicationState, browserToolsToken: browserToolsToken)
         let shouldBurnFireModeChats = !options.contains(.data) // Invalidating the fire mode datastore makes deleting chats redundant.
-        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory(trigger: trigger, applicationState: applicationState) : .success(())
+        async let fireBurnTask = shouldBurnFireModeChats ? await burnFireModeAIHistory(trigger: trigger, source: source, applicationState: applicationState) : .success(())
         let (normalResult, fireResult) = await (normalBurnTask, fireBurnTask)
         if case .failure = normalResult { return normalResult }
         if case .failure = fireResult { return fireResult }
@@ -691,6 +696,7 @@ class FireExecutor: FireExecuting {
 
     @MainActor
     private func burnNormalModeAIHistory(trigger: FireRequest.Trigger,
+                                         source: AIChatDeletePixelSource,
                                          applicationState: DataStoreWarmup.ApplicationState,
                                          browserToolsToken: AIChatBrowserToolsClearingToken?) async -> Result<Void, Error> {
         // Right after launch the store can fail to respond until it's warmed up, even when no website data is burned.
@@ -707,10 +713,10 @@ class FireExecutor: FireExecuting {
         case .success:
             if let browserToolsToken { tabManager.browserToolsService.didClear(browserToolsToken, target: .all) }
             await recordAIChatsClearDate(trigger: trigger)
-            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: AIChatDeletePixelSource(trigger: trigger))))
+            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: source)))
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear Duck.ai chat history: \(error.localizedDescription)")
-            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: AIChatDeletePixelSource(trigger: trigger))))
+            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: source)))
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()
@@ -721,6 +727,7 @@ class FireExecutor: FireExecuting {
 
     @MainActor
     private func burnFireModeAIHistory(trigger: FireRequest.Trigger,
+                                       source: AIChatDeletePixelSource,
                                        applicationState: DataStoreWarmup.ApplicationState) async -> Result<Void, Error> {
         guard fireModeCapability.isFireModeEnabled else {
             return .success(())
@@ -737,10 +744,10 @@ class FireExecutor: FireExecuting {
         let result = await cleaner.cleanAIChatHistory()
         switch result {
         case .success:
-            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: AIChatDeletePixelSource(trigger: trigger))))
+            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteSuccessful, frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: source)))
         case .failure(let error):
             Logger.aiChat.debug("Failed to clear fire mode Duck.ai chat history: \(error.localizedDescription)")
-            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: AIChatDeletePixelSource(trigger: trigger))))
+            pixelFiring?.fire(Pixel.Event.aiChatHistoryDeleteFailed.withError(error), frequency: .dailyAndCount, options: .parameters(deletePixelParameters(of: cleaner, source: source)))
 
             if let userScriptError = error as? UserScriptError {
                 userScriptError.fireLoadJSFailedPixelIfNeeded()

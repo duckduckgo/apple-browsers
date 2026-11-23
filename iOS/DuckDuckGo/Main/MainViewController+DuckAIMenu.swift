@@ -27,6 +27,8 @@ struct FireChatConfirmationPreparation {
     let deleteAllChats: ScopedFireConfirmationViewModel.DeleteAllChatsOption?
     let context: FireButtonDeleteAllChatsPixel.Context
     let instrumentation: FireButtonDeleteAllChatsInstrumentation
+    /// Runs a confirmed Fire request through the Fire button, for sheets that `MainViewController` doesn't present.
+    let burn: @MainActor (FireRequest) -> Void
 
     /// Fires the shown pixel when the presented sheet offers Delete All Chats.
     func reportShownIfOffered(by viewModel: ScopedFireConfirmationViewModel) {
@@ -43,7 +45,8 @@ extension MainViewController {
             present(FireChatConfirmationPreparation(browsingMode: tabManager.currentBrowsingMode,
                                                     deleteAllChats: nil,
                                                     context: .tab,
-                                                    instrumentation: FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixelFiring)))
+                                                    instrumentation: FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixelFiring),
+                                                    burn: { [weak self] in self?.forgetAllWithAnimation(request: $0) }))
             return
         }
         Task { @MainActor [weak self] in
@@ -64,8 +67,7 @@ extension MainViewController {
     }
 
     func prepareFireChatConfirmation(for tab: Tab?,
-                                     context: FireButtonDeleteAllChatsPixel.Context,
-                                     onDeleteAllChatsSucceeded: (() -> Void)? = nil) async -> FireChatConfirmationPreparation? {
+                                     context: FireButtonDeleteAllChatsPixel.Context) async -> FireChatConfirmationPreparation? {
         let browsingMode = tab?.mode ?? tabManager.currentBrowsingMode
         let isFireMode = browsingMode == .fire
         let instrumentation = FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixelFiring)
@@ -82,13 +84,8 @@ extension MainViewController {
             if isDeleteAllChatsEligible(for: tab, context: context) {
                 switch featureFlagger.isFeatureOn(.aiChatNativeStorage) ? result : .failure(.storageUnavailable) {
                 case .success(let count) where count > 0:
-                    let layout = FireButtonDeleteAllChatsPixel.Layout(chatCount: count)
                     deleteAllChats = .init(chatCount: count,
-                                           isChatSyncEnabled: !isFireMode && aiChatSyncCleaner?.canUseAIChatSyncDelete == true,
-                                           onDelete: { [weak self] in
-                        instrumentation.executed(layout: layout, browsingMode: browsingMode, context: context)
-                        self?.burnAllChats(isFireMode: isFireMode, source: .fireButtonAll, onSuccess: onDeleteAllChatsSucceeded)
-                    })
+                                           isChatSyncEnabled: !isFireMode && aiChatSyncCleaner?.canUseAIChatSyncDelete == true)
                 case .success:
                     break
                 case .failure(let reason):
@@ -99,7 +96,8 @@ extension MainViewController {
         return FireChatConfirmationPreparation(browsingMode: browsingMode,
                                                deleteAllChats: deleteAllChats,
                                                context: context,
-                                               instrumentation: instrumentation)
+                                               instrumentation: instrumentation,
+                                               burn: { [weak self] in self?.forgetAllWithAnimation(request: $0) })
     }
 
     private static let mainMenuRecentChatsLimit = 8
@@ -129,7 +127,7 @@ extension MainViewController {
     }
 
     /// `nil` when native chat storage is unavailable for that browsing mode.
-    func mainMenuNativeChats(isFireMode: Bool) async -> [DuckAiChat]? {
+    private func mainMenuNativeChats(isFireMode: Bool) async -> [DuckAiChat]? {
         let result = await NativeChatsReader.read(storageHandler: isFireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler,
                                                   isStorageEnabled: featureFlagger.isFeatureOn(.aiChatNativeStorage))
         return try? result.get()
@@ -249,7 +247,7 @@ extension MainViewController {
             tabViewModel: nil,
             pixelSource: .browsing,
             fireContext: .deleteChats(count: chatCount, onDelete: { [weak self] in
-                self?.dismiss(animated: true) { self?.burnAllChats(isFireMode: isFireMode, source: .deleteAll) }
+                self?.dismiss(animated: true) { self?.deleteAllChats(isFireMode: isFireMode) }
             }),
             browsingMode: isFireMode ? .fire : .normal,
             onConfirm: { _ in },
@@ -257,62 +255,28 @@ extension MainViewController {
         )
     }
 
-    private func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource, onSuccess: (() -> Void)? = nil) {
-        let fireExecutor = self.fireExecutor
+    /// With `fireButtonDeleteAllChats` on, deletes the chats through the Fire button like Delete All Chats in the Fire confirmation.
+    func deleteAllChats(isFireMode: Bool) {
         guard featureFlagger.isFeatureOn(.fireButtonDeleteAllChats) else {
-            fireButtonAnimator.animate { [weak self] in
-                guard case .success = await fireExecutor.burnAllChats(isFireMode: isFireMode, source: source) else { return }
-                self?.reloadOpenChats(isFireMode: isFireMode)
-                onSuccess?()
-                guard !isFireMode else { return }
-                // Flushes the deletion to sync so the chats aren't pulled back.
-                fireExecutor.scheduleSync()
-            } onTransitionCompleted: {
-            } completion: {
-            }
+            burnAllChats(isFireMode: isFireMode)
             return
         }
+        forgetAllWithAnimation(request: FireRequest(options: [.tabs, .aiChats],
+                                                    trigger: .manualFire,
+                                                    scope: .allChats(isFireMode ? .fire : .normal),
+                                                    source: .browsing))
+    }
 
-        // Closing the last Fire Tab replaces the Fire data store; never delete from or refresh a replaced one.
-        let fireModeDataStoreID = isFireMode ? fireExecutor.fireModeDataStoreID : nil
-        func isOriginalStore() -> Bool {
-            !isFireMode || (fireModeDataStoreID != nil && fireModeDataStoreID == fireExecutor.fireModeDataStoreID)
-        }
-
+    private func burnAllChats(isFireMode: Bool) {
+        let fireExecutor = self.fireExecutor
         fireButtonAnimator.animate { [weak self] in
-            guard isOriginalStore(),
-                  case .success = await fireExecutor.burnAllChats(isFireMode: isFireMode, source: source) else {
-                self?.presentDeleteAllChatsFailure()
-                return
-            }
-            guard isOriginalStore() else { return }
-            self?.reloadOpenChats(isFireMode: isFireMode)
-            if !isFireMode {
-                // Flushes the deletion to sync so the chats aren't pulled back.
-                fireExecutor.scheduleSync()
-            }
-            onSuccess?()
+            guard case .success = await fireExecutor.burnAllChats(isFireMode: isFireMode) else { return }
+            self?.tabManager.reloadOpenChats(in: isFireMode ? .fire : .normal)
+            guard !isFireMode else { return }
+            // Flushes the deletion to sync so the chats aren't pulled back.
+            fireExecutor.scheduleSync()
         } onTransitionCompleted: {
         } completion: {
-        }
-    }
-
-    func presentDeleteAllChatsFailure() {
-        let presenter = topPresentedViewController
-        guard presenter.viewIfLoaded?.window?.isKeyWindow == true,
-              !presenter.isBeingDismissed, !(presenter is UIAlertController) else { return }
-
-        let alert = UIAlertController(title: UserText.deleteAllChatsFailureTitle, message: nil, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: UserText.actionOK, style: .default))
-        presenter.present(alert, animated: true)
-    }
-
-    /// Reloads loaded Duck.ai tabs and Duck.ai sidebars so they stop showing deleted chats.
-    private func reloadOpenChats(isFireMode: Bool) {
-        for tab in tabManager.tabsModel(for: isFireMode ? .fire : .normal).tabs {
-            guard let controller = tabManager.controller(for: tab) else { continue }
-            controller.reloadFullModeAIChatIfNeeded()
-            controller.reloadContextualAIChatIfNeeded()
         }
     }
 }

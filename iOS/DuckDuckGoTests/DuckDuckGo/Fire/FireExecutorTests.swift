@@ -77,7 +77,6 @@ final class FireExecutorTests: XCTestCase {
     
     class MockHistoryCleaner: HistoryCleaning {
         var cleanAIChatHistoryResult: Result<Void, Error> = .success(())
-        var isNativeStorageAvailable = true
         private(set) var cleanAIChatHistoryCallCount = 0
         
         var deleteAIChatResult: Result<Void, Error> = .success(())
@@ -93,11 +92,6 @@ final class FireExecutorTests: XCTestCase {
             cleanAIChatHistoryCallCount += 1
             onCleanAIChatHistory?()
             return cleanAIChatHistoryResult
-        }
-
-        func cleanAIChatHistoryRequiringNativeStorage() async -> Result<Void, Error> {
-            guard isNativeStorageAvailable else { return .failure(ChatHistoryError.storageUnavailable) }
-            return await cleanAIChatHistory()
         }
         
         func deleteAIChat(chatID: String) async -> Result<Void, Error> {
@@ -536,7 +530,7 @@ final class FireExecutorTests: XCTestCase {
         })
         let firstBurn = Task { await first.burnChat(chatID: "chat", isFireMode: false) }
         await fulfillment(of: [firstSnapshots], timeout: 2)
-        let secondBurn = Task { await second.burnAllChats(isFireMode: false, source: .deleteAll) }
+        let secondBurn = Task { await second.burnAllChats(isFireMode: false) }
         await fulfillment(of: [secondSnapshots], timeout: 2)
         finishFirst?.resume()
         _ = await firstBurn.value
@@ -615,7 +609,7 @@ final class FireExecutorTests: XCTestCase {
             switch operation {
             case "single": result = await executor.burnChat(chatID: "chat", isFireMode: false)
             case "multiple": result = await executor.burnChats(chatIDs: ["chat"], isFireMode: false)
-            default: result = await executor.burnAllChats(isFireMode: false, source: .deleteAll)
+            default: result = await executor.burnAllChats(isFireMode: false)
             }
             if case .failure(let error) = result { XCTFail("Deletion failed: \(error)") }
             XCTAssertTrue(snapshotsReached)
@@ -671,7 +665,7 @@ final class FireExecutorTests: XCTestCase {
             switch operation {
             case "single": result = await executor.burnChat(chatID: "chat", isFireMode: true)
             case "multiple": result = await executor.burnChats(chatIDs: ["chat"], isFireMode: true)
-            default: result = await executor.burnAllChats(isFireMode: true, source: .deleteAll)
+            default: result = await executor.burnAllChats(isFireMode: true)
             }
             if case .failure(let error) = result { XCTFail("Deletion failed: \(error)") }
             XCTAssertTrue(snapshotsReached)
@@ -713,7 +707,7 @@ final class FireExecutorTests: XCTestCase {
 
         _ = await executor.burnChat(chatID: "chat", isFireMode: false)
         _ = await executor.burnChats(chatIDs: ["chat-1", "chat-2"], isFireMode: false)
-        _ = await executor.burnAllChats(isFireMode: false, source: .deleteAll)
+        _ = await executor.burnAllChats(isFireMode: false)
 
         XCTAssertEqual(cleanupCallCount, 3)
     }
@@ -1318,57 +1312,6 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertNil(call.additionalParameters?["first_attempt_error_code"])
     }
 
-    func testDirectDeleteAllRetainsTheSourceInSuccessAndFailureForEachMode() async throws {
-        let sources: [(AIChatDeletePixelSource, String)] = [(.fireButtonAll, "fire_button_all"), (.deleteAll, "delete_all")]
-        for (source, expectedSource) in sources {
-            for isFireMode in [false, true] {
-                if isFireMode, #unavailable(iOS 17) { continue }
-                for succeeds in [false, true] {
-                    let initialPixelCount = pixelKitMock.actualFireCalls.count
-                    let syncCount = mockAIChatSyncCleaner.recordLocalClearDates.count
-                    mockHistoryCleaner.cleanAIChatHistoryResult = succeeds ? .success(()) : .failure(NSError(domain: "test", code: 1))
-                    var clearedSnapshots = false
-                    let executor = makeFireExecutor(clearAppSwitcherSnapshots: { clearedSnapshots = true })
-                    let result = await executor.burnAllChats(isFireMode: isFireMode, source: source)
-                    if !succeeds {
-                        XCTAssertThrowsError(try result.get())
-                        XCTAssertFalse(clearedSnapshots)
-                    }
-                    let name = succeeds ? Pixel.Event.aiChatHistoryDeleteSuccessful.name : Pixel.Event.aiChatHistoryDeleteFailed.name
-                    let call = try XCTUnwrap(pixelKitMock.actualFireCalls.dropFirst(initialPixelCount).first { $0.pixel.name == name })
-                    XCTAssertEqual(call.additionalParameters?["source"], expectedSource)
-                    XCTAssertEqual(call.frequency, .dailyAndCount)
-                    XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, isFireMode)
-                    XCTAssertEqual(mockAIChatSyncCleaner.recordLocalClearDates.count, syncCount + (succeeds && !isFireMode ? 1 : 0))
-                }
-            }
-        }
-    }
-
-    func testWhenFireDeleteAllCannotUseNativeStorageThenNoSyncDeletionIsRecorded() async {
-        mockHistoryCleaner.isNativeStorageAvailable = false
-        let executor = makeFireExecutor()
-
-        let result = await executor.burnAllChats(isFireMode: false, source: .fireButtonAll)
-
-        XCTAssertThrowsError(try result.get()) { error in
-            XCTAssertEqual(error as? ChatHistoryError, .storageUnavailable)
-        }
-        XCTAssertTrue(mockAIChatSyncCleaner.recordLocalClearDates.isEmpty)
-    }
-
-    func testDeleteAllChatsOnlySyncsDeletionUpToWhenTheLocalClearStarted() async throws {
-        var clearStarted: Date?
-        mockHistoryCleaner.onCleanAIChatHistory = { clearStarted = Date() }
-        let executor = makeFireExecutor()
-
-        let result = await executor.burnAllChats(isFireMode: false, source: .fireButtonAll)
-
-        _ = try result.get()
-        let cutoff = try XCTUnwrap(mockAIChatSyncCleaner.recordLocalClearDates.first ?? nil)
-        XCTAssertLessThanOrEqual(cutoff, try XCTUnwrap(clearStarted))
-    }
-
     func testWhenAIChatsAreBurnedThenWideEventRecordsTheWarmupWait() async throws {
         let executor = makeFireExecutor()
 
@@ -1783,6 +1726,19 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, true)
         XCTAssertTrue(mockAIChatSyncCleaner.recordLocalClearDates.isEmpty, "Fire-mode chats never sync")
         XCTAssertFalse(mockDelegate.willStartBurningDataCalled, "Deleting chats clears no website data")
+    }
+
+    func testWhenBurningAllChatsThenDeletePixelsReportTheFireButtonAllSource() async throws {
+        let executor = makeFireExecutor()
+        await executor.burn(request: makeFireRequest(options: [.tabs, .aiChats], scope: .allChats(.normal)), applicationState: .unknown)
+
+        mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "test", code: 1))
+        await executor.burn(request: makeFireRequest(options: [.tabs, .aiChats], scope: .allChats(.normal)), applicationState: .unknown)
+
+        let success = try XCTUnwrap(pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.aiChatHistoryDeleteSuccessful.name })
+        let failure = try XCTUnwrap(pixelKitMock.actualFireCalls.first { $0.pixel.name == Pixel.Event.aiChatHistoryDeleteFailed.name })
+        XCTAssertEqual(success.additionalParameters?["source"], "fire_button_all")
+        XCTAssertEqual(failure.additionalParameters?["source"], "fire_button_all")
     }
 }
 

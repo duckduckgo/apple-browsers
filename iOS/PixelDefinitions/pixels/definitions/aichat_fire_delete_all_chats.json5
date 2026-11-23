@@ -21,26 +21,11 @@
         ]
     },
     "aichat_fire_delete-all-chats_executed": {
-        "description": "The user chose Delete All Chats in the Fire confirmation for a Duck.ai tab or contextual chat.",
+        "description": "The Fire button started deleting every saved Duck.ai chat of one browsing mode from a Delete All Chats action. Fired with the other Fire burn pixels.",
         "owners": ["bkunat"],
-        "triggers": ["user_interaction"],
+        "triggers": ["user_submitted"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            "browsingMode",
-            {
-                "key": "layout",
-                "type": "string",
-                "description": "Whether Delete All Chats appears alongside Delete This Chat or alone.",
-                "enum": ["with_this_chat", "all_chats_only"]
-            },
-            {
-                "key": "context",
-                "type": "string",
-                "description": "Whether the Fire confirmation was opened in a Duck.ai tab or contextual chat.",
-                "enum": ["tab", "contextual"]
-            }
-        ]
+        "parameters": ["appVersion", "burnSource", "tabType", "browsingMode"]
     },
     "aichat_fire_delete-all-chats_count-unavailable": {
         "description": "An eligible Duck.ai Fire confirmation could not read a reliable native chat count and offers only the single-chat action.",

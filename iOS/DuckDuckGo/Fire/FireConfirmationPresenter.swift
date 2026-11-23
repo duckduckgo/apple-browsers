@@ -108,9 +108,7 @@ struct FireConfirmationPresenter {
                                                         fireContext: fireContext,
                                                         isSingleTab: isSingleTab,
                                                         browsingMode: browsingMode,
-                                                        deleteAllChats: deleteAllChats?.wrappingDelete { [weak viewController] action in
-                                                            viewController?.dismiss(animated: true, completion: action)
-                                                        },
+                                                        deleteAllChats: deleteAllChats,
                                                         onConfirm: { [weak viewController] fireOptions in
                                                             viewController?.dismiss(animated: true) {
                                                                 onConfirm(fireOptions)

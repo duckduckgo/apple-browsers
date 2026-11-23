@@ -203,8 +203,7 @@ protocol TabDelegate: AnyObject {
     func tabDidRequestFireButtonPulse(tab: TabViewController)
 
     @MainActor
-    func tabPrepareContextualFireChatConfirmation(_ tab: TabViewController,
-                                                  onDeleteAllChatsSucceeded: @escaping () -> Void) async -> FireChatConfirmationPreparation?
+    func tabPrepareContextualFireChatConfirmation(_ tab: TabViewController) async -> FireChatConfirmationPreparation?
 
     func tabDidRequestDeleteContextualChat(tab: TabViewController, chatID: String)
 
@@ -286,8 +285,7 @@ extension TabDelegate {
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {}
 
     @MainActor
-    func tabPrepareContextualFireChatConfirmation(_ tab: TabViewController,
-                                                  onDeleteAllChatsSucceeded: @escaping () -> Void) async -> FireChatConfirmationPreparation? { nil }
+    func tabPrepareContextualFireChatConfirmation(_ tab: TabViewController) async -> FireChatConfirmationPreparation? { nil }
 
     func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool) {}
 

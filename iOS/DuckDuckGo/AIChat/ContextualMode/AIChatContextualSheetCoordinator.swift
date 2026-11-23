@@ -75,8 +75,7 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     @MainActor
     func aiChatContextualSheetCoordinatorPrepareFireChatConfirmation(
-        _ coordinator: AIChatContextualSheetCoordinator,
-        onDeleteAllChatsSucceeded: @escaping () -> Void
+        _ coordinator: AIChatContextualSheetCoordinator
     ) async -> FireChatConfirmationPreparation?
 
     /// Called when the user confirmed deletion of the contextual chat, providing the chat ID to delete server-side.
@@ -1718,10 +1717,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         _ viewController: AIChatContextualSheetViewController
     ) async -> FireChatConfirmationPreparation? {
         guard isSheetPresented, sheetViewController === viewController, parkedSheetViewController == nil else { return nil }
-        let preparation = await delegate?.aiChatContextualSheetCoordinatorPrepareFireChatConfirmation(self) { [weak self, weak viewController] in
-            guard let self, let viewController, isSheetPresented, sheetViewController === viewController else { return }
-            dismissSurface(of: viewController)
-        }
+        let preparation = await delegate?.aiChatContextualSheetCoordinatorPrepareFireChatConfirmation(self)
         guard isSheetPresented, sheetViewController === viewController, parkedSheetViewController == nil else { return nil }
         return preparation
     }

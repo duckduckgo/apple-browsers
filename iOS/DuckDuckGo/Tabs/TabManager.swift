@@ -58,6 +58,18 @@ protocol TabManaging {
     @MainActor func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource)
 }
 
+extension TabManaging {
+    /// Reloads loaded Duck.ai tabs and Duck.ai sidebars so they stop showing deleted chats.
+    @MainActor
+    func reloadOpenChats(in mode: BrowsingMode) {
+        for tab in tabsModel(for: mode).tabs {
+            guard let controller = controller(for: tab) else { continue }
+            controller.reloadFullModeAIChatIfNeeded()
+            controller.reloadContextualAIChatIfNeeded()
+        }
+    }
+}
+
 enum FireModeSwitchSource: String {
     case tabSelection = "tab_selection"
     case longPressTabsIcon = "long_press_tabs_icon"

@@ -845,7 +845,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
             return .success(())
         }
         @discardableResult
-        func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error> {
+        func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
             burnedAllChatsIsFireMode.append(isFireMode)
             return .success(())
         }

@@ -927,10 +927,15 @@ private extension AIChatContextualSheetViewController {
             dataClearingCapability: DataClearingCapability.create(using: featureFlagger),
             featureFlagger: featureFlagger,
             browsingMode: preparation?.browsingMode ?? .normal,
-            deleteAllChats: preparation?.deleteAllChats?.wrappingDelete { [weak self] action in
-                self?.dismissFireConfirmation(completion: action)
+            deleteAllChats: preparation?.deleteAllChats,
+            onConfirm: { [weak self] request in
+                // Delete All Chats: close this sheet and run the request like the Fire button does.
+                self?.dismissFireConfirmation { [weak self] in
+                    guard let self else { return }
+                    delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
+                    preparation?.burn(request)
+                }
             },
-            onConfirm: { _ in },
             onCancel: { [weak self] in
                 self?.dismissFireConfirmation()
             }

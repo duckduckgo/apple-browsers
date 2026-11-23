@@ -139,35 +139,18 @@ final class HistoryCleanerTests: XCTestCase {
 
     // MARK: - cleanAIChatHistory (all chats)
 
-    func testWhenNativeStorageIsRequiredAndAvailableThenAllChatsAndFilesAreDeleted() async {
+    func testWhenStorageFlagEnabledAndMigrationDoneThenCleanAIChatHistoryDeletesAllChatsAndFilesFromLocalStorage() async {
         mockFlagProvider.isNativeDataStorageEnabledResult = true
         mockHandler.stubbedIsMigrationDone = true
         let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
 
-        let result = await sut.cleanAIChatHistoryRequiringNativeStorage()
+        let result = await sut.cleanAIChatHistory()
 
         XCTAssertEqual(mockHandler.deleteAllChatsCallCount, 1)
         XCTAssertEqual(mockHandler.deleteAllFilesCallCount, 1)
         XCTAssertEqual(mockHandler.deleteChatCallCount, 0, "Single-chat delete should not be called for bulk clear")
         XCTAssertEqual(mockHandler.deleteFileCallCount, 0, "Per-file delete should not be called for bulk clear")
-        XCTAssertEqual(mockJSCleaner.clearJSDataCalls, [nil])
         XCTAssertNotNil(try? result.get(), "Expected success result, got \(result)")
-    }
-
-    func testWhenTheStorageFlagTurnsOffThenRequiredNativeClearFailsBeforeClearingJSData() async {
-        mockFlagProvider.isNativeDataStorageEnabledResult = true
-        mockHandler.stubbedIsMigrationDone = true
-        let sut = makeSUT(nativeStorageHandler: mockHandler, featureFlagProvider: mockFlagProvider)
-        mockFlagProvider.isNativeDataStorageEnabledResult = false
-
-        let result = await sut.cleanAIChatHistoryRequiringNativeStorage()
-
-        XCTAssertThrowsError(try result.get()) { error in
-            XCTAssertEqual(error as? ChatHistoryError, .storageUnavailable)
-        }
-        XCTAssertEqual(mockHandler.deleteAllChatsCallCount, 0)
-        XCTAssertEqual(mockHandler.deleteAllFilesCallCount, 0)
-        XCTAssertTrue(mockJSCleaner.clearJSDataCalls.isEmpty)
     }
 
     func testWhenStorageFlagEnabledAndAccessFlagDisabledThenCleanAIChatHistoryStillUsesLocalStorage() async {

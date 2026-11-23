@@ -162,23 +162,6 @@ final class FireButtonDeleteAllChatsTests: XCTestCase {
         XCTAssertTrue(calls.allSatisfy(\.includeAppVersionParameter))
     }
 
-    func testExecutedFiresDailyAndCountForEachContextWithItsLayoutAndMode() {
-        let pixels = PixelKitMock()
-        let instrumentation = FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixels)
-
-        instrumentation.executed(layout: .allChatsOnly, browsingMode: .normal, context: .tab)
-        instrumentation.executed(layout: .withThisChat, browsingMode: .fire, context: .contextual)
-
-        let calls = pixels.actualFireCalls
-        XCTAssertEqual(calls.map(\.pixel.name), ["aichat_fire_delete-all-chats_executed", "aichat_fire_delete-all-chats_executed"])
-        XCTAssertEqual(calls.map(\.frequency), [.dailyAndCount, .dailyAndCount])
-        XCTAssertEqual(calls.map(\.pixel.parameters), [
-            ["layout": "all_chats_only", "browsing_mode": "normal", "context": "tab"],
-            ["layout": "with_this_chat", "browsing_mode": "fire", "context": "contextual"]
-        ])
-        XCTAssertTrue(calls.allSatisfy(\.includeAppVersionParameter))
-    }
-
     func testCountUnavailableHasOnlyTheBoundedReasonAndNoErrorParameters() {
         let pixels = PixelKitMock()
         let instrumentation = FireButtonDeleteAllChatsInstrumentation(pixelFiring: pixels)

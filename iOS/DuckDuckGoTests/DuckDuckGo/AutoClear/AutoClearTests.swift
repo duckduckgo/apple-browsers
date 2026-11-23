@@ -52,7 +52,7 @@ class AutoClearTests: XCTestCase {
             .success(())
         }
 
-        func burnAllChats(isFireMode: Bool, source: AIChatDeletePixelSource) async -> Result<Void, Error> {
+        func burnAllChats(isFireMode: Bool) async -> Result<Void, Error> {
             .success(())
         }
 

@@ -32,10 +32,6 @@ struct FireButtonDeleteAllChatsInstrumentation {
         pixelFiring?.fire(FireButtonDeleteAllChatsPixel.shown(layout: layout, context: context))
     }
 
-    func executed(layout: FireButtonDeleteAllChatsPixel.Layout, browsingMode: BrowsingMode, context: FireButtonDeleteAllChatsPixel.Context) {
-        pixelFiring?.fire(FireButtonDeleteAllChatsPixel.executed(layout: layout, browsingMode: browsingMode, context: context), frequency: .dailyAndCount)
-    }
-
     func countUnavailable(reason: NativeChatsReadFailure) {
         pixelFiring?.fire(FireButtonDeleteAllChatsPixel.countUnavailable(reason: reason), frequency: .dailyAndCount)
     }
@@ -57,7 +53,8 @@ enum FireButtonDeleteAllChatsPixel: PixelKit.Event {
     }
 
     case shown(layout: Layout, context: Context)
-    case executed(layout: Layout, browsingMode: BrowsingMode, context: Context)
+    /// Fired with the other Fire burn pixels, so it carries their `source`, `tabType` and `browsing_mode` parameters.
+    case executed(burnParameters: [String: String])
     case countUnavailable(reason: NativeChatsReadFailure)
 
     var standardParameters: [PixelKitStandardParameter]? { nil }
@@ -75,8 +72,8 @@ enum FireButtonDeleteAllChatsPixel: PixelKit.Event {
         switch self {
         case .shown(let layout, let context):
             return ["layout": layout.rawValue, "context": context.rawValue]
-        case .executed(let layout, let browsingMode, let context):
-            return ["layout": layout.rawValue, PixelParameters.browsingMode: browsingMode.pixelParamValue, "context": context.rawValue]
+        case .executed(let burnParameters):
+            return burnParameters
         case .countUnavailable(let reason):
             return ["reason": reason.rawValue]
         }

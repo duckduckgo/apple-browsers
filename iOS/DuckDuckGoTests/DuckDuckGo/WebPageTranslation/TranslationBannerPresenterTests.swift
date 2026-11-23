@@ -25,7 +25,7 @@ import XCTest
 @MainActor
 final class TranslationBannerPresenterTests: XCTestCase {
 
-    private let offer = TranslationOffer(source: "es", target: "en")
+    private let offer = TranslationOffer(source: "es", target: "en", pairID: "es-en")
     private var host: UIViewController!
     private let addressBar = UIView()
 

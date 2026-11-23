@@ -26,10 +26,10 @@ public struct TranslationOffer: Equatable, Sendable {
     /// The manifest key of the pair, which names the model to load.
     public let pairID: String
 
-    public init(source: String, target: String, pairID: String? = nil) {
+    public init(source: String, target: String, pairID: String) {
         self.source = source
         self.target = target
-        self.pairID = pairID ?? "\(source)-\(target)"
+        self.pairID = pairID
     }
 }
 

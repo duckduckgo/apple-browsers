@@ -60,7 +60,11 @@ final class PageTranslationSession {
         } catch is CancellationError {
             Logger.webPageTranslation.info("Page translation cancelled")
         } catch {
-            Logger.webPageTranslation.error("Page translation failed: \(error.localizedDescription, privacy: .public)")
+            // TranslateKit's errors aren't LocalizedError, so the reason is only in the description; it may quote the page.
+            Logger.webPageTranslation.error("""
+                Page translation failed: \(error.localizedDescription, privacy: .public) \
+                \(String(describing: error), privacy: .private)
+                """)
         }
     }
 }

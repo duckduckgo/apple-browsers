@@ -30,23 +30,23 @@ struct TranslationOfferTests {
     @Test("an English page shows a banner for the first device language that has a pair", .timeLimit(.minutes(1)))
     func englishPageBannerTargetsFirstDeviceLanguageWithPair() {
         #expect(manifest.offerDecision(detectedLanguage: "en", deviceLanguages: ["it-IT", "de-DE", "es"])
-                == .banner(TranslationOffer(source: "en", target: "de")))
+                == .banner(TranslationOffer(source: "en", target: "de", pairID: "en-de")))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("a foreign page shows a banner to English when English is a device language", .timeLimit(.minutes(1)))
     func foreignPageBannerTargetsEnglish() {
         #expect(manifest.offerDecision(detectedLanguage: "fr", deviceLanguages: ["en-GB"])
-                == .banner(TranslationOffer(source: "fr", target: "en")))
+                == .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("a page in a device language other than the first is offered in the menu only", .timeLimit(.minutes(1)))
     func pageInLaterDeviceLanguageIsMenuOnly() {
         #expect(manifest.offerDecision(detectedLanguage: "en", deviceLanguages: ["de-DE", "en-US"])
-                == .menuOnly(TranslationOffer(source: "en", target: "de")))
+                == .menuOnly(TranslationOffer(source: "en", target: "de", pairID: "en-de")))
         #expect(manifest.offerDecision(detectedLanguage: "fr", deviceLanguages: ["en-GB", "fr-FR"])
-                == .menuOnly(TranslationOffer(source: "fr", target: "en")))
+                == .menuOnly(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
     }
 
     @available(iOS 16, macOS 13, *)

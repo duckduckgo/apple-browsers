@@ -243,7 +243,7 @@ final class UnifiedSuggestionsHost {
         let enabled = surface != nil
         stopModeChangeAnimator()
         viewModel.cancelLogoModeChange()
-        viewModel.usesRedesignedNewTabPageLayout = surface?.swapsLogoOnModeChange == true
+        viewModel.isOverRedesignedNewTabPage = surface?.swapsLogoOnModeChange == true
         viewModel.setEmbeddedEscapeHatchGeometry(nil)
         redesignedPresentationCancellable = nil
         if enabled {
@@ -289,7 +289,7 @@ final class UnifiedSuggestionsHost {
         stopModeChangeAnimator()
         viewModel.prepareLogoModeChange(to: mode)
         pendingModeChangeResizeStarted = onResizeStarted
-        if !viewModel.usesRedesignedNewTabPageLayout,
+        if !viewModel.isOverRedesignedNewTabPage,
            viewModel.logoModeChange?.source != nil, viewModel.logoModeChange?.isFadingOut == false {
             var layers = contentLayers
             if let contentLayer = favoritesPresentation.viewController?.viewIfLoaded?.layer { layers.append(contentLayer) }
@@ -312,7 +312,7 @@ final class UnifiedSuggestionsHost {
         }
         viewModel.performLogoModeChange(to: mode) {
             // Only a visible legacy logo can hold the resize for a fade.
-            guard !viewModel.usesRedesignedNewTabPageLayout, viewModel.logoModeChange?.source != nil else {
+            guard !viewModel.isOverRedesignedNewTabPage, viewModel.logoModeChange?.source != nil else {
                 applyChanges()
                 return
             }

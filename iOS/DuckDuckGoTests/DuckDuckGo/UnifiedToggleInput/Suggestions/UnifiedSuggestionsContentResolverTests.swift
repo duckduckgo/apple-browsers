@@ -166,12 +166,6 @@ final class UnifiedSuggestionsContentResolverTests: XCTestCase {
                                           usesRedesign: true, showsRedesignedSearchModules: true))
     }
 
-    func test_focusedLogo_isHiddenOnlyBehindTheRedesignedNewTabPage() {
-        XCTAssertTrue(UnifiedSuggestionsContentResolver.allowsFocusedLogo(usesRedesignedNewTabPageLayout: false, embedsRedesignedModules: false))
-        XCTAssertFalse(UnifiedSuggestionsContentResolver.allowsFocusedLogo(usesRedesignedNewTabPageLayout: true, embedsRedesignedModules: false))
-        XCTAssertTrue(UnifiedSuggestionsContentResolver.allowsFocusedLogo(usesRedesignedNewTabPageLayout: true, embedsRedesignedModules: true))
-    }
-
     func test_flagOn_embedsIdleChromeInBothLayouts() {
         for usesRedesign in [false, true] {
             for mode in TextEntryMode.allCases {

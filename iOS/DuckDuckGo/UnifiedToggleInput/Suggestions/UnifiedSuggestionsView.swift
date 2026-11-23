@@ -133,11 +133,11 @@ struct UnifiedSuggestionsView: View {
 
     /// The New Tab Page swaps the logo and the incoming content at once.
     private var fadesOutLeavingLogo: Bool {
-        viewModel.waitsForLogoFadeOut && !viewModel.usesRedesignedNewTabPageLayout
+        viewModel.waitsForLogoFadeOut && !viewModel.isOverRedesignedNewTabPage
     }
 
     private var isWaitingForLeavingLogo: Bool {
-        !viewModel.usesRedesignedNewTabPageLayout && viewModel.logoModeChange?.source != nil
+        !viewModel.isOverRedesignedNewTabPage && viewModel.logoModeChange?.source != nil
             && (viewModel.isPreparingLogoModeChange || fadesOutLeavingLogo)
     }
 
@@ -193,19 +193,18 @@ struct UnifiedSuggestionsView: View {
             let geometry = viewModel.logoLayout(in: viewport)
             let destinationShowsLogo = viewModel.isShowingLogo && (geometry.hatchLayout == nil || geometry.hatchLayout?.visibleFrame != nil)
             let source = viewModel.logoModeChange?.source
-            let isPreparingLogo = !viewModel.usesRedesignedNewTabPageLayout && viewModel.isPreparingLogoModeChange && source != nil
+            let isPreparingLogo = !viewModel.isOverRedesignedNewTabPage && viewModel.isPreparingLogoModeChange && source != nil
             let isFadingLogo = viewModel.logoModeChange?.isFadingOut == true
-            let retainedSource = !viewModel.usesRedesignedNewTabPageLayout && (isPreparingLogo || isFadingLogo || !destinationShowsLogo) ? source : nil
+            let retainedSource = !viewModel.isOverRedesignedNewTabPage && (isPreparingLogo || isFadingLogo || !destinationShowsLogo) ? source : nil
             let showsLogo = (isPreparingLogo || (viewModel.isShowingLogo && !isFadingLogo)) && !viewModel.isFireTab && !viewModel.isLandscape
-                && UnifiedSuggestionsContentResolver.allowsFocusedLogo(usesRedesignedNewTabPageLayout: usesRedesignedNewTabPageLayout,
-                                                                       embedsRedesignedModules: embedsRedesignedModules)
+                && !viewModel.isOverRedesignedNewTabPage
             let targetCenterY = retainedSource?.frame.midY ?? geometry.centerY
             let offsetY = targetCenterY - frame.midY
             let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
             let hatchLayout = geometry.hatchLayout.map { layout in
                 var layout = layout
                 layout.retainedFrame = retainedSource?.frame
-                layout.animatesVisibility = !viewModel.usesRedesignedNewTabPageLayout && retainedSource == nil
+                layout.animatesVisibility = !viewModel.isOverRedesignedNewTabPage && retainedSource == nil
                 return layout
             }
             let logo = FocusedDaxLogoView(progress: retainedSource?.progress ?? viewModel.logoModel.progress,
@@ -241,7 +240,7 @@ struct UnifiedSuggestionsView: View {
                 .animation(!showsLogo && fadesOutLeavingLogo ? FocusedContentFade.fadeOut : nil, value: showsLogo)
                 // A logo held back for the keyboard fades in once it settles.
                 .opacity(viewModel.isLogoRevealDeferred ? 0 : 1)
-                .animation(viewModel.usesRedesignedNewTabPageLayout || viewModel.isLogoRevealDeferred || animation == nil ? nil : FocusedContentFade.fadeIn,
+                .animation(viewModel.isOverRedesignedNewTabPage || viewModel.isLogoRevealDeferred || animation == nil ? nil : FocusedContentFade.fadeIn,
                            value: viewModel.isLogoRevealDeferred)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.

@@ -17,22 +17,19 @@
 //
 
 import Foundation
-import VPN
 
 extension VPNStartupMonitor.StartupError {
     public var disconnectReasonDescription: String? {
         guard case .startTunnelDisconnectedSilently(let underlyingError?) = self else { return nil }
 
         let disconnectError = underlyingError as NSError
-        let displayError: NSError
-        if disconnectError.domain == PacketTunnelProvider.TunnelError.errorDomain,
-           disconnectError.code == PacketTunnelProvider.TunnelError.Code.otherTunnelStartError.rawValue,
+        var reason = XPCErrorSanitizer.originalDomainAndCode(of: disconnectError)
+        if reason.domain == PacketTunnelProvider.TunnelError.errorDomain,
+           reason.code == PacketTunnelProvider.TunnelError.Code.otherTunnelStartError.rawValue,
            let cause = disconnectError.userInfo[NSUnderlyingErrorKey] as? Error {
-            displayError = cause as NSError
-        } else {
-            displayError = disconnectError
+            reason = XPCErrorSanitizer.originalDomainAndCode(of: cause as NSError)
         }
         // Omitting userInfo lets Foundation display the domain and code even for errors with custom descriptions.
-        return NSError(domain: displayError.domain, code: displayError.code).localizedDescription
+        return NSError(domain: reason.domain, code: reason.code).localizedDescription
     }
 }

@@ -70,6 +70,26 @@ import Subscription
         XCTAssertEqual(VPNConnectionError(nsError: error), .connectionFailed)
     }
 
+    func testControllerBannerDisplaysUnderlyingStartupError() {
+        let cause = NSError(domain: "com.duckduckgo.networking.OAuthClientError", code: 11003)
+        let provider = PacketTunnelProvider.TunnelError.otherTunnelStartError(internalError: cause)
+        let startupError = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: provider)
+        let failure = NetworkProtectionTunnelController.StartError.startVPNFailed(startupError)
+
+        XCTAssertEqual(NetworkProtectionTunnelController.userFacingControllerErrorMessage(for: failure), cause.localizedDescription)
+    }
+
+    func testControllerDefersToSessionForSubscriptionExpiryCancellationAndMissingReason() {
+        let causes: [Error?] = [PacketTunnelProvider.TunnelError.vpnAccessRevokedDetectedByMonitorCheck,
+                                PacketTunnelProvider.TunnelError.appRequestedCancellation, nil]
+        for cause in causes {
+            let startupError = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: cause)
+            let failure = NetworkProtectionTunnelController.StartError.startVPNFailed(startupError)
+
+            XCTAssertNil(NetworkProtectionTunnelController.userFacingControllerErrorMessage(for: failure))
+        }
+    }
+
     func testStatusUpdate_notConnected_setsIsNetPEnabledToFalse() async throws {
         await whenStatusUpdate_notConnected()
     }

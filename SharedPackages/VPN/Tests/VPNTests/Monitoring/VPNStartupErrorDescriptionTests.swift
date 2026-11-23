@@ -16,9 +16,8 @@
 //  limitations under the License.
 //
 
-import NetworkProtectionUI
-import VPN
 import XCTest
+@testable import VPN
 
 final class VPNStartupErrorDescriptionTests: XCTestCase {
     func testTokenRefreshFailureDisplaysOAuthDomainAndCode() {
@@ -45,6 +44,15 @@ final class VPNStartupErrorDescriptionTests: XCTestCase {
     func testDisconnectWithoutUnderlyingErrorHasNoReasonDescription() {
         let error = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: nil)
         XCTAssertNil(error.disconnectReasonDescription)
+    }
+
+    func testSanitizedTunnelAndCauseDisplayOriginalDomainAndCode() {
+        let cause = NSError(domain: "TestService", code: 19)
+        let provider = PacketTunnelProvider.TunnelError.otherTunnelStartError(internalError: cause)
+        let sanitized = SanitizedError(wrappedError: provider, underlyingError: SanitizedError(wrappedError: cause, underlyingError: nil))
+        let error = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: sanitized)
+
+        XCTAssertEqual(error.disconnectReasonDescription, cause.localizedDescription)
     }
 
     func testTimeoutHasNoDisconnectReasonDescription() {

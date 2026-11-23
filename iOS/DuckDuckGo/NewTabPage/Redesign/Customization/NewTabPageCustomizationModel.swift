@@ -39,10 +39,10 @@ final class NewTabPageCustomizationModel: ObservableObject {
         }
     }
 
-    @Published var isBackgroundIllustrationVisible: Bool {
+    @Published var theme: NewTabPageTheme {
         didSet {
-            guard oldValue != isBackgroundIllustrationVisible else { return }
-            persistor.isBackgroundIllustrationVisible = isBackgroundIllustrationVisible
+            guard oldValue != theme else { return }
+            persistor.theme = theme
         }
     }
 
@@ -70,7 +70,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
         isFavoritesSectionVisible = persistor.isFavoritesSectionVisible
         isMessagesSectionVisible = persistor.isMessagesSectionVisible
-        isBackgroundIllustrationVisible = persistor.isBackgroundIllustrationVisible
+        theme = persistor.theme
         isKeyboardShownOnNewTab = keyboardSettings.onNewTab
     }
 

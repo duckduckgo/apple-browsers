@@ -30,24 +30,24 @@ struct RedesignedNewTabPageCardBackground: View {
     private let cornerRadius: CGFloat = Metrics.cornerRadius
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     private let customizationStore: NewTabPageCustomizationStore
-    @State private var isIllustrationVisible: Bool
+    @State private var theme: NewTabPageTheme
 
     init(usesLiquidGlass: Bool = false, customizationStore: NewTabPageCustomizationStore = NewTabPageCustomizationStore()) {
         self.usesLiquidGlass = usesLiquidGlass
         self.customizationStore = customizationStore
-        _isIllustrationVisible = State(initialValue: customizationStore.isBackgroundIllustrationVisible)
+        _theme = State(initialValue: customizationStore.theme)
     }
 
     var body: some View {
         content
-            .onReceive(customizationStore.backgroundIllustrationVisibilityPublisher.receive(on: DispatchQueue.main)) { isVisible in
-                isIllustrationVisible = isVisible
+            .onReceive(customizationStore.themePublisher.receive(on: DispatchQueue.main)) { theme in
+                self.theme = theme
             }
     }
 
     @ViewBuilder
     private var content: some View {
-        if #available(iOS 26, *), usesLiquidGlass, !reduceTransparency, isIllustrationVisible {
+        if #available(iOS 26, *), usesLiquidGlass, !reduceTransparency, theme.backgroundImage != nil {
             Color.clear.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         } else {
             raisedSurface
@@ -56,8 +56,7 @@ struct RedesignedNewTabPageCardBackground: View {
 
     private var raisedSurface: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        // The dark card tint is tuned for the illustration, so the plain background uses the legacy surface.
-        let fill = isIllustrationVisible ? Color(singleUseColor: .newTabPageSearchCardBackground) : Color(designSystemColor: .surface)
+        let fill = Color(theme.cardBackgroundColor)
         let shadowColor = Color(designSystemColor: .shadowSecondary)
         let borderColor = Color(singleUseColor: .inputContentSeparator)
         // Each shadow comes from its own fill-only layer. Chaining `.shadow` on the composite makes the second

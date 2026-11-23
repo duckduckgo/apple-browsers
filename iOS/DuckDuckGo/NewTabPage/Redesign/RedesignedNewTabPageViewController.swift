@@ -94,8 +94,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         var isLeavingFocus = false
     }
 
-    private let backgroundImageView = UIImageView(image: UIImage(resource: .backgroundPond))
-    private var backgroundIllustrationCancellable: AnyCancellable?
+    private let backgroundImageView = UIImageView()
+    private var themeCancellable: AnyCancellable?
 
     private let contentContainerView: UIView = {
         let view = UIView()
@@ -179,7 +179,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             scrollView.contentInsetAdjustmentBehavior = .never
             applyScrollInsets()
         }
-        observeBackgroundIllustrationVisibility()
+        observeTheme()
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -312,12 +312,20 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         restoreEntrancePose()
     }
 
-    private func observeBackgroundIllustrationVisibility() {
-        backgroundIllustrationCancellable = NewTabPageCustomizationStore().backgroundIllustrationVisibilityPublisher
+    private func observeTheme() {
+        let store = NewTabPageCustomizationStore()
+        applyBackground(of: store.theme)
+        themeCancellable = store.themePublisher
+            .dropFirst()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isVisible in
-                self?.backgroundImageView.isHidden = !isVisible
+            .sink { [weak self] theme in
+                self?.applyBackground(of: theme)
             }
+    }
+
+    private func applyBackground(of theme: NewTabPageTheme) {
+        backgroundImageView.image = theme.backgroundImage
+        backgroundImageView.isHidden = theme.backgroundImage == nil
     }
 
     private func addSubviews() {

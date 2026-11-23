@@ -110,75 +110,122 @@ struct NewTabPageRedesignPixelTests {
     }
 }
 
-@Suite("New Tab Page background illustration setting")
+@Suite("New Tab Page theme")
 @MainActor
-struct NewTabPageBackgroundIllustrationTests {
+struct NewTabPageThemeTests {
 
-    private func makeStore() throws -> NewTabPageCustomizationStore {
-        let suiteName = "NewTabPageBackgroundIllustrationTests-\(UUID().uuidString)"
+    private func makeStore(storedTheme: String? = nil) throws -> NewTabPageCustomizationStore {
+        let suiteName = "NewTabPageThemeTests-\(UUID().uuidString)"
         let userDefaults = try #require(UserDefaults(suiteName: suiteName))
         userDefaults.removePersistentDomain(forName: suiteName)
+        if let storedTheme {
+            userDefaults.set(storedTheme, forKey: "com_duckduckgo_ios_newTabPage_theme")
+        }
         return NewTabPageCustomizationStore(keyValueStore: userDefaults)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("The illustration is visible by default", .timeLimit(.minutes(1)))
-    func illustrationIsVisibleByDefault() throws {
-        #expect(try makeStore().isBackgroundIllustrationVisible)
+    private func resolved(_ color: UIColor, _ style: UIUserInterfaceStyle) -> UIColor {
+        color.resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The illustration preference persists", .timeLimit(.minutes(1)), arguments: [false, true])
-    func illustrationPreferencePersists(isVisible: Bool) throws {
-        var store = try makeStore()
-
-        store.isBackgroundIllustrationVisible = isVisible
-
-        #expect(store.isBackgroundIllustrationVisible == isVisible)
+    @Test("The default theme is blue", .timeLimit(.minutes(1)))
+    func defaultThemeIsBlue() throws {
+        #expect(try makeStore().theme == .blue)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The publisher emits the current value, then every change", .timeLimit(.minutes(1)))
-    func publisherEmitsCurrentValueThenChanges() throws {
+    @Test("An unknown stored theme falls back to the default", .timeLimit(.minutes(1)))
+    func unknownStoredThemeFallsBack() throws {
+        #expect(try makeStore(storedTheme: "removed-theme").theme == .default)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The theme persists", .timeLimit(.minutes(1)), arguments: NewTabPageTheme.allCases)
+    func themePersists(theme: NewTabPageTheme) throws {
         var store = try makeStore()
-        var received: [Bool] = []
-        let cancellable = store.backgroundIllustrationVisibilityPublisher.sink { received.append($0) }
 
-        store.isBackgroundIllustrationVisible = false
-        store.isBackgroundIllustrationVisible = true
+        store.theme = theme
 
-        #expect(received == [true, false, true])
+        #expect(store.theme == theme)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The publisher emits the current theme, then every change", .timeLimit(.minutes(1)))
+    func publisherEmitsCurrentThemeThenChanges() throws {
+        var store = try makeStore()
+        var received: [NewTabPageTheme] = []
+        let cancellable = store.themePublisher.sink { received.append($0) }
+
+        store.theme = .plain
+        store.theme = .blue
+
+        #expect(received == [.blue, .plain, .blue])
         cancellable.cancel()
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The model starts from the stored value and writes changes through", .timeLimit(.minutes(1)))
+    @Test("The model starts from the stored theme and writes changes through", .timeLimit(.minutes(1)))
     func modelWritesChangesThrough() {
-        let persistor = ReferenceNewTabPageCustomizationPersistor(isBackgroundIllustrationVisible: false)
+        let persistor = ReferenceNewTabPageCustomizationPersistor(theme: .plain)
         let model = NewTabPageCustomizationModel(persistor: persistor, pixelFiring: nil)
-        #expect(!model.isBackgroundIllustrationVisible)
+        #expect(model.theme == .plain)
 
-        model.isBackgroundIllustrationVisible = true
+        model.theme = .blue
 
-        #expect(model.isBackgroundIllustrationVisible)
-        #expect(persistor.isBackgroundIllustrationVisible)
+        #expect(model.theme == .blue)
+        #expect(persistor.theme == .blue)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only themes with artwork have a background image", .timeLimit(.minutes(1)))
+    func plainThemeHasNoBackgroundImage() {
+        #expect(NewTabPageTheme.blue.backgroundImage != nil)
+        #expect(NewTabPageTheme.plain.backgroundImage == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A tint in both appearances replaces the standard surface in both", .timeLimit(.minutes(1)))
+    func tintInBothAppearances() {
+        let tint = NewTabPageThemeTint.both(.red).color(over: .white)
+
+        #expect(resolved(tint, .light) == resolved(.red, .light))
+        #expect(resolved(tint, .dark) == resolved(.red, .dark))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A dark only tint keeps the standard surface in light mode", .timeLimit(.minutes(1)))
+    func darkOnlyTintKeepsStandardSurfaceInLightMode() {
+        let tint = NewTabPageThemeTint.darkOnly(.red).color(over: .white)
+
+        #expect(resolved(tint, .light) == resolved(.white, .light))
+        #expect(resolved(tint, .dark) == resolved(.red, .dark))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("No tint keeps the standard surface in both appearances", .timeLimit(.minutes(1)))
+    func noTintKeepsStandardSurface() {
+        let tint = NewTabPageThemeTint.none.color(over: .white)
+
+        #expect(resolved(tint, .light) == resolved(.white, .light))
+        #expect(resolved(tint, .dark) == resolved(.white, .dark))
     }
 }
 
 private final class ReferenceNewTabPageCustomizationPersistor: NewTabPageCustomizationPersisting {
     var isFavoritesSectionVisible = true
     var isMessagesSectionVisible = true
-    var isBackgroundIllustrationVisible: Bool
+    var theme: NewTabPageTheme
 
-    init(isBackgroundIllustrationVisible: Bool) {
-        self.isBackgroundIllustrationVisible = isBackgroundIllustrationVisible
+    init(theme: NewTabPageTheme) {
+        self.theme = theme
     }
 }
 
 private struct MockNewTabPageCustomizationPersistor: NewTabPageCustomizationPersisting {
     var isFavoritesSectionVisible = true
     var isMessagesSectionVisible = true
-    var isBackgroundIllustrationVisible = true
+    var theme = NewTabPageTheme.default
 }
 
 private final class MockAddFavoriteBookmarks: MenuBookmarksInteracting {

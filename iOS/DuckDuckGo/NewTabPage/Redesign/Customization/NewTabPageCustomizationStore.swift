@@ -26,26 +26,26 @@ protocol NewTabPageCustomizationPersisting {
 
     var isFavoritesSectionVisible: Bool { get set }
     var isMessagesSectionVisible: Bool { get set }
-    var isBackgroundIllustrationVisible: Bool { get set }
+    var theme: NewTabPageTheme { get set }
 }
 
 private enum NewTabPageCustomizationStorageKeys: String, StorageKeyDescribing {
     case isFavoritesSectionVisible = "com_duckduckgo_ios_newTabPage_favorites_isVisible"
     case isMessagesSectionVisible = "com_duckduckgo_ios_newTabPage_messages_isVisible"
-    case isBackgroundIllustrationVisible = "com_duckduckgo_ios_newTabPage_backgroundIllustration_isVisible"
+    case theme = "com_duckduckgo_ios_newTabPage_theme"
 }
 
 private struct NewTabPageCustomizationKeys: StoringKeys {
     let isFavoritesSectionVisible = StorageKey<Bool>(NewTabPageCustomizationStorageKeys.isFavoritesSectionVisible)
     let isMessagesSectionVisible = StorageKey<Bool>(NewTabPageCustomizationStorageKeys.isMessagesSectionVisible)
-    let isBackgroundIllustrationVisible = StorageKey<Bool>(NewTabPageCustomizationStorageKeys.isBackgroundIllustrationVisible)
+    let theme = StorageKey<String>(NewTabPageCustomizationStorageKeys.theme)
 }
 
 struct NewTabPageCustomizationStore: NewTabPageCustomizationPersisting {
 
     private static let favoritesVisibilityDidChange = Notification.Name("NewTabPageCustomizationStore.favoritesVisibilityDidChange")
 
-    private static let backgroundIllustrationVisibilityDidChange = Notification.Name("NewTabPageCustomizationStore.backgroundIllustrationVisibilityDidChange")
+    private static let themeDidChange = Notification.Name("NewTabPageCustomizationStore.themeDidChange")
 
     private let keyValueStore: KeyValueStoring
 
@@ -82,21 +82,21 @@ struct NewTabPageCustomizationStore: NewTabPageCustomizationPersisting {
         set { storage.isMessagesSectionVisible = newValue }
     }
 
-    var isBackgroundIllustrationVisible: Bool {
-        get { storage.isBackgroundIllustrationVisible ?? true }
+    var theme: NewTabPageTheme {
+        get { storage.theme.flatMap(NewTabPageTheme.init(rawValue:)) ?? .default }
         set {
-            guard isBackgroundIllustrationVisible != newValue else { return }
-            storage.isBackgroundIllustrationVisible = newValue
-            NotificationCenter.default.post(name: Self.backgroundIllustrationVisibilityDidChange, object: nil)
+            guard theme != newValue else { return }
+            storage.theme = newValue.rawValue
+            NotificationCenter.default.post(name: Self.themeDidChange, object: nil)
         }
     }
 
     /// Every retained page and module observes the same persisted preference, including pages in other tabs.
-    var backgroundIllustrationVisibilityPublisher: AnyPublisher<Bool, Never> {
+    var themePublisher: AnyPublisher<NewTabPageTheme, Never> {
         Deferred {
-            NotificationCenter.default.publisher(for: Self.backgroundIllustrationVisibilityDidChange)
-                .map { _ in self.isBackgroundIllustrationVisible }
-                .prepend(self.isBackgroundIllustrationVisible)
+            NotificationCenter.default.publisher(for: Self.themeDidChange)
+                .map { _ in self.theme }
+                .prepend(self.theme)
                 .removeDuplicates()
         }
         .eraseToAnyPublisher()

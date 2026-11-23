@@ -91,24 +91,18 @@ struct NewTabPageCustomizationView: View {
 
     private var themeSection: some View {
         Section {
-            HStack(spacing: Metrics.themeTileSpacing) {
-                NewTabPageThemeTile(image: UIImage(resource: .themeBlue),
-                                    title: UserText.newTabPageCustomizationThemeBlue,
-                                    isSelected: model.isBackgroundIllustrationVisible) {
-                    model.isBackgroundIllustrationVisible = true
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Metrics.themeTileSpacing) {
+                    ForEach(NewTabPageTheme.allCases, id: \.self) { theme in
+                        NewTabPageThemeTile(theme: theme, isSelected: model.theme == theme) {
+                            model.theme = theme
+                        }
+                    }
                 }
-
-                NewTabPageThemeTile(image: UIImage(resource: .themePlain),
-                                    title: UserText.newTabPageCustomizationThemePlain,
-                                    isSelected: !model.isBackgroundIllustrationVisible) {
-                    model.isBackgroundIllustrationVisible = false
-                }
-
-                Spacer(minLength: 0)
+                .padding(Metrics.themeRowInset)
             }
             .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: Metrics.themeRowInset, leading: Metrics.themeRowInset,
-                                      bottom: Metrics.themeRowInset, trailing: Metrics.themeRowInset))
+            .listRowInsets(EdgeInsets())
         }
     }
 
@@ -137,14 +131,13 @@ private struct NewTabPageThemeTile: View {
         static let selectionBorderGap: CGFloat = 3
     }
 
-    let image: UIImage
-    let title: String
+    let theme: NewTabPageTheme
     let isSelected: Bool
     let onSelect: () -> Void
 
     var body: some View {
         Button(action: onSelect) {
-            Image(uiImage: image)
+            Image(uiImage: theme.tileImage)
                 .resizable()
                 .frame(width: Metrics.tileSize.width, height: Metrics.tileSize.height)
                 .clipShape(RoundedRectangle(cornerRadius: Metrics.cornerRadius))
@@ -156,7 +149,7 @@ private struct NewTabPageThemeTile: View {
                 )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(title)
+        .accessibilityLabel(theme.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
@@ -200,7 +193,7 @@ private struct NewTabPageCustomizationRow: View {
     private var label: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             if let image {
-                Image(uiImage: image)
+                Image(uiImage: theme.tileImage)
                     .foregroundColor(Color(designSystemColor: .icons))
                     .alignmentGuide(.firstTextBaseline, computeValue: iconBaseline)
                     .accessibilityHidden(true)

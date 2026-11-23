@@ -28,9 +28,9 @@ class CompleteDownloadRowViewModel: DownloadsListRowViewModel {
     var fileURL: URL
     var fileSize: String
 
-    init(fileURL: URL) {
+    init(fileURL: URL, locale: Locale = .autoupdatingCurrent) {
         self.fileURL = fileURL
-        self.fileSize = DownloadsListRowViewModel.byteCountFormatter.string(fromByteCount: Int64(fileURL.fileSize))
+        self.fileSize = DownloadsListRowViewModel.formattedByteCount(Int64(fileURL.fileSize), locale: locale)
         super.init(filename: fileURL.filename)
     }
 

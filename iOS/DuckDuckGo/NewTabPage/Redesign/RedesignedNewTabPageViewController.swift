@@ -86,6 +86,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         let bottomSafeAreaInset: CGFloat
         /// How far the input sat from its place in the page layout when focus began, because the page was scrolled.
         let scrolledInputDistance: CGFloat
+        /// The sticky pinning translation applied to the input when focus began.
+        let stickySearchInputTranslation: CGFloat
         var isGeometryValid = true
         /// Whether the focused pose has started leaving, after which the page keeps the offset the user scrolled to.
         var isLeavingFocus = false
@@ -516,23 +518,25 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     }
 
     func focusedPoseSearchInputFrame(in targetView: UIView) -> CGRect? {
-        searchInputFrame(in: targetView, scrolledBy: scrollDistanceSinceEditingBegan)
+        searchInputFrame(in: targetView,
+                         scrolledBy: scrollDistanceSinceEditingBegan,
+                         pinnedBy: inputEditingLayout?.stickySearchInputTranslation)
     }
 
-    private func searchInputFrame(in targetView: UIView, scrolledBy scrollDistance: CGFloat) -> CGRect? {
+    private func searchInputFrame(in targetView: UIView, scrolledBy scrollDistance: CGFloat, pinnedBy pinnedTranslation: CGFloat? = nil) -> CGRect? {
         guard canAnimateSearchInput else { return nil }
         guard let window = view.window else { return nil }
         if let inputEditingLayout, inputEditingLayout.isGeometryValid, inputEditingLayout.windowBounds == window.bounds {
             return inputEditingLayout.inputFrameInWindow.map { targetView.convert($0, from: window) }
         }
-        guard let frame = visibleSearchInputFrameInWindow(scrolledBy: scrollDistance) else { return nil }
+        guard let frame = visibleSearchInputFrameInWindow(scrolledBy: scrollDistance, pinnedBy: pinnedTranslation) else { return nil }
         return targetView.convert(frame, from: window)
     }
 
-    private func visibleSearchInputFrameInWindow(scrolledBy scrollDistance: CGFloat = 0) -> CGRect? {
+    private func visibleSearchInputFrameInWindow(scrolledBy scrollDistance: CGFloat = 0, pinnedBy pinnedTranslation: CGFloat? = nil) -> CGRect? {
         guard let window = view.window, let searchInputView else { return nil }
         let frame = searchInputView.untransformedFrame(of: searchInputView.bounds, in: window)
-            .offsetBy(dx: 0, dy: scrollDistance + stickySearchInputTranslation)
+            .offsetBy(dx: 0, dy: scrollDistance + (pinnedTranslation ?? stickySearchInputTranslation))
         let viewport = scrollView.convert(scrollView.bounds, to: window).intersection(window.bounds)
         // An offscreen resting card should not pull the editor beyond the visible page.
         return frame.intersects(viewport) ? frame : nil
@@ -713,7 +717,8 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
                                                     windowBounds: view.window?.bounds,
                                                     bottomSafeAreaInset: view.safeAreaInsets.bottom,
                                                     scrolledInputDistance: scrollView.contentOffset.y + scrollView.adjustedContentInset.top
-                                                        - stickySearchInputTranslation)
+                                                        - stickySearchInputTranslation,
+                                                    stickySearchInputTranslation: stickySearchInputTranslation)
         } else if !isEditing, let savedLayout = inputEditingLayout {
             setFocusedPose(nil)
             inputEditingLayout = nil

@@ -94,8 +94,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     // and ijecting some JS to control youtube pausing
     private var useContentScopeScriptsForMediaControl = true
 
-    /// JavaScript for media playback control
-    private let mediaControlScript: String = {
+    /// JavaScript for media playback control, read from the bundle once per process on first use
+    /// so that creating a handler (one per tab) does not do file I/O.
+    static let mediaControlScriptSource: String = {
         guard let url = Bundle.main.url(forResource: "mediaControl", withExtension: "js"),
               let script = try? String(contentsOf: url) else {
             assertionFailure("Failed to load mute audio script")
@@ -103,6 +104,11 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         }
         return script
     }()
+
+    /// JavaScript for media playback control
+    private var mediaControlScript: String {
+        Self.mediaControlScriptSource
+    }
 
     /// Initializes a new instance of `DuckPlayerNavigationHandler` with the provided dependencies.
     ///

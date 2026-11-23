@@ -98,6 +98,27 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Media Control Script Tests
+
+    func testMediaControlScriptSource_IsLoadedFromBundle() {
+        XCTAssertFalse(NativeDuckPlayerNavigationHandler.mediaControlScriptSource.isEmpty)
+        XCTAssertTrue(NativeDuckPlayerNavigationHandler.mediaControlScriptSource.contains("mediaControl"))
+    }
+
+    func testCreatingMultipleHandlers_SharesMediaControlScriptSource() {
+        let first = NativeDuckPlayerNavigationHandler(duckPlayer: mockDuckPlayer,
+                                                      featureFlagger: mockFeatureFlagger,
+                                                      appSettings: mockAppSettings,
+                                                      delayHandler: mockDelayHandler)
+        let second = NativeDuckPlayerNavigationHandler(duckPlayer: mockDuckPlayer,
+                                                       featureFlagger: mockFeatureFlagger,
+                                                       appSettings: mockAppSettings,
+                                                       delayHandler: mockDelayHandler)
+
+        XCTAssertFalse(first === second)
+        XCTAssertFalse(NativeDuckPlayerNavigationHandler.mediaControlScriptSource.isEmpty)
+    }
+
     // MARK: - handleURLChange Tests
 
     // TODO: Test media playback/pause

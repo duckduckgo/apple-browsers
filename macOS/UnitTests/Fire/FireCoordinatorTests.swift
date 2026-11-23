@@ -41,6 +41,7 @@ struct FireCoordinatorTests {
 
     private func makeCoordinator(
         onboardingFireReporting: (() -> OnboardingFireReporting)? = nil,
+        onboardingContextualDialogsManager: (() -> ContextualOnboardingStateUpdater)? = nil,
         fireDialogViewFactory: FireDialogViewFactory? = nil
     ) -> FireCoordinator {
         let fire = Fire(cacheManager: WebCacheManagerMock(),
@@ -57,7 +58,7 @@ struct FireCoordinatorTests {
                                featureFlagger: MockFeatureFlagger(),
                                historyCoordinating: historyCoordinator,
                                visualizeFireAnimationDecider: nil,
-                               onboardingContextualDialogsManager: nil,
+                               onboardingContextualDialogsManager: onboardingContextualDialogsManager,
                                fireproofDomains: MockFireproofDomains(),
                                faviconManagement: faviconManagement,
                                windowControllersManager: windowControllersManager,
@@ -346,6 +347,47 @@ struct FireCoordinatorTests {
 
         #expect(mockFireReporting.measureFireDialogDismissedCallCount == 1)
         #expect(mockFireReporting.measureFireDialogBurnActionCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testPresentFireDialog_whenDuckAIOnboarding_thenOpensSetToDeleteChatsOnlyAndCloseTheTab() async throws {
+        var viewModel: FireDialogViewModel?
+        let factory: FireDialogViewFactory = { config in
+            viewModel = config.viewModel
+            return CallbackFireDialogPresenter {
+                config.onConfirm(.noAction)
+            }
+        }
+        let coordinator = makeCoordinator(fireDialogViewFactory: factory)
+
+        _ = await coordinator.presentFireDialog(mode: .duckAIOnboarding, in: MockWindow(isVisible: false), settings: nil)
+
+        let presented = try #require(viewModel)
+        #expect(!presented.includeHistory)
+        #expect(!presented.includeCookiesAndSiteData)
+        #expect(presented.includeChatHistorySetting)
+        #expect(presented.includeTabsAndWindows)
+        #expect(presented.isSectionsExpanded)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1))) func testPresentFireDialog_whenDuckAIOnboardingBurns_thenTellsOnboardingFireWasUsed() async throws {
+        let stateUpdater = CapturingContextualOnboardingStateUpdater()
+        let burnResult = FireDialogResult(clearingOption: .currentWindow,
+                                          includeHistory: false,
+                                          includeTabsAndWindows: true,
+                                          includeCookiesAndSiteData: false,
+                                          includeChatHistory: false)
+        let factory: FireDialogViewFactory = { config in
+            CallbackFireDialogPresenter {
+                config.onConfirm(.burn(options: burnResult))
+            }
+        }
+        let coordinator = makeCoordinator(onboardingContextualDialogsManager: { stateUpdater }, fireDialogViewFactory: factory)
+
+        _ = await coordinator.presentFireDialog(mode: .duckAIOnboarding, in: MockWindow(isVisible: false), settings: nil)
+
+        #expect(stateUpdater.fireButtonUsedCalled, "Using Fire is what unlocks the Duck.ai path")
     }
 
     @available(iOS 16, macOS 13, *)

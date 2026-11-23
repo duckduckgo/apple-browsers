@@ -3212,6 +3212,64 @@ final class FireDialogViewModelTests: XCTestCase {
         VisitIdentifier(uuid: UUID().uuidString, url: URL(string: url)!, date: date)
     }
 
+    // MARK: - Duck.ai onboarding
+
+    @MainActor func testWhenDuckAIOnboarding_ThenOnlyTheChatsRowShowsUnderTheChatDataTitle() {
+        let viewModel = makeViewModelWithChats(mode: .duckAIOnboarding, isFireDialogSimplified: true, settings: MockFireDialogViewSettings())
+
+        XCTAssertEqual(viewModel.dialogTitle, UserText.fireDialogDuckAIOnboardingTitle)
+        XCTAssertTrue(viewModel.shouldShowChatHistoryToggle)
+        XCTAssertFalse(viewModel.mode.shouldShowSiteDataRows)
+        XCTAssertFalse(viewModel.mode.shouldShowCloseTabsToggle)
+        XCTAssertFalse(viewModel.mode.shouldShowMoreOptionsMenu)
+    }
+
+    @MainActor func testWhenFireButton_ThenTheSiteDataRowsCloseTabsToggleAndMenuShow() {
+        let viewModel = makeViewModelWithChats(mode: .fireButton, isFireDialogSimplified: true, settings: MockFireDialogViewSettings())
+
+        XCTAssertTrue(viewModel.mode.shouldShowSiteDataRows)
+        XCTAssertTrue(viewModel.mode.shouldShowCloseTabsToggle)
+        XCTAssertTrue(viewModel.mode.shouldShowMoreOptionsMenu)
+    }
+
+    @MainActor func testWhenDuckAIOnboarding_ThenTheTabClosesEvenWithCloseTabsOff() {
+        // The Duck.ai path only moves on once a new page loads, so the tab must close.
+        let viewModel = makeViewModelWithChats(mode: .duckAIOnboarding, isFireDialogSimplified: true, settings: MockFireDialogViewSettings())
+
+        viewModel.includeTabsAndWindows = false
+
+        XCTAssertTrue(viewModel.shouldCloseTabsAndWindows)
+    }
+
+    @MainActor func testWhenDuckAIOnboarding_ThenNoChoiceIsSaved() {
+        let settings = MockFireDialogViewSettings()
+        let viewModel = makeViewModelWithChats(mode: .duckAIOnboarding, isFireDialogSimplified: true, settings: settings)
+
+        viewModel.clearingOption = .currentTab
+        viewModel.includeTabsAndWindows = false
+        viewModel.includeHistory = true
+        viewModel.includeCookiesAndSiteData = true
+        viewModel.includeChatHistorySetting = true
+        viewModel.isSectionsExpanded = false
+        viewModel.didConfirmDataClearing()
+
+        XCTAssertNil(settings.lastSelectedClearingOption)
+        XCTAssertNil(settings.lastIncludeTabsAndWindowsState)
+        XCTAssertNil(settings.lastIncludeHistoryState)
+        XCTAssertNil(settings.lastIncludeCookiesAndSiteDataState)
+        XCTAssertNil(settings.lastIncludeChatHistoryState)
+        XCTAssertNil(settings.lastSectionsExpandedState, "Using Fire here must not collapse the details for later dialogs")
+    }
+
+    @MainActor func testWhenDuckAIOnboarding_ThenSavedChoicesAreIgnored() {
+        let settings = MockFireDialogViewSettings(lastIncludeTabsAndWindowsState: false, lastSectionsExpandedState: false)
+
+        let viewModel = makeViewModelWithChats(mode: .duckAIOnboarding, isFireDialogSimplified: true, settings: settings)
+
+        XCTAssertTrue(viewModel.includeTabsAndWindows)
+        XCTAssertTrue(viewModel.isSectionsExpanded)
+    }
+
     /// Makes a view model that has Duck.ai chats to delete.
     ///
     /// The simplified dialog also hides the chat history toggle when there are no chats, so the chats

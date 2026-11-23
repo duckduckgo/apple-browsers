@@ -44,12 +44,14 @@ runs:
           author=$(gh api "https://api.github.com/repos/${{ github.repository }}/commits/${head_commit}" --jq '.author.login // ""' || true)
         fi
 
-        # Check if this is a merge commit from a PR
-
-        # Extract PR number from commit message
-        # Format 1: "Merge pull request #123 from ..." (merge commits)
-        # Format 2: "Some message (#123)" (squash commits)
-        pr_number=$(echo "$commit_message" | grep -oE "(Merge pull request #[0-9]+|\(#[0-9]+\))" | grep -oE "[0-9]+" | head -n 1 || true)
+        # GitHub puts the PR number at the start of a merge subject or the end of a squash subject.
+        subject=${commit_message%%$'\n'*}
+        pr_number=""
+        if [[ "$subject" =~ ^"Merge pull request #"([0-9]+)([[:space:]]|$) ]]; then
+          pr_number=${BASH_REMATCH[1]}
+        elif [[ "$subject" =~ [[:space:]]\(#([0-9]+)\)$ ]]; then
+          pr_number=${BASH_REMATCH[1]}
+        fi
 
         # Bot-authored commits (e.g. PRs opened by an agent) have no Asana user.
         # Attribute them to the person who merged the PR instead.

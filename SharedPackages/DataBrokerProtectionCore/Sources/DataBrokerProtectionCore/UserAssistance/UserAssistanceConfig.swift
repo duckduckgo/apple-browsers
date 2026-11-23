@@ -17,13 +17,40 @@
 //
 
 import Foundation
+import PrivacyConfig
 
-/// Whether opt-outs that need the user can be handed to them. Each broker's own definition says whether its opt-out needs the user.
-public struct UserAssistanceConfig: Equatable, Sendable {
-    public let isEnabled: Bool
+public struct UserAssistanceConfig: Decodable, Equatable, Sendable {
+    public let enabledBrokers: Set<String>
 
-    public init(isEnabled: Bool = false) {
-        self.isEnabled = isEnabled
+    private enum CodingKeys: String, CodingKey {
+        case enabledBrokers
+    }
+
+    public init() {
+        enabledBrokers = []
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let brokers = try container.decodeIfPresent([String].self, forKey: .enabledBrokers) ?? []
+        // Brokers must be named one by one, so a "*" entry never turns this on for every broker.
+        enabledBrokers = Set(brokers.filter { $0 != "*" })
+    }
+
+    public init(privacyConfig: PrivacyConfiguration) {
+        guard let settings = privacyConfig.settings(for: DBPSubfeature.userAssistance),
+              let data = settings.data(using: .utf8),
+              let config = try? JSONDecoder().decode(Self.self, from: data) else {
+            self.init()
+            return
+        }
+        self = config
+    }
+
+    public var isEnabled: Bool { !enabledBrokers.isEmpty }
+
+    public func isEnabled(forBrokerURL url: String) -> Bool {
+        enabledBrokers.contains(url)
     }
 }
 
@@ -35,6 +62,7 @@ public extension DataBroker {
 
 public extension BrokerProfileJobDependencyProviding {
     var userAssistanceConfig: UserAssistanceConfig {
-        UserAssistanceConfig(isEnabled: featureFlagger.isUserAssistanceOn)
+        guard featureFlagger.isUserAssistanceOn else { return UserAssistanceConfig() }
+        return UserAssistanceConfig(privacyConfig: privacyConfig.privacyConfig)
     }
 }

@@ -1588,10 +1588,13 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                               appStorePurchaseFlow: purchaseFlow)
         let newSubscription = expectation(forNotification: .userDidStartNewSubscription, object: sut)
 
-        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!))
+        // The message holds the web view weakly, and the purchase writes its outcome to it.
+        let webView = MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
         _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
 
         await fulfillment(of: [newSubscription], timeout: 1.0)
+        withExtendedLifetime(webView) {}
     }
 
     @MainActor
@@ -1607,10 +1610,13 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let newSubscription = expectation(forNotification: .userDidStartNewSubscription, object: sut)
         newSubscription.isInverted = true
 
-        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!))
+        // The message holds the web view weakly, and the purchase writes its outcome to it.
+        let webView = MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!)
+        let message = WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
         _ = await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
 
         await fulfillment(of: [newSubscription], timeout: 1.0)
+        withExtendedLifetime(webView) {}
     }
 
     // MARK: - Cancellation flow

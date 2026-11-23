@@ -336,9 +336,12 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
                                 onFlowEvent: { events.append($0); reported.fulfill() })
         await sut.setupTransactionObserver()
 
-        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage())
+        // The message holds the web view weakly, and a cancelled or completed purchase writes to it.
+        let webView = makePurchaseWebView()
+        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage(webView: webView))
 
         await fulfillment(of: [reported], timeout: 1.0)
+        withExtendedLifetime(webView) {}
         XCTAssertEqual(events, [.purchaseFailed])
     }
 
@@ -352,9 +355,12 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
                                 onFlowEvent: { events.append($0); reported.fulfill() })
         await sut.setupTransactionObserver()
 
-        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage())
+        // The message holds the web view weakly, and a cancelled or completed purchase writes to it.
+        let webView = makePurchaseWebView()
+        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage(webView: webView))
 
         await fulfillment(of: [reported], timeout: 1.0)
+        withExtendedLifetime(webView) {}
         XCTAssertEqual(events, [.subscriptionFound])
     }
 
@@ -370,9 +376,12 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
                                 onFlowEvent: { _ in reported.fulfill() })
         await sut.setupTransactionObserver()
 
-        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage())
+        // The message holds the web view weakly, and a cancelled or completed purchase writes to it.
+        let webView = makePurchaseWebView()
+        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage(webView: webView))
 
         await fulfillment(of: [reported], timeout: 1.0)
+        withExtendedLifetime(webView) {}
     }
 
     // MARK: - Helper
@@ -405,10 +414,13 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
     }
 
     @MainActor
-    private func makePurchaseMessage() -> WKScriptMessage {
-        WKScriptMessage.mock(name: "subscriptionSelected",
-                             body: "",
-                             webView: MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!))
+    private func makePurchaseWebView() -> MockURLWebView {
+        MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!)
+    }
+
+    @MainActor
+    private func makePurchaseMessage(webView: WKWebView) -> WKScriptMessage {
+        WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
     }
 
     @MainActor

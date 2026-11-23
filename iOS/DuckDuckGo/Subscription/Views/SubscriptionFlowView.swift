@@ -231,7 +231,7 @@ struct SubscriptionFlowView: View {
         guard let presenter = UIViewController.getCurrentViewController(),
               presenter.viewIfLoaded?.window != nil,
               presenter.transitionCoordinator == nil else {
-            viewModel.notificationsDeniedDialogDidSelect(.notNow)
+            viewModel.notificationsDeniedDialogFailedToPresent()
             return
         }
         let alert = UIAlertController(title: UserText.subscriptionNotificationsDeniedDialogTitle,

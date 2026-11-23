@@ -63,7 +63,8 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionWithdrawalEligibilityFailure,
                 .subscriptionNotificationsDeniedDialogNotNowClick,
                 .subscriptionNotificationsDeniedDialogOpenSettingsClick,
-                .subscriptionNotificationsDeniedDialogSettingsReturn:
+                .subscriptionNotificationsDeniedDialogSettingsReturn,
+                .subscriptionNotificationsDeniedDialogPresentationFailure:
             return .standard
         default:
             return .legacyOmitted
@@ -118,6 +119,7 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionNotificationsDeniedDialogNotNowClick
     case subscriptionNotificationsDeniedDialogOpenSettingsClick
     case subscriptionNotificationsDeniedDialogSettingsReturn(notificationsPermission: String)
+    case subscriptionNotificationsDeniedDialogPresentationFailure
 
     var name: String {
         switch self {
@@ -167,6 +169,7 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionNotificationsDeniedDialogNotNowClick: return "subscription_notifications-denied-dialog_not-now_click"
         case .subscriptionNotificationsDeniedDialogOpenSettingsClick: return "subscription_notifications-denied-dialog_open-settings_click"
         case .subscriptionNotificationsDeniedDialogSettingsReturn: return "subscription_notifications-denied-dialog_settings_return"
+        case .subscriptionNotificationsDeniedDialogPresentationFailure: return "subscription_notifications-denied-dialog_presentation_failure"
         }
     }
 
@@ -269,7 +272,8 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionWithdrawalEligibilityFailure,
                 .subscriptionNotificationsDeniedDialogNotNowClick,
                 .subscriptionNotificationsDeniedDialogOpenSettingsClick,
-                .subscriptionNotificationsDeniedDialogSettingsReturn:
+                .subscriptionNotificationsDeniedDialogSettingsReturn,
+                .subscriptionNotificationsDeniedDialogPresentationFailure:
             return [.pixelSource]
         }
     }

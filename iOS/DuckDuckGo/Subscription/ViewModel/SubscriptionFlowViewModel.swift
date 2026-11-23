@@ -623,6 +623,11 @@ extension SubscriptionFlowViewModel {
         }
     }
 
+    func notificationsDeniedDialogFailedToPresent() {
+        pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogPresentationFailure, frequency: .dailyAndCount)
+        resolveNotificationsDeniedDialog(with: .notNow)
+    }
+
     func onDisappear() {
         subFeature.onShowNotificationsDeniedDialog = nil
         resolveNotificationsDeniedDialog(with: .notNow)

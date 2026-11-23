@@ -20,6 +20,9 @@ Brokers are named by URL and run from the bundled JSON of the build under test, 
 don't copy broker JSON, so each run uses the JSON that branch ships. A scenario that needs an edited broker JSON names
 the file and how it was made.
 
+A local broker is named by its JSON file instead. `fakebroker.com` is the PIR fake broker's assisted broker, in
+`docs/assisted-opt-out-broker.json` of a `duckduckgo/pir-fake-broker` checkout that serves its test assist endpoint.
+
 ## Credentials
 
 | Name | What it is | Needed for |
@@ -31,4 +34,5 @@ the file and how it was made.
 | Name | What it is | Needed for |
 | --- | --- | --- |
 | `fresh-simulator` | A simulator ddg-check-pir creates for one iOS attempt and deletes afterwards. | Every iOS scenario. |
+| `fake-broker-john-doe` | The PIR fake broker running locally (web on port 3000, API on 3001) with one record seeded: `curl -X POST http://localhost:3001/api/profiles -H 'Content-Type: application/json' -d '{"firstName":"John","lastName":"Doe","middleName":"Michael","age":41,"city":"Springfield","state":"IL"}'` | `fakebroker.com` scenarios. Its opt-out removes the record, so seed it again before each run. |
 | `signed-out-empty-store` | The macOS DEBUG account signed out, with no saved PIR profile. | `scheduler seed` on macOS. |

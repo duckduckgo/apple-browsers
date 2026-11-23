@@ -46,6 +46,9 @@ class WorkflowTests(unittest.TestCase):
         self.error = None
         self.foreign = False
         self.auth_diagnostics = {}
+        self.activity = None
+        self.pending_handoffs, self.waiting, self.polls_before_handoff = [], False, 0
+        self.hook_calls, self.hook_status = [], 200
         self.server_port = self.server(self.handle)
         test = self
 
@@ -117,7 +120,7 @@ class WorkflowTests(unittest.TestCase):
     def run_state(self):
         return dict(id="run", results=[] if self.no_matches else [dict(id="record", profileUrl="https://record.test",
                     profileQuery="query", optOutStatus=self.opt_status, hasEmailConfirmationLink=self.link)],
-                    scanErrors=[self.error] if self.error else [], events=self.events[:])
+                    scanErrors=[self.error] if self.error else [], events=self.events[:], activity=self.activity)
 
     def event(self, summary):
         self.events.append(dict(kind="History", summary=summary, profileQuery="query"))
@@ -140,6 +143,10 @@ class WorkflowTests(unittest.TestCase):
             self.event("Scan Started")
             if self.no_matches:
                 self.event("No Match")
+            return 202, self.run_state()
+        if path.endswith("/optouts/record") and self.pending_handoffs:
+            self.event("Opt-out Started")
+            self.activity = "optOut"
             return 202, self.run_state()
         if path.endswith("/optouts/record"):
             if self.opts_out_in_parent:
@@ -164,7 +171,40 @@ class WorkflowTests(unittest.TestCase):
                 return 500, dict(error=self.log_error)
             return 200, [dict(timestamp="2026-01-01T00:00:00Z", level="info", category="PIR", subsystem="test",
                               process="test-app", message=self.token + " " + json.dumps(self.token))]
+        self.advance_assisted_optout()
         return 200, self.run_state()
+
+    def advance_assisted_optout(self):
+        """Hands off each pending step to the user, resuming only after the hook answers it."""
+        if self.activity != "optOut":
+            return
+        if not self.waiting:
+            if self.polls_before_handoff:
+                self.polls_before_handoff -= 1
+                return
+            self.events.append(dict(kind="History", summary="Waiting for the user", details=self.pending_handoffs[0],
+                                    profileQuery="query", timestamp=f"t{len(self.events)}"))
+            self.waiting = True
+        elif self.hook_calls and self.hook_calls[-1]["step"] == self.pending_handoffs[0] and self.hook_status == 200:
+            self.pending_handoffs.pop(0)
+            self.waiting = False
+            self.events.append(dict(kind="Action", summary="optOut > click", profileQuery="query"))
+            if not self.pending_handoffs:
+                self.opt_status, self.activity = "confirmed", None
+                self.event("Opt-out Confirmed")
+
+    def hook(self, method, path, headers, body):
+        self.hook_calls.append(dict(method=method, step=self.pending_handoffs[0] if self.waiting else None))
+        return self.hook_status, dict(armed=True)
+
+    def assist_options(self, *steps):
+        options = self.auth_options()
+        self.config.update(emailConfirmation=False, assist=dict(hookUrl=f"http://127.0.0.1:{self.server(self.hook)}/api/test/assist"))
+        self.pending_handoffs = list(steps)
+        return options
+
+    def scan_body(self):
+        return next(body for method, path, _, body in self.calls if path == "/api/debug/scans")
 
     def args(self, *extra):
         self.config_file = self.input_directory / "config.json"
@@ -261,6 +301,76 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result["snapshots"]["captured"], 0)
         self.assertIn("unreadable snapshots", result["snapshots"]["collectionError"])
         self.assertTrue(self.instances[-1].stopped)
+
+    def test_assist_shows_web_view_and_calls_hook_only_after_the_handoff(self):
+        self.polls_before_handoff = 2
+        result = self.execute(*self.assist_options("Prove you're human"))
+        self.assertEqual(result["status"], "pass", result)
+        self.assertIs(self.scan_body()["hidesWebView"], False)
+        self.assertEqual(self.hook_calls, [dict(method="POST", step="Prove you're human")])
+        handoff = result["assist"]["handoffs"][0]
+        self.assertEqual((handoff["step"], handoff["hookStatus"]), ("Prove you're human", 200))
+        self.assertIsNotNone(handoff["timestamp"])
+        passed = [c["check"] for c in result["checks"] if c["passed"]]
+        self.assertIn("opt-out resumed after the last hand-off", passed)
+        self.assertIn("selected record emitted Opt-out Confirmed", passed)
+
+    def test_assist_calls_hook_once_per_handoff(self):
+        result = self.execute(*self.assist_options("first check", "second check"))
+        self.assertEqual(result["status"], "pass", result)
+        self.assertEqual([c["step"] for c in self.hook_calls], ["first check", "second check"])
+        self.assertEqual([h["step"] for h in result["assist"]["handoffs"]], ["first check", "second check"])
+
+    def test_assisted_optout_that_completes_without_handoff_fails(self):
+        result = self.execute(*self.assist_options())
+        self.assertEqual(result["status"], "fail")
+        self.assertIn("handed off to the user", result["reason"])
+        self.assertEqual(self.hook_calls, [])
+        self.assertEqual(result["assist"]["handoffs"], [])
+
+    def test_assisted_optout_whose_handoff_never_appears_fails_clearly(self):
+        self.polls_before_handoff = 10**6
+        result = self.execute(*self.assist_options("Prove you're human"))
+        self.assertEqual(result["status"], "fail")
+        self.assertIn("never handed off", result["reason"])
+        self.assertEqual(self.hook_calls, [])
+
+    def test_assist_hook_failure_fails_without_confirming(self):
+        self.hook_status = 500
+        result = self.execute(*self.assist_options("Prove you're human"))
+        self.assertEqual(result["status"], "fail")
+        self.assertIn("assist hook returned HTTP 500", result["reason"])
+        self.assertEqual(result["assist"]["handoffs"][0]["hookStatus"], 500)
+        self.assertEqual(len(self.hook_calls), 1)
+        self.assertNotEqual(self.opt_status, "confirmed")
+
+    def test_optout_without_assist_keeps_hidden_web_view_and_never_calls_a_hook(self):
+        options = self.auth_options()
+        self.config["emailConfirmation"] = False
+        result = self.execute(*options)
+        self.assertEqual(result["status"], "pass", result)
+        self.assertIs(self.scan_body()["hidesWebView"], True)
+        self.assertNotIn("assist", result)
+        self.assertEqual(self.hook_calls, [])
+
+    def test_assist_hook_must_be_loopback_and_only_for_optouts(self):
+        options = self.auth_options()
+        for url in ("http://localhost:3001/api/test/assist", "http://127.0.0.1:3001/x", "http://[::1]:3001/x"):
+            self.config["assist"] = dict(hookUrl=url)
+            with self.subTest(url=url):
+                self.assertEqual(pir.execute(self.args("--check-config", *options), self.Runtime)["status"], "valid")
+        rejected = [dict(hookUrl="http://broker.example/api/test/assist"), dict(hookUrl="http://10.0.0.1/x"),
+                    dict(hookUrl="http://localhost.example/x"), dict(hookUrl="http://user:pw@localhost/x"),
+                    dict(hookUrl="file:///tmp/x"), dict(hookUrl="http://localhost/x?redirect=1"),
+                    dict(hookUrl="http://localhost/x", timeout=1), "http://localhost/x"]
+        for assist in rejected:
+            self.config["assist"] = assist
+            with self.subTest(assist=assist), self.assertRaisesRegex(ValueError, "assist"):
+                pir.execute(self.args("--check-config", *options), self.Runtime)
+        self.config.update(optOut=False, assist=dict(hookUrl="http://localhost/x"))
+        with self.assertRaisesRegex(ValueError, "only to opt-out"):
+            pir.execute(self.args("--check-config", *options), self.Runtime)
+        self.assertEqual(self.instances, [])
 
     def test_native_absent_entitlement_field_means_unverified(self):
         snapshot = dict(result=dict(authenticated=True, backend="provided-token", status="credentialProvided",

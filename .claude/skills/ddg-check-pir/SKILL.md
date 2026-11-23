@@ -28,6 +28,13 @@ An opt-out sends real broker requests and cannot be undone. Run scan-only first,
 the broker, profile, selected record and scenario. With several matches, `expectedFile` must name the exact
 `profileUrl`. The app does the matching; the runner has no matcher of its own.
 
+A broker whose opt-out has a `userAssist` step runs unattended only against a local test broker with a completion hook,
+such as the PIR fake broker. Add `"assist": {"hookUrl": "http://localhost:3001/api/test/assist"}`; the hook must be on a
+loopback host. The run then shows its web view, and each time history shows `Waiting for the user` the runner POSTs the
+hook once, standing in for the user. The report records each hand-off's step and hook status. The run fails if the hook
+doesn't return HTTP 200, no hand-off appears, or the opt-out finishes without one. Without `assist`, an assisted broker
+fails at once with a user-assistance error.
+
 A child broker (opt-out step `parentSiteOptOut`) opts out through its `parent`. The app skips its opt-out as production
 does, so the run reports the scan verdict and leaves the opt-out unverified. Test removal against the parent broker.
 

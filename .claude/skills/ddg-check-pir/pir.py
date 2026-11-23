@@ -3,6 +3,7 @@
 import argparse
 import dataclasses
 import hashlib
+import ipaddress
 import json
 import math
 import os
@@ -25,8 +26,21 @@ class Failed(Exception):
     """The broker flow or an assertion failed."""
 
 
+class TimedOut(Failed):
+    """PIR activity did not finish within its deadline."""
+
+
 class BrokerOutcome(Exception):
     pass
+
+
+HANDOFF = "Waiting for the user"
+
+
+# Redirects could forward the credential header or auth body to another server.
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 class SetupFailed(Exception):
@@ -62,7 +76,7 @@ def load_inputs(path, needs_auth=False):
     raw_config = path.read_bytes()
     config = json.loads(raw_config)
     allowed = {"brokerFile", "profileFile", "expectedFile", "optOut", "emailConfirmation",
-               "subscriptionEnvironment", "pirEnvironment", "pirEndpoint", "activityTimeout", "emailTimeout"}
+               "subscriptionEnvironment", "pirEnvironment", "pirEndpoint", "activityTimeout", "emailTimeout", "assist"}
     if not isinstance(config, dict) or set(config) - allowed:
         raise ValueError("configuration must be an object containing only documented fields; keep credentials separate")
     raw = {}
@@ -88,6 +102,18 @@ def load_inputs(path, needs_auth=False):
         raise ValueError("optOut must explicitly be true or false")
     if config["optOut"] and not isinstance(config.get("emailConfirmation"), bool):
         raise ValueError("emailConfirmation must explicitly be true or false")
+    if "assist" in config:
+        assist = config["assist"]
+        if not config["optOut"] or not isinstance(assist, dict) or set(assist) != {"hookUrl"} or not isinstance(assist["hookUrl"], str):
+            raise ValueError("assist applies only to opt-out runs and contains only hookUrl")
+        hook = urllib.parse.urlsplit(assist["hookUrl"])
+        try:
+            loopback = hook.hostname == "localhost" or ipaddress.ip_address(hook.hostname or "").is_loopback
+        except ValueError:
+            loopback = False
+        # The hook stands in for the user on a local test broker; never send it to a remote host.
+        if hook.scheme not in ("http", "https") or not loopback or hook.username or hook.password or hook.query or hook.fragment:
+            raise ValueError("assist hookUrl must be a credential-free http(s) URL on a loopback host")
     if config["optOut"] or needs_auth or "pirEndpoint" in config:
         if not isinstance(config.get("pirEndpoint", ""), str):
             raise ValueError("pirEndpoint must be a URL string")
@@ -157,9 +183,6 @@ class Client:
         self.last_run = None
         self.last_status = None
         self.collect_snapshots = None
-        class NoRedirect(urllib.request.HTTPRedirectHandler):
-            def redirect_request(self, req, fp, code, msg, headers, newurl):
-                return None
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
     def request(self, method, path, body=None, timeout=10):
@@ -224,7 +247,7 @@ class Client:
             time.sleep(min(.25, max(0, deadline - time.monotonic())))
         raise SetupFailed("PIR prerequisite did not complete within its deadline")
 
-    def idle(self, run_id, timeout):
+    def idle(self, run_id, timeout, on_run=None):
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             run = self.request("GET", f"/api/debug/runs/{run_id}", timeout=min(10, max(.01, deadline - time.monotonic())))
@@ -238,10 +261,14 @@ class Client:
                     self.reported.add(key)
                     print(self.redactor.text(f"PIR {event.get('timestamp')}: {event.get('summary')}"), flush=True)
             assert_clean(run)
+            if on_run:
+                on_run(run)
             if self.last_status == 200 and not run.get("activity"):
                 return run
             time.sleep(min(.5, max(0, deadline - time.monotonic())))
-        raise Failed("PIR activity timed out; cleanup must stop the owned runtime")
+        raise TimedOut("PIR activity timed out; cleanup must stop the owned runtime")
+
+
 def assert_clean(run):
     from scheduler import BROKER_ERRORS
     summaries = [event.get("summary", "") for event in run.get("events", [])]
@@ -279,6 +306,48 @@ def history(run, summary, query=None):
 
 
 
+def call_assist_hook(url):
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+    try:
+        with opener.open(urllib.request.Request(url, method="POST", data=b""), timeout=10) as response:
+            return response.status
+    except urllib.error.HTTPError as error:
+        with error:
+            return error.code
+    except OSError as error:
+        raise Failed(f"assist hook request failed: {type(error).__name__}") from error
+
+
+def assisted_idle(context, client, run_id, config):
+    """Waits for the opt-out, standing in for the user once per hand-off and only after it appears."""
+    hook_url = config["assist"]["hookUrl"]
+    handoffs = context.result.setdefault("assist", dict(hookUrl=hook_url, handoffs=[]))["handoffs"]
+
+    def respond(run):
+        events = [e for e in run.get("events", []) if e.get("kind") == "History" and e.get("summary") == HANDOFF]
+        for event in events[len(handoffs):]:
+            record = dict(step=event.get("details"), timestamp=event.get("timestamp"), profileQuery=event.get("profileQuery"))
+            handoffs.append(record)
+            record.update(hookStatus=call_assist_hook(hook_url), hookCalledAt=time.time())
+            print(f"PIR assist: hand-off {record['step']!r} at {record['timestamp']}; hook HTTP {record['hookStatus']}", flush=True)
+            if record["hookStatus"] != 200:
+                raise Failed(f"assist hook returned HTTP {record['hookStatus']} for hand-off {record['step']!r}")
+
+    try:
+        run = client.idle(run_id, config["activityTimeout"], on_run=respond)
+    except TimedOut as error:
+        if not handoffs:
+            raise Failed(f"opt-out never handed off to the user ({HANDOFF!r}) within activityTimeout") from error
+        raise Failed(f"opt-out did not finish within activityTimeout after {len(handoffs)} assisted hand-off(s)") from error
+    context.check(f"opt-out handed off to the user ({HANDOFF!r}) before it finished, as assist requires", handoffs)
+    for record in handoffs:
+        context.check(f"hand-off {record['step']!r} at {record['timestamp']}: assist hook returned HTTP {record['hookStatus']}", True)
+    events = run.get("events", [])
+    last = max(i for i, e in enumerate(events) if e.get("kind") == "History" and e.get("summary") == HANDOFF)
+    context.check("opt-out resumed after the last hand-off", any(e.get("summary") != HANDOFF for e in events[last + 1:]))
+    return run
+
+
 def verify_auth(snapshot, config, *, provided):
     result = snapshot.get("result", {})
     backend, status, entitled = (("provided-token", "credentialProvided", None) if provided
@@ -311,7 +380,7 @@ def workflow(context, inputs, client, token):
         context.check("saved subscription has PIR entitlement for the configured backend", True)
     context.unverified("PIR UI and production scheduler", "debug jobs run directly through the PIR debug server")
     context.unverified("PIR worker and backend traffic", "this workflow records debug-server responses and application logs, without network interception")
-    started = client.request("POST", "/api/debug/scans", dict(broker=broker, profile=profile, hidesWebView=True))
+    started = client.request("POST", "/api/debug/scans", dict(broker=broker, profile=profile, hidesWebView="assist" not in config))
     run_id = started.get("id")
     if not isinstance(run_id, str) or not re.fullmatch(r"[A-Za-z0-9-]+", run_id):
         raise Failed("scan did not return a valid run ID")
@@ -335,7 +404,7 @@ def workflow(context, inputs, client, token):
     context.check("scan selected one record to opt out", True)
     path = f"/api/debug/runs/{run_id}"
     client.request("POST", f"{path}/optouts/{result_id}")
-    opted = client.idle(run_id, config["activityTimeout"])
+    opted = assisted_idle(context, client, run_id, config) if "assist" in config else client.idle(run_id, config["activityTimeout"])
     result = selected(opted, result_id=result_id)
     if result.get("optOutStatus") == "optsOutInParent":
         context.check("app skipped the opt-out because the broker opts out in its parent",

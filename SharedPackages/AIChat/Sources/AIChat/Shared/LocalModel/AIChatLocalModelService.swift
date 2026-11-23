@@ -60,6 +60,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
     private let storage: AIChatPageSummariesModelStoring
     private let engine: AIChatLocalModelEngine
     private let runQueue: AIChatLocalRunQueue
+    private let instrumentation: AIChatLocalModelInstrumentation?
     private let pushers = NSHashTable<AnyObject>.weakObjects()
     private var lastPushedState: AIChatLocalModelState?
     private var cancellables = Set<AnyCancellable>()
@@ -69,12 +70,14 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
                 storage: AIChatPageSummariesModelStoring,
                 engine: AIChatLocalModelEngine = AppleFoundationModelEngine(),
                 runQueue: AIChatLocalRunQueue? = nil,
-                notificationCenter: NotificationCenter = .default) {
+                notificationCenter: NotificationCenter = .default,
+                instrumentation: AIChatLocalModelInstrumentation? = nil) {
         self.isFeatureFlagOn = isFeatureFlagOn
         self.featureFlagUpdates = featureFlagUpdates
         self.storage = storage
         self.engine = engine
         self.runQueue = runQueue ?? AIChatLocalRunQueue(engine: engine)
+        self.instrumentation = instrumentation
         self.availability = Self.uncheckedAvailability
         self.lastPushedState = currentState
 
@@ -85,15 +88,22 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
 
         featureFlagUpdates
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.refreshAvailability() }
+            .sink { [weak self] in
+                self?.refreshAvailability()
+                self?.reportState()
+            }
             .store(in: &cancellables)
 
         // Apple Intelligence is turned on and off in System Settings, so check again whenever the user comes back.
         notificationCenter.publisher(for: Self.didBecomeActiveNotification)
-            .sink { [weak self] _ in self?.refreshAvailability() }
+            .sink { [weak self] _ in
+                self?.refreshAvailability()
+                self?.reportState()
+            }
             .store(in: &cancellables)
 
         refreshAvailability()
+        reportState()
     }
 
     /// Stands in while the flag is off, so launch doesn't touch Foundation Models for everyone else.
@@ -187,6 +197,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         runQueue.enqueue(request, ownerID: ObjectIdentifier(pusher)) { [weak pusher] chunk in
             pusher?.pushLocalRunChunk(chunk)
         }
+        instrumentation?.fire(.runStarted(engine: storage.pageSummariesModel, task: request.task))
         return AIChatLocalRunStartReply(model: engine.model)
     }
 
@@ -218,6 +229,15 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
             optIn()
         }
         return result
+    }
+
+    // MARK: - Pixels
+
+    /// The pixel is daily, so firing it at launch, on every return to the app and on flag updates
+    /// counts each person once a day, including one whose flag turns on mid-session.
+    private func reportState() {
+        guard let state = currentState else { return }
+        instrumentation?.fire(.state(selected: storage.pageSummariesModel, state: state, availability: availability))
     }
 
     // MARK: - Pushes

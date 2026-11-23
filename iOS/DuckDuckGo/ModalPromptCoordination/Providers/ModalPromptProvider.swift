@@ -53,6 +53,21 @@ enum ModalPromptPresentationKind {
     /// checkpoint. All its eligibility must live in `isEligibleToPresent(isOnboardingComplete:)`,
     /// since `provideModalPrompt()` is never called.
     case deferred
+
+    /// Presents UI the app does not own, such as a system sheet. The manager holds the slot while
+    /// `presentExternalPrompt(from:completion:)` runs, and starts the cooldown only if it was shown.
+    ///
+    /// All its eligibility must live in `isEligibleToPresent(isOnboardingComplete:)`, since
+    /// `provideModalPrompt()` is never called.
+    case external
+}
+
+/// How an `.external` provider's presentation ended.
+enum ExternalPromptResult {
+    /// The prompt was shown and is now gone.
+    case shown(PromptExposureID)
+    /// Nothing was shown, so the slot is freed without a cooldown.
+    case notShown
 }
 
 /// A type that can provide a prompt to be presented to the centralised modal prompts coordination system.
@@ -81,6 +96,10 @@ protocol ModalPromptProvider {
 
     /// Called when a held `.deferred` slot is released unredeemed. Default: no-op.
     func didReleaseDeferredSlot()
+
+    /// Presents an `.external` provider's UI. `completion` must be called exactly once, after the
+    /// UI has gone or failed to appear. Default: completes with `.notShown`.
+    func presentExternalPrompt(from presenter: ModalPromptPresenter, completion: @escaping @MainActor (ExternalPromptResult) -> Void)
 }
 
 extension ModalPromptProvider {
@@ -98,6 +117,10 @@ extension ModalPromptProvider {
     func didPresentModal() {}
 
     func didReleaseDeferredSlot() {}
+
+    func presentExternalPrompt(from presenter: ModalPromptPresenter, completion: @escaping @MainActor (ExternalPromptResult) -> Void) {
+        completion(.notShown)
+    }
 
 }
 

@@ -56,6 +56,8 @@ enum ModalPromptAttemptPhase: Equatable {
     case presentationActive(PromoQueueModalOwnershipIdentity)
     /// A deferred promo holds the slot pending an external event.
     case deferred(PromoQueueModalOwnershipIdentity)
+    /// An external promo is presenting UI the app does not own.
+    case external(PromoQueueModalOwnershipIdentity)
 }
 
 /// Manages the coordination and presentation of modal prompts based on priority and cooldown rules.
@@ -71,6 +73,7 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     private enum SelectedPrompt {
         case modal(configuration: ModalPromptConfiguration, provider: any ModalPromptProvider)
         case deferred(provider: any ModalPromptProvider)
+        case external(provider: any ModalPromptProvider)
     }
 
     private struct CommittedAttempt {
@@ -104,6 +107,9 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         /// Holds the lease until redeemed or released. No root to observe, so reconciliation
         /// deliberately leaves this state alone.
         case deferred(PromoQueueModalLease, provider: any ModalPromptProvider)
+        /// Holds the lease while a provider presents UI the app does not own. No root to observe,
+        /// so the provider's completion ends it.
+        case external(PromoQueueModalLease)
     }
 
     private let promptExposureReporter: PromptExposureReporting
@@ -155,6 +161,8 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             return .presentationActive(lease.ownershipIdentity)
         case .deferred(let lease, _):
             return .deferred(lease.ownershipIdentity)
+        case .external(let lease):
+            return .external(lease.ownershipIdentity)
         }
     }
 
@@ -189,7 +197,18 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
     func presentModalPromptIfNeeded(from presenter: ModalPromptPresenter) {
         // Deferred promos need the coordinated route, which owns the lease they hold. So they
         // must report themselves ineligible here — see `AppRatingPromptCoordinationPolicy`.
-        guard case .modal(let configuration, let provider) = selectModalPrompt() else { return }
+        let selectedPrompt = selectModalPrompt()
+
+        if case .external(let provider) = selectedPrompt {
+            let attemptID = UUID()
+            legacyActiveAttemptIDs.insert(attemptID)
+            presentExternalPrompt(from: provider, presenter: presenter, coordinated: false) { [weak self] in
+                self?.legacyActiveAttemptIDs.remove(attemptID) != nil
+            }
+            return
+        }
+
+        guard case .modal(let configuration, let provider) = selectedPrompt else { return }
 
         let scheduledAttemptID = UUID()
         legacyActiveAttemptIDs.insert(scheduledAttemptID)
@@ -228,6 +247,19 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
             Logger.modalPrompt.debug(
                 "[Modal Prompt Coordination] - Holding the slot for \(type(of: provider)) until it is redeemed."
             )
+
+        case .external(let provider):
+            attemptState = .external(lease)
+            presentExternalPrompt(from: provider, presenter: presenter, coordinated: true) { [weak self] in
+                guard let self, case .external(let currentLease) = self.attemptState,
+                      currentLease.ownershipIdentity == lease.ownershipIdentity else {
+                    return false
+                }
+
+                self.attemptState = .idle
+                lease.release()
+                return true
+            }
 
         case .modal(let configuration, let provider):
             let committedAttempt = CommittedAttempt(
@@ -331,6 +363,10 @@ private extension ModalPromptCoordinationManager {
                 return .deferred(provider: provider)
             }
 
+            if provider.presentationKind == .external {
+                return .external(provider: provider)
+            }
+
             guard let configuration = provider.provideModalPrompt() else { continue }
 
             return .modal(configuration: configuration, provider: provider)
@@ -358,6 +394,31 @@ private extension ModalPromptCoordinationManager {
             ) { [weak self] in
                 self?.didPresent(committedAttempt.provider, exposureID: committedAttempt.configuration.exposureID, coordinated: true)
             }
+        }
+    }
+
+    /// Hands the slot to an `.external` provider until it completes.
+    ///
+    /// - Parameter endAttempt: Frees the slot. Returns `false` when the attempt is no longer the
+    ///   current one, so a late completion changes nothing.
+    func presentExternalPrompt(
+        from provider: any ModalPromptProvider,
+        presenter: ModalPromptPresenter,
+        coordinated: Bool,
+        endAttempt: @escaping @MainActor () -> Bool
+    ) {
+        // No root to watch, so a close handler waits on the attempt itself.
+        handedOffPromptRoot = nil
+        isPromptAwaitingHandOff = true
+        Logger.modalPrompt.debug("[Modal Prompt Coordination] - Handing the slot to \(type(of: provider)) to present its own UI.")
+
+        provider.presentExternalPrompt(from: presenter) { [weak self] result in
+            guard let self, endAttempt() else { return }
+
+            self.isPromptAwaitingHandOff = false
+            guard case .shown(let exposureID) = result else { return }
+
+            self.didPresent(provider, exposureID: exposureID, coordinated: coordinated)
         }
     }
 
@@ -424,7 +485,7 @@ private extension ModalPromptCoordinationManager {
         switch attemptState {
         case .idle:
             return
-        case .evaluating(let lease), .presentationActive(let lease, _):
+        case .evaluating(let lease), .presentationActive(let lease, _), .external(let lease):
             attemptState = .idle
             lease.release()
         case .committed(let committedAttempt):

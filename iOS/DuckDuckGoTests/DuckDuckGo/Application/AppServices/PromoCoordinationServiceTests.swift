@@ -202,6 +202,7 @@ final class PromoCoordinationServiceTests {
     func whenHigherPriorityProvidersReturnNilThenCorrectProviderIsUsed(priority: ProviderPriority) throws {
         // GIVEN
         let providers = ModalPromptProviders(
+            ageSignal: MockModalPromptProvider(shouldReturnPrompt: false),
             // Not eligible, so it cannot win ahead of the provider under test. Deferred ordering
             // is covered by ModalPromptCoordinationManagerDeferredTests.
             appRatingPrompt: MockModalPromptProvider(shouldReturnPrompt: false),

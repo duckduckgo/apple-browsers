@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import BrowserServicesKit
 import Persistence
 import SetDefaultBrowserUI
 import PixelKit
@@ -72,7 +73,13 @@ enum PromoCoordinationFactory {
             firePixel: { PixelKit.fire($0) }
         )
 
+        let ageSignalModalPromptProvider = AgeSignalModalPromptProvider(
+            requester: AgeSignalRequester(service: DefaultAgeRangeService(), storage: dependency.keyValueFileStoreService.throwingKeyedStoring()),
+            featureFlagger: dependency.featureFlagger
+        )
+
         let providers = ModalPromptProviders(
+            ageSignal: ageSignalModalPromptProvider,
             appRatingPrompt: appRatingPromptCoordinator,
             newAddressBarPicker: newAddressBarPickerModalPromptProvider,
             defaultBrowser: defaultBrowserModalPromptProvider,

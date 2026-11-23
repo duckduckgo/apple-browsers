@@ -29,6 +29,9 @@ final class MockModalPromptProvider: ModalPromptProvider {
     private(set) var didCallProvideModalPrompt = false
     private(set) var didCallDidPresentModal = false
     private(set) var didCallDidReleaseDeferredSlot = false
+    private(set) var presentExternalPromptCallCount = 0
+    /// Held so a test decides when, and with what result, the external prompt ends.
+    private(set) var externalPromptCompletion: (@MainActor (ExternalPromptResult) -> Void)?
     private(set) var capturedIsOnboardingComplete: Bool?
 
     var presentationKind: ModalPromptPresentationKind {
@@ -61,6 +64,11 @@ final class MockModalPromptProvider: ModalPromptProvider {
 
     func didReleaseDeferredSlot() {
         didCallDidReleaseDeferredSlot = true
+    }
+
+    func presentExternalPrompt(from presenter: ModalPromptPresenter, completion: @escaping @MainActor (ExternalPromptResult) -> Void) {
+        presentExternalPromptCallCount += 1
+        externalPromptCompletion = completion
     }
 
     func reset() {

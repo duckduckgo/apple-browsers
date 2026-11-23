@@ -34,6 +34,7 @@ extension MainViewController: ModalPromptPresenter {}
 // MARK: - Service
 
 struct ModalPromptProviders {
+    let ageSignal: ModalPromptProvider
     let appRatingPrompt: ModalPromptProvider
     let newAddressBarPicker: ModalPromptProvider
     let defaultBrowser: ModalPromptProvider
@@ -46,6 +47,7 @@ struct ModalPromptProviders {
     /// Highest-to-lowest launch-promo priority used by the modal manager.
     var ordered: [ModalPromptProvider] {
         [
+            ageSignal,
             appRatingPrompt,
             winBackOffer,
             subscriptionPromo,

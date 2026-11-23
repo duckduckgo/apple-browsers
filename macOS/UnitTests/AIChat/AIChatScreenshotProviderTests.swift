@@ -84,6 +84,6 @@ struct AIChatScreenshotProviderTests {
     private func json(_ response: AIChatCaptureScreenshotResponse) throws -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
-        return String(decoding: try encoder.encode(response), as: UTF8.self)
+        return try #require(String(bytes: try encoder.encode(response), encoding: .utf8))
     }
 }

@@ -127,6 +127,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     var isInteractionPrevented: Bool = false {
         didSet {
             addNewTabButtonFooter?.isEnabled = !isInteractionPrevented
+            updateDuckAIChromeSegmentedControlState()
         }
     }
 
@@ -1497,7 +1498,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private var isDuckAIChromeButtonsEnabled: Bool {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
-        return tab.content != .onboarding
+        return tab.content != .onboarding && !isInteractionPrevented
     }
 
     private func updateDuckAIChromeSegmentedControlState() {

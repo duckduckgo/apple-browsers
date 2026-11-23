@@ -42,6 +42,21 @@ final class NetworkProtectionClientTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWhenTheEnvironmentChangesThenRequestsGoToTheNewController() {
+        var environment = VPNSettings.SelectedEnvironment.production
+        let client = NetworkProtectionBackendClient { environment }
+
+        XCTAssertEqual(client.registerKeyURL.host, VPNSettings.SelectedEnvironment.production.endpointURL.host)
+        XCTAssertEqual(client.serversURL.host, VPNSettings.SelectedEnvironment.production.endpointURL.host)
+        XCTAssertEqual(client.locationsURL.host, VPNSettings.SelectedEnvironment.production.endpointURL.host)
+
+        environment = .staging
+
+        XCTAssertEqual(client.registerKeyURL.host, VPNSettings.SelectedEnvironment.staging.endpointURL.host)
+        XCTAssertEqual(client.serversURL.host, VPNSettings.SelectedEnvironment.staging.endpointURL.host)
+        XCTAssertEqual(client.locationsURL.host, VPNSettings.SelectedEnvironment.staging.endpointURL.host)
+    }
+
     func testWhenDecodingServersResponse_AndServersDataIsValid_ThenResponseIsDecoded() throws {
         let data = TestData.mockServers
         let decodedServers = try JSONDecoder().decode([NetworkProtectionServer].self, from: data)

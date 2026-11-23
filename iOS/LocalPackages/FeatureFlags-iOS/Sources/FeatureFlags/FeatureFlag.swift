@@ -490,6 +490,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275565?focus=true
     case embeddedExtension
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220738096505020
+    /// Serve surrogates from the embedded web extension. Read it via `WebExtensionAvailability.isAppleSurrogateRedirectionEnabled`.
+    case appleSurrogateRedirection
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213278892205657?focus=true
     case forceDarkModeOnWebsites
 
@@ -1094,6 +1098,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate))
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension))
+        case .appleSurrogateRedirection:
+            Config(source: .remoteReleasable(TrackerProtectionConfigSubfeature.appleSurrogateRedirection))
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(ForceDarkModeOnWebsitesSubfeature.featureRollout))
         case .adBlockingExtension:

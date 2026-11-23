@@ -75,18 +75,44 @@ struct OnboardingAIModelsResolverTests {
         #expect(result.models.map(\.id) == ["openai-1"])
     }
 
+    @Test("Check only Gemma models are kept from the tinfoil provider")
+    func onlyGemmaIsKeptFromTinfoil() {
+        // WHEN
+        let result = OnboardingAIModelsResolver.resolve(from: [
+            model(id: "tinfoil/gpt-oss-120b", provider: "tinfoil"),
+            model(id: "tinfoil/gemma4-31b", provider: "tinfoil", shortName: "Gemma")
+        ])
+
+        // THEN
+        #expect(result.models.map(\.id) == ["tinfoil/gemma4-31b"])
+        #expect(result.models.map(\.provider) == [.tinfoil])
+        #expect(result.models.map(\.modelShortName) == ["Gemma"])
+    }
+
+    @Test("Check Mistral models are dropped")
+    func mistralIsDropped() {
+        // WHEN
+        let result = OnboardingAIModelsResolver.resolve(from: [
+            model(id: "openai", provider: "openai"),
+            model(id: "mistral-small-2603", provider: "mistral")
+        ])
+
+        // THEN
+        #expect(result.models.map(\.id) == ["openai"])
+    }
+
     @Test("Check providers are returned in the API (first-appearance) order")
     func ordersByProviderAppearanceOrder() {
         // WHEN
         let result = OnboardingAIModelsResolver.resolve(from: [
-            model(id: "mistral", provider: "mistral"),
+            model(id: "tinfoil/gemma4-31b", provider: "tinfoil"),
             model(id: "openai", provider: "openai"),
             model(id: "anthropic", provider: "anthropic")
         ])
 
         // THEN the order matches the input, not a fixed provider order
-        #expect(result.models.map(\.provider) == [.mistral, .openai, .anthropic])
-        #expect(result.models.map(\.id) == ["mistral", "openai", "anthropic"])
+        #expect(result.models.map(\.provider) == [.tinfoil, .openai, .anthropic])
+        #expect(result.models.map(\.id) == ["tinfoil/gemma4-31b", "openai", "anthropic"])
     }
 
     @Test("Check default is the OpenAI model when present")
@@ -95,7 +121,7 @@ struct OnboardingAIModelsResolverTests {
         let result = OnboardingAIModelsResolver.resolve(from: [
             model(id: "anthropic", provider: "anthropic"),
             model(id: "openai", provider: "openai"),
-            model(id: "mistral", provider: "mistral")
+            model(id: "tinfoil/gemma4-31b", provider: "tinfoil")
         ])
 
         // THEN
@@ -106,12 +132,12 @@ struct OnboardingAIModelsResolverTests {
     func defaultFallsBackToFirstShownWhenNoOpenAI() {
         // WHEN
         let result = OnboardingAIModelsResolver.resolve(from: [
-            model(id: "mistral", provider: "mistral"),
+            model(id: "tinfoil/gemma4-31b", provider: "tinfoil"),
             model(id: "anthropic", provider: "anthropic")
         ])
 
         // THEN default is the first model in API (first-appearance) order.
-        #expect(result.defaultModelId == "mistral")
+        #expect(result.defaultModelId == "tinfoil/gemma4-31b")
     }
 
     @Test("Check empty input yields no models and no default")

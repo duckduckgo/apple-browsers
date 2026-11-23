@@ -3073,6 +3073,22 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
     }
 
+    func test_updateSelectedModel_withoutPersistingSelection_onNewChat_doesNotChangePreferredModel() {
+        sut.modelStore.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+
+        sut.updateSelectedModel("mistral", persistsSelection: false)
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku",
+                       "a chat-only pick must not retarget the new-chat default")
+        XCTAssertEqual(sut.modelStore.currentModelId, "mistral",
+                       "a chat-only pick still updates the live current-tab model")
+    }
+
     func test_persistedModelId_fallsBackToPreferredModel_onFreshTabActivation() {
         sut.modelStore.models = [
             makeModel(id: "gpt-5", access: true),

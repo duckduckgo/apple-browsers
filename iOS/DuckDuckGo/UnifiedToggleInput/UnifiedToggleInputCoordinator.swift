@@ -1917,8 +1917,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.clearRejectionBanner()
     }
 
-    func updateSelectedModel(_ modelId: String) {
-        modelSelector.updateSelectedModel(modelId)
+    /// - Parameter persistsSelection: When `false`, `modelId` applies to the current chat only and is not
+    ///   saved as the model that new chats start on.
+    func updateSelectedModel(_ modelId: String, persistsSelection: Bool = true) {
+        modelSelector.updateSelectedModel(modelId, persistsSelection: persistsSelection)
     }
 
     /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.

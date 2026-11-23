@@ -18,3 +18,11 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: Refresh page
 
 - waitForAnimationToEnd
+
+# YouTube's ranking for the title changes, so the video isn't always the first result
+- scrollUntilVisible:
+    element:
+      text: ${output.videoTitle}.*
+    direction: DOWN
+    timeout: 30000
+    centerElement: true

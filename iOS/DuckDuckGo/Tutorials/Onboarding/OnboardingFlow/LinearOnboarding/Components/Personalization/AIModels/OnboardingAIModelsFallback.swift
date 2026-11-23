@@ -37,13 +37,13 @@ protocol OnboardingAIModelsFallbackProviding {
 struct OnboardingAIModelsFallback: OnboardingAIModelsFallbackProviding {
     /// Compiled-in last resort so the picker is never empty, even with no config and no network.
     /// Mirrors what the resolver picks from the models API: one accessible model per supported
-    /// provider, in display order (ChatGPT, Claude, Mistral). Bypasses the resolver, so this array
+    /// provider, in display order (ChatGPT, Claude, Gemma). Bypasses the resolver, so this array
     /// order is the final display order. Default is OpenAI.
     private static let lastResortFallback = OnboardingAIModelResponse(
         models: [
             OnboardingAIModelOption(id: "gpt-5.4-nano", provider: .openai, modelShortName: "5.4-nano"),
             OnboardingAIModelOption(id: "claude-haiku-4-5", provider: .anthropic, modelShortName: "Haiku 4.5"),
-            OnboardingAIModelOption(id: "mistral-small-2603", provider: .mistral, modelShortName: "Mistral")
+            OnboardingAIModelOption(id: "tinfoil/gemma4-31b", provider: .tinfoil, modelShortName: "Gemma")
         ],
         defaultModelId: "gpt-5.4-nano"
     )
@@ -96,7 +96,7 @@ private struct OnboardingAIModelsFallbackPayload: Decodable {
 
     var response: OnboardingAIModelResponse {
         let options = models.compactMap { entry -> OnboardingAIModelOption? in
-            guard let model = entry.model, let provider = OnboardingAIProvider(rawValue: model.provider) else { return nil }
+            guard let model = entry.model, let provider = OnboardingAIProvider(modelId: model.id, provider: model.provider) else { return nil }
             return OnboardingAIModelOption(id: model.id, provider: provider, modelShortName: model.modelShortName)
         }
         // If the default isn't among the kept models, prefer the OpenAI one, otherwise the first, so the picker always has a selection.

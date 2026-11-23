@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Common
 import FoundationExtensions
@@ -90,6 +91,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             tld: Application.appDelegate.tld,
             featureFlagger: featureFlagger,
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
+            onboardingPathStarter: { CapturingPathStarter() },
             appearancePreferences: appearancePreferences,
             themeManager: MockThemeManager(),
             startupPreferences: startupPreferences,
@@ -103,6 +105,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
             syncServiceProvider: { nil },
             syncErrorHandler: SyncErrorHandler(),
+            aiChatBonusOffer: AIChatBonusOfferDependencies(handler: AIChatBonusHandler(service: AIChatBonusService(), factsProvider: AIChatBonusFactsProvider()), messageLog: AIChatBonusMessageLog()),
             webExtensionAvailability: nil,
             dockCustomization: DockCustomizerMock(),
             reinstallUserDetection: MockReinstallingUserDetecting(),

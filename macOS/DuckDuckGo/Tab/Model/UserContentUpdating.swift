@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Combine
 import Common
@@ -96,6 +97,7 @@ final class UserContentUpdating {
          tld: TLD,
          featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
+         onboardingPathStarter: @escaping () -> ContextualOnboardingPathStarting,
          appearancePreferences: AppearancePreferences,
          themeManager: ThemeManaging,
          startupPreferences: StartupPreferences,
@@ -108,6 +110,7 @@ final class UserContentUpdating {
          autoconsentManagement: AutoconsentManagement,
          contentScopePreferences: ContentScopePreferences,
          syncErrorHandler: SyncErrorHandling,
+         aiChatBonusOffer: AIChatBonusOfferDependencies,
          webExtensionAvailability: WebExtensionAvailabilityProviding?,
          dockCustomization: DockCustomization,
          reinstallUserDetection: ReinstallingUserDetecting,
@@ -144,6 +147,7 @@ final class UserContentUpdating {
                                                           tld: tld,
                                                           featureFlagger: featureFlagger,
                                                           onboardingNavigationDelegate: onboardingNavigationDelegate,
+                                                          onboardingPathStarter: onboardingPathStarter,
                                                           appearancePreferences: appearancePreferences,
                                                           themeManager: themeManager,
                                                           startupPreferences: startupPreferences,
@@ -157,6 +161,7 @@ final class UserContentUpdating {
                                                           contentScopePreferences: contentScopePreferences,
                                                           syncServiceProvider: syncServiceProvider,
                                                           syncErrorHandler: syncErrorHandler,
+                                                          aiChatBonusOffer: aiChatBonusOffer,
                                                           webExtensionAvailability: webExtensionAvailability,
                                                           dockCustomization: dockCustomization,
                                                           reinstallUserDetection: reinstallUserDetection,

@@ -136,17 +136,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     let applicationUpdateDetector: ApplicationUpdateDetector
-    var cpmAppSessionDiagnostics: CPMAppSessionDiagnostics {
-        let versionChange: CPMAppSessionDiagnostics.VersionChange?
-        switch applicationUpdateDetector.isApplicationUpdated() {
-        case .updated: versionChange = .updated
-        case .downgraded: versionChange = .downgraded
-        case .noChange: versionChange = nil
-        }
-        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate) {
-            NSApp.isActive ? .active : .inactive
-        }
-    }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -213,8 +202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckPlayerOverlayObserver: DuckPlayerOverlayObserver = {
         DuckPlayerOverlayObserver(
             duckPlayer: duckPlayer,
-            windowControllersManager: windowControllersManager,
-            featureFlagger: featureFlagger
+            windowControllersManager: windowControllersManager
         )
     }()
 
@@ -353,7 +341,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncService: syncService,
         pinningManager: pinningManager,
         promoService: promoService,
-        dockCustomization: dockCustomization
+        dockCustomization: dockCustomization,
+        addToDockVideoPresenter: addToDockVideoPresenter
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -365,6 +354,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Open surfaces stamp it via `NSApp.delegateTyped.aiChatConversationSourceHandler`; the user-script
     /// handler is injected the same instance.
     let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
+    /// The app's single owner of the Duck.ai bonus record, shared by every consumer.
+    let aiChatBonusService = AIChatBonusService()
+    /// The bonus offer bridge handler and message log, shared by every Duck.ai tab.
+    let aiChatBonusOffer: AIChatBonusOfferDependencies
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
 
@@ -410,22 +403,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
 
     let remoteMessagingClient: RemoteMessagingClient!
-    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
+    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater & ContextualOnboardingPathStarting
 
     @MainActor
     var isOnboardingReadyForPrompts: Bool {
-        guard onboardingContextualDialogsManager.state == .onboardingCompleted else { return false }
-        if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
-            let isActiveTabOnboarding = windowControllersManager.lastKeyMainWindowController?.activeTab?.content == .onboarding
-            return !isActiveTabOnboarding
-        }
-        return OnboardingActionsManager.isOnboardingFinished
+        OnboardingActionsManager.isOnboardingFinished && onboardingContextualDialogsManager.state == .onboardingCompleted
     }
 
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
     let eventHubIntegration: MacOSEventHubIntegration
     private lazy var webNotificationClickHandler = WebNotificationClickHandler(tabFinder: windowControllersManager)
-    private lazy var onboardingNonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
     let userChurnService: UserChurnService
     let userChurnScheduler: UserChurnBackgroundActivityScheduler
     let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitor
@@ -525,7 +512,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
         BookmarksEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             hasTopLevelEntitiesProvider: { [bookmarkManager] in
                 bookmarkManager.hasTopLevelEntities()
             },
@@ -540,7 +526,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
         AutofillEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             isAnyCategoryEmptyProvider: {
                 guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return false }
                 return (try? vault.accountsCount()) == 0 || (try? vault.identitiesCount()) == 0 || (try? vault.creditCardsCount()) == 0
@@ -655,6 +640,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var updateController: UpdateController?
     private var updateNotificationPromoBridge: UpdateNotificationPromoBridge?
     let dockCustomization: DockCustomization
+    let addToDockVideoPresenter: AddToDockVideoPresenting
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
     static var firstLaunchDate: Date
@@ -687,7 +673,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
-    init(dockCustomization: DockCustomization) {
+    override init() {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)
         defer {
@@ -695,7 +681,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         self.startupProfiler = startupProfiler
-        self.dockCustomization = dockCustomization
 
         if [.unitTests, .integrationTests].contains(AppVersion.runType) {
             keyStore = (NSClassFromString("MockEncryptionKeyStore") as? EncryptionKeyStoring.Type)!.init()
@@ -863,6 +848,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        self.dockCustomization = DockCustomizer(featureFlagger: featureFlagger)
+        self.addToDockVideoPresenter = AddToDockVideoPresenter()
         webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
@@ -1072,9 +1059,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
-        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
-                                                              windowControllersManager: windowControllersManager,
-                                                              historyCoordinator: historyCoordinator)
         localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
@@ -1121,6 +1105,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
 #endif
+        aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,
+                                                              windowControllersManager: windowControllersManager,
+                                                              historyCoordinator: historyCoordinator,
+                                                              bookmarkManager: bookmarkManager,
+                                                              permissionManager: permissionManager)
         notificationService = UserNotificationAuthorizationService()
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
@@ -1211,6 +1200,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           wideEventManaging: wideEvent,
                                           aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner })
 
+        aiChatBonusOffer = AIChatBonusOfferDependencies(
+            handler: AIChatBonusHandler(service: aiChatBonusService, factsProvider: AIChatBonusFactsProvider()),
+            messageLog: AIChatBonusMessageLog()
+        )
+
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -1221,6 +1215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 configurationStore: configurationStore,
                 contentScopeExperimentsManager: self.contentScopeExperimentsManager,
                 onboardingNavigationDelegate: windowControllersManager,
+                onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
                 appearancePreferences: appearancePreferences,
                 themeManager: themeManager,
                 startupPreferences: startupPreferences,
@@ -1237,6 +1232,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences,
                 syncErrorHandler: syncErrorHandler,
+                aiChatBonusOffer: aiChatBonusOffer,
                 webExtensionAvailability: webExtensionAvailability,
                 dockCustomization: dockCustomization,
                 reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
@@ -1256,6 +1252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             configurationStore: configurationStore,
             contentScopeExperimentsManager: self.contentScopeExperimentsManager,
             onboardingNavigationDelegate: windowControllersManager,
+            onboardingPathStarter: { Application.appDelegate.onboardingContextualDialogsManager },
             appearancePreferences: appearancePreferences,
             themeManager: themeManager,
             startupPreferences: startupPreferences,
@@ -1272,6 +1269,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
+            aiChatBonusOffer: aiChatBonusOffer,
             webExtensionAvailability: webExtensionAvailability,
             dockCustomization: dockCustomization,
             reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
@@ -1301,7 +1299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: featureFlagger,
                 subscriptionManager: subscriptionManager
             ),
-            isNonBlocking: { [featureFlagger] in NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking }
+            settings: keyValueStore.throwingKeyedStoring()
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -1311,7 +1309,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                 notificationPresenter: notificationPresenter,
                                                                                 uiHosting: { windowControllersManager.activeViewController },
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted },
-                                                                                dockCustomization: dockCustomization)
+                                                                                dockCustomization: dockCustomization,
+                                                                                addToDockVideoFeatureFlagger: featureFlagger,
+                                                                                addToDockVideoPresenter: addToDockVideoPresenter)
         // Dedicated store: EventHub flushes often and `KeyValueFileStore.set` rewrites the whole file.
         // `try?` — telemetry runs in memory rather than failing launch.
         eventHubIntegration = MacOSEventHubIntegration(
@@ -1342,7 +1342,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 themeManager: themeManager,
                 dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager },
                 // App Store builds can't detect reinstalls, so rules using it fail there rather than treating everyone as new.
-                isReturningUser: { isSparkleBuild ? reinstallUserDetection.isReinstallingUser : nil }
+                isReturningUser: { isSparkleBuild ? reinstallUserDetection.isReinstallingUser : nil },
+                aiChatBonusStateProvider: aiChatBonusService
             )
             let subscriptionManagerForPIR = subscriptionManager
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
@@ -1594,6 +1595,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             Logger.general.error("Problem when checking for reinstalling user: \(error.localizedDescription)")
         }
+        OnboardingActionsManager.migrateRetiredNonBlockingOnboarding(keyValueStore: keyValueStore)
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 
@@ -1652,6 +1654,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let profilerToken = startupProfiler.measureSequence(initialStep: .appDidFinishLaunchingBeforeRestoration)
+
+        // Not in init: creating the Fire view model reads `NSApp.delegate`, which isn't set yet.
+        aiChatBrowserToolsService.revokeChatGrants(whenBurning: fireCoordinator.fireViewModel.fire.burningDataPublisher)
 
         Task {
             await subscriptionManager.loadInitialData()
@@ -1721,16 +1726,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let subscriptionPromoDelegate = FireWindowSubscriptionPromoDelegate()
         self.subscriptionPromoDelegate = subscriptionPromoDelegate
-        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: windowControllersManager)
         let dependencies = PromoDependencies(
             keyValueStore: keyValueStore,
             isExternallyActivated: urlEventHandlerResult.willOpenWindows,
             isNewUserProvider: { AppDelegate.isNewUser },
-            isOnboardingCompletedProvider: { [featureFlagger, onboardingContextualDialogsManager] in
-                NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking
-                ? onboardingContextualDialogsManager.state == .onboardingCompleted && !activeDomainPublisher.isActiveTabOnboarding
-                : OnboardingActionsManager.isOnboardingFinished
-            },
+            isOnboardingCompletedProvider: { OnboardingActionsManager.isOnboardingFinished },
             activeRemoteMessageModel: activeRemoteMessageModel,
             defaultBrowserAndDockPromptService: defaultBrowserAndDockPromptService,
             userChurnService: userChurnService,
@@ -1912,6 +1912,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         hangMetricsService.resume()
 
+        // Reads and writes end an expired boost too, but neither may happen soon after the app becomes active.
+        try? aiChatBonusService.endBoostIfExpired()
+
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
         QuitSurveyReturnUserHandler(
@@ -1954,9 +1957,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
-        if defaultBrowserPreferences.isDefault {
-            onboardingNonBlockingExperiment.fireMetric(.setAsDefaultEnabled)
-        }
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
     }
 
@@ -2072,12 +2072,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 pixelFiring: PixelKit.shared,
                 notificationPresenter: notificationPresenter,
                 keyValueStore: UserDefaults.standard,
-                isOnboardingFinished: { [weak self, featureFlagger] in
-                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
-                        return self?.isOnboardingReadyForPrompts == true
-                    }
-                    return OnboardingActionsManager.isOnboardingFinished
-                }
+                applicationUpdateDetector: applicationUpdateDetector,
+                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished }
             )
         } else {
             assert(buildType.isSparkleBuild)
@@ -2108,12 +2104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 },
                 wideEvent: wideEvent,
-                isOnboardingFinished: { [weak self, featureFlagger] in
-                    if NonBlockingOnboarding(featureFlagger: featureFlagger).isNonBlocking {
-                        return self?.isOnboardingReadyForPrompts == true
-                    }
-                    return OnboardingActionsManager.isOnboardingFinished
-                },
+                isOnboardingFinished: { OnboardingActionsManager.isOnboardingFinished },
                 openUpdatesPage: { [windowControllersManager] in
                     windowControllersManager.showTab(with: .releaseNotes)
                 }
@@ -2237,8 +2228,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
 
             // 9. Close windows before quitting while waiting for ⌘Q release
-            .perform { [windowControllersManager] in
-                windowControllersManager.setOnboardingTab(nil)
+            .perform {
                 NSApp.visibleWindows.forEach { $0.close() }
             }
         ]

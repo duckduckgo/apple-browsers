@@ -41,6 +41,17 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
         pixelHandler.clear()
     }
 
+    func testWhenABundledFileHasUnsupportedData_thenItIsSkippedAndTheOthersLoad() throws {
+        let urls = try ["invalid-broker-with-unsupported-action", "valid-broker", "invalid-broker-with-unsupported-step"].map {
+            try XCTUnwrap(Bundle.module.url(forResource: $0, withExtension: "json", subdirectory: "BundleResources"))
+        }
+        let expected = try DataBroker.initFromResource(urls[1]).broker
+
+        let resources = try FileResources.brokerResources(from: urls)
+
+        XCTAssertEqual(resources.map(\.broker.url), [expected.url])
+    }
+
     private func makeSUT(vault: DataBrokerProtectionSecureVaultMock,
                          appVersion: AppVersionNumberProvider = AppVersionNumber(),
                          isAuthenticatedUser: @escaping () async -> Bool = { true },

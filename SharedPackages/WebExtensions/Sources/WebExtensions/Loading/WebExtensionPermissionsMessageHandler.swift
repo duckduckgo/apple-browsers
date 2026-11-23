@@ -29,15 +29,37 @@ import WebKit
 /// waiting on a callback always gets one. Only pages of a loaded extension are answered, and without a
 /// permission controller nothing is held or granted.
 @available(macOS 15.4, *)
-final class WebExtensionPermissionsMessageHandler: NSObject, WKScriptMessageHandlerWithReply {
+final class WebExtensionPermissionsMessageHandler: NSObject, WKScriptMessageHandlerWithReply, WKScriptMessageHandler {
 
     private static let extensionScheme = "webkit-extension"
 
     /// The loaded extension context the page URL belongs to.
     @MainActor var extensionContext: (URL) -> WKWebExtensionContext? = { _ in nil }
 
-    /// Where the permissions are asked for and kept.
-    @MainActor var controller: WebExtensionPermissionController?
+    /// Where the permissions are asked for and kept; `nil` while permission enforcement is off.
+    @MainActor var controller: () -> WebExtensionPermissionController? = { nil }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        MainActor.assumeIsolated {
+            recordUserGesture(from: message)
+        }
+    }
+
+    @MainActor
+    func recordUserGesture(from message: WKScriptMessage) {
+        guard message.name == WebExtensionPermissionUserGestureScript.messageHandlerName else { return }
+        let origin = message.frameInfo.securityOrigin
+        recordUserGesture(originProtocol: origin.protocol, originHost: origin.host, contentWorld: message.world)
+    }
+
+    @MainActor
+    func recordUserGesture(originProtocol: String, originHost: String, contentWorld: WKContentWorld) {
+        guard contentWorld == .defaultClient,
+              originProtocol == Self.extensionScheme, !originHost.isEmpty,
+              let url = URL(string: "\(Self.extensionScheme)://\(originHost)/"),
+              let context = extensionContext(url) else { return }
+        controller()?.recordUserGesture(for: context)
+    }
 
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
@@ -69,7 +91,7 @@ final class WebExtensionPermissionsMessageHandler: NSObject, WKScriptMessageHand
               !originHost.isEmpty,
               let url = URL(string: "\(Self.extensionScheme)://\(originHost)/"),
               let context = extensionContext(url),
-              let controller else {
+              let controller = controller() else {
             return refusal
         }
 
@@ -86,7 +108,14 @@ final class WebExtensionPermissionsMessageHandler: NSObject, WKScriptMessageHand
         case "contains":
             return permissions.allSatisfy { controller.isGranted($0, to: context.uniqueIdentifier) }
         case "request":
-            return await controller.request(WebExtensionPermissionRequest(appPermissions: Set(permissions)), for: context)
+            return await controller.requestAppPermissions(Set(permissions), for: context,
+                                                           requestIdentifier: request?["requestIdentifier"] as? String)
+        case "prepareRequest":
+            return controller.prepareAppPermissionRequest(Set(permissions), for: context) as Any? ?? false
+        case "cancelRequest":
+            guard let requestIdentifier = request?["requestIdentifier"] as? String else { return false }
+            controller.cancelAppPermissionRequest(requestIdentifier, for: context)
+            return true
         case "remove":
             return permissions.allSatisfy { controller.revoke($0, from: context) }
         default:

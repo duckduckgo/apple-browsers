@@ -34,6 +34,7 @@ struct AddressBarUpdateButton: View {
                 .lineLimit(1)
         }
         .buttonStyle(AddressBarUpdateButtonStyle())
+        .padding(.leading, 6)
     }
 }
 

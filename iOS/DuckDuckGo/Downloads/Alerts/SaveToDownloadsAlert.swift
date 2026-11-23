@@ -56,7 +56,7 @@ struct SaveToDownloadsAlert {
         var title = downloadMetadata.filename
         
         if downloadMetadata.expectedContentLength > 0 {
-            let size = DownloadsListRowViewModel.byteCountFormatter.string(fromByteCount: downloadMetadata.expectedContentLength)
+            let size = DownloadsListRowViewModel.formattedByteCount(downloadMetadata.expectedContentLength)
             title += " (\(size))"
         }
         

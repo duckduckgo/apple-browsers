@@ -90,6 +90,25 @@ final class NewTabPageInputPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.reservesAddressBarSpace)
     }
 
+    func testWhenOnWebPageWithBrowserPresentationThenWebPageSurfaceIsUsed() {
+        XCTAssertEqual(NewTabPageInputPresentation.browser.redesignedFocusedSurface(isOnAITab: false, isOnWebPage: true), .webPage)
+        XCTAssertNil(NewTabPageInputPresentation.browser.redesignedFocusedSurface(isOnAITab: false, isOnWebPage: false))
+        XCTAssertNil(NewTabPageInputPresentation.browser.redesignedFocusedSurface(isOnAITab: true, isOnWebPage: true))
+    }
+
+    func testWhenEditingUnifiedInputThenNewTabPageSurfaceIsUsed() {
+        XCTAssertEqual(NewTabPageInputPresentation.editing(usesUnifiedInput: true).redesignedFocusedSurface(isOnAITab: false, isOnWebPage: false),
+                       .newTabPage)
+    }
+
+    func testWhenInlineInputIsPresentOtherwiseThenNoSurfaceIsUsed() {
+        let presentations: [NewTabPageInputPresentation] = [.resting(usesUnifiedInput: true),
+                                                           .editing(usesUnifiedInput: false)]
+        for presentation in presentations {
+            XCTAssertNil(presentation.redesignedFocusedSurface(isOnAITab: false, isOnWebPage: false))
+        }
+    }
+
     private func resolve(usesUnifiedInput: Bool = true,
                          legacyEditing: Bool = false,
                          unifiedEditing: Bool = false,
@@ -195,9 +214,11 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
 
     func testWhenInlinePresentationChangesThenContentFillsViewportAndStatusBackgroundIsClear() {
         for position in [AddressBarPosition.top, .bottom] {
-            for floating in [false, true] {
+            for (floating, toolbarAnchorActive, screenBottomAnchorActive) in [(false, true, false), (true, false, true)] {
                 let coordinator = makeCoordinator(position: position)
                 coordinator.setFloatingUIEnabled(floating)
+                coordinator.constraints.contentContainerBottomToToolbarTop.isActive = false
+                coordinator.constraints.contentContainerBottomToUnifiedToggleInputTop.isActive = true
                 let states: [(presentation: NewTabPageInputPresentation, hidesNavigation: Bool)] = [
                     (.resting(usesUnifiedInput: true), true),
                     (.editing(usesUnifiedInput: true), false),
@@ -205,6 +226,9 @@ final class NewTabPageInputCoordinatorTests: XCTestCase {
                 ]
                 for state in states {
                     coordinator.setNewTabPageInputPresentation(state.presentation)
+                    XCTAssertFalse(coordinator.constraints.contentContainerBottomToUnifiedToggleInputTop.isActive)
+                    XCTAssertEqual(coordinator.constraints.contentContainerBottomToToolbarTop.isActive, toolbarAnchorActive)
+                    XCTAssertEqual(coordinator.constraints.contentContainerBottomToSafeArea.isActive, screenBottomAnchorActive)
                     XCTAssertTrue(coordinator.navigationBarCollectionView.isHidden)
                     XCTAssertTrue(coordinator.constraints.contentContainerTopToSuperview.isActive)
                     XCTAssertFalse(coordinator.constraints.contentContainerTopToSafeArea.isActive)

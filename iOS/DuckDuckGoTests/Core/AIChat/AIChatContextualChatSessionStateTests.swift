@@ -880,7 +880,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .submitPrompt(let prompt, let context, let termsAccepted) = receivedEffect {
+        if case .submitPrompt(let prompt, let context, let termsAccepted, _) = receivedEffect {
             XCTAssertEqual(prompt, "Hello world")
             XCTAssertNil(context)
             XCTAssertFalse(termsAccepted)
@@ -897,10 +897,39 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
         sessionState.handlePromptSubmission("Hello world", termsAccepted: true)
 
-        guard case .submitPrompt(_, _, let termsAccepted) = receivedEffect else {
+        guard case .submitPrompt(_, _, let termsAccepted, _) = receivedEffect else {
             return XCTFail("Expected submitPrompt effect")
         }
         XCTAssertTrue(termsAccepted)
+    }
+
+    /// The effect reaches the sheet a main-queue hop later, so the mark has to travel inside it.
+    func testWhenASummaryIsSubmittedThenSubmitPromptEffectCarriesTheLocalTask() {
+        var receivedEffect: SheetEffect?
+        sessionState.effects
+            .sink { receivedEffect = $0 }
+            .store(in: &cancellables)
+
+        sessionState.handlePromptSubmission("Summarize this page.", localTask: .summarize)
+
+        guard case .submitPrompt(_, _, _, let localTask) = receivedEffect else {
+            return XCTFail("Expected submitPrompt effect")
+        }
+        XCTAssertEqual(localTask, .summarize)
+    }
+
+    func testWhenAPromptIsSubmittedWithoutALocalTaskThenSubmitPromptEffectHasNone() {
+        var receivedEffect: SheetEffect?
+        sessionState.effects
+            .sink { receivedEffect = $0 }
+            .store(in: &cancellables)
+
+        sessionState.handlePromptSubmission("Summarize this page.")
+
+        guard case .submitPrompt(_, _, _, let localTask) = receivedEffect else {
+            return XCTFail("Expected submitPrompt effect")
+        }
+        XCTAssertNil(localTask)
     }
 
     func testEffectsPublisherEmitsSubmitPromptWithContext() {
@@ -924,7 +953,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
 
         // Then
-        if case .submitPrompt(let prompt, let context, _) = receivedEffect {
+        if case .submitPrompt(let prompt, let context, _, _) = receivedEffect {
             XCTAssertEqual(prompt, "Hello world")
             XCTAssertNotNil(context)
             XCTAssertEqual(context?.title, "Test Page")
@@ -1764,7 +1793,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.suggestionsScope, .selection)
     }
 
-    func testDocumentContextReachesTheResolverSoSummarizeIsWordedForADocument() {
+    func testDocumentContextReachesTheResolverSoSummarizeIsWordedForADocument() async {
         let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
         sessionState = AIChatContextualChatSessionState(
@@ -1786,7 +1815,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.markPendingSignalsOnlyCollection()
         sessionState.updateContext(makeDocumentContext())
 
-        wait(for: [loaded], timeout: 1.0)
+        await fulfillment(of: [loaded], timeout: 5)
         XCTAssertTrue(mockProvider.lastInput?.isDocument == true)
     }
 

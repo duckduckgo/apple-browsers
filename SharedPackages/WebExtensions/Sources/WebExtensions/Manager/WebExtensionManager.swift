@@ -88,7 +88,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let storageProvider: WebExtensionStorageProviding
     let cpmBaseURLPolicy: CPMExtensionBaseURLPolicy
     public let loader: WebExtensionLoading
-    public let permissionController: WebExtensionPermissionController?
+    private let storedPermissionController: WebExtensionPermissionController?
+    private let isPermissionEnforcementEnabled: @MainActor () -> Bool
+
+    /// `nil` while permission enforcement is off, so loaded extensions get every permission they ask for.
+    @MainActor
+    public var permissionController: WebExtensionPermissionController? {
+        isPermissionEnforcementEnabled() ? storedPermissionController : nil
+    }
     public var chromeWebStore: ChromeWebStoreManaging?
     /// Disables extensions that remote configuration lists. `nil` until the host starts enforcement.
     public var remoteDisableEnforcer: WebExtensionRemoteDisableEnforcer?
@@ -114,8 +121,20 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Provider for creating extension-specific message handlers.
     public private(set) var handlerProvider: WebExtensionHandlerProviding?
 
-    /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS.
-    let nativeMessagingHandler: WebExtensionNativeMessagingHandling?
+    private let storedNativeMessagingHandler: WebExtensionNativeMessagingHandling?
+    private let isNativeMessagingEnabled: @MainActor () -> Bool
+
+    /// Talks to native messaging hosts. `nil` where hosts are unavailable, such as on iOS, or while native messaging is off.
+    @MainActor
+    var nativeMessagingHandler: WebExtensionNativeMessagingHandling? {
+        isNativeMessagingEnabled() ? storedNativeMessagingHandler : nil
+    }
+
+    /// Permissions this build never grants at runtime, such as `nativeMessaging` in the App Store build.
+    let unavailablePermissions: Set<WKWebExtension.Permission>
+
+    /// Records extensions that tried native messaging where it's unavailable. `nil` where nothing should be recorded.
+    let nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol?
 
     /// Coordinator for managing scriptlet installation to extensions (created internally from scriptlet configuration).
     private(set) var scriptletCoordinator: WebExtensionScriptletCoordinator?
@@ -148,6 +167,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Store identities available before a successful first load creates the installation record.
     var installingStoreIdentities: [String: WebExtensionStoreIdentity] = [:]
 
+    /// Verified bundled installations whose first load precedes their installation record.
+    var installingEmbeddedIdentifiers: Set<String> = []
+
     /// Tasks that keep background pages with open native messaging ports loaded, by extension identifier.
     var nativePortKeepAliveTasks: [String: NativePortKeepAlive] = [:]
 
@@ -164,6 +186,26 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// The `chrome.privacy.services` values extensions set, which let one take over DuckDuckGo autofill.
     /// `nil` without a key-value store.
     public let privacySettings: WebExtensionPrivacySettingsStore?
+
+    private let isAutofillTakeoverEnabled: @MainActor () -> Bool
+
+    /// The installation that DuckDuckGo leaves autofill to, if any: the one that turned
+    /// `passwordSavingEnabled` off, or else the first loaded extension in
+    /// `ChromeWebStoreID.takingOverAutofillWhileLoaded`.
+    @MainActor
+    public var autofillManagingIdentifier: String? {
+        guard isAutofillTakeoverEnabled() else { return nil }
+        if let identifier = privacySettings?.identifierTurningOff(.passwordSavingEnabled) {
+            return identifier
+        }
+        let takingOver = Set(ChromeWebStoreID.takingOverAutofillWhileLoaded.map {
+            WebExtensionStoreIdentity(store: .chromeWebStore, id: $0.rawValue)
+        })
+        return installationStore.installedExtensions.first { installedExtension in
+            installedExtension.storeIdentity.map(takingOver.contains) == true
+                && context(for: installedExtension.uniqueIdentifier) != nil
+        }?.uniqueIdentifier
+    }
 #endif
 
     private let storePixelsReporter: WebExtensionStorePixelsReporter?
@@ -174,6 +216,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 #if os(macOS)
     /// Answers `chrome.idle.queryState` for extension pages.
     private let idleHandler = WebExtensionIdleMessageHandler()
+    private let clipboardReadHandler: WebExtensionClipboardReadMessageHandler
+    private let downloadHandler: WebExtensionDownloadMessageHandler
 
     /// Answers `chrome.privacy.services` calls for extension pages.
     private let privacyHandler = WebExtensionPrivacyMessageHandler()
@@ -189,13 +233,11 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     let pixelFiring: WebExtensionPixelFiring
     /// Shared monitor because all tabs communicate through the same embedded-extension process.
     public let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
-    /// Passive state recorder used to attribute CPM failures without changing recovery behavior.
-    public let cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder?
     /// Captured at manager creation so one startup cannot mix the enabled and disabled upgrade paths.
     public let isCPMUpgradeBeforeLoadEnabled: Bool
     /// Independent kill switch for restarting the context when a failed background view is still retained.
     private let isCPMBackgroundLoadRestartEnabled: @MainActor () -> Bool
-    /// Platform lifecycle state must remain available when diagnostics are disabled.
+    /// Whether the app is suspended; background-load recovery waits for the foreground.
     private let isApplicationInBackground: @MainActor () -> Bool
 
     /// Concurrent navigations share one wake; a replacement context must start its own preparation.
@@ -216,8 +258,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var backgroundLoadErrorObserver: NSObjectProtocol?
     /// WebKit can retain historical errors after recovery. Weak keys keep generations independent.
     private let observedBackgroundLoadErrors = NSMapTable<WKWebExtensionContext, NSArray>.weakToStrongObjects()
-    private weak var backgroundLoadRestartContext: WKWebExtensionContext?
-    /// Three restarts without an attributed response; four means the exhausted budget was reported.
+    /// Restarts since the current embedded extension last sent a message; the budget is three.
     private var backgroundLoadRestartAttempts = 0
     private let now: () -> Date
     /// Keeps the health monitor informed of app suspension for as long as the manager lives.
@@ -246,12 +287,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 storageProvider: WebExtensionStorageProviding,
                 installationStore: InstalledWebExtensionStoring = InstalledWebExtensionStore(),
                 permissionController: WebExtensionPermissionController? = nil,
+                isPermissionEnforcementEnabled: @escaping @MainActor () -> Bool = { true },
                 loader: WebExtensionLoading? = nil,
                 lifecycleDelegate: WebExtensionLifecycleDelegate? = nil,
                 internalSiteHandler: (any WebExtensionInternalSiteHandling)? = nil,
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                 cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
-                cpmDiagnosticsRecorder: CPMMessagingDiagnosticsRecorder? = nil,
                 isCPMNetworkProcessRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 cpmNetworkProcessRecoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                 isCPMBackgroundLoadRestartEnabled: @escaping @MainActor () -> Bool = { false },
@@ -262,6 +303,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
+                isNativeMessagingEnabled: @escaping @MainActor () -> Bool = { true },
+                unavailablePermissions: Set<WKWebExtension.Permission> = [],
+                nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol? = nil,
                 keyValueStore: (any ThrowingKeyValueStoring)? = nil,
                 retentionStore: WebExtensionRetentionStore? = nil,
                 isAutofillTakeoverEnabled: @escaping @MainActor () -> Bool = { true },
@@ -280,15 +324,26 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                                                                                 name: WebExtensionAPICompatibilityScript.messageHandlerName)
 
 #if os(macOS)
+        downloadHandler = WebExtensionDownloadMessageHandler()
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            downloadHandler, contentWorld: .page, name: WebExtensionAPIStubScript.downloadMessageHandlerName)
         // `chrome.idle.queryState` asks the app for the idle state and waits for the reply.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             idleHandler, contentWorld: .page, name: WebExtensionAPIStubScript.idleMessageHandlerName)
+        clipboardReadHandler = WebExtensionClipboardReadMessageHandler()
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            clipboardReadHandler, contentWorld: .page, name: WebExtensionAPIStubScript.clipboardReadMessageHandlerName)
         // `chrome.privacy.services` settings are kept by the app, which decides who controls each one.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             privacyHandler, contentWorld: .page, name: WebExtensionAPIStubScript.privacyMessageHandlerName)
         // `chrome.permissions` asks the app for the permissions WebKit doesn't know, such as `privacy`.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             permissionsHandler, contentWorld: .page, name: WebExtensionAPIStubScript.permissionsMessageHandlerName)
+        controllerConfiguration.webViewConfiguration.userContentController.add(
+            permissionsHandler, contentWorld: .defaultClient, name: WebExtensionPermissionUserGestureScript.messageHandlerName)
+        controllerConfiguration.webViewConfiguration.userContentController.addUserScript(
+            WKUserScript(source: WebExtensionPermissionUserGestureScript.source,
+                         injectionTime: .atDocumentStart, forMainFrameOnly: false, in: .defaultClient))
 #endif
         controllerConfiguration.webViewConfiguration.userContentController.add(
             badgeColorHandler, contentWorld: .page, name: WebExtensionAPIStubScript.badgeColorMessageHandlerName)
@@ -298,41 +353,56 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.windowTabProvider = windowTabProvider
         self.storageProvider = storageProvider
         self.installationStore = installationStore
-        self.permissionController = permissionController
+        self.storedPermissionController = permissionController
+        self.isPermissionEnforcementEnabled = isPermissionEnforcementEnabled
         self.bundledExtensionURL = bundledExtensionURL
         let baseURLPolicy = CPMExtensionBaseURLPolicy(installationStore: installationStore, isEnabled: isCPMStableBaseURLEnabled)
         self.cpmBaseURLPolicy = baseURLPolicy
         self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider,
                                                    isInspectable: configuration.isInspectable,
                                                    permissionController: permissionController,
+                                                   isPermissionEnforcementEnabled: isPermissionEnforcementEnabled,
                                                    baseURLProvider: baseURLPolicy.baseURL, installationStore: installationStore)
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
         self.now = now
-        self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
-        self.cpmDiagnosticsRecorder = cpmDiagnosticsRecorder
+        self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor ?? CPMMessagingHealthMonitor(pixelFiring: pixelFiring, isUnmeasuredPage: { _ in false })
         self.isCPMUpgradeBeforeLoadEnabled = isCPMUpgradeBeforeLoadEnabled
         self.cpmNetworkProcessRecovery = CPMNetworkProcessRecovery(
             isEnabled: isCPMNetworkProcessRecoveryEnabled,
-            featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates,
-            pixelFiring: pixelFiring
+            featureFlagUpdates: cpmNetworkProcessRecoveryFeatureFlagUpdates
         )
         self.isCPMBackgroundLoadRestartEnabled = isCPMBackgroundLoadRestartEnabled
         self.backgroundLoadRecoveryCooldown = backgroundLoadRecoveryCooldown
         self.isApplicationInBackground = isApplicationInBackground
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
-        self.nativeMessagingHandler = nativeMessagingHandler
+        self.storedNativeMessagingHandler = nativeMessagingHandler
+        self.isNativeMessagingEnabled = isNativeMessagingEnabled
+        self.unavailablePermissions = unavailablePermissions
+        self.nativeMessagingLimitationStore = nativeMessagingLimitationStore
         self.storePixelsReporter = retentionStore.map { WebExtensionStorePixelsReporter(store: $0, installationStore: installationStore, pixelFiring: pixelFiring, now: now) }
 #if os(macOS)
         self.commandShortcuts = keyValueStore.map { WebExtensionCommandShortcutStore(keyValueStore: $0) }
         self.privacySettings = keyValueStore.map { WebExtensionPrivacySettingsStore(keyValueStore: $0) }
+        self.isAutofillTakeoverEnabled = isAutofillTakeoverEnabled
 #endif
         self.scriptletConfiguration = scriptletConfiguration
         self.unloadGuard = WebExtensionUnloadGuard()
 
         super.init()
+
+        // A closed tab stops waiting for the extension; the tab itself says which identifier the monitor knows it by.
+        listener.onTabClosed = { [weak monitor = self.cpmMessagingHealthMonitor] tab in
+            MainActor.assumeMainThread {
+                guard let identifier = (tab as? CPMMonitoredTab)?.cpmTabIdentifier else {
+                    Logger.webExtensions.error("[CPM Health Monitor] A closed tab has no CPM identifier, so its wait is not dropped")
+                    return
+                }
+                monitor?.handle(.tabClosed(tabIdentifier: identifier))
+            }
+        }
 
         badgeColorHandler.store = badgeColors
         badgeColorHandler.extensionContext = { [weak self] url in
@@ -350,11 +420,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             self?.extensionContext(for: url) != nil
         }
 
+        downloadHandler.automaticDownloadDirectory = { configuration.automaticDownloadDirectory }
+        downloadHandler.contextForOrigin = { [weak self] in self?.extensionContext(for: $0) }
+        downloadHandler.backgroundWebView = { [weak self] in self?.backgroundWebView(in: $0) }
+        downloadHandler.presentationWindow = { [weak self] in self?.downloadPresentationWindow(for: $0, context: $1, boundTo: $2) }
+        downloadHandler.permissionController = { [weak self] in self?.permissionController }
         privacyHandler.store = privacySettings
+        clipboardReadHandler.extensionContext = { [weak self] in self?.extensionContext(for: $0) }
+        clipboardReadHandler.hasPermission = { [weak self] in self?.permissionController?.isGranted(.clipboardRead, to: $0.uniqueIdentifier) == true }
         privacyHandler.extensionIdentifier = { [weak self] url in
             self?.extensionContext(for: url)?.uniqueIdentifier
         }
-        permissionsHandler.controller = permissionController
+        permissionsHandler.controller = { [weak self] in self?.permissionController }
         permissionsHandler.extensionContext = { [weak self] url in
             self?.extensionContext(for: url)
         }
@@ -420,13 +497,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     @MainActor
     private func configureCPMMonitoring() {
-        if let cpmDiagnosticsRecorder {
-            (self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor)?.diagnosticsProvider = cpmDiagnosticsRecorder
-            cpmDiagnosticsRecorder.nativeMessageHandlerCheck = { [weak self] context in
-                self?.messageRouter.hasHandler(for: context.uniqueIdentifier, featureName: "autoconsent") ?? false
-            }
-        }
-
         if let healthMonitor = self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
             healthMonitor.isCurrentEmbeddedExtension = { [weak self] identifier in
                 guard let self, !self.isCPMMessagingRecoveryInProgress else { return false }
@@ -526,18 +596,22 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let identifier = UUID().uuidString
         var embeddedType = storeIdentity == nil ? metadata.type : nil
 
-        if embeddedType != nil, let permissionController {
+        if embeddedType != nil {
             // A manifest's DDG identifier is not proof that it came from the app bundle. Verify its source URL, too.
             let isBundled = EmbeddedWebExtensionRegistry.all.contains {
                 bundledExtensionURL($0)?.standardizedFileURL == sourceURL.standardizedFileURL
             }
             if isBundled {
-                permissionController.trustedInstallations.insert(identifier)
+                installingEmbeddedIdentifiers.insert(identifier)
+                permissionController?.trustedInstallations.insert(identifier)
             } else {
                 embeddedType = nil
             }
         }
-        defer { permissionController?.trustedInstallations.remove(identifier) }
+        defer {
+            installingEmbeddedIdentifiers.remove(identifier)
+            permissionController?.trustedInstallations.remove(identifier)
+        }
 
         let packageIdentifier = storeIdentity?.store == .chromeWebStore ? UUID() : nil
         let resourceIdentifier = InstalledWebExtension.resourceIdentifier(for: identifier, packageIdentifier: packageIdentifier)
@@ -560,12 +634,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
             if storeIdentity?.store == .chromeWebStore,
                let oldIdentifier, let oldContext = context(for: oldIdentifier) {
-                // Both versions use the same origin, so only one can be loaded at a time.
                 await unloadGuard.awaitSettled(oldContext)
                 try loader.unloadExtension(identifier: oldIdentifier, from: controller)
                 replacedContext = oldContext
                 cpmNetworkProcessRecovery.stopWatching(identifier: oldIdentifier)
-                cpmDiagnosticsRecorder?.contextDidUnload(identifier: oldIdentifier)
                 unregisterHandlers(for: oldIdentifier)
             }
             installingStoreIdentities[identifier] = storeIdentity
@@ -655,14 +727,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
             cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
-            cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
             Logger.webExtensions.debug("✅ Unloaded extension '\(identifier)' from memory")
         } catch {
             if context(for: identifier) != nil {
                 throw WebExtensionError.failedToUnloadWebExtension(error)
             }
             Logger.webExtensions.debug("⚠️ Extension '\(identifier)' was not loaded in memory: \(error.localizedDescription)")
-            cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
         }
 
         clearEmbeddedBackgroundStartup(identifier: identifier)
@@ -677,6 +747,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         privacySettings?.removeSettings(for: identifier)
 #endif
         installationStore.remove(uniqueIdentifier: identifier)
+        forgetNativeMessagingLimitation(of: installedExtension)
         unloadedExtensionsCache.removeValue(forKey: identifier)
         dataClearingReloadIdentifiers.remove(identifier)
         unregisterHandlers(for: identifier)
@@ -688,12 +759,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             try storageProvider.removeExtension(identifier: identifier)
         } catch {
             Logger.webExtensions.error("❌ Failed to remove extension files for '\(identifier)': \(error.localizedDescription)")
-            cpmDiagnosticsRecorder?.extensionFilesRemoveFailed(identifier: identifier, error: error)
             pixelFiring.fire(.uninstallError(error: error))
             throw WebExtensionError.failedToRemoveWebExtension(error)
         }
 
         Logger.webExtensions.info("✅ Successfully uninstalled extension '\(identifier)'")
+        if embeddedType == .embedded { cpmMessagingHealthMonitor.handle(.embeddedExtensionRemoved) }
         reportUninstalled(installedExtension)
         notifyUpdate()
         if let storeIdentity = installedExtension?.storeIdentity, storeIdentity.store == .chromeWebStore {
@@ -757,7 +828,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmBaseURLPolicy.prepareForDataClearingReload(of: context)
                 permissionController?.didUnload(identifier)
                 cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
-                cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
                 // Capture the parsed extension only after a confirmed unload, so the cache never
                 // holds an extension still loaded in the controller. reloadInstalledExtensions()
                 // uses it to re-create the context without re-reading and re-parsing from disk.
@@ -767,7 +837,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 successCount += 1
             } catch {
                 Logger.webExtensions.error("❌ Failed to unload extension '\(identifier)': \(error.localizedDescription)")
-                cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
                 pixelFiring.fire(.reloadError(type: type,
                                               trigger: .dataClearing,
                                               phase: .unload,
@@ -838,10 +907,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 cpmBaseURLPolicy.recordBackgroundLoadFailure(in: previousContext, errors: previousErrors)
             }
             cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
-            cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
         } catch {
             // The extension and its native handlers are still active when unload fails.
-            cpmDiagnosticsRecorder?.contextUnloadFailed(identifier: identifier, error: error)
             pixelFiring.fire(.reloadError(type: type,
                                           trigger: trigger,
                                           phase: .unload,
@@ -1066,19 +1133,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let identifier = context.uniqueIdentifier
         Logger.webExtensions.debug("[CPM Background] Starting background wait for \(identifier, privacy: .public)")
         // Copies WebKit's error on the main thread, as the other background-load paths do.
-        context.loadBackgroundContentCopyingErrors { [weak self, weak context] error in
+        context.loadBackgroundContentCopyingErrors { [weak self] error in
             let elapsed = Date().timeIntervalSince(started)
             if elapsed >= 1 {
                 Logger.webExtensions.info("[CPM Background] Background callback for \(identifier, privacy: .public) after \(elapsed, privacy: .public)s")
             }
             if let error {
                 Logger.webExtensions.error("❌ Failed to load embedded extension background content: \(error.localizedDescription)")
-            }
-            if let self, let context, self.embeddedBackgroundContextForNavigation === context {
-                if self.backgroundLoadRestartContext === context {
-                    self.backgroundLoadRestartContext = nil
-                    if error == nil { self.pixelFiring.fire(.cpmBackgroundLoadRestart(.backgroundReady)) }
-                }
             }
             if self?.embeddedBackgroundStartup == startup {
                 self?.clearEmbeddedBackgroundStartup()
@@ -1192,13 +1253,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     private func restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(_ context: WKWebExtensionContext) async {
         guard !isCPMMessagingRecoveryInProgress, self.context(for: context.uniqueIdentifier) === context else { return }
-        guard backgroundLoadRestartAttempts < 3 else {
-            if backgroundLoadRestartAttempts == 3 {
-                backgroundLoadRestartAttempts += 1
-                pixelFiring.fire(.cpmBackgroundLoadRestart(.restartLimitReached))
-            }
-            return
-        }
+        guard backgroundLoadRestartAttempts < 3 else { return }
         backgroundLoadRestartAttempts += 1
         lastBackgroundLoadRecoveryAt = now()
         await reloadEmbeddedContext(identifier: context.uniqueIdentifier, trigger: .cpmBackgroundLoadFailure)
@@ -1211,10 +1266,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         defer { isCPMMessagingRecoveryInProgress = false }
         do {
             try await reloadExtension(identifier: identifier, trigger: trigger)
-            if trigger == .cpmBackgroundLoadFailure {
-                // Set this before scheduling the background load so even an immediate callback is attributed.
-                backgroundLoadRestartContext = context(for: identifier)
-            }
             // A missing WebKit completion must not hold the recovery guard forever.
             Task { @MainActor [weak self] in await self?.loadEmbeddedExtensionBackgroundContent() }
         } catch {
@@ -1280,7 +1331,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             if Self.isUpdateInstallationDeferral(error) { continue }
             // Uninstall broken 3rd-party extensions, unless they only failed to load because of a consent/settings read failure.
             if installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == false,
-               permissionController != nil,
                error is WebExtensionLoader.PermissionPreparationError
             {
                 continue
@@ -1460,6 +1510,68 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             ?? []
     }
 
+    @MainActor
+    public func hasHitNativeMessagingLimitation(identifier: String) -> Bool {
+        guard let nativeMessagingLimitationStore, let key = nativeMessagingLimitationKey(for: identifier) else { return false }
+        return nativeMessagingLimitationStore.hasHitLimitation(extensionKey: key)
+    }
+
+    @MainActor
+    public func isNativeMessagingAlertSuppressed(identifier: String) -> Bool {
+        guard let nativeMessagingLimitationStore, let key = nativeMessagingLimitationKey(for: identifier) else { return false }
+        return nativeMessagingLimitationStore.isAlertSuppressed(extensionKey: key)
+    }
+
+    @MainActor
+    public func suppressNativeMessagingAlert(identifier: String) {
+        guard let nativeMessagingLimitationStore, let key = nativeMessagingLimitationKey(for: identifier) else { return }
+        nativeMessagingLimitationStore.suppressAlert(extensionKey: key)
+    }
+
+    @MainActor
+    public func pixelExtension(identifier: String) -> WebExtensionPixelExtension {
+        pixelExtension(for: installedExtension(identifier: identifier)?.storeIdentity)
+    }
+
+    @MainActor
+    func recordNativeMessagingLimitation(for extensionContext: WKWebExtensionContext) {
+        guard let nativeMessagingLimitationStore,
+              let key = nativeMessagingLimitationKey(for: extensionContext.uniqueIdentifier),
+              !nativeMessagingLimitationStore.hasHitLimitation(extensionKey: key) else { return }
+        nativeMessagingLimitationStore.recordLimitation(extensionKey: key)
+        pixelFiring.fire(.nativeMessagingBlocked(extension: pixelExtension(identifier: extensionContext.uniqueIdentifier)))
+        NotificationCenter.default.post(name: .webExtensionNativeMessagingLimitationDidChange, object: self)
+    }
+
+    /// The store ID, so the state survives updates, or the installation ID for extensions from elsewhere.
+    @MainActor
+    private func nativeMessagingLimitationKey(for identifier: String) -> String? {
+        guard let installed = installedExtension(identifier: identifier) else { return nil }
+        return installed.storeIdentity?.id ?? installed.uniqueIdentifier
+    }
+
+    /// Updates install the new version before removing the old one, so the state stays while any version is installed.
+    @MainActor
+    private func forgetNativeMessagingLimitation(of installedExtension: InstalledWebExtension?) {
+        guard let nativeMessagingLimitationStore, let installedExtension else { return }
+        guard let storeIdentity = installedExtension.storeIdentity else {
+            nativeMessagingLimitationStore.forget(extensionKey: installedExtension.uniqueIdentifier)
+            return
+        }
+        guard installationStore.installedExtensions(withStoreIdentity: storeIdentity).isEmpty else { return }
+        nativeMessagingLimitationStore.forget(extensionKey: storeIdentity.id)
+    }
+
+    @MainActor
+    public func hasAccessToPrivateData(for identifier: String) -> Bool? {
+        permissionController?.hasAccessToPrivateData(for: identifier)
+    }
+
+    @MainActor
+    public func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {
+        try permissionController?.setHasAccessToPrivateData(allowed, for: identifier)
+    }
+
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
         contexts.first { Self.url(url, isWithin: $0.baseURL) }
     }
@@ -1481,10 +1593,39 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
 #if os(macOS)
+    @MainActor
+    func downloadPresentationWindow(for webView: WKWebView, context: WKWebExtensionContext, boundTo originalWindow: NSWindow? = nil) -> NSWindow? {
+        let source: NSWindow?
+        if backgroundWebView(in: context) === webView {
+            // A background request can arrive after the user switches apps while 1Password fetches the attachment.
+            source = originalWindow ?? NSApp.keyWindow ?? NSApp.mainWindow ?? windowTabProvider.lastActiveWindowForDownload
+        } else {
+            source = webView.window
+        }
+        guard let source else { return nil }
+        for window in sequence(first: source, next: { $0.parent ?? $0.sheetParent }) {
+            guard let controller = window.windowController as? any WKWebExtensionWindow else { continue }
+            guard originalWindow == nil || originalWindow === window,
+                  controller.isPrivate?(for: context) == false || context.hasAccessToPrivateData else { return nil }
+            return window.isVisible || window.isMiniaturized ? window : nil
+        }
+        return nil
+    }
+
+    @MainActor
+    public func handleDownloadMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        downloadHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
     /// Answers an idle state request from an extension page in a tab, where the controller's own
     /// message handlers are not installed.
     public func handleIdleMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         idleHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
+    @MainActor
+    public func handleClipboardReadMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        replyHandler(clipboardReadHandler.readText(for: message), nil)
     }
 
     /// Answers a `chrome.privacy.services` call from an extension page in a tab, where the
@@ -1499,6 +1640,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func handlePermissionsMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         permissionsHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
+    @MainActor
+    public func handlePermissionUserGestureMessage(_ message: WKScriptMessage) {
+        permissionsHandler.recordUserGesture(from: message)
+    }
+
+    @MainActor
+    public func recordUserGesture(for context: WKWebExtensionContext) {
+        guard self.context(for: context.uniqueIdentifier) === context else { return }
+        permissionController?.recordUserGesture(for: context)
     }
 #endif
 
@@ -1635,6 +1787,9 @@ public extension Notification.Name {
     /// browser window keeps its own set of extension toolbar buttons.
     static let webExtensionsDidChangeLoadedExtensions = Notification.Name("webExtensionsDidChangeLoadedExtensions")
 
+    /// Posted by `WebExtensionManager` when an extension first tries native messaging where it's unavailable.
+    static let webExtensionNativeMessagingLimitationDidChange = Notification.Name("webExtensionNativeMessagingLimitationDidChange")
+
     /// Posted by `WebExtensionManager` when an extension changes its toolbar action, such as its icon,
     /// from JavaScript. The object is the extension's `WKWebExtensionContext`.
     static let webExtensionActionDidChange = Notification.Name("webExtensionActionDidChange")
@@ -1665,7 +1820,6 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                       controller?.extensionContexts.contains(extensionContext) == true else { return false }
                 return self?.backgroundWebView(in: extensionContext) === webView
             }
-            cpmDiagnosticsRecorder?.didCreateBackgroundWebView(webView, for: extensionContext)
         }
     }
 
@@ -1724,9 +1878,14 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
                                        promptForPermissions permissions: Set<WKWebExtension.Permission>,
                                        in tab: (any WKWebExtensionTab)?,
                                        for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.Permission>, Date?) {
-        guard let permissionController else { return (permissions, nil) }
-        let granted = await permissionController.request(WebExtensionPermissionRequest(permissions: permissions), for: extensionContext)
-        return (granted ? permissions : [], nil)
+        let unavailable = permissions.intersection(unavailablePermissions)
+        if unavailable.contains(.nativeMessaging) {
+            recordNativeMessagingLimitation(for: extensionContext)
+        }
+        let request = WebExtensionPermissionRequest(permissions: permissions.subtracting(unavailable), unavailablePermissions: unavailable)
+        guard let permissionController else { return (request.permissions, nil) }
+        let granted = await permissionController.request(request, for: extensionContext)
+        return (granted ? request.permissions : [], nil)
     }
 
     public func webExtensionController(_ controller: WKWebExtensionController,
@@ -1844,7 +2003,6 @@ extension WebExtensionManager {
         guard context(for: identifier) === incumbent else { throw UpdateInstallationError.installationChanged }
         try loader.unloadExtension(identifier: identifier, from: controller)
         cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
-        cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
         unregisterHandlers(for: identifier)
         // Unload starts the commit. Activity changes now must not leave the replacement unloaded.
         guard extensionUpdateGenerations[identifier] == generation,

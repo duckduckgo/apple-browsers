@@ -21,6 +21,7 @@ import Testing
 import SharedTestUtilities
 import FeatureFlags_macOS
 import PrivacyDashboard
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -28,75 +29,30 @@ class ContextualDialogsManagerTests {
     var manager: ContextualDialogsManager!
     var trackerProvider: MockTrackerMessageProvider!
     var stateStorage: MockContextualDialogStateStoring!
+    var searchPathStorage: MockBlockedTrackerStoring!
+    let store = InMemoryThrowingKeyValueStore()
     var subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling!
     let expectation = XCTestExpectation()
 
     init() {
         stateStorage = MockContextualDialogStateStoring()
+        searchPathStorage = MockBlockedTrackerStoring()
         trackerProvider = MockTrackerMessageProvider(expectation: expectation)
         subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
-        manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                           subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                           stateStorage: stateStorage)
-        trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
+        manager = makeManager()
+    }
+
+    private func makeManager() -> ContextualDialogsManager {
+        .withSearchPath(trackerMessageProvider: trackerProvider,
+                        subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                        stateStorage: stateStorage,
+                        searchPathStorage: searchPathStorage,
+                        settings: store.throwingKeyedStoring())
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Non-blocking contextual onboarding starts on NTP or DuckDuckGo and stays dismissed", .timeLimit(.minutes(1)),
-          arguments: ["ntp", "https://duckduckgo.com", "https://www.duckduckgo.com", "https://duckduckgo.com/?q=test"])
-    func testNonBlockingContextualLifecycle(url: String) async {
-        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                                       stateStorage: stateStorage,
-                                                       isNonBlocking: { true })
-        treatmentManager.state = .notStarted
-        let newTab = await Tab(content: .newtab)
-        let browsingTab = url == "ntp" ? newTab : await Tab(content: .url(URL(string: url)!, source: .ui))
-        #expect(treatmentManager.dialogTypeForTab(browsingTab) == .tryASearch)
-        #expect(treatmentManager.lastDialogForTab(browsingTab) == .tryASearch)
-
-        treatmentManager.turnOffFeature()
-
-        #expect(treatmentManager.state == .onboardingCompleted)
-        #expect(treatmentManager.lastDialogForTab(browsingTab) == nil)
-        #expect(treatmentManager.dialogTypeForTab(newTab) == nil)
-        treatmentManager.gotItPressed()
-        #expect(treatmentManager.state == .onboardingCompleted)
-        #expect(treatmentManager.lastDialog == nil)
-
-        let restored = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                               subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                               stateStorage: stateStorage,
-                                               isNonBlocking: { true })
-        #expect(restored.dialogTypeForTab(browsingTab) == nil)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Other sites retain tracker tips without showing or consuming Try a search", .timeLimit(.minutes(1)),
-          arguments: ["https://example.com", "https://duckduckgo.com.example.com", "https://example.com/?q=test"])
-    func testTreatmentWebsiteDoesNotConsumeSearchPrompt(url: String) async {
-        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                                       stateStorage: stateStorage,
-                                                       isNonBlocking: { true })
-        treatmentManager.state = .notStarted
-        let siteTab = await Tab(content: .url(URL(string: url)!, source: .ui))
-        guard case .trackers = treatmentManager.dialogTypeForTab(siteTab) else {
-            Issue.record("Expected the tracker tip on a regular website")
-            return
-        }
-        #expect(!stateStorage.contextualDialogsSeen.contains("tryASearch"))
-        let newTab = await Tab(content: .newtab)
-        #expect(treatmentManager.dialogTypeForTab(newTab) == .tryASearch)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A cached search prompt is not restored on another site in treatment", .timeLimit(.minutes(1)), arguments: [false, true])
-    func testCachedSearchPromptAfterLeavingNewTab(isNonBlocking: Bool) async {
-        let manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                              subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                              stateStorage: stateStorage,
-                                              isNonBlocking: { isNonBlocking })
+    @Test("A cached search prompt is restored after leaving New Tab", .timeLimit(.minutes(1)))
+    func testCachedSearchPromptAfterLeavingNewTab() async {
         manager.state = .notStarted
         let schemeHandler = TestSchemeHandler { _ in .ok(.html("test")) }
         let tab = await Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
@@ -104,32 +60,7 @@ class ContextualDialogsManagerTests {
 
         tab.setContent(.url(URL(string: "https://example.com")!, source: .ui))
 
-        #expect(manager.lastDialogForTab(tab) == (isNonBlocking ? nil : .tryASearch))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The onboarding page neither advances contextual onboarding nor restores a cached dialog", .timeLimit(.minutes(1)))
-    func testOnboardingTabCannotPresentTheSubscriptionFollowUp() async {
-        subscriptionUpsellExperiment.cohortStub = .treatment
-        let treatmentManager = ContextualDialogsManager(trackerMessageProvider: trackerProvider,
-                                                       subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                                                       stateStorage: stateStorage,
-                                                       isNonBlocking: { true })
-        treatmentManager.state = .ongoing
-        stateStorage.contextualDialogsSeen = ["highFive"]
-        let tab = await Tab(content: .onboarding)
-
-        #expect(treatmentManager.dialogTypeForTab(tab) == nil)
-        #expect(treatmentManager.state == .ongoing)
-        #expect(stateStorage.contextualDialogsSeen == ["highFive"])
-
-        tab.setContent(.url(URL(string: "https://example.com")!, source: .ui))
-        #expect(treatmentManager.dialogTypeForTab(tab) == .subscriptionUpsell)
-        #expect(treatmentManager.lastDialogForTab(tab) == .subscriptionUpsell)
-
-        tab.setContent(.onboarding)
-        #expect(treatmentManager.lastDialogForTab(tab) == nil)
-        #expect(treatmentManager.dialogTypeForTab(tab) == nil)
+        #expect(manager.lastDialogForTab(tab) == .tryASearch)
     }
 
     // MARK: - Subscription Upsell Flow
@@ -143,10 +74,10 @@ class ContextualDialogsManagerTests {
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
         let tab = await Tab(content: .newtab)
 
-        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .highFive)
+        #expect(manager.dialogTypeForTab(tab) == .highFive)
         #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
 
-        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == .subscriptionUpsell)
+        #expect(manager.dialogTypeForTab(tab) == .subscriptionUpsell)
         #expect(subscriptionUpsellExperiment.enrollCallCount == 1)
     }
 
@@ -197,10 +128,7 @@ class ContextualDialogsManagerTests {
             stateStorage = MockContextualDialogStateStoring()
             subscriptionUpsellExperiment = SpyOnboardingSubscriptionUpsellEnrolling()
             subscriptionUpsellExperiment.cohortStub = cohort
-            manager = ContextualDialogsManager(
-                trackerMessageProvider: trackerProvider,
-                subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-                stateStorage: stateStorage)
+            manager = makeManager()
             manager.state = .ongoing
             manager.lastDialog = .highFive
 
@@ -220,7 +148,7 @@ class ContextualDialogsManagerTests {
         manager.gotItPressed()
 
         let tab = await Tab(content: .newtab)
-        #expect(manager.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+        #expect(manager.dialogTypeForTab(tab) == nil)
         #expect(manager.state == .onboardingCompleted)
         #expect(manager.lastDialog == nil)
     }
@@ -234,7 +162,7 @@ class ContextualDialogsManagerTests {
         manager.gotItPressed()
         let otherTab = await Tab(content: .newtab)
 
-        #expect(manager.dialogTypeForTab(otherTab, privacyInfo: nil) == nil)
+        #expect(manager.dialogTypeForTab(otherTab) == nil)
         #expect(manager.state == .onboardingCompleted)
         #expect(manager.lastDialog == nil)
     }
@@ -247,13 +175,10 @@ class ContextualDialogsManagerTests {
         manager.lastDialog = .highFive
         manager.gotItPressed()
 
-        let relaunched = ContextualDialogsManager(
-            trackerMessageProvider: trackerProvider,
-            subscriptionUpsellExperiment: subscriptionUpsellExperiment,
-            stateStorage: stateStorage)
+        let relaunched = makeManager()
         let tab = await Tab(content: .newtab)
 
-        #expect(relaunched.dialogTypeForTab(tab, privacyInfo: nil) == nil)
+        #expect(relaunched.dialogTypeForTab(tab) == nil)
         #expect(relaunched.state == .onboardingCompleted)
     }
 
@@ -286,7 +211,7 @@ class ContextualDialogsManagerTests {
         manager.state = .notStarted
         let tab = await Tab(content: .newtab)
 
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
 
         XCTAssertEqual(dialog, .tryASearch)
     }
@@ -297,7 +222,7 @@ class ContextualDialogsManagerTests {
         manager.state = .notStarted
         let tab = await Tab(content: .newtab)
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .tryASearch)
     }
 
@@ -307,7 +232,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .newtab)
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .tryASite)
     }
 
@@ -317,7 +242,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .newtab)
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .highFive)
     }
 
@@ -327,7 +252,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .newtab)
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == nil)
     }
 
@@ -339,7 +264,7 @@ class ContextualDialogsManagerTests {
         manager.state = .notStarted
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .tryASearch)
     }
 
@@ -348,9 +273,9 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitShowsHighFive(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = true
+        searchPathStorage.blockedTrackerSeen = true
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .highFive)
     }
 
@@ -359,9 +284,9 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitShowsTryFireButton(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = true
+        searchPathStorage.blockedTrackerSeen = true
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .tryFireButton)
     }
 
@@ -370,9 +295,9 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitShowsTrackersFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
@@ -381,9 +306,9 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitShowsTrackersNoFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: false))
     }
 
@@ -392,15 +317,15 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitIfItHasSeenTrackersBlockedItDoesNotShowItAgain() async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
 
         // First Site Visit
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
 
         // Second Site Visit
-        let dialog2 = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog2 = manager.dialogTypeForTab(tab)
         #expect(dialog2 != .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
@@ -409,16 +334,16 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitIfItHasNotSeenTrackersBlockedItDoesNotShowOtherTrackerDialogWithNoTeckersBlocked() async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
 
         // First Site Visit
         trackerProvider.trackerType = .majorTracker
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
 
         // Second Site Visit
-        let dialog2 = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog2 = manager.dialogTypeForTab(tab)
         #expect(dialog2 != .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
@@ -427,17 +352,17 @@ class ContextualDialogsManagerTests {
     func testOnSiteVisitIfItHasNotSeenTrackersBlockedItShowsTrackerDialogAgainIfTrackersBlocked() async {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
-        stateStorage.blockedTrackerSeen = false
+        searchPathStorage.blockedTrackerSeen = false
 
         // First Site Visit
         trackerProvider.trackerType = .majorTracker
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
 
         // Second Site Visit
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
-        let dialog2 = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog2 = manager.dialogTypeForTab(tab)
         #expect(dialog2 == .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
@@ -447,7 +372,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == nil)
     }
 
@@ -459,7 +384,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .searchDone(shouldFollowUp: true))
     }
 
@@ -469,7 +394,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .searchDone(shouldFollowUp: false))
     }
 
@@ -479,7 +404,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == .highFive)
     }
 
@@ -489,7 +414,7 @@ class ContextualDialogsManagerTests {
         manager.state = .ongoing
         let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
         stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
-        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        let dialog = manager.dialogTypeForTab(tab)
         #expect(dialog == nil)
     }
 
@@ -601,9 +526,36 @@ class SpyOnboardingSubscriptionUpsellEnrolling: OnboardingSubscriptionUpsellEnro
 class MockContextualDialogStateStoring: ContextualOnboardingStateStoring {
     var fireButtonUsedOnce: Bool = false
 
-    var blockedTrackerSeen: Bool = false
-
     var contextualDialogsSeen: [String] = []
 
     var stateString: String = ""
+}
+
+class MockBlockedTrackerStoring: BlockedTrackerStoring {
+    var blockedTrackerSeen: Bool = false
+}
+
+extension ContextualDialogsManager {
+    /// The manager with the real paths, the search path backed by storage the test controls instead of UserDefaults.
+    static func withSearchPath(trackerMessageProvider: TrackerMessageProviding,
+                               subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+                               stateStorage: ContextualOnboardingStateStoring,
+                               searchPathStorage: BlockedTrackerStoring,
+                               settings: any ThrowingKeyedStoring<ContextualOnboardingSettings>) -> ContextualDialogsManager {
+        ContextualDialogsManager(trackerMessageProvider: trackerMessageProvider,
+                                 subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                 stateStorage: stateStorage,
+                                 settings: settings,
+                                 makePath: { kind, progress in
+                                     switch kind {
+                                     case .search:
+                                         SearchOnboardingPath(progress: progress,
+                                                              storage: searchPathStorage,
+                                                              subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                                              trackerMessageProvider: trackerMessageProvider)
+                                     case .duckAI:
+                                         DuckAIOnboardingPath(progress: progress, subscriptionUpsellExperiment: subscriptionUpsellExperiment)
+                                     }
+                                 })
+    }
 }

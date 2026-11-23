@@ -129,7 +129,6 @@ extension WebExtensionManager {
                                                        requiresExtraction: bundledMetadata.requiresExtraction,
                                                        cpmOriginIdentifier: origin,
                                                        startScriptlets: startScriptlets)
-                    cpmDiagnosticsRecorder?.extensionDidUpdate(type: descriptor.type)
 
                     // Only unload the old version once its own load has settled.
                     await unloadGuard.awaitSettled(context(for: oldIdentifier))
@@ -211,9 +210,11 @@ extension WebExtensionManager {
         Logger.webExtensions.debug("🔄 Installing embedded extension: \(type.rawValue)")
 
         let identifier = UUID().uuidString
+        installingEmbeddedIdentifiers.insert(identifier)
         cpmBaseURLPolicy.pendingInstallations[identifier] = type
         cpmBaseURLPolicy.pendingOriginIdentifiers[identifier] = cpmOriginIdentifier
         defer {
+            installingEmbeddedIdentifiers.remove(identifier)
             cpmBaseURLPolicy.pendingInstallations[identifier] = nil
             cpmBaseURLPolicy.pendingOriginIdentifiers[identifier] = nil
         }

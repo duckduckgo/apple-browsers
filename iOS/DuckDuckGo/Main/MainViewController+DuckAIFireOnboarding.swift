@@ -104,6 +104,9 @@ extension MainViewController {
 
         let tabsToRemove = tabManager.currentTabsModel.tabs.filter { $0 !== tabToKeep.tabModel }
         for tab in tabsToRemove {
+            if #available(iOS 18.4, *) {
+                webExtensionEventsCoordinator?.didCloseTab(tab)
+            }
             tabManager.remove(tab: tab, clearTabHistory: false)
         }
         tabManager.select(tabToKeep.tabModel, dismissCurrent: false)
@@ -305,7 +308,13 @@ extension MainViewController {
         if let tabToClose = currentTab?.tabModel {
             closeTab(tabToClose, behavior: .createEmptyTabAtSamePosition, clearTabHistory: false, allowingKeyboard: false)
         }
-        openAIChat(source: .onboarding, query, autoSend: query.map { !$0.isEmpty } ?? false, flowType: .mobileAppOnboarding)
+        openAIChat(
+            source: .onboarding,
+            query,
+            autoSend: query.map { !$0.isEmpty } ?? false,
+            flowType: .mobileAppOnboarding,
+            modelId: onboardingResumeStepStore.resumeDuckAIQueryModelID
+        )
     }
 
     func clearDuckAIWebsiteDataForResumeIfNeeded() async {
@@ -497,7 +506,7 @@ extension MainViewController {
         }
     }
 
-    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType) {
+    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, modelId: String?, flowType: AIChatOnboardingFlowType) {
         let isLinearInterlude = linearOnboardingContext?.activeInterlude == .duckAI
         let shouldArmDuckAIFireOnboarding = autoSend && duckAIFireOnboardingFlow.state != .completed
             && (isLinearInterlude || !daxDialogsManager.hasSeenOnboarding)
@@ -512,13 +521,14 @@ extension MainViewController {
                 onboardingResumeStepStore.resumeStep = .duckAIAnswerStep
             }
             onboardingResumeStepStore.resumeDuckAIQueryPrompt = query
+            onboardingResumeStepStore.resumeDuckAIQueryModelID = modelId
             enforceSingleTabAfterOnboardingIfNeeded()
         } else if duckAIFireOnboardingFlow.state != .completed {
             duckAIFireOnboardingFlow.state = .idle
         }
 
         setDuckAIFireControlsLocked(shouldArmDuckAIFireOnboarding)
-        openAIChat(source: .onboarding, query, autoSend: autoSend, flowType: flowType)
+        openAIChat(source: .onboarding, query, autoSend: autoSend, flowType: flowType, modelId: modelId)
     }
 
     func clearDuckAIOnboardingResumeStepIfNeeded() {

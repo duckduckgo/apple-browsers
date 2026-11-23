@@ -17,6 +17,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 public enum SitePermissionsEvent: Equatable, Sendable {
 
     public enum PermissionType: String, Equatable, Sendable {
@@ -48,6 +50,42 @@ public enum SitePermissionsEvent: Equatable, Sendable {
         case dismissed
     }
 
+    /// Why a dialog the user saw went away without an answer.
+    public enum DialogCloseReason: String, Equatable, Sendable {
+        /// The main frame navigated to the URL it was already showing.
+        case navigationReload = "navigation_reload"
+        case navigationSameSite = "navigation_same_site"
+        case navigationCrossSite = "navigation_cross_site"
+        case processTerminated = "process_terminated"
+        /// The tab was closed or unloaded from memory.
+        case tabClosed = "tab_closed"
+        case dataCleared = "data_cleared"
+        /// The request was cancelled or replaced, for example after a permission change in another tab.
+        case cancelled
+    }
+
+    /// How long a dialog was visible before it went away, in coarse buckets.
+    public enum DialogVisibleDuration: String, Equatable, Sendable {
+        case lessThanOneSecond = "lt_1s"
+        case oneToFiveSeconds = "1_5s"
+        case fiveToThirtySeconds = "5_30s"
+        case moreThanThirtySeconds = "gt_30s"
+
+        public init(seconds: TimeInterval) {
+            switch seconds {
+            case ..<1: self = .lessThanOneSecond
+            case ..<5: self = .oneToFiveSeconds
+            case ..<30: self = .fiveToThirtySeconds
+            default: self = .moreThanThirtySeconds
+            }
+        }
+    }
+
+    public enum DialogFrame: String, Equatable, Sendable {
+        case main
+        case iframe
+    }
+
     public enum SystemPromptResult: String, Equatable, Sendable {
         case granted
         case denied
@@ -68,6 +106,10 @@ public enum SitePermissionsEvent: Equatable, Sendable {
 
     case permissionDialogImpression(type: PermissionType)
     case permissionDialogClick(type: PermissionType, selection: DialogSelection)
+    case permissionDialogClosedWithoutChoice(type: PermissionType,
+                                             reason: DialogCloseReason,
+                                             visibleFor: DialogVisibleDuration,
+                                             frame: DialogFrame)
     case permissionSystemPromptResult(type: SitePermissionType, result: SystemPromptResult)
     case permissionReminderDialog(type: PermissionType, action: ReminderDialogAction)
     case permissionSystemSettingsOpened(type: PermissionType)

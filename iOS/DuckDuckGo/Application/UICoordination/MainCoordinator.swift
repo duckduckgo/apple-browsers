@@ -32,11 +32,11 @@ import EventHub
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
-import PrivacyStats
 import Networking
 import WebExtensions
 import Onboarding
 import FeatureFlags_iOS
+import WebPageTranslation
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -151,7 +151,8 @@ final class MainCoordinator {
          onboardingManager: OnboardingManaging,
          eventHub: EventHubManaging,
          usageContextProvider: UsageContextProviding,
-         promptExposureReporter: PromptExposureReporting
+         promptExposureReporter: PromptExposureReporting,
+         translationModels: TranslationModels?
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -207,7 +208,7 @@ final class MainCoordinator {
             readLastActiveDate: { dailyActivityStore.currentActivity().lastActiveDate },
             isEnabled: { NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable })
         self.daxGreetingActivity = daxGreetingActivity
-        self.privacyStats = Self.makePrivacyStats()
+        self.privacyStats = DeferredPrivacyStats()
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
         let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
@@ -350,7 +351,8 @@ final class MainCoordinator {
                                         onboardingManager: onboardingManager,
                                         promoCoordinationService: promoCoordinationService,
                                         usageContextProvider: usageContextProvider,
-                                        promptExposureReporter: promptExposureReporter)
+                                        promptExposureReporter: promptExposureReporter,
+                                        translationModels: translationModels)
 
         onboardingTimeLimitCancellable = daxDialogs.isDismissedPublisher
             .filter { [weak daxDialogs] isDismissed in
@@ -372,6 +374,24 @@ final class MainCoordinator {
 
     func start(drawsIdleReturnNewTabPage: Bool) {
         controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
+    }
+
+    /// Whether a warm return puts up the after-idle New Tab Page before its first frame, given the UI it's returning to.
+    func drawsNewTabPageForIdleReturnOnForeground(outcome: IdleReturnOutcome,
+                                                  isFeatureOn: Bool,
+                                                  hasLaunchAction: Bool,
+                                                  isTabClearingEnabled: Bool) -> Bool {
+        outcome.drawsNewTabPageOnForeground(isFeatureOn: isFeatureOn,
+                                            hasLaunchAction: hasLaunchAction,
+                                            isClearingTabs: isTabClearingEnabled || controller.autoClearInProgress,
+                                            isVoiceSessionActive: voiceSessionStateManager.isVoiceSessionActive,
+                                            hasPageToReplace: tabManager.currentTabsModel.currentTab?.link != nil,
+                                            isScreenPresented: controller.presentedViewController != nil)
+    }
+
+    /// Before a warm return's first frame, so the previous page isn't drawn again first.
+    func drawNewTabPageForIdleReturnOnForeground() {
+        controller.openNewTabPageAfterIdleReturn()
     }
 
     private func subscribeToDarkReaderChanges() {
@@ -444,7 +464,6 @@ final class MainCoordinator {
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             mainViewController: controller,
-            appSession: AppDependencyProvider.shared.appSessionInfo,
             featureFlagger: featureFlagger,
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
@@ -655,14 +674,6 @@ final class MainCoordinator {
                         featureFlagger: featureFlagger,
                         memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: false) }),
                         fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
-    }
-
-    private static func makePrivacyStats() -> PrivacyStatsProviding {
-        let location = PrivacyStatsDatabase.defaultLocation
-        if let database = PrivacyStatsDatabase(location: location) {
-            return PrivacyStats(databaseProvider: database)
-        }
-        return UnavailablePrivacyStats(storeLocation: location)
     }
 
     // MARK: - Public API
@@ -906,7 +917,7 @@ extension MainCoordinator: ShortcutItemHandling {
 
     private func handleQuery(_ query: String) {
         controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query, fromExternalLink: true, entrance: .fromOutsideTheApp)
+        controller.loadQueryInNewTab(query, reuseExisting: .any, fromExternalLink: true, entrance: .fromOutsideTheApp)
     }
 
     private func handleSearchPassword() {
@@ -969,15 +980,9 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
-                startUntreatedReturnSession(timeAwayMs: timeAwayMs)
-                completion(.keptCurrent)
-                return
-            }
             controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: controller.presentedViewController) { [weak self] in
                 guard let self else { return }
-                if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                    || !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
+                if !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
                     startUntreatedReturnSession(timeAwayMs: timeAwayMs)
                 }
                 completion(.keptCurrent)
@@ -987,10 +992,9 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
         controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
-        let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true, entrance: .fromOutsideTheApp)
+            self.controller.openNewTabPageAfterIdleReturn()
             completion(.openedNewTab)
         }
     }
@@ -1010,6 +1014,10 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func recordOrdinaryReturn(timeAwayMs: Int?) {
         startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+    }
+
+    func releaseHeldNewTabPage() {
+        controller.releaseHeldNewTabPage()
     }
 
     /// A return where no after-idle treatment was applied, so `after_idle` stays false and

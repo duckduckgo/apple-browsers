@@ -46,7 +46,13 @@ public final class BrowserToolCatalog {
     }
 
     public var enabledClientToolCapabilities: [ClientToolCapability] {
-        enabledTools.compactMap { clientToolCapabilitiesByName[$0.name] }
+        let tools = enabledTools.compactMap { clientToolCapabilitiesByName[$0.name] }
+        return offersRequestAccess ? tools + [.requestAccess] : tools
+    }
+
+    /// `requestAccess` is offered only alongside at least one tool.
+    public var offersRequestAccess: Bool {
+        configuration.isRequestAccessEnabled && !enabledTools.isEmpty
     }
 
     public func tool(for capability: ClientToolCapability) -> (any BrowserTool)? {

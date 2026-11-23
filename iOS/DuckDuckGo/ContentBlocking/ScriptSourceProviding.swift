@@ -46,6 +46,7 @@ public protocol ScriptSourceProviding {
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
     var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
     var aiChatBonusOffer: AIChatBonusOfferDependencies { get }
+    var aiChatLocalModel: AIChatLocalModelDependencies? { get }
 
 }
 
@@ -62,6 +63,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         let syncErrorHandler: SyncErrorHandling
         let webExtensionAvailability: WebExtensionAvailabilityProviding?
         let aiChatBonusOffer: AIChatBonusOfferDependencies
+        var aiChatLocalModel: AIChatLocalModelDependencies?
     }
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
@@ -83,6 +85,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let trackerProtectionDataSource: TrackerProtectionDataSource?
     let aiChatBonusOffer: AIChatBonusOfferDependencies
+    let aiChatLocalModel: AIChatLocalModelDependencies?
     private let contentScopeSources: ContentScopeScriptSources
 
     var contentScopeSource: ContentScopeScriptSource { contentScopeSources.contentScope }
@@ -104,6 +107,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         syncErrorHandler = dependencies.syncErrorHandler
         webExtensionAvailability = dependencies.webExtensionAvailability
         aiChatBonusOffer = dependencies.aiChatBonusOffer
+        aiChatLocalModel = dependencies.aiChatLocalModel
         trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager
         )
@@ -120,7 +124,10 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         contentScopeSources = ContentScopeScriptSources(privacyConfigurationManager: privacyConfigurationManager,
                                                         properties: contentScopeProperties,
                                                         surrogateTrackerData: trackerProtectionDataSource?.surrogateFilteredTrackerData,
-                                                        contentScopeExcludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue],
+                                                        contentScopeExcludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue,
+                                                                                       PrivacyFeature.aiChatBrowserTools.rawValue],
+                                                        contentScopeIsolatedExcludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures
+                                                            + [PrivacyFeature.aiChatBrowserTools.rawValue],
                                                         onFailure: { error in
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()

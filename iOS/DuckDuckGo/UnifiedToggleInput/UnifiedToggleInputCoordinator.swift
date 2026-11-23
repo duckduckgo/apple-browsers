@@ -687,7 +687,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func bindToTab(_ userScript: AIChatUserScript, hasExistingChat: Bool = false) {
         let newIdentifier = ObjectIdentifier(userScript)
-        if boundUserScriptIdentifier == newIdentifier {
+        // A freed script's address can be reused by the next one, so a matching identifier alone doesn't prove it's the same script.
+        if boundUserScriptIdentifier == newIdentifier, boundUserScript === userScript {
             boundUserScript = userScript
             userScript.inputBoxHandler = self
             syncChipVisibility(hasExistingChat: hasExistingChat)
@@ -1910,8 +1911,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.clearRejectionBanner()
     }
 
-    func updateSelectedModel(_ modelId: String) {
-        modelSelector.updateSelectedModel(modelId)
+    /// - Parameter persistsSelection: When `false`, `modelId` applies to the current chat only and is not
+    ///   saved as the model that new chats start on.
+    func updateSelectedModel(_ modelId: String, persistsSelection: Bool = true) {
+        modelSelector.updateSelectedModel(modelId, persistsSelection: persistsSelection)
     }
 
     /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
@@ -2326,6 +2329,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                                                queryType: UnifiedToggleInputQueryType(query: text),
                                                resubmitDelay: resubmitDelay(of: text, mode: .search))
             clearStoreEntryAfterSubmission()
+            delegate?.unifiedToggleInputWillSubmitQuery(text)
             if isAITabState {
                 hide()
             } else if isContextualChatState {

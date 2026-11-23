@@ -342,7 +342,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
         XCTAssertEqual(sut.tierBadgeToDisplay, .pro)
     }
 
-    func testTierBadgeToDisplay_WhenPlusTierAndFeatureFlagEnabled_ReturnsPlus() {
+    func testTierBadgeToDisplay_WhenPlusTier_ReturnsPlus() {
         // Given - Plus tier with feature flag ON
         sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
 
@@ -361,7 +361,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
     // MARK: - Should Show View All Plans Tests
 
-    func testShouldShowViewAllPlans_WhenActiveSubscriptionAndFeatureFlagEnabled_ReturnsTrue() {
+    func testShouldShowViewAllPlans_WhenActiveSubscription_ReturnsTrue() {
         // Given - Active subscription with feature flag ON
         sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
 

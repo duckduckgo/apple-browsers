@@ -88,7 +88,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.tierBadgeToDisplay, .pro)
     }
 
-    func testTierBadgeToDisplay_WhenPlusTierAndFeatureFlagEnabled_ReturnsPlus() async {
+    func testTierBadgeToDisplay_WhenPlusTier_ReturnsPlus() async {
         // Given - Plus tier with feature flag ON
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -125,7 +125,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowViewAllPlans)
     }
 
-    func testShouldShowViewAllPlans_WhenActiveSubscriptionAndFeatureFlagEnabled_ReturnsTrue() async {
+    func testShouldShowViewAllPlans_WhenActiveSubscription_ReturnsTrue() async {
         // Given - Active subscription with feature flag ON
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -138,7 +138,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(sut.shouldShowViewAllPlans)
     }
 
-    func testShouldShowViewAllPlans_WhenActiveProTierSubscriptionAndFeatureFlagDisabled_ReturnsTrue() async {
+    func testShouldShowViewAllPlans_WhenActiveProTierSubscription_ReturnsTrue() async {
         // Given - Active Pro tier subscription with feature flag OFF
         mockFeatureFlagger.enabledFeatureFlags = []
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .pro))

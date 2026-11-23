@@ -43,12 +43,4 @@ struct SubscriptionPageFeatureFlagAdapterTests {
 
         #expect(adapter.isEnabled(subscriptionFlag) == isEnabled)
     }
-
-    @Test("Flag is disabled by default")
-    func flagDisabledByDefault() {
-        let mockFlagger = MockFeatureFlagger()
-        let adapter = SubscriptionPageFeatureFlagAdapter(featureFlagger: mockFlagger)
-
-        #expect(adapter.isEnabled(.supportsAlternateStripePaymentFlow) == false)
-    }
 }

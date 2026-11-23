@@ -153,7 +153,6 @@ extension MainViewController {
             },
             inlineInputHandoffAnimations: {
                 outgoingContent.alpha = 0
-                source?.alpha = 1
             },
             interruptCleanup: { [weak self, weak coordinator] in
                 inputContainer.transform = .identity

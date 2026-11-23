@@ -426,6 +426,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         updatedCreateImageFeature: UpdatedCreateImageFeatureProviding = UpdatedCreateImageFeature(),
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        userDefaultModel: AIChatUserDefaultModelProviding? = nil,
         subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         floatingUIManager: FloatingUIManaging? = nil,
@@ -470,7 +471,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             subscriptionManager: subscriptionManager,
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
             startsNewChatsOnDefault: startsNewChatsOnDefault,
-            overLimitNewChatDefaults: usageLimitsStore?.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
+            overLimitNewChatDefaults: usageLimitsStore?.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main),
+            userDefaultModel: userDefaultModel ?? duckAiNativeStorageHandler.map { DuckAiUserDefaultModelStore(storage: $0) }
         )
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }

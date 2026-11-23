@@ -70,7 +70,8 @@ final class IPadOmnibarModelPickerController {
             subscriptionManager: subscriptionManager,
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
             startsNewChatsOnDefault: startsNewChatsOnDefault,
-            overLimitNewChatDefaults: Self.overLimitNewChatDefaults(from: duckAiNativeStorageHandler)
+            overLimitNewChatDefaults: Self.overLimitNewChatDefaults(from: duckAiNativeStorageHandler),
+            userDefaultModel: duckAiNativeStorageHandler.map { DuckAiUserDefaultModelStore(storage: $0) }
         )
         store.onModelsUpdated = { [weak self] in
             self?.onModelsUpdated?()

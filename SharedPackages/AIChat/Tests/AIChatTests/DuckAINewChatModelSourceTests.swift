@@ -80,9 +80,32 @@ struct DuckAINewChatModelSourceTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Sending the user default reports user_default", .timeLimit(.minutes(1)))
+    func userDefaultIsUserDefault() {
+        let userDefault = AIChatNewChatSelection(modelId: "haiku", reasoningEffort: nil, origin: .user)
+        #expect(resolve("haiku", newChatDefault: userDefault) == .userDefault)
+        #expect(resolve("haiku", isPicked: true, newChatDefault: userDefault) == .userDefault)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Falling back from an unusable user default reports user_default_unavailable", .timeLimit(.minutes(1)),
+          arguments: [AIChatNewChatSelection.Origin.server, .fallback])
+    func unusableUserDefault(origin: AIChatNewChatSelection.Origin) {
+        let fellBack = AIChatNewChatSelection(modelId: "luna", reasoningEffort: nil, origin: origin, isUserDefaultUnavailable: true)
+        #expect(resolve("luna", newChatDefault: fellBack) == .userDefaultUnavailable)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Picking another model with an unusable user default reports picked", .timeLimit(.minutes(1)))
+    func pickedOverUnusableUserDefault() {
+        let fellBack = AIChatNewChatSelection(modelId: "luna", reasoningEffort: nil, origin: .server, isUserDefaultUnavailable: true)
+        #expect(resolve("claude", isPicked: true, newChatDefault: fellBack) == .picked)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Raw values match the pixel parameter", .timeLimit(.minutes(1)))
     func rawValuesMatchPixel() {
         #expect(DuckAINewChatModelSource.pixelParameterKey == "model_source")
-        #expect(DuckAINewChatModelSource.allCases.map(\.rawValue) == ["default", "picked", "onboarding", "fallback"])
+        #expect(DuckAINewChatModelSource.allCases.map(\.rawValue) == ["default", "picked", "onboarding", "fallback", "user_default", "user_default_unavailable"])
     }
 }

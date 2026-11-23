@@ -49,12 +49,14 @@ public final class DefaultAgeRangeService: AgeRangeServicing {
 
     public init() {}
 
+    private let defaultAgeBracket = 16
+
     public func requestAgeRange(in anchor: AgeRangeAnchor) async throws {
         guard #available(iOS 26.2, macOS 26.2, *) else {
             return
         }
 
         // Legal requires keeping only the request date, so the response is dropped.
-        _ = try await AgeRangeService.shared.requestAgeRange(ageGates: 18, in: anchor)
+        _ = try await AgeRangeService.shared.requestAgeRange(ageGates: defaultAgeBracket, in: anchor)
     }
 }

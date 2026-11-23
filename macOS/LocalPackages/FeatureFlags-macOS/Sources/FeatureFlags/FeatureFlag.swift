@@ -519,10 +519,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218741?focus=true
     case promoQueueSyncSetupAutofillPromo
 
-    /// Enables the Bookmark Added "Sync Bookmarks Across Devices" button promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
-    case promoQueueBookmarkAddedSyncPromo
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
     case defaultBrowserWinBackPromo
 
@@ -1044,8 +1040,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupBookmarksPromo))
         case .promoQueueSyncSetupAutofillPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupAutofillPromo))
-        case .promoQueueBookmarkAddedSyncPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
         case .defaultBrowserWinBackPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:

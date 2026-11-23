@@ -572,7 +572,7 @@ private final class AIChatNativePermissionCoordinator: ClientToolPermissionCoord
                    prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         let requiresRequestAccess = chatID != nil && !tool.asksEveryTime
         if let failure = admission(tool.name, requiresRequestAccess, prompter) {
-            return .refused(failure.clientToolError, .beforePermission)
+            return .refused(failure.clientToolError, .beforePermission, answer: nil)
         }
         let authorization = await base.authorize(callID: callID, tool: tool, targetsOtherTab: targetsOtherTab,
                                                  target: target, chatID: chatID, accessToolNames: accessToolNames, prompter: prompter)

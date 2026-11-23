@@ -565,7 +565,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         let tool = BrowserToolsBridgeAskTool()
         let authorization = await fixture.service.clientToolPermissions.authorize(callID: "call", tool: tool, prompter: fixture.script)
         switch authorization {
-        case .refused(let error, _):
+        case .refused(let error, _, _):
             XCTAssertEqual(error, .cancelled)
         case .granted(_, let performExecution):
             XCTFail("A tool requiring a native prompt must be cancelled")

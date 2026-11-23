@@ -34,6 +34,12 @@ enum BrowserToolsPixel: PixelKit.Event {
     /// `promptNumberInChat` is set only with batch access on, when calls carry their chat.
     case promptAnswered(tool: String, answer: BrowserToolPromptAnswer, promptNumberInChat: Int?, timeToAnswer: TimeInterval)
 
+    /// Event Trigger: A `requestAccess` call finished, with or without a prompt.
+    case accessRequested(BrowserToolAccessRequestOutcome)
+
+    /// Event Trigger: One tool's result in a finished `requestAccess` call. `tool` is a slug from `toolSlugs`.
+    case accessResult(tool: String, access: BrowserToolAccessRequestOutcome.ToolResult)
+
     /// Event Trigger: Duck.ai was offered browser tools. Fired daily.
     case enabled
 
@@ -95,6 +101,8 @@ enum BrowserToolsPixel: PixelKit.Event {
         case .call: "aichat_tools_call_macos"
         case .used: "aichat_tools_used_macos"
         case .promptAnswered: "aichat_tools_prompt_answered_macos"
+        case .accessRequested: "aichat_tools_access_requested_macos"
+        case .accessResult: "aichat_tools_access_result_macos"
         case .enabled: "aichat_tools_enabled_macos"
         case .protocolError: "aichat_tools_protocol_error_macos"
         case .usedTool(let tool): "aichat_tools_used_\(tool)_macos"
@@ -116,6 +124,14 @@ enum BrowserToolsPixel: PixelKit.Event {
             var parameters = ["tool": tool, "answer": answer.rawValue, "time_to_answer": Self.timeToAnswerBucket(timeToAnswer)]
             parameters["prompt_number_in_chat"] = number.map { $0 >= 4 ? "4_plus" : String($0) }
             return parameters
+        case .accessRequested(let outcome):
+            var parameters = ["decision": outcome.decision.rawValue]
+            parameters["requested"] = outcome.requested.map(String.init)
+            parameters["asked"] = outcome.asked.map(String.init)
+            parameters["removed"] = outcome.removed.map(String.init)
+            return parameters
+        case .accessResult(let tool, let access):
+            return ["tool": tool, "access": access.rawValue]
         case .protocolError(let reason, let tool):
             return ["reason": reason.rawValue, "tool": tool.flatMap { Self.toolSlugs[$0] } ?? "unknown"]
         case .permissionChanged(let tool, let from, let to, let source):
@@ -220,5 +236,14 @@ struct BrowserToolsPixelInstrumentation: BrowserToolsInstrumentation {
         guard let slug = BrowserToolsPixel.toolSlugs[tool] else { return }
         pixelFiring?.fire(BrowserToolsPixel.promptAnswered(tool: slug, answer: answer, promptNumberInChat: promptNumberInChat,
                                                            timeToAnswer: timeToAnswer))
+    }
+
+    func accessRequestDidFinish(_ outcome: BrowserToolAccessRequestOutcome) {
+        pixelFiring?.fire(BrowserToolsPixel.accessRequested(outcome))
+        // A name outside the catalog came from the page and is never sent.
+        for result in outcome.results {
+            guard let slug = BrowserToolsPixel.toolSlugs[result.tool] else { continue }
+            pixelFiring?.fire(BrowserToolsPixel.accessResult(tool: slug, access: result.result))
+        }
     }
 }

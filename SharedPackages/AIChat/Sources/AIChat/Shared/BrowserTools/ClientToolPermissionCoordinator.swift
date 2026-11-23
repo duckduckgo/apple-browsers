@@ -92,11 +92,12 @@ public enum BrowserToolAccessLevel: String, Sendable {
 
 public enum ClientToolPermissionAuthorization {
     case granted(BrowserToolPermissionPath, performExecution: @MainActor (@escaping @MainActor () async -> BrowserToolResult) async -> BrowserToolResult?)
-    case refused(ClientToolError, BrowserToolPermissionPath)
+    /// `answer` says how the prompt closed; nil when none was shown.
+    case refused(ClientToolError, BrowserToolPermissionPath, answer: BrowserToolPromptAnswer?)
 
     public var permissionPath: BrowserToolPermissionPath {
         switch self {
-        case .granted(let path, _), .refused(_, let path): path
+        case .granted(let path, _), .refused(_, let path, _): path
         }
     }
 }
@@ -128,8 +129,9 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let cancellation: ClientToolCancellationSignal
         var state: State = .queued
         var permissionPath = BrowserToolPermissionPath.beforePermission
-        /// Set while a single-tool prompt is shown, for `promptDidClose`.
+        /// Set while a prompt is shown, for `promptDidClose`.
         var promptShownAt: TimeInterval?
+        var promptAnswer: BrowserToolPromptAnswer?
         var promptNumberInChat: Int?
         var continuation: CheckedContinuation<ClientToolPermissionAuthorization, Never>?
         var executionContinuation: CheckedContinuation<BrowserToolResult?, Never>?
@@ -203,7 +205,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let requestID = UUID().uuidString
         let deadline = now() + Self.permissionTimeout
         return await withTaskCancellationHandler {
-            guard !Task.isCancelled, !cancellation.isCancelled else { return .refused(.cancelled, .beforePermission) }
+            guard !Task.isCancelled, !cancellation.isCancelled else { return .refused(.cancelled, .beforePermission, answer: nil) }
             return await withCheckedContinuation { continuation in
                 let entry = Entry(requestID: requestID, callID: callID, tool: tool, targetsOtherTab: targetsOtherTab, target: target,
                                   chatID: chatID, accessToolNames: accessToolNames, prompter: prompter,
@@ -256,12 +258,12 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         default: decision
         }
         let answer: BrowserToolPromptAnswer = switch decision {
-        case .allowOnce: .allowOnce
+        // `allowAccess` and `dontAllow` are offered only by `requestAccess` prompts.
+        case .allowOnce, .allowAccess: .allowOnce
         case .allowForChat: .allowForChat
         case .always: .always
-        case .never: .never
-        // Offered only by `requestAccess` prompts, which aren't reported here.
-        case .allowAccess, .dontAllow, .dismiss: .dismiss
+        case .never, .dontAllow: .never
+        case .dismiss: .dismiss
         }
         closePrompt(entry, answer: answer)
         switch decision {
@@ -420,7 +422,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         releaseQueue(entry)
         let continuation = entry.continuation
         entry.continuation = nil
-        continuation?.resume(returning: .refused(error, entry.permissionPath))
+        continuation?.resume(returning: .refused(error, entry.permissionPath, answer: entry.promptAnswer))
         executionContinuation?.resume(returning: nil)
         processPendingPermissionQueues()
     }
@@ -479,8 +481,8 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         }
         entry.state = .awaitingDecision
         entry.permissionPath = .prompt
+        entry.promptShownAt = now()
         if entry.accessToolNames == nil {
-            entry.promptShownAt = now()
             if let chatID = entry.chatID {
                 promptCounts[chatID, default: 0] += 1
                 entry.promptNumberInChat = promptCounts[chatID]
@@ -500,10 +502,12 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         }
     }
 
-    /// Reports a single-tool prompt once, when it closes.
+    /// Records how a prompt closed, once, and reports it for a single-tool prompt.
     private func closePrompt(_ entry: Entry, answer: BrowserToolPromptAnswer) {
         guard let shownAt = entry.promptShownAt else { return }
         entry.promptShownAt = nil
+        entry.promptAnswer = answer
+        guard entry.accessToolNames == nil else { return }
         instrumentation?.promptDidClose(tool: entry.tool.name, answer: answer, promptNumberInChat: entry.promptNumberInChat,
                                         timeToAnswer: now() - shownAt)
     }

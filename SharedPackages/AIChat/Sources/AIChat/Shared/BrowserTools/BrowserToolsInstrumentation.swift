@@ -62,6 +62,59 @@ public enum BrowserToolPromptAnswer: String, Equatable, Sendable {
     case withdrawn
 }
 
+/// A finished `requestAccess` call outside a Fire window.
+public struct BrowserToolAccessRequestOutcome: Equatable, Sendable {
+    /// Raw values are the `decision` pixel values.
+    public enum Decision: String, Sendable {
+        case allow
+        case dontAllow = "dont_allow"
+        case dismiss
+        case timeout
+        case withdrawn
+        /// Every requested tool was already decided, so nothing was asked.
+        case noPrompt = "no_prompt"
+        /// The call could not be read: no chat or an invalid list of tools.
+        case invalid
+        /// Batch access is off.
+        case unavailable
+    }
+
+    /// Raw values are the `access` pixel values.
+    public enum ToolResult: String, Sendable {
+        case granted
+        /// Taken out of the prompt by the user, who allowed the rest.
+        case removed
+        /// Asked for, and the prompt didn't allow it.
+        case denied
+        case alreadyAllowed = "already_allowed"
+        case never
+        /// Not served, turned off, or a tool that asks every time.
+        case unavailable
+    }
+
+    public struct Result: Equatable, Sendable {
+        public let tool: String
+        public let result: ToolResult
+    }
+
+    public let decision: Decision
+    /// Nil for `invalid` and `unavailable`, when the list wasn't read.
+    public let requested: Int?
+    public let asked: Int?
+    public let removed: Int?
+    /// One per requested name, in the order requested.
+    public let results: [Result]
+
+    public init(decision: Decision, requested: Int? = nil, asked: Int? = nil, removed: Int? = nil,
+                results: [(tool: String, result: ToolResult)] = []) {
+        self.decision = decision
+        self.requested = requested
+        self.asked = asked
+        self.removed = removed
+        self.results = results.map { Result(tool: $0.tool, result: $0.result) }
+    }
+}
+
 @MainActor
 public protocol BrowserToolsInstrumentation {
     /// A finished tool call, other than `requestAccess` or one from a Fire window.
@@ -71,4 +124,6 @@ public protocol BrowserToolsInstrumentation {
     /// A single-tool permission prompt closed. `requestAccess` prompts are not reported here.
     /// - Parameter promptNumberInChat: 1 for the chat's first prompt; nil without batch access, when calls carry no chat.
     func promptDidClose(tool: String, answer: BrowserToolPromptAnswer, promptNumberInChat: Int?, timeToAnswer: TimeInterval)
+
+    func accessRequestDidFinish(_ outcome: BrowserToolAccessRequestOutcome)
 }

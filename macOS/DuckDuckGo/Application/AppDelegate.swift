@@ -1295,11 +1295,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             trackerMessageProvider: TrackerMessageProvider(
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
             ),
-            subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
-                featureFlagger: featureFlagger,
-                subscriptionManager: subscriptionManager
-            ),
-            settings: keyValueStore.throwingKeyedStoring()
+            subscriptionManager: subscriptionManager,
+            settings: keyValueStore.throwingKeyedStoring(),
+            uiLocker: windowControllersManager
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -2303,6 +2301,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        // No new windows while onboarding locks the UI.
+        guard !windowControllersManager.userInteractionLock.isLocked else { return nil }
         return ApplicationDockMenu(internalUserDecider: internalUserDecider, isFireWindowDefault: visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled)
     }
 
@@ -2395,7 +2395,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             themeManager: themeManager,
             darkReaderExcludedDomainsProvider: darkReaderSettings,
             scriptletConfiguration: makeScriptletConfiguration(),
-            eventHub: eventHubIntegration.eventHub
+            eventHub: eventHubIntegration.eventHub,
+            isAppleSurrogateRedirectionEnabled: { [webExtensionAvailability] in webExtensionAvailability.isAppleSurrogateRedirectionEnabled }
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager

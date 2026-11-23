@@ -42,6 +42,10 @@ on:
         required: false
         default: never
         type: string
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
 
 jobs:
   run-ui-test:
@@ -68,6 +72,8 @@ jobs:
     - name: Check out the code
       id: checkout
       uses: actions/checkout@v6
+      with:
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Print macOS version
       run: sw_vers

@@ -1,0 +1,15 @@
+{
+  "names": [
+    {
+      "firstName": "Jane",
+      "lastName": "Doe"
+    }
+  ],
+  "addresses": [
+    {
+      "city": "Springfield",
+      "state": "IL"
+    }
+  ],
+  "birthYear": 1985
+}

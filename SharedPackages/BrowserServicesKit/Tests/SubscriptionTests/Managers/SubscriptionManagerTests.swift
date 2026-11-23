@@ -554,6 +554,54 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
     }
 
+    func testMissingPrimary_BackupRestoreFails_ThrowsReportsAndClearsEntitlementsWithoutSigningOut() async throws {
+        let signedIn = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockOAuthClient.internalCurrentTokenContainer = signedIn
+        mockOAuthClient.getTokensResponse = .success(signedIn)
+        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+        XCTAssertFalse(subscriptionManager.cachedUserEntitlements.isEmpty)
+
+        mockOAuthClient.internalCurrentTokenContainer = nil
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+        installCoordinator(backupResult: .failure(TokenBackupError.expired), appStoreSucceeds: true)
+        mockPixelHandler.handledPixels = []
+        let entitlementsChanged = expectation(forNotification: .entitlementsDidChange, object: subscriptionManager)
+
+        do {
+            _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? SubscriptionManagerError, .noTokenAvailable)
+        }
+
+        await fulfillment(of: [entitlementsChanged], timeout: 1)
+        XCTAssertTrue(subscriptionManager.cachedUserEntitlements.isEmpty)
+        XCTAssertEqual(mockPixelHandler.handledPixels, [.backupRestoreFailed(.missingToken, .expired, TokenBackupError.expired)])
+        guard case .backupRestoreFailed(_, _, let reportedError) = mockPixelHandler.handledPixels.first else {
+            return XCTFail("Expected a backup restore failure pixel")
+        }
+        XCTAssertEqual(reportedError as? TokenBackupError, .expired)
+        XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 0)
+        XCTAssertEqual(mockOAuthClient.logoutCallCount, 0)
+        XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
+    }
+
+    func testRestoreMissingTokenIfPossible_BackupRestoreFails_ReportsItAndDoesNotFetchTheSubscription() async {
+        mockOAuthClient.internalCurrentTokenContainer = nil
+        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
+        installCoordinator(backupResult: .failure(URLError(.timedOut)), appStoreSucceeds: true)
+
+        await subscriptionManager.restoreMissingTokenIfPossible()
+
+        XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
+        XCTAssertTrue(mockOAuthClient.getTokensPolicies.isEmpty)
+        XCTAssertEqual(mockPixelHandler.handledPixels, [.backupRestoreFailed(.missingToken, .temporary, URLError(.timedOut))])
+        XCTAssertFalse(mockSubscriptionEndpointService.getSubscriptionCalled)
+        XCTAssertFalse(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 0)
+    }
+
     func testMissingPrimary_NoCoordinator_ThrowsNoTokenAsToday() async throws {
         subscriptionManager.tokenRecoveryCoordinator = nil
         mockOAuthClient.internalCurrentTokenContainer = nil

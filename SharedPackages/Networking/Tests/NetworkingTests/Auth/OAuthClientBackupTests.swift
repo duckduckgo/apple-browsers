@@ -199,7 +199,10 @@ final class OAuthClientBackupTests: XCTestCase {
         try backupStorage.saveTokenContainer(existing)
         await refresher.setTestingDecodedTokenContainers([newPrimary])
 
-        _ = try await makeClient(backupStorage: backupStorage).getTokens(policy: .localForceRefresh)
+        let client = makeClient(backupStorage: backupStorage)
+
+        _ = try await client.getTokens(policy: .localForceRefresh)
+        await client.waitForBackupRenewal()
 
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
         XCTAssertEqual(try backupStorage.getTokenContainer(), existing)
@@ -218,7 +221,10 @@ final class OAuthClientBackupTests: XCTestCase {
         try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
         await refresher.setTestingDecodedTokenContainers([newPrimary])
 
-        let result = try await makeClient(backupStorage: FailingTokenStorage(failOnRead: true)).getTokens(policy: .localForceRefresh)
+        let client = makeClient(backupStorage: FailingTokenStorage(failOnRead: true))
+
+        let result = try await client.getTokens(policy: .localForceRefresh)
+        await client.waitForBackupRenewal()
 
         XCTAssertEqual(result, newPrimary)
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 1)
@@ -861,6 +867,19 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertEqual(mockOAuthService.refreshAccessTokenRequestedTokens, ["storedBackupR", "storedBackupR"])
     }
 
+    func testRestore_deadCurrentUnchangedDuringFork_replacesItWithTheRestoredPrimary() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "deadR"))
+        try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR"))
+        await refresher.setTestingDecodedTokenContainers([newBackup, newPrimary])
+
+        let result = try await makeClient(backupStorage: backupStorage).restoreFromBackup(expectedExternalID: "test-subject")
+
+        XCTAssertEqual(result, newPrimary)
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), newPrimary)
+        XCTAssertEqual(try backupStorage.getTokenContainer(), newBackup)
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenRequestedTokens, ["storedBackupR", "storedBackupR"])
+    }
+
     func testRestore_noBackupStorage_isUnavailable() async {
         do {
             _ = try await makeClient(backupStorage: nil).restoreFromBackup(expectedExternalID: nil)
@@ -1273,11 +1292,84 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertEqual(results, [newPrimary, newPrimary])
         XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 2)
     }
+
+    func testRestore_concurrentCallExpectingAnotherAccount_throwsAccountMismatchAndKeepsTheRestoredTokens() async throws {
+        try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR"))
+        let stub = SideEffectForkRefresher(minted: [newBackup, newPrimary]) { }
+        let client = makeClient(backupStorage: backupStorage, tokenRefresher: stub)
+        let second = SecondRestoreBox()
+        stub.sideEffect = {
+            second.task = Task { try await client.restoreFromBackup(expectedExternalID: "other") }
+            await Self.waitUntilARestoreIsShared(by: client)
+        }
+
+        let first = try await client.restoreFromBackup(expectedExternalID: "test-subject")
+
+        XCTAssertEqual(first, newPrimary)
+        do {
+            _ = try await XCTUnwrap(second.task).value
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, .accountMismatch)
+        }
+        XCTAssertEqual(stub.forkCallCount, 1)
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), newPrimary)
+        XCTAssertEqual(try backupStorage.getTokenContainer(), newBackup)
+    }
+
+    func testRestore_concurrentCallExpectingTheRestoredAccount_getsTheRunningRestoresResult() async throws {
+        try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR"))
+        let stub = SideEffectForkRefresher(minted: [newBackup, newPrimary]) { }
+        let client = makeClient(backupStorage: backupStorage, tokenRefresher: stub)
+        let second = SecondRestoreBox()
+        stub.sideEffect = {
+            second.task = Task { try await client.restoreFromBackup(expectedExternalID: "test-subject") }
+            await Self.waitUntilARestoreIsShared(by: client)
+        }
+
+        let first = try await client.restoreFromBackup(expectedExternalID: nil)
+        let secondResult = try await XCTUnwrap(second.task).value
+
+        XCTAssertEqual(first, newPrimary)
+        XCTAssertEqual(secondResult, newPrimary)
+        XCTAssertEqual(stub.forkCallCount, 1)
+    }
+
+    /// Waits up to 5 seconds for a caller of `restoreFromBackup` to wait for the restore already running on `client`.
+    private static func waitUntilARestoreIsShared(by client: DefaultOAuthClient) async {
+        let deadline = Date().addingTimeInterval(5)
+        while await client.sharedBackupRestoreWaiterCount == 0 {
+            guard Date() < deadline else {
+                return XCTFail("No caller joined the running backup restore")
+            }
+            await Task.yield()
+        }
+    }
+}
+
+/// Holds the task of a restore started from a fork side effect, so the test can await it afterwards.
+private final class SecondRestoreBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedTask: Task<TokenContainer, Error>?
+
+    var task: Task<TokenContainer, Error>? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return storedTask
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            storedTask = newValue
+        }
+    }
 }
 
 private final class SideEffectForkRefresher: TokenRefreshing, @unchecked Sendable {
     private let minted: [TokenContainer]
     private let failAfterMinted: Error?
+    private(set) var forkCallCount = 0
     var sideEffect: () async -> Void
 
     init(minted: [TokenContainer], failAfterMinted: Error? = nil, sideEffect: @escaping () async -> Void) {
@@ -1295,6 +1387,7 @@ private final class SideEffectForkRefresher: TokenRefreshing, @unchecked Sendabl
     }
 
     func fork(_ tokenContainer: TokenContainer, count: Int) async throws(TokenForkError) -> [TokenContainer] {
+        forkCallCount += 1
         await sideEffect()
         if let failAfterMinted {
             throw .incomplete(minted: minted, underlying: failAfterMinted)

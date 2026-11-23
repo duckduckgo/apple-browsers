@@ -18,16 +18,16 @@
 
 /// Which browser controls onboarding leaves usable.
 enum UserInteractionLock: Equatable {
-    case none
+    case unlocked
     case locked(except: Set<UnlockedControl> = [])
 
     var isLocked: Bool {
-        self != .none
+        self != .unlocked
     }
 
     func allows(_ control: UnlockedControl) -> Bool {
         switch self {
-        case .none: return true
+        case .unlocked: return true
         case .locked(let except): return except.contains(control)
         }
     }

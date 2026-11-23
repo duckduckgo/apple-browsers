@@ -104,7 +104,7 @@ final class WindowControllersManagerOnboardingTests: XCTestCase {
         XCTAssertFalse(mainViewController.validateMenuItem(newTab))
         XCTAssertFalse(mainViewController.validateMenuItem(sidebar))
 
-        sut.setUILock(UserInteractionLock.none)
+        sut.setUILock(.unlocked)
 
         XCTAssertTrue(mainViewController.validateMenuItem(newTab))
         XCTAssertTrue(mainViewController.validateMenuItem(sidebar))
@@ -119,7 +119,7 @@ final class WindowControllersManagerOnboardingTests: XCTestCase {
         XCTAssertFalse(first.mainViewController.tabCollectionViewModel.changesEnabled)
         XCTAssertFalse(second.mainViewController.tabCollectionViewModel.changesEnabled)
 
-        sut.setUILock(UserInteractionLock.none)
+        sut.setUILock(.unlocked)
 
         XCTAssertTrue(first.mainViewController.tabCollectionViewModel.changesEnabled)
         XCTAssertTrue(second.mainViewController.tabCollectionViewModel.changesEnabled)

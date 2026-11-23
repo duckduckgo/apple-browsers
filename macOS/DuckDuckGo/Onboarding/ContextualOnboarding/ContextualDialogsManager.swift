@@ -101,7 +101,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     private let makePath: (ContextualOnboardingPathKind) -> ContextualOnboardingPath
     private weak var uiLocker: ContextualOnboardingUILocking?
     /// The lock last sent to `uiLocker`, so it's only told about changes.
-    private var appliedUILock = UserInteractionLock.none
+    private var appliedUILock = UserInteractionLock.unlocked
 
     /// The path chosen at the junction. No saved path means search.
     /// Built on first use, so a finished onboarding never builds one.
@@ -198,11 +198,12 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     /// The lock the active path keeps on the browser UI. None on the search path and once onboarding ends.
     var uiLock: UserInteractionLock {
-        state == .onboardingCompleted ? .none : activePath.uiLock
+        state == .onboardingCompleted ? .unlocked : activePath.uiLock
     }
 
     private func updateUILock() {
         let lock = uiLock
+        // Only send changes, so an unlocked path doesn't lift the welcome onboarding's lock.
         guard lock != appliedUILock else { return }
         appliedUILock = lock
         uiLocker?.setUILock(lock)

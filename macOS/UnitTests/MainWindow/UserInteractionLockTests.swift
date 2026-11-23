@@ -24,8 +24,8 @@ struct UserInteractionLockTests {
     @available(iOS 16, macOS 13, *)
     @Test("Unlocked allows everything", .timeLimit(.minutes(1)))
     func unlockedAllowsEverything() {
-        #expect(!UserInteractionLock.none.isLocked)
-        #expect(UserInteractionLock.none.allows(.fire))
+        #expect(!UserInteractionLock.unlocked.isLocked)
+        #expect(UserInteractionLock.unlocked.allows(.fire))
     }
 
     @available(iOS 16, macOS 13, *)

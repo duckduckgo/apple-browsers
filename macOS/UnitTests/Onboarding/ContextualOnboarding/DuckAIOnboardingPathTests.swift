@@ -88,7 +88,7 @@ struct DuckAIOnboardingPathTests {
 
         progress.fireButtonUsedOnce = true
 
-        #expect(sut.uiLock == UserInteractionLock.none)
+        #expect(sut.uiLock == .unlocked)
     }
 
     @available(iOS 16, macOS 13, *)

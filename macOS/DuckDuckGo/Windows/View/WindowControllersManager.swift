@@ -133,7 +133,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     weak var tabsPreferences: TabsPreferences?
 
     /// The one lock on browser interaction during onboarding. Every window and menu reads it.
-    private(set) var userInteractionLock = UserInteractionLock.none
+    private(set) var userInteractionLock = UserInteractionLock.unlocked
 
     /// Tracks which tabs currently host an active Duck.ai voice session, so voice entry points
     /// can focus an existing tab instead of opening a new one. Lazy so the tracker can capture
@@ -682,7 +682,7 @@ extension WindowControllersManager: @preconcurrency ContextualOnboardingUILockin
 extension WindowControllersManager: OnboardingNavigating {
     @MainActor
     func updatePreventUserInteraction(prevent: Bool) {
-        setUserInteractionLock(prevent ? .locked() : .none)
+        setUserInteractionLock(prevent ? .locked() : .unlocked)
     }
 
     @MainActor

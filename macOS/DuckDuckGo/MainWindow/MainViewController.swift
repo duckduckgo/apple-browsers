@@ -1241,11 +1241,11 @@ extension MainViewController {
 
         switch event.button {
         case .back:
-            guard selectedTabViewModel.canGoBack else { return nil }
+            guard allowsUserInteraction, selectedTabViewModel.canGoBack else { return nil }
             selectedTabViewModel.tab.goBack()
             return nil
         case .forward:
-            guard selectedTabViewModel.canGoForward else { return nil }
+            guard allowsUserInteraction, selectedTabViewModel.canGoForward else { return nil }
             selectedTabViewModel.tab.goForward()
             return nil
         default:

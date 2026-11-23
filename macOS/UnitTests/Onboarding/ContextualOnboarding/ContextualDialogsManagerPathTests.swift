@@ -53,14 +53,14 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("The search path never locks the UI", .timeLimit(.minutes(1)))
     func searchPathDoesNotLock() {
-        #expect(manager.uiLock == UserInteractionLock.none)
+        #expect(manager.uiLock == .unlocked)
 
         manager.startPath(.search)
         manager.state = .ongoing
         manager.fireButtonUsed()
         manager.state = .onboardingCompleted
 
-        #expect(manager.uiLock == UserInteractionLock.none)
+        #expect(manager.uiLock == .unlocked)
         #expect(uiLocker.calls.isEmpty)
     }
 
@@ -75,8 +75,8 @@ struct ContextualDialogsManagerPathTests {
 
         manager.fireButtonUsed()
 
-        #expect(manager.uiLock == UserInteractionLock.none)
-        #expect(uiLocker.calls == [.locked(except: [.fire]), UserInteractionLock.none])
+        #expect(manager.uiLock == .unlocked)
+        #expect(uiLocker.calls == [.locked(except: [.fire]), .unlocked])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -87,8 +87,8 @@ struct ContextualDialogsManagerPathTests {
 
         manager.state = newState
 
-        #expect(manager.uiLock == UserInteractionLock.none)
-        #expect(uiLocker.calls == [.locked(except: [.fire]), UserInteractionLock.none])
+        #expect(manager.uiLock == .unlocked)
+        #expect(uiLocker.calls == [.locked(except: [.fire]), .unlocked])
     }
 
     @available(iOS 16, macOS 13, *)

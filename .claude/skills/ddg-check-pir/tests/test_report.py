@@ -36,8 +36,8 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(report.main([str(batch)]), 0)
         page = (batch / "report.html").read_text()
         self.assertIn("Scan finds the profile&#x27;s record", page)
-        self.assertIn("<span class='badge confirmed'>confirmed</span>", page)
-        self.assertIn("<tr data-n=1", page)
+        self.assertIn("pass · confirmed", page)
+        self.assertIn("data-n=1", page)
         self.assertIn("1 match(es)", page)
         self.assertIn("evidence/macos-run-1/snapshots/00000002-scan-extract-result.png", page)
         self.assertNotIn("macos-build-1", page)
@@ -48,8 +48,50 @@ class ReportTests(unittest.TestCase):
         report.main([str(batch), "--baseline", str(baseline)])
         page = (batch / "report.html").read_text()
         self.assertIn("changed: review, result", page)
-        self.assertIn("class='flag'", page)
+        self.assertIn("class='cell fail'", page)
         self.assertIn("fromHash[1] : 1)", page)
+
+
+    def test_latest_attempt_counts_and_brokers_with_the_same_title_stay_apart(self):
+        batch = self.batch("stack", "fail", review="disputed")
+        evidence = batch / "evidence"
+        for name, broker, status, started in (("macos-run-2", "peoplefinders.com", "pass", 30), ("macos-run-3", "411.com", "pass", 40)):
+            folder = evidence / name
+            folder.mkdir()
+            (folder / "pir-broker.json").write_text(json.dumps(dict(url=broker)))
+            (folder / "verification.md").write_text("confirmed\n")
+            (folder / "result.json").write_text(json.dumps(dict(
+                command="run", platform="macos", status=status, scenario="Scan finds the profile's record",
+                startedAt=started, finishedAt=started + 5)))
+        (evidence / "macos-run-1" / "pir-broker.json").write_text(json.dumps(dict(url="peoplefinders.com")))
+        report.main([str(batch)])
+        page = (batch / "report.html").read_text()
+        self.assertIn("All 2 scenario runs got their expected verdict and were confirmed", page)
+        self.assertIn("retry #", page)
+        self.assertIn("· 411.com", page)
+
+
+    def test_an_expected_failure_is_not_a_problem_but_an_unexpected_pass_is(self):
+        batch = self.batch("stack", "fail", review="confirmed")
+        result = batch / "evidence" / "macos-run-1" / "result.json"
+        data = json.loads(result.read_text())
+        result.write_text(json.dumps(dict(data, expected="fail")))
+        report.main([str(batch)])
+        self.assertIn("All 1 scenario runs got their expected verdict", (batch / "report.html").read_text())
+        result.write_text(json.dumps(dict(data, status="pass", expected="fail")))
+        report.main([str(batch)])
+        self.assertIn("expected fail, got pass", (batch / "report.html").read_text())
+
+
+    def test_findings_outside_the_scenario_warn_without_failing(self):
+        batch = self.batch("stack", "pass", review="confirmed")
+        (batch / "evidence" / "macos-run-1" / "verification.md").write_text(
+            "confirmed\n\n## Findings\n\n- The broker JSON misses ages on every card.\n")
+        report.main([str(batch)])
+        page = (batch / "report.html").read_text()
+        self.assertIn("Findings outside the scenarios", page)
+        self.assertIn("misses ages on every card", page)
+        self.assertIn("All 1 scenario runs got their expected verdict", page)
 
 
 if __name__ == "__main__":

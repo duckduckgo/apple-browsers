@@ -1,6 +1,6 @@
 # Scenarios
 
-Each `##` section is one scenario. Its title is its name in results and comparisons.
+Each `##` section is one scenario. Its file and title, as `<file>: <title>`, name it in results and comparisons.
 
 - A batch is the scenarios selected by tag, run on one build. For example, a baseline batch runs every scenario tagged
   `baseline`, and later batches are compared against it.
@@ -21,7 +21,8 @@ paths must be absolute or relative to the config file.
 | A broker, such as `peoplefinders.com` | `"brokerFile"`: the bundled `<broker>.json` in `SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/` |
 | `staging-token` | `--token-file` with the path the user gives, plus `"subscriptionEnvironment": "staging"`, `"pirEnvironment": "staging"` and `"pirEndpoint": "https://dbp-staging.duckduckgo.com"` |
 | `fresh-simulator` | Nothing to add. iOS runs always create one. |
-| The scenario's title | `--scenario "<title>"` on every `run` and `scheduler` command, so the batch report can group attempts |
+| The scenario's file and title | `--scenario "<file>: <title>"` on every `run` and `scheduler` command, such as `--scenario "peoplefinders.com: Scan finds the profile's record"`. The report groups results by file. |
+| `verdict: fail` (or `inconclusive`) | `--expect fail`. Without the line the scenario expects `pass`. A run whose verdict differs from the expected one needs attention. |
 | `action: run` with JSON fields | Those fields in the config, then `pir.py run --config <config> --evidence-dir <evidence>` |
 | `action: scheduler seed` | `pir.py scheduler seed --platform ios --profile-file <profile> --evidence-dir <evidence>` |
 | A matched `profileUrl` from the scan | Run the scan scenario first, then pin one `profileUrl` from its `pir-final-run.json` in `"expectedFile"`, a file holding `{"profileUrl": "..."}` |
@@ -46,12 +47,12 @@ P=.claude/skills/verify-pir/pir.py
 python3 "$P" run --platform macos --config ~/pir-runs/<batch>/configs/optout-peoplefinders.json \
   --token-file <token file> --check-config
 python3 "$P" run --platform macos --config ~/pir-runs/<batch>/configs/optout-peoplefinders.json \
-  --token-file <token file> --evidence-dir ~/pir-runs/<batch>/evidence --scenario "Opt-out is submitted"
+  --token-file <token file> --evidence-dir ~/pir-runs/<batch>/evidence --scenario "peoplefinders.com: Opt-out is submitted"
 ```
 
 These steps need judgment and aren't in the mapping:
 
-- When a scan matches several records, pin one that fits the profile's name, place and birth year. Check the ages on the results page.
+- When a scan matches several records, pin one of them. Prefer one whose card shows an age.
 - Get the user's approval before an `irreversible` scenario.
 - When a scenario that needs a match gets none, try another profile fixture and note it in the results.
 - Review each run's evidence as the skill's `verify.md` describes, and report the review next to the runner's verdict.
@@ -61,8 +62,10 @@ These steps need judgment and aren't in the mapping:
 After the runs and their reviews, write the batch's HTML report next to its evidence:
 
 ```sh
-python3 .claude/skills/verify-pir/report.py ~/pir-runs/<batch> --baseline ~/pir-runs/<baseline batch>
+python3 .claude/skills/verify-pir/report.py ~/pir-runs/<batch>
 ```
 
-`--baseline` is optional. It matches rows by scenario title and platform and flags any change in verdict, review or
-result. The report links snapshots that show real people's data, so keep it local.
+Compare against an earlier batch only when the user names one: add `--baseline <that batch's folder>`. Don't pick a
+baseline on your own. Rows are matched by scenario, broker and platform, and a run counts as needing attention when it
+is worse than the baseline's run, not merely different. The report links snapshots that show real people's data, so
+keep it local.

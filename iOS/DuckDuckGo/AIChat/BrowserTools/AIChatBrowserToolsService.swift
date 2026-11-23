@@ -71,15 +71,12 @@ final class AIChatBrowserToolsService {
          permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
          capabilities: [ClientToolCapability]? = nil) {
         self.historyManager = historyManager
-        let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
-        self.configuration = configuration
+        configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
         injectedScopeProvider = scopeProvider
         if let capabilities {
             self.supportedCapabilities = capabilities
         }
-        let permissions = BrowserToolPermissionStore(storage: permissionStorage) {
-            configuration.isRequestAccessEnabled
-        }
+        let permissions = BrowserToolPermissionStore(storage: permissionStorage) { true }
         self.permissions = permissions
         clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
         lastClientToolsConfiguration = clientToolsConfiguration

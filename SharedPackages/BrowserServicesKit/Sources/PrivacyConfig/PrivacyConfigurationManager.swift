@@ -46,11 +46,6 @@ public protocol PrivacyConfigurationManaging: AnyObject {
 
 public extension PrivacyConfigurationManaging {
 
-    /// Never fires. Managers that store the user's allowlist publish their own changes.
-    var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
-        Empty(completeImmediately: false).eraseToAnyPublisher()
-    }
-
     func currentConfigJSON(excludingFeatures excludedFeatures: [String]) -> Data? {
         guard let config = try? PrivacyConfigurationData(data: currentConfig) else { return nil }
         return try? config.toJSONData(excludeFeatures: excludedFeatures)

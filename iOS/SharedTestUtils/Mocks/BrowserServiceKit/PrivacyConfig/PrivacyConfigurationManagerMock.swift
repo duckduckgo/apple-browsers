@@ -127,6 +127,9 @@ class PrivacyConfigurationMock: PrivacyConfiguration {
 }
 
 class PrivacyConfigurationManagerMock: PrivacyConfigurationManaging {
+    var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
 
     var embeddedConfigData: PrivacyConfigurationManager.ConfigurationData {
         fatalError("not implemented")

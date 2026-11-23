@@ -548,6 +548,10 @@ private extension DBPEndToEndTests {
     }
 
     final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
+        var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+            Empty(completeImmediately: false).eraseToAnyPublisher()
+        }
+
         var currentConfig: Data = Data()
 
         var updatesPublisher: AnyPublisher<Void, Never> = .init(Just(()))

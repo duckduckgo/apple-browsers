@@ -52,6 +52,10 @@ class MockEmbeddedDataProvider: EmbeddedDataProvider {
 }
 
 class MockPrivacyConfigurationManaging: PrivacyConfigurationManaging {
+    var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
+
     var currentConfig: Data = Data()
 
     let updatesSubject = PassthroughSubject<Void, Never>()

@@ -216,6 +216,7 @@ private extension PrivacyConfigurationManaging {
 private class PrivacyConfigurationDataBrokerProtectionConfigOverride: PrivacyConfigurationManaging {
     var base: Data
     var updatesPublisher: AnyPublisher<(), Never>
+    var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never>
     var privacyConfig: PrivacyConfiguration
     var internalUserDecider: InternalUserDecider
 
@@ -230,6 +231,7 @@ private class PrivacyConfigurationDataBrokerProtectionConfigOverride: PrivacyCon
     init(manager: PrivacyConfigurationManaging) {
         base = manager.currentConfig
         updatesPublisher = manager.updatesPublisher
+        userUnprotectedDomainsPublisher = manager.userUnprotectedDomainsPublisher
         privacyConfig = manager.privacyConfig
         internalUserDecider = manager.internalUserDecider
     }

@@ -290,6 +290,9 @@ private func makeURLProvider(internalUserDecider: MockInternalUserDecider) -> (C
 }
 
 final class OverridePrivacyConfigurationManagerMock: PrivacyConfigurationManaging {
+    var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
 
     let privacyConfig: PrivacyConfiguration
     let internalUserDecider: InternalUserDecider = MockInternalUserDecider()

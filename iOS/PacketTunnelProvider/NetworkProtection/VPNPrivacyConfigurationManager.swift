@@ -26,6 +26,10 @@ import FoundationExtensions
 import PixelKit
 
 public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging {
+    /// Never fires: this manager doesn't store the user's allowlist.
+    public var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
 
     static let shared = VPNPrivacyConfigurationManager()
 

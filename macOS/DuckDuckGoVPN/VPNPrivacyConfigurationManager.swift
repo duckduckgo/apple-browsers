@@ -23,6 +23,10 @@ import PixelKit
 import PrivacyConfig
 
 public final class VPNPrivacyConfigurationManager: PrivacyConfigurationManaging {
+    /// Never fires: this manager doesn't store the user's allowlist.
+    public var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
 
     public let internalUserDecider: InternalUserDecider
     private let lock = NSLock()

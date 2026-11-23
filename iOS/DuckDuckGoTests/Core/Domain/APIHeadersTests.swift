@@ -40,6 +40,18 @@ class APIHeadersTests: XCTestCase {
         XCTAssertEqual(expected, testee.httpHeaders[APIRequest.HTTPHeaderField.ifNoneMatch])
     }
 
+    func testWhenHeadersV2RequestedThenAcceptLanguageListsPreferredLanguagesWithDescendingQValues() {
+        let expected = Locale.preferredLanguages.prefix(6).enumerated().map { index, language in
+            "\(language);q=\(1.0 - (Double(index) * 0.1))"
+        }.joined(separator: ", ")
+
+        let first = APIRequestV2.HeadersV2().httpHeaders[HTTPHeaderKey.acceptLanguage]
+        let second = APIRequestV2.HeadersV2(userAgent: "UserAgent").httpHeaders[HTTPHeaderKey.acceptLanguage]
+
+        XCTAssertEqual(expected, first)
+        XCTAssertEqual(expected, second)
+    }
+
     func makeAppVersion() -> AppVersion {
         let mockBundle = MockBundle()
         mockBundle.add(name: Bundle.Key.identifier, value: "com.duckduckgo.mobile.ios")

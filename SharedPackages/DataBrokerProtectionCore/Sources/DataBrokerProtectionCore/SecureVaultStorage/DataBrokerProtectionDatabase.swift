@@ -29,6 +29,7 @@ public protocol DataBrokerProtectionRepository: EmailConfirmationSupporting {
 
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
     func fetchBroker(with brokerId: Int64) throws -> DataBroker?
+    func fetchBroker(withURL url: String) throws -> DataBroker?
 
     func saveBroker(brokerResource: BrokerResource) throws -> Int64
     func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
@@ -164,6 +165,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return try vault.fetchBroker(with: brokerId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchBroker with brokerId")
+            throw error
+        }
+    }
+
+    public func fetchBroker(withURL url: String) throws -> DataBroker? {
+        do {
+            return try vault.fetchBroker(with: url)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchBroker with url")
             throw error
         }
     }

@@ -841,6 +841,13 @@ extension AppDelegate {
         }
     }
 
+    /// Deletes the favorited bookmarks, so picking the same sites again creates new favorites.
+    @MainActor
+    @objc func resetFavorites(_ sender: Any?) {
+        let favoriteIDs = bookmarkManager.list?.favoriteBookmarks.map(\.id) ?? []
+        bookmarkManager.remove(objectsWithUUIDs: favoriteIDs, undoManager: nil)
+    }
+
     @objc func resetDuckPlayerOverlayInteractions(_ sender: Any?) {
         duckPlayer.preferences.youtubeOverlayAnyButtonPressed = false
         duckPlayer.preferences.youtubeOverlayInteracted = false

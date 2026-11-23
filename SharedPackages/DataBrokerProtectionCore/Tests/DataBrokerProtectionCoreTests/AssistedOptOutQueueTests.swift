@@ -166,7 +166,11 @@ struct AssistedOptOutQueueTests {
         #expect(finishedResult == .completed)
         #expect(metrics.starts == 1)
         #expect(metrics.outcomes == [ending.outcome])
-        #expect(queue.activeSessions.isEmpty)
+        #expect(queue.activeSessions.map(\.phase) == (ending == .submitted ? [.submitted] : []))
+        if ending == .submitted {
+            session.requestCancel()
+            #expect(queue.activeSessions.isEmpty)
+        }
         if ending != .submitted {
             #expect(!fixture.database.wasUpdatedPreferredRunDateForOptOutCalled)
             #expect(fixture.database.optOutEvents.last?.type == .optOutAwaitingUserAssistance)

@@ -252,7 +252,10 @@ final class UnifiedSuggestionsHost {
                 inputsPublisher: config.inputsPublisher,
                 dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
                 fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher(),
-                favoritesSectionVisibilityPublisher: config.favoritesSectionVisibilityPublisher,
+                // Only the New Tab Page draws the empty Add Favorite row; a web page embeds saved favorites alone.
+                favoritesSectionVisibilityPublisher: surface == .newTabPage
+                    ? config.favoritesSectionVisibilityPublisher
+                    : Just(false).eraseToAnyPublisher(),
                 escapeHatchVisibilityPublisher: viewModel.$escapeHatchPlacement.map { $0 != .hidden }.removeDuplicates().eraseToAnyPublisher())
             redesignedSearchPresentation = presentation
             redesignedPresentationCancellable = presentation.$showsSearchModules

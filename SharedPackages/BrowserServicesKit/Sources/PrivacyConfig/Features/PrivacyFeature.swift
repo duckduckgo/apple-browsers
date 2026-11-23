@@ -783,6 +783,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
     case improvedPairingFlow
+
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1220380918806338
+    case sendSyncSetupWideEvent
 }
 
 public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {

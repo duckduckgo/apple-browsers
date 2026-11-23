@@ -71,6 +71,18 @@ struct TranslationOfferTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("an offer carries the manifest key of its pair, so the right model loads", .timeLimit(.minutes(1)))
+    func offerCarriesManifestPairID() {
+        let pair = TranslationManifest.Pair(sourceLanguage: "fr", targetLanguage: "en", version: "1.0", totalBytes: 0, files: [:])
+        let manifest = TranslationManifest(schemaVersion: TranslationManifest.supportedSchemaVersion,
+                                           baseUrl: URL(string: "https://example.com/")!,
+                                           models: ["fr-en-base": pair])
+
+        #expect(manifest.offerDecision(detectedLanguage: "fr", deviceLanguages: ["en-US"])
+                == .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en-base")))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("an unreliable detection offers nothing", .timeLimit(.minutes(1)))
     func unreliableDetectionOffersNothing() {
         #expect(manifest.offerDecision(detectedLanguage: nil, deviceLanguages: ["en-US"]) == .noOffer(.unreliable))

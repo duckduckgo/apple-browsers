@@ -23,10 +23,13 @@ import Foundation
 public struct TranslationOffer: Equatable, Sendable {
     public let source: String
     public let target: String
+    /// The manifest key of the pair, which names the model to load.
+    public let pairID: String
 
-    public init(source: String, target: String) {
+    public init(source: String, target: String, pairID: String? = nil) {
         self.source = source
         self.target = target
+        self.pairID = pairID ?? "\(source)-\(target)"
     }
 }
 
@@ -64,8 +67,8 @@ extension TranslationManifest {
 
         // Return first match, since device languages are ordered by preference
         for target in targets where target != source {
-            if let pair = pair(from: source, to: target) {
-                let offer = TranslationOffer(source: pair.sourceLanguage, target: pair.targetLanguage)
+            if let (pairID, pair) = pair(from: source, to: target) {
+                let offer = TranslationOffer(source: pair.sourceLanguage, target: pair.targetLanguage, pairID: pairID)
                 // The user reads the page's language, just not as their first: offer it in the menu. Otherwise, show the banner.
                 return targets.contains(source) ? .menuOnly(offer) : .banner(offer)
             }
@@ -74,10 +77,10 @@ extension TranslationManifest {
     }
 
     /// The manifest pair between two primary language codes, however the manifest spells them.
-    private func pair(from source: String, to target: String) -> Pair? {
-        models.values.first { pair in
+    private func pair(from source: String, to target: String) -> (id: String, pair: Pair)? {
+        models.first { _, pair in
             Self.primaryLanguage(pair.sourceLanguage) == source && Self.primaryLanguage(pair.targetLanguage) == target
-        }
+        }.map { (id: $0.key, pair: $0.value) }
     }
 
     /// CLD2 still reports some languages by their pre-ISO 639 codes.

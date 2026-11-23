@@ -83,4 +83,57 @@ struct TranslationManifestTests {
     func unknownPairHasNoBundle() throws {
         #expect(try TranslationManifest.decode(fixture).bundle(for: "xx-en") == nil)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a pair with one vocabulary passes it for both languages", .timeLimit(.minutes(1)))
+    func modelSpecUsesSharedVocab() throws {
+        let spec = try Self.pair(files: ["model": "a/model.bin", "vocab": "a/vocab.spm", "lexicalShortlist": "a/lex.bin"])
+            .modelSpec(in: URL(fileURLWithPath: "/models/fr-en"))
+
+        #expect(spec.sourceLang == "fr")
+        #expect(spec.targetLang == "en")
+        #expect(spec.modelPath == "/models/fr-en/model.bin")
+        #expect(spec.vocabPaths == ["/models/fr-en/vocab.spm"])
+        #expect(spec.shortlistPath == "/models/fr-en/lex.bin")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a pair with split vocabularies passes the source's first", .timeLimit(.minutes(1)))
+    func modelSpecUsesSplitVocabs() throws {
+        let spec = try Self.pair(files: ["model": "model.bin", "srcVocab": "src.spm", "trgVocab": "trg.spm", "lexicalShortlist": "lex.bin"])
+            .modelSpec(in: URL(fileURLWithPath: "/models/fr-en"))
+
+        #expect(spec.vocabPaths == ["/models/fr-en/src.spm", "/models/fr-en/trg.spm"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("model file paths drop the download's .zst, as installed", .timeLimit(.minutes(1)))
+    func modelSpecStripsZst() throws {
+        let spec = try Self.pair(files: ["model": "x/model.bin.zst", "vocab": "x/vocab.spm.zst", "lexicalShortlist": "x/lex.bin.zst"])
+            .modelSpec(in: URL(fileURLWithPath: "/models/fr-en"))
+
+        #expect(spec.modelPath == "/models/fr-en/model.bin")
+        #expect(spec.vocabPaths == ["/models/fr-en/vocab.spm"])
+        #expect(spec.shortlistPath == "/models/fr-en/lex.bin")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a pair without a model file can't be loaded", .timeLimit(.minutes(1)))
+    func modelSpecThrowsWithoutModel() throws {
+        let pair = Self.pair(files: ["vocab": "vocab.spm", "lexicalShortlist": "lex.bin"])
+
+        #expect(throws: PageTranslatorError.missingFile("model")) {
+            try pair.modelSpec(in: URL(fileURLWithPath: "/models/fr-en"))
+        }
+    }
+
+    private static func pair(files: [String: String]) -> TranslationManifest.Pair {
+        TranslationManifest.Pair(sourceLanguage: "fr",
+                                 targetLanguage: "en",
+                                 version: "1.0",
+                                 totalBytes: 0,
+                                 files: files.mapValues {
+                                     TranslationManifest.File(path: $0, bytes: 0, sha256: "", decompressedSize: 0, decompressedHash: "")
+                                 })
+    }
 }

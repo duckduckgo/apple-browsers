@@ -25,6 +25,10 @@
 // macOS than the app supports, so it is opened at runtime only where it can run. Calling the
 // functions declared in llama.h directly would link them: go through `cllama_api` instead.
 //
+// Temporary, for the internal release and evals: the headers next to this file are copied by hand
+// from the llama.cpp release, and the library is opened with dlopen. Both will be refactored before
+// an external release.
+//
 // Every llama.cpp function the runtime uses. Their types come from llama.h, so a release that
 // changes a signature fails to compile here rather than crashing at runtime.
 #define CLLAMA_FUNCTIONS(X) \

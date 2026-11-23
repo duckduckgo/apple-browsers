@@ -34,6 +34,8 @@ let package = Package(
     targets: [
         // llama.cpp's headers, from the same release as the framework `embed_llama_framework.sh`
         // copies into the app. Nothing links llama.cpp: `cllama_load` opens it at runtime.
+        // Temporary, for the internal release and evals: the hand-copied headers and the runtime
+        // loading will be refactored before an external release.
         .target(
             name: "CLlama",
             exclude: ["LICENSE"]

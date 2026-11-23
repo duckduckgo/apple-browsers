@@ -66,6 +66,9 @@ public enum LlamaRuntimeError: DDGError, Sendable {
 
 /// llama.cpp, opened at runtime rather than linked, so systems it can't run on never load it.
 /// The library stays open for the life of the process.
+///
+/// Temporary, for the internal release and evals: opening a prebuilt framework at runtime will be
+/// refactored before an external release.
 public final class LlamaLibrary: @unchecked Sendable {
 
     /// Filled by `cllama_load`, so every function is set. Immutable after that.

@@ -325,7 +325,7 @@ private final class ReloadRecordingWebView: WKWebView {
 
 private final class HandshakeAgentInterface: DataBrokerProtectionAppToAgentInterface {
     func assistedOptOutDataDidChange() {}
-    func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList? { AssistedOptOutList(optOuts: []) }
+    func getAssistedOptOuts() async -> AssistedOptOutList? { AssistedOptOutList(optOuts: []) }
     func startAssistedOptOut(id: String) {}
     func profileSaved() async {}
     func appLaunched() async {}
@@ -456,13 +456,13 @@ struct AssistedDashboardTests {
         await fixture.model.pollAssistedOptOuts(in: webView)
         #expect(await fixture.model.getAssistedOptOuts() == lastGoodList)
         #expect(webView.scripts.count == 1)
-        let requestsBeforeDisable = fixture.agent.requests.count
+        let requestsBeforeDisable = fixture.agent.requests
         fixture.flagger.isUserAssistanceOn = false
         let clearedPush = XCTestExpectation(description: "Disabled list cleared")
         webView.onPush = { clearedPush.fulfill() }
         await fixture.model.pollAssistedOptOuts(in: webView)
         #expect(await XCTWaiter.fulfillment(of: [clearedPush], timeout: 5) == .completed)
-        #expect(fixture.agent.requests.count == requestsBeforeDisable)
+        #expect(fixture.agent.requests == requestsBeforeDisable)
         #expect(webView.scripts.count == 2)
         #expect(!webView.scripts[1].contains("1-1-1"))
         #expect(await fixture.model.getAssistedOptOuts().optOuts.isEmpty)
@@ -474,11 +474,9 @@ struct AssistedDashboardTests {
         #expect(await XCTWaiter.fulfillment(of: [restoredPush], timeout: 5) == .completed)
         #expect(webView.scripts.count == 3)
         webView.pollingWindow.visibleForPolling = false
-        let requestsBeforeHide = fixture.agent.requests.count
+        let requestsBeforeHide = fixture.agent.requests
         await fixture.model.pollAssistedOptOuts(in: webView)
-        #expect(fixture.agent.requests.count == requestsBeforeHide)
-        #expect(fixture.agent.requests.first == false)
-        #expect(fixture.agent.requests.contains(true))
+        #expect(fixture.agent.requests == requestsBeforeHide)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -536,13 +534,13 @@ private final class AssistedDashboardFixture {
 
 private final class AssistedAgentInterface: DataBrokerProtectionAppToAgentInterface {
     var list: AssistedOptOutList? = .init(optOuts: [.init(id: "1-1-1", dataBroker: .init(name: "Broker", url: "testbroker.com"), state: .waiting)])
-    var requests: [Bool] = []
+    var requests = 0
     var startedIDs: [String] = []
     var invalidations = 0
     var profileSavedCalls = 0
     var onGet: (() -> Void)?
-    func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList? {
-        requests.append(droppingSubmitted)
+    func getAssistedOptOuts() async -> AssistedOptOutList? {
+        requests += 1
         onGet?()
         return list
     }

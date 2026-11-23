@@ -123,7 +123,7 @@ protocol XPCServerInterface {
     func stopDebugServer()
 
     /// Replies with a JSON-encoded `AssistedOptOutList`.
-    func getAssistedOptOuts(droppingSubmitted: Bool, completion: @escaping (Data?) -> Void)
+    func getAssistedOptOuts(completion: @escaping (Data?) -> Void)
     func assistedOptOutDataDidChange()
     func startAssistedOptOut(id: String)
 }
@@ -237,9 +237,9 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
         serverDelegate?.stopDebugServer()
     }
 
-    func getAssistedOptOuts(droppingSubmitted: Bool, completion: @escaping (Data?) -> Void) {
+    func getAssistedOptOuts(completion: @escaping (Data?) -> Void) {
         Task {
-            let list = await serverDelegate?.getAssistedOptOuts(droppingSubmitted: droppingSubmitted)
+            let list = await serverDelegate?.getAssistedOptOuts()
             completion(list.flatMap { try? JSONEncoder().encode($0) })
         }
     }

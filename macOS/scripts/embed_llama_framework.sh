@@ -42,7 +42,9 @@ if [[ ! -d "${source_framework}" ]]; then
 	unzip -q "${zip_path}" -d "${staging}"
 	rm -f "${zip_path}"
 	mkdir -p "$(dirname "${cache_dir}")"
-	mv "${staging}" "${cache_dir}" 2>/dev/null || rm -rf "${staging}"
+	mv "${staging}" "${cache_dir}" 2>/dev/null || true
+	# When another target got there first, mv doesn't fail: it moves this copy inside the winner's folder.
+	rm -rf "${staging}" "${cache_dir}/$(basename "${staging}")"
 fi
 
 rm -rf "${destination}"

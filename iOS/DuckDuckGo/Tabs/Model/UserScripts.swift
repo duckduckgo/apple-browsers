@@ -87,7 +87,7 @@ final class UserScripts: UserScriptsProvider {
          geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          segmentSkipPreferences: SegmentSkipPreferences,
-         segmentSkipSegmentsProvider: SegmentSkipSegmentsProvider = AppDependencyProvider.shared.segmentSkipSegmentsProvider,
+         segmentSkipProvider: SegmentSkipProvider = AppDependencyProvider.shared.segmentSkipProvider,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
 
@@ -97,7 +97,7 @@ final class UserScripts: UserScriptsProvider {
         selectionFrameScript = SelectionFrameUserScript()
         duckAILoadingSkeletonUserScript = DuckAILoadingSkeletonUserScript(unifiedToggleInputFeature: unifiedToggleInputFeature,
                                                                           debugSettings: aiChatDebugSettings)
-        segmentSkipSubfeature = SegmentSkipSubfeature(segmentsProvider: segmentSkipSegmentsProvider,
+        segmentSkipSubfeature = SegmentSkipSubfeature(segmentsProvider: segmentSkipProvider,
                                                         preferences: segmentSkipPreferences,
                                                         isFeatureFlagOn: { featureFlagger.isFeatureOn(.segmentSkip) })
         self.mediaCaptureUserScript = mediaCaptureUserScript

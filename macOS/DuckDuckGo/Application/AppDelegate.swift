@@ -153,7 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let contentScopePreferences: ContentScopePreferences
     private(set) lazy var segmentSkipPreferences = SegmentSkipPreferences(store: keyValueStore)
     /// One instance for the app, so every tab shares the segments cache.
-    let segmentSkipSegmentsProvider = SegmentSkipSegmentsProvider()
+    let segmentSkipProvider = SegmentSkipProvider()
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!

@@ -35,14 +35,14 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
         preferences = SegmentSkipPreferences(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter())
     }
 
-    private func makeSubfeature(provider: SegmentSkipSegmentsProvider = SegmentSkipSegmentsProvider(load: { _ in
+    private func makeSubfeature(provider: SegmentSkipProvider = SegmentSkipProvider(load: { _ in
         XCTFail("Unexpected lookup")
         throw URLError(.badURL)
     })) -> Subfeature {
         Subfeature(segmentsProvider: provider, preferences: preferences, isFeatureFlagOn: { self.isFeatureFlagOn })
     }
 
-    private func getSegments(_ subfeature: Subfeature, params: Any) async throws -> [SegmentSkipSegmentsProvider.Segment] {
+    private func getSegments(_ subfeature: Subfeature, params: Any) async throws -> [SegmentSkipProvider.Segment] {
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getSegments"))
         let response = try await handler(params, WKScriptMessage.mock(name: "getSegments", body: [:]))
         return try XCTUnwrap(response as? Subfeature.GetSegmentsResponse).segments
@@ -82,7 +82,7 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
 
     @MainActor
     func testGetSegmentsResolvesToEmptyWhenLookupFails() async throws {
-        let provider = SegmentSkipSegmentsProvider(load: { _ in throw URLError(.notConnectedToInternet) })
+        let provider = SegmentSkipProvider(load: { _ in throw URLError(.notConnectedToInternet) })
         let segments = try await getSegments(makeSubfeature(provider: provider), params: ["videoID": "dQw4w9WgXcQ"])
         XCTAssertEqual(segments, [])
     }
@@ -103,7 +103,7 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
 
     @MainActor
     func testGetSegmentsIgnoresCategoriesSentByThePage() async throws {
-        let provider = SegmentSkipSegmentsProvider(load: { request in
+        let provider = SegmentSkipProvider(load: { request in
             let url = request.url!.absoluteString
             XCTAssertTrue(url.contains("%22sponsor%22"), url)
             XCTAssertFalse(url.contains("selfpromo"), url)
@@ -170,7 +170,7 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
     func testGetSegmentsDoesNotSubscribeToPreferenceUpdates() async throws {
         let webView = PushCapturingWebView()
         let broker = UserScriptMessageBroker(context: "test")
-        let provider = SegmentSkipSegmentsProvider(load: { _ in throw URLError(.notConnectedToInternet) })
+        let provider = SegmentSkipProvider(load: { _ in throw URLError(.notConnectedToInternet) })
         let subfeature = makeSubfeature(provider: provider)
         subfeature.with(broker: broker)
         defer { withExtendedLifetime((subfeature, broker, webView)) {} }

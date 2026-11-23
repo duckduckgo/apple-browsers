@@ -79,12 +79,12 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
          segmentSkipPreferences: SegmentSkipPreferences = NSApp.delegateTyped.segmentSkipPreferences,
-         segmentSkipSegmentsProvider: SegmentSkipSegmentsProvider = NSApp.delegateTyped.segmentSkipSegmentsProvider,
+         segmentSkipProvider: SegmentSkipProvider = NSApp.delegateTyped.segmentSkipProvider,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
         let featureFlagger = sourceProvider.featureFlagger
-        segmentSkipSubfeature = SegmentSkipSubfeature(segmentsProvider: segmentSkipSegmentsProvider,
+        segmentSkipSubfeature = SegmentSkipSubfeature(segmentsProvider: segmentSkipProvider,
                                                         preferences: segmentSkipPreferences,
                                                         isFeatureFlagOn: { featureFlagger.isFeatureOn(.segmentSkip) })
         if #available(macOS 15.4, *) {

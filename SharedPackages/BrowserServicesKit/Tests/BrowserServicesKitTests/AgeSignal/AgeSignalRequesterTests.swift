@@ -67,11 +67,11 @@ final class AgeSignalRequesterTests: XCTestCase {
         XCTAssertFalse(requester.isRequestDue(isReinstall: false))
     }
 
-    func testDueAfterAYear() throws {
+    func testNotDueAfterAYear() throws {
         try storeMarker(at: start)
         let requester = makeRequester(now: start.addingTimeInterval(366 * 24 * 3600))
 
-        XCTAssertTrue(requester.isRequestDue(isReinstall: false))
+        XCTAssertFalse(requester.isRequestDue(isReinstall: false))
     }
 
     func testDueAfterReinstall() throws {

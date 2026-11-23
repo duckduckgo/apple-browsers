@@ -73,11 +73,6 @@ public final class AgeSignalRequester {
             return true
         }
 
-        guard let lastRequestDate = try? storage.lastRequestDate,
-              let nextRequestDate = Calendar.current.date(byAdding: .year, value: 1, to: lastRequestDate) else {
-            return true
-        }
-
-        return now() >= nextRequestDate
+        return (try? storage.lastRequestDate) == nil
     }
 }

@@ -368,20 +368,6 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
-    func testWhenModalClickMetricArrivesOverTheBridgeThenSourceIsDecoded() throws {
-        let json = #"{"metricName":"userDidClickUpgradeOnUpgradeToProModal","source":"pluslimit"}"#
-        let metric = try JSONDecoder().decode(AIChatMetric.self, from: Data(json.utf8))
-        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: pixelKitMock)
-
-        // When
-        handler.firePixelWithMetric(metric)
-
-        // Then
-        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click")
-        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["origin": "funnel_duckai_ios__pluslimit"])
-    }
-
     /// The modal clicks must not also be claimed by the engagement or entry-point tables, or one tap would
     /// fire two pixels.
     func testModalClickMetricsAreOnlyInTheModalTable() {

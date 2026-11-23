@@ -90,6 +90,75 @@
             }
         ]
     },
+    "aichat_tools_access_requested_macos": {
+        "description": "Fired when a Duck.ai requestAccess call finishes: Duck.ai asked once for the browser tools a chat expects to use. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "requested",
+                "description": "How many tools Duck.ai asked for. Absent when decision is invalid or unavailable",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+            },
+            {
+                "key": "asked",
+                "description": "How many of them the prompt showed: the rest were already allowed, set to Never or unavailable. Absent when decision is invalid or unavailable",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 12
+            },
+            {
+                "key": "removed",
+                "description": "How many shown tools the user took out before allowing. Absent when decision is invalid or unavailable",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 12
+            },
+            {
+                "key": "decision",
+                "description": "allow, dont_allow or dismiss = the user's answer, timeout = unanswered until the 120 s deadline, withdrawn = closed because the call was cancelled or its chat went away, no_prompt = nothing needed asking, invalid = the call could not be read, unavailable = batch access is off",
+                "enum": ["allow", "dont_allow", "dismiss", "timeout", "withdrawn", "no_prompt", "invalid", "unavailable"]
+            }
+        ]
+    },
+    "aichat_tools_access_result_macos": {
+        "description": "Fired once per requested tool when a Duck.ai requestAccess call finishes, after aichat_tools_access_requested_macos. Names this app doesn't know are not sent. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "The tool requested",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks"
+                ]
+            },
+            {
+                "key": "access",
+                "description": "granted = allowed for the chat in this prompt, removed = taken out by the user, denied = the prompt didn't allow it, already_allowed = allowed without asking, never = set to Never, unavailable = not offered or a tool that asks every time",
+                "enum": ["granted", "removed", "denied", "already_allowed", "never", "unavailable"]
+            }
+        ]
+    },
     "aichat_tools_enabled_macos": {
         "description": "Fired at most once a day, when Duck.ai is offered browser tools: its page reads the native config, or the offered tools change while it is open. Not fired in Fire windows.",
         "owners": ["jotaemepereira"],

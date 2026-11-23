@@ -89,13 +89,10 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
         }
     }
 
-    private let allowsPartialSelection: @MainActor () -> Bool
     private let surface: @MainActor () -> Surface?
     private var active: Presentation?
 
-    init(allowsPartialSelection: @escaping @MainActor () -> Bool = { true },
-         surface: @escaping @MainActor () -> Surface?) {
-        self.allowsPartialSelection = allowsPartialSelection
+    init(surface: @escaping @MainActor () -> Surface?) {
         self.surface = surface
     }
 
@@ -154,7 +151,7 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
 
         let presentation = Presentation(requestID: requestID, window: overlay,
                                         browserWindow: window, owner: surface.controller)
-        let content = AIChatToolPermissionView(prompt: prompt, allowsPartialSelection: allowsPartialSelection(),
+        let content = AIChatToolPermissionView(prompt: prompt,
                                                surfaceState: presentation.surfaceState) { [weak self, weak presentation] choice in
             guard let self, let presentation, active === presentation,
                   !presentation.surfaceState.isChangingSurface else { return }

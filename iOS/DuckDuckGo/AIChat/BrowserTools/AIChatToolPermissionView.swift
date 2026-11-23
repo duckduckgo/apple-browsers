@@ -36,13 +36,13 @@ struct AIChatToolPermissionView: View {
         let rowIcon: UIImage
         let accessibilityName: String
 
-        init?(name: String, targetsOtherTab: Bool = false) {
+        init?(name: String, targetsOtherTab: Bool = false, offersAllowForChat: Bool = false) {
             typealias Icons = DesignSystemImages.Glyphs.Size16
             id = name
             let copy: Copy.ToolText
             switch AIChatBrowserToolsSubfeature(rawValue: name) {
             case .readTabContent:
-                copy = Copy.tabContent(targetsOtherTab: targetsOtherTab)
+                copy = Copy.tabContent(targetsOtherTab: targetsOtherTab, offersAllowForChat: offersAllowForChat)
                 icon = Icons.tabContent
                 rowIcon = Icons.file
             case .searchHistory:
@@ -54,7 +54,7 @@ struct AIChatToolPermissionView: View {
                 icon = Icons.windowsAndTabs
                 rowIcon = icon
             case .findInPage:
-                copy = Copy.findInPage(targetsOtherTab: targetsOtherTab)
+                copy = Copy.findInPage(targetsOtherTab: targetsOtherTab, offersAllowForChat: offersAllowForChat)
                 icon = Icons.searchSite
                 rowIcon = icon
             default:
@@ -109,7 +109,8 @@ struct AIChatToolPermissionView: View {
                 self.init(accessToolNames: toolNames)
             } else {
                 guard prompt.target == nil,
-                      let tool = Tool(name: prompt.toolName, targetsOtherTab: prompt.targetsOtherTab) else { return nil }
+                      let tool = Tool(name: prompt.toolName, targetsOtherTab: prompt.targetsOtherTab,
+                                      offersAllowForChat: prompt.offersAllowForChat) else { return nil }
                 self.init(tools: [tool], approval: prompt.offersAllowForChat ? .chat : .once)
             }
         }
@@ -183,14 +184,13 @@ struct AIChatToolPermissionView: View {
     private let respond: @MainActor (ClientToolPermissionDecision) -> Void
 
     init(prompt: Prompt,
-         allowsPartialSelection: Bool,
          surfaceState: AIChatToolPermissionPresenter.SurfaceState,
          respond: @escaping @MainActor (ClientToolPermissionDecision) -> Void) {
         self.tools = prompt.tools
         self.approval = prompt.approval
         self.surfaceState = surfaceState
         self.respond = respond
-        _selection = State(initialValue: Selection(toolNames: prompt.tools.map(\.id), allowsPartialSelection: allowsPartialSelection))
+        _selection = State(initialValue: Selection(toolNames: prompt.tools.map(\.id), allowsPartialSelection: prompt.tools.count > 1))
     }
 
     var body: some View {
@@ -238,7 +238,7 @@ struct AIChatToolPermissionView: View {
 
     @ViewBuilder
     private func cardContent(availableHeight: CGFloat) -> some View {
-        let showsList = tools.count > 1
+        let showsList = approval == .access
         let headerHeight = heights[.header, default: 0]
         let listHeight = max(0, availableHeight - headerHeight - Metrics.listSpacing)
         let scrollsHeader = headerHeight > availableHeight || (showsList && listHeight < heights[.firstRow, default: 0])
@@ -264,7 +264,7 @@ struct AIChatToolPermissionView: View {
     }
 
     private var header: some View {
-        let singleTool = tools.count == 1 ? tools.first : nil
+        let singleTool = approval == .access ? nil : tools.first
 
         return VStack(alignment: .leading, spacing: 8) {
             PermissionBadge(toolIcon: singleTool?.icon)
@@ -425,9 +425,17 @@ private extension AIChatToolPermissionView {
         static var allowInThisChat: LocalizedStringKey { "Allow in This Chat" }
         static var dontAllow: LocalizedStringKey { "Don’t Allow" }
 
-        static func tabContent(targetsOtherTab: Bool) -> ToolText {
-            ToolText(
-                name: String(localized: "Tab Content"),
+        static func tabContent(targetsOtherTab: Bool, offersAllowForChat: Bool) -> ToolText {
+            let name = String(localized: "Tab Content")
+            if offersAllowForChat {
+                return ToolText(
+                    name: name,
+                    title: String(localized: "Allow Duck.ai to read content from open tabs?"),
+                    detail: String(localized: "It can see page titles, addresses, and text without asking again in this chat.")
+                )
+            }
+            return ToolText(
+                name: name,
                 title: targetsOtherTab
                     ? String(localized: "Allow Duck.ai to read the content of another tab?")
                     : String(localized: "Allow Duck.ai to read the content of this tab?"),
@@ -446,15 +454,21 @@ private extension AIChatToolPermissionView {
 
         static var openTabs: ToolText {
             ToolText(
-                name: String(localized: "Open Tabs"),
+                name: String(localized: "List Open Tabs"),
                 title: String(localized: "Allow Duck.ai to see your open tabs?"),
-                detail: String(localized: "It will see the title and address of each tab in this window."),
-                accessibilityName: String(localized: "List Open Tabs")
+                detail: String(localized: "It will see the title and address of each tab in this window.")
             )
         }
 
-        static func findInPage(targetsOtherTab: Bool) -> ToolText {
-            ToolText(
+        static func findInPage(targetsOtherTab: Bool, offersAllowForChat: Bool) -> ToolText {
+            if offersAllowForChat {
+                return ToolText(
+                    name: UserText.findInPage,
+                    title: String(localized: "Allow Duck.ai to use Find in Page on open tabs?"),
+                    detail: String(localized: "It can see page titles, addresses, and short snippets around each match without asking again in this chat.")
+                )
+            }
+            return ToolText(
                 name: UserText.findInPage,
                 title: targetsOtherTab
                     ? String(localized: "Allow Duck.ai to use Find in Page on another tab?")

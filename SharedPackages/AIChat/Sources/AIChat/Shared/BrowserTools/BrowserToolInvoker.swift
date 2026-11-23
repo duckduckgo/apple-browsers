@@ -122,8 +122,11 @@ public final class BrowserToolInvoker {
                 return .failure(callId: request.callId, error: error)
             case .granted(let performExecution):
                 // Settles the granted entry; there is nothing to run.
-                guard await performExecution({ .success(.null) }) != nil else {
+                guard let result = await performExecution({ .success(.null) }) else {
                     return .failure(callId: request.callId, error: .cancelled)
+                }
+                if case .failure(let error) = result {
+                    return .failure(callId: request.callId, error: Self.clientToolError(error))
                 }
             }
             for name in toAsk {

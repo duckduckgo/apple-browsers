@@ -1,5 +1,5 @@
 """Tests for verify-ios's own logic that need no simulator: locks, process ownership, state, preflight, telemetry
-parsing, evidence. Run: python3 -m unittest discover -s .claude/skills/verify-ios/tests -p 'test_*.py'
+parsing, evidence. Run: python3 -m unittest discover -s .agents/skills/verify-ios/tests -p 'test_*.py'
 """
 import json, multiprocessing, os, re, shlex, shutil, signal, struct, subprocess, sys, tempfile, textwrap, time, unittest, zlib
 from unittest import mock
@@ -1587,3 +1587,33 @@ class ProveAgainstBaseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SourceStampTests(unittest.TestCase):
+    """The skills live in .agents/skills, with .claude/skills symlinks. Editing them while you work on a proof
+    must not mark the build stale, and editing the app must."""
+
+    def setUp(self):
+        self.repo = tempfile.mkdtemp(dir=TMP)
+        for args in (["init", "-q"], ["config", "user.email", "t@example.com"], ["config", "user.name", "T"]):
+            subprocess.run(["git", "-C", self.repo, *args], check=True)
+        for path in ("App/Main.swift", ".agents/skills/verify-x/SKILL.md", ".claude/notes.md"):
+            self.write(path, "base\n")
+        subprocess.run(["git", "-C", self.repo, "add", "-A"], check=True)
+        subprocess.run(["git", "-C", self.repo, "commit", "-qm", "base"], check=True)
+
+    def write(self, path, text):
+        full = os.path.join(self.repo, path)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        with open(full, "w") as f:
+            f.write(text)
+
+    def test_skill_edits_keep_the_stamp_and_app_edits_change_it(self):
+        with mock.patch.object(env, "ROOT", self.repo):
+            before = env.source_stamp()["stamp"]
+            self.write(".agents/skills/verify-x/SKILL.md", "changed\n")
+            self.write(".agents/skills/verify-x/new.py", "new\n")
+            self.write(".claude/notes.md", "changed\n")
+            self.assertEqual(env.source_stamp()["stamp"], before)
+            self.write("App/Main.swift", "changed\n")
+            self.assertNotEqual(env.source_stamp()["stamp"], before)

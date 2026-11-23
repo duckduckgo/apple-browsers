@@ -1,7 +1,7 @@
 """Every refusal in the harness, ax and doctor is refused, and no refused action changes the app: the trust contract.
 
 Run it after changing harness.py, vhelp.py, verify.sh or ax.swift, in a VM (it quits and relaunches the app):
-    bin/verify-macos-browser prove .claude/skills/verify-macos-browser/tests/must_fail.py --target vm-1
+    bin/verify-macos-browser prove .agents/skills/verify-macos-browser/tests/must_fail.py --target vm-1
 It passes only when every probe was refused as it should be; a probe that wasn't fails the run and names it. It brings
 Finder to the front for a moment, and its report's Warnings must list the deliberate no-op click. To trigger
 doctor's refusals it edits README.md, adds an untracked file, and rewrites this run's build.json, launch.json and

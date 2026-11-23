@@ -1,5 +1,5 @@
 """Tests for the harness's pure parts: the verdict, report.md, and check. No app, build or VM.
-Run: python3 -m unittest discover -s .claude/skills/verify-macos-browser/tests -p 'test_*.py'
+Run: python3 -m unittest discover -s .agents/skills/verify-macos-browser/tests -p 'test_*.py'
 """
 import glob
 import json

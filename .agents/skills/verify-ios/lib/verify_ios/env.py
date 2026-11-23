@@ -144,9 +144,10 @@ def flag_problem(flags):
 
 
 def source_stamp():
-    """Fingerprint of the app source in this worktree: HEAD plus every uncommitted change outside .claude/.
+    """Fingerprint of the app source in this worktree: HEAD plus every uncommitted change outside .claude/ and .agents/
+    (where the skills live).
     Recorded when the app is built and compared before a proof, so a proof can't pass against a stale build."""
-    scope = ["--", ".", ":(exclude).claude"]
+    scope = ["--", ".", ":(exclude).claude", ":(exclude).agents"]
     head = run(["git", "-C", ROOT, "rev-parse", "HEAD"]).stdout.strip()
     h = hashlib.sha256(head.encode())
     h.update(subprocess.run(["git", "-C", ROOT, "diff", "HEAD", "--binary", *scope], capture_output=True).stdout)

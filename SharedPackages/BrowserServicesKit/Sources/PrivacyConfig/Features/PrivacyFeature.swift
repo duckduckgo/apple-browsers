@@ -982,6 +982,8 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
+    /// Enables web extensions for internal users on macOS, independently of `ExtensionManagementSubfeature.isLaunchedExtensions`.
+    case isLaunchedExtensionsInternal
     /// Controls Chrome Web Store update discovery on macOS.
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case updateDiscovery

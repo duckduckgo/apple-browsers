@@ -48,7 +48,7 @@ extension WebExtensionManager {
             },
             disabledExtensionIDsDidChange: featureFlagger.updatesPublisher,
             isExtensionsEnabled: { [featureFlagger] in
-                featureFlagger.isFeatureOn(.webExtensions)
+                featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal)
             },
             pixelFiring: MacOSWebExtensionPixelFiring()
         )
@@ -203,7 +203,7 @@ enum WebExtensionManagerFactory {
                                            isAppStoreBuild: buildType.isAppStoreBuild,
                                            unsupportedExtensionIDs: unsupportedExtensionIDs),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
-            isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensions) && featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+            isUpdateDiscoveryEnabled: { (featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal)) && featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
             updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             canApplyUpdatesWhileInactive: updateApplicationPolicy(for: manager),
             updateApplicationActivityUpdates: updateActivity,

@@ -229,6 +229,21 @@ final class DuckSchemeHandlerTests: XCTestCase {
         XCTAssertTrue(html.contains("<title>Extensions</title>"))
     }
 
+    @MainActor
+    func testWebExtensionsInspectorIsServedToInternalUsersWhenOnlyWebExtensionsInternalFlagIsOn() throws {
+        guard #available(macOS 15.4, *) else { throw XCTSkip("Web extensions require macOS 15.4") }
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                                featuresStub: [FeatureFlag.webExtensions.rawValue: false,
+                                                               FeatureFlag.webExtensionsInternal.rawValue: true])
+        let handler = DuckURLSchemeHandler(featureFlagger: featureFlagger)
+        let task = MockSchemeTask(request: URLRequest(url: URL.webExtensions))
+
+        handler.webView(WKWebView(), start: task)
+
+        let html = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertTrue(html.contains("<title>Extensions</title>"))
+    }
+
     // MARK: - Permissions inspector (duck://permissions)
 
     /// The page ships as bundle resources rather than string literals, so a packaging mistake would

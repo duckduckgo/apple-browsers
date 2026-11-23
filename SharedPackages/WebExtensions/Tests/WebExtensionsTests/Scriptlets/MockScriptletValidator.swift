@@ -23,11 +23,12 @@ final class MockScriptletValidator: ScriptletValidating {
 
     var validateCallCount = 0
     var shouldThrowError = false
+    var failingURLHosts: Set<String> = []
 
     func validate(_ fetched: [FetchedScriptlet]) throws {
         validateCallCount += 1
 
-        if shouldThrowError {
+        if shouldThrowError || fetched.contains(where: { failingURLHosts.contains($0.descriptor.url.host ?? "") }) {
             throw ScriptletError.signatureVerificationFailed(name: "test")
         }
     }

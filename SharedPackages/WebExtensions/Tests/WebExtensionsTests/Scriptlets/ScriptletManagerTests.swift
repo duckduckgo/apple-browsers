@@ -365,6 +365,19 @@ final class ScriptletManagerTests: XCTestCase {
         XCTAssertNil(mockStore.savedFetched)
     }
 
+    func testWhenUnsignedDDGHostScriptletsAreMixedWithSignedOnesThenScriptletsAreSaved() async {
+        let manager = makeManager(acceptsUnsigned: true)
+        let unsigned = ScriptletDescriptor(name: "test.js", url: URL(string: "https://raw.githubusercontent.com/duckduckgo/content-blocker-extension/abc/src/test.js")!, signature: "sig")
+        let signed = ScriptletDescriptor(name: "rules.json", url: URL(string: "https://staticcdn.duckduckgo.com/rules.json")!, signature: "sig")
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [unsigned, signed])
+        mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: unsigned, data: Data("a".utf8)), FetchedScriptlet(descriptor: signed, data: Data("b".utf8))]
+        mockValidator.failingURLHosts = ["raw.githubusercontent.com"]
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertNotNil(mockStore.savedFetched)
+    }
+
     private func makeManager(acceptsUnsigned: Bool) -> ScriptletManager {
         ScriptletManager(
             configProvider: mockConfigProvider,

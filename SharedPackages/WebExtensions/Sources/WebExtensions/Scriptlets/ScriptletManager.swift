@@ -146,10 +146,11 @@ public final class ScriptletManager: ScriptletProviding {
     // MARK: - Private
 
     // Prototype only: lets test builds load unpublished scriptlets from a preview config.
-    private func acceptsUnsigned(_ manifest: ScriptletManifest) -> Bool {
+    private func acceptsUnsigned(_ fetched: [FetchedScriptlet]) -> Bool {
         guard acceptsUnsignedScriptlets() else { return false }
-        return manifest.scriptlets.allSatisfy { descriptor in
-            let url = descriptor.url
+        return fetched.allSatisfy { scriptlet in
+            if (try? validator.validate([scriptlet])) != nil { return true }
+            let url = scriptlet.descriptor.url
             guard url.scheme == "https" else { return false }
             return (url.host == "raw.githubusercontent.com" && url.path.hasPrefix("/duckduckgo/")) || url.host == "duckduckgo.github.io"
         }
@@ -210,7 +211,7 @@ public final class ScriptletManager: ScriptletProviding {
                 try validator.validate(fetched)
                 Logger.webExtensions.info("[Scriptlets] Signature validation passed for '\(extensionType.rawValue)' (\(fetched.count) scriptlet(s))")
             } catch {
-                if isProduction && !acceptsUnsigned(manifest) {
+                if isProduction && !acceptsUnsigned(fetched) {
                     pixelFiring.fire(.scriptletValidationError(type: extensionType, error: error))
                     throw error
                 }

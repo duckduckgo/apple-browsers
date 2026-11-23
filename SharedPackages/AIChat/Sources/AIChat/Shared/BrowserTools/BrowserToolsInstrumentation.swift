@@ -49,9 +49,26 @@ public struct BrowserToolCallTrace: Equatable, Sendable {
     }
 }
 
+/// How a single-tool permission prompt closed. Raw values are the `answer` pixel values.
+public enum BrowserToolPromptAnswer: String, Equatable, Sendable {
+    case allowOnce = "allow_once"
+    case allowForChat = "allow_for_chat"
+    case always
+    case never
+    case dismiss
+    /// Unanswered until the permission deadline.
+    case timeout
+    /// Closed without an answer: the call was cancelled or its chat went away.
+    case withdrawn
+}
+
 @MainActor
 public protocol BrowserToolsInstrumentation {
     /// A finished tool call, other than `requestAccess` or one from a Fire window.
     /// - Parameter response: the reply Duck.ai gets, after the size limit.
     func toolCallDidFinish(tool: String, response: ExecuteClientToolResponse, trace: BrowserToolCallTrace)
+
+    /// A single-tool permission prompt closed. `requestAccess` prompts are not reported here.
+    /// - Parameter promptNumberInChat: 1 for the chat's first prompt; nil without batch access, when calls carry no chat.
+    func promptDidClose(tool: String, answer: BrowserToolPromptAnswer, promptNumberInChat: Int?, timeToAnswer: TimeInterval)
 }

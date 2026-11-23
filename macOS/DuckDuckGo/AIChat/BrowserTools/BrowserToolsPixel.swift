@@ -30,6 +30,10 @@ enum BrowserToolsPixel: PixelKit.Event {
     /// Event Trigger: A browser tool call succeeded. Fired daily.
     case used
 
+    /// Event Trigger: A single-tool permission prompt closed, answered or not. `tool` is a slug from `toolSlugs`.
+    /// `promptNumberInChat` is set only with batch access on, when calls carry their chat.
+    case promptAnswered(tool: String, answer: BrowserToolPromptAnswer, promptNumberInChat: Int?, timeToAnswer: TimeInterval)
+
     /// Event Trigger: Duck.ai was offered browser tools. Fired daily.
     case enabled
 
@@ -90,6 +94,7 @@ enum BrowserToolsPixel: PixelKit.Event {
         switch self {
         case .call: "aichat_tools_call_macos"
         case .used: "aichat_tools_used_macos"
+        case .promptAnswered: "aichat_tools_prompt_answered_macos"
         case .enabled: "aichat_tools_enabled_macos"
         case .protocolError: "aichat_tools_protocol_error_macos"
         case .usedTool(let tool): "aichat_tools_used_\(tool)_macos"
@@ -106,6 +111,10 @@ enum BrowserToolsPixel: PixelKit.Event {
             var parameters = ["tool": tool, "result": result?.rawValue ?? "success", "permission_path": permissionPath.rawValue]
             parameters["duration"] = duration.map(Self.durationBucket)
             parameters["result_count"] = resultCount.map(Self.resultCountBucket)
+            return parameters
+        case .promptAnswered(let tool, let answer, let number, let timeToAnswer):
+            var parameters = ["tool": tool, "answer": answer.rawValue, "time_to_answer": Self.timeToAnswerBucket(timeToAnswer)]
+            parameters["prompt_number_in_chat"] = number.map { $0 >= 4 ? "4_plus" : String($0) }
             return parameters
         case .protocolError(let reason, let tool):
             return ["reason": reason.rawValue, "tool": tool.flatMap { Self.toolSlugs[$0] } ?? "unknown"]
@@ -167,6 +176,15 @@ enum BrowserToolsPixel: PixelKit.Event {
         }
     }
 
+    static func timeToAnswerBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<2: "lt_2s"
+        case ..<10: "lt_10s"
+        case ..<60: "lt_60s"
+        default: "gte_60s"
+        }
+    }
+
     static func resultCountBucket(_ count: Int) -> String {
         switch count {
         case ...0: "0"
@@ -196,5 +214,11 @@ struct BrowserToolsPixelInstrumentation: BrowserToolsInstrumentation {
         guard error == nil else { return }
         pixelFiring?.fire(BrowserToolsPixel.used, frequency: .daily)
         pixelFiring?.fire(BrowserToolsPixel.usedTool(slug), frequency: .daily)
+    }
+
+    func promptDidClose(tool: String, answer: BrowserToolPromptAnswer, promptNumberInChat: Int?, timeToAnswer: TimeInterval) {
+        guard let slug = BrowserToolsPixel.toolSlugs[tool] else { return }
+        pixelFiring?.fire(BrowserToolsPixel.promptAnswered(tool: slug, answer: answer, promptNumberInChat: promptNumberInChat,
+                                                           timeToAnswer: timeToAnswer))
     }
 }

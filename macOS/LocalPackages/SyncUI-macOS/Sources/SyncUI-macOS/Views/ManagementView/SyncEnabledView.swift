@@ -33,7 +33,7 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
 
     var body: some View {
         // Errors
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: 16) {
             syncUnavailableView()
             if model.isSyncPaused {
                 syncPaused()
@@ -106,7 +106,7 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
 
     private func bookmarkOption(title: String, caption: String, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text(title)
                 SyncUIViews.Caption(text: caption)
             }

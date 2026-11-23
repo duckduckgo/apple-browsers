@@ -60,7 +60,7 @@ enum IOSLaunchSettings {
             + experiments(setLaunchArgument: dependencies.setLaunchArgument, requires: flagRequirements)
             + [privacyConfigURL(setLaunchArgument: dependencies.setLaunchArgument)]
             + settingsScreen(dependencies.appSettings)
-            + duckAI(dependencies.appConfigurationDefaults)
+            + duckAI(AIChatUserSettingsStore(keyValueStore: dependencies.appConfigurationDefaults, pixelFiring: { nil }))
             + debugMenu(appSettings: dependencies.appSettings,
                         appDefaults: dependencies.appDefaults,
                         aiChatDebugSettings: dependencies.aiChatDebugSettings,

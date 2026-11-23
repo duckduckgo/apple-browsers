@@ -126,13 +126,13 @@ Every new Settings or Debug menu option that stores a value gets a launch key in
 1. Add a factory to the file for its area and list it in that file's group function:
    `+Settings.swift` (`settings.<name>`, `settingsScreen`), `+DuckAI.swift` (`duckAI.<name>`, `duckAI`) or
    `+Debug.swift` (`debug.<name>`, `debugMenu`). It takes only the store it writes.
-2. Write through the API the screen uses (`AppSettings` or the feature's store). If that API sends pixels, write
-   under the key constants the store exports instead, like `+DuckAI.swift`.
+2. Write through the API the screen uses (`AppSettings` or the feature's store). If it sends pixels, inject the
+   pixel firer and pass none, like `AIChatUserSettingsStore` in `+DuckAI.swift`.
 3. Use `LaunchSetting.choice` for enums. For other values, put checks that can fail in `validate` or `parse`, so a
    bad profile writes nothing. Don't use `setLaunchArgument` for settings: it hides changes the tester makes later.
 4. If the store isn't in `IOSLaunchSettings.Dependencies`, add it there and in `LaunchProfileStartup`.
 5. Test it in `IOSLaunchSettingsTests` by reading the value back through the store the screen reads, and add a
    row to the table above.
 
-If the store can't be written before the app's services start (it needs `AppDependencyProvider` or sends pixels
-with no exported keys), skip the key and say why in the PR description.
+If the store can't be written before the app's services start (it needs `AppDependencyProvider`), split the
+writes into a type that doesn't, as `AIChatUserSettingsStore` does, or skip the key and say why in the PR description.

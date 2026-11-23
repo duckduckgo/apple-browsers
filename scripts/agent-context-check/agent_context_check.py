@@ -22,7 +22,8 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 INSTRUCTION_NAMES = ("AGENTS.md", "CLAUDE.md")
-SKILLS_DIR = ".claude/skills"
+# Claude Code reads .claude/skills; Codex and Auto read .agents/skills, with .claude/skills symlinks to it.
+SKILLS_DIRS = (".claude/skills", ".agents/skills")
 
 
 def git(*args, root):
@@ -49,7 +50,7 @@ class Tree:
         parts = path.split("/")
         return (parts[-1] in INSTRUCTION_NAMES
                 or (len(parts) == 1 and re.fullmatch(r"REVIEW.*\.md", path) is not None)
-                or (path.startswith(SKILLS_DIR + "/") and len(parts) == 4 and parts[-1] == "SKILL.md"))
+                or (any(path.startswith(d + "/") for d in SKILLS_DIRS) and len(parts) == 4 and parts[-1] == "SKILL.md"))
 
     def load(self):
         if self.ref is None:
@@ -227,7 +228,7 @@ def check_references(tree, root, ignored):
                   root=root).splitlines()
     tracked_set = set(tracked)
     directories = {str(p) for path in tracked for p in Path(path).parents}
-    skills = {Path(p).parent.name for p in tree.files if p.startswith(SKILLS_DIR)}
+    skills = {Path(p).parent.name for p in tree.files if p.startswith(SKILLS_DIRS)}
 
     def path_exists(value, source):
         candidates = [value, str(Path(source).parent / value)]
@@ -251,7 +252,7 @@ def check_references(tree, root, ignored):
         elif kind == "type" and value not in declared and value not in path_names:
             errors.append(f"{source}: `{value}` isn't declared anywhere in the repo")
         elif kind == "skill" and value not in skills:
-            errors.append(f"{source}: skill `{value}` isn't in {SKILLS_DIR}/")
+            errors.append(f"{source}: skill `{value}` isn't in {' or '.join(d + '/' for d in SKILLS_DIRS)}")
     return sorted(set(errors))
 
 

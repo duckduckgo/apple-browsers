@@ -5,6 +5,8 @@ appId: com.duckduckgo.mobile.ios
 - evalScript: "${output.videoTitle = 'DuckDuckGo vs Google: 5 Reasons You Should Switch'}"
 - evalScript: "${output.videoSearchUrl = 'https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web'}"
 - evalScript: "${output.youtubeSearchUrl = 'https://www.youtube.com/results?search_query=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%22&sp=EgIQAQ%253D%253D'}"
+# The SERP result URL line of the watch page (the SERP also lists a /live/ URL that Duck Player doesn't intercept)
+- evalScript: "${output.serpWatchResultUrl = '.*watch.v=3ml7yeKBUhc'}"
 - evalScript: "${output.searchEntryId = 'searchEntry'}"
 - evalScript: "${output.closeButtonId = 'xmark'}"
 - evalScript: "${output.chevronUpId = 'chevron.up'}"

@@ -167,6 +167,12 @@ class TabViewController: UIViewController {
     var webViewContainerBottomConstraint: NSLayoutConstraint?
     /// Holds the native Duck.ai chat input on iPad while this tab shows a full-tab chat.
     var fullTabChatInputContainer: FullTabChatInputContainerView?
+    /// Holds the native Duck.ai chats sidebar on iPad while this tab shows a full-tab chat.
+    var chatListSidebarContainer: IPadChatListSidebarContainerView?
+    /// Set once this tab's `sidebar=open` load has opened the chats sidebar, so later page URL changes don't reopen it.
+    var hasOpenedChatListSidebarFromURL = false
+    /// Opened for the iPad chats list, so its empty chat keeps the input down on every visit, as `sidebar=open` does.
+    var isOpenedForChatList = false
     private lazy var firstPaintCover = FirstPaintCover()
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
@@ -177,6 +183,7 @@ class TabViewController: UIViewController {
         didSet {
             // Floating UI reserves the obscured top region while a dialog is up, so relayout on both.
             updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+            updateOuterContainerClippingForFloatingUI()
         }
     }
     var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
@@ -645,7 +652,7 @@ class TabViewController: UIViewController {
         }
     }
 
-    private let rulesCompilationMonitor = RulesCompilationMonitor.shared
+    var rulesCompilationMonitor = RulesCompilationMonitor.shared
     
     private var lastRenderedURL: URL?
 
@@ -841,7 +848,6 @@ class TabViewController: UIViewController {
     var sitePermissionsDependenciesProvider: @MainActor () -> SitePermissionsDependencies?
 
     let sitePermissionsState = SitePermissionsState()
-    var sitePermissionsNavigationTimeout: TimeInterval = 10
     var contentBlockingWaitPixelTimeout: TimeInterval = 10
     var contentBlockingWaitNotificationCenter: NotificationCenter = .default
 
@@ -893,12 +899,15 @@ class TabViewController: UIViewController {
         guard let webView else { return nil }
         return MultiTabAttachmentPage(state: { [weak self] in
             guard let self, let webView = self.webView else { return nil }
+            let isInitialRequestPending = self.pageContextInitialRequestPending
+                || (self.pageContextRestoredPageNeedsLoad && !self.pageContextNavigationInProgress && webView.isLoading)
             return .init(identity: .init(webView: ObjectIdentifier(webView), navigation: self.pageContextNavigationID),
                          url: webView.url,
                          isLoading: self.pageContextInitialRequestPending || self.pageContextNavigationInProgress || webView.isLoading,
                          isLoaded: self.pageContextLoadedNavigationID == self.pageContextNavigationID,
                          isAttachable: self.pageContextHandler.isCurrentPageAttachable(),
-                         hasTerminatedProcess: self.pageContextProcessTerminated)
+                         hasTerminatedProcess: self.pageContextProcessTerminated,
+                         isInitialRequestPending: isInitialRequestPending)
         }, changes: Publishers.Merge3(urlPublisher.map { _ in () }, pageContextPageChanges,
                                      webView.publisher(for: \.isLoading).map { _ in () }).eraseToAnyPublisher(),
         collect: { [weak self] url, isValid in
@@ -1298,8 +1307,7 @@ class TabViewController: UIViewController {
     }
 
     private func updateWebViewBottomConstraint(for barsVisibilityPercent: CGFloat) {
-        let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
+        if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingLayout {
             if chromeDelegate?.isInMinimalChromeLayout == true {
                 // Minimal chrome: inset follows the bars so the slot is reclaimed when hidden. The
                 // iOS 26 fixed inset is skipped; in landscape it leaves a visible gap once the bar
@@ -1403,14 +1411,8 @@ class TabViewController: UIViewController {
         borderView.isTopVisible = false
         borderView.isBottomVisible = false
 
-        // AI tabs keep the web view full-bleed while native controls float above it.
-        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        let usesFloatingAIChrome = if #available(iOS 26, *) {
-            isUnifiedToggleInputAffectingLayout
-                && floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
-        } else {
-            false
-        }
+        let isUnifiedToggleInputAffectingLayout = self.isUnifiedToggleInputAffectingLayout
+        let usesFloatingAIChrome = self.shouldUseFloatingAIChrome
         var obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
@@ -1422,7 +1424,10 @@ class TabViewController: UIViewController {
         // While a dialog is up the obscured top region offsets the stack instead of the web view, or
         // the page gets pushed down twice. Measured at full chrome visibility so the dialog (and the
         // web view frame) holds still through a bars hide/show instead of resizing every frame.
-        let effectiveContextualOnboardingTopInset = isUnifiedToggleInputAffectingLayout ? 0 : contextualOnboardingTopInset
+        // Floating Duck.ai chrome: the dialog clears the floating chat header, which stays in place on scroll.
+        let effectiveContextualOnboardingTopInset = (isUnifiedToggleInputAffectingLayout && !usesFloatingAIChrome)
+            ? 0
+            : contextualOnboardingTopInset
         applyContextualOnboardingTopInset(effectiveContextualOnboardingTopInset)
         obscuredInsets.top = max(0, obscuredInsets.top - effectiveContextualOnboardingTopInset)
 
@@ -1535,12 +1540,36 @@ class TabViewController: UIViewController {
     private func updateContextualOnboardingLayoutForFloatingUIIfNeeded() {
         // A non-current tab has no chrome to measure; it gets laid out again on re-selection.
         guard floatingUIManager.isFloatingUIEnabled, webView != nil, let chromeDelegate else { return }
-        let inset = daxContextualOnboardingController == nil
-            ? 0
-            : max(0, chromeDelegate.floatingWebViewObscuredInsets(for: 1.0).top)
+        let chromeTopInset = shouldUseFloatingAIChrome
+            ? chromeDelegate.floatingAIChatHeaderObscuredHeight
+            : chromeDelegate.floatingWebViewObscuredInsets(for: 1.0).top
+        let inset = daxContextualOnboardingController == nil ? 0 : max(0, chromeTopInset)
         guard contextualOnboardingTopInset != inset else { return }
         contextualOnboardingTopInset = inset
         applyWebViewLayout(for: lastAppliedBarsVisibilityPercent)
+        if shouldUseFloatingAIChrome, daxContextualOnboardingController != nil {
+            // Settle the header offset now, so the presenter's animation only grows the dialog
+            // from under the floating chat header instead of sliding it in from the top of the screen.
+            view.layoutIfNeeded()
+        }
+    }
+
+    /// AI tab with the unified toggle input: the web view stays full-bleed while native controls float above it.
+    private var isUnifiedToggleInputAffectingLayout: Bool {
+        isAITab && unifiedToggleInputFeature.isAvailable
+    }
+
+    /// AI tab on iOS 26+ with the Liquid Glass Duck.ai chrome: the chat header and input float over a full-bleed web view.
+    private var shouldUseFloatingAIChrome: Bool {
+        guard #available(iOS 26, *) else { return false }
+        return isUnifiedToggleInputAffectingLayout && floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
+    }
+
+    /// Floating UI lets the page draw outside its container so it shows behind the glass chrome.
+    /// While a contextual onboarding dialog sits above the page clip it.
+    private func updateOuterContainerClippingForFloatingUI() {
+        guard floatingUIManager.isFloatingUIEnabled, outerContainer != nil else { return }
+        outerContainer.clipsToBounds = daxContextualOnboardingController != nil
     }
 
     /// Offsets the content stack so the dialog — its first arranged subview — clears the floating
@@ -1730,8 +1759,8 @@ class TabViewController: UIViewController {
         if floatingUIManager.isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
-            outerContainer.clipsToBounds = false
             webViewContainer.clipsToBounds = false
+            updateOuterContainerClippingForFloatingUI()
         }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
@@ -4267,47 +4296,31 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         // Geolocation must be installed before the first document, including SERP and content-blocking-off loads.
-        // Keep these wait tasks so tab teardown resolves WebKit's outstanding decisions.
+        // Like the legacy wait, this has no deadline: a slow rules compile means a slow load, not an error page.
+        // Stop, a replacing navigation and tab teardown cancel these tasks, which resolves WebKit's pending decisions.
         rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
         showProgressIndicator()
         let waitID = UUID()
-        let timeout = sitePermissionsNavigationTimeout
         let geolocationInstalled = userContentController.$contentBlockingAssets
             .filter { ($0?.userScripts as? UserScripts)?.geolocationUserScript != nil }
         if isMainFrame {
             startContentBlockingWaitTimeoutPixel(until: geolocationInstalled)
         }
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
-            defer {
-                state?.contentBlockingWaitTasks[waitID] = nil
-                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
-            }
-            guard !Task.isCancelled else {
-                completion(false)
-                return
-            }
-            // Only readiness may reset the deadline; unrelated asset updates must not extend it.
-            let readiness = geolocationInstalled
-                .timeout(.seconds(timeout), scheduler: DispatchQueue.main)
-                .first()
-            var isReady = false
-            for await _ in readiness.values {
-                isReady = true
-                break
-            }
-            // Remove before completion: success re-enters the navigation policy delegate.
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
+            // The assets publisher never finishes, so this returns nil only when the wait is cancelled.
+            let isReady = await geolocationInstalled.values.first { _ in true } != nil
             let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
-            guard !Task.isCancelled, isCurrentWait else {
+            guard isReady, !Task.isCancelled, isCurrentWait else {
+                // Rules are not ready, so this is not a finished wait. Keep the tab's waiter: a replacing wait shares it.
                 completion(false)
                 return
             }
             if isMainFrame {
                 state?.contentBlockingWaitTimeoutPixel = nil
             }
-            if !isReady, isMainFrame {
-                self?.showSitePermissionsAssetsTimeout(for: url)
-            }
-            completion(isReady)
+            // Resuming navigation re-enters policy and can record a zero-second wait.
+            rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
+            completion(true)
         }
         return true
     }
@@ -4335,17 +4348,6 @@ extension TabViewController: WKNavigationDelegate {
             }, receiveValue: { [pixelFiring] in
                 pixelFiring?.fire(ContentBlockingPixel.rulesCompilationTimeout, frequency: .dailyAndCount)
             })
-    }
-
-    private func showSitePermissionsAssetsTimeout(for failedURL: URL) {
-        let error = URLError(.timedOut, userInfo: [NSURLErrorFailingURLErrorKey: failedURL])
-        lastError = error
-        pendingNativeLoadURL = nil
-        shouldReloadOnError = false
-        url = failedURL
-        hideProgressIndicator()
-        showError(message: error.localizedDescription)
-        webpageDidFailToLoad()
     }
 
     private func decidePolicyFor(navigationAction: WKNavigationAction, completion: @escaping (TabNavigationDecision) -> Void) {

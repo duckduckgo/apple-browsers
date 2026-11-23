@@ -173,7 +173,8 @@ extension OnboardingComparisonContent {
         ],
         primaryCTA: "Browser Comparison Primary",
         secondaryCTA: "Browser Comparison Secondary",
-        daxAnimation: .wingBottom
+        daxAnimation: .wingBottom,
+        drawsCheckmarks: true
     )
 
     static let mockAI = OnboardingComparisonContent(
@@ -185,7 +186,8 @@ extension OnboardingComparisonContent {
         ],
         primaryCTA: "AI Comparison Primary",
         secondaryCTA: nil,
-        daxAnimation: .wingBottom
+        daxAnimation: .wingBottom,
+        drawsCheckmarks: true
     )
 }
 

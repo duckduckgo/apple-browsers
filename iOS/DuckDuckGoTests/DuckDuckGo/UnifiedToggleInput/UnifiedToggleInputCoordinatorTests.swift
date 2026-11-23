@@ -655,12 +655,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     @MainActor
     func test_editPrompt_bindingAnotherChat_cancelsEdit() async {
-        sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
+        // Held here: the coordinator keeps scripts weakly and compares them by identity, so a freed first
+        // script could share its address with the second, read as the same chat and leave the edit waiting forever.
+        let firstChatScript = makeBridgeReadyUserScript()
+        sut.bindToTab(firstChatScript, hasExistingChat: true)
         let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)) }
         await Task.yield()
         guard sut.isEditing else { return XCTFail("The edit started before rebinding") }
 
-        sut.bindToTab(makeTestUserScript(), hasExistingChat: true)
+        let otherChatScript = makeTestUserScript()
+        withExtendedLifetime(firstChatScript) {
+            sut.bindToTab(otherChatScript, hasExistingChat: true)
+        }
 
         guard case .cancelled = await editTask.value else {
             return XCTFail("Binding another chat's script resolves the held edit as cancelled")
@@ -2929,6 +2935,22 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.updateSelectedModel("mistral")
 
         XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
+    }
+
+    func test_updateSelectedModel_withoutPersistingSelection_onNewChat_doesNotChangePreferredModel() {
+        sut.modelStore.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+
+        sut.updateSelectedModel("mistral", persistsSelection: false)
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku",
+                       "a chat-only pick must not retarget the new-chat default")
+        XCTAssertEqual(sut.modelStore.currentModelId, "mistral",
+                       "a chat-only pick still updates the live current-tab model")
     }
 
     func test_persistedModelId_fallsBackToPreferredModel_onFreshTabActivation() {

@@ -34,7 +34,7 @@ final class AIChatNativePermissionTests: XCTestCase {
             case .never: XCTAssertEqual(result, .failure(callId: "call", error: .denied))
             default: XCTAssertEqual(result, .failure(callId: "call", error: .cancelled))
             }
-            let stored: BrowserToolPermissionState = decision == .always ? .allow : decision == .never ? .deny : .ask
+            let stored: BrowserToolPermissionState? = decision == .always ? .allow : decision == .never ? .deny : nil
             XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), stored)
             XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
             fixture.cleanUp()
@@ -50,11 +50,11 @@ final class AIChatNativePermissionTests: XCTestCase {
         fixture.presenter.onPresent = { shown.fulfill() }
         let task = Task { await fixture.invoke() }
         await fulfillment(of: [shown], timeout: 1)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
         XCTAssertEqual(fixture.listings, 0)
         fixture.presenter.select(.always)
         XCTAssertEqual(fixture.listings, 0)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
         fixture.presenter.completeDismissal()
         let result = await task.value
         XCTAssertEqual(result, fixture.success)
@@ -76,7 +76,7 @@ final class AIChatNativePermissionTests: XCTestCase {
             fixture.presenter.completeDismissal()
             let result = await task.value
             XCTAssertEqual(result, .failure(callId: "call", error: .cancelled))
-            XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+            XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
             XCTAssertEqual(fixture.listings, 0)
             fixture.cleanUp()
         }
@@ -106,7 +106,7 @@ final class AIChatNativePermissionTests: XCTestCase {
             XCTAssertEqual(result, .failure(callId: "call", error: .cancelled))
             XCTAssertTrue(fixture.presenter.isPresentingPermission)
             fixture.presenter.completeDismissal()
-            XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+            XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
             XCTAssertEqual(fixture.listings, 0)
             fixture.presenter.holdDismissal = false
             fixture.presenter.autoAnswer = .allowOnce
@@ -140,7 +140,7 @@ final class AIChatNativePermissionTests: XCTestCase {
         let result = await fixture.invoke()
         XCTAssertEqual(result, .failure(callId: "call", error: .cancelled))
         XCTAssertEqual(fixture.listings, 0)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
         fixture.presenter.onPresent = nil
         fixture.presenter.isAvailable = true
         fixture.presenter.autoAnswer = .allowOnce
@@ -239,7 +239,7 @@ final class AIChatNativePermissionTests: XCTestCase {
         let secondResult = await second.value
         XCTAssertEqual(secondResult, fixture.success)
         XCTAssertEqual(fixture.listings, 2)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
     }
 
     func testRebindingSameScriptRejectsDelayedOldDecision() async {
@@ -258,7 +258,7 @@ final class AIChatNativePermissionTests: XCTestCase {
         let cancelled = await pending.value
         XCTAssertEqual(cancelled, .failure(callId: "call", error: .cancelled))
         fixture.presenter.completeDismissal()
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
         let fresh = await fixture.invoke()
         XCTAssertEqual(fresh, fixture.success)
         XCTAssertEqual(replacement.prompts.count, 1)

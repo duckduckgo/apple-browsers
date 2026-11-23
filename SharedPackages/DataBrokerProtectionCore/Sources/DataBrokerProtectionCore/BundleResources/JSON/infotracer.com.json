@@ -1,7 +1,7 @@
 {
   "name": "InfoTracer",
   "url": "infotracer.com",
-  "version": "0.4.0",
+  "version": "0.7.1",
   "addedDatetime": 1770227618445,
   "optOutUrl": "https://members.infotracer.com/removeMyData",
   "steps": [
@@ -11,56 +11,95 @@
       "actions": [
         {
           "actionType": "navigate",
-          "url": "https://members.infotracer.com/removeMyData?fname=${firstName}&lname=${lastName}&city=${city}&state=${state|upcase}&multiple=1",
-          "id": "127da963-3e92-451e-8a63-077edf1a6621"
-        },
-        {
-          "actionType": "click",
-          "elements": [
-            {
-              "type": "button",
-              "selector": "#notrobl"
-            }
-          ],
-          "id": "4fe16315-973e-4aa7-a903-a1c19ed1cdd1"
+          "url": "https://members.infotracer.com/removeMyData",
+          "id": "634cac07-2dfa-4807-a4c2-5e411881be2f"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
               "type": "element",
-              "selector": "//th[contains(text(), 'Report ID')]"
+              "selector": "#optoutform"
             }
           ],
-          "id": "f51882cd-6ca6-43f8-8b59-5d05231e8196"
+          "id": "2a85e50f-375f-4b0d-8b1e-ec1b7dc143f5"
+        },
+        {
+          "actionType": "fillForm",
+          "dataSource": "userProfile",
+          "selector": "#optoutform",
+          "elements": [
+            {
+              "type": "firstName",
+              "selector": "#DataRemovalServiceModel_fname"
+            },
+            {
+              "type": "lastName",
+              "selector": "#DataRemovalServiceModel_lname"
+            },
+            {
+              "type": "state",
+              "selector": "#DataRemovalServiceModel_state"
+            },
+            {
+              "type": "city",
+              "selector": "#DataRemovalServiceModel_city"
+            }
+          ],
+          "id": "1f01900c-df0f-4129-a45e-0ff5e3d657db"
+        },
+        {
+          "_comment": "Turnstile auto-completes. Wait for the hidden token before submitting.",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//form[@id='optoutform']//input[@name='cf-turnstile-response' and @value and @value != '']"
+            }
+          ],
+          "id": "cft-1bc68f49-38b0-464b-8bf1-505c22852b12"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "#optoutform button.form-submit-btn"
+            }
+          ],
+          "id": "000c3181-9789-41dc-a40b-6a46b5f5bff0"
+        },
+        {
+          "_comment": "The site submits 2s after the click and the reply takes 15-20s.",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//form[@id='rmdTableForm']|//div[contains(., 'No data was found')]"
+            }
+          ],
+          "id": "dc94a6f0-699d-4bbf-9ecd-ee91cad52877"
         },
         {
           "actionType": "extract",
-          "selector": "tr",
+          "selector": "//form[@id='rmdTableForm']//tr[td]",
+          "noResultsSelector": "//div[contains(@class,'alert') and contains(., 'No data was found')]",
           "profile": {
             "name": {
               "selector": ".//td[3]"
             },
-            "alternativeNamesList": {
-              "selector": ".//td[4]",
-              "findElements": true
-            },
             "age": {
-              "selector": ".//td[5]"
+              "selector": ".//td[4]"
             },
             "addressCityStateList": {
-              "selector": ".//td[6]",
-              "findElements": true
-            },
-            "relativesList": {
-              "selector": ".//td[7]",
+              "selector": ".//td[5]",
               "findElements": true
             },
             "profileUrl": {
-              "selector": ".//td[1]"
+              "identifierType": "hash"
             }
           },
-          "id": "c1b9f277-bc42-4957-a804-985e85c947e0"
+          "id": "0cc6a4b7-695a-4f0f-af25-80b95e83f01b"
         }
       ]
     },
@@ -70,125 +109,197 @@
       "actions": [
         {
           "actionType": "navigate",
-          "url": "https://members.infotracer.com/removeMyData?fname=${firstName}&lname=${lastName}&city=${city}&state=${state|upcase}&multiple=1",
-          "id": "d930c7d4-f3a1-4df4-a8fa-b8b2d549a4c9"
-        },
-        {
-          "actionType": "click",
-          "elements": [
-            {
-              "type": "button",
-              "selector": "#notrobl"
-            }
-          ],
-          "id": "18d0d6cd-89e1-45e2-b025-8c42fb2ee288"
+          "url": "https://members.infotracer.com/removeMyData",
+          "id": "1448c826-d7d8-4fad-afa5-0e036babbc07"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
               "type": "element",
-              "selector": "//th[contains(text(), 'Report ID')]"
+              "selector": "#optoutform"
             }
           ],
-          "id": "ff19011f-3302-479d-839c-0f1ec63c7bde"
+          "id": "020dab3b-a713-4c65-9500-858692060820"
+        },
+        {
+          "actionType": "fillForm",
+          "dataSource": "userProfile",
+          "selector": "#optoutform",
+          "elements": [
+            {
+              "type": "firstName",
+              "selector": "#DataRemovalServiceModel_fname"
+            },
+            {
+              "type": "lastName",
+              "selector": "#DataRemovalServiceModel_lname"
+            },
+            {
+              "type": "state",
+              "selector": "#DataRemovalServiceModel_state"
+            },
+            {
+              "type": "city",
+              "selector": "#DataRemovalServiceModel_city"
+            }
+          ],
+          "id": "6e847761-66c5-47f6-ab36-1f6593d43e67"
+        },
+        {
+          "_comment": "Turnstile auto-completes. Wait for the hidden token before submitting.",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//form[@id='optoutform']//input[@name='cf-turnstile-response' and @value and @value != '']"
+            }
+          ],
+          "id": "cft-175bf9f0-637e-4cd9-8f33-1ffaaed89930"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": "button[class~='btn-danger']",
+              "selector": "#optoutform button.form-submit-btn"
+            }
+          ],
+          "id": "f4835bf2-2d0c-472f-98b8-34bb7357431f"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#rmdTableForm"
+            }
+          ],
+          "id": "36ce7318-c5eb-4c77-95ed-fe7f20c629a6"
+        },
+        {
+          "_comment": "The results table carries its own Turnstile; Remove stays disabled until it passes.",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//form[@id='rmdTableForm']//input[@name='cf-turnstile-response' and @value and @value != '']"
+            }
+          ],
+          "id": "cft-8e281e54-3e2f-4c70-b5a0-b6790bf7149d"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "input.toBeOptOut",
               "parent": {
                 "profileMatch": {
-                  "selector": "tr",
+                  "selector": "//form[@id='rmdTableForm']//tr[td]",
                   "profile": {
                     "name": {
                       "selector": ".//td[3]"
                     },
-                    "alternativeNamesList": {
-                      "selector": ".//td[4]",
-                      "findElements": true
-                    },
                     "age": {
-                      "selector": ".//td[5]"
+                      "selector": ".//td[4]"
                     },
                     "addressCityStateList": {
-                      "selector": ".//td[6]",
-                      "findElements": true
-                    },
-                    "relativesList": {
-                      "selector": ".//td[7]",
+                      "selector": ".//td[5]",
                       "findElements": true
                     },
                     "profileUrl": {
-                      "selector": ".//td[1]"
+                      "identifierType": "hash"
                     }
                   }
                 }
               }
             }
           ],
-          "id": "36dac9b4-3666-47cf-a7e9-f90c7d72de43"
-        },
-        {
-          "actionType": "fillForm",
-          "selector": "form",
-          "elements": [
-            {
-              "type": "email",
-              "selector": "input[name='DataRemovalFormModel[email]']"
-            }
-          ],
-          "id": "9b4ec854-7455-4857-a30f-84e1bcbc7703"
-        },
-        {
-          "actionType": "getCaptchaInfo",
-          "selector": ".g-recaptcha",
-          "id": "71d79c0a-f35a-4771-84f5-23c87c36fba3"
-        },
-        {
-          "actionType": "solveCaptcha",
-          "selector": ".g-recaptcha",
-          "id": "c59a58aa-07d1-4b1f-b9df-b650c7d4fab8"
+          "id": "2d57a54a-6cb0-44ca-bbc9-549225c608a0"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": "button[class~='btn-primary'][type='submit']"
+              "selector": "button.btn-optout-process",
+              "parent": {
+                "profileMatch": {
+                  "selector": "//form[@id='rmdTableForm']//tr[td]",
+                  "profile": {
+                    "name": {
+                      "selector": ".//td[3]"
+                    },
+                    "age": {
+                      "selector": ".//td[4]"
+                    },
+                    "addressCityStateList": {
+                      "selector": ".//td[5]",
+                      "findElements": true
+                    },
+                    "profileUrl": {
+                      "identifierType": "hash"
+                    }
+                  }
+                }
+              }
             }
           ],
-          "id": "3c4e0334-71d9-4fc5-8c7c-5c1fccb53712"
+          "id": "167aed57-856e-4812-a9bd-416d0d8ccd5a"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
-              "type": "text",
-              "selector": "body",
-              "expect": "Please check your email and confirm your request."
+              "type": "element",
+              "selector": "#DataRemovalFormModel_email"
             }
           ],
-          "id": "b9975884-7019-4281-883e-b88cf4e525a4"
+          "id": "ce4356c4-2084-4c7a-b3b8-c526c5e02077"
         },
         {
-          "actionType": "emailConfirmation",
-          "_comment": "InfoTracer confirmation link is not valid for ~1 hour after submission. 390s x 10 retries = 65 min total polling time.",
-          "pollingTime": 390,
-          "id": "ef2c022a-7741-4284-b385-4b9d5245dac2"
+          "actionType": "fillForm",
+          "selector": "#optoutform",
+          "elements": [
+            {
+              "type": "email",
+              "selector": "#DataRemovalFormModel_email"
+            }
+          ],
+          "id": "ee93116b-332a-4c79-962e-626c424912b8"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
-              "type": "text",
-              "selector": "body",
-              "expect": "We have received your data removal request"
+              "type": "element",
+              "selector": "//form[@id='optoutform']//input[@name='cf-turnstile-response' and @value and @value != '']"
             }
           ],
-          "id": "17c41d13-b690-4fc5-a4ce-01ac6cffb319"
+          "id": "cft-5737ee31-414d-4d31-84c3-9ba0d3c7d5ff"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "#optoutform button.form-submit-btn"
+            }
+          ],
+          "id": "a60c240d-2f77-4b2f-8df9-6aaf266f2eae"
+        },
+        {
+          "_comment": "No confirmation link any more: the site states removal within 24-48 hours and emails once it is done.",
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "text",
+              "selector": "body",
+              "expect": "Your request has been received and will be processed"
+            }
+          ],
+          "id": "3814357f-c116-42f4-af76-a1cb57a95589"
         }
       ]
     }
@@ -196,7 +307,8 @@
   "schedulingConfig": {
     "retryError": 48,
     "confirmOptOutScan": 72,
-    "maintenanceScan": 240
+    "maintenanceScan": 240,
+    "maxAttempts": -1
   },
-  "removedAt": 1774014286261
+  "removedAt": null
 }

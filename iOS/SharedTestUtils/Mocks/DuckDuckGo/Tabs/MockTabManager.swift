@@ -22,7 +22,7 @@ import Foundation
 
 @MainActor
 class MockTabManager: TabManaging {
-    var browserToolsService = AIChatBrowserToolsService(featureFlagger: MockFeatureFlagger())
+    var browserToolsService = AIChatBrowserToolsService(featureFlagger: MockFeatureFlagger(), historyManager: MockHistoryManager())
     var currentTabsModel: TabsModelManaging = TabsModel(desktop: false)
     var allTabsModel: TabsModelReading = TabsModel(desktop: false)
     var currentBrowsingMode: BrowsingMode = .normal

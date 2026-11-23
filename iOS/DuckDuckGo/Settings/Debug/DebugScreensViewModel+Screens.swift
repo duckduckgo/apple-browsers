@@ -107,7 +107,8 @@ extension DebugScreensViewModel {
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
                                 aiChatBonusMessageLog: dependencies.aiChatBonusMessageLog,
                                 featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                tabManager: dependencies.tabManager)
+                                tabManager: dependencies.tabManager,
+                                aiChatLocalModel: dependencies.aiChatLocalModel)
             }),
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()
@@ -307,7 +308,7 @@ extension DebugScreensViewModel {
                         controller.presentingViewController?.dismiss(animated: true)
                     }
 
-                    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType) {}
+                    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, modelId: String?, flowType: AIChatOnboardingFlowType) {}
 
                     func searchFromOnboarding(for query: String) {}
 

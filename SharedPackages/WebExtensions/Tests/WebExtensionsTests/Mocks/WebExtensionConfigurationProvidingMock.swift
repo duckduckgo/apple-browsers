@@ -16,10 +16,14 @@
 //  limitations under the License.
 //
 
+import Foundation
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)
 final class WebExtensionConfigurationProvidingMock: WebExtensionConfigurationProviding {
     var applicationNameForUserAgent: String = "TestUserAgent"
     var isInspectable: Bool = false
+#if os(macOS)
+    var automaticDownloadDirectory: URL?
+#endif
 }

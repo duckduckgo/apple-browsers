@@ -27,19 +27,31 @@ final class AddToDockVideoPresenterTests {
 
     private let window = SheetRecordingWindow()
 
-    private func makeSUT(window: NSWindow?) -> AddToDockVideoPresenter {
-        AddToDockVideoPresenter(windowProvider: { window })
+    private func makeSUT(window: NSWindow?, newWindow: NSWindow? = nil) -> AddToDockVideoPresenter {
+        AddToDockVideoPresenter(windowProvider: { window }, newWindowProvider: { newWindow })
     }
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func presentingWithNoWindowDoesNothing() {
+    func presentingWithNoWindowShowsSheetInNewWindow() {
+        let sut = makeSUT(window: nil, newWindow: window)
+
+        let didPresent = sut.present(primaryAction: .done) { _ in }
+
+        #expect(didPresent)
+        #expect(window.presentedSheets.count == 1)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func presentingWhenNoWindowCanBeOpenedDoesNothing() {
         let sut = makeSUT(window: nil)
         var receivedActions: [AddToDockVideoAction] = []
 
-        sut.present(primaryAction: .done) { receivedActions.append($0) }
+        let didPresent = sut.present(primaryAction: .done) { receivedActions.append($0) }
         sut.handle(.done)
 
+        #expect(!didPresent)
         #expect(receivedActions.isEmpty)
     }
 
@@ -64,9 +76,11 @@ final class AddToDockVideoPresenterTests {
         var firstActions: [AddToDockVideoAction] = []
         var secondActions: [AddToDockVideoAction] = []
 
-        sut.present(primaryAction: .done) { firstActions.append($0) }
-        sut.present(primaryAction: .next) { secondActions.append($0) }
+        let firstDidPresent = sut.present(primaryAction: .done) { firstActions.append($0) }
+        let secondDidPresent = sut.present(primaryAction: .next) { secondActions.append($0) }
 
+        #expect(firstDidPresent)
+        #expect(!secondDidPresent)
         #expect(window.presentedSheets.count == 1)
 
         sut.handle(.done)

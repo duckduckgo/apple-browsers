@@ -19,7 +19,7 @@
 import Foundation
 import Combine
 import Persistence
-import PrivacyDashboard
+import Subscription
 
 /// Represents the current state of onboarding.
 enum ContextualOnboardingState: String {
@@ -37,12 +37,13 @@ enum ContextualDialogType: Equatable {
     case tryFireButton
     case highFive
     case subscriptionUpsell
+    case thatsDuckAI
 }
 
 /// Protocol for providing the appropriate dialog type based on a Tab.
 protocol ContextualOnboardingDialogTypeProviding {
     /// Returns a dialog type for the provided tab and  privacy information.
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType?
+    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType?
 
     /// Returns the last dialog shown if it was shown for the given tab.
     func lastDialogForTab(_ tab: Tab) -> ContextualDialogType?
@@ -132,7 +133,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     }
 
     init(trackerMessageProvider: TrackerMessageProviding,
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         subscriptionManager: any SubscriptionManager,
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
          settings: any ThrowingKeyedStoring<ContextualOnboardingSettings> = Application.appDelegate.keyValueStore.throwingKeyedStoring(),
          makePath: ((ContextualOnboardingPathKind, ContextualOnboardingProgressReading) -> ContextualOnboardingPath)? = nil) {
@@ -143,10 +144,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             switch kind {
             case .search:
                 return SearchOnboardingPath(progress: progress,
-                                            subscriptionUpsellExperiment: subscriptionUpsellExperiment,
+                                            subscriptionManager: subscriptionManager,
                                             trackerMessageProvider: trackerMessageProvider)
             case .duckAI:
-                return DuckAIOnboardingPath()
+                return DuckAIOnboardingPath(progress: progress, subscriptionManager: subscriptionManager)
             }
         }
         // Compares the raw value, as before: an unreadable saved value counts as not completed here.
@@ -206,13 +207,13 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     }
 
     // Determines and returns which dialog should be shown for a given tab and privacy info.
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo? = nil) -> ContextualDialogType? {
+    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType? {
         // If onboarding is complete, return nil.
         guard state != .onboardingCompleted else { return nil }
         // If onboarding hasn't started, mark it as ongoing.
         if state == .notStarted { state = .ongoing }
 
-        switch activePath.dialog(for: tab, privacyInfo: privacyInfo) {
+        switch activePath.dialog(for: tab) {
         case .next(let dialog):
             progress.markSeen(dialog)
             lastDialog = dialog
@@ -248,6 +249,8 @@ extension ContextualDialogType {
             return "highFive"
         case .subscriptionUpsell:
             return "subscriptionUpsell"
+        case .thatsDuckAI:
+            return "thatsDuckAI"
         }
     }
 

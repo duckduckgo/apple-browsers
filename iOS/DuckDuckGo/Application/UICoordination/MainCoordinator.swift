@@ -32,7 +32,6 @@ import EventHub
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
-import PrivacyStats
 import Networking
 import WebExtensions
 import Onboarding
@@ -100,6 +99,7 @@ final class MainCoordinator {
     private var darkReaderCancellables = Set<AnyCancellable>()
     private var youTubeAdBlockingCancellable: AnyCancellable?
     private let nativeMessagingSupport = NativeMessagingSupport()
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding?
     private var webExtensionLoadTask: Task<Void, Never>?
     private var isWebExtensionLoadPending = false
     private var protectedDataCancellable: AnyCancellable?
@@ -157,6 +157,7 @@ final class MainCoordinator {
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.webExtensionAvailability = contentBlockingService.userScriptsDependencies.webExtensionAvailability
         self.daxDialogs = daxDialogs
         self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFloatingUIFeatureEnabled()
         self.keyValueStore = keyValueStore
@@ -209,7 +210,7 @@ final class MainCoordinator {
             readLastActiveDate: { dailyActivityStore.currentActivity().lastActiveDate },
             isEnabled: { NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable })
         self.daxGreetingActivity = daxGreetingActivity
-        self.privacyStats = Self.makePrivacyStats()
+        self.privacyStats = DeferredPrivacyStats()
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
         let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
@@ -471,7 +472,10 @@ final class MainCoordinator {
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
             searchTokenProvider: controller,
             scriptletConfiguration: makeScriptletConfiguration(),
-            eventHub: eventHub
+            eventHub: eventHub,
+            isAppleSurrogateRedirectionEnabled: { [webExtensionAvailability] in
+                webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true
+            }
         )
         self.webExtensionManager = webExtensionManager
 
@@ -675,14 +679,6 @@ final class MainCoordinator {
                         featureFlagger: featureFlagger,
                         memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: false) }),
                         fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
-    }
-
-    private static func makePrivacyStats() -> PrivacyStatsProviding {
-        let location = PrivacyStatsDatabase.defaultLocation
-        if let database = PrivacyStatsDatabase(location: location) {
-            return PrivacyStats(databaseProvider: database)
-        }
-        return UnavailablePrivacyStats(storeLocation: location)
     }
 
     // MARK: - Public API
@@ -989,15 +985,9 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
-                startUntreatedReturnSession(timeAwayMs: timeAwayMs)
-                completion(.keptCurrent)
-                return
-            }
             controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: controller.presentedViewController) { [weak self] in
                 guard let self else { return }
-                if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-                    || !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
+                if !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
                     startUntreatedReturnSession(timeAwayMs: timeAwayMs)
                 }
                 completion(.keptCurrent)

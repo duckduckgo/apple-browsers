@@ -174,6 +174,11 @@ struct Launching: LaunchingHandling {
             }
         )
 
+        let localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                        storage: AIChatSettings(featureFlagger: featureFlagger))
+        let aiChatLocalModel = AIChatLocalModelDependencies(service: localModelService,
+                                                            accessPrompt: LocalModelAccessPrompt())
+
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
                                                             sync: syncService.sync,
@@ -186,7 +191,8 @@ struct Launching: LaunchingHandling {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
                                                             adBlockingAvailability: adBlockingAvailability,
-                                                            aiChatBonusOffer: aiChatBonusOffer)
+                                                            aiChatBonusOffer: aiChatBonusOffer,
+                                                            aiChatLocalModel: aiChatLocalModel)
         launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.

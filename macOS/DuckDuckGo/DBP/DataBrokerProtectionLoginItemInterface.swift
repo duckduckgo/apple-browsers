@@ -140,8 +140,8 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
         ipcClient.stopDebugServer()
     }
 
-    func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList? {
-        await ipcClient.getAssistedOptOuts(droppingSubmitted: droppingSubmitted)
+    func getAssistedOptOuts() async -> AssistedOptOutList? {
+        await ipcClient.getAssistedOptOuts()
     }
 
     func assistedOptOutDataDidChange() {

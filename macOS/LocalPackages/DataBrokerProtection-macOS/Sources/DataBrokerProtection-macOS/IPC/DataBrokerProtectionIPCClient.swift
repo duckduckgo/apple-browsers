@@ -203,10 +203,10 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
         })
     }
 
-    public func getAssistedOptOuts(droppingSubmitted: Bool) async -> AssistedOptOutList? {
+    public func getAssistedOptOuts() async -> AssistedOptOutList? {
         let data: Data? = await withCheckedContinuation { continuation in
             xpc.execute(call: { server in
-                server.getAssistedOptOuts(droppingSubmitted: droppingSubmitted) { continuation.resume(returning: $0) }
+                server.getAssistedOptOuts { continuation.resume(returning: $0) }
             }, xpcReplyErrorHandler: { error in
                 Logger.dataBrokerProtection.error("Error \(error.localizedDescription)")
                 continuation.resume(returning: nil)

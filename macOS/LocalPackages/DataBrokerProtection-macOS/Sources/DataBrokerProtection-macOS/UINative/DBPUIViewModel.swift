@@ -164,7 +164,7 @@ extension DBPUIViewModel: DBPUIAssistedOptOutsDelegate {
 
     public func getAssistedOptOuts() async -> AssistedOptOutList {
         let list = isUserAssistanceEnabled
-            ? await agentInterface.getAssistedOptOuts(droppingSubmitted: true) : AssistedOptOutList(optOuts: [])
+            ? await agentInterface.getAssistedOptOuts() : AssistedOptOutList(optOuts: [])
         return await MainActor.run {
             let currentList = isUserAssistanceEnabled ? (list ?? lastAssistedOptOuts ?? AssistedOptOutList(optOuts: [])) : AssistedOptOutList(optOuts: [])
             lastAssistedOptOuts = currentList
@@ -197,7 +197,7 @@ extension DBPUIViewModel: DBPUIAssistedOptOutsDelegate {
     @MainActor func pollAssistedOptOuts(in webView: WKWebView) async {
         guard webView.window?.occlusionState.contains(.visible) == true else { return }
         let list = isUserAssistanceEnabled
-            ? await agentInterface.getAssistedOptOuts(droppingSubmitted: false) : AssistedOptOutList(optOuts: [])
+            ? await agentInterface.getAssistedOptOuts() : AssistedOptOutList(optOuts: [])
         let currentList = isUserAssistanceEnabled ? list : AssistedOptOutList(optOuts: [])
         guard !Task.isCancelled, let currentList, currentList != lastAssistedOptOuts else { return }
         lastAssistedOptOuts = currentList

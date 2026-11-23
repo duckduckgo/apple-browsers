@@ -38,7 +38,7 @@ let package = Package(
         // loading will be refactored before an external release.
         .target(
             name: "CLlama",
-            exclude: ["LICENSE"]
+            exclude: ["LICENSE", "THIRD-PARTY-NOTICES"]
         ),
         .target(
             name: "LlamaRuntime",

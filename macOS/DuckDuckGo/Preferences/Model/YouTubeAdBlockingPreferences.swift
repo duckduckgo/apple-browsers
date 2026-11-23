@@ -118,7 +118,7 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         }
     }
 
-    var segmentSkipSkipMode: SegmentSkipSkipMode {
+    var segmentSkipMode: SegmentSkipMode {
         get { segmentSkipPreferences.skipMode }
         set {
             objectWillChange.send()

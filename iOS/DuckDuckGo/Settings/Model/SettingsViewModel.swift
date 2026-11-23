@@ -857,8 +857,8 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var segmentSkipSkipMode: Binding<SegmentSkipSkipMode> {
-        Binding<SegmentSkipSkipMode>(
+    var segmentSkipMode: Binding<SegmentSkipMode> {
+        Binding<SegmentSkipMode>(
             get: { self.segmentSkipPreferences.skipMode },
             set: {
                 self.objectWillChange.send()

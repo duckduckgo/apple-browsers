@@ -68,7 +68,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
         contentController: WKUserContentController = WKUserContentController(),
         scriptSourceProviderDependencies: DefaultScriptSourceProvider.Dependencies,
         segmentSkipPreferences: SegmentSkipPreferences,
-        segmentSkipProvider: SegmentSkipProvider = AppDependencyProvider.shared.segmentSkipProvider,
+        segmentSkipSegmentsProvider: SegmentSkipSegmentsProvider = AppDependencyProvider.shared.segmentSkipSegmentsProvider,
         duckPlayerUserScript: DuckPlayerUserScriptPlayer? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator? = nil,
@@ -80,7 +80,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
               
        self.duckPlayerUserScript = duckPlayerUserScript ?? DuckPlayerUserScriptPlayer(viewModel: viewModel)
        // Duck Player loads youtube-nocookie.com in its own web view, so the tab's SegmentSkip subfeature never sees it.
-       self.segmentSkipSubfeature = SegmentSkipSubfeature(segmentsProvider: segmentSkipProvider,
+       self.segmentSkipSubfeature = SegmentSkipSubfeature(segmentsProvider: segmentSkipSegmentsProvider,
                                                             preferences: segmentSkipPreferences,
                                                             isFeatureFlagOn: { featureFlagger.isFeatureOn(.segmentSkip) })
 

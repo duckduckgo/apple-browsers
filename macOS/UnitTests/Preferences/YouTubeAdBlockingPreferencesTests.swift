@@ -278,10 +278,10 @@ final class YouTubeAdBlockingPreferencesTests: XCTestCase {
     func testSegmentSkipSettingsPersistThroughTheSharedStore() {
         sut = makeSegmentSkipSUT(flagOn: true)
         XCTAssertTrue(sut.segmentSkipEnabled)
-        XCTAssertEqual(sut.segmentSkipSkipMode, .manual)
+        XCTAssertEqual(sut.segmentSkipMode, .manual)
 
         sut.segmentSkipEnabled = false
-        sut.segmentSkipSkipMode = .auto
+        sut.segmentSkipMode = .auto
 
         let shared = SegmentSkipPreferences(store: defaults)
         XCTAssertFalse(shared.isEnabled)

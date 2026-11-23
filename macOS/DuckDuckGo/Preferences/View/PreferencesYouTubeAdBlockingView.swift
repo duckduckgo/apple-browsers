@@ -157,9 +157,9 @@ extension Preferences {
                             .accessibilityIdentifier("Preferences.SegmentSkip.enabledToggle")
 
                         if model.segmentSkipEnabled {
-                            Picker(SegmentSkipCopy.skipModeLabel, selection: $model.segmentSkipSkipMode) {
-                                Text(verbatim: SegmentSkipCopy.manual).tag(SegmentSkipSkipMode.manual)
-                                Text(verbatim: SegmentSkipCopy.auto).tag(SegmentSkipSkipMode.auto)
+                            Picker(SegmentSkipCopy.skipModeLabel, selection: $model.segmentSkipMode) {
+                                Text(verbatim: SegmentSkipCopy.manual).tag(SegmentSkipMode.manual)
+                                Text(verbatim: SegmentSkipCopy.auto).tag(SegmentSkipMode.auto)
                             }
                             .pickerStyle(.menu)
                             .fixedSize()

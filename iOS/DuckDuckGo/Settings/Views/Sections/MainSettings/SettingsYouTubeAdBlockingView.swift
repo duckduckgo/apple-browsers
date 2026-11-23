@@ -86,8 +86,8 @@ struct SettingsYouTubeAdBlockingView: View {
                                      accessory: .toggle(isOn: viewModel.segmentSkipEnabled))
                     if viewModel.segmentSkipEnabled.wrappedValue {
                         SettingsPickerCellView(label: SegmentSkipCopy.skipModeLabel,
-                                               options: SegmentSkipSkipMode.allCases,
-                                               selectedOption: viewModel.segmentSkipSkipMode)
+                                               options: SegmentSkipMode.allCases,
+                                               selectedOption: viewModel.segmentSkipMode)
                     }
                 }
             }
@@ -168,7 +168,7 @@ private enum SegmentSkipCopy {
     static let auto = "Automatic"
 }
 
-extension SegmentSkipSkipMode: @retroactive CustomStringConvertible {
+extension SegmentSkipMode: @retroactive CustomStringConvertible {
     public var description: String {
         switch self {
         case .manual: SegmentSkipCopy.manual

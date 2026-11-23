@@ -1,5 +1,5 @@
 //
-//  SegmentSkipProviderTests.swift
+//  SegmentSkipSegmentsProviderTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -19,9 +19,9 @@
 import XCTest
 @testable import BrowserServicesKit
 
-final class SegmentSkipProviderTests: XCTestCase {
+final class SegmentSkipSegmentsProviderTests: XCTestCase {
 
-    private typealias Provider = SegmentSkipProvider
+    private typealias Provider = SegmentSkipSegmentsProvider
 
     private let videoID = "dQw4w9WgXcQ"
     private lazy var validQuery = try! Provider.Query(videoID: videoID)

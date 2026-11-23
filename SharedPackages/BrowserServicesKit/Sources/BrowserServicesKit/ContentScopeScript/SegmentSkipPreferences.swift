@@ -20,14 +20,14 @@ import Combine
 import Foundation
 import Persistence
 
-public enum SegmentSkipSkipMode: String, CaseIterable {
+public enum SegmentSkipMode: String, CaseIterable {
     case manual
     case auto
 }
 
 public struct SegmentSkipSettings: StoringKeys {
     public let isEnabled = StorageKey<Bool>(SegmentSkipStorageKey.isEnabled)
-    public let skipMode = StorageKey<SegmentSkipSkipMode>(SegmentSkipStorageKey.skipMode)
+    public let skipMode = StorageKey<SegmentSkipMode>(SegmentSkipStorageKey.skipMode)
 
     public init() {}
 }
@@ -57,7 +57,7 @@ public final class SegmentSkipPreferences {
         set { set(newValue, for: \.isEnabled) }
     }
 
-    public var skipMode: SegmentSkipSkipMode {
+    public var skipMode: SegmentSkipMode {
         get { (try? settings.skipMode) ?? .manual }
         set { set(newValue, for: \.skipMode) }
     }

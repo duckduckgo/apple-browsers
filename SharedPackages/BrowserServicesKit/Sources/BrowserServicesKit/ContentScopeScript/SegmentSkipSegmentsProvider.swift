@@ -1,5 +1,5 @@
 //
-//  SegmentSkipProvider.swift
+//  SegmentSkipSegmentsProvider.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -25,7 +25,7 @@ import os.log
 ///
 /// Lookups use a SHA-256 hash prefix of the video ID, so the server never sees the exact video.
 /// Results are cached in memory; the app keeps one instance so every tab shares the cache.
-public actor SegmentSkipProvider {
+public actor SegmentSkipSegmentsProvider {
 
     // Segments endpoint; the request URL is `<apiBaseURL>/<hash prefix>?categories=…&actionTypes=…`.
     public static let apiBaseURL = URL(string: "https://duckduckgo.com/sponsorblock/v1/segments")!
@@ -83,7 +83,7 @@ public actor SegmentSkipProvider {
         case invalidResponse
         case httpStatus(Int)
 
-        public static var errorDomain: String { "com.duckduckgo.segmentSkip.Provider" }
+        public static var errorDomain: String { "com.duckduckgo.segmentSkip.SegmentsProvider" }
 
         public var errorCode: Int {
             switch self {

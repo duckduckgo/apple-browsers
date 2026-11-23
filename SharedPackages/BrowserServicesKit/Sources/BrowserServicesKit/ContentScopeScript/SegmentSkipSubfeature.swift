@@ -45,14 +45,14 @@ public final class SegmentSkipSubfeature: NSObject, Subfeature {
 
     public weak var broker: UserScriptMessageBroker?
 
-    private let segmentsProvider: SegmentSkipProvider
+    private let segmentsProvider: SegmentSkipSegmentsProvider
     private let preferences: SegmentSkipPreferences
     private let isFeatureFlagOn: () -> Bool
     /// The page that asked for config; `onConfigChanged` is pushed back into it.
     private weak var webView: WKWebView?
     private var preferencesCancellable: AnyCancellable?
 
-    public init(segmentsProvider: SegmentSkipProvider,
+    public init(segmentsProvider: SegmentSkipSegmentsProvider,
                 preferences: SegmentSkipPreferences,
                 isFeatureFlagOn: @escaping () -> Bool) {
         self.segmentsProvider = segmentsProvider
@@ -79,7 +79,7 @@ public final class SegmentSkipSubfeature: NSObject, Subfeature {
     static let onConfigChanged = "onConfigChanged"
 
     struct GetSegmentsResponse: Encodable {
-        let segments: [SegmentSkipProvider.Segment]
+        let segments: [SegmentSkipSegmentsProvider.Segment]
     }
 
     struct ConfigResponse: Encodable, Equatable {
@@ -119,7 +119,7 @@ public final class SegmentSkipSubfeature: NSObject, Subfeature {
 
     /// Rejects malformed params, but every lookup failure resolves to an empty list: the page never retries.
     private func handleGetSegments(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        let query = try SegmentSkipProvider.Query(params: params)
+        let query = try SegmentSkipSegmentsProvider.Query(params: params)
         guard isEnabled else {
             Logger.segmentSkip.debug("getSegments skipped: featureFlag=\(self.isFeatureFlagOn()) userSetting=\(self.preferences.isEnabled)")
             return GetSegmentsResponse(segments: [])

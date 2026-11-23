@@ -41,7 +41,7 @@ struct SubscriptionFlowView: View {
     // Local View State
     @State private var errorMessageType: SubscriptionTransactionErrorAlert.MessageType = .general
     @State private var isPresentingError: Bool = false
-    @State private var isPresentingNotificationsDeniedDialog: Bool = false
+    @State private var notificationsDeniedAlert: UIAlertController?
 
     // MARK: - Onboarding state
 
@@ -183,6 +183,7 @@ struct SubscriptionFlowView: View {
         }
 
         .onDisappear {
+            updateNotificationsDeniedDialog(daysBeforeTrialEnds: nil)
             viewModel.onDisappear()
         }
                 
@@ -209,21 +210,41 @@ struct SubscriptionFlowView: View {
             }
         }
         .onChange(of: viewModel.state.notificationsDeniedDialogDays) { days in
-            isPresentingNotificationsDeniedDialog = days != nil
+            updateNotificationsDeniedDialog(daysBeforeTrialEnds: days)
         }
-        .alert(UserText.subscriptionNotificationsDeniedDialogTitle,
-               isPresented: $isPresentingNotificationsDeniedDialog,
-               presenting: viewModel.state.notificationsDeniedDialogDays) { _ in
-            Button(UserText.subscriptionNotificationsDeniedDialogNotNow, role: .cancel) {
-                viewModel.notificationsDeniedDialogDidSelect(.notNow)
-            }
-            Button(UserText.subscriptionNotificationsDeniedDialogOpenSettings) {
-                viewModel.notificationsDeniedDialogDidSelect(.openSettings)
-            }
-            .keyboardShortcut(.defaultAction)
-        } message: { daysBeforeCancel in
-            Text(UserText.subscriptionNotificationsDeniedDialogMessage(daysBeforeTrialEnds: daysBeforeCancel))
+    }
+
+    private func updateNotificationsDeniedDialog(daysBeforeTrialEnds: Int?) {
+        let previousAlert = notificationsDeniedAlert
+        notificationsDeniedAlert = nil
+        guard let previousAlert, previousAlert.presentingViewController != nil else {
+            presentNotificationsDeniedDialog(daysBeforeTrialEnds: daysBeforeTrialEnds)
+            return
         }
+        previousAlert.dismiss(animated: false) {
+            presentNotificationsDeniedDialog(daysBeforeTrialEnds: daysBeforeTrialEnds)
+        }
+    }
+
+    private func presentNotificationsDeniedDialog(daysBeforeTrialEnds: Int?) {
+        guard let daysBeforeTrialEnds else { return }
+        guard let presenter = UIViewController.getCurrentViewController(),
+              presenter.viewIfLoaded?.window != nil,
+              presenter.transitionCoordinator == nil else {
+            viewModel.notificationsDeniedDialogDidSelect(.notNow)
+            return
+        }
+        let alert = UIAlertController(title: UserText.subscriptionNotificationsDeniedDialogTitle,
+                                      message: UserText.subscriptionNotificationsDeniedDialogMessage(daysBeforeTrialEnds: daysBeforeTrialEnds),
+                                      preferredStyle: .alert)
+        alert.addAction(title: UserText.subscriptionNotificationsDeniedDialogNotNow, style: .cancel) { [viewModel] in
+            viewModel.notificationsDeniedDialogDidSelect(.notNow)
+        }
+        alert.preferredAction = alert.addAction(title: UserText.subscriptionNotificationsDeniedDialogOpenSettings) { [viewModel] in
+            viewModel.notificationsDeniedDialogDidSelect(.openSettings)
+        }
+        notificationsDeniedAlert = alert
+        presenter.present(alert, animated: true)
     }
 
     // MARK: - Onboarding

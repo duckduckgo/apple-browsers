@@ -1059,8 +1059,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
+        // The flag also gates Apple Intelligence, so remote config could turn it on for everyone. The
+        // downloadable model stays internal either way. Decided at launch: a change in internal status
+        // applies after a relaunch.
+        let downloadableModel: AIChatDownloadableLocalModel? = internalUserDecider.isInternalUser
+            ? .llamaCpp(privacyConfigurationManager: privacyConfigurationManager)
+            : nil
         localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
-                                                     downloadableModel: .llamaCpp(privacyConfigurationManager: privacyConfigurationManager))
+                                                     downloadableModel: downloadableModel)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)

@@ -109,6 +109,8 @@ public struct AIChatNativeConfigValues: Codable {
     public var supportsResponseStateReporting = false
     /// `true` when iPad shows its own native chat list beside the full-tab chat, so Duck.ai can leave its list out.
     public var supportsiPadNativeChatList = false
+    /// `true` when native settings let the user customize Duck.ai responses.
+    public var supportsCustomizeResponsesInSettings = true
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool

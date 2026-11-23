@@ -34,7 +34,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         static let entranceDuration: TimeInterval = 0.25
         static let focusedModulesHideDuration: TimeInterval = 0.1
         static let focusedWelcomeScale: CGFloat = 0.85
-        static let focusedBackdropAlpha: CGFloat = 0
     }
 
     private static let focusedModuleIDs: [NewTabPageBlockID] = [.favorites, .escapeHatch, .messages]
@@ -84,14 +83,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     private let backgroundImageView = UIImageView(image: UIImage(resource: .backgroundPond))
-
-    private let focusedBackdropView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .background)
-        view.alpha = 0
-        view.isUserInteractionEnabled = false
-        return view
-    }()
 
     private let contentContainerView: UIView = {
         let view = UIView()
@@ -186,7 +177,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
                                            y: view.bounds.height - backgroundSize,
                                            width: backgroundSize,
                                            height: backgroundSize)
-        focusedBackdropView.frame = view.bounds
     }
 
     override func viewDidLayoutSubviews() {
@@ -293,7 +283,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     private func addSubviews() {
         view.addSubview(backgroundImageView)
-        view.addSubview(focusedBackdropView)
         view.addSubview(contentContainerView)
         contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
@@ -555,7 +544,6 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
 
     private func applyFocusedPose() {
         let isFocused = focusedPose != nil
-        focusedBackdropView.alpha = isFocused ? Metrics.focusedBackdropAlpha : 0
         searchInputView?.transform = CGAffineTransform(translationX: 0, y: focusedPose?.inputOffset ?? 0)
         let greetingTransform = CGAffineTransform(translationX: 0, y: focusedPose?.greetingOffset ?? 0)
         let welcomeView = blocks.first { $0.id == .welcome }?.viewController.view

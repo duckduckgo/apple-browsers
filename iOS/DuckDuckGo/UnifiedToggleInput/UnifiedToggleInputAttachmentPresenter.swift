@@ -64,8 +64,9 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
     /// Supplies the UTI surface for attachment pixels. Set by the coordinator; defaults to `.addressBar`.
     var pixelSurfaceProvider: (() -> UnifiedToggleInputPixelSurface)?
-    /// Supplies the temporary `simplified_prompt_box` param for attachment pixels. Nil omits the param.
-    var simplifiedPromptBoxProvider: (() -> Bool)?
+    /// Supplies the temporary `simplified_prompt_box` param for attachment pixels. Hosts without the simplified
+    /// prompt box (the iPad address bar) keep the default, `off`.
+    var simplifiedPromptBoxProvider: () -> Bool = { false }
     var isFireTabProvider: (() -> Bool)?
 
     nonisolated static func recoverFileAttachment(from metadata: FileMetadata, id: UUID = UUID()) -> AIChatFileAttachment? {
@@ -535,7 +536,7 @@ extension UnifiedToggleInputAttachmentPresenter: UIImagePickerControllerDelegate
     func imageAttachedPixelParameters(source: String) -> [String: String] {
         typealias Keys = UnifiedToggleInputCoordinatorPixelHelper
         var parameters = ["source": source, "surface": (pixelSurfaceProvider?() ?? .addressBar).rawValue]
-        parameters[Keys.simplifiedPromptBoxKey] = Keys.simplifiedPromptBoxValue(simplifiedPromptBoxProvider?())
+        parameters[Keys.simplifiedPromptBoxKey] = Keys.simplifiedPromptBoxValue(simplifiedPromptBoxProvider())
         return parameters
     }
 

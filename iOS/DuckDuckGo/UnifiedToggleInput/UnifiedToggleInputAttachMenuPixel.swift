@@ -44,9 +44,8 @@ extension UnifiedToggleInputAttachMenuItem {
 }
 
 enum UnifiedToggleInputAttachMenuPixel: PixelKit.Event {
-    /// `simplifiedPromptBox` is nil on surfaces without the Duck.ai prompt box (the iPad address bar), which omit the param.
-    case shown(surface: UnifiedToggleInputPixelSurface, simplifiedPromptBox: Bool? = nil)
-    case itemSelected(UnifiedToggleInputAttachMenuItem, surface: UnifiedToggleInputPixelSurface, simplifiedPromptBox: Bool? = nil)
+    case shown(surface: UnifiedToggleInputPixelSurface, simplifiedPromptBox: Bool)
+    case itemSelected(UnifiedToggleInputAttachMenuItem, surface: UnifiedToggleInputPixelSurface, simplifiedPromptBox: Bool)
 
     var name: String {
         switch self {
@@ -58,7 +57,7 @@ enum UnifiedToggleInputAttachMenuPixel: PixelKit.Event {
     var parameters: [String: String]? {
         typealias Keys = UnifiedToggleInputCoordinatorPixelHelper
         var parameters: [String: String]
-        let simplifiedPromptBox: Bool?
+        let simplifiedPromptBox: Bool
         switch self {
         case .shown(let surface, let isSimplified):
             parameters = ["surface": surface.rawValue]

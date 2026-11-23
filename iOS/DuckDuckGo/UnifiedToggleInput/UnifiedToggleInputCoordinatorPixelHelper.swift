@@ -196,8 +196,8 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
     /// simplified one, so dashboards can compare flag-on and flag-off devices. Remove after monitoring.
     static let simplifiedPromptBoxKey = "simplified_prompt_box"
 
-    static func simplifiedPromptBoxValue(_ isOn: Bool?) -> String? {
-        isOn.map { $0 ? "on" : "off" }
+    static func simplifiedPromptBoxValue(_ isOn: Bool) -> String {
+        isOn ? "on" : "off"
     }
 
     static func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment,
@@ -262,7 +262,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
 
     static func fireToolSelectedPixel(for tool: AIChatRAGTool,
                                       surface: UnifiedToggleInputPixelSurface,
-                                      simplifiedPromptBox: Bool? = nil,
+                                      simplifiedPromptBox: Bool,
                                       firing: UTIPixelFiring = .live) {
         var parameters = surfaceParameters(surface)
         parameters[simplifiedPromptBoxKey] = simplifiedPromptBoxValue(simplifiedPromptBox)
@@ -301,7 +301,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         usageContext: UsageContext? = nil,
         addressBarPosition: AddressBarPosition? = nil,
         resubmitOfSearch: CrossModeResubmitDetector.DelayBucket? = nil,
-        simplifiedPromptBox: Bool? = nil,
+        simplifiedPromptBox: Bool,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue

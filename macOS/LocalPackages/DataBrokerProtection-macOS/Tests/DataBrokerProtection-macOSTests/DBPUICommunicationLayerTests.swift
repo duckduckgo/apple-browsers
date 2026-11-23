@@ -525,8 +525,8 @@ struct AssistedDashboardTests {
         instrumentation.ended(outcome: outcome, totalDuration: 601, userTurnDuration: 61)
         #expect(pixels.actualFireCalls.map { $0.pixel.name } == ["pir_assisted_opt_out_started_macos", "pir_assisted_opt_out_user_turn_macos",
                                                                "pir_assisted_opt_out_ended_macos"])
-        #expect(pixels.actualFireCalls.map { $0.pixel.parameters ?? [:] } == [[:], ["duration_bucket": "5_15s"],
-            ["outcome": outcome.rawValue, "total_duration_bucket": "10m_or_more", "user_turn_duration_bucket": "1_2m"]])
+        #expect(pixels.actualFireCalls.map { $0.pixel.parameters ?? [:] } == [[:], ["duration_seconds_bucket": "0"],
+            ["outcome": outcome.rawValue, "total_duration_seconds_bucket": "480", "user_turn_duration_seconds_bucket": "60"]])
         #expect(pixels.actualFireCalls.allSatisfy { $0.frequency == .standard && $0.includeAppVersionParameter && $0.pixel.namePrefix == .none })
     }
 }

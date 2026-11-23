@@ -20,7 +20,6 @@ import DataBrokerProtectionCore
 import Foundation
 import PixelKit
 
-/// Fires the assisted opt-out pixels from the background agent. Durations are sent as coarse buckets, not exact times.
 @MainActor
 final class AssistedOptOutPixelInstrumentation: AssistedOptOutInstrumentation {
     private let pixelFiring: PixelFiring?
@@ -30,29 +29,56 @@ final class AssistedOptOutPixelInstrumentation: AssistedOptOutInstrumentation {
     }
 
     func started() {
-        pixelFiring?.fire(DataBrokerProtectionMacOSPixels.assistedOptOutStarted, frequency: .standard)
+        pixelFiring?.fire(AssistedOptOutPixel.started, frequency: .standard)
     }
 
     func reachedUserTurn(after duration: TimeInterval) {
-        pixelFiring?.fire(DataBrokerProtectionMacOSPixels.assistedOptOutUserTurn(durationBucket: bucket(duration)), frequency: .standard)
+        pixelFiring?.fire(AssistedOptOutPixel.userTurn(durationBucket: bucket(duration)), frequency: .standard)
     }
 
     func ended(outcome: AssistedOptOutOutcome, totalDuration: TimeInterval, userTurnDuration: TimeInterval) {
-        pixelFiring?.fire(DataBrokerProtectionMacOSPixels.assistedOptOutEnded(
+        pixelFiring?.fire(AssistedOptOutPixel.ended(
             outcome: outcome, totalDurationBucket: bucket(totalDuration), userTurnDurationBucket: bucket(userTurnDuration)), frequency: .standard)
     }
 
     private func bucket(_ duration: TimeInterval) -> String {
         switch duration {
-        case ..<1: return "under_1s"
-        case ..<5: return "1_5s"
-        case ..<15: return "5_15s"
-        case ..<30: return "15_30s"
-        case ..<60: return "30_60s"
-        case ..<120: return "1_2m"
-        case ..<300: return "2_5m"
-        case ..<600: return "5_10m"
-        default: return "10m_or_more"
+        case ..<30: return "0"
+        case ..<60: return "30"
+        case ..<120: return "60"
+        case ..<240: return "120"
+        case ..<480: return "240"
+        default: return "480"
         }
     }
+}
+
+enum AssistedOptOutPixel: PixelKit.Event {
+    case started
+    case userTurn(durationBucket: String)
+    case ended(outcome: AssistedOptOutOutcome, totalDurationBucket: String, userTurnDurationBucket: String)
+
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var name: String {
+        switch self {
+        case .started: return "pir_assisted_opt_out_started_macos"
+        case .userTurn: return "pir_assisted_opt_out_user_turn_macos"
+        case .ended: return "pir_assisted_opt_out_ended_macos"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .started:
+            return [:]
+        case .userTurn(let durationBucket):
+            return ["duration_seconds_bucket": durationBucket]
+        case .ended(let outcome, let totalDurationBucket, let userTurnDurationBucket):
+            return ["outcome": outcome.rawValue, "total_duration_seconds_bucket": totalDurationBucket,
+                    "user_turn_duration_seconds_bucket": userTurnDurationBucket]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [] }
 }

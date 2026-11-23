@@ -148,9 +148,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
         syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0,
                                                         recentModalPromptStatusProvider: recentModalPromptStatusProvider) }
-    private lazy var syncPromoView = AnyView(AIChatSyncPromoView(
-        onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
-        onCloseTap: { [weak self] in self?.handleSyncPromoClose() }))
+    private var syncPromoView: AnyView {
+        AnyView(AIChatSyncPromoView(
+            onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
+            onCloseTap: { [weak self] in self?.handleSyncPromoClose() },
+            usesNewTabPageCardBackground: usesRedesignedNewTabPageLayout))
+    }
     private var isContentActive = false
     /// Fires on each focus to force a fresh content resolve before the host is shown, so the prior
     /// session's stale content (a suggestion list, a logo at the wrong mark) is never flashed.

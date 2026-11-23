@@ -251,7 +251,9 @@ final class UnifiedSuggestionsHost {
             let presentation = RedesignedFocusedSearchPresentation(
                 inputsPublisher: config.inputsPublisher,
                 dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
-                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher())
+                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher(),
+                favoritesSectionVisibilityPublisher: config.favoritesSectionVisibilityPublisher,
+                escapeHatchVisibilityPublisher: viewModel.$escapeHatchPlacement.map { $0 != .hidden }.removeDuplicates().eraseToAnyPublisher())
             redesignedSearchPresentation = presentation
             redesignedPresentationCancellable = presentation.$showsSearchModules
                 .sink { [weak self] showsSearchModules in

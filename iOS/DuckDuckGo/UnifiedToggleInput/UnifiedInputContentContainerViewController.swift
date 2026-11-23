@@ -741,7 +741,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 case .website(let url): self?.delegate?.unifiedInputEditingStateDidRequestTextUpdate(url.absoluteString)
                 default: break
                 }
-            }
+            },
+            favoritesSectionVisibilityPublisher: customizationStore.favoritesVisibilityPublisher
         )
 
         let host = UnifiedSuggestionsHost(config: config, usesScrollableEscapeHatch: usesScrollableEscapeHatch)

@@ -1696,6 +1696,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertTrue(presenter.isPresentingPermission)
 
         presenter.completeDismissal()
+        XCTAssertFalse(presenter.isPresentingPermission)
         XCTAssertEqual(host.sidebarDetachments.count, 1)
         XCTAssertEqual(host.modalPresentationCount, 1)
         XCTAssertFalse(sut.hasParkedSurface)

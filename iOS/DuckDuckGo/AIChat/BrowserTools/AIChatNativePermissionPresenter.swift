@@ -24,10 +24,15 @@ import UIKit
 protocol AIChatNativePermissionPresenting: AnyObject {
     var isSurfaceAvailable: Bool { get }
     var isPresentingPermission: Bool { get }
+    var preservesPermissionOnSurfaceChange: Bool { get }
     func owns(_ viewController: UIViewController) -> Bool
     func present(_ prompt: ClientToolPermissionPrompt, message: String, decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool
     func withdraw(requestID: String, completion: @escaping @MainActor () -> Void)
     func withdrawActive(completion: @escaping @MainActor () -> Void)
+}
+
+extension AIChatNativePermissionPresenting {
+    var preservesPermissionOnSurfaceChange: Bool { false }
 }
 
 @MainActor
@@ -77,13 +82,17 @@ final class AIChatNativePermissionPresenter: AIChatNativePermissionPresenting {
     }
 
     var isSurfaceAvailable: Bool {
-        guard let owner = surface(), owner.viewIfLoaded?.window != nil,
+        Self.canPresent(from: surface(), ignoring: active?.alert)
+    }
+
+    static func canPresent(from owner: UIViewController?, ignoring permissionController: UIViewController? = nil) -> Bool {
+        guard let owner, owner.viewIfLoaded?.window != nil,
               !owner.isBeingDismissed, !owner.isBeingPresented else { return false }
         var branch: UIViewController? = owner
         var child: UIViewController?
         while let controller = branch {
             guard !controller.isBeingDismissed, !controller.isBeingPresented else { return false }
-            if let presented = controller.presentedViewController, presented !== active?.alert, presented !== child { return false }
+            if let presented = controller.presentedViewController, presented !== permissionController, presented !== child { return false }
             child = controller
             branch = controller.parent ?? controller.presentingViewController
         }

@@ -384,3 +384,121 @@ private final class PermissionModalOwner: UIViewController {
     var modal: UIViewController?
     override var presentedViewController: UIViewController? { modal }
 }
+
+@MainActor
+final class AIChatToolPermissionSelectionTests: XCTestCase {
+    func testDirectToolPromptsApproveOnlyCurrentCall() throws {
+        for toolName in ["readTabContent", "listOpenTabs", "searchHistory", "findInPage"] {
+            let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: toolName, targetsOtherTab: false)
+            let prompt = try XCTUnwrap(AIChatToolPermissionView.Prompt(request), toolName)
+            let selection = AIChatToolPermissionView.Selection(toolNames: prompt.tools.map(\.id), allowsPartialSelection: false)
+
+            XCTAssertEqual(prompt.tools.map(\.id), [toolName])
+            XCTAssertEqual(prompt.approval.decision(for: selection), .allowOnce, toolName)
+        }
+    }
+
+    func testDirectToolPromptsApproveForChatWhenOffered() throws {
+        for toolName in ["readTabContent", "listOpenTabs", "searchHistory", "findInPage"] {
+            let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: toolName,
+                                                     targetsOtherTab: false, offersAllowForChat: true)
+            let prompt = try XCTUnwrap(AIChatToolPermissionView.Prompt(request), toolName)
+            let selection = AIChatToolPermissionView.Selection(toolNames: prompt.tools.map(\.id), allowsPartialSelection: false)
+
+            XCTAssertEqual(prompt.tools.map(\.id), [toolName])
+            XCTAssertEqual(prompt.approval.decision(for: selection), .allowForChat, toolName)
+        }
+    }
+
+    func testAccessPromptsPreserveAccessDecisionForSingleAndMultipleTools() throws {
+        for toolNames in [["readTabContent"], ["readTabContent", "listOpenTabs"]] {
+            let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "requestAccess",
+                                                     targetsOtherTab: false, accessToolNames: toolNames, offersAllowForChat: true)
+            let prompt = try XCTUnwrap(AIChatToolPermissionView.Prompt(request))
+            var selection = AIChatToolPermissionView.Selection(toolNames: prompt.tools.map(\.id), allowsPartialSelection: true)
+
+            XCTAssertEqual(prompt.tools.map(\.id), toolNames)
+            XCTAssertEqual(prompt.approval.decision(for: selection), .allowAccess(excluding: []))
+            selection.toggle("listOpenTabs")
+            let excluded: Set<String> = toolNames.count > 1 ? ["listOpenTabs"] : []
+            XCTAssertEqual(prompt.approval.decision(for: selection), .allowAccess(excluding: excluded))
+        }
+    }
+
+    func testUnsupportedAndTargetedDirectRequestsDoNotUseCustomPrompt() {
+        let unknown = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "unknownTool", targetsOtherTab: false)
+        XCTAssertNil(AIChatToolPermissionView.Prompt(unknown))
+
+        for toolName in ["readTabContent", "listOpenTabs", "searchHistory", "findInPage"] {
+            let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: toolName,
+                                                     targetsOtherTab: false, target: "https://example.com")
+            XCTAssertNil(AIChatToolPermissionView.Prompt(request), toolName)
+        }
+    }
+
+    func testAllRequestedToolsStartSelected() {
+        let toolNames = ["readTabContent", "listOpenTabs", "searchHistory"]
+        let selection = AIChatToolPermissionView.Selection(toolNames: toolNames, allowsPartialSelection: true)
+
+        for toolName in toolNames {
+            XCTAssertTrue(selection.isSelected(toolName))
+            XCTAssertTrue(selection.canToggle(toolName))
+        }
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: []))
+    }
+
+    func testDeselectedToolIsExcludedFromOriginalPromptDecision() throws {
+        let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "requestAccess", targetsOtherTab: false,
+                                                accessToolNames: ["readTabContent", "listOpenTabs", "searchHistory"])
+        var selection = AIChatToolPermissionView.Selection(toolNames: try XCTUnwrap(prompt.accessToolNames), allowsPartialSelection: true)
+
+        selection.toggle("listOpenTabs")
+
+        XCTAssertTrue(selection.isSelected("readTabContent"))
+        XCTAssertFalse(selection.isSelected("listOpenTabs"))
+        XCTAssertTrue(selection.isSelected("searchHistory"))
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: ["listOpenTabs"]))
+    }
+
+    func testLastSelectedToolCannotBeDeselectedAndAnotherToolCanBeReselected() {
+        var selection = AIChatToolPermissionView.Selection(toolNames: ["readTabContent", "listOpenTabs"], allowsPartialSelection: true)
+        selection.toggle("listOpenTabs")
+
+        XCTAssertFalse(selection.canToggle("readTabContent"))
+        XCTAssertTrue(selection.canToggle("listOpenTabs"))
+        selection.toggle("readTabContent")
+        XCTAssertTrue(selection.isSelected("readTabContent"))
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: ["listOpenTabs"]))
+
+        selection.toggle("listOpenTabs")
+
+        XCTAssertTrue(selection.isSelected("listOpenTabs"))
+        XCTAssertTrue(selection.canToggle("readTabContent"))
+        XCTAssertTrue(selection.canToggle("listOpenTabs"))
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: []))
+    }
+
+    func testDisablingPartialSelectionKeepsEveryToolSelected() {
+        let toolNames = ["readTabContent", "listOpenTabs"]
+        var selection = AIChatToolPermissionView.Selection(toolNames: toolNames, allowsPartialSelection: false)
+
+        for toolName in toolNames {
+            XCTAssertFalse(selection.canToggle(toolName))
+            selection.toggle(toolName)
+            XCTAssertTrue(selection.isSelected(toolName))
+        }
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: []))
+    }
+
+    func testSingleToolRemainsSelected() {
+        var selection = AIChatToolPermissionView.Selection(toolNames: ["readTabContent"], allowsPartialSelection: true)
+
+        XCTAssertTrue(selection.isSelected("readTabContent"))
+        XCTAssertFalse(selection.canToggle("readTabContent"))
+        selection.toggle("readTabContent")
+
+        XCTAssertTrue(selection.isSelected("readTabContent"))
+        XCTAssertFalse(selection.canToggle("readTabContent"))
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: []))
+    }
+}

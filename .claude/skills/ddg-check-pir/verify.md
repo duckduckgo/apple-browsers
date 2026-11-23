@@ -65,4 +65,5 @@ Run these once for each new baseline build. They show the checks can fail.
   runner passes the run, because it counts `actionFailed` as a broker outcome. The review must dispute it: the page
   loaded normally, so the broker didn't cause the failure.
 - **No match:** use a profile fixture with no record on the broker. Expect `inconclusive`.
-- **Bad token:** pass a token file containing a malformed token. Expect `fail` before any broker request.
+- **Bad token:** pass a token file containing only whitespace. Expect the runner to exit with `Invalid inputs` and
+  create no attempt folder, so the token check stops the run before any broker request.

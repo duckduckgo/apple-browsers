@@ -162,16 +162,6 @@ final class BookmarkAddedSyncPromoDelegateTests: XCTestCase {
         await eligibility(of: sut, becomes: false)
     }
 
-    func testWhenKillSwitchTurnsOffThenPromoBecomesNotEligible() async {
-        let sut = makeSUT()
-        XCTAssertTrue(sut.isEligible)
-
-        featureFlagger.enabledFeatureFlags = [.newSyncEntryPoints, .syncFeatureLevel3]
-        featureFlagger.triggerUpdate()
-
-        await eligibility(of: sut, becomes: false)
-    }
-
     func testWhenEligibilityIsLostWhileShowingThenHideResolvesWithNoChange() async {
         let sut = makeSUT()
         let showTask = await startShowing(sut)

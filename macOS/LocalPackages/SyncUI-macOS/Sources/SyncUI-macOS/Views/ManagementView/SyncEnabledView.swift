@@ -33,7 +33,7 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
 
     var body: some View {
         // Errors
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 28) {
             syncUnavailableView()
             if model.isSyncPaused {
                 syncPaused()

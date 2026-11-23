@@ -4,8 +4,6 @@ set -eo pipefail
 
 platform=$1
 destination=$2
-package_root=${3:-SharedPackages}
-checks_file=${4:-.github/shared-package-checks.json}
 repository=$(cd "$(dirname "$0")/.." && pwd)
 
 case "$platform" in
@@ -25,7 +23,7 @@ esac
 
 packages=$(jq -ce --arg platform "$platform" '
   .[] | select($platform == "macos" or .macosTestOnly != true)
-' "$repository/$checks_file")
+' "$repository/.github/shared-package-checks.json")
 
 run_package() (
   package=$1
@@ -36,7 +34,7 @@ run_package() (
   test_targets=$(jq -r '.testTargets[]?' <<< "$package") || exit 1
   sources=$(jq -r '(.warningSources // ["Sources", "Tests"])[]' <<< "$package") || exit 1
 
-  cd "$repository/$package_root/$path" || exit 1
+  cd "$repository/SharedPackages/$path" || exit 1
 
   build_actions=(clean test)
   xcode_args=(-scheme "$scheme" -destination "$destination" -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO)

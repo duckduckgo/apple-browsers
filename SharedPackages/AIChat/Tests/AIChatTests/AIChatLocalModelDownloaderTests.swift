@@ -365,6 +365,27 @@ final class AIChatLocalModelDownloaderTests {
         #expect(!FileManager.default.fileExists(atPath: otherModel.path))
     }
 
+    /// Remote config can switch models, which leaves the earlier model's files behind.
+    @available(iOS 16, macOS 13, *)
+    @Test("Uninstall and Cancel also delete an earlier model's files", .timeLimit(.minutes(1)))
+    func removingDeletesEarlierModels() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let earlierModel = directory.appendingPathComponent("\(String(repeating: "a", count: 64)).gguf")
+        let earlierPart = directory.appendingPathComponent("\(String(repeating: "b", count: 64)).gguf.part")
+        let downloader = makeDownloader()
+
+        try Data([1, 2, 3]).write(to: earlierModel)
+        try Data([1]).write(to: earlierPart)
+        downloader.uninstall()
+        #expect(!FileManager.default.fileExists(atPath: earlierModel.path))
+        #expect(!FileManager.default.fileExists(atPath: earlierPart.path))
+
+        try Data([1, 2, 3]).write(to: earlierModel)
+        try Data([1]).write(to: earlierPart)
+        downloader.cancel()
+        #expect(!FileManager.default.fileExists(atPath: earlierModel.path))
+        #expect(!FileManager.default.fileExists(atPath: earlierPart.path))
+    }
 }
 
 // MARK: - Remote config

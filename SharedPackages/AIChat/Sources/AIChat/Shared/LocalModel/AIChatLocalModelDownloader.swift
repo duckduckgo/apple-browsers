@@ -116,7 +116,7 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         guard !state.isInstalled, download == nil, !isWaitingToRetry, !isVerifying else { return }
         defaults.set(spec.sha256, forKey: Self.installRequestKey)
         failedAttempts = 0
-        removeOtherModelFiles()
+        removeModelFiles(keeping: [spec.fileName, spec.fileName + ".part"])
         startDownload()
     }
 
@@ -124,15 +124,14 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         guard !state.isInstalled else { return }
         stopDownload()
         defaults.removeObject(forKey: Self.installRequestKey)
-        try? FileManager.default.removeItem(at: partURL)
+        removeModelFiles()
         state = .notInstalled
     }
 
     public func uninstall() {
         stopDownload()
         defaults.removeObject(forKey: Self.installRequestKey)
-        try? FileManager.default.removeItem(at: partURL)
-        try? FileManager.default.removeItem(at: directory.appendingPathComponent(spec.fileName))
+        removeModelFiles()
         state = .notInstalled
     }
 
@@ -300,9 +299,8 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         try? directory.setResourceValues(values)
     }
 
-    /// Only one model is kept: a different model from remote config replaces the old one.
-    private func removeOtherModelFiles() {
-        let keep: Set = [spec.fileName, spec.fileName + ".part"]
+    /// Only one model is kept, and remote config can switch models, so files from an earlier one go too.
+    private func removeModelFiles(keeping keep: Set<String> = []) {
         let files = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
         for file in files where (file.hasSuffix(".gguf") || file.hasSuffix(".gguf.part")) && !keep.contains(file) {
             try? FileManager.default.removeItem(at: directory.appendingPathComponent(file))

@@ -58,6 +58,29 @@ struct LlamaGenerationSmokeTests {
             try context.generate(prompt: tokens, maxTokens: 100, sampling: .greedy, shouldStop: { pieces >= 3 }, onText: { _ in pieces += 1 })
         }
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The prompt doesn't stay in memory once a run ends, finished or stopped", .timeLimit(.minutes(1)))
+    func memoryIsClearedAfterRuns() throws {
+        let library = try LlamaLibrary.load(at: try #require(LocalLlamaFiles.libraryURL))
+        let model = try LlamaModel(library: library, fileURL: try #require(LocalLlamaFiles.modelURL))
+        let tokens = try model.tokenize("Count to one hundred:", addSpecial: true, parseSpecial: true)
+        let context = try model.makeContext(size: 512)
+
+        var positionsDuringRun: [Int32] = []
+        try context.generate(prompt: tokens, maxTokens: 4, sampling: .greedy, shouldStop: { false }, onText: { _ in
+            positionsDuringRun.append(context.lastPositionInMemory)
+        })
+        #expect(positionsDuringRun.allSatisfy { $0 >= 0 })
+        #expect(!positionsDuringRun.isEmpty)
+        #expect(context.lastPositionInMemory == -1)
+
+        var pieces = 0
+        #expect(throws: CancellationError.self) {
+            try context.generate(prompt: tokens, maxTokens: 100, sampling: .greedy, shouldStop: { pieces >= 2 }, onText: { _ in pieces += 1 })
+        }
+        #expect(context.lastPositionInMemory == -1)
+    }
 }
 
 private enum LocalLlamaFiles {

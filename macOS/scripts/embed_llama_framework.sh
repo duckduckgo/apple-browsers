@@ -4,8 +4,8 @@
 # and only on Apple silicon with macOS 13.3 or later: a linked framework would load at launch on
 # every Mac, including macOS 12, which this build of llama.cpp doesn't support.
 #
-# The headers in SharedPackages/LlamaRuntime/Sources/CLlama/include come from the same release.
-# Update both together.
+# The headers in SharedPackages/LlamaRuntime/Sources/CLlama/include, and LICENSE and
+# THIRD-PARTY-NOTICES next to them, come from the same release. Update them together.
 #
 # Temporary, for the internal release and evals. Downloading llama.cpp's prebuilt release at build
 # time, the hand-copied headers and opening the framework at runtime will be refactored before an
@@ -59,6 +59,10 @@ mv "${binary}.arm64" "${binary}"
 # Headers and the module map are for linking, which nothing does.
 rm -rf "${destination}/Headers" "${destination}/Modules" \
 	"${destination}/Versions/A/Headers" "${destination}/Versions/A/Modules"
+
+# The release has no license files. Copied before signing, so the signature covers them.
+license_dir="${SRCROOT}/../SharedPackages/LlamaRuntime/Sources/CLlama"
+cp "${license_dir}/LICENSE" "${license_dir}/THIRD-PARTY-NOTICES" "${destination}/Versions/A/Resources/"
 
 # The app's own signature covers nested code, so the framework is signed with the same identity.
 # Exporting an archive signs it again for distribution.

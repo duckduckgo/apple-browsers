@@ -486,6 +486,22 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertEqual(sut.imageButton.accessibilityLabel, UserText.aiChatToolbarAddButtonAccessibilityLabel)
     }
 
+    func testTheSimplifiedChipsClearButtonKeepsAFullSizeTapArea() throws {
+        let sut = makeFittingToolbar()
+        sut.usesSimplifiedPromptBox = true
+        sut.isToolsButtonHidden = true
+        sut.selectedTool = .webSearch
+        layOut(sut, width: 1000)
+        let clear = try XCTUnwrap(findButton(accessibilityLabel: UserText.aiChatToolbarClearSelectedToolAccessibilityLabel, in: sut))
+        let justOutsideTheGlyph = CGPoint(x: clear.bounds.midX, y: clear.bounds.minY - 12)
+
+        XCTAssertTrue(clear.point(inside: justOutsideTheGlyph, with: nil), "The 16pt ✕ is the only way to turn a tool off, so it takes taps up to 44pt")
+
+        sut.usesSimplifiedPromptBox = false
+        layOut(sut, width: 1000)
+        XCTAssertFalse(clear.point(inside: CGPoint(x: clear.bounds.midX, y: clear.bounds.minY - 12), with: nil), "Flag off keeps today's tap area")
+    }
+
     func testTheSimplifiedChipIsSixtyPointsWide() throws {
         let sut = makeFittingToolbar()
         sut.usesSimplifiedPromptBox = true

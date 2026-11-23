@@ -43,6 +43,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         /// The simplified prompt box's chip: 8pt padding and a 16pt ✕, 60pt wide in all.
         static let simplifiedChipHorizontalPadding: CGFloat = 8
         static let simplifiedClearButtonSize: CGFloat = 16
+        /// The simplified chip's ✕ is the only way to turn a tool off, so it keeps a full-size tap area around its 16pt glyph.
+        static let simplifiedClearButtonHitTarget: CGFloat = 44
         static let chipSpacing: CGFloat = 4
         static let minimumGroupGap: CGFloat = 8
     }
@@ -416,8 +418,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         return imageView
     }()
 
-    private lazy var selectedToolClearButton: UIButton = {
-        let button = UIButton(type: .system)
+    private lazy var selectedToolClearButton: ToolClearButton = {
+        let button = ToolClearButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
         button.tintColor = UIColor(designSystemColor: .textPrimary)
@@ -863,6 +865,7 @@ private extension UnifiedToggleInputToolbarView {
         selectedToolChipTrailing?.constant = -padding
         selectedToolClearButtonWidth?.constant = clearSize
         selectedToolClearButtonHeight?.constant = clearSize
+        selectedToolClearButton.minimumHitTarget = usesSimplifiedPromptBox ? Constants.simplifiedClearButtonHitTarget : 0
         selectedToolClearButton.setImage(usesSimplifiedPromptBox ? DesignSystemImages.Glyphs.Size16.closeSmall
                                                                  : DesignSystemImages.Glyphs.Size16.close, for: .normal)
     }
@@ -985,4 +988,16 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
+}
+
+/// Grows its tap area to `minimumHitTarget` around a smaller glyph; 0 keeps the button's own bounds.
+private final class ToolClearButton: UIButton {
+
+    var minimumHitTarget: CGFloat = 0
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let dx = min(0, (bounds.width - minimumHitTarget) / 2)
+        let dy = min(0, (bounds.height - minimumHitTarget) / 2)
+        return bounds.insetBy(dx: dx, dy: dy).contains(point)
+    }
 }

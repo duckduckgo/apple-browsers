@@ -111,6 +111,7 @@ enum WebExtensionPixel: PixelKit.Event {
     case enabled(extension: WebExtensionPixelExtension)
     case disabled(extension: WebExtensionPixelExtension)
     case remotelyDisabled(extension: WebExtensionPixelExtension)
+    case killSwitchDisabled(count: Int)
     case retained14Days(extension: WebExtensionPixelExtension)
     case churned14Days(extension: WebExtensionPixelExtension)
     case installedCount(installed: Int, enabled: Int)
@@ -262,6 +263,8 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_churned_14d_macos"
         case .remotelyDisabled:
             return "web_extension_remotely_disabled_macos"
+        case .killSwitchDisabled:
+            return "web_extension_kill_switch_disabled_macos"
         case .installedCount:
             return "web_extension_installed_count_macos"
         case .toolbarClicked:
@@ -346,6 +349,8 @@ enum WebExtensionPixel: PixelKit.Event {
             return [Self.extensionParameterKey: pixelExtension.parameterValue, "source": source.rawValue]
         case .installedCount(let installed, let enabled):
             return ["count": Self.countBucket(installed), "enabled_count": Self.countBucket(enabled)]
+        case .killSwitchDisabled(let count):
+            return ["count": Self.countBucket(count)]
         case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
             return ["extension_version": version,
                     "missing_api_count": String(missingAPICount),
@@ -368,7 +373,7 @@ enum WebExtensionPixel: PixelKit.Event {
         case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
              .updateApplied, .updateInstallFailed,
              .cpmMessagingBreakage, .cpmMessagingBreakagePersistent, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
-             .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount,
+             .enabled, .disabled, .remotelyDisabled, .killSwitchDisabled, .retained14Days, .churned14Days, .installedCount,
              .getClicked, .detailsOpened, .publisherLinkClicked, .learnMoreClicked, .learnMoreRemoteDisableClicked, .toolbarClicked,
              .nativeMessagingBlocked, .nativeMessagingAlertShown, .nativeMessagingAlertLearnMoreClicked:
             return .none
@@ -528,6 +533,8 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .churned14Days(extension: pixelExtension)
         case .remotelyDisabled(let pixelExtension):
             pixel = .remotelyDisabled(extension: pixelExtension)
+        case .killSwitchDisabled(let count):
+            pixel = .killSwitchDisabled(count: count)
         case .installedCount(let installed, let enabled):
             pixel = .installedCount(installed: installed, enabled: enabled)
         case .nativeMessagingBlocked(let pixelExtension):
@@ -539,7 +546,7 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             frequency = .dailyAndCount
         case .bitwardenDailyActive, .apiCompatibilityGaps, .installedCount:
             frequency = .daily
-        case .enabled, .disabled, .remotelyDisabled, .cpmMessagingBreakage, .cpmMessagingBreakagePersistent:
+        case .enabled, .disabled, .remotelyDisabled, .killSwitchDisabled, .cpmMessagingBreakage, .cpmMessagingBreakagePersistent:
             frequency = .dailyAndCount
         case .defaultPasswordManagerSet, .retained14Days, .churned14Days, .nativeMessagingBlocked:
             frequency = .standard

@@ -35,6 +35,25 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
 
     // MARK: - App Permissions
 
+#if os(macOS)
+    func testClipboardReadIsIncludedInInstallConsentAndOptionalAccessCanBeRevoked() async throws {
+        let controller = makeController()
+        let required = try await makeContext(permissions: ["clipboardRead"])
+        try await controller.prepare(required)
+        XCTAssertEqual(prompter.installationRequests.last?.appPermissions, [.clipboardRead])
+        XCTAssertTrue(controller.isGranted(.clipboardRead, to: required.uniqueIdentifier))
+
+        let optional = try await makeContext(optionalPermissions: ["clipboardRead"])
+        try await controller.prepare(optional)
+        XCTAssertFalse(controller.isGranted(.clipboardRead, to: optional.uniqueIdentifier))
+        controller.recordUserGesture(for: optional)
+        let granted = await controller.requestAppPermissions([.clipboardRead], for: optional)
+        XCTAssertTrue(granted)
+        XCTAssertTrue(controller.revoke(.clipboardRead, from: optional))
+        XCTAssertFalse(controller.isGranted(.clipboardRead, to: optional.uniqueIdentifier))
+    }
+#endif
+
     func testAppPermissionRequestWithoutUserGestureDoesNotPrompt() async throws {
         let controller = makeController()
         let context = try await makeContext(optionalPermissions: ["privacy"])

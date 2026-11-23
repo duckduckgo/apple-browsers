@@ -30,19 +30,22 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     private let autoconsentMessageHandler: MacOSAutoconsentMessageHandlerDelegate
     private let darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding?
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
+    private let isAppleSurrogateRedirectionEnabled: @MainActor () -> Bool
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
-        eventHub: EventHubManaging
+        eventHub: EventHubManaging,
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         self.autoconsentMessageHandler = MacOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
         self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
+        self.isAppleSurrogateRedirectionEnabled = isAppleSurrogateRedirectionEnabled
     }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
@@ -52,7 +55,8 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                delegate: autoconsentMessageHandler
+                delegate: autoconsentMessageHandler,
+                isAppleSurrogateRedirectionEnabled: isAppleSurrogateRedirectionEnabled
             )]
         case .darkReader:
             guard let provider = darkReaderExcludedDomainsProvider else { return [] }

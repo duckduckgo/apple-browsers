@@ -1,0 +1,19 @@
+# tap_serp_watch_result.yaml
+# Opens the video's youtube.com/watch result on the SERP. The SERP also lists the
+# same video under youtube.com/live/, which Duck Player doesn't intercept.
+
+appId: com.duckduckgo.mobile.ios
+---
+
+# Wait for the results to render
+- extendedWaitUntil:
+    visible: ${output.serpWatchResultUrl}
+    timeout: 15000
+
+- waitForAnimationToEnd
+
+# `below` picks the closest match, so this taps the title of the watch result
+- tapOn:
+    text: ${output.videoTitle}.*
+    below:
+      text: ${output.serpWatchResultUrl}

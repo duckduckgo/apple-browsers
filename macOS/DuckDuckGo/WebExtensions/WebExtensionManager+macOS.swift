@@ -36,6 +36,11 @@ extension WebExtensionManager {
         NSApp.delegateTyped.webExtensionManager != nil
     }
 
+    /// Whether extension management is on for this user: launched for everyone, or for internal users only.
+    static func isExtensionsEnabled(featureFlagger: FeatureFlagger) -> Bool {
+        featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal)
+    }
+
     /// Installed with the manager, so `isRemotelyDisabled` is correct before the initial load finishes.
     @MainActor
     func installRemoteDisableEnforcer(configurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
@@ -48,7 +53,7 @@ extension WebExtensionManager {
             },
             disabledExtensionIDsDidChange: featureFlagger.updatesPublisher,
             isExtensionsEnabled: { [featureFlagger] in
-                featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal)
+                Self.isExtensionsEnabled(featureFlagger: featureFlagger)
             },
             pixelFiring: MacOSWebExtensionPixelFiring()
         )
@@ -200,10 +205,16 @@ enum WebExtensionManagerFactory {
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
             catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager,
+                                           isExtensionsEnabled: {
+                                               WebExtensionManager.isExtensionsEnabled(featureFlagger: featureFlagger)
+                                           },
                                            isAppStoreBuild: buildType.isAppStoreBuild,
                                            unsupportedExtensionIDs: unsupportedExtensionIDs),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
-            isUpdateDiscoveryEnabled: { (featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal)) && featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+            isUpdateDiscoveryEnabled: {
+                WebExtensionManager.isExtensionsEnabled(featureFlagger: featureFlagger)
+                    && featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery)
+            },
             updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             canApplyUpdatesWhileInactive: updateApplicationPolicy(for: manager),
             updateApplicationActivityUpdates: updateActivity,

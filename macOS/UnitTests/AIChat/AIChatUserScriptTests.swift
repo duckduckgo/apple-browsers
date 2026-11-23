@@ -24,6 +24,7 @@ import PrivacyConfig
 import UserScript
 import WebKit
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -85,7 +86,8 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testNativeConfigDispatcherAddsEnabledClientToolsAndPreservesOtherValues() async throws {
         let service = makeBrowserToolsService()
-        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
+        let pixels = PixelKitMock()
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service, pixelFiring: pixels)
         var baseConfig = AIChatNativeConfigValues.defaultValues
         baseConfig.supportsResponseStateReporting = true
         mockHandler.configResponse = baseConfig
@@ -105,11 +107,14 @@ final class AIChatUserScriptTests: XCTestCase {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         XCTAssertEqual(try encoder.encode(remainingConfig), try encoder.encode(baseConfig))
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.name), ["aichat_tools_enabled_macos"])
+        XCTAssertEqual(pixels.actualFireCalls.map(\.frequency), [.daily])
     }
 
     @MainActor func testNativeConfigOmitsClientToolsInFireAndOutsideChat() async throws {
         let service = makeBrowserToolsService()
-        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
+        let pixels = PixelKitMock()
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service, pixelFiring: pixels)
         var baseConfig = AIChatNativeConfigValues.defaultValues
         baseConfig.clientTools = try ClientToolsConfiguration(capabilities: [.listOpenTabs])
         mockHandler.configResponse = baseConfig
@@ -130,6 +135,7 @@ final class AIChatUserScriptTests: XCTestCase {
         webView.documentURL = nil
         let missingURLConfig = try await nativeConfig(from: webView)
         XCTAssertNil(missingURLConfig.clientTools)
+        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
     }
 
     @MainActor func testLocalModelIsOfferedOnlyToPagesThatGetItsPushes() async throws {

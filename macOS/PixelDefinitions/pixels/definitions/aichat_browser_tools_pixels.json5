@@ -47,6 +47,47 @@
             }
         ]
     },
+    "aichat_tools_enabled_macos": {
+        "description": "Fired at most once a day, when Duck.ai is offered browser tools: its page reads the native config, or the offered tools change while it is open. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_protocol_error_macos": {
+        "description": "Fired when Duck.ai sends a browser tool call native cannot read, or one for a capability this app version does not know. A known tool turned off remotely is not an error. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["exception"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "invalid_request = the call could not be read, unknown_capability = the capability name or version is not one this app knows",
+                "enum": ["invalid_request", "unknown_capability"]
+            },
+            {
+                "key": "tool",
+                "description": "The tool the call named, or unknown when it named none this app knows. The raw name is never sent",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks",
+                    "unknown"
+                ]
+            }
+        ]
+    },
     "aichat_tools_used_macos": {
         "description": "Fired at most once a day, on the first successful Duck.ai browser tool call of any tool.",
         "owners": ["jotaemepereira"],

@@ -88,7 +88,7 @@ Per sub-feature:
   Type the prompt in Search mode and switch after, which carries it over intact. Its text isn't readable through
   AX: read the prompt back from Duck.ai's page after submitting.
 - In a wiped container, Duck.ai shows the submitted prompt, then asks to accept its terms ("Continue") before it
-  answers. A proof that the prompt arrived needs no answer; one that reads an answer presses Continue first.
+  answers. Press Continue (Shared steps, "Duck.ai terms").
 - The prompt doesn't travel in the URL: the tab loads plain duck.ai and the app hands the prompt to the page. Prove
   the prompt arrived from the page's content (`find`), not from `url()`.
 - Duck.ai's first-use screens and accepted terms live in its web storage. A VM run starts with none; on this Mac a

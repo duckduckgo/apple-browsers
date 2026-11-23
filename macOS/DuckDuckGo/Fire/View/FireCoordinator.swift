@@ -240,7 +240,7 @@ extension FireCoordinator {
 
         let scopeQuery: DataModel.HistoryQueryKind
         switch mode {
-        case .fireButton, .mainMenuAll:
+        case .fireButton, .mainMenuAll, .duckAIOnboarding:
             scopeQuery = .rangeFilter(.all)
         case .historyView(let query):
             scopeQuery = query

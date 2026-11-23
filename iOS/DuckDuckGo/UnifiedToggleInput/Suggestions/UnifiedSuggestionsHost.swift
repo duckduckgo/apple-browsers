@@ -243,7 +243,7 @@ final class UnifiedSuggestionsHost {
         let enabled = surface != nil
         stopModeChangeAnimator()
         viewModel.cancelLogoModeChange()
-        viewModel.usesRedesignedNewTabPageLayout = enabled
+        viewModel.usesRedesignedNewTabPageLayout = surface?.swapsLogoOnModeChange == true
         viewModel.setEmbeddedEscapeHatchGeometry(nil)
         redesignedPresentationCancellable = nil
         if enabled {

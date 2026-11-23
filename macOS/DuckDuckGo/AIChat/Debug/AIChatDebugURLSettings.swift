@@ -25,8 +25,13 @@ struct AIChatDebugURLSettings: StoringKeys {
 
 extension KeyedStoring where Keys == AIChatDebugURLSettings {
 
+    // TEMP: preset dev server for test builds. Remove before merging.
+    var customURLOrTempDevURL: String? {
+        self.customURL ?? "http://euw-serp-dev-testing14.duck.ai/"
+    }
+
     var customURLHostname: String? {
-        if let customURL = self.customURL,
+        if let customURL = self.customURLOrTempDevURL,
             let url = URL(string: customURL) {
             return url.host
         }

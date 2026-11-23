@@ -172,7 +172,7 @@ final class MainWindowController: NSWindowController {
 
         selectedTab.startOnboarding()
         // Lock immediately to avoid flicker while the onboarding script loads.
-        userInteraction(prevented: true)
+        windowControllersManager?.setUserInteractionLock(.locked())
     }
 
     private func subscribeToResolutionChange() {
@@ -312,19 +312,10 @@ final class MainWindowController: NSWindowController {
             }
     }
 
-    func userInteraction(prevented: Bool, forBurning: Bool = false) {
-        mainViewController.userInteraction(prevented: prevented)
+    func userInteraction(lock: UserInteractionLock) {
+        mainViewController.userInteraction(lock: lock)
 
-        NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !prevented }
-
-        guard forBurning else { return }
-        if prevented {
-            window?.styleMask.remove(.closable)
-            mainViewController.view.makeMeFirstResponder()
-        } else {
-            window?.styleMask.update(with: .closable)
-            mainViewController.adjustFirstResponder()
-        }
+        NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !lock.isLocked }
     }
 
     private func moveTabBarView(toTitlebarView: Bool) {

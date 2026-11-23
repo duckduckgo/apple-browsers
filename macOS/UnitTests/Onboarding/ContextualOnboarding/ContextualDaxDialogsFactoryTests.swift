@@ -388,6 +388,38 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertEqual(reporter.shownDialog, dialogType)
     }
 
+    @MainActor
+    func testWhenSubscriptionUpsellAccepted_ThenAcceptanceIsMeasured() {
+        let dialog = DefaultContextualDaxDialogViewFactory.subscriptionUpsellDialog(delegate: delegate, pixelReporter: reporter, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {})
+        dialog.acceptAction()
+        XCTAssertTrue(reporter.subscriptionUpsellAcceptedCalled)
+        XCTAssertFalse(reporter.subscriptionUpsellDeclinedCalled)
+    }
+
+    @MainActor
+    func testWhenSubscriptionUpsellDeclined_ThenDeclineIsMeasured() {
+        let dialog = DefaultContextualDaxDialogViewFactory.subscriptionUpsellDialog(delegate: delegate, pixelReporter: reporter, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {})
+        dialog.declineAction()
+        XCTAssertTrue(reporter.subscriptionUpsellDeclinedCalled)
+        XCTAssertFalse(reporter.subscriptionUpsellAcceptedCalled)
+    }
+
+    @MainActor
+    func testWhenRebrandedSubscriptionUpsellAccepted_ThenAcceptanceIsMeasured() {
+        let dialog = RebrandedContextualDaxDialogsFactory.subscriptionUpsellDialog(delegate: delegate, pixelReporter: reporter, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {})
+        dialog.acceptAction()
+        XCTAssertTrue(reporter.subscriptionUpsellAcceptedCalled)
+        XCTAssertFalse(reporter.subscriptionUpsellDeclinedCalled)
+    }
+
+    @MainActor
+    func testWhenRebrandedSubscriptionUpsellDeclined_ThenDeclineIsMeasured() {
+        let dialog = RebrandedContextualDaxDialogsFactory.subscriptionUpsellDialog(delegate: delegate, pixelReporter: reporter, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {})
+        dialog.declineAction()
+        XCTAssertTrue(reporter.subscriptionUpsellDeclinedCalled)
+        XCTAssertFalse(reporter.subscriptionUpsellAcceptedCalled)
+    }
+
 }
 
 class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
@@ -398,6 +430,8 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var dismissedDialog: ContextualDialogType?
     var shownDialog: ContextualDialogType?
     var gotItPressedDialog: ContextualDialogType?
+    var subscriptionUpsellAcceptedCalled = false
+    var subscriptionUpsellDeclinedCalled = false
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -443,6 +477,14 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
     func measureGotItPressed(dialogType: ContextualDialogType) {
         gotItPressedDialog = dialogType
+    }
+
+    func measureSubscriptionUpsellAccepted() {
+        subscriptionUpsellAcceptedCalled = true
+    }
+
+    func measureSubscriptionUpsellDeclined() {
+        subscriptionUpsellDeclinedCalled = true
     }
 }
 extension CapturingOnboardingNavigationDelegate: OnboardingNavigationDelegate {}

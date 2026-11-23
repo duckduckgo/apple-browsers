@@ -61,9 +61,10 @@ class MainMenuTests: XCTestCase {
     @MainActor
     func testOnboardingMenuAvailabilityBeforeAndAfterOnboarding() throws {
         let appDelegate = try XCTUnwrap(Application.appDelegate)
-        let originalOnboardingFinished = OnboardingActionsManager.isOnboardingFinished
+        let windowControllersManager = appDelegate.windowControllersManager
+        let originalLock = windowControllersManager.userInteractionLock
         defer {
-            OnboardingActionsManager.isOnboardingFinished = originalOnboardingFinished
+            windowControllersManager.setUserInteractionLock(originalLock)
         }
 
         let actions = [
@@ -77,7 +78,7 @@ class MainMenuTests: XCTestCase {
             #selector(AppDelegate.openImportBrowserDataWindow(_:))
         ]
         for finished in [false, true] {
-            OnboardingActionsManager.isOnboardingFinished = finished
+            windowControllersManager.setUserInteractionLock(finished ? .unlocked : .locked())
             for action in actions {
                 let menuItem = NSMenuItem()
                 menuItem.action = action

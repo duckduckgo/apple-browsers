@@ -18,6 +18,8 @@ import urllib.parse
 import urllib.request
 import uuid
 
+NATIVE_LOG_LIMIT = 5000  # The debug server's maximum for /api/logs.
+
 
 class Failed(Exception):
     """The broker flow or an assertion failed."""
@@ -340,6 +342,7 @@ def workflow(context, inputs, client, token):
                       not history(opted, "Opt-out Started", result.get("profileQuery")))
         context.unverified("PIR opt-out", f"{broker['name']} opts out in its parent {broker.get('parent') or 'site'}; "
                            "run the opt-out against the parent broker")
+        context.result["reason"] = "Scan completed; the app skipped the opt-out because the broker opts out in its parent."
         return
     context.check("selected record emitted Opt-out Started", history(opted, "Opt-out Started", result.get("profileQuery")))
     if config["emailConfirmation"]:
@@ -617,7 +620,8 @@ def execute(args, runtime_factory=None):
                               "cancelled; submitted broker requests cannot be undone")
     except BrokerOutcome as outcome:
         context.result["checks"].append(dict(check=f"broker ended the job with a terminal error: {outcome}", passed=True))
-        context.result.update(status="pass", brokerError=str(outcome))
+        context.result.update(status="pass", brokerError=str(outcome),
+                              reason=f"The broker ended the job with {outcome}; later steps didn't run.")
     except Failed as error:
         context.result.update(status="fail", reason=str(error))
     except Exception as error:
@@ -632,8 +636,12 @@ def execute(args, runtime_factory=None):
             if runtime and args.command in ("run", "selftest", "scheduler"):
                 try:
                     if client and (args.command == "scheduler" or client.owned):
-                        logs = client.request("GET", "/api/logs?limit=1000")
+                        since = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(context.result["startedAt"]))
+                        logs = client.request("GET", f"/api/logs?since={urllib.parse.quote(since)}&limit={NATIVE_LOG_LIMIT}")
                         context.write("pir-native-logs.json", logs)
+                        if len(logs) >= NATIVE_LOG_LIMIT:
+                            context.result["evidenceErrors"].append(
+                                f"debug logs: reached the {NATIVE_LOG_LIMIT}-line limit; earlier lines of the attempt are missing")
                         if is_selftest:
                             context.check("native debug logs returned a JSON array", isinstance(logs, list))
                 except (Exception, KeyboardInterrupt) as error:

@@ -2308,7 +2308,6 @@ struct OnboardingTryVPNFollowUpTests {
         sut.onTryVPNFromOnboarding = { _ in }
 
         // WHEN
-        sut.measureScreenImpression()
         sut.tryVPNAction()
         sut.skipTryVPNAction()
 
@@ -2333,7 +2332,6 @@ struct OnboardingTryVPNFollowUpTests {
         await waitForIntroType(.vpnActivationDialog(content: .mock), in: sut)
 
         // WHEN
-        sut.measureScreenImpression()
         sut.vpnActivationContinueAction(isVPNOn: isVPNOn)
 
         // THEN
@@ -2371,7 +2369,6 @@ struct OnboardingTryVPNFollowUpTests {
         sut.skipTryVPNAction()
 
         // WHEN
-        sut.measureScreenImpression()
         sut.subscriptionReminderContinueAction()
 
         // THEN

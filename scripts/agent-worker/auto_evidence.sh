@@ -7,7 +7,7 @@
 # Usage: auto_evidence.sh <evidence root>
 # Prints the viewer URL of the most recently written decision log, if any. Everything else goes to stderr as
 # status words only, since this repo's logs are public
-# Env: AUTO_DIR, and the AZURE_* settings from azure_identity.sh
+# Env: AUTO_DIR, ARTIFACTS_CONTAINER, and the AZURE_* settings from azure_identity.sh
 
 set -uo pipefail
 root=$1
@@ -26,7 +26,7 @@ for dir in "$root"/*/; do
   if [[ $name =~ ^decisions-[0-9a-f]{64}\.tsv$ && -f $log ]]; then
     mtime=$(stat -c %Y "$log" 2> /dev/null || stat -f %m "$log")
     if (( mtime >= latest_mtime )); then
-      latest="https://artifacts.go.duckduckgo.com/view/auto/$uuid/$name" latest_mtime=$mtime
+      latest="https://artifacts.go.duckduckgo.com/view/$ARTIFACTS_CONTAINER/$uuid/$name" latest_mtime=$mtime
     fi
   fi
 done

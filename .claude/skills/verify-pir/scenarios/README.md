@@ -5,7 +5,7 @@ Each `##` section is one scenario. Its file and title, as `<file>: <title>`, nam
 - A batch is the scenarios selected by tag, run on one build. For example, a baseline batch runs every scenario tagged
   `baseline`, and later batches are compared against it.
 - Run a scenario once on each platform it lists, separately. A pass on one platform proves nothing for the other.
-- `setup` names fixtures from `fixtures.md`. `expect` is what the verifier checks against the run's evidence.
+- `setup` names fixtures from `fixtures.md`, and from `fixtures.local.md` when it exists. `expect` is what the verifier checks against the run's evidence.
 - A scenario tagged `irreversible` sends a real opt-out. It needs the user's approval.
 
 ## Running a scenario

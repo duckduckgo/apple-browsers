@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
-"""Prepare the pinned local PIR dashboard and DEBUG preferences. Requires Python 3.12+."""
+"""Point the DEBUG browser at a PIR dashboard and privacy configuration for assisted opt-out testing."""
 
 import argparse
-import hashlib
-import http.server
 import os
 from pathlib import Path
 import plistlib
 import subprocess
-import tarfile
 import time
 import urllib.parse
 
 
-FE_REVISION = "a0dd559389494beee5ff612fc1491176084f5b66"
-FE_RUN = "1834799"
-ARCHIVE_SHA256 = "d52e1adda0a56f9aa6de1deb1dde3ee249db28468173c1599ee7a3477dbc6ee6"
 CONFIG_SUITE = "HKE973VLUW.com.duckduckgo.macos.browser.app-configuration.debug"
 DBP_SUITE = "HKE973VLUW.com.duckduckgo.macos.browser.dbp.debug"
 LOCAL_VERSION_KEY = "macos.browser.data-broker-protection.LastLocalVersionChecked"
@@ -72,44 +66,20 @@ def url_archive(url):
     }, fmt=plistlib.FMT_BINARY)
 
 
-def prepare_artifact(cache):
-    archive = cache / "artifact/build-output.tar.gz"
-    if not archive.exists():
-        run("gh", "run", "download", FE_RUN, "--repo", "duckduckgo/static-pages",
-            "--name", "build-output", "--dir", str(archive.parent),
-            env={**os.environ, "GH_HOST": "dub.duckduckgo.com"})
-    with archive.open("rb") as file:
-        digest = hashlib.file_digest(file, "sha256").hexdigest()
-    if digest != ARCHIVE_SHA256:
-        raise ValueError(f"Unexpected FE archive SHA256: {digest}")
-    output = cache / "out"
-    marker = output / ".verified-artifact"
-    if not marker.exists() or marker.read_text() != digest:
-        output.mkdir(parents=True, exist_ok=True)
-        with tarfile.open(archive) as tar:
-            names = {member.name.removeprefix("./") for member in tar.getmembers()}
-            if not {"dbp.html", "dbp/dashboard.html"}.issubset(names):
-                raise ValueError("FE archive is missing the dashboard export")
-            if not any(name.startswith("_next/") for name in names):
-                raise ValueError("FE archive is missing Next assets")
-            if not any(name.startswith("static-assets/") for name in names):
-                raise ValueError("FE archive is missing static assets")
-            tar.extractall(output, filter="data")
-        marker.write_text(digest)
-    return output
+def https_url(value):
+    url = urllib.parse.urlsplit(value)
+    if url.scheme != "https" or not url.hostname:
+        raise argparse.ArgumentTypeError(f"not an HTTPS URL: {value}")
+    return value
 
 
 def prepare(args):
-    url = urllib.parse.urlsplit(args.privacy_config_url)
-    if url.scheme != "https" or not url.hostname:
-        raise ValueError("Provide an HTTPS privacy-configuration URL")
-    output = prepare_artifact(args.cache_dir)
     changes = [
         (group_domain(CONFIG_SUITE), "isInternalUser", True),
         (group_domain(CONFIG_SUITE), "CustomConfigurationURL.privacyConfiguration",
          url_archive(args.privacy_config_url)),
         (group_domain(DBP_SUITE), "urlType", "custom"),
-        (group_domain(DBP_SUITE), "customURLValue", f"http://127.0.0.1:{args.port}/dbp"),
+        (group_domain(DBP_SUITE), "customURLValue", args.dashboard_url),
         (group_domain(DBP_SUITE), "dbp.debug.testBrokerURLs", ["beenverified.com"]),
     ]
     if args.refresh_bundled_brokers:
@@ -117,6 +87,8 @@ def prepare(args):
         for bundle in ("com.duckduckgo.macos.browser.debug",
                        "com.duckduckgo.macos.DBP.backgroundAgent.debug"):
             changes.append((standard_domain(bundle), LOCAL_VERSION_KEY, None))
+    if any(isinstance(domain, Path) and not domain.parent.is_dir() for domain, _, _ in changes):
+        raise SystemExit("Launch and quit the DEBUG browser once before preparing")
     backup = []
     for domain, key, _ in changes:
         values = read_domain(domain)
@@ -124,7 +96,8 @@ def prepare(args):
         if key in values:
             previous["value"] = values[key]
         backup.append(previous)
-    backup_path = args.cache_dir / f"preferences-before-{time.time_ns()}.plist"
+    args.backup_dir.mkdir(parents=True, exist_ok=True)
+    backup_path = args.backup_dir / f"preferences-before-{time.time_ns()}.plist"
     backup_path.write_bytes(plistlib.dumps(backup))
     os.chmod(backup_path, 0o600)
     for domain, key, value in changes:
@@ -133,9 +106,8 @@ def prepare(args):
                 run("defaults", "delete", str(domain), key)
         else:
             write_value(domain, key, value)
-    print(f"FE revision: {FE_REVISION}\nExport: {output}\nPreference backup: {backup_path}")
-    print(f"Serve with: {Path(__file__)} serve --cache-dir {args.cache_dir} --port {args.port}")
-    print("Launch the DEBUG browser separately with -privacyConfigURL and the same URL.")
+    print(f"Dashboard: {args.dashboard_url}\nPreference backup: {backup_path}")
+    print("Launch the DEBUG browser with -privacyConfigURL and the same privacy-configuration URL.")
 
 
 def restore(args):
@@ -147,36 +119,16 @@ def restore(args):
     print("Restored only the preference keys recorded in the backup.")
 
 
-class ExportHandler(http.server.SimpleHTTPRequestHandler):
-    def send_head(self):
-        parsed = urllib.parse.urlsplit(self.path)
-        html_path = parsed.path.rstrip("/") + ".html"
-        if not Path(self.translate_path(parsed.path)).is_file() and Path(self.translate_path(html_path)).is_file():
-            self.path = urllib.parse.urlunsplit(("", "", html_path, parsed.query, ""))
-        return super().send_head()
-
-
-def serve(args):
-    output = args.cache_dir / "out"
-    if not (output / ".verified-artifact").exists():
-        raise ValueError("Run prepare before serving")
-    handler = lambda *a, **kw: ExportHandler(*a, directory=str(output), **kw)
-    with http.server.ThreadingHTTPServer(("127.0.0.1", args.port), handler) as server:
-        print(f"Serving http://127.0.0.1:{args.port}/dbp", flush=True)
-        server.serve_forever()
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    for command, action in (("prepare", prepare), ("serve", serve)):
-        subparser = subparsers.add_parser(command)
-        subparser.add_argument("--cache-dir", type=Path, default=Path("/tmp/pir-assisted-testing"))
-        subparser.add_argument("--port", type=int, default=8765)
-        subparser.set_defaults(action=action)
-        if command == "prepare":
-            subparser.add_argument("privacy_config_url")
-            subparser.add_argument("--refresh-bundled-brokers", action="store_true")
+    subparser = subparsers.add_parser("prepare")
+    subparser.add_argument("privacy_config_url", type=https_url)
+    subparser.add_argument("dashboard_url", type=https_url)
+    subparser.add_argument("--refresh-bundled-brokers", action="store_true")
+    subparser.add_argument("--backup-dir", type=Path,
+                           default=Path.home() / "Library/Application Support/pir-assisted-testing")
+    subparser.set_defaults(action=prepare)
     subparser = subparsers.add_parser("restore")
     subparser.add_argument("backup", type=Path)
     subparser.set_defaults(action=restore)

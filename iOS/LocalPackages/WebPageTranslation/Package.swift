@@ -32,7 +32,7 @@ let package = Package(
         .package(path: "../../../SharedPackages/DDGError"),
         .package(path: "../../../SharedPackages/LocalModels"),
         .package(path: "../../../SharedPackages/Persistence"),
-        .package(url: "https://github.com/duckduckgo/translate-kit", exact: "0.4.2"),
+        .package(url: "https://github.com/duckduckgo/translate-kit", exact: "0.5.0"),
     ],
     targets: [
         .target(

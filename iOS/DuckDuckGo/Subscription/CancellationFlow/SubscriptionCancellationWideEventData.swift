@@ -30,7 +30,7 @@ final class SubscriptionCancellationWideEventData: WideEventData {
         mobileMetaType: "ios-subscription-cancellation",
         // The macOS version of this wide event will be added later.
         desktopMetaType: "macos-subscription-cancellation",
-        version: "1.0.1"
+        version: "1.0.0"
     )
 
     static let cancellationTimeout: TimeInterval = .hours(24)
@@ -142,6 +142,7 @@ extension SubscriptionCancellationWideEventData {
         case cancelSubscription = "cancel_subscription"
         case manageSubscription = "manage_subscription"
         case managePaymentOrCancel = "manage_payment_or_cancel"
+        case changePlan = "change_plan"
     }
 
     enum StatusReason: String, Codable, CaseIterable {

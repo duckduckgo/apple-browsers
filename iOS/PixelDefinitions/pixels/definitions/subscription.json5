@@ -823,7 +823,7 @@
                 "key": "feature.data.ext.entry_point",
                 "type": "string",
                 "description": "The Subscription Settings button that started the journey",
-                "enum": ["cancel_subscription", "manage_subscription", "manage_payment_or_cancel"]
+                "enum": ["cancel_subscription", "manage_subscription", "manage_payment_or_cancel", "change_plan"]
             },
             {
                 "key": "feature.data.ext.purchase_platform",

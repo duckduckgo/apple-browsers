@@ -24,6 +24,12 @@ def load(path, default=None):
         return default
 
 
+def findings(text):
+    """Bullets under the review's "Findings" heading: problems outside what the scenario checks."""
+    match = re.search(r"^#+\s*Findings\s*$(.*?)(?=^#+\s|\Z)", text, re.MULTILINE | re.DOTALL)
+    return [line.strip()[2:].strip() for line in match.group(1).splitlines() if line.strip().startswith(("- ", "* "))] if match else []
+
+
 def review(folder):
     try:
         text = (folder / "verification.md").read_text()
@@ -60,15 +66,28 @@ def attempt(folder):
         return None
     status, text = review(folder)
     started, finished = result.get("startedAt"), result.get("finishedAt")
-    return dict(folder=folder, result=result, scenario=result.get("scenario") or "", platform=result.get("platform", ""),
-                command=result.get("command", ""), status=result.get("status", ""), review=status, verification=text,
+    broker = (load(folder / "pir-broker.json", {}) or {}).get("url", "") if result.get("command") == "run" else ""
+    return dict(folder=folder, result=result, scenario=result.get("scenario") or "", broker=broker, platform=result.get("platform", ""),
+                command=result.get("command", ""), status=result.get("status", ""), expected=result.get("expected", "pass"),
+                review=status, verification=text, findings=findings(text),
                 summary=summary(folder, result), started=started,
                 duration=(finished - started) if started and finished else None)
 
 
+def key(a):
+    """A scenario run is one scenario on one broker and platform; scenario titles repeat across brokers."""
+    return (a["scenario"], a["broker"], a["platform"])
+
+
 def attempts(batch):
-    found = [attempt(folder) for folder in sorted((batch / "evidence").glob("*")) if folder.is_dir()]
-    return sorted((a for a in found if a), key=lambda a: (a["platform"], a["scenario"] == "", a["scenario"], a["started"] or 0))
+    found = [a for a in (attempt(folder) for folder in sorted((batch / "evidence").glob("*")) if folder.is_dir()) if a]
+    latest = {}
+    for a in found:
+        if a["scenario"] and (key(a) not in latest or (a["started"] or 0) > (latest[key(a)]["started"] or 0)):
+            latest[key(a)] = a
+    for a in found:
+        a["retried"] = bool(a["scenario"]) and latest[key(a)] is not a
+    return sorted(found, key=lambda a: (a["platform"], a["scenario"] == "", a["scenario"], a["broker"], a["started"] or 0))
 
 
 def duration(seconds):
@@ -205,79 +224,132 @@ def details(a, report_dir):
 def compare(a, baseline):
     if not a["scenario"]:
         return "", ""
-    previous = baseline.get((a["scenario"], a["platform"]))
+    previous = baseline.get(key(a))
     if previous is None:
         return "no baseline", "new"
-    changed = [label for label, key in (("verdict", "status"), ("review", "review"), ("result", "summary"))
-               if a[key] != previous[key]]
+    changed = [label for label, field in (("verdict", "status"), ("review", "review"), ("result", "summary"))
+               if a[field] != previous[field]]
     text = f"{previous['status']} / {previous['review']}: {previous['summary']}"
     return text, ("changed: " + ", ".join(changed)) if changed else "same"
 
 
+PLATFORM_NAMES = {"ios": "iOS", "macos": "macOS"}
+ICONS = {
+    "ok": "<circle cx='8' cy='8' r='8'/><path d='M4.5 8.3l2.3 2.3 4.7-4.9' fill='none' stroke='#fff' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/>",
+    "fail": "<circle cx='8' cy='8' r='8'/><path d='M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4' stroke='#fff' stroke-width='1.9' stroke-linecap='round'/>",
+    "warn": "<path d='M8 1.2l7.2 13.3H.8z'/><path d='M8 6v4' stroke='#fff' stroke-width='1.8' stroke-linecap='round'/><circle cx='8' cy='12.3' r='1' fill='#fff'/>",
+    "none": "<path d='M4.5 8h7' stroke='currentColor' stroke-width='1.6' stroke-linecap='round'/>",
+}
+
+
+def scenario_parts(scenario):
+    """Scenarios are named "<scenario file>: <title>"; older attempts may carry the title alone."""
+    file, separator, title = scenario.partition(": ")
+    return (file, title) if separator else ("Other scenarios", scenario)
+
+
+def icon(state, label=""):
+    return (f"<svg class='icon {state}' viewBox='0 0 16 16' role='img' aria-label='{html.escape(label or state)}'>"
+            f"<title>{html.escape(label or state)}</title>{ICONS[state]}</svg>")
+
+
 def render(batch, rows, baseline=None):
+    """Shows scenario runs only; selftests and other attempts without a scenario are setup, not results."""
     e, report_dir = html.escape, batch
+    rows = [r for r in rows if r["scenario"]]
     by_baseline = {}
     for row in baseline or []:
-        if row["scenario"]:
-            by_baseline.setdefault((row["scenario"], row["platform"]), row)
+        if row["scenario"] and not row["retried"]:
+            by_baseline[key(row)] = row
     fingerprints = sorted({(r["result"].get("launch") or {}).get("sourceSHA256", "")[:12] for r in rows} - {""})
     starts = [r["started"] for r in rows if r["started"]]
-    items, panels, selected, attention, pending = [], [], None, [], []
-    PLATFORM_NAMES = {"ios": "iOS", "macos": "macOS"}
-    current_platform = None
+    panels, attention, pending = [], [], []
     for number, r in enumerate(rows, 1):
-        if r["platform"] != current_platform:
-            current_platform = r["platform"]
-            items.append(f"<tr class=group id=group-{e(current_platform)}><th colspan=4>"
-                         f"{e(PLATFORM_NAMES.get(current_platform, current_platform or 'Other'))}</th></tr>")
-        before, change = compare(r, by_baseline) if baseline is not None else ("", "")
-        reasons = ([r["status"]] if r["status"] != "pass" else []) + \
-                  ([r["review"]] if r["review"] not in ("confirmed", "not reviewed") else []) + \
-                  ([change] if change.startswith(("changed", "new")) else [])
-        if r["scenario"] and reasons:
-            attention.append((number, r, reasons))
-        if r["scenario"] and r["review"] == "not reviewed":
-            pending.append((number, r))
-        flagged = r["review"] in ("disputed", "unclear") or change.startswith("changed") or r["status"] != "pass"
-        if selected is None and flagged:
-            selected = number
-        title = r["scenario"] or f"({r['command']})"
-        badges = (f"<span class='badge {e(r['status'])}'>{e(r['status'])}</span>"
-                  f"<span class='badge {e(r['review'].replace(' ', '-'))}'>{e(r['review'])}</span>" +
-                  (f"<span class='badge changed'>{e(change)}</span>" if change.startswith(("changed", "new")) else ""))
-        items.append(f"<tr data-n={number} class='{'flag' if flagged else ''}'><td>{number}</td>"
-                     f"<td><b>{e(title)}</b><br>{badges}</td>"
-                     f"<td>{e(r['summary'])}</td><td class=muted>{e(duration(r['duration']))}</td></tr>")
-        compared = (f"<p><b>Baseline:</b> {e(before)} <b>{e(change)}</b></p>" if baseline is not None and r["scenario"] else "")
-        panels.append(f"<section class=attempt id=a{number}><h2>#{number} {e(title)} <span class=muted>{e(PLATFORM_NAMES.get(r['platform'], r['platform']))}</span></h2>"
-                      f"<p>{badges} <span class=muted>{e(duration(r['duration']))} · {e(r['folder'].name)}</span></p>"
-                      f"<p>{e(r['summary'])}</p>{compared}{details(r, report_dir)}</section>")
-    when = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(min(starts))) if starts else ""
-    scenario_runs = [r for r in rows if r["scenario"]]
-    extra = len(rows) - len(scenario_runs)
-    extra_note = f" Also {extra} attempt(s) without a scenario, listed last." if extra else ""
-    link = lambda n, r: f"<a href='#a{n}' data-go={n}>#{n} {e(r['scenario'])} ({e(PLATFORM_NAMES.get(r['platform'], r['platform']))})</a>"
-    platform_counts = " · ".join(
-        f"{e(PLATFORM_NAMES.get(p, p))}: {sum(r['platform'] == p for r in scenario_runs)} runs, "
-        f"{sum(r['platform'] == p for _, r, _ in attention)} need attention"
-        for p in sorted({r['platform'] for r in scenario_runs}))
-    pending_note = ("<p class=pending>Review pending: " + ", ".join(link(n, r) for n, r in pending) + "</p>") if pending else ""
+        r["number"] = number
+        before, change = compare(r, by_baseline) if baseline is not None and not r["retried"] else ("", "")
+        previous = by_baseline.get(key(r)) if baseline is not None else None
+        known = previous is not None and previous["review"] == r["review"] == "disputed"
+        as_expected = r["status"] == r["expected"]
+        worse = previous is not None and ((previous["status"] == previous["expected"] and not as_expected) or
+                                          (previous["review"] == "confirmed" and r["review"] in ("disputed", "unclear")))
+        # A changed result alone is drift for the comparison to explain, not a problem.
+        reasons = ([f"expected {r['expected']}, got {r['status']}"] if not as_expected else []) + \
+                  ([r["review"]] if r["review"] in ("disputed", "unclear") and not known else []) + \
+                  (["worse than the baseline"] if worse else [])
+        counted = bool(r["scenario"]) and not r["retried"]
+        if counted and reasons:
+            attention.append(r)
+        if counted and r["review"] == "not reviewed":
+            pending.append(r)
+        r["reasons"] = reasons
+        r["state"] = "fail" if reasons else ("warn" if r["review"] != "confirmed" or known or r["findings"] else "ok")
+        file, title = scenario_parts(r["scenario"]) if r["scenario"] else ("", f"({r['command']})")
+        r["file"], r["title"] = file, title
+        verdict = (f"expected {r['expected']}, got {r['status']}" if r["expected"] != "pass" or not as_expected else r["status"])
+        r["line"] = f"{verdict} · {r['review']}" + (f" · {len(r['findings'])} finding(s)" if r["findings"] else "")
+        found = ("<h4>Findings</h4><ul>" + "".join(f"<li>{e(f)}</li>" for f in r["findings"]) + "</ul>") if r["findings"] else ""
+        why = (f"<p class='why status'>{icon(r['state'])}<span>{e('; '.join(reasons))}</span></p>" if reasons else
+               f"<p class='why status'>{icon(r['state'])}<span>{'dispute already in the baseline' if known else e(r['line'])}</span></p>")
+        compared = (f"<p><b>Baseline:</b> {e(before)} <b>{e(change)}</b></p>" if baseline is not None and counted else "")
+        retried = "<p class=muted>A later attempt of this scenario replaces this one.</p>" if r["retried"] else ""
+        broker = f" · {e(r['broker'])}" if r["broker"] and r["broker"] != file else ""
+        panels.append(f"<section class=attempt id=a{number}><h2>#{number} {e(title)}{broker} "
+                      f"<span class=muted>{e(PLATFORM_NAMES.get(r['platform'], r['platform']))}</span></h2>"
+                      f"<p class=muted>{e(file)} · {e(r['line'])} · {e(duration(r['duration']))} · {e(r['folder'].name)}</p>"
+                      f"{why}{retried}<p>{e(r['summary'])}</p>{compared}{found}{details(r, report_dir)}</section>")
+
+    scenario_runs = [r for r in rows if r["scenario"] and not r["retried"]]
+    platforms = sorted({r["platform"] for r in scenario_runs}) or sorted({r["platform"] for r in rows})
+    sections = collections.OrderedDict()
+    for r in sorted(scenario_runs, key=lambda r: (r["file"] == "Other scenarios", r["file"], r["started"] or 0)):
+        sections.setdefault(r["file"], collections.OrderedDict()).setdefault((r["title"], r["broker"]), {})[r["platform"]] = r
+    retries = collections.defaultdict(list)
+    for r in rows:
+        if r["retried"]:
+            retries[key(r)].append(r)
+    worst = lambda states: "fail" if "fail" in states else ("warn" if "warn" in states else "ok")
+
+    def cell(r):
+        if r is None:
+            return f"<td class='cell empty'>{icon('none', 'not run')}</td>"
+        earlier = retries.get(key(r), [])
+        tries = (" <span class=muted>(" + ", ".join(f"<a href='#a{x['number']}' data-go={x['number']}>retry #{x['number']}</a>"
+                                                   for x in earlier) + ")</span>") if earlier else ""
+        return (f"<td class='cell {r['state']}' data-n={r['number']}><div class=status>{icon(r['state'], r['line'])}"
+                f"<div><b>#{r['number']}</b> {e(r['line'])}{tries}<div class=muted>{e(r['summary'])}</div></div></div></td>")
+
+    matrix = []
+    for file, scenarios in sections.items():
+        states = [r["state"] for platforms_runs in scenarios.values() for r in platforms_runs.values()]
+        matrix.append(f"<tr class=group><th colspan={len(platforms) + 1}><span class=status>{icon(worst(states))}{e(file)}</span></th></tr>")
+        for (title, broker), runs in scenarios.items():
+            label = e(title) + (f" <span class=muted>· {e(broker)}</span>" if broker and broker != file else "")
+            matrix.append(f"<tr><td class=title>{label}</td>" + "".join(cell(runs.get(p)) for p in platforms) + "</tr>")
+    head = "<tr><th>Scenario</th>" + "".join(f"<th>{e(PLATFORM_NAMES.get(p, p))}</th>" for p in platforms) + "</tr>"
+
+    link = lambda r: (f"<a href='#a{r['number']}' data-go={r['number']}>#{r['number']} {e(r['title'])}"
+                      f"{' · ' + e(r['broker']) if r['broker'] and r['broker'] != r['file'] else ''} "
+                      f"({e(PLATFORM_NAMES.get(r['platform'], r['platform']))})</a>")
+    tally = " · ".join(f"{e(PLATFORM_NAMES.get(p, p))} " + " ".join(
+        f"<span class=count>{icon(state)}{sum(r['platform'] == p and r['state'] == state for r in scenario_runs)}</span>"
+        for state in ("ok", "warn", "fail")) for p in platforms)
+    pending_note = ("<p class=pending>Review pending: " + ", ".join(link(r) for r in pending) + "</p>") if pending else ""
+    with_findings = [r for r in scenario_runs if r["findings"]]
+    findings_note = ("<div class=findings><div class=status>" + icon("warn") + "<b>Findings outside the scenarios</b></div><ul>" +
+                     "".join(f"<li>{link(r)}: {e(f)}</li>" for r in with_findings for f in r["findings"]) + "</ul></div>") if with_findings else ""
     if not scenario_runs:
-        banner = f"<div class='banner warn'><b>No scenario runs in this batch.</b>{e(extra_note)}</div>"
+        banner = f"<div class='banner warn'><div class=status>{icon('warn')}<b>No scenario runs in this batch.</b></div></div>"
     elif attention:
-        by_platform = collections.defaultdict(list)
-        for n, r, why in attention:
-            by_platform[r["platform"]].append(f"<li>{link(n, r)}: {e(', '.join(why))}</li>")
-        banner = (f"<div class='banner attn'><b>Needs attention: {len(attention)} of {len(scenario_runs)} scenario runs.</b>"
-                  f"{e(extra_note)}" + "".join(
-                      f"<p class=platform>{e(PLATFORM_NAMES.get(p, p))}</p><ul>{''.join(lines)}</ul>"
-                      for p, lines in sorted(by_platform.items())) + f"{pending_note}</div>")
+        banner = (f"<div class='banner attn'><div class=status>{icon('fail')}<b>Needs attention: {len(attention)} of {len(scenario_runs)} scenario runs.</b></div><ul>" +
+                  "".join(f"<li>{link(r)}: {e(', '.join(r['reasons']))}</li>" for r in attention) + f"</ul>{pending_note}</div>{findings_note}")
     elif pending:
-        banner = (f"<div class='banner warn'><b>No problems found, but {len(pending)} of {len(scenario_runs)} scenario runs "
-                  f"still need a review.</b>{e(extra_note)}{pending_note}</div>")
+        banner = (f"<div class='banner warn'><div class=status>{icon('warn')}<b>No problems found, but {len(pending)} of {len(scenario_runs)} scenario runs "
+                  f"still need a review.</b></div>{pending_note}</div>{findings_note}")
     else:
-        banner = (f"<div class='banner ok'><b>All {len(scenario_runs)} scenario runs passed and their reviews confirmed them"
-                  f"{' with no change from the baseline' if baseline is not None else ''}.</b>{e(extra_note)}</div>")
+        banner = (f"<div class='banner ok'><div class=status>{icon('ok')}<b>All {len(scenario_runs)} scenario runs got their expected verdict and were confirmed"
+                  f"{' with no change from the baseline' if baseline is not None else ''}.</b></div></div>{findings_note}")
+    first = attention[0]["number"] if attention else (scenario_runs[0]["number"] if scenario_runs else 1)
+    when = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(min(starts))) if starts else ""
     return f"""<!doctype html>
 <html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width, initial-scale=1">
 <meta name=color-scheme content="light dark">
@@ -286,53 +358,57 @@ def render(batch, rows, baseline=None):
 :root {{ color-scheme:light dark; --bg:#fff; --fg:#1d1d1f; --muted:#6e6e73; --line:#d2d2d7; --flag:#fff4e5; --sel:#e8f0fe; --pass:#1a7f37; --fail:#c62828; --warn:#b26a00; --link:#0b57d0; --code:#f2f2f7; }}
 @media (prefers-color-scheme: dark) {{ :root {{ --bg:#1c1c1e; --fg:#f2f2f7; --muted:#a1a1a6; --line:#3a3a3c; --flag:#3a2a10; --sel:#1f3a5f; --pass:#4caf50; --fail:#ef5350; --warn:#ffb74d; --link:#8ab4f8; --code:#2c2c2e; }} }}
 * {{ box-sizing:border-box; }} a {{ color:var(--link); }} code {{ background:var(--code); padding:0 3px; border-radius:3px; }}
-body {{ background:var(--bg); color:var(--fg); font:14px/1.45 -apple-system, system-ui, sans-serif; margin:0; }}
+body {{ background:var(--bg); color:var(--fg); font:14px/1.45 -apple-system, system-ui, sans-serif; margin:0; display:flex; flex-direction:column; height:100vh; }}
 header {{ padding:12px 16px; border-bottom:1px solid var(--line); }} header h1 {{ font-size:18px; margin:0 0 4px; }}
 .muted, header p {{ color:var(--muted); }} header p {{ margin:2px 0; font-size:13px; }}
-body {{ display:flex; flex-direction:column; height:100vh; }} main {{ display:grid; grid-template-columns:minmax(420px, 46%) 1fr; flex:1; min-height:0; }}
+main {{ display:grid; grid-template-columns:minmax(460px, 52%) 1fr; flex:1; min-height:0; }}
 #list {{ overflow:auto; border-right:1px solid var(--line); }} #detail {{ overflow:auto; padding:0 20px 40px; }}
 table {{ border-collapse:collapse; width:100%; }} th, td {{ border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }}
-#list tr[data-n] {{ cursor:pointer; }} #list tr.flag {{ background:var(--flag); }} #list tr.active {{ background:var(--sel); outline:2px solid var(--fg); outline-offset:-2px; }}
-table.attempts {{ table-layout:fixed; }} table.attempts td {{ overflow-wrap:anywhere; }}
+table.matrix {{ table-layout:fixed; }} table.matrix td {{ overflow-wrap:anywhere; }} table.matrix td.title {{ width:34%; font-weight:500; }}
+td.cell[data-n] {{ cursor:pointer; font-size:13px; }} td.cell.fail {{ background:var(--flag); }} td.cell.active {{ background:var(--sel); outline:2px solid var(--fg); outline-offset:-2px; }}
+tr.group th {{ position:sticky; top:0; background:var(--bg); font-size:15px; padding-top:14px; z-index:1; }}
+.icon {{ width:16px; height:16px; flex:none; }}
+.status {{ display:flex; align-items:flex-start; gap:8px; }} .status > .icon {{ margin-top:2px; }}
+th .status {{ align-items:center; }} th .status > .icon {{ margin-top:0; }}
+.count {{ display:inline-flex; align-items:center; gap:3px; margin-right:8px; vertical-align:middle; }}
+.icon.ok {{ fill:var(--pass); }} .icon.fail {{ fill:var(--fail); }} .icon.warn {{ fill:var(--warn); }} .icon.none {{ color:var(--muted); }}
 .banner {{ margin:10px 0 2px; padding:8px 12px; border-radius:8px; border:1px solid var(--line); }} .banner ul {{ margin:4px 0 0; padding-left:20px; max-height:9.5em; overflow:auto; }}
-.pending {{ color:var(--muted); margin:6px 0 0; }} .banner.warn {{ border-color:var(--warn); background:none; }} .banner.ok {{ border-color:var(--pass); }} .banner.ok b {{ color:var(--pass); }} .banner.attn {{ border-color:var(--fail); background:var(--flag); }} .banner.attn > b {{ color:var(--fail); }}
-tr.group th {{ position:sticky; top:0; background:var(--bg); font-size:15px; padding-top:12px; z-index:1; }}
-.banner p.platform {{ margin:6px 0 0; font-weight:600; }}
-.badge {{ display:inline-block; white-space:nowrap; font-size:11px; padding:0 6px; margin:2px 4px 0 0; border-radius:8px; border:1px solid var(--line); }}
-.badge.pass, .badge.confirmed {{ color:var(--pass); }} .badge.fail, .badge.disputed {{ color:var(--fail); }}
-.badge.inconclusive, .badge.changed {{ color:var(--warn); }} .pass {{ color:var(--pass); }} .fail {{ color:var(--fail); }}
+.pending {{ color:var(--muted); margin:6px 0 0; }} .banner.warn {{ border-color:var(--warn); }} .banner.ok {{ border-color:var(--pass); }}
+.banner.attn {{ border-color:var(--fail); background:var(--flag); }}
+.findings {{ margin:8px 0 2px; padding:8px 12px; border-radius:8px; border:1px solid var(--warn); }} .findings ul {{ margin:4px 0 0; padding-left:44px; max-height:7em; overflow:auto; }} .banner ul {{ padding-left:44px; }} .why {{ font-weight:500; }}
+.pass {{ color:var(--pass); }} .fail {{ color:var(--fail); }}
 .shots {{ display:flex; flex-wrap:wrap; gap:12px; }} .shots a {{ width:320px; color:var(--muted); font-size:12px; }}
 .shots img {{ width:100%; border:1px solid var(--line); }} .review {{ border-left:3px solid var(--line); padding-left:12px; }}
 pre {{ white-space:pre-wrap; }} .js .attempt {{ display:none; }} .js .attempt.active {{ display:block; }}
-@media (max-width: 800px) {{ body {{ display:block; height:auto; }} main {{ display:block; }} #list {{ max-height:45vh; }} }}
+@media (max-width: 800px) {{ body {{ display:block; height:auto; }} main {{ display:block; }} #list {{ max-height:50vh; }} }}
 </style></head><body>
 <header><h1>PIR batch {e(batch.name)}</h1>
-<p>Started {e(when)} · {platform_counts} · source {e(', '.join(fingerprints))}</p>
-<p>Select an attempt or use the arrow keys. Snapshots and records show real people's data. Keep this report local.</p>
+<p>Started {e(when)} · {tally} · source {e(', '.join(fingerprints))}</p>
+<p>Select a result or use the arrow keys. Snapshots and records show real people's data. Keep this report local.</p>
 {banner}</header>
-<main><div id=list><table class=attempts><colgroup><col style='width:2.5em'><col style='width:48%'><col><col style='width:5.5em'></colgroup>{''.join(items)}</table></div><div id=detail>{''.join(panels)}</div></main>
+<main><div id=list><table class=matrix>{head}{''.join(matrix)}</table></div><div id=detail>{''.join(panels)}</div></main>
 <script>
 document.documentElement.classList.add("js");
-const rows = [...document.querySelectorAll("#list tr[data-n]")];
+const cells = [...document.querySelectorAll("#list [data-n]")];
 function show(n) {{
-  rows.forEach(r => r.classList.toggle("active", r.dataset.n == n));
+  cells.forEach(c => c.classList.toggle("active", c.dataset.n == n));
   document.querySelectorAll(".attempt").forEach(p => p.classList.toggle("active", p.id == "a" + n));
   document.getElementById("detail").scrollTop = 0;
-  const row = rows.find(r => r.dataset.n == n); if (row) row.scrollIntoView({{block: "nearest"}});
+  const cell = cells.find(c => c.dataset.n == n); if (cell) cell.scrollIntoView({{block: "nearest"}});
   history.replaceState(null, "", "#a" + n);
 }}
-rows.forEach(r => r.addEventListener("click", () => show(r.dataset.n)));
+cells.forEach(c => c.addEventListener("click", event => {{ if (!event.target.closest("a")) show(c.dataset.n); }}));
 document.querySelectorAll("[data-go]").forEach(a => a.addEventListener("click", event => {{ event.preventDefault(); show(a.dataset.go); }}));
 document.addEventListener("keydown", event => {{
-  const current = rows.findIndex(r => r.classList.contains("active"));
-  const step = {{ArrowDown: 1, j: 1, ArrowUp: -1, k: -1}}[event.key];
+  const current = cells.findIndex(c => c.classList.contains("active"));
+  const step = {{ArrowDown: 1, ArrowRight: 1, j: 1, ArrowUp: -1, ArrowLeft: -1, k: -1}}[event.key];
   if (!step) return;
   event.preventDefault();
-  const next = rows[Math.min(rows.length - 1, Math.max(0, current + step))];
+  const next = cells[Math.min(cells.length - 1, Math.max(0, current + step))];
   if (next) show(next.dataset.n);
 }});
 const fromHash = location.hash.match(/^#a(\\d+)$/);
-show(fromHash ? fromHash[1] : {selected or 1});
+show(fromHash ? fromHash[1] : {first});
 </script>
 </body></html>
 """

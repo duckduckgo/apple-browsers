@@ -51,7 +51,6 @@ final class UserScripts: UserScriptsProvider {
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let pageContextUserScript: PageContextUserScript
     let internalFeedbackUserScript: InternalFeedbackUserScript
-    let duckAILoadingSkeletonUserScript: DuckAILoadingSkeletonUserScript?
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -88,15 +87,12 @@ final class UserScripts: UserScriptsProvider {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          sponsorBlockPreferences: SponsorBlockPreferences,
          sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = AppDependencyProvider.shared.sponsorBlockSegmentsProvider,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
         findInPageScript = findInPageImplementation == .legacy ? FindInPageUserScript() : nil
 
         selectionFrameScript = SelectionFrameUserScript()
-        duckAILoadingSkeletonUserScript = DuckAILoadingSkeletonUserScript(unifiedToggleInputFeature: unifiedToggleInputFeature,
-                                                                          debugSettings: aiChatDebugSettings)
         sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
                                                         preferences: sponsorBlockPreferences,
                                                         isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
@@ -107,31 +103,10 @@ final class UserScripts: UserScriptsProvider {
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
-        do {
-            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                                                                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue,
-                                                                                                   PrivacyFeature.aiChatBrowserTools.rawValue])
-            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                                                                        privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                                                                                        excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures
-                                                                                            + [PrivacyFeature.aiChatBrowserTools.rawValue])
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
-                                                                properties: sourceProvider.contentScopeProperties,
-                                                                scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
-                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue,
-                                                                                             SelectionFrameUserScript.featureName],
-                                                                privacyConfigurationJSONGenerator: configGenerator)
-            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
-                                                                        properties: sourceProvider.contentScopeProperties,
-                                                                        scriptContext: .contentScopeIsolated,
-                                                                        privacyConfigurationJSONGenerator: isolatedConfigGenerator)
-        } catch {
-            if let error = error as? UserScriptError {
-                error.fireLoadJSFailedPixelIfNeeded()
-            }
-            fatalError("Failed to initialize ContentScopeUserScript: \(error)")
-        }
+        contentScopeUserScript = ContentScopeUserScript(source: sourceProvider.contentScopeSource,
+                                                        allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue,
+                                                                                     TrackerProtectionSubfeature.featureNameValue, SelectionFrameUserScript.featureName])
+        contentScopeUserScriptIsolated = ContentScopeUserScript(source: sourceProvider.contentScopeIsolatedSource)
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
             webExtensionAvailability: sourceProvider.webExtensionAvailability,
@@ -159,15 +134,13 @@ final class UserScripts: UserScriptsProvider {
                                                           bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings,
-                                            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog,
-                                            localModelService: sourceProvider.aiChatLocalModel?.service,
-                                            localModelAccessPrompt: sourceProvider.aiChatLocalModel?.accessPrompt)
+                                            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))
 
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
-                .exact(hostname: "duck.ai"),
+                .exactOrSubdomain(hostname: "duck.ai"),
             ]
             if let debugHostname = aiChatDebugSettings.messagePolicyHostname {
                 originRules.append(.exact(hostname: debugHostname))
@@ -175,7 +148,6 @@ final class UserScripts: UserScriptsProvider {
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
                 originRules: originRules,
-                framePolicy: aiChatDebugSettings.messagePolicyHostname == nil ? .secureMainFrame : .mainFrame,
                 pixelFiring: DuckAiNativeStoragePixelAdapter()
             )
         } else {
@@ -239,8 +211,7 @@ final class UserScripts: UserScriptsProvider {
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,
-            contentScopeUserScriptIsolated,
-            duckAILoadingSkeletonUserScript
+            contentScopeUserScriptIsolated
         ]
 
         if !isAutoconsentExtensionAvailable {

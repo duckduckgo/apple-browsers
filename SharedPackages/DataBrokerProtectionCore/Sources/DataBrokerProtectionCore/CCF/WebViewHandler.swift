@@ -73,7 +73,11 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 contentBlocking: DBPWebViewContentBlocking? = nil,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
                 actionLogContext: PIRActionLogContext? = nil,
-                challengeEventHandler: ((String) -> Void)? = nil) throws {
+                challengeEventHandler: ((String) -> Void)? = nil) async throws {
+        let sources = try await DataBrokerUserScriptSources.make(privacyConfig: privacyConfig,
+                                                                 prefs: prefs,
+                                                                 surrogateTrackerData: contentBlocking?.surrogateTrackerData,
+                                                                 includesTrackerProtection: contentBlocking != nil)
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         self.customUserAgent = customUserAgent
@@ -89,12 +93,11 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             })
 #endif
         let configuration = WKWebViewConfiguration()
-        try configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig,
-                                                       prefs: prefs,
-                                                       delegate: delegate,
-                                                       executionConfig: executionConfig,
-                                                       shouldContinueActionHandler: shouldContinueActionHandler,
-                                                       contentBlocking: contentBlocking)
+        configuration.applyDataBrokerConfiguration(sources: sources,
+                                                   delegate: delegate,
+                                                   executionConfig: executionConfig,
+                                                   shouldContinueActionHandler: shouldContinueActionHandler,
+                                                   contentBlocking: contentBlocking)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
         configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
 

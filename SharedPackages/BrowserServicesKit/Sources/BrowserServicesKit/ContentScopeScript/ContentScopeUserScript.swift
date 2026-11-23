@@ -270,26 +270,32 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
     public var messageNames: [String] = []
     public weak var delegate: ContentScopeUserScriptDelegate?
 
-    public init(_ privacyConfigManager: PrivacyConfigurationManaging,
-                properties: ContentScopeProperties,
-                scriptContext: ContentScopeScriptContext = .contentScope(),
-                allowedNonisolatedFeatures: [String] = [],
-                privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
-    ) throws {
-        self.scriptContext = scriptContext
+    /// Makes a script that uses a source built once and shared, so making it costs next to nothing.
+    public init(source: ContentScopeScriptSource, allowedNonisolatedFeatures: [String] = []) {
+        self.sharedSource = source
+        self.scriptContext = source.scriptContext
         self.allowedNonisolatedFeatures = allowedNonisolatedFeatures
 
-        broker = UserScriptMessageBroker(context: scriptContext.messagingContextName, requiresRunInPageContentWorld: !scriptContext.isIsolated, debug: properties.debug)
+        broker = UserScriptMessageBroker(context: scriptContext.messagingContextName, requiresRunInPageContentWorld: !scriptContext.isIsolated, debug: source.isDebug)
 
         messageNames = [scriptContext.messagingContextName]
+    }
 
-        source = try ContentScopeUserScript.generateSource(
-            privacyConfigManager,
-            properties: properties,
-            scriptContext: scriptContext,
-            config: broker.messagingConfig(),
-            privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
-        )
+    /// Makes a script with its own source, generated on the calling thread.
+    ///
+    /// Generating the source takes milliseconds for the larger configurations. Prefer building a `ContentScopeScriptSource`
+    /// off the main thread with `ContentScopeScriptSource.make`, and sharing it where the inputs are the same.
+    public convenience init(_ privacyConfigManager: PrivacyConfigurationManaging,
+                            properties: ContentScopeProperties,
+                            scriptContext: ContentScopeScriptContext = .contentScope(),
+                            allowedNonisolatedFeatures: [String] = [],
+                            privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
+    ) throws {
+        let source = try ContentScopeScriptSource(privacyConfigurationManager: privacyConfigManager,
+                                                  properties: properties,
+                                                  scriptContext: scriptContext,
+                                                  privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator)
+        self.init(source: source, allowedNonisolatedFeatures: allowedNonisolatedFeatures)
     }
 
     private static func userUnprotectedDomains(from privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -297,44 +303,31 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         scriptContext.appliesUserUnprotectedDomains ? privacyConfigurationManager.privacyConfig.userUnprotectedDomains : []
     }
 
+    /// The bundle for `scriptContext` with the privacy configuration, user unprotected domains and properties filled in.
+    ///
+    /// The bundles read the configuration from `$CONTENT_SCOPE_JSON$`, a string literal they pass to `JSON.parse`.
+    /// Every frame compiles its own copy of the script. A large object literal compiles to code that builds each object,
+    /// which stays in memory for as long as the frame keeps any of the script's functions alive; a string literal is one constant.
     public static func generateSource(_ privacyConfigurationManager: PrivacyConfigurationManaging,
                                       properties: ContentScopeProperties,
                                       scriptContext: ContentScopeScriptContext,
-                                      config: WebkitMessagingConfig,
                                       privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
               let userUnprotectedDomains = try? JSONEncoder().encode(userUnprotectedDomains(from: privacyConfigurationManager, for: scriptContext)),
               let userUnprotectedDomainsString = String(data: userUnprotectedDomains, encoding: .utf8),
-              let jsonPropertiesString = try? encodeProperties(properties, scriptContext: scriptContext),
-              let jsonConfig = try? JSONEncoder().encode(config),
-              let jsonConfigString = String(data: jsonConfig, encoding: .utf8)
+              let jsonPropertiesString = try? encodeProperties(properties, scriptContext: scriptContext)
         else {
             return ""
         }
 
-        let replacements = try privacyConfigReplacements(for: privacyConfigJson).merging([
+        let replacements = [
+            "$CONTENT_SCOPE_JSON$": try javaScriptStringLiteral(for: privacyConfigJson),
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
-            "$USER_PREFERENCES$": jsonPropertiesString,
-            "$WEBKIT_MESSAGING_CONFIG$": jsonConfigString
-        ]) { current, _ in current }
-        return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: replacements)
-    }
-
-    /// The privacy config as script source, for both the current and the older placeholder.
-    ///
-    /// Every frame compiles its own copy of the script. A large object literal compiles to code that builds each object,
-    /// which stays in memory for as long as the frame keeps any of the script's functions alive; a string literal is one constant.
-    /// - `$CONTENT_SCOPE_JSON$`: a string literal holding the JSON, which the bundle passes to `JSON.parse`.
-    /// - `$CONTENT_SCOPE$`: bundles from before `$CONTENT_SCOPE_JSON$` expect an expression for the config object,
-    ///   so it is parsed here too. Remove once every bundled Content Scope Scripts version reads `$CONTENT_SCOPE_JSON$`.
-    static func privacyConfigReplacements(for json: String) throws -> [String: String] {
-        let literal = try javaScriptStringLiteral(for: json)
-        return [
-            "$CONTENT_SCOPE_JSON$": literal,
-            "$CONTENT_SCOPE$": "JSON.parse(\(literal))"
+            "$USER_PREFERENCES$": jsonPropertiesString
         ]
+        return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: replacements)
     }
 
     static func javaScriptStringLiteral(for string: String) throws -> String {
@@ -348,7 +341,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             .replacingOccurrences(of: "\u{2029}", with: "\\u2029", options: .literal)
     }
 
-    private static func encodeProperties(_ properties: ContentScopeProperties, scriptContext: ContentScopeScriptContext) throws -> String {
+    static func encodeProperties(_ properties: ContentScopeProperties, scriptContext: ContentScopeScriptContext) throws -> String {
         let jsonProperties = try JSONEncoder().encode(properties)
         var dict = try JSONSerialization.jsonObject(with: jsonProperties, options: []) as? [String: Any] ?? [:]
         dict["messagingContextName"] = scriptContext.messagingContextName
@@ -362,17 +355,33 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
             dict["trackerData"] = trackerDataDict
         }
 
-        let encoded = try JSONSerialization.data(withJSONObject: dict, options: [])
+        // Sorted, because dictionary order differs between instances and a source shared by every tab should not depend on it
+        let encoded = try JSONSerialization.data(withJSONObject: dict, options: [.sortedKeys])
         guard let result = String(data: encoded, encoding: .utf8) else {
             throw EncodingError.invalidValue(properties, EncodingError.Context(codingPath: [], debugDescription: "Failed to convert ContentScopeProperties to dictionary" ))
         }
         return result
     }
 
-    public let source: String
-    public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-    public let forMainFrameOnly: Bool = false
+    static let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    static let forMainFrameOnly = false
+
+    private let sharedSource: ContentScopeScriptSource
+    public var source: String { sharedSource.source }
+    public var injectionTime: WKUserScriptInjectionTime { Self.injectionTime }
+    public var forMainFrameOnly: Bool { Self.forMainFrameOnly }
     public var requiresRunInPageContentWorld: Bool { !self.scriptContext.isIsolated }
+
+    /// The `WKUserScript` shared by every script made from the same `ContentScopeScriptSource`.
+    public func makeWKUserScript() async -> WKUserScriptBox {
+        await sharedSource.userScript.makeWKUserScript()
+    }
+
+    /// The `WKUserScript` shared by every script made from the same `ContentScopeScriptSource`.
+    @MainActor
+    public func makeWKUserScriptSync() -> WKUserScript {
+        sharedSource.userScript.makeWKUserScriptSync()
+    }
 }
 
 @available(macOS 11.0, iOS 14.0, *)

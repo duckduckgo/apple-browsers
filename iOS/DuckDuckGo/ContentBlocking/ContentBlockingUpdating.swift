@@ -75,6 +75,7 @@ public final class ContentBlockingUpdating {
 
     @Published private var bufferedValue: NewContent?
     private var cancellable: AnyCancellable?
+    private let sourceProviderQueue = DispatchQueue(label: "com.duckduckgo.ContentBlockingUpdating.sourceProvider", qos: .userInitiated)
 
     private(set) var userContentBlockingAssets: AnyPublisher<NewContent, Never>!
 
@@ -84,6 +85,8 @@ public final class ContentBlockingUpdating {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
+            // Every tab shares these, so build them here, off the main thread, rather than when the first tab asks
+            sourceProvider.buildContentScopeSources()
             return NewContent(rulesUpdate: rulesUpdate,
                               sourceProvider: sourceProvider,
                               duckAiNativeStorageHandler: duckAiNativeStorageHandler,
@@ -117,8 +120,12 @@ public final class ContentBlockingUpdating {
                 .receive(on: DispatchQueue.main), combine)
             .combineLatest(onNotificationWithInitial(AppUserDefaults.Notifications.autofillDebugScriptToggled), combine)
             .combineLatest(onNotificationWithInitial(AppUserDefaults.Notifications.contentScopeDebugStateToggled), combine)
-            // DefaultScriptSourceProvider instance should be created once per rules/config change and fed into UserScripts initialization
+            // DefaultScriptSourceProvider instance should be created once per rules/config change and fed into UserScripts initialization.
+            // Most of these notifications are posted on the main thread, and building a provider enrolls experiments and
+            // generates the Content Scope Scripts sources, which takes tens of milliseconds, so build it in the background.
+            .receive(on: sourceProviderQueue)
             .map(makeValue)
+            .receive(on: DispatchQueue.main)
             .assign(to: \.bufferedValue, onWeaklyHeld: self) // buffer latest update value
 
         // 2. Publish ContentBlockingAssets(Rules+Scripts) for WKUserContentController per subscription

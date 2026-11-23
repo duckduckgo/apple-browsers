@@ -477,10 +477,13 @@ public extension String {
     /// Scans the string's UTF-8 bytes once, matching replacement keys at each position
     /// and copying non-matching regions in bulk. Replacement values are never re-expanded.
     /// Longer keys are matched first to avoid partial matches.
+    ///
+    /// Templates such as the Content Scope Scripts bundles are about 1 MB, so the scan for a key's first byte dominates.
+    /// When every key starts with the same byte (`$PLACEHOLDER$`), `memchr` finds the next candidate;
+    /// otherwise a 256-entry lookup table does.
     func applyingReplacements(_ replacements: [String: String]) -> String {
         guard !replacements.isEmpty else { return self }
 
-        let templateUTF8 = Array(self.utf8)
         let keys = replacements
             .filter { !$0.key.isEmpty }
             .map { (utf8: Array($0.key.utf8), value: Array($0.value.utf8)) }
@@ -489,43 +492,64 @@ public extension String {
         guard !keys.isEmpty else { return self }
 
         let firstBytes = Set(keys.map { $0.utf8[0] })
+        let sharedFirstByte = firstBytes.count == 1 ? firstBytes.first : nil
+        var isFirstByte = [Bool](repeating: false, count: 256)
+        for byte in firstBytes {
+            isFirstByte[Int(byte)] = true
+        }
 
-        // Output size can exceed template size when replacement values are
-        // larger than their placeholders; size the reservation accordingly
-        // to avoid repeated capacity doublings during append.
-        let estimatedSize = templateUTF8.count + keys.reduce(0) { $0 + $1.value.count }
-        var result = [UInt8]()
-        result.reserveCapacity(estimatedSize)
+        var template = self
+        let result = template.withUTF8 { template -> [UInt8] in
+            // Output size can exceed template size when replacement values are
+            // larger than their placeholders; size the reservation accordingly
+            // to avoid repeated capacity doublings during append.
+            var result = [UInt8]()
+            result.reserveCapacity(template.count + keys.reduce(0) { $0 + $1.value.count })
 
-        var i = 0
-        while i < templateUTF8.count {
-            if firstBytes.contains(templateUTF8[i]) {
-                var matched = false
-                for entry in keys {
-                    let end = i + entry.utf8.count
-                    if end <= templateUTF8.count,
-                       templateUTF8[i..<end].elementsEqual(entry.utf8) {
+            isFirstByte.withUnsafeBufferPointer { isFirstByte in
+                var i = 0
+                while i < template.count {
+                    let candidate = Self.indexOfFirstByte(in: template, from: i, sharedFirstByte: sharedFirstByte, isFirstByte: isFirstByte)
+                    result.append(contentsOf: UnsafeBufferPointer(rebasing: template[i..<candidate]))
+                    i = candidate
+                    guard i < template.count else { break }
+
+                    if let entry = keys.first(where: { Self.template(template, at: i, startsWith: $0.utf8) }) {
                         result.append(contentsOf: entry.value)
-                        i = end
-                        matched = true
-                        break
+                        i += entry.utf8.count
+                    } else {
+                        result.append(template[i])
+                        i += 1
                     }
                 }
-                if !matched {
-                    result.append(templateUTF8[i])
-                    i += 1
-                }
-            } else {
-                let start = i
-                while i < templateUTF8.count && !firstBytes.contains(templateUTF8[i]) {
-                    i += 1
-                }
-                result.append(contentsOf: templateUTF8[start..<i])
             }
+            return result
         }
 
         // swiftlint:disable:next optional_data_string_conversion
         return String(decoding: result, as: UTF8.self)
+    }
+
+    /// The index of the next byte at or after `start` that begins a key, or `template.count` if there is none.
+    private static func indexOfFirstByte(in template: UnsafeBufferPointer<UInt8>,
+                                         from start: Int,
+                                         sharedFirstByte: UInt8?,
+                                         isFirstByte: UnsafeBufferPointer<Bool>) -> Int {
+        guard let base = template.baseAddress else { return template.count }
+        if let sharedFirstByte {
+            guard let match = memchr(base + start, Int32(sharedFirstByte), template.count - start) else { return template.count }
+            return base.distance(to: match.assumingMemoryBound(to: UInt8.self))
+        }
+        var index = start
+        while index < template.count && !isFirstByte[Int(template[index])] {
+            index += 1
+        }
+        return index
+    }
+
+    private static func template(_ template: UnsafeBufferPointer<UInt8>, at index: Int, startsWith key: [UInt8]) -> Bool {
+        guard let base = template.baseAddress, index + key.count <= template.count else { return false }
+        return memcmp(base + index, key, key.count) == 0
     }
 
     /// Prevents typographic widows by replacing the last space with a non-breaking space.

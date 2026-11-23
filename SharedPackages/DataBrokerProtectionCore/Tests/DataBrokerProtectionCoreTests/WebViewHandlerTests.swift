@@ -30,7 +30,7 @@ final class WebViewHandlerTests: XCTestCase {
     @MainActor
     func testWhenWaitingForWebViewLoadAndTaskIsCancelled_thenThrowsCancelled() async throws {
         // Given
-        let sut = try makeWebViewHandler()
+        let sut = try await makeWebViewHandler()
         let loadTask = Task { @MainActor in
             try await sut.waitForWebViewLoad()
         }
@@ -53,7 +53,7 @@ final class WebViewHandlerTests: XCTestCase {
     @MainActor
     func testWhenWebContentProcessTerminatesWhileWaitingForWebViewLoad_thenThrowsExplicitError() async throws {
         // Given
-        let sut = try makeWebViewHandler()
+        let sut = try await makeWebViewHandler()
         let loadTask = Task { @MainActor in
             try await sut.waitForWebViewLoad()
         }
@@ -76,7 +76,7 @@ final class WebViewHandlerTests: XCTestCase {
     @MainActor
     func testWhenCustomUserAgentIsProvided_thenWebViewUsesIt() async throws {
         let customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:142.0) Gecko/20100101 Firefox/142.0"
-        let sut = try makeWebViewHandler(customUserAgent: customUserAgent)
+        let sut = try await makeWebViewHandler(customUserAgent: customUserAgent)
 
         await sut.initializeWebView(showWebView: false)
 
@@ -85,7 +85,7 @@ final class WebViewHandlerTests: XCTestCase {
 
     @MainActor
     func testWhenCustomUserAgentIsNil_thenWebViewKeepsDefaultUserAgent() async throws {
-        let sut = try makeWebViewHandler()
+        let sut = try await makeWebViewHandler()
 
         await sut.initializeWebView(showWebView: false)
 
@@ -97,8 +97,8 @@ final class WebViewHandlerTests: XCTestCase {
     private func makeWebViewHandler(
         customUserAgent: String? = nil,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil
-    ) throws -> DataBrokerProtectionWebViewHandler {
-        try DataBrokerProtectionWebViewHandler(
+    ) async throws -> DataBrokerProtectionWebViewHandler {
+        try await DataBrokerProtectionWebViewHandler(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: .mock,
             delegate: MockWebViewCommunicationDelegate(),

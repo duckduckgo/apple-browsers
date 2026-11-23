@@ -45,11 +45,10 @@ final class UserContentUpdating {
     struct NewContent: UserContentControllerNewContent {
         let rulesUpdate: ContentBlockerRulesManager.UpdateEvent
         let sourceProvider: ScriptSourceProviding
-        let contentScopePreferences: ContentScopePreferences
 
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [contentScopePreferences] sourceProvider in
-                UserScripts(with: sourceProvider, contentScopePreferences: contentScopePreferences)
+            { sourceProvider in
+                UserScripts(with: sourceProvider)
             }
         }
     }
@@ -159,6 +158,7 @@ final class UserContentUpdating {
                                                           fireproofDomains: fireproofDomains,
                                                           fireCoordinator: fireCoordinator,
                                                           autoconsentManagement: autoconsentManagement,
+                                                          contentScopePreferences: contentScopePreferences,
                                                           syncServiceProvider: syncServiceProvider,
                                                           syncErrorHandler: syncErrorHandler,
                                                           aiChatBonusOffer: aiChatBonusOffer,
@@ -166,7 +166,9 @@ final class UserContentUpdating {
                                                           dockCustomization: dockCustomization,
                                                           reinstallUserDetection: reinstallUserDetection,
                                                           installDateProvider: installDateProvider)
-                return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
+                // Every tab shares these, so build them here rather than when the first tab asks
+                sourceProvider.buildContentScopeSources()
+                return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
             }
             return await newContentTask.value
         }
@@ -177,6 +179,9 @@ final class UserContentUpdating {
             // regenerate UserScripts on gpcEnabled preference updated
                 .combineLatest(webTrackingProtectionPreferences.$isGPCEnabled)
                 .map { $0.0 } // drop gpcEnabled value: $0.1
+            // and when the user becomes internal, which Content Scope Scripts read from the per-update properties
+                .combineLatest(featureFlagger.internalUserDecider.isInternalUserPublisher.removeDuplicates())
+                .map { $0.0 } // drop isInternalUser value: $0.1
                 .combineLatest(onNotificationWithInitial(.autofillUserSettingsDidChange), combine)
                 .combineLatest(onNotificationWithInitial(.autofillScriptDebugSettingsDidChange), combine)
                 .combineLatest(onNotificationWithInitial(.contentScopeDebugStateDidChange), combine)

@@ -122,7 +122,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
         let recorder = AIChatClearingTimingsRecorder()
         let script: AIChatDataClearingUserScript
         do {
-            script = try setupWebView()
+            script = try await setupWebView()
         } catch {
             return (.failure(error), recorder.timings)
         }
@@ -143,7 +143,7 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
     }
 
     @MainActor
-    private func setupWebView() throws -> AIChatDataClearingUserScript {
+    private func setupWebView() async throws -> AIChatDataClearingUserScript {
         let aiChatDataClearing = AIChatDataClearingUserScript()
 
         let features = ContentScopeFeatureToggles(
@@ -171,13 +171,15 @@ public final class WebViewAIChatJSDataCleaner: AIChatJSDataCleaning {
             featureToggles: features
         )
 
-        let contentScope = try ContentScopeUserScript(
-            privacyConfig,
+        // The script embeds the whole privacy configuration, so generate it off the main thread
+        let contentScopeSource = try await ContentScopeScriptSource.make(
+            privacyConfigurationManager: privacyConfig,
             properties: contentScopeProperties,
             scriptContext: .aiChatDataClearing,
-            allowedNonisolatedFeatures: [aiChatDataClearing.featureName],
             privacyConfigurationJSONGenerator: nil
         )
+        let contentScope = ContentScopeUserScript(source: contentScopeSource,
+                                                  allowedNonisolatedFeatures: [aiChatDataClearing.featureName])
         contentScope.registerSubfeature(delegate: aiChatDataClearing)
 
         let userContentController = WKUserContentController()

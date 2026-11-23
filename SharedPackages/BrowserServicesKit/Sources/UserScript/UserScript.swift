@@ -20,6 +20,48 @@ import Foundation
 import WebKit
 import CryptoKit
 
+/// Wraps user script sources for injection and turns them into `WKUserScript`s.
+enum UserScriptSourcePreparation {
+
+    nonisolated static func prepare(_ source: String) -> String {
+        let hash = SHA256.hash(data: Data(source.utf8)).hashValue
+
+        // This prevents the script being executed twice which appears to be a WKWebKit issue for about:blank frames when the location changes
+        return """
+        (() => {
+            if (window.navigator._duckduckgoloader_ && window.navigator._duckduckgoloader_.includes('\(hash)')) {return}
+            \(source)
+            window.navigator._duckduckgoloader_ = window.navigator._duckduckgoloader_ || [];
+            window.navigator._duckduckgoloader_.push('\(hash)')
+        })()
+        """
+    }
+
+    @available(macOS 11.0, iOS 14.0, *)
+    @MainActor
+    static func contentWorld(_ requiresRunInPageContentWorld: Bool) -> WKContentWorld {
+        if requiresRunInPageContentWorld {
+            return .page
+        }
+        return .defaultClient
+    }
+
+    @MainActor
+    static func makeWKUserScript(from preparedSource: String,
+                                 injectionTime: WKUserScriptInjectionTime,
+                                 forMainFrameOnly: Bool,
+                                 requiresRunInPageContentWorld: Bool) -> WKUserScriptBox {
+        if #available(macOS 11.0, iOS 14.0, *) {
+            return .init(wkUserScript: WKUserScript(source: preparedSource,
+                                                    injectionTime: injectionTime,
+                                                    forMainFrameOnly: forMainFrameOnly,
+                                                    in: contentWorld(requiresRunInPageContentWorld)))
+        } else {
+            return .init(wkUserScript: WKUserScript(source: preparedSource, injectionTime: injectionTime, forMainFrameOnly: forMainFrameOnly))
+        }
+    }
+}
+
 public struct WKUserScriptBox: @unchecked Sendable {
     public let wkUserScript: WKUserScript
 }
@@ -33,6 +75,11 @@ public protocol UserScript: WKScriptMessageHandler {
     var messageNames: [String] { get }
 
     func makeWKUserScript() async -> WKUserScriptBox
+
+    /// A requirement, not only an extension method, so a script that shares its `WKUserScript` is asked for it
+    /// even when the caller holds a `UserScript` existential.
+    @MainActor
+    func makeWKUserScriptSync() -> WKUserScript
 
 }
 
@@ -49,10 +96,7 @@ extension UserScript {
     @available(macOS 11.0, iOS 14.0, *)
     @MainActor
     static func getContentWorld(_ requiresRunInPageContentWorld: Bool) -> WKContentWorld {
-        if requiresRunInPageContentWorld {
-            return .page
-        }
-        return .defaultClient
+        UserScriptSourcePreparation.contentWorld(requiresRunInPageContentWorld)
     }
 
     @available(macOS 11.0, iOS 14.0, *)
@@ -73,17 +117,7 @@ extension UserScript {
     }
 
     fileprivate nonisolated static func prepareScriptSource(from source: String) -> String {
-        let hash = SHA256.hash(data: Data(source.utf8)).hashValue
-
-        // This prevents the script being executed twice which appears to be a WKWebKit issue for about:blank frames when the location changes
-        return """
-        (() => {
-            if (window.navigator._duckduckgoloader_ && window.navigator._duckduckgoloader_.includes('\(hash)')) {return}
-            \(source)
-            window.navigator._duckduckgoloader_ = window.navigator._duckduckgoloader_ || [];
-            window.navigator._duckduckgoloader_.push('\(hash)')
-        })()
-        """
+        UserScriptSourcePreparation.prepare(source)
     }
 
     @MainActor
@@ -91,15 +125,10 @@ extension UserScript {
                                              injectionTime: WKUserScriptInjectionTime,
                                              forMainFrameOnly: Bool,
                                              requiresRunInPageContentWorld: Bool = false) -> WKUserScriptBox {
-        if #available(macOS 11.0, iOS 14.0, *) {
-            let contentWorld = getContentWorld(requiresRunInPageContentWorld)
-            return .init(wkUserScript: WKUserScript(source: source,
-                                                    injectionTime: injectionTime,
-                                                    forMainFrameOnly: forMainFrameOnly,
-                                                    in: contentWorld))
-        } else {
-            return .init(wkUserScript: WKUserScript(source: source, injectionTime: injectionTime, forMainFrameOnly: forMainFrameOnly))
-        }
+        UserScriptSourcePreparation.makeWKUserScript(from: source,
+                                                     injectionTime: injectionTime,
+                                                     forMainFrameOnly: forMainFrameOnly,
+                                                     requiresRunInPageContentWorld: requiresRunInPageContentWorld)
     }
 
     public func makeWKUserScript() async -> WKUserScriptBox {

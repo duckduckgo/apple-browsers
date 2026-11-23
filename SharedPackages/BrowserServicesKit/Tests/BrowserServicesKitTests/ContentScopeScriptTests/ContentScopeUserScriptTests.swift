@@ -80,7 +80,6 @@ final class ContentScopeUserScriptTests: XCTestCase {
             mockPrivacyConfigurationManager,
             properties: properties,
             scriptContext: .contentScope(),
-            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: configGenerator
         )
 
@@ -97,7 +96,6 @@ final class ContentScopeUserScriptTests: XCTestCase {
             mockPrivacyConfigurationManager,
             properties: properties,
             scriptContext: .contentScope(),
-            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: configGenerator
         )
 
@@ -175,7 +173,6 @@ final class ContentScopeUserScriptTests: XCTestCase {
             mockPrivacyConfigurationManager,
             properties: properties,
             scriptContext: .contentScope(),
-            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: configGenerator
         )
 
@@ -199,7 +196,6 @@ final class ContentScopeUserScriptTests: XCTestCase {
             manager,
             properties: properties,
             scriptContext: scriptContext,
-            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: nil
         )
     }
@@ -340,7 +336,6 @@ final class ContentScopeUserScriptTests: XCTestCase {
             mockPrivacyConfigurationManager,
             properties: properties,
             scriptContext: .contentScope(surrogateTrackerData: trackerData),
-            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: nil
         )
 
@@ -353,7 +348,6 @@ final class ContentScopeUserScriptTests: XCTestCase {
             mockPrivacyConfigurationManager,
             properties: properties,
             scriptContext: .contentScope(),
-            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: nil
         )
 
@@ -365,7 +359,6 @@ final class ContentScopeUserScriptTests: XCTestCase {
             mockPrivacyConfigurationManager,
             properties: properties,
             scriptContext: .contentScopeIsolated,
-            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: nil
         )
 
@@ -476,7 +469,6 @@ final class ContentScopeUserScriptTests: XCTestCase {
             mockPrivacyConfigurationManager,
             properties: properties,
             scriptContext: .contentScope(),
-            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
             privacyConfigurationJSONGenerator: configGenerator
         )
 
@@ -484,37 +476,27 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertTrue(source.contains(#"JSON.parse("{\"features\":{\"gpc\":{\"state\":\"enabled\"}}}")"#))
     }
 
-    func testPrivacyConfigReplacementsRoundTripCharactersThatNeedEscaping() throws {
+    func testConfigStringLiteralRoundTripsCharactersThatNeedEscaping() throws {
         // GIVEN
         let json = #"{"quote":"\"","backslash":"\\","script":"</script>","separators":"\#u{2028}\#u{2029}","#
             + #""combined":"\#u{2028}\#u{0301}","nearSeparator":"\#u{2027}\#u{202A}\#u{20AC}","emoji":"🦆","slash":"a/b"}"#
         let expected = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? NSDictionary
 
         // WHEN
-        let replacements = try ContentScopeUserScript.privacyConfigReplacements(for: json)
-        let literal = try XCTUnwrap(replacements["$CONTENT_SCOPE_JSON$"])
-        let olderPlaceholder = try XCTUnwrap(replacements["$CONTENT_SCOPE$"])
+        let literal = try ContentScopeUserScript.javaScriptStringLiteral(for: json)
 
         // THEN
         XCTAssertFalse(literal.contains("\u{2028}"))
         XCTAssertFalse(literal.contains("\u{2029}"))
-        // Bundles that read $CONTENT_SCOPE_JSON$ parse it themselves; older bundles read $CONTENT_SCOPE$ as an expression
-        for source in ["JSON.parse(\(literal))", olderPlaceholder] {
-            let context = try XCTUnwrap(JSContext())
-            let parsed = context.evaluateScript("JSON.stringify(\(source))")?.toString()
-            XCTAssertNil(context.exception)
-            let actual = try JSONSerialization.jsonObject(with: Data(try XCTUnwrap(parsed).utf8)) as? NSDictionary
-            XCTAssertEqual(actual, expected)
-        }
+        let context = try XCTUnwrap(JSContext())
+        let parsed = context.evaluateScript("JSON.stringify(JSON.parse(\(literal)))")?.toString()
+        XCTAssertNil(context.exception)
+        let actual = try JSONSerialization.jsonObject(with: Data(try XCTUnwrap(parsed).utf8)) as? NSDictionary
+        XCTAssertEqual(actual, expected)
     }
 
-    func testWhenOlderPlaceholderIsReplacedThenItParsesTheSameStringLiteral() throws {
-        // WHEN
-        let replacements = try ContentScopeUserScript.privacyConfigReplacements(for: #"{"features":{}}"#)
-
-        // THEN
-        XCTAssertEqual(replacements["$CONTENT_SCOPE_JSON$"], #""{\"features\":{}}""#)
-        XCTAssertEqual(replacements["$CONTENT_SCOPE$"], #"JSON.parse("{\"features\":{}}")"#)
+    func testWhenConfigIsEncodedThenItIsAJSONStringLiteral() throws {
+        XCTAssertEqual(try ContentScopeUserScript.javaScriptStringLiteral(for: #"{"features":{}}"#), #""{\"features\":{}}""#)
     }
 }
 

@@ -426,7 +426,7 @@ final class ChromeWebStoreUpdateCoordinatorTests: XCTestCase {
             }
             return .init(outcome: .failure(.cancelled), retryNotBefore: nil)
         })
-        weak var weakCoordinator = coordinator
+        weak let weakCoordinator = coordinator
         let caller = Task { [weak coordinator] in await coordinator?.checkForUpdatesNow() }
         await fulfillment(of: [entered], timeout: 1)
         await coordinator?.stop()
@@ -438,7 +438,7 @@ final class ChromeWebStoreUpdateCoordinatorTests: XCTestCase {
 
     func testStopReleasesStoredProviderCaptures() async {
         var token: CallbackToken? = CallbackToken()
-        weak var weakToken = token
+        weak let weakToken = token
         let coordinator = coordinator(identifiers: { [token] in
             _ = token
             return []

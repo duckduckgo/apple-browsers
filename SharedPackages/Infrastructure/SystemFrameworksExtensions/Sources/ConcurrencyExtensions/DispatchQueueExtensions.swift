@@ -34,9 +34,7 @@ public extension DispatchQueue {
         if Thread.isMainThread {
             MainActor.assumeMainThread(workItem)
         } else {
-            DispatchQueue.main.async {
-                workItem()
-            }
+            DispatchQueue.main.async(execute: workItem)
         }
     }
 

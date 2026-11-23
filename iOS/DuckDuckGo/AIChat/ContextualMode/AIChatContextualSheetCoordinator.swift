@@ -41,12 +41,17 @@ private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeaturePro
     let isAvailable: Bool
     let isToggleHiddenOnDuckAITab: Bool
     let isAttachmentPasteEnabled: Bool
+    let isFullTabChatInputAvailable: Bool
 }
 
 /// Delegate protocol for coordinating actions that require interaction with the browser.
 protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to load a URL externally.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL)
+
+    /// Like `didRequestToLoad`, with the sheet still presented: the new tab closes it out of sight as it opens.
+    /// Returns false when the new tab can't, so the sheet closes as usual.
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoadClosingSheet url: URL) -> Bool
 
     /// Opens duck.ai in a new tab: the hand-off passes this chat's URL, Open Duck.ai a chat-ID-free one.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
@@ -108,6 +113,7 @@ final class AIChatContextualSheetCoordinator {
     private let usageContextProvider: UsageContextProviding
     private let debugSettings: AIChatDebugSettingsHandling
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring
     private let isFireTab: Bool
     private let tabAttachmentSource: MultiTabAttachmentSource?
     static let contextualContextCollectionTimeout: TimeInterval = 5
@@ -117,6 +123,11 @@ final class AIChatContextualSheetCoordinator {
     private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
     private var sessionEffectCancellable: AnyCancellable?
+    weak var browserToolsOwner: Tab?
+    var browserToolsService: AIChatBrowserToolsService?
+    var browserToolsPermissionPresenter: (any AIChatNativePermissionPresenting)?
+    var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
+    private(set) weak var browserToolsWebViewController: AIChatContextualWebViewController?
     private var currentPageURLCancellable: AnyCancellable?
     private var didFinishURLCancellable: AnyCancellable?
     private var documentReadCancellable: AnyCancellable?
@@ -277,6 +288,7 @@ final class AIChatContextualSheetCoordinator {
          usageContextProvider: UsageContextProviding,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingExperimentMetricStore: SubscriptionOnboardingExperimentMetricStoring,
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
          selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil,
@@ -303,6 +315,7 @@ final class AIChatContextualSheetCoordinator {
         self.usageContextProvider = usageContextProvider
         self.debugSettings = debugSettings
         self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.onboardingExperimentMetricStore = onboardingExperimentMetricStore
         self.pixelHandler = pixelHandler
         self.selectionJourneyInstrumentation = selectionJourneyInstrumentation ?? DefaultDuckAISelectionJourneyInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -762,6 +775,7 @@ final class AIChatContextualSheetCoordinator {
     /// As on macOS, the sidebar belongs to its tab: it leaves the screen with the tab, its chat still open, and comes
     /// back with it. A sheet over the page closes, as it always has.
     func tabWillLeaveScreen() {
+        cancelBrowserToolsPermission()
         guard !isAwayWithTab else { return }
         guard let sheetViewController, isSheetInSidebar, let sidebarHost else {
             dismissSheet()
@@ -795,8 +809,12 @@ final class AIChatContextualSheetCoordinator {
     private func park(_ sheetViewController: AIChatContextualSheetViewController,
                       leavingSidebarOf sidebarHost: AIChatContextualSidebarHosting,
                       animated: Bool) {
+        cancelBrowserToolsPermission()
         // Something the chat presented, like the Fire confirmation, would be left behind by the move.
-        sheetViewController.presentedViewController?.dismiss(animated: false)
+        if let presented = sheetViewController.presentedViewController,
+           browserToolsPermissionPresenter?.owns(presented) != true {
+            presented.dismiss(animated: false)
+        }
         sheetViewController.beginSurfaceChange()
         parkedSheetViewController = sheetViewController
         sidebarHost.detachContextualSidebar(sheetViewController, animated: animated)
@@ -863,6 +881,9 @@ final class AIChatContextualSheetCoordinator {
     private func dismissSurface(of sheetViewController: AIChatContextualSheetViewController,
                                 animated: Bool = true,
                                 completion: (() -> Void)? = nil) {
+        if self.sheetViewController === sheetViewController {
+            cancelBrowserToolsPermission()
+        }
         if parkedSheetViewController === sheetViewController {
             // Already off screen, for a resize or with its tab: nothing to animate away, only the chat to close.
             parkedSheetViewController = nil
@@ -884,9 +905,15 @@ final class AIChatContextualSheetCoordinator {
         }
     }
 
+    private func cancelBrowserToolsPermission() {
+        browserToolsWebViewController?.browserToolsWillLeaveScreen()
+        browserToolsPermissionPresenter?.withdrawActive(completion: {})
+    }
+
     private func handleSheetDismissed() {
         guard isSheetPresented else { return }
         isSheetPresented = false
+        cancelBrowserToolsPermission()
         // A chat away with its tab reported leaving the screen when the tab left.
         if !isHandingOverToFloatingInput && !isAwayWithTab {
             delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: false)
@@ -898,10 +925,20 @@ final class AIChatContextualSheetCoordinator {
         startSessionTimer()
     }
 
+    func detachBrowserTools() {
+        browserToolScopeFactory = nil
+        browserToolsOwner = nil
+        browserToolsService = nil
+        browserToolsWebViewController?.detachBrowserTools()
+        browserToolsWebViewController = nil
+    }
+
     // Mirrors handleSheetDismissed but deliberately skips startSessionTimer — a fire-button
     // clear nukes the chat and doesn't want a pending timer firing afterwards. Keep aligned
     // when adding side effects to handleSheetDismissed.
     func clearActiveChat(reason: DuckAISelectionJourneyWideEventData.TerminalReason = .chatCleared) {
+        browserToolsWebViewController?.detachBrowserTools()
+        browserToolsWebViewController = nil
         let sheetInSidebar = isSheetInSidebar ? sheetViewController : nil
         let parkedSheet = parkedSheetViewController
         parkedSheetViewController = nil
@@ -1070,6 +1107,7 @@ private extension AIChatContextualSheetCoordinator {
             persistentUTIHost: persistentUTIHost,
             suggestionsReader: suggestionsReader,
             floatingInputFeature: floatingInputFeature,
+            usesLiquidGlassHeader: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
             opensOntoSubmittedChat: opensOntoSubmittedChat
         )
         sheetVC.delegate = self
@@ -1323,7 +1361,8 @@ private extension AIChatContextualSheetCoordinator {
         let contextualUTIFeature = ContextualUnifiedToggleInputFeature(
             isAvailable: isWebUTIEnabled,
             isToggleHiddenOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
-            isAttachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
+            isAttachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            isFullTabChatInputAvailable: unifiedToggleInputFeature.isFullTabChatInputAvailable
         )
 
         let webVC = AIChatContextualWebViewController(
@@ -1350,6 +1389,7 @@ private extension AIChatContextualSheetCoordinator {
             },
             pixelHandler: pixelHandler,
             onboardingActivationRecorder: onboardingActivationRecorder,
+            onboardingExperimentMetricStore: onboardingExperimentMetricStore,
             utiHostInstaller: { [weak self] contextualChatViewController in
                 guard let self else { return nil }
                 guard self.isWebUTIEnabled else { return nil }
@@ -1366,6 +1406,14 @@ private extension AIChatContextualSheetCoordinator {
             }
         )
 
+        webVC.browserToolsOwner = browserToolsOwner
+        webVC.browserToolsService = browserToolsService
+        cancelBrowserToolsPermission()
+        let permissionPresenter = makeBrowserToolsPermissionPresenter(for: webVC)
+        browserToolsPermissionPresenter = permissionPresenter
+        webVC.browserToolsPermissionPresenter = permissionPresenter
+        webVC.browserToolScopeFactory = browserToolScopeFactory
+        browserToolsWebViewController = webVC
         webVC.setAttachedSelectionsProvider { [weak self] in
             self?.sessionState.attachedSelections ?? []
         }
@@ -1377,6 +1425,21 @@ private extension AIChatContextualSheetCoordinator {
         }
 
         return webVC
+    }
+
+    private func makeBrowserToolsPermissionPresenter(for webVC: AIChatContextualWebViewController) -> AIChatNativePermissionPresenter {
+        AIChatNativePermissionPresenter { [weak self, weak webVC] in
+            guard let self, let webVC, self.browserToolsWebViewController === webVC,
+                  self.isSheetPresented, !self.hasParkedSurface, !self.isAwayWithTab,
+                  let sheet = self.sheetViewController else { return nil }
+            guard webVC.parent === sheet else { return nil }
+            if sheet.parent != nil {
+                guard self.sidebarHost?.isContextualSidebarShowing(sheet) == true else { return nil }
+            } else if sheet.presentingViewController == nil {
+                return nil
+            }
+            return sheet
+        }
     }
 
     var duckAiLastUsedModelProvider: DuckAiLastUsedModelProviding? {
@@ -1474,7 +1537,14 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
         case .summarize, .summarizePage:
             pixelHandler.fireQuickActionSummarizeSelected()
             promoteFloatingInputToSheet()
-            persistentUTIHost?.submitQuickActionPrompt(action.prompt)
+            func submitPrompt() {
+                persistentUTIHost?.submitQuickActionPrompt(action.prompt)
+            }
+            if let sheetViewController {
+                sheetViewController.submittingSummary(submitPrompt)
+            } else {
+                submitPrompt()
+            }
         }
     }
 
@@ -1494,8 +1564,19 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
 extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerDelegate {
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestToLoad url: URL) {
+        // The sheet recedes with the page under the new tab, instead of sliding away before it.
+        if isPresentedAsSheet(viewController), delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoadClosingSheet: url) == true {
+            return
+        }
         dismissSurface(of: viewController)
         delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoad: url)
+    }
+
+    /// On screen as a presented sheet, not as the iPad sidebar or parked off screen.
+    private func isPresentedAsSheet(_ viewController: AIChatContextualSheetViewController) -> Bool {
+        return viewController.parent == nil
+            && parkedSheetViewController !== viewController
+            && viewController.presentingViewController != nil
     }
 
     func aiChatContextualSheetViewControllerDidRequestDismiss(_ viewController: AIChatContextualSheetViewController) {
@@ -1562,6 +1643,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
+        guard sheetViewController === viewController else { return }
         handleSheetDismissed()
     }
 
@@ -1592,12 +1674,15 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         sessionState.cancelManualAttach()
     }
 
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String, termsAccepted: Bool) {
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didSubmitPrompt prompt: String,
+                                             termsAccepted: Bool,
+                                             localTask: AIChatLocalModelTask?) {
         let hasPageContext: Bool
         if case .attached = sessionState.chipState { hasPageContext = true } else { hasPageContext = false }
         sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
         selectionJourneyInstrumentation.promptSubmitted()
-        sessionState.handlePromptSubmission(prompt, termsAccepted: termsAccepted)
+        sessionState.handlePromptSubmission(prompt, termsAccepted: termsAccepted, localTask: localTask)
         delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: .contextualChat)
     }
 

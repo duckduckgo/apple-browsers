@@ -52,7 +52,6 @@ final class CPMNetworkProcessRecovery {
     private let processIdentifier: ProcessIdentifier
     private let restart: Restart
     private let checkInterval: TimeInterval
-    private let pixelFiring: WebExtensionPixelFiring
     // Old and new extension contexts can coexist while an embedded extension is upgraded.
     private var watches: [String: Watch] = [:]
     private var periodicCheck: Task<Void, Never>?
@@ -60,19 +59,17 @@ final class CPMNetworkProcessRecovery {
 
     init(isEnabled: @escaping @MainActor () -> Bool,
          featureFlagUpdates: AnyPublisher<Void, Never>? = nil,
-         pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
          checkInterval: TimeInterval = 5,
          processIdentifier: @escaping ProcessIdentifier = CPMNetworkProcessRecovery.networkProcessIdentifier,
          restart: @escaping Restart = CPMNetworkProcessRecovery.restartBackground) {
         self.isEnabled = isEnabled
         self.checkInterval = checkInterval
-        self.pixelFiring = pixelFiring
         self.processIdentifier = processIdentifier
         self.restart = restart
         featureFlagSubscription = featureFlagUpdates?
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                MainActor.assumeIsolated {
+                _ = MainActor.assumeIsolated {
                     self?.recoverIfNeeded()
                 }
             }
@@ -98,7 +95,7 @@ final class CPMNetworkProcessRecovery {
         }
     }
 
-    /// Also checked at main-frame HTTP(S) response policy, independently of the startup gate and diagnostics.
+    /// Also checked at main-frame HTTP(S) response policy, independently of the startup gate.
     @discardableResult
     func recoverIfNeeded() -> Bool {
         guard isEnabled() else {
@@ -129,7 +126,6 @@ final class CPMNetworkProcessRecovery {
             Logger.webExtensions.info("[CPM Recovery] Restarted embedded background after Network process replacement")
             removeWatch(identifier: identifier, matching: watch)
             recovered = true
-            pixelFiring.fire(.cpmNetworkProcessRecoveryApplied)
         }
         return recovered
     }

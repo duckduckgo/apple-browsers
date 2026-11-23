@@ -23,19 +23,104 @@ import WebExtensions
 
 @available(macOS 15.4, *)
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
-    func testBackgroundLoadRestartOutcomesUseCanonicalPixelKitContract() throws {
-        for outcome in CPMBackgroundLoadRestartOutcome.allCases {
+    func testBreakageUsesCanonicalPixelKitContract() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .reached(.configRead), tabs: .many))
+        XCTAssertEqual(pixels.actualFireCalls.count, 1)
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_macos")
+        XCTAssertEqual(call.pixel.namePrefix, .none)
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertEqual(call.pixel.parameters, ["last_stage": "config_read", "tabs": "many"])
+        XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
+        XCTAssertNil(call.additionalParameters)
+        XCTAssertTrue(call.includeAppVersionParameter)
+    }
+
+    func testBreakageWithoutMeasuringLeavesOutTheStage() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .notMeasured, tabs: .one))
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.parameters, ["tabs": "one"])
+    }
+
+    func testBreakageWithoutAReportedStageSendsNone() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .noMark, tabs: .one))
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.parameters, ["last_stage": "none", "tabs": "one"])
+    }
+
+    func testNativeMessagingBlockedFiresEveryTimeTheManagerReportsIt() {
+        let pixels = PixelKitMock()
+
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.nativeMessagingBlocked(extension: .catalog(.onePassword)))
+
+        XCTAssertEqual(pixels.actualFireCalls, [
+            ExpectedFireCall(pixel: WebExtensionPixel.nativeMessagingBlocked(extension: .catalog(.onePassword)), frequency: .standard)
+        ])
+    }
+
+    func testUpdatePixelsUseOnlyAllowedParameters() throws {
+        for pixelExtension in WebExtensionPixelExtension.allCases {
+            var cases: [(WebExtensionPixelEvent, String, [String: String])] = [
+                (.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos", ["extension": pixelExtension.parameterValue]),
+                (.updateApplied(extension: pixelExtension), "web_extension_update_success_macos", ["extension": pixelExtension.parameterValue])
+            ]
+            cases += WebExtensionUpdateDownloadFailure.allCases.map { outcome in
+                (.updateDownloadFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_download_failed_macos",
+                 ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+            }
+            cases += WebExtensionUpdateVerificationFailure.allCases.map { outcome in
+                (.updateVerificationFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_verification_failed_macos",
+                 ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+            }
+            cases += WebExtensionUpdateInstallFailure.allCases.map { outcome in
+                (.updateInstallFailed(extension: pixelExtension, outcome: outcome), "web_extension_update_failure_macos",
+                 ["extension": pixelExtension.parameterValue, "outcome": outcome.rawValue])
+            }
+
+            for (event, name, parameters) in cases {
+                let pixels = PixelKitMock()
+                MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
+                XCTAssertEqual(pixels.actualFireCalls.count, 1)
+                let call = try XCTUnwrap(pixels.actualFireCalls.first)
+                XCTAssertEqual(call.pixel.name, name)
+                XCTAssertEqual(call.pixel.parameters, parameters)
+                XCTAssertEqual(call.frequency, .dailyAndCount)
+                XCTAssertEqual(call.pixel.namePrefix, .none)
+                XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
+                XCTAssertNil(call.pixel.error)
+                XCTAssertNil(call.additionalParameters)
+                XCTAssertTrue(call.includeAppVersionParameter)
+            }
+        }
+    }
+
+    func testUpdateWireNamesMatchDefinitions() throws {
+        let pixelExtension: WebExtensionPixelExtension = .catalog(.bitwarden)
+        let cases: [(WebExtensionPixelEvent, String)] = [
+            (.updateDownloadFailed(extension: pixelExtension, outcome: .networkFailure), "web_extension_update_download_failed_macos"),
+            (.updateVerificationFailed(extension: pixelExtension, outcome: .invalidPackage), "web_extension_update_verification_failed_macos"),
+            (.updateVerified(extension: pixelExtension), "web_extension_update_verified_macos"),
+            (.updateApplied(extension: pixelExtension), "web_extension_update_success_macos"),
+            (.updateInstallFailed(extension: pixelExtension, outcome: .loadFailure), "web_extension_update_failure_macos")
+        ]
+        for (event, expectedName) in cases {
+            let suite = "\(#function)-\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            var names: [String] = []
+            let pixelKit = PixelKit(dryRun: false, appVersion: "1.0.0", source: PixelKit.Source.macDMG.rawValue,
+                                    defaultHeaders: [:], pixelCalendar: nil, defaults: defaults) { name, _, _, _, _, completion in
+                names.append(name)
+                completion(true, nil)
+            }
             let pixels = PixelKitMock()
-            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmBackgroundLoadRestart(outcome))
-            XCTAssertEqual(pixels.actualFireCalls.count, 1)
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
             let call = try XCTUnwrap(pixels.actualFireCalls.first)
-            XCTAssertEqual(call.pixel.name, "web_extension_cpm_background_load_restart")
-            XCTAssertEqual(call.pixel.namePrefix, .none)
-            XCTAssertEqual(call.frequency, .dailyAndCount)
-            XCTAssertEqual(call.pixel.parameters, ["outcome": outcome.rawValue])
-            XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
-            XCTAssertNil(call.additionalParameters)
-            XCTAssertTrue(call.includeAppVersionParameter)
+            pixelKit.fire(call.pixel, frequency: call.frequency)
+            XCTAssertEqual(names, [expectedName + "_daily", expectedName + "_count"])
         }
     }
 
@@ -102,26 +187,26 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         }
     }
 
-    func testRecoveryApplicationUsesDailyAndCountWithoutCustomParameters() throws {
+    func testPersistentBreakageUsesDailyAndCountWithoutCustomParameters() throws {
         let pixels = PixelKitMock()
-        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmNetworkProcessRecoveryApplied)
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakagePersistent)
 
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
-        XCTAssertEqual(call.pixel.name, "web_extension_cpm_network_process_recovery_applied")
+        XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_persistent_macos")
         XCTAssertEqual(call.frequency, .dailyAndCount)
         XCTAssertEqual(call.pixel.namePrefix, .none)
-        XCTAssertNil(call.pixel.parameters)
+        XCTAssertTrue((call.pixel.parameters ?? [:]).isEmpty)
         XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
         XCTAssertNil(call.additionalParameters)
         XCTAssertTrue(call.includeAppVersionParameter)
     }
 
-    func testRecoveryApplicationWireNamesMatchDefinitions() throws {
+    func testPersistentBreakageWireNamesMatchDefinitions() throws {
         let sources: [PixelKit.Source] = [.macDMG, .macStore]
         for source in sources {
             let pixels = PixelKitMock()
-            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmNetworkProcessRecoveryApplied)
+            MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakagePersistent)
             let call = try XCTUnwrap(pixels.actualFireCalls.first)
             let suite = "\(#function)-\(UUID().uuidString)"
             let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -137,7 +222,7 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
                 completion(true, nil)
             }
             pixelKit.fire(call.pixel, frequency: call.frequency)
-            XCTAssertEqual(names, ["web_extension_cpm_network_process_recovery_applied_daily", "web_extension_cpm_network_process_recovery_applied_count"])
+            XCTAssertEqual(names, ["web_extension_cpm_breakage_persistent_macos_daily", "web_extension_cpm_breakage_persistent_macos_count"])
         }
     }
 
@@ -164,6 +249,16 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
             XCTAssertEqual(try XCTUnwrap(pixels.actualFireCalls.first).frequency, .standard, "\(event)")
         }
+    }
+
+    func testKillSwitchDisabledIsDailyAndCountWithBucketedCount() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.killSwitchDisabled(count: 3))
+
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.name, "web_extension_kill_switch_disabled_macos")
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertEqual(call.pixel.parameters, ["count": "2"])
     }
 
     func testInstalledCountIsDaily() throws {

@@ -113,6 +113,7 @@ public extension DesignSystemImages {
             public static var qr: DesignSystemImage { .init(resource: .QR_12) }
             public static var reload: DesignSystemImage { .init(resource: .reload12) }
             public static var reloadSmall: DesignSystemImage { .init(resource: .reloadSmall12) }
+            public static var replay: DesignSystemImage { .init(resource: .replay12) }
             public static var save: DesignSystemImage { .init(resource: .save12) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind12) }
             public static var sendPlane: DesignSystemImage { .init(resource: .sendPlane12) }
@@ -474,6 +475,7 @@ public extension DesignSystemImages {
             public static var aiModelClaude: DesignSystemImage { .init(resource: .aiModelClaude24) }
             public static var aiModelMistral: DesignSystemImage { .init(resource: .aiModelMistral24) }
             public static var aiModelOpenAI: DesignSystemImage { .init(resource: .aiModelOpenAI24) }
+            public static var aiModelOSS: DesignSystemImage { .init(resource: .aiModelOSS24) }
             public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }

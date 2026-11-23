@@ -149,6 +149,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
+    /// The bound page sets this on every bind, so only `unbind` clears it.
+    var isTermsOfServiceShownOnPage: Bool = false {
+        didSet {
+            guard oldValue != isTermsOfServiceShownOnPage else { return }
+            footerController?.setTermsOfServiceShownOnPage(isTermsOfServiceShownOnPage)
+        }
+    }
+
     // MARK: - Properties
 
     private(set) var viewController: UnifiedToggleInputViewController
@@ -212,7 +220,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private var keyboardMonitor: UTIKeyboardMonitor!
-    private let scheduleOmnibarFocus: (@escaping () -> Void) -> Void
+    /// When focus the input asks for runs: on the next turn by default, later while a new tab makes its entrance.
+    private let scheduleInputFocus: (@escaping () -> Void) -> Void
     private var omnibarFocusWorkID = UUID()
     private var isOmnibarFocusPending = false
     private var pendingOmnibarFocusRequests: [(isValid: () -> Bool, completion: ((Bool) -> Void)?, allowsInactive: Bool)] = []
@@ -408,7 +417,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         floatingUIManager: FloatingUIManaging? = nil,
         nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
-        scheduleOmnibarFocus: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) }
+        scheduleInputFocus: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) }
     ) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
             isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
@@ -420,7 +429,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.featureFlagger = featureFlagger
-        self.scheduleOmnibarFocus = scheduleOmnibarFocus
+        self.scheduleInputFocus = scheduleInputFocus
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
@@ -453,7 +462,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController = UnifiedToggleInputViewController(isToggleEnabled: isToggleEnabled,
                                                          isFireTab: isFireTab,
                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput,
-                                                         usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
+                                                         usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout,
+                                                         usesFloatingUI: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled)
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter ?? DuckAISubscriptionUpsellPresenter(policy: upsellPolicy)
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
         // rather than bound here — see `setUpFooter`.
@@ -677,7 +687,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func bindToTab(_ userScript: AIChatUserScript, hasExistingChat: Bool = false) {
         let newIdentifier = ObjectIdentifier(userScript)
-        if boundUserScriptIdentifier == newIdentifier {
+        // A freed script's address can be reused by the next one, so a matching identifier alone doesn't prove it's the same script.
+        if boundUserScriptIdentifier == newIdentifier, boundUserScript === userScript {
             boundUserScript = userScript
             userScript.inputBoxHandler = self
             syncChipVisibility(hasExistingChat: hasExistingChat)
@@ -700,6 +711,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
         boundUserScriptIdentifier = nil
+        isTermsOfServiceShownOnPage = false
         resetSessionState()
     }
 
@@ -961,6 +973,26 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showCollapsed(from: previousDisplayState))
     }
 
+    /// Shrinks the input to its compact bar while a menu or screen covers it. Its mode and session carry on.
+    func setAside() {
+        guard isAITabExpanded else { return }
+        let previousDisplayState = displayState
+        displayState = duckAISurfaceState(.collapsed)
+        applyToolbarPresentation()
+        viewController.deactivateInput()
+        intentSubject.send(.showCollapsed(from: previousDisplayState))
+    }
+
+    /// Brings back input that `setAside` shrank, without counting it as opened again.
+    func restoreSetAside() {
+        guard isAITabCollapsed else { return }
+        let previousDisplayState = displayState
+        displayState = duckAISurfaceState(.expanded)
+        applyToolbarPresentation()
+        intentSubject.send(.showExpanded(from: previousDisplayState))
+        activateInput()
+    }
+
     func showExpanded(prefilledText: String? = nil, inputMode: TextEntryMode = .aiChat, activatesInput: Bool = true) {
         guard !isOnboardingLocked else { return }
         restoreAttachmentsRetainedForDismiss()
@@ -993,7 +1025,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         intentSubject.send(.showExpanded(from: previousDisplayState))
         guard activatesInput else { return }
 
-        DispatchQueue.main.async { [weak self] in
+        scheduleInputFocus { [weak self] in
             guard let self, self.isInputPaneExpanded else { return }
             guard !self.isOnboardingLocked else { return }
             self.viewController.activateInput()
@@ -1355,7 +1387,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isOmnibarFocusPending = true
         omnibarFocusWorkID = UUID()
         let workID = omnibarFocusWorkID
-        scheduleOmnibarFocus { [weak self] in
+        scheduleInputFocus { [weak self] in
             guard let self, self.isOmnibarFocusPending, self.omnibarFocusWorkID == workID else { return }
             let requests = self.pendingOmnibarFocusRequests
             self.pendingOmnibarFocusRequests = []
@@ -1377,7 +1409,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                     self.viewController.isInputFirstResponder && request.isValid())
             }
             guard selectsPrefill, self.omnibarPrefilledText != nil else { return }
-            self.scheduleOmnibarFocus { [weak self] in
+            self.scheduleInputFocus { [weak self] in
                 guard let self, self.omnibarFocusWorkID == workID, self.isOmnibarEditing,
                       requests.contains(where: { !$0.allowsInactive && $0.isValid() }) else { return }
                 self.viewController.selectAllText()
@@ -1511,12 +1543,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // together; otherwise the content snaps while the toolbar is still growing.
         let applyModeChange = { [self] in
             viewController.performInputModeChanges {
-                // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
-                // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
-                refreshFooterSuppression()
-                if needsViewSync {
-                    viewController.setInputMode(effectiveMode, animated: animated)
-                }
+                applyFooterAndViewInputMode(effectiveMode, syncsView: needsViewSync, animated: animated)
             }
             if didModeChange {
                 modeChangeSubject.send(effectiveMode)
@@ -1541,6 +1568,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             recordUserChoiceToStore()
             syncInputOutcomeMeasurement()
         }
+    }
+
+    /// Shows or suppresses the Duck.ai footer and applies `mode` to the input view, in the order the mode change needs.
+    private func applyFooterAndViewInputMode(_ mode: TextEntryMode, syncsView: Bool, animated: Bool) {
+        // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
+        // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
+        // Leaving Duck.ai, it goes after the mode: the mode moves focus to another text control, and the
+        // keyboard reload lays the window out unanimated, which would stretch the card into the footer's room.
+        let footerChangesFirst = mode == .aiChat
+        if footerChangesFirst { refreshFooterSuppression() }
+        if syncsView {
+            viewController.setInputMode(mode, animated: animated)
+        }
+        if !footerChangesFirst { refreshFooterSuppression() }
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
@@ -1879,8 +1920,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.clearRejectionBanner()
     }
 
-    func updateSelectedModel(_ modelId: String) {
-        modelSelector.updateSelectedModel(modelId)
+    /// - Parameter persistsSelection: When `false`, `modelId` applies to the current chat only and is not
+    ///   saved as the model that new chats start on.
+    func updateSelectedModel(_ modelId: String, persistsSelection: Bool = true) {
+        modelSelector.updateSelectedModel(modelId, persistsSelection: persistsSelection)
     }
 
     /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
@@ -2295,6 +2338,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
                                                queryType: UnifiedToggleInputQueryType(query: text),
                                                resubmitDelay: resubmitDelay(of: text, mode: .search))
             clearStoreEntryAfterSubmission()
+            delegate?.unifiedToggleInputWillSubmitQuery(text)
             if isAITabState {
                 hide()
             } else if isContextualChatState {

@@ -38,6 +38,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private enum Constants {
         static let buttonSize: CGFloat = 28
         static let iconSize = CGSize(width: 16, height: 16)
+        static let checkForUpdatesMenuTitle = "Check for Updates…"
     }
 
     var themeManager: ThemeManaging { appThemeManager }
@@ -49,6 +50,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private let isPrivateWindow: Bool
     private let selectedTabProvider: () -> WKWebExtensionTab?
     private let pixelFiring: (any PixelKitFiring)?
+    private let nativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol?
     private var buttons = Set<ExtensionButton>()
     private var updateCancellable: AnyCancellable?
     private var actionCancellable: AnyCancellable?
@@ -69,8 +71,10 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
          container: NSStackView,
          isPrivateWindow: Bool = false,
          selectedTabProvider: @escaping () -> WKWebExtensionTab? = { nil },
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         nativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol? = nil) {
          self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.nativeMessagingAlertPresenter = nativeMessagingAlertPresenter
         self.selectedTabProvider = selectedTabProvider
         self.pixelFiring = pixelFiring
         self.appThemeManager = themeManager
@@ -315,8 +319,16 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
 
         if action?.isEnabled != false {
             fireToolbarClickedPixel(identifier: identifier)
+            webExtensionManagerProvider()?.recordUserGesture(for: context)
         }
+
+        // WebKit only presents the popup for an action performed during the click, so the explanation follows it.
         context.performAction(for: selectedTab)
+        if let nativeMessagingAlertPresenter {
+            Task { @MainActor in
+                await nativeMessagingAlertPresenter.explainOnActionClick(context)
+            }
+        }
     }
 
     private func fireToolbarClickedPixel(identifier: String) {
@@ -329,6 +341,16 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
             pixelExtension = .other
         }
         pixelFiring?.fire(WebExtensionPixel.toolbarClicked(extension: pixelExtension), frequency: .dailyAndCount)
+    }
+
+    @objc private func showUpdateVersions(sender: NSMenuItem) {
+        guard NSApp.delegateTyped.internalUserDecider.isInternalUser,
+              let context = sender.representedObject as? WKWebExtensionContext,
+              let manager = webExtensionManagerProvider(),
+              let identity = manager.installedExtension(identifier: context.uniqueIdentifier)?.storeIdentity,
+              identity.store == .chromeWebStore,
+              manager.chromeWebStore?.catalogExtensionIDs.contains(identity.id) == true else { return }
+        WebExtensionUpdateVersionsWindowPresenter.show(manager: manager)
     }
 
     @objc private func showAPICompatibilityLog(sender: NSMenuItem) {
@@ -379,7 +401,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
 
     /// The right-click menu of an extension button: a header with the extension's name, the items the
     /// extension adds with `contextMenus.create({ contexts: ["action"] })`, the item that removes the extension,
-    /// plus, for internal users, the extension's API compatibility log.
+    /// plus, for internal users, update checks and the extension's API compatibility log.
     /// WebKit can change the extension's items at any time, so the menu is built on demand.
     private func contextMenu(for context: WKWebExtensionContext) -> NSMenu {
         let menu = NSMenu()
@@ -394,6 +416,16 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
 
         if NSApp.delegateTyped.internalUserDecider.isInternalUser {
             menu.addItem(.separator())
+            if let manager = webExtensionManagerProvider(),
+               let identity = manager.installedExtension(identifier: context.uniqueIdentifier)?.storeIdentity,
+               identity.store == .chromeWebStore,
+               let store = manager.chromeWebStore,
+               store.catalogExtensionIDs.contains(identity.id) {
+                let checkItem = NSMenuItem(title: Constants.checkForUpdatesMenuTitle, action: #selector(showUpdateVersions))
+                checkItem.target = self
+                checkItem.representedObject = context
+                menu.addItem(checkItem)
+            }
             let item = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(showAPICompatibilityLog))
             item.target = self
             item.representedObject = context

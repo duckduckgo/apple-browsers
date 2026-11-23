@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Core
 import Foundation
+import Onboarding
 import PixelKit
 import PrivacyConfig
 import Subscription
@@ -83,6 +84,9 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     /// The statistics store used to determine if the user is a returning user.
     private let statisticsStore: StatisticsStore
 
+    /// The reason the user gave on the onboarding Download Screen, if any.
+    private let downloadReasonProvider: () -> OnboardingDownloadReason?
+
     /// Initializes a new instance of the OnboardingSubscriptionPromotionHelper.
     ///
     /// - Parameters:
@@ -90,14 +94,17 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     ///   - subscriptionManager: The subscription manager. Defaults to the shared instance.
     ///   - pixelFiring: The pixel firing service. Defaults to PixelKit.shared.
     ///   - statisticsStore: The statistics store. Defaults to StatisticsUserDefaults.
+    ///   - downloadReasonProvider: The onboarding download reason. Defaults to the persisted tutorial setting.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
-         statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
+         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
+         downloadReasonProvider: @escaping () -> OnboardingDownloadReason? = { DefaultTutorialSettings().onboardingDownloadReason }) {
         self.featureFlagger = featureFlagger
         self.subscriptionManager = subscriptionManager
         self.pixelFiring = pixelFiring
         self.statisticsStore = statisticsStore
+        self.downloadReasonProvider = downloadReasonProvider
     }
     
     /// Text to display on the promotion proceed button
@@ -110,8 +117,10 @@ struct OnboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHel
     /// Indicates whether the Subscription promotion should be displayed to the user during onboarding.
     ///
     /// This property checks if the feature flag is enabled and if the user can purchase a subscription.
+    /// Users who chose VPN as their download reason already saw the subscription offer during onboarding.
     var shouldDisplay: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.privacyProOnboardingPromotion, allowOverride: true) && subscriptionManager.hasAppStoreProductsAvailable
+        guard downloadReasonProvider() != .vpn else { return false }
+        return featureFlagger.isFeatureOn(for: FeatureFlag.privacyProOnboardingPromotion, allowOverride: true) && subscriptionManager.hasAppStoreProductsAvailable
     }
 
     /// Provides the URL components for redirecting as part of the onboarding promotion experiment.

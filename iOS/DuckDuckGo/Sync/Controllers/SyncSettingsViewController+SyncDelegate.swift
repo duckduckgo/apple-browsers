@@ -183,10 +183,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 var additionalParameters = self.uiVersionParameters
                 additionalParameters[PixelParameters.source] = self.source
-                try await pixelFiring?.fireAsync(Pixel.Event.syncSignupDirect, options: .parameters(additionalParameters))
-                var setupEndedParameters = self.uiVersionParameters
-                setupEndedParameters[PixelParameters.source] = "signup"
-                pixelFiring?.fire(Pixel.Event.syncSetupEndedSuccessful, options: .parameters(setupEndedParameters))
+                pixelFiring?.fire(Pixel.Event.syncSignupDirect, options: .parameters(additionalParameters))
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
                 await self.refreshDevicesAfterSimplifiedSyncEnable()
@@ -437,11 +434,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         case .signupConfirmedTapped:
             pixelFiring?.fire(Pixel.Event.settingsSyncSignupConfirmedTapped,
                               options: .parameters(uiVersionParameters))
-        case .signupAbandoned:
-            var parameters = uiVersionParameters
-            parameters[PixelParameters.source] = "signup"
-            pixelFiring?.fire(Pixel.Event.syncSetupEndedAbandoned,
-                              options: .parameters(parameters))
         case .recoverSyncedDataTapped:
             pixelFiring?.fire(Pixel.Event.settingsSyncRecoverSyncedDataTapped,
                               options: .parameters(uiVersionParameters))

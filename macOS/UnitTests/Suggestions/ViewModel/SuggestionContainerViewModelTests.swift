@@ -212,6 +212,24 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenSelectedSuggestionIsRemovedAndSameRowIsReselected_ThenSelectedSuggestionViewModelShowsNextSuggestion() {
+        let deleted = Suggestion.historyEntry(title: "Heyzine", url: URL(string: "https://heyzine.com")!, score: 2)
+        let next = Suggestion.historyEntry(title: "HackerRank", url: URL(string: "https://hackerrank.com")!, score: 1)
+        suggestionContainer.getSuggestions(for: "h")
+        suggestionLoadingMock.completion?(SuggestionResult(topHits: [deleted, next], duckduckgoSuggestions: [], localSuggestions: []), nil)
+        suggestionContainerViewModel.selectRow(at: 0)
+        XCTAssertEqual(suggestionContainerViewModel.selectedSuggestionViewModel?.suggestion, deleted)
+
+        suggestionContainerViewModel.isTopSuggestionSelectionExpected = false
+        suggestionContainer.getSuggestions(for: "h", useCachedData: true)
+        suggestionLoadingMock.completion?(SuggestionResult(topHits: [next], duckduckgoSuggestions: [], localSuggestions: []), nil)
+        suggestionContainerViewModel.selectRow(at: 0)
+
+        XCTAssertEqual(suggestionContainerViewModel.selectionIndex, 0)
+        XCTAssertEqual(suggestionContainerViewModel.selectedSuggestionViewModel?.suggestion, next)
+    }
+
+    @MainActor
     func testWhenUserAppendsText_suggestionsLoadingInitiatedAndTopHitIsSelected() {
         XCTAssertFalse(suggestionLoadingMock.getSuggestionsCalled)
         suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: true)

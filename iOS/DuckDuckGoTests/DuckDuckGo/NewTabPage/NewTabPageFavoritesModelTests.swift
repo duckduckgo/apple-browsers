@@ -22,7 +22,7 @@ import Combine
 import Bookmarks
 import CoreData
 import Common
-import Persistence
+@_spi(Testing) import Persistence
 @testable import Core
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
@@ -230,6 +230,52 @@ struct NewTabPageFavoritesExpansionPixelTests {
                            faviconLoader: MockFavoritesFaviconLoading(),
                            faviconsCache: MockFavoritesFaviconCaching(),
                            pixelFiring: pixelKitMock)
+    }
+}
+
+@Suite("Favorites expansion persistence")
+struct FavoritesExpansionPersistenceTests {
+
+    private let keyValueStore = InMemoryKeyValueStore()
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Favorites start collapsed when nothing is stored", .timeLimit(.minutes(1)))
+    func startsCollapsedByDefault() {
+        let state = FavoritesExpansionState(store: FavoritesExpansionStore(keyValueStore: keyValueStore))
+
+        #expect(!state.isExpanded)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Expanding is written to the store", .timeLimit(.minutes(1)))
+    func expandingWritesToStore() {
+        let store = FavoritesExpansionStore(keyValueStore: keyValueStore)
+        let state = FavoritesExpansionState(store: store)
+
+        state.isExpanded = true
+
+        #expect(store.isExpanded)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new state restores the stored expansion", .timeLimit(.minutes(1)), arguments: [false, true])
+    func newStateRestoresStoredValue(isExpanded: Bool) {
+        FavoritesExpansionStore(keyValueStore: keyValueStore).isExpanded = isExpanded
+
+        let restoredState = FavoritesExpansionState(store: FavoritesExpansionStore(keyValueStore: keyValueStore))
+
+        #expect(restoredState.isExpanded == isExpanded)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A state without a store stays in memory", .timeLimit(.minutes(1)))
+    func stateWithoutStoreIsInMemoryOnly() {
+        let state = FavoritesExpansionState()
+
+        state.isExpanded = true
+
+        #expect(state.isExpanded)
+        #expect(!FavoritesExpansionState().isExpanded)
     }
 }
 

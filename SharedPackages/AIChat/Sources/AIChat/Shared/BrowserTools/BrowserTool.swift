@@ -18,67 +18,43 @@
 
 import Foundation
 
-/// A browser capability Duck.ai can discover and invoke. Adding one is: conform, add a
-/// sub-feature gate, register — the bridge, session and permission layers stay untouched.
+/// A browser capability Duck.ai can discover and invoke.
 @MainActor
 public protocol BrowserTool: AnyObject {
 
-    /// Stable id used in `tools/list` and `tools/call`.
+    /// Stable capability identifier.
     var name: String { get }
 
-    /// Short human-readable label. English, not localized — Duck.ai's backend owns the
-    /// model-facing catalog, so these strings only describe the native↔FE contract.
-    var title: String { get }
-
-    /// What the capability does, for the native↔FE contract.
-    var description: String { get }
-
-    /// `auto` never prompts; `ask` is subject to a stored Always/Never decision.
+    /// The default when the user hasn't chosen one in the prompt or in settings.
     var permissionMode: BrowserToolPermissionMode { get }
 
-    /// Shown to the user when an `ask` tool needs consent. Not localized, mirroring Windows.
-    var permissionReason: String { get }
+    /// A tool that changes the browser: it prompts on every call, a stored Always is ignored, and `requestAccess` never grants it.
+    var asksEveryTime: Bool { get }
 
     var inputSchema: JSONValue { get }
-
-    /// Emitted only when the result shape is known.
-    var outputSchema: JSONValue? { get }
-
-    /// MCP hints; omitted for untrusted page tools.
-    var annotations: MCPToolAnnotations? { get }
 
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
     /// re-checks the Fire boundary so a direct call cannot bypass it.
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult
+
+    /// Shapes a successful `execute` value into this capability's client-tools result: only the
+    /// contract's fields, within its limits.
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult
+
+    /// The exact address the call acts on, shown in its prompt.
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String?
+
+    /// How many items a search or list tool returned in a `clientToolResult` value. Nil for every other tool.
+    func resultCount(of value: JSONValue) -> Int?
 }
 
 public extension BrowserTool {
-    var outputSchema: JSONValue? { nil }
-    var permissionReason: String { "Duck.ai wants to use a browser tool." }
-    var annotations: MCPToolAnnotations? { nil }
-
-    /// This tool's `tools/list` descriptor. DEBUG builds also advertise the permission mode and
-    /// current decision; release builds keep the wire MCP-clean.
-    func descriptor(permissionState: String? = nil) -> BrowserToolDescriptor {
-#if DEBUG
-        let permissionDefault: String? = permissionMode.rawValue
-        let permissionCurrent: String? = permissionState
-#else
-        let permissionDefault: String? = nil
-        let permissionCurrent: String? = nil
-#endif
-        return BrowserToolDescriptor(name: name,
-                                     title: title,
-                                     description: description,
-                                     inputSchema: inputSchema,
-                                     outputSchema: outputSchema,
-                                     annotations: annotations,
-                                     permissionDefault: permissionDefault,
-                                     permissionCurrent: permissionCurrent)
-    }
+    var asksEveryTime: Bool { false }
+    func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { nil }
+    func resultCount(of value: JSONValue) -> Int? { nil }
 }
 
-/// A tool's declared default. Distinct from the *stored* decision, which only Ask tools have.
 public enum BrowserToolPermissionMode: String, Equatable, Sendable {
     case auto
     case ask
@@ -88,8 +64,8 @@ public enum BrowserToolPermissionMode: String, Equatable, Sendable {
 /// `ownerTabID` through its own injected dependencies.
 public struct BrowserToolCallContext: Equatable, Sendable {
 
-    /// The Duck.ai owner tab. A sidebar resolves to its host tab, so a sidebar and the tab it is
-    /// docked to share one session and one scope.
+    /// The Duck.ai owner tab. A sidebar resolves to its host tab,
+    /// so both share the same scope.
     public let ownerTabID: String
 
     /// Opaque handle for the window the chat belongs to, minted by the platform. Tools scope to
@@ -100,22 +76,20 @@ public struct BrowserToolCallContext: Equatable, Sendable {
     /// token, so the front end cannot infer that the user is browsing privately.
     public let isBurner: Bool
 
-    /// From the `initialize` handshake. Ask tools fail with `elicitation_unsupported` when false,
-    /// because there would be no way to obtain consent.
-    public let supportsElicitationForm: Bool
+    public let isDetached: Bool
 
     public init(ownerTabID: String,
                 ownerWindowToken: String? = nil,
                 isBurner: Bool,
-                supportsElicitationForm: Bool) {
+                isDetached: Bool = false) {
         self.ownerTabID = ownerTabID
         self.ownerWindowToken = ownerWindowToken
         self.isBurner = isBurner
-        self.supportsElicitationForm = supportsElicitationForm
+        self.isDetached = isDetached
     }
 }
 
-/// Outcome of an invocation, before it is mapped onto the MCP `CallToolResult` envelope.
+/// Outcome of a native tool invocation.
 public enum BrowserToolResult: Equatable, Sendable {
     case success(JSONValue)
     case failure(BrowserToolFailure)
@@ -130,4 +104,11 @@ public protocol BrowserToolsConfiguration: AnyObject {
 
     /// The tool's own sub-feature, already combined with the parent.
     func isToolEnabled(named name: String) -> Bool
+
+    /// The `requestAccess` sub-feature, already combined with the parent.
+    var isRequestAccessEnabled: Bool { get }
+}
+
+public extension BrowserToolsConfiguration {
+    var isRequestAccessEnabled: Bool { false }
 }

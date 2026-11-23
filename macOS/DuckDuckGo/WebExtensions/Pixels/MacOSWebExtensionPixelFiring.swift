@@ -23,10 +23,16 @@ import WebExtensions
 enum WebExtensionPixel: PixelKit.Event {
 
     private static let extensionParameterKey = "extension"
+    private static let outcomeParameterKey = "outcome"
 
     // MARK: - Chrome Web Store Updates
 
     case updateCheck(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateCheckOutcome)
+    case updateDownloadFailed(extension: WebExtensionPixelExtension, outcome: String)
+    case updateVerificationFailed(extension: WebExtensionPixelExtension, outcome: String)
+    case updateVerified(extension: WebExtensionPixelExtension)
+    case updateApplied(extension: WebExtensionPixelExtension)
+    case updateInstallFailed(extension: WebExtensionPixelExtension, outcome: WebExtensionUpdateInstallFailure)
 
     // MARK: - Installation
 
@@ -100,25 +106,33 @@ enum WebExtensionPixel: PixelKit.Event {
     case defaultPasswordManagerSet(extension: WebExtensionPixelExtension)
     case apiCompatibilityGaps(extension: ExtensionsCatalogSubfeature, version: String, missingAPICount: Int, unsupportedURLCount: Int)
 
-    case cpmNetworkProcessRecoveryApplied
-
     // MARK: - Extension Management
 
     case enabled(extension: WebExtensionPixelExtension)
     case disabled(extension: WebExtensionPixelExtension)
     case remotelyDisabled(extension: WebExtensionPixelExtension)
+    case killSwitchDisabled(count: Int)
     case retained14Days(extension: WebExtensionPixelExtension)
     case churned14Days(extension: WebExtensionPixelExtension)
     case installedCount(installed: Int, enabled: Int)
     case getClicked(extension: WebExtensionPixelExtension)
     case detailsOpened(extension: WebExtensionPixelExtension)
     case publisherLinkClicked(extension: WebExtensionPixelExtension)
+    case learnMoreClicked
+    case learnMoreRemoteDisableClicked
     /// An extension's toolbar button, when the click performs its action rather than closing its popup.
     case toolbarClicked(extension: WebExtensionPixelExtension)
 
-    // MARK: - Debug
+    // MARK: - Native messaging in the App Store build
 
-    case debugCPM(CPMWebExtensionPixelMetadata)
+    case nativeMessagingBlocked(extension: WebExtensionPixelExtension)
+    case nativeMessagingAlertShown(extension: WebExtensionPixelExtension, source: NativeMessagingAlertSource)
+    case nativeMessagingAlertLearnMoreClicked(extension: WebExtensionPixelExtension)
+
+    // MARK: - CPM messaging breakage
+
+    case cpmMessagingBreakage(lastStage: String?, tabs: String)
+    case cpmMessagingBreakagePersistent
 
     // MARK: - PixelKit.Event
 
@@ -130,6 +144,16 @@ enum WebExtensionPixel: PixelKit.Event {
             case .googleFlagged: return "web_extension_update_skipped_macos"
             default: return "web_extension_update_check_failed_macos"
             }
+        case .updateDownloadFailed:
+            return "web_extension_update_download_failed_macos"
+        case .updateVerificationFailed:
+            return "web_extension_update_verification_failed_macos"
+        case .updateVerified:
+            return "web_extension_update_verified_macos"
+        case .updateApplied:
+            return "web_extension_update_success_macos"
+        case .updateInstallFailed:
+            return "web_extension_update_failure_macos"
         case .installed:
             return "m_mac_web_extension_installed"
         case .installError:
@@ -215,11 +239,10 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_ad_blocking_not_loaded_macos"
         case .adBlockingScriptletsNotFetched:
             return "web_extension_ad_blocking_scriptlets_not_fetched_macos"
-        case .debugCPM(let metadata):
-            // Preserve the shared canonical CPM names on both platforms.
-            return metadata.name
-        case .cpmNetworkProcessRecoveryApplied:
-            return "web_extension_cpm_network_process_recovery_applied"
+        case .cpmMessagingBreakage:
+            return "web_extension_cpm_breakage_macos"
+        case .cpmMessagingBreakagePersistent:
+            return "web_extension_cpm_breakage_persistent_macos"
         case .enabled:
             return "web_extension_enabled_macos"
         case .disabled:
@@ -230,16 +253,28 @@ enum WebExtensionPixel: PixelKit.Event {
             return "web_extension_get_clicked_macos"
         case .publisherLinkClicked:
             return "web_extension_publisher_link_clicked_macos"
+        case .learnMoreClicked:
+            return "web_extension_learn_more_clicked_macos"
+        case .learnMoreRemoteDisableClicked:
+            return "web_extension_learn_more_remote_disable_clicked_macos"
         case .retained14Days:
             return "web_extension_retained_14d_macos"
         case .churned14Days:
             return "web_extension_churned_14d_macos"
         case .remotelyDisabled:
             return "web_extension_remotely_disabled_macos"
+        case .killSwitchDisabled:
+            return "web_extension_kill_switch_disabled_macos"
         case .installedCount:
             return "web_extension_installed_count_macos"
         case .toolbarClicked:
             return "web_extension_toolbar_clicked_macos"
+        case .nativeMessagingBlocked:
+            return "web_extension_native_messaging_blocked_macos"
+        case .nativeMessagingAlertShown:
+            return "web_extension_native_messaging_alert_shown_macos"
+        case .nativeMessagingAlertLearnMoreClicked:
+            return "web_extension_native_messaging_alert_learn_more_clicked_macos"
         }
     }
 
@@ -259,9 +294,15 @@ enum WebExtensionPixel: PixelKit.Event {
         case .updateCheck(let pixelExtension, let outcome):
             var parameters = [Self.extensionParameterKey: pixelExtension.parameterValue]
             if outcome != .updateFound && outcome != .googleFlagged {
-                parameters["outcome"] = outcome.rawValue
+                parameters[Self.outcomeParameterKey] = outcome.rawValue
             }
             return parameters
+        case .updateDownloadFailed(let pixelExtension, let outcome), .updateVerificationFailed(let pixelExtension, let outcome):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue, Self.outcomeParameterKey: outcome]
+        case .updateInstallFailed(let pixelExtension, let outcome):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue, Self.outcomeParameterKey: outcome.rawValue]
+        case .updateVerified(let pixelExtension), .updateApplied(let pixelExtension):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue]
         case .embeddedUpgraded(let fromVersion, let toVersion),
              .darkReaderUpgraded(let fromVersion, let toVersion),
              .adBlockingExtensionUpgraded(let fromVersion, let toVersion):
@@ -300,18 +341,26 @@ enum WebExtensionPixel: PixelKit.Event {
              .getClicked(let pixelExtension),
              .detailsOpened(let pixelExtension),
              .publisherLinkClicked(let pixelExtension),
-             .toolbarClicked(let pixelExtension):
+             .toolbarClicked(let pixelExtension),
+             .nativeMessagingBlocked(let pixelExtension),
+             .nativeMessagingAlertLearnMoreClicked(let pixelExtension):
             return [Self.extensionParameterKey: pixelExtension.parameterValue]
+        case .nativeMessagingAlertShown(let pixelExtension, let source):
+            return [Self.extensionParameterKey: pixelExtension.parameterValue, "source": source.rawValue]
         case .installedCount(let installed, let enabled):
             return ["count": Self.countBucket(installed), "enabled_count": Self.countBucket(enabled)]
+        case .killSwitchDisabled(let count):
+            return ["count": Self.countBucket(count)]
         case .apiCompatibilityGaps(_, let version, let missingAPICount, let unsupportedURLCount):
             return ["extension_version": version,
                     "missing_api_count": String(missingAPICount),
                     "unsupported_url_count": String(unsupportedURLCount)]
         case .bitwardenDailyActive(let isDefault):
             return ["is_default": isDefault ? "true" : "false"]
-        case .debugCPM(let metadata):
-            return metadata.parameters
+        case .cpmMessagingBreakage(let lastStage, let tabs):
+            var parameters = ["tabs": tabs]
+            parameters["last_stage"] = lastStage
+            return parameters
         case .reloadError(let parameters):
             return parameters
         default:
@@ -321,9 +370,12 @@ enum WebExtensionPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix {
         switch self {
-        case .updateCheck, .debugCPM, .reloadError, .cpmNetworkProcessRecoveryApplied, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
-             .enabled, .disabled, .remotelyDisabled, .retained14Days, .churned14Days, .installedCount,
-             .getClicked, .detailsOpened, .publisherLinkClicked, .toolbarClicked:
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
+             .updateApplied, .updateInstallFailed,
+             .cpmMessagingBreakage, .cpmMessagingBreakagePersistent, .reloadError, .bitwardenDailyActive, .defaultPasswordManagerSet, .apiCompatibilityGaps,
+             .enabled, .disabled, .remotelyDisabled, .killSwitchDisabled, .retained14Days, .churned14Days, .installedCount,
+             .getClicked, .detailsOpened, .publisherLinkClicked, .learnMoreClicked, .learnMoreRemoteDisableClicked, .toolbarClicked,
+             .nativeMessagingBlocked, .nativeMessagingAlertShown, .nativeMessagingAlertLearnMoreClicked:
             return .none
         default:
             return .platformDefault
@@ -333,6 +385,14 @@ enum WebExtensionPixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? {
         return [.pixelSource]
     }
+}
+
+/// Where the native messaging alert was shown from.
+enum NativeMessagingAlertSource: String {
+    /// The extension asked for the native messaging permission at runtime, such as Bitwarden for biometrics.
+    case permissionRequest = "permission_request"
+    /// The toolbar button of an extension that requires native messaging, such as 1Password.
+    case toolbarClick = "toolbar_click"
 }
 
 @available(macOS 15.4, *)
@@ -392,6 +452,16 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         switch event {
         case .updateCheck(let pixelExtension, let outcome):
             pixel = .updateCheck(extension: pixelExtension, outcome: outcome)
+        case .updateDownloadFailed(let pixelExtension, let outcome):
+            pixel = .updateDownloadFailed(extension: pixelExtension, outcome: outcome.rawValue)
+        case .updateVerificationFailed(let pixelExtension, let outcome):
+            pixel = .updateVerificationFailed(extension: pixelExtension, outcome: outcome.rawValue)
+        case .updateVerified(let pixelExtension):
+            pixel = .updateVerified(extension: pixelExtension)
+        case .updateApplied(let pixelExtension):
+            pixel = .updateApplied(extension: pixelExtension)
+        case .updateInstallFailed(let pixelExtension, let outcome):
+            pixel = .updateInstallFailed(extension: pixelExtension, outcome: outcome)
         case .installed(let pixelExtension):
             pixel = .installed(extension: pixelExtension)
         case .installError(let pixelExtension, let error):
@@ -442,11 +512,10 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = macPixel
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
             pixel = .adBlockingScriptletsNotFetched(extensionLoaded: extensionLoaded)
-        case .cpmBackgroundLoadRestart, .cpmMessagingEpisode, .cpmRecovery, .cpmStartupResponseMissing:
-            guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
-            pixel = .debugCPM(metadata)
-        case .cpmNetworkProcessRecoveryApplied:
-            pixel = .cpmNetworkProcessRecoveryApplied
+        case .cpmMessagingBreakage(let lastStage, let tabs):
+            pixel = .cpmMessagingBreakage(lastStage: lastStage.pixelValue, tabs: tabs.rawValue)
+        case .cpmMessagingBreakagePersistent:
+            pixel = .cpmMessagingBreakagePersistent
         case .defaultPasswordManagerSet(let pixelExtension):
             pixel = .defaultPasswordManagerSet(extension: pixelExtension)
         case .bitwardenDailyActive(let isDefault):
@@ -464,17 +533,22 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             pixel = .churned14Days(extension: pixelExtension)
         case .remotelyDisabled(let pixelExtension):
             pixel = .remotelyDisabled(extension: pixelExtension)
+        case .killSwitchDisabled(let count):
+            pixel = .killSwitchDisabled(count: count)
         case .installedCount(let installed, let enabled):
             pixel = .installedCount(installed: installed, enabled: enabled)
+        case .nativeMessagingBlocked(let pixelExtension):
+            pixel = .nativeMessagingBlocked(extension: pixelExtension)
         }
         switch event {
-        case .updateCheck:
+        case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified,
+             .updateApplied, .updateInstallFailed:
             frequency = .dailyAndCount
         case .bitwardenDailyActive, .apiCompatibilityGaps, .installedCount:
             frequency = .daily
-        case .enabled, .disabled, .remotelyDisabled:
+        case .enabled, .disabled, .remotelyDisabled, .killSwitchDisabled, .cpmMessagingBreakage, .cpmMessagingBreakagePersistent:
             frequency = .dailyAndCount
-        case .defaultPasswordManagerSet, .retained14Days, .churned14Days:
+        case .defaultPasswordManagerSet, .retained14Days, .churned14Days, .nativeMessagingBlocked:
             frequency = .standard
         default:
             frequency = Self.frequency(of: event)
@@ -486,19 +560,9 @@ struct MacOSWebExtensionPixelFiring: WebExtensionPixelFiring {
         let frequency: PixelKit.Frequency
         if case .reloadError = event {
             frequency = .dailyAndCount
-        } else if let metadata = CPMWebExtensionPixelMetadata(event: event) {
-            frequency = metadata.frequency.pixelKitFrequency
         } else {
             frequency = .dailyAndStandard
         }
         return frequency
-    }
-}
-
-private extension CPMWebExtensionPixelFrequency {
-    var pixelKitFrequency: PixelKit.Frequency {
-        switch self {
-        case .dailyAndCount: return .dailyAndCount
-        }
     }
 }

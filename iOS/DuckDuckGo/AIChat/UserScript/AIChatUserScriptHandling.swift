@@ -156,6 +156,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
+    @MainActor func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func connectInitialPromptSession(_ session: AIChatInitialPromptSession)
@@ -164,15 +165,19 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func cancelInitialPrompt()
     /// The `termsAccepted` value `prompt` carries across the bridge.
     func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool?
-    func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChatLink(params: Any, message: UserScriptMessage) async -> Encodable?
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
+    /// The payload the page will ask for once it loads.
+    @MainActor func willHandOff(_ payload: AIChatPayload)
+    /// Whether the page holds a handed-off prompt behind its own Terms of Service card.
+    @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?)
-    func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
+    @MainActor func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
     func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?)
     func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -221,6 +226,15 @@ protocol AIChatUserScriptHandling: AnyObject {
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
+    @MainActor
+    func executeClientTool(params: Any, source: AIChatUserScript?) async -> ExecuteClientToolResponse {
+        guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
+            return .invalidRequest(rawParams: params)
+        }
+        guard let source else { return .failure(callId: request.callId, error: .unavailable) }
+        return await source.invokeBrowserTool(request).limitedToResultBytes()
+    }
+
 
     @MainActor private var initialPromptConnection: AIChatInitialPromptSession.Connection?
 
@@ -255,6 +269,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let termsOfServiceWebRecordSource: DuckAiNativeStorageHandling?
     private let pixelFiring: (any PixelKitFiring)?
     private var termsOfServicePageLoadState: DuckAiTermsOfServicePageLoadState = .unknown
+    @MainActor var isTermsOfServiceShownOnPage = false {
+        didSet { inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage }
+    }
 
     private var isAttachmentPrivacyEnabled: Bool {
         !devicePlatform.isIphone && featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad)
@@ -426,6 +443,24 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         pixelFiring?.fire(DuckAiTermsOfServicePixel.duplicateAcceptanceContext(context), frequency: .dailyAndCount)
     }
 
+    /// The app's acceptance outlives the web app's record, which a Fire tab or a restored device can lack.
+    /// The page reads its records once it has this config, so the restored record is in place before then.
+    private func restoreTermsOfServiceRecordIfNeeded() {
+        guard featureFlagger.isFeatureOn(.duckAITermsOfServiceRecordRestore),
+              isNativeStorageBridgeAvailable,
+              termsOfServiceStore.hasAccepted,
+              let source = termsOfServiceWebRecordSource else { return }
+
+        let key = DuckAiNativeStorageConsent.termsOfServiceEntryKey
+        do {
+            guard !DuckAiNativeStorageConsent.isTermsOfServiceAccepted(try source.getEntry(key: key)) else { return }
+            try source.putEntry(key: key, value: "true")
+            Logger.aiChat.debug("[TermsOfService] Restored the web app's record from the app's acceptance")
+        } catch {
+            Logger.aiChat.error("[TermsOfService] Failed to restore the web app's record: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     /// Read when the page asks for the native config, before the web app writes its own acceptance.
     private func readTermsOfServicePageLoadState() -> DuckAiTermsOfServicePageLoadState {
         guard isNativeStorageBridgeAvailable, let source = termsOfServiceWebRecordSource else { return .unknown }
@@ -500,13 +535,25 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsContextualMode = aichatContextualModeFeature.isAvailable || defaults.supportsAIChatContextualMode
         }
 
-        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode) && isNativeChatInputAvailable
+        // Full mode also hands the chat header to native, which iPad doesn't have: its full-tab chat takes only the input.
+        let ownsIPadFullTabInput = displayMode == .fullTab && !devicePlatform.isIphone
+        let supportsNativeChatInput = (supportsFullMode || supportsContextualMode || ownsIPadFullTabInput) && isNativeChatInputAvailable
         return (supportsFullMode, supportsContextualMode, supportsNativeChatInput)
     }
 
-    /// iPad keeps the web input on a full-tab chat, but its contextual sheet and sidebar use the native input like iPhone.
+    /// With its native chat input on, iPad hands the page's header to native in every display mode.
+    private var isIPadNativeChatInputOn: Bool {
+        !devicePlatform.isIphone && unifiedToggleInputFeature.isFullTabChatInputAvailable
+    }
+
+    /// The iPad native chat list reads chats from native storage, so it needs that flag as well as the native input.
+    private var isIPadNativeChatListOn: Bool {
+        isIPadNativeChatInputOn && featureFlagger.isFeatureOn(.aiChatNativeStorage)
+    }
+
+    /// iPad's contextual sheet and sidebar always use the native input; its full-tab chat does once the iPad flag is on.
     private var isNativeChatInputAvailable: Bool {
-        unifiedToggleInputFeature.isAvailable || displayMode == .contextual
+        unifiedToggleInputFeature.isFullTabChatInputAvailable || displayMode == .contextual
     }
 
     private var supportsBrowserTabContexts: Bool {
@@ -523,10 +570,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let supportsTabContexts = supportsContextualMode || supportsBrowserTabContexts
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt || iPadDuckAIControlsFeature.isAvailable
         let fireMode = isFireModeProvider?() ?? false
+        restoreTermsOfServiceRecordIfNeeded()
         termsOfServicePageLoadState = readTermsOfServicePageLoadState()
 
         let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
-            && devicePlatform.isIphone
+            && (devicePlatform.isIphone || displayMode == .fullTab)
             && supportsNativeChatInput
             && isNativeStorageBridgeAvailable
         var config = AIChatNativeConfigValues(
@@ -539,7 +587,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: supportsTabContexts,
-            supportsAIChatFullMode: supportsFullMode,
+            supportsAIChatFullMode: supportsFullMode || isIPadNativeChatInputOn,
             supportsAIChatContextualMode: supportsContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
@@ -560,6 +608,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsCanonicalChatFormat: true
         )
         config.supportsResponseStateReporting = true
+        config.supportsiPadNativeChatList = isIPadNativeChatListOn
         return config
     }
 
@@ -647,8 +696,30 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         initialPromptConnection?.cancel()
     }
 
+    /// The page asks for this once per load, so it also tells whether the page holds a prompt behind its own Terms of Service card.
+    @MainActor
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeHandoffData.defaultValuesWithPayload(payloadHandler?.consumeData() as? AIChatPayload)
+        let payload = payloadHandler?.consumeData() as? AIChatPayload
+        updateTermsOfServiceShownOnPage(for: payload, when: "Page load")
+        return AIChatNativeHandoffData.defaultValuesWithPayload(payload)
+    }
+
+    /// Lets the input stand its disclaimer down while the page is still loading.
+    @MainActor
+    func willHandOff(_ payload: AIChatPayload) {
+        updateTermsOfServiceShownOnPage(for: payload, when: "Handoff before page load")
+    }
+
+    @MainActor
+    private func updateTermsOfServiceShownOnPage(for payload: AIChatPayload?, when moment: String) {
+        isTermsOfServiceShownOnPage = !termsOfServiceStore.hasAccepted && Self.autoSubmitsPrompt(payload)
+        Logger.aiChat.debug("[TermsOfService] \(moment, privacy: .public) holds a prompt behind the page's own card: \(self.isTermsOfServiceShownOnPage, privacy: .public)")
+    }
+
+    /// The web app sends such a prompt by itself, and asks for the terms on its own card first.
+    private static func autoSubmitsPrompt(_ payload: AIChatPayload?) -> Bool {
+        guard let prompt = payload?["aiChatPrompt"] as? String, !prompt.isEmpty else { return false }
+        return payload?["aiChatAutoPrompt"] as? Bool == true
     }
 
     func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -670,8 +741,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         chatStatusHandler = handler
     }
 
+    @MainActor
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {
         self.inputBoxHandler = inputBoxHandler
+        self.inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage
     }
 
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {
@@ -706,30 +779,28 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return OpenKeyboardResponse(success: false, error: "WebView not available")
         }
 
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.main.async {
-                let javascript = """
-                (function() {
-                    try {
-                        const element = document.querySelector('\(cssSelector)');
-                        element?.focus?.();
-                        return true;
-                    } catch (error) {
-                        console.error('Error focusing element:', error);
-                        return false;
-                    }
-                })();
-                """
+        return await focusElement(matching: cssSelector, in: webView)
+    }
 
-                webView.evaluateJavaScript(javascript) { _, error in
-                    if let error = error {
-                        Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
-                        continuation.resume(returning: OpenKeyboardResponse(success: false, error: "JavaScript execution failed"))
-                    } else {
-                        continuation.resume(returning: OpenKeyboardResponse(success: true))
-                    }
-                }
-            }
+    /// The selector is passed as a script argument, never interpolated into the source, so page-supplied text cannot run as code.
+    @MainActor
+    private func focusElement(matching selector: String, in webView: WKWebView) async -> OpenKeyboardResponse {
+        let javascript = """
+        try {
+            document.querySelector(selector)?.focus?.();
+            return true;
+        } catch (error) {
+            console.error('Error focusing element:', error);
+            return false;
+        }
+        """
+
+        do {
+            _ = try await webView.callAsyncJavaScript(javascript, arguments: ["selector": selector], in: nil, contentWorld: .page)
+            return OpenKeyboardResponse(success: true)
+        } catch {
+            Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
+            return OpenKeyboardResponse(success: false, error: "JavaScript execution failed")
         }
     }
 

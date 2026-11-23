@@ -52,6 +52,9 @@ extension DebugScreensViewModel {
                     }
                 }
             }),
+            .view(title: "New Tab Transition", { _ in
+                NewTabTransitionDebugView()
+            }),
             .view(title: "CPM", { d in
                 CPMDebugScreensView(
                     keyValueStore: d.keyValueStore,
@@ -103,7 +106,9 @@ extension DebugScreensViewModel {
             .view(title: "AI Chat", { dependencies in
                 AIChatDebugView(duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
                                 aiChatBonusMessageLog: dependencies.aiChatBonusMessageLog,
-                                featureFlagger: AppDependencyProvider.shared.featureFlagger)
+                                featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                tabManager: dependencies.tabManager,
+                                aiChatLocalModel: dependencies.aiChatLocalModel)
             }),
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()
@@ -138,8 +143,8 @@ extension DebugScreensViewModel {
             .view(title: "History", { d in
                 HistoryDebugRootView(tabManager: d.tabManager)
             }),
-            .view(title: "Bookmarks", { _ in
-                BookmarksDebugRootView()
+            .view(title: "Bookmarks", accessibilityIdentifier: "Debug.Screen.Bookmarks", { dependencies in
+                BookmarksDebugRootView(bookmarksDatabase: dependencies.bookmarksDatabase)
             }),
             .view(title: "Favorites", { d in
                 FavoritesDebugView(bookmarksDatabase: d.bookmarksDatabase,
@@ -186,6 +191,12 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Win-back Offer", { d in
                 WinBackOfferDebugView(keyValueStore: d.keyValueStore)
+            }),
+            .view(title: "Translation Models", { d in
+                TranslationModelsDebugView(
+                    models: d.translationModels,
+                    capability: WebPageTranslationCapability.create(featureFlagger: AppDependencyProvider.shared.featureFlagger)
+                )
             }),
             .view(title: "Prompt Coordination", { d in
                 PromptCoordinationDebugView(
@@ -297,19 +308,29 @@ extension DebugScreensViewModel {
                         controller.presentingViewController?.dismiss(animated: true)
                     }
 
-                    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType) {}
+                    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, modelId: String?, flowType: AIChatOnboardingFlowType) {}
 
                     func searchFromOnboarding(for query: String) {}
+
+                    func presentSubscriptionPaywallFromOnboarding(from controller: UIViewController, onDismiss: @escaping () -> Void) {
+                        onDismiss()
+                    }
                 }
 
                 weak var capturedController: OnboardingDebugViewController?
 
-                // swiftlint:disable:next empty_parentheses_with_trailing_closure
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
+                // The app always injects `DaxDialogs`; the debug screen edits its time-limit state.
+                guard let daxDialogs = d.daxDialogManager as? DaxDialogs else {
+                    assertionFailure("Expected DaxDialogs")
+                    return UIViewController()
+                }
+
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView(timeLimit: daxDialogs.timeLimit) {
                     guard let capturedController else { return }
 
+                    let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
                     let viewModel = OnboardingIntroFactory.makeViewModel(
-                        pixelReporter: OnboardingPixelReporter(subscriptionManager: AppDependencyProvider.shared.subscriptionManager),
+                        pixelReporter: OnboardingPixelReporter(subscriptionManager: subscriptionManager),
                         systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                         daxDialogsManager: d.daxDialogManager,
                         syncAutoRestoreHandler: d.syncAutoRestoreHandler,
@@ -319,7 +340,8 @@ extension DebugScreensViewModel {
                         adBlockingAvailability: AdBlockingAvailability(
                             featureFlagger: AppDependencyProvider.shared.featureFlagger,
                             isEnabledByUserProvider: { false }
-                        )
+                        ),
+                        subscriptionManager: subscriptionManager
                     )
                     let controller = OnboardingIntroFactory.makeController(
                         viewModel: viewModel,

@@ -27,10 +27,6 @@ extension OnboardingPersonalizationContent.Item.ItemType {
 
     var icon: Image {
         switch self {
-        case .recentlyVisitedSites:
-            Image(uiImage: DesignSystemImages.Color.Size24.history)
-        case .safeSearch:
-            Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
         case .searchAssist:
             Image(uiImage: DesignSystemImages.Color.Size24.searchAssist)
         case .aiGeneratedImages:
@@ -254,7 +250,7 @@ extension OnboardingAIProvider {
         switch self {
         case .openai: "ChatGPT"
         case .anthropic: "Claude"
-        case .mistral: "Mistral"
+        case .tinfoil: "Gemma"
         }
     }
 
@@ -264,8 +260,8 @@ extension OnboardingAIProvider {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.aiModelOpenAI)
         case .anthropic:
             Image(uiImage: DesignSystemImages.Glyphs.Size24.aiModelClaude)
-        case .mistral:
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.aiModelMistral)
+        case .tinfoil:
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.aiModelOSS)
         }
     }
 }

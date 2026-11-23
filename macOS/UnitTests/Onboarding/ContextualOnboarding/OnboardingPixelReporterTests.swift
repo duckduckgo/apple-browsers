@@ -267,6 +267,33 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandler.eventsReceived, [.end(.clicked(.dismiss))])
     }
 
+    func test_WhenMeasureSubscriptionUpsellShown_ThenSubscriptionPromoShownEventSent() {
+        reporter.measureDialogShown(dialogType: .subscriptionUpsell)
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.subscriptionPromo(.shown)])
+    }
+
+    func test_WhenMeasureSubscriptionUpsellManuallyDismissed_ThenSubscriptionPromoDismissClickedEventSent() {
+        reporter.measureDialogManuallyDismissed(dialogType: .subscriptionUpsell)
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.subscriptionPromo(.clicked(.dismiss))])
+    }
+
+    func test_WhenMeasureSubscriptionUpsellAccepted_ThenSubscriptionPromoEngageClickedEventSent() {
+        reporter.measureSubscriptionUpsellAccepted()
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.subscriptionPromo(.clicked(.engage))])
+    }
+
+    func test_WhenMeasureSubscriptionUpsellDeclined_ThenSubscriptionPromoDismissClickedEventSent() {
+        reporter.measureSubscriptionUpsellDeclined()
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.subscriptionPromo(.clicked(.dismiss))])
+    }
+
+    func test_WhenSubscriptionUpsellDismissedOrGotItPressed_ThenNoPixelSent() {
+        reporter.measureDialogDismissed(dialogType: .subscriptionUpsell)
+        reporter.measureGotItPressed(dialogType: .subscriptionUpsell)
+        XCTAssertNil(eventSent)
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [])
+    }
+
     // Tab Onboarding Pixel test
     @MainActor
     func test_WhenNavigationDidFinish_ThenReporterMeasureSiteVisitedCalled() {
@@ -314,42 +341,13 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
 }
 
-class MockContextualOnboardingState: ContextualOnboardingStateUpdater, ContextualOnboardingDialogTypeProviding {
-    func lastDialogForTab(_ tab: Tab) -> DuckDuckGo_Privacy_Browser.ContextualDialogType? {
-        return lastDialog
-    }
-
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
-        return lastDialog
-    }
-
-    var lastDialog: ContextualDialogType?
-
-    var state: ContextualOnboardingState = .onboardingCompleted
-
-    @Published var isContextualOnboardingCompleted: Bool = true
-    var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
-
-    func updateStateFor(tab: Tab) {
-    }
-
-    func gotItPressed() {
-    }
-
-    func fireButtonUsed() {
-    }
-
-    func turnOffFeature() {}
-
-}
-
 final class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     var eventsReceived: [OnboardingSharedPixelEvent] = []
 
     func fire(_ event: OnboardingSharedPixelEvent,
               source: OnboardingPixelParameter.Source?,
               flow: OnboardingPixelParameter.Flow?,
-              variant: OnboardingPixelParameter.Variant?) {
+              variants: OnboardingPixelParameter.Variants) {
         eventsReceived.append(event)
     }
 

@@ -40,12 +40,7 @@ extension DownloadsListRowViewModel: Hashable {
 }
 
 extension DownloadsListRowViewModel {
-    static let byteCountFormatter: ByteCountFormatter = {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = .useAll
-        formatter.countStyle = .file
-        formatter.includesUnit = true
-        formatter.isAdaptive = true
-        return formatter
-    }()
+    static func formattedByteCount(_ byteCount: Int64, locale: Locale = .autoupdatingCurrent) -> String {
+        byteCount.formatted(.byteCount(style: .file).locale(locale))
+    }
 }

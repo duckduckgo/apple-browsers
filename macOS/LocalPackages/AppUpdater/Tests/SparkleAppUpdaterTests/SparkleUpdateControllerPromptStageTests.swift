@@ -34,8 +34,10 @@ import Testing
 final class SparkleUpdateControllerPromptStageTests {
 
     private let featureFlagger = MockFeatureFlagger()
+    private let notificationPresenter = MockNotificationPresenter()
     private let store = InMemoryThrowingKeyValueStore()
     private let item = SUAppcastItem.empty()
+    private let wideEvent = WideEventMock()
 
     init() {
         featureFlagger.featuresStub[FeatureFlag.moreProminentUpdates.rawValue] = true
@@ -47,12 +49,12 @@ final class SparkleUpdateControllerPromptStageTests {
                                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                 manualUpdateRemovalHandler: ManualUpdateRemovalHandler(settings: store.throwingKeyedStoring(), featureFlagger: featureFlagger),
                                 pixelFiring: nil,
-                                notificationPresenter: MockNotificationPresenter(),
+                                notificationPresenter: notificationPresenter,
                                 keyValueStore: store,
                                 applicationUpdateDetector: ApplicationUpdateDetector(settings: store.throwingKeyedStoring()),
                                 allowCustomUpdateFeed: false,
                                 isAutoUpdatePaused: { true },
-                                wideEvent: WideEventMock(),
+                                wideEvent: wideEvent,
                                 isOnboardingFinished: { true })
     }
 
@@ -72,6 +74,15 @@ final class SparkleUpdateControllerPromptStageTests {
 
     private func finishDownload(_ controller: SparkleUpdateController) {
         _ = controller.updater(updater(for: controller), willInstallUpdateOnQuit: item, immediateInstallationBlock: {})
+    }
+
+    private func startInstalling(_ controller: SparkleUpdateController) {
+        controller.updater(updater(for: controller), willExtractUpdate: item)
+    }
+
+    private func failUpdate(_ controller: SparkleUpdateController) {
+        let error = NSError(domain: SUSparkleErrorDomain, code: Int(SUError.installationError.rawValue))
+        controller.updater(updater(for: controller), didFinishUpdateCycleFor: .updates, error: error)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -135,6 +146,7 @@ final class SparkleUpdateControllerPromptStageTests {
 
         #expect(controller.pendingNotificationTask != nil)
         #expect(!controller.needsNotificationDot)
+        #expect(!controller.mustShowUpdateIndicators, "the menu item waits for the delay too")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -168,24 +180,93 @@ final class SparkleUpdateControllerPromptStageTests {
 
         #expect(controller.pendingNotificationTask == nil)
         #expect(!controller.needsNotificationDot)
+        #expect(!controller.mustShowUpdateIndicators, "the menu item waits for the first prompt")
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A downloaded update shows the update indicators from the first prompt", .timeLimit(.minutes(1)))
+    @Test("A downloaded update shows the menu item from the first prompt and the dot at the first and second prompts, with no popover", .timeLimit(.minutes(1)))
     func indicatorsFollowThePromptStage() throws {
         let controller = makeController()
         let tracker = try #require(controller.updatePromptStageTracker)
+        var shownStages: [UpdatePromptStage] = []
+        let cancellable = controller.pendingUpdatePromptStagePublisher.sink { shownStages.append($0) }
         findUpdate(controller)
 
         tracker.moveClock(to: .firstPrompt)
+        #expect(!controller.mustShowUpdateIndicators, "waits for the download")
         #expect(!controller.needsNotificationDot, "waits for the download")
-
-        finishDownload(controller)
-        #expect(controller.needsNotificationDot)
-        #expect(controller.mustShowUpdateIndicators)
+        #expect(controller.pendingUpdatePromptStage == .none, "waits for the download")
 
         tracker.resetClock()
-        #expect(!controller.needsNotificationDot)
+        finishDownload(controller)
         #expect(!controller.mustShowUpdateIndicators)
+        #expect(!controller.needsNotificationDot)
+        #expect(controller.pendingUpdatePromptStage == .available)
+
+        tracker.moveClock(to: .firstPrompt)
+        #expect(controller.mustShowUpdateIndicators)
+        #expect(controller.needsNotificationDot)
+        #expect(controller.pendingUpdatePromptStage == .firstPrompt)
+
+        tracker.moveClock(to: .secondPrompt)
+        #expect(controller.needsNotificationDot)
+        #expect(controller.pendingUpdatePromptStage == .secondPrompt)
+
+        tracker.moveClock(to: .thirdPrompt)
+        #expect(!controller.needsNotificationDot, "the toolbar button takes over from the dot")
+        #expect(controller.mustShowUpdateIndicators)
+        #expect(controller.pendingUpdatePromptStage == .thirdPrompt)
+
+        #expect(shownStages == [.none, .available, .firstPrompt, .secondPrompt, .thirdPrompt])
+        #expect(notificationPresenter.shownUpdateTypes.isEmpty)
+        cancellable.cancel()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Manual updates follow the prompt stages too, with no popover", .timeLimit(.minutes(1)))
+    func manualUpdatesFollowThePromptStage() throws {
+        let controller = makeController()
+        controller.areAutomaticUpdatesEnabled = false
+        findUpdate(controller)
+        finishDownload(controller)
+
+        try #require(controller.updatePromptStageTracker).moveClock(to: .firstPrompt)
+
+        #expect(controller.needsNotificationDot)
+        #expect(notificationPresenter.shownUpdateTypes.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The prompts hide while the update runs and come back if it fails, until a check finds the app up to date", .timeLimit(.minutes(1)))
+    func promptsComeBackAfterAFailure() throws {
+        let controller = makeController()
+        findUpdate(controller)
+        finishDownload(controller)
+        try #require(controller.updatePromptStageTracker).moveClock(to: .secondPrompt)
+
+        startInstalling(controller)
+        #expect(controller.pendingUpdatePromptStage == .none)
+
+        failUpdate(controller)
+        #expect(controller.pendingUpdatePromptStage == .secondPrompt)
+
+        findNoUpdate(controller, latestItem: item)
+        #expect(controller.pendingUpdatePromptStage == .none)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Updating from a prompt after a failure starts a new update", .timeLimit(.minutes(1)))
+    func updatingAfterFailureRetries() throws {
+        let controller = makeController()
+        findUpdate(controller)
+        finishDownload(controller)
+        startInstalling(controller)
+        failUpdate(controller)
+        wideEvent.started.removeAll()
+
+        controller.runUpdate()
+
+        let flow = try #require(wideEvent.started.last as? UpdateWideEventData)
+        #expect(flow.initiationType == .manual)
     }
 }

@@ -304,6 +304,15 @@ extension AutoconsentUserScript {
         }
     }
 
+    static let defaultHeuristicPopupSearchTimeout = 100
+
+    static func heuristicPopupSearchTimeout(from settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings) -> Int {
+        guard let timeout = settings["heuristicPopupSearchTimeout"] as? Int, timeout > 0 else {
+            return defaultHeuristicPopupSearchTimeout
+        }
+        return timeout
+    }
+
     @MainActor
     private func heuristicModeValue() -> String {
         if !(consentHeuristicEnabled ?? false) {
@@ -413,7 +422,10 @@ extension AutoconsentUserScript {
                 "detectRetries": 20,
                 "isMainWorld": false,
                 "enableHeuristicDetection": true,
-                "heuristicMode": consentHeuristicMode ?? "off"
+                "heuristicMode": consentHeuristicMode ?? "off",
+                "enableHeuristicHitTest": featureFlagger.isFeatureOn(.heuristicHitTest),
+                "enablePopupMutationObserver": featureFlagger.isFeatureOn(.popupMutationObserver),
+                "heuristicPopupSearchTimeout": Self.heuristicPopupSearchTimeout(from: remoteConfig)
             ] as [String: Any?]
         ] as [String: Any?]
 

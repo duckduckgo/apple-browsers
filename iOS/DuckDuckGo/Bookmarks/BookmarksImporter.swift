@@ -108,6 +108,15 @@ final public class BookmarksImporter {
 
         let document: Document = try SwiftSoup.parse(normalizedHtml)
 
+        // Some exports close the folder's <DT> before its <DL>. Move the list into
+        // the folder so the preview and import both read it as the folder's contents.
+        for list in try document.select("DT + DL") {
+            guard let folder = try list.previousElementSibling(),
+                  try !folder.select("H3").isEmpty(),
+                  try folder.select("DL").isEmpty() else { continue }
+            try folder.appendChild(list)
+        }
+
         let root = try document.select("body").first() ?? document
 
         // Get all direct children
@@ -155,6 +164,11 @@ final public class BookmarksImporter {
 
     private func parse(documentElement: Element, importedBookmark: BookmarkOrFolder?, inFavorite: Bool = false) throws {
         guard let firstDL = try documentElement.select("DL").first() else {
+            // A folder with no <DL> of its own is an empty folder, which countBookmarks already
+            // tolerates. Failing here would abort the whole import after the preview accepted it.
+            if importedBookmark != nil {
+                return
+            }
             throw BookmarksImportError.invalidHtmlNoDLTag
         }
         try firstDL.children()

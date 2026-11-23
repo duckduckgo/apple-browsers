@@ -454,7 +454,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         signalEdgeIfDraggedPastIt(scrollView)
 
         switch state {
-        case .idle: break
+        case .idle: return
 
         case .starting(let startPosition):
             let offset = startPosition.x - scrollView.contentOffset.x
@@ -501,6 +501,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 state = .starting(startPosition)
             }
         }
+        if let tab = tabsModel?.currentTab, tab.link != nil {
+            liveTabControllerProvider(tab)?.updateSitePermissionDialogVisibility()
+        }
+        liveDestinationController?.updateSitePermissionDialogVisibility()
     }
 
     private func prepareFloatingSwipe(offset: CGFloat) {
@@ -855,6 +859,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let header = AIChatTabChatHeaderView(
             isFireModeEnabled: true,
             shouldShowImageGeneration: omnibarDependencies.featureFlagger.isFeatureOn(.aiChatNativeSidebar),
+            usesFloatingAIChrome: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
             layout: AIChatTabChatHeaderView.Layout(featureFlagger: omnibarDependencies.featureFlagger)
         )
         header.isUserInteractionEnabled = false
@@ -882,7 +887,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let inputController = UnifiedToggleInputViewController(
             isToggleEnabled: true,
             isFireTab: tab.fireTab,
-            usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout)
+            usesCompactAttachmentLayout: attachMoreTabsFeature.usesCompactAttachmentLayout,
+            usesFloatingUI: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled)
         inputController.loadViewIfNeeded()
         inputController.view.isUserInteractionEnabled = false
 
@@ -1406,7 +1412,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         chromePreview = nil
         teardownAuxiliarySwipeSnapshots()
         if let tab = tabsModel?.currentTab, tab.link != nil {
-            liveTabControllerProvider(tab)?.fireSitePermissionDialogImpressionIfVisible()
+            liveTabControllerProvider(tab)?.updateSitePermissionDialogVisibility()
         }
     }
 

@@ -67,7 +67,8 @@ extension NewTabPageActionsManager {
         syncService: DDGSyncing?,
         pinningManager: PinningManager,
         promoService: PromoService?,
-        dockCustomization: DockCustomization
+        dockCustomization: DockCustomization,
+        addToDockVideoPresenter: AddToDockVideoPresenting
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -134,6 +135,7 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             featureFlagger: featureFlagger,
+            privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
             aiChatPreferencesPersistor: NSApp.delegateTyped.aiChatPreferencesPersistor,
             searchPreferences: NSApp.delegateTyped.searchPreferences,
             windowControllersManager: windowControllersManager,
@@ -187,7 +189,9 @@ extension NewTabPageActionsManager {
                 tabOpener: NewTabPageTabOpener(),
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 pixelHandler: nextStepsPixelHandler,
-                newTabPageNavigator: DefaultNewTabPageNavigator()
+                newTabPageNavigator: DefaultNewTabPageNavigator(),
+                featureFlagger: featureFlagger,
+                videoPresenter: addToDockVideoPresenter
             ),
             pixelHandler: nextStepsPixelHandler,
             persistor: nextStepsCardsPersistor,

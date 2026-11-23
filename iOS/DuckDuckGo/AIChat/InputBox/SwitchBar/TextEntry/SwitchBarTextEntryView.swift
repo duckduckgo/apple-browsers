@@ -145,6 +145,12 @@ class SwitchBarTextEntryView: UIView {
     }
     private let placeholderLabel = UILabel()
     private var buttonsView = SwitchBarButtonsView()
+    var usesFloatingAIStopButtonSpacing: Bool = false {
+        didSet { buttonsView.usesFloatingAIStopButtonSpacing = usesFloatingAIStopButtonSpacing }
+    }
+    var hidesStopButtonBackground: Bool = false {
+        didSet { buttonsView.hidesStopButtonBackground = hidesStopButtonBackground }
+    }
     private var currentButtonState: SwitchBarButtonState {
         get { buttonsView.buttonState }
         set { buttonsView.buttonState = newValue }

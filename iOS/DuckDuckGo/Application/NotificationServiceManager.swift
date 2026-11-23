@@ -166,6 +166,7 @@ private extension NotificationServiceManager {
         }
         PixelKit.fire(pixel)
 
-        mainCoordinator.presentDataBrokerProtectionDashboard()
+        let freeScanEntryPoint: FreemiumDBPEntryPoint? = identifier == .firstFreemiumScanComplete ? .scanCompleteNotification : nil
+        mainCoordinator.presentDataBrokerProtectionDashboard(freeScanEntryPoint: freeScanEntryPoint)
     }
 }

@@ -33,7 +33,7 @@ actor ChromeWebStoreUpdateCoordinator {
     typealias SchedulerFactory = @Sendable (TimeInterval) -> any ChromeWebStorePeriodicScheduling
 
     typealias PersistState = @MainActor @Sendable (ChromeWebStoreUpdateState) -> Void
-    typealias ResultHandler = @MainActor @Sendable (String, ChromeWebStoreUpdateChecker.Outcome) -> Void
+    typealias ResultHandler = @MainActor @Sendable (String, ChromeWebStoreUpdateChecker.Outcome) async -> Void
 
     static let defaultCheckInterval: TimeInterval = 5 * 60 * 60
     private static let launchCheckMinimumInterval: TimeInterval = 4 * 60 * 60

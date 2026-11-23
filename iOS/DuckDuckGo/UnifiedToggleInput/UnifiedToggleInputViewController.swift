@@ -68,7 +68,8 @@ final class UnifiedToggleInputViewController: UIViewController {
     private lazy var inputBarView = UnifiedToggleInputView(handler: handler,
                                                           isToggleEnabled: isToggleEnabled,
                                                           placesAttachmentsAboveInput: placesAttachmentsAboveInput,
-                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout)
+                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout,
+                                                          usesFloatingUI: usesFloatingUI)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
     func inputCardFrame(in view: UIView) -> CGRect {
@@ -89,6 +90,7 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
     var aiTabFireButton: UIButton { inputBarView.aiTabFireButton }
+    var aiTabChatsButton: UIButton { inputBarView.aiTabChatsButton }
 
     /// Dims the input bar for the fire-education onboarding step without affecting the fire button.
     func setOnboardingDimmed(_ dimmed: Bool) {
@@ -103,14 +105,17 @@ final class UnifiedToggleInputViewController: UIViewController {
     private let placesAttachmentsAboveInput: Bool
 
     private let usesCompactAttachmentLayout: Bool
+    private let usesFloatingUI: Bool
 
     init(isToggleEnabled: Bool,
          isFireTab: Bool = false,
          placesAttachmentsAboveInput: Bool = false,
-         usesCompactAttachmentLayout: Bool = false) {
+         usesCompactAttachmentLayout: Bool = false,
+         usesFloatingUI: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
         self.usesCompactAttachmentLayout = usesCompactAttachmentLayout
+        self.usesFloatingUI = usesFloatingUI
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)

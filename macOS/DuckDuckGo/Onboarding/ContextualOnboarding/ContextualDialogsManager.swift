@@ -18,7 +18,8 @@
 
 import Foundation
 import Combine
-import PrivacyDashboard
+import Persistence
+import Subscription
 
 /// Represents the current state of onboarding.
 enum ContextualOnboardingState: String {
@@ -36,12 +37,13 @@ enum ContextualDialogType: Equatable {
     case tryFireButton
     case highFive
     case subscriptionUpsell
+    case thatsDuckAI
 }
 
 /// Protocol for providing the appropriate dialog type based on a Tab.
 protocol ContextualOnboardingDialogTypeProviding {
     /// Returns a dialog type for the provided tab and  privacy information.
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType?
+    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType?
 
     /// Returns the last dialog shown if it was shown for the given tab.
     func lastDialogForTab(_ tab: Tab) -> ContextualDialogType?
@@ -59,16 +61,23 @@ protocol ContextualOnboardingStateUpdater: AnyObject {
     func turnOffFeature()
 }
 
+/// Starts the contextual onboarding path the user picked on the junction.
+protocol ContextualOnboardingPathStarting: AnyObject {
+    func startPath(_ kind: ContextualOnboardingPathKind)
+}
+
+/// Locks the browser UI while contextual onboarding needs the user to stay on one tab.
+protocol ContextualOnboardingUILocking: AnyObject {
+    @MainActor func setUILock(_ lock: UserInteractionLock)
+}
+
 /// Protocol for storing onboarding state data.
-protocol ContextualOnboardingStateStoring {
+protocol ContextualOnboardingStateStoring: AnyObject {
     /// Array of string representations of dialogs that have been shown.
     var contextualDialogsSeen: [String] { get set }
 
     /// Current contextual onboarding state stored as a string (notStarted, ongoing, completed).
     var stateString: String { get set }
-
-    /// Flag indicating if a blocked tracker dialog has been shown.
-    var blockedTrackerSeen: Bool { get set }
 
     /// Flag indicating if the fire button has been used.
     var fireButtonUsedOnce: Bool { get set }
@@ -82,20 +91,22 @@ public class ContextualOnboardingStateStorage: ContextualOnboardingStateStoring 
     @UserDefaultsWrapper(key: .contextualOnboardingState, defaultValue: ContextualOnboardingState.onboardingCompleted.rawValue)
     var stateString: String
 
-    @UserDefaultsWrapper(key: .contextualOnboardingBlockedTrackers, defaultValue: false)
-    var blockedTrackerSeen: Bool
-
     @UserDefaultsWrapper(key: .contextualOnboardingFireButtonUsed, defaultValue: false)
     var fireButtonUsedOnce: Bool
 }
 
 /// Main manager responsible for deciding which onboarding dialog to display based on the current state and tab.
-public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
+public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater, ContextualOnboardingPathStarting {
 
-    private let trackerMessageProvider: TrackerMessageProviding
-    private let subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling
-    private var stateStorage: ContextualOnboardingStateStoring
-    private let isNonBlocking: () -> Bool
+    private let progress: ContextualOnboardingProgress
+    private let makePath: (ContextualOnboardingPathKind) -> ContextualOnboardingPath
+    private weak var uiLocker: ContextualOnboardingUILocking?
+    /// The lock last sent to `uiLocker`, so it's only told about changes.
+    private var appliedUILock = UserInteractionLock.unlocked
+
+    /// The path chosen at the junction. No saved path means search.
+    /// Built on first use, so a finished onboarding never builds one.
+    private lazy var activePath: ContextualOnboardingPath = makePath(progress.pathKind ?? .search)
 
     // The last dialog that was presented.
     var lastDialog: ContextualDialogType?
@@ -107,14 +118,12 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     @Published private(set) var isContextualOnboardingCompleted: Bool
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
 
-    // Computed property for managing state.
     var state: ContextualOnboardingState {
         get {
-            return ContextualOnboardingState(rawValue: stateStorage.stateString) ?? .onboardingCompleted
+            progress.state
         }
         set {
-            // Update persistent state.
-            stateStorage.stateString = newValue.rawValue
+            progress.state = newValue
 
             // Publish completion status
             let isCompleted = newValue == .onboardingCompleted
@@ -123,30 +132,43 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             }
 
             // If onboarding is restarted, clear all stored dialogs and flags.
-            if state == ContextualOnboardingState.notStarted {
-                stateStorage.contextualDialogsSeen = []
-                stateStorage.fireButtonUsedOnce = false
-                stateStorage.blockedTrackerSeen = false
+            if newValue == .notStarted {
+                activePath.reset()
+                progress.reset()
+                activePath = makePath(.search)
             }
+            updateUILock()
         }
     }
 
     init(trackerMessageProvider: TrackerMessageProviding,
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         subscriptionManager: any SubscriptionManager,
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
-         isNonBlocking: @escaping () -> Bool = { false }) {
-        self.isNonBlocking = isNonBlocking
-        self.trackerMessageProvider = trackerMessageProvider
-        self.subscriptionUpsellExperiment = subscriptionUpsellExperiment
-        self.stateStorage = stateStorage
+         settings: any ThrowingKeyedStoring<ContextualOnboardingSettings> = Application.appDelegate.keyValueStore.throwingKeyedStoring(),
+         uiLocker: ContextualOnboardingUILocking? = nil,
+         makePath: ((ContextualOnboardingPathKind, ContextualOnboardingProgressReading) -> ContextualOnboardingPath)? = nil) {
+        let progress = ContextualOnboardingProgress(storage: stateStorage, settings: settings)
+        self.progress = progress
+        self.uiLocker = uiLocker
+        self.makePath = { kind in
+            if let makePath { return makePath(kind, progress) }
+            switch kind {
+            case .search:
+                return SearchOnboardingPath(progress: progress,
+                                            subscriptionManager: subscriptionManager,
+                                            trackerMessageProvider: trackerMessageProvider)
+            case .duckAI:
+                return DuckAIOnboardingPath(progress: progress, subscriptionManager: subscriptionManager)
+            }
+        }
+        // Compares the raw value, as before: an unreadable saved value counts as not completed here.
         self.isContextualOnboardingCompleted = stateStorage.stateString == ContextualOnboardingState.onboardingCompleted.rawValue
+        // After a relaunch, restores the lock of a path that was still running.
+        updateUILock()
     }
 
     // Returns the last dialog shown if it was shown for the given tab.
     func lastDialogForTab(_ tab: Tab) -> ContextualDialogType? {
-        if isNonBlocking(), case .onboarding = tab.content { return nil }
-        if isNonBlocking(), state == .onboardingCompleted { return nil }
-        if isNonBlocking(), lastDialog == .tryASearch, !canShowSearchPrompt(in: tab) { return nil }
         // If the provided tab is the same as the last tab we processed, return the stored last dialog.
         if tab == lastTab {
             return lastDialog
@@ -156,219 +178,78 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
 
     // Called when the user taps the "Got It" button present on some dialogs.
     public func gotItPressed() {
-        if isNonBlocking(), state == .onboardingCompleted { return }
-        // Update state based on the type of dialog that was last shown.
-        switch lastDialog {
-        case .searchDone(shouldFollowUp: true)?:
-            // When user press got it "searchDone" dialog it will automatically show "tryASite" therefore we mark it as seen and as lastDialog
-            markSeen(.tryASite)
-            lastDialog = .tryASite
-        case .trackers?:
-            // When user press got it "trackers" dialog it will automatically show "tryFireButton" therefore we mark it as seen and as lastDialog
-            markSeen(.tryFireButton)
-            lastDialog = .tryFireButton
-        case .tryFireButton?:
-            // When user skips the "tryFireButton" dialog it will automatically show "highFive" therefore we mark it as seen and as lastDialog
-            lastDialog = .highFive
-            enteredHighFive()
-        case .highFive?:
-            advancePastHighFive()
-        case .subscriptionUpsell?:
+        guard let lastDialog else { return }
+        switch activePath.gotItPressed(lastDialog: lastDialog) {
+        case .next(let dialog):
+            progress.markSeen(dialog)
+            self.lastDialog = dialog
+        case .completed:
             state = .onboardingCompleted
-            lastDialog = nil
-        default:
+            self.lastDialog = nil
+        case .none:
             break
         }
     }
 
-    // Enrol on entering highFive, not on leaving it, so every exit resolves against the same cohort.
-    private func enteredHighFive() {
-        if !hasSeen(.highFive) {
-            markSeen(.highFive)
-        }
-        subscriptionUpsellExperiment.enroll()
-    }
-
-    private func advancePastHighFive() {
-        guard subscriptionUpsellExperiment.cohort == .treatment else {
-            state = .onboardingCompleted
-            lastDialog = nil
-            return
-        }
-        markSeen(.subscriptionUpsell)
-        lastDialog = .subscriptionUpsell
-    }
-
     // Called when the user uses the fire button
     func fireButtonUsed() {
-        stateStorage.fireButtonUsedOnce = true
+        progress.fireButtonUsedOnce = true
+        updateUILock()
+    }
+
+    /// The lock the active path keeps on the browser UI. None on the search path and once onboarding ends.
+    var uiLock: UserInteractionLock {
+        state == .onboardingCompleted ? .unlocked : activePath.uiLock
+    }
+
+    private func updateUILock() {
+        let lock = uiLock
+        // Only send changes, so an unlocked path doesn't lift the welcome onboarding's lock.
+        guard lock != appliedUILock else { return }
+        appliedUILock = lock
+        DispatchQueue.main.async { [weak uiLocker] in uiLocker?.setUILock(lock) }
+    }
+
+    /// Called from the junction with the path the user picked.
+    func startPath(_ kind: ContextualOnboardingPathKind) {
+        progress.pathKind = kind
+        activePath = makePath(kind)
+        switch kind {
+        case .search:
+            // The user has just searched from the junction, so Try a search is skipped.
+            progress.markSeen(.tryASearch)
+        case .duckAI:
+            // Only Fire used on this path unlocks it, not Delete All History during the welcome flow.
+            progress.fireButtonUsedOnce = false
+        }
+        updateUILock()
     }
 
     // Called to turn off the contextual onboarding.
     func turnOffFeature() {
-        if isNonBlocking() {
-            lastDialog = nil
-            lastTab = nil
-        }
         state = .onboardingCompleted
     }
 
     // Determines and returns which dialog should be shown for a given tab and privacy info.
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo? = nil) -> ContextualDialogType? {
-        // No contextual transition or presentation belongs on the first-run onboarding page.
-        if isNonBlocking(), case .onboarding = tab.content { return nil }
+    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType? {
         // If onboarding is complete, return nil.
         guard state != .onboardingCompleted else { return nil }
         // If onboarding hasn't started, mark it as ongoing.
         if state == .notStarted { state = .ongoing }
-        // The upsell shows once. The persisted marker also prevents it returning after relaunch.
-        if hasSeen(.subscriptionUpsell) {
+
+        switch activePath.dialog(for: tab) {
+        case .next(let dialog):
+            progress.markSeen(dialog)
+            lastDialog = dialog
+            lastTab = tab
+        case .none:
+            lastDialog = nil
+            lastTab = tab
+        case .completed:
             state = .onboardingCompleted
             lastDialog = nil
-            return nil
         }
-        // Browsing on is the third way out of highFive, so it takes the same transition.
-        if hasSeen(.highFive) {
-            advancePastHighFive()
-
-            if lastDialog == .subscriptionUpsell {
-                lastTab = tab
-                return .subscriptionUpsell
-            }
-
-            return nil
-        }
-
-        var selectedDialog: ContextualDialogType?
-        // Determine which dialog to show based on the type of tab.
-        switch tab.content {
-        case .newtab:
-            selectedDialog = dialogForNewTab()
-        case .url(let url, _, _):
-            if isNonBlocking(), !hasSeen(.tryASearch), canShowSearchPrompt(in: tab) {
-                selectedDialog = .tryASearch
-            } else if url.isDuckDuckGoSearch {
-                selectedDialog = dialogForDuckDuckGoSearch()
-            } else {
-                // For website visit, decide dialog also based on the tracker type.
-                let trackerType = trackerMessageProvider.trackersType(privacyInfo: tab.privacyInfo)
-                selectedDialog = dialogForRegularUrl(trackerType: trackerType, privacyInfo: privacyInfo)
-            }
-        default:
-            selectedDialog = nil
-        }
-
-        // Mark the dialog as seen.
-        if let dialog = selectedDialog { markSeen(dialog) }
-
-        // Store the last dialog and last tab for future reference.
-        lastDialog = selectedDialog
-        lastTab = tab
-
-        if selectedDialog == .highFive { enteredHighFive() }
-
-        return selectedDialog
-    }
-
-    // MARK: - Helpers
-
-    private func canShowSearchPrompt(in tab: Tab) -> Bool {
-        switch tab.content {
-        case .newtab:
-            return true
-        case .url(let url, _, _):
-            return url.host?.lowercased() == "duckduckgo.com" || url.host?.lowercased() == "www.duckduckgo.com"
-        default:
-            return false
-        }
-    }
-
-    // Determines the dialog for a new tab.
-    private func dialogForNewTab() -> ContextualDialogType? {
-        // If "tryASearch" has not been shown, show it.
-        if !hasSeen(.tryASearch) {
-            return .tryASearch
-        }
-        // If "tryASearch" was seen and "tryASite" hasn't been shown and the "tracker" dialog hasn't been seen, show "tryASite".
-        if !hasSeen(.tryASite) && !hasSeen(.defaultTrackers) {
-            return .tryASite
-        }
-        // If either "tryFireButton" has been shown or the fire button was used, and "highFive" hasn't been shown,
-        // and the trackers dialog has been shown, return "highFive" if not previously shown.
-        if (hasSeen(.tryFireButton) || stateStorage.fireButtonUsedOnce) &&
-            !hasSeen(.highFive) &&
-            hasSeen(.defaultTrackers) {
-            return .highFive
-        }
-        return nil
-    }
-
-    // Determines the dialog for a DuckDuckGo search URL.
-    private func dialogForDuckDuckGoSearch() -> ContextualDialogType? {
-        // Ensure "tryASearch" has been seen.
-        guard hasSeen(.tryASearch) else { return nil }
-        // If the "SearchDone" hasn't been seen, choose between follow-up or non-follow-up (showing TrySiteVisit or not o gotItPressed)
-        // based on whether either "tryASite" or the "trackers" has been seen.
-        if !hasSeen(.defaultSearchDone) {
-            return (hasSeen(.tryASite) || hasSeen(.defaultTrackers))
-            ? .searchDone(shouldFollowUp: false)
-            : .searchDone(shouldFollowUp: true)
-        }
-        // If the fire button was used or "tryFireButton" seen, and default trackers has been seen,
-        // show "highFive" if not previously shown.
-        if (hasSeen(.tryFireButton) || stateStorage.fireButtonUsedOnce) &&
-            hasSeen(.defaultTrackers) &&
-            !hasSeen(.highFive) {
-            return .highFive
-        }
-        return nil
-    }
-
-    // Determines the dialog for a website visit based on tracker type and privacy info.
-    private func dialogForRegularUrl(trackerType: OnboardingTrackersType?, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
-        // The blocking flow also introduces search on other websites.
-        if !isNonBlocking(), !hasSeen(.tryASearch) { return .tryASearch }
-        // If a blocked tracker dialog (specific tracker dialog where trackers were blocked) was not shown
-        if !stateStorage.blockedTrackerSeen {
-            // If the tracker type is blocked, mark it and show a tracker dialog.
-            // Decide if when the user presses got it we should show the fireButton dialog
-            // (based on whether the fire button was used or related dialog shown)
-            if case .blockedTrackers = trackerType {
-                stateStorage.blockedTrackerSeen = true
-                let shouldFollowUp = !hasSeen(.tryFireButton) && !stateStorage.fireButtonUsedOnce
-                return trackerDialog(for: privacyInfo, shouldFollowUp: shouldFollowUp)
-            }
-            // if the tracker dialog (for not blocked trackers e.i. major tracker no no trackers) hasn't been seen, show it.
-            if !hasSeen(.defaultTrackers) {
-                let shouldFollowUp = !hasSeen(.tryFireButton) && !stateStorage.fireButtonUsedOnce
-                return trackerDialog(for: privacyInfo, shouldFollowUp: shouldFollowUp)
-            }
-        }
-        // If "trackers" has been seen, show "tryFireButton" if not seen before.
-        if !hasSeen(.tryFireButton) && hasSeen(.defaultTrackers) {
-            return .tryFireButton
-        }
-        // If "tryFireButton" and "trackers" dialogs have been seen show "highFive" if not seen before.
-        if hasSeen(.tryFireButton) && hasSeen(.defaultTrackers) && !hasSeen(.highFive) {
-            return .highFive
-        }
-        return nil
-    }
-
-    // Builds a tracker dialog using the tracker message provider.
-    private func trackerDialog(for privacyInfo: PrivacyInfo?, shouldFollowUp: Bool) -> ContextualDialogType? {
-        guard let message = trackerMessageProvider.trackerMessage(privacyInfo: privacyInfo) else { return nil }
-        return .trackers(message: message, shouldFollowUp: shouldFollowUp)
-    }
-
-    // Checks if a dialog (by case name) has been seen previously.
-    private func hasSeen(_ dialog: ContextualDialogType) -> Bool {
-        return stateStorage.contextualDialogsSeen.contains(dialog.stringRepresentation)
-    }
-
-    // Marks a dialog as seen by adding its string representation to storage.
-    private func markSeen(_ dialog: ContextualDialogType) {
-        stateStorage.contextualDialogsSeen.append(dialog.stringRepresentation)
+        return lastDialog
     }
 }
 
@@ -392,6 +273,8 @@ extension ContextualDialogType {
             return "highFive"
         case .subscriptionUpsell:
             return "subscriptionUpsell"
+        case .thatsDuckAI:
+            return "thatsDuckAI"
         }
     }
 

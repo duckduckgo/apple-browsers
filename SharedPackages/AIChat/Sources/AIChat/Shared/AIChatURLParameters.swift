@@ -35,6 +35,8 @@ public enum AIChatURLParameters {
     public static let flowQueryName = "flow"
     /// Flow selector value for mobile app onboarding.
     public static let mobileAppOnboardingFlowQueryValue = "mobile-app-onboarding"
+    /// Flow selector value for desktop app onboarding.
+    public static let desktopAppOnboardingFlowQueryValue = "desktop-app-onboarding"
 
     public static let modeName = "mode"
     public static let voiceModeValue = "voice"
@@ -56,6 +58,14 @@ public enum AIChatURLParameters {
     /// Tells the Duck.ai FE to render only the Customize Responses card.
     public static let customizeResponsesName = "customize-responses"
     public static let customizeResponsesValue = "full"
+
+    /// Duck.ai in desktop onboarding mode, sending `prompt` automatically.
+    public static func desktopOnboardingPromptURL(from baseURL: URL, prompt: String) -> URL {
+        baseURL
+            .addingOrReplacing(URLQueryItem(name: promptQueryName, value: prompt))
+            .addingOrReplacing(URLQueryItem(name: autoSubmitPromptQueryName, value: autoSubmitPromptQueryValue))
+            .addingOrReplacing(URLQueryItem(name: flowQueryName, value: desktopAppOnboardingFlowQueryValue))
+    }
 
     /// Appends `?mode=voice` to the given base URL.
     public static func voiceModeURL(from baseURL: URL) -> URL {

@@ -75,7 +75,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             activeOffers: [],
             tier: nil,
             availableChanges: nil,
-            pendingPlans: nil
+            pendingPlans: nil,
+            planCountry: nil
         )
         mockSubscriptionManager.resultSubscription = .success(subscription)
         mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat] // All enabled
@@ -1070,6 +1071,7 @@ private final class MockWebExtensionAvailability: WebExtensionAvailabilityProvid
     var isAvailable = false
     var isAutoconsentExtensionAvailable = false
     var isExtensionManagementAvailable: Bool
+    var isAppleSurrogateRedirectionEnabled = false
 
     init(isExtensionManagementAvailable: Bool) {
         self.isExtensionManagementAvailable = isExtensionManagementAvailable

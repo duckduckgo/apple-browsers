@@ -1,5 +1,5 @@
 {
-  "originHash" : "c8f67018d9d106a102480275a0dda8d142b6f3715f79b7bd1127d631c922e944",
+  "originHash" : "63b84bc1be12a2326773d4d2822cdfc598e010c2119ff140e732d3c473e983de",
   "pins" : [
     {
       "identity" : "jwt-kit",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/gumob/PunycodeSwift.git",
       "state" : {
-        "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
-        "version" : "3.0.0"
+        "revision" : "01d1465a1ab47d7ba43ae573ba277a13538f852f",
+        "version" : "4.0.4"
       }
     },
     {

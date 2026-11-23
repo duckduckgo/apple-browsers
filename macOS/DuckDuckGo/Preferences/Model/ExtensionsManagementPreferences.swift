@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import os.log
 import PixelKit
 import PrivacyConfig
 import WebExtensions
@@ -37,8 +38,8 @@ final class ExtensionsManagementPreferences: ObservableObject {
         }
     }
 
-    /// Opened when the configuration doesn't set `learnMoreUrlRemoteDisable`, matching Windows.
-    private static let remoteDisableLearnMoreFallbackURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages")!
+    /// Opened when the configuration doesn't set `learnMoreUrl` or `learnMoreUrlRemoteDisable` to an absolute URL, matching Windows.
+    private static let learnMoreFallbackURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages")!
 
     private let configurationManager: PrivacyConfigurationManaging
     private let webExtensionManager: WebExtensionManaging?
@@ -85,6 +86,14 @@ final class ExtensionsManagementPreferences: ObservableObject {
         scheduleEnabledState(isEnabled, identifier: entry.id)
     }
 
+    func setHasAccessToPrivateData(_ allowed: Bool, for entry: InstalledExtensionEntry) {
+        do {
+            try webExtensionManager?.setHasAccessToPrivateData(allowed, for: entry.id)
+        } catch {
+            Logger.webExtensions.error("Could not save Fire Window access: \(error.localizedDescription)")
+        }
+    }
+
     func remove(_ entry: InstalledExtensionEntry) {
         guard
             let store = webExtensionManager?.chromeWebStore,
@@ -99,18 +108,25 @@ final class ExtensionsManagementPreferences: ObservableObject {
     }
 
     func openLearnMore() {
-        guard let url = webExtensionManager?.chromeWebStore?.learnMoreURL else {
-            return
-        }
+        fire(.learnMoreClicked)
+        openConfiguredLearnMore(settingsKey: "learnMoreUrl")
+    }
 
-        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    func openNativeMessagingLearnMore() {
+        windowControllersManager.show(url: .ddgLearnMore, source: .ui, newTab: true, selected: true)
     }
 
     func openRemoteDisableLearnMore() {
-        let configuredURL = configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrlRemoteDisable"] as? String
-        let url = configuredURL.flatMap(URL.init(string:)) ?? Self.remoteDisableLearnMoreFallbackURL
+        fire(.learnMoreRemoteDisableClicked)
+        openConfiguredLearnMore(settingsKey: "learnMoreUrlRemoteDisable")
+    }
 
-        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    private func openConfiguredLearnMore(settingsKey: String) {
+        let configuredURL = (configurationManager.privacyConfig.settings(for: .extensionManagement)[settingsKey] as? String)
+            .flatMap(URL.init(string:))
+            .flatMap { $0.scheme == nil ? nil : $0 }
+
+        windowControllersManager.show(url: configuredURL ?? Self.learnMoreFallbackURL, source: .ui, newTab: true, selected: true)
     }
 }
 
@@ -123,62 +139,22 @@ extension ExtensionsManagementPreferences {
         let isRemotelyDisabled: Bool
         /// Saved at installation, so they're known while the extension is disabled.
         let permissions: [String]
+        let matchPatterns: [String]
+        let hasAccessToPrivateData: Bool?
+        let hasHitNativeMessagingLimitation: Bool
 
         var id: String { record.uniqueIdentifier }
         var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
 
+        /// The installation alert's lines, one per row.
         var permissionsSummary: String? {
-            let names = permissions
-                .compactMap(WebExtensionManifestPermission.init(rawValue:))
-                .map(\.displayName)
+            let messages = WebExtensionPermissionFormatter.messages(forPermissionNames: permissions, matchPatterns: matchPatterns)
 
-            if names.isEmpty {
+            if messages.isEmpty {
                 return nil
             }
 
-            let summary = ListFormatter.localizedString(byJoining: names)
-            return summary.prefix(1).uppercased() + summary.dropFirst()
-        }
-    }
-}
-
-extension WebExtensionManifestPermission {
-
-    var displayName: String {
-        switch self {
-        case .accessibilityFeaturesModify: UserText.extensionsSettingsPermissionAccessibilityFeaturesModify
-        case .accessibilityFeaturesRead: UserText.extensionsSettingsPermissionAccessibilityFeaturesRead
-        case .bookmarks: UserText.extensionsSettingsPermissionBookmarks
-        case .clipboardRead: UserText.extensionsSettingsPermissionClipboardRead
-        case .clipboardWrite: UserText.extensionsSettingsPermissionClipboardWrite
-        case .contentSettings: UserText.extensionsSettingsPermissionContentSettings
-        case .debugger: UserText.extensionsSettingsPermissionDebugger
-        case .declarativeNetRequest: UserText.extensionsSettingsPermissionDeclarativeNetRequest
-        case .declarativeNetRequestFeedback: UserText.extensionsSettingsPermissionDeclarativeNetRequestFeedback
-        case .desktopCapture: UserText.extensionsSettingsPermissionDesktopCapture
-        case .downloads: UserText.extensionsSettingsPermissionDownloads
-        case .downloadsOpen: UserText.extensionsSettingsPermissionDownloadsOpen
-        case .downloadsUI: UserText.extensionsSettingsPermissionDownloadsUI
-        case .favicon: UserText.extensionsSettingsPermissionFavicon
-        case .geolocation: UserText.extensionsSettingsPermissionGeolocation
-        case .history: UserText.extensionsSettingsPermissionHistory
-        case .identityEmail: UserText.extensionsSettingsPermissionIdentityEmail
-        case .management: UserText.extensionsSettingsPermissionManagement
-        case .nativeMessaging: UserText.extensionsSettingsPermissionNativeMessaging
-        case .notifications: UserText.extensionsSettingsPermissionNotifications
-        case .pageCapture: UserText.extensionsSettingsPermissionPageCapture
-        case .privacy: UserText.extensionsSettingsPermissionPrivacy
-        case .proxy: UserText.extensionsSettingsPermissionProxy
-        case .readingList: UserText.extensionsSettingsPermissionReadingList
-        case .sessions: UserText.extensionsSettingsPermissionSessions
-        case .systemStorage: UserText.extensionsSettingsPermissionSystemStorage
-        case .tabCapture: UserText.extensionsSettingsPermissionTabCapture
-        case .tabGroups: UserText.extensionsSettingsPermissionTabGroups
-        case .tabs: UserText.extensionsSettingsPermissionTabs
-        case .topSites: UserText.extensionsSettingsPermissionTopSites
-        case .ttsEngine: UserText.extensionsSettingsPermissionTtsEngine
-        case .webAuthenticationProxy: UserText.extensionsSettingsPermissionWebAuthenticationProxy
-        case .webNavigation: UserText.extensionsSettingsPermissionWebNavigation
+            return messages.map { "• \($0)" }.joined(separator: "\n")
         }
     }
 }
@@ -190,6 +166,8 @@ private extension ExtensionsManagementPreferences {
         let extensionsPublisher = NotificationCenter.default
             .publisher(for: .chromeWebStoreExtensionChanged)
             .merge(with: NotificationCenter.default.publisher(for: .webExtensionsDidChangeLoadedExtensions))
+            .merge(with: NotificationCenter.default.publisher(for: .webExtensionPrivateAccessDidChange))
+            .merge(with: NotificationCenter.default.publisher(for: .webExtensionNativeMessagingLimitationDidChange))
             .asVoid()
 
         configurationManager.updatesPublisher
@@ -244,7 +222,10 @@ private extension ExtensionsManagementPreferences {
             let entry = InstalledExtensionEntry(record: record,
                                                 listing: listing,
                                                 isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier),
-                                                permissions: manager.extensionPermissions(for: identifier))
+                                                permissions: manager.extensionPermissions(for: identifier),
+                                                matchPatterns: manager.extensionMatchPatterns(for: identifier),
+                                                hasAccessToPrivateData: manager.hasAccessToPrivateData(for: identifier),
+                                                hasHitNativeMessagingLimitation: manager.hasHitNativeMessagingLimitation(identifier: identifier))
             entries.append(entry)
             seenListingIDs.insert(listing.id)
         }

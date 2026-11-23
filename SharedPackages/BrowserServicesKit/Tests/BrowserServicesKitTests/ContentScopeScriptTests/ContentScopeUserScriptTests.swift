@@ -290,6 +290,34 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertTrue(context.isIsolated)
     }
 
+    func testWhenBrokerProtectionContextThenFileNameIsBrokerProtection() {
+        // GIVEN
+        let context = ContentScopeScriptContext.brokerProtection
+
+        // THEN
+        XCTAssertEqual(context.fileName, "brokerProtection")
+    }
+
+    func testWhenBrokerProtectionContextThenMessagingContextNameIsContentScopeScriptsIsolated() {
+        // GIVEN
+        let context = ContentScopeScriptContext.brokerProtection
+
+        // THEN
+        XCTAssertEqual(context.messagingContextName, "contentScopeScriptsIsolated")
+    }
+
+    func testWhenBrokerProtectionContextThenIsIsolatedReturnsTrue() {
+        // GIVEN
+        let context = ContentScopeScriptContext.brokerProtection
+
+        // THEN
+        XCTAssertTrue(context.isIsolated)
+    }
+
+    func testWhenBrokerProtectionContextThenSourceIsTheBrokerProtectionBundle() throws {
+        XCTAssertLessThan(try source(for: .brokerProtection).count, try source(for: .contentScopeIsolated).count)
+    }
+
     // MARK: - Surrogate tracker data encoding
 
     func testWhenContentScopeContextHasSurrogateTrackerDataThenItIsEncodedAsTrackerData() throws {
@@ -342,6 +370,36 @@ final class ContentScopeUserScriptTests: XCTestCase {
         )
 
         XCTAssertFalse(source.contains("\"trackerData\""), "trackerData key should never leak into non-contentScope contexts")
+    }
+
+    // MARK: - Surrogate injection argument
+
+    private func generatedSource(for scriptContext: ContentScopeScriptContext) throws -> String {
+        try ContentScopeUserScript.generateSource(
+            mockPrivacyConfigurationManager,
+            properties: properties,
+            scriptContext: scriptContext,
+            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
+            privacyConfigurationJSONGenerator: nil
+        )
+    }
+
+    func testWhenScriptSurrogateInjectionIsDisabledThenArgIsTrue() throws {
+        let source = try generatedSource(for: .contentScope(disableScriptSurrogateInjection: true))
+
+        XCTAssertTrue(source.contains("\"disableScriptSurrogateInjection\":true"))
+    }
+
+    func testWhenScriptSurrogateInjectionIsNotDisabledThenArgIsAbsent() throws {
+        let source = try generatedSource(for: .contentScope())
+
+        XCTAssertFalse(source.contains("\"disableScriptSurrogateInjection\":"), "C-S-S injects surrogates when the arg is absent")
+    }
+
+    func testWhenNonContentScopeContextThenArgIsAbsent() throws {
+        let source = try generatedSource(for: .contentScopeIsolated)
+
+        XCTAssertFalse(source.contains("\"disableScriptSurrogateInjection\":"))
     }
 
     // MARK: - ContentScopeUserScript Integration Tests with aiChatDataClearing Context
@@ -458,7 +516,8 @@ final class ContentScopeUserScriptTests: XCTestCase {
 
     func testPrivacyConfigReplacementsRoundTripCharactersThatNeedEscaping() throws {
         // GIVEN
-        let json = #"{"quote":"\"","backslash":"\\","script":"</script>","separators":"\#u{2028}\#u{2029}","emoji":"🦆","slash":"a/b"}"#
+        let json = #"{"quote":"\"","backslash":"\\","script":"</script>","separators":"\#u{2028}\#u{2029}","#
+            + #""combined":"\#u{2028}\#u{0301}","nearSeparator":"\#u{2027}\#u{202A}\#u{20AC}","emoji":"🦆","slash":"a/b"}"#
         let expected = try JSONSerialization.jsonObject(with: Data(json.utf8)) as? NSDictionary
 
         // WHEN

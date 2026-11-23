@@ -46,16 +46,7 @@ enum VPNConnectionError: Equatable {
     ///            (e.g., user-initiated cancellation).
     ///
     init?(nsError error: NSError) {
-        // First, try to get domain and code directly from the error
-        var domain = error.domain
-        var code = error.code
-
-        // Check if this is a SanitizedError wrapper - if so, extract the original domain/code from userInfo
-        if let originalDomain = error.userInfo["OriginalErrorDomain"] as? String,
-           let originalCode = error.userInfo["OriginalErrorCode"] as? Int {
-            domain = originalDomain
-            code = originalCode
-        }
+        let (domain, code) = XPCErrorSanitizer.originalDomainAndCode(of: error)
 
         // Check if this is a TunnelError
         guard domain == PacketTunnelProvider.TunnelError.errorDomain else {
@@ -71,7 +62,7 @@ enum VPNConnectionError: Equatable {
         switch errorCode {
         case .startingTunnelWithoutAuthToken:
             self = .authenticationFailed
-        case .couldNotGenerateTunnelConfiguration:
+        case .couldNotGenerateTunnelConfiguration, .reconnectBlocked, .otherTunnelStartError:
             self = .connectionFailed
         case .vpnAccessRevoked, .vpnAccessRevokedDetectedByMonitorCheck:
             self = .subscriptionExpired

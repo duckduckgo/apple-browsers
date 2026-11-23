@@ -8,6 +8,12 @@ inputs:
   cache-key-prefix:
     description: 'Cache key prefix (e.g. ios-ruby, macos-ruby)'
     required: true
+  ruby-version:
+    description: >-
+      Ruby version to use instead of the one in .ruby-version (e.g. '3.4.5').
+      On self-hosted runners the version must already be installed with asdf.
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -15,14 +21,33 @@ runs:
     - name: Install selected Ruby version
       if: runner.environment != 'self-hosted'
       uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ inputs.ruby-version || 'default' }}
+
+    # Self-hosted runners manage Ruby with asdf. ASDF_RUBY_VERSION takes precedence over
+    # .ruby-version, and GITHUB_ENV keeps it set for the later steps of the job.
+    - name: Select Ruby version with asdf
+      if: runner.environment == 'self-hosted' && inputs.ruby-version != ''
+      shell: bash
+      env:
+        RUBY_VERSION_OVERRIDE: ${{ inputs.ruby-version }}
+      run: echo "ASDF_RUBY_VERSION=${RUBY_VERSION_OVERRIDE}" >> "$GITHUB_ENV"
+
+    # Gems with native extensions only work with the Ruby version that built them,
+    # so each Ruby version needs its own cache entry.
+    - name: Read Ruby version
+      id: ruby-version
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: echo "version=$(ruby -e 'print RUBY_VERSION')" >> "$GITHUB_OUTPUT"
 
     - name: Cache Ruby dependencies
       uses: actions/cache@v5
       with:
         path: ${{ inputs.working-directory }}/vendor/bundle
-        key: ${{ runner.os }}-${{ inputs.cache-key-prefix }}-${{ hashFiles(format('{0}/Gemfile.lock', inputs.working-directory)) }}
+        key: ${{ runner.os }}-${{ inputs.cache-key-prefix }}-${{ steps.ruby-version.outputs.version }}-${{ hashFiles(format('{0}/Gemfile.lock', inputs.working-directory)) }}
         restore-keys: |
-          ${{ runner.os }}-${{ inputs.cache-key-prefix }}-
+          ${{ runner.os }}-${{ inputs.cache-key-prefix }}-${{ steps.ruby-version.outputs.version }}-
 
     - name: Setup bundler
       shell: bash

@@ -220,6 +220,9 @@ extension PermissionType {
             return "external-scheme"
         case .autoplayPolicy:
             return "autoplay-policy"
+        case .browserTool:
+            // Not fired: browser tool choices fire BrowserToolsPixel.permissionChanged instead.
+            return "browser-tool"
         }
     }
 }

@@ -69,6 +69,21 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         XCTAssertEqual(tabs.map { $0["url"] }, ["https://example.com"])
     }
 
+    func testWhenATabIsAFileThenItIsNotListedAndReturnedURLsLoseTheirQuery() async throws {
+        let collection = collection([
+            .loaded(Tab(content: .url(URL(fileURLWithPath: "/Users/someone/notes.txt"), credential: nil, source: .ui))),
+            .loaded(Tab(content: .url(URL(string: "https://example.com/doc?key=secret#part")!, credential: nil, source: .ui)))
+        ])
+        let (tool, context) = make(collection: collection, ownerTabID: "owner")
+
+        let result = await tool.execute(arguments: nil, context: context)
+        guard case .success(let value) = result else { return XCTFail("\(result)") }
+        let shaped = tool.clientToolResult(from: value)
+
+        guard case .success(let shapedValue) = shaped else { return XCTFail("\(shaped)") }
+        XCTAssertEqual(shapedValue["tabs"]?.arrayValue?.map { $0["url"] }, ["https://example.com/doc"])
+    }
+
     /// Listed, because it is a page the user has open — but not attachable, matching the tab picker.
     func testWhenATabIsTheDuckDuckGoHomepageThenItIsListedAsNotAttachable() async throws {
         let collection = regularCollection(urls: ["https://duckduckgo.com/"])
@@ -89,6 +104,8 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
 
         let tabs = try XCTUnwrap(tabsPayload(from: result))
         XCTAssertEqual(tabs.map { $0["url"] }, ["https://a.example", "https://b.example"])
+        guard case .success(let value) = result else { return XCTFail("expected success, got \(result)") }
+        XCTAssertEqual(tool.resultCount(of: value), 2)
     }
 
     func testWhenLimitIsOutOfRangeThenArgumentsAreInvalid() async {
@@ -116,8 +133,7 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         let tool = ListOpenTabsBrowserTool(windowControllersManager: manager(with: [collection]))
         let context = BrowserToolCallContext(ownerTabID: "owner",
                                              ownerWindowToken: "not-a-window",
-                                             isBurner: false,
-                                             supportsElicitationForm: true)
+                                             isBurner: false)
 
         let result = await tool.execute(arguments: nil, context: context)
 
@@ -130,8 +146,7 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         let tool = ListOpenTabsBrowserTool(windowControllersManager: manager(with: [collection]))
         let context = BrowserToolCallContext(ownerTabID: "owner",
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
-                                             isBurner: true,
-                                             supportsElicitationForm: true)
+                                             isBurner: true)
 
         let result = await tool.execute(arguments: nil, context: context)
 
@@ -143,7 +158,6 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
 
         XCTAssertEqual(tool.name, "listOpenTabs")
         XCTAssertEqual(tool.permissionMode, .ask)
-        XCTAssertEqual(tool.permissionReason, "Duck.ai wants to see your open tabs.")
     }
 
     // MARK: -
@@ -152,8 +166,7 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         let tool = ListOpenTabsBrowserTool(windowControllersManager: manager(with: [collection]))
         let context = BrowserToolCallContext(ownerTabID: ownerTabID,
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
-                                             isBurner: false,
-                                             supportsElicitationForm: true)
+                                             isBurner: false)
         return (tool, context)
     }
 

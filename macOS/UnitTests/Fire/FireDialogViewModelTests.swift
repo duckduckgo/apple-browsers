@@ -3341,6 +3341,8 @@ class CapturingContextualOnboardingStateUpdater: ContextualOnboardingStateUpdate
         gotItPressedCalled = true
     }
 
+    var isWaitingForDuckAIChatDeletion = false
+
     func fireButtonUsed() {
         fireButtonUsedCalled = true
     }

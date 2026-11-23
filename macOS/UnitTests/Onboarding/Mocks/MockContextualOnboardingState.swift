@@ -47,6 +47,8 @@ final class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Con
         gotItPressedCallCount += 1
     }
 
+    var isWaitingForDuckAIChatDeletion = false
+
     func fireButtonUsed() {}
 
     func turnOffFeature() {

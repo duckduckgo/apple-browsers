@@ -123,6 +123,11 @@ final class FireDialogViewModel: ObservableObject {
             self != .duckAIOnboarding
         }
 
+        /// Show the "…" menu? Its items lead away from the dialog, which the Duck.ai onboarding path doesn't allow.
+        var shouldShowMoreOptionsMenu: Bool {
+            self != .duckAIOnboarding
+        }
+
         /// Whether the dialog remembers the user's choices for the next time.
         var savesChoices: Bool {
             self != .duckAIOnboarding

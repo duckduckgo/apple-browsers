@@ -56,6 +56,8 @@ protocol ContextualOnboardingDialogTypeProviding {
 protocol ContextualOnboardingStateUpdater: AnyObject {
     var state: ContextualOnboardingState { get set }
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { get }
+    /// Whether the Duck.ai path is waiting for the user to delete their chat with Fire.
+    var isWaitingForDuckAIChatDeletion: Bool { get }
     func gotItPressed()
     func fireButtonUsed()
     func turnOffFeature()
@@ -189,6 +191,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         case .none:
             break
         }
+    }
+
+    var isWaitingForDuckAIChatDeletion: Bool {
+        state != .onboardingCompleted && progress.pathKind == .duckAI && !progress.fireButtonUsedOnce
     }
 
     // Called when the user uses the fire button

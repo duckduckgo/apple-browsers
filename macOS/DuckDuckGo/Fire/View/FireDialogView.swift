@@ -173,13 +173,15 @@ struct FireDialogView: ModalView {
                 }
                 .padding(.horizontal, Constants.horizontalPadding)
                 .background(alignment: .topTrailing) {
-                    moreOptionsMenu
-                        .menuIndicator(.hidden)
-                        .fixedSize()
-                        .accessibilityLabel(UserText.fireDialogMoreOptions)
-                        .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
-                        .padding(.top, 16)
-                        .padding(.trailing, Constants.toolbarHorizontalPadding)
+                    if viewModel.mode.shouldShowMoreOptionsMenu {
+                        moreOptionsMenu
+                            .menuIndicator(.hidden)
+                            .fixedSize()
+                            .accessibilityLabel(UserText.fireDialogMoreOptions)
+                            .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+                            .padding(.top, 16)
+                            .padding(.trailing, Constants.toolbarHorizontalPadding)
+                    }
 
                 }
 

@@ -13,9 +13,9 @@
             "channel",
             {
                 "key": "model_source",
-                "description": "Where the model of a new chat's first prompt came from: the server default, a pick before sending, or a fallback when the server sent no usable default. onboarding is reserved for parity with iOS. Sent only while new chats start on the default model, and only when a model is sent.",
+                "description": "Where the model of a new chat's first prompt came from: the server default, a pick before sending, the user's default model from Duck.ai settings (user_default), the default the chat fell back to because the user's default model can't be used, e.g. unknown, not on their plan, or over the usage limit (user_default_unavailable), or a fallback when the server sent no usable default. onboarding is reserved for parity with iOS. Sent only while new chats start on the default model, and only when a model is sent.",
                 "type": "string",
-                "enum": ["default", "picked", "onboarding", "fallback"]
+                "enum": ["default", "picked", "onboarding", "fallback", "user_default", "user_default_unavailable"]
             },
             {
                 "key": "model_id",

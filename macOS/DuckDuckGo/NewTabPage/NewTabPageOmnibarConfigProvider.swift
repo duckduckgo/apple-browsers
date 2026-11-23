@@ -168,7 +168,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
         self.firePixel = firePixel
 
-        overLimitDefaultChangesCancellable = self.newChatDefaults?.overLimitDefaultChanges
+        defaultChangesCancellable = self.newChatDefaults?.defaultChanges
             .sink { [weak self] in self?.usageLimitsChangedSubject.send(()) }
 
         // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
@@ -452,7 +452,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
     private var highUsageNoticeSource: AIChatHighUsageNoticeSource?
     private var usageLimitsCancellables = Set<AnyCancellable>()
-    private var overLimitDefaultChangesCancellable: AnyCancellable?
+    private var defaultChangesCancellable: AnyCancellable?
 
     var usageLimitsPublisher: AnyPublisher<Void, Never> {
         usageLimitsChangedSubject.eraseToAnyPublisher()
@@ -462,8 +462,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     func refreshUsageLimits(requestingWebView: WKWebView?) {
         guard let windowControllersManager else { return }
         let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
-        let store = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
-                                           featureFlagger: featureFlagger)
+        let storageHandler = duckAiStorageHandlerProvider(burnerMode)
+        let store = DuckAiUsageLimitsStore(storageHandler: storageHandler, featureFlagger: featureFlagger)
         usageLimitsCancellables.removeAll()
         usageWarningViewModel = store.makeWarningViewModel(
             modelSuggester: DuckAiModelSuggester(
@@ -495,6 +495,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .sink { [weak self] in self?.usageWarningViewModel?.refresh() }
             .store(in: &usageLimitsCancellables)
         observeOverLimitNewChatDefault(in: store)
+        observeUserDefaultModel(in: storageHandler)
         // After the first resolve, so entering Duck.ai mode doesn't push an update on top of the
         // `getConfig` response that triggered it.
         usageWarningViewModel?.$warning
@@ -507,6 +508,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     /// Over the usage limit, new chats start on the default web sends in the usage-limits snapshot.
     private func observeOverLimitNewChatDefault(in store: DuckAiUsageLimitsStore) {
         newChatDefaults?.observeOverLimitDefaults(store.overLimitNewChatDefaultPublisher(receivingUpdatesOn: ImmediateScheduler.shared))
+    }
+
+    /// Follows the requesting page's storage, so a Fire Window reads the setting through its own handler.
+    private func observeUserDefaultModel(in storageHandler: DuckAiNativeStorageHandling?) {
+        newChatDefaults?.observeUserDefaultModel(storageHandler.map { DuckAiUserDefaultModelStore(storage: $0) })
     }
 
     @MainActor

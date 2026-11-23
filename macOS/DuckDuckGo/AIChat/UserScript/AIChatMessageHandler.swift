@@ -132,7 +132,7 @@ extension AIChatMessageHandler {
     func getNativeConfigValues(isFireWindow: Bool) -> AIChatNativeConfigValues {
         let appVersion = AppVersion.shared.versionAndBuildNumber
         let defaults = AIChatNativeConfigValues.defaultValues
-        return AIChatNativeConfigValues(
+        var config = AIChatNativeConfigValues(
             isAIChatHandoffEnabled: true,
             supportsClosingAIChat: true,
             supportsOpeningSettings: true,
@@ -168,6 +168,8 @@ extension AIChatMessageHandler {
             supportsBonusOffer: isSparkleBuild && featureFlagger.isFeatureOn(.aiChatLimitExtensionPromo),
             supportsCanonicalChatFormat: true
         )
+        config.supportsDefaultModelSetting = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
+        return config
     }
 
     private func getNativeHandoffData() -> Encodable? {

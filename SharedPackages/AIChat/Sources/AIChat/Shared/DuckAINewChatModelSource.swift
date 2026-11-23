@@ -24,6 +24,8 @@ public enum DuckAINewChatModelSource: String, CaseIterable, Sendable {
     case picked
     case onboarding
     case fallback
+    case userDefault = "user_default"
+    case userDefaultUnavailable = "user_default_unavailable"
 
     public static let pixelParameterKey = "model_source"
 
@@ -36,12 +38,18 @@ public enum DuckAINewChatModelSource: String, CaseIterable, Sendable {
                                newChatDefault: AIChatNewChatSelection?) -> DuckAINewChatModelSource? {
         if sentModelId == onboardingModelId { return .onboarding }
         if let newChatDefault, newChatDefault.modelId == sentModelId, sendsDefaultEffort {
-            switch newChatDefault.origin {
-            case .server: return .default
-            case .fallback: return .fallback
-            }
+            return source(sendingDefault: newChatDefault)
         }
         if isPicked { return .picked }
         return newChatDefault == nil ? nil : .fallback
+    }
+
+    private static func source(sendingDefault newChatDefault: AIChatNewChatSelection) -> DuckAINewChatModelSource {
+        if newChatDefault.isUserDefaultUnavailable { return .userDefaultUnavailable }
+        switch newChatDefault.origin {
+        case .user: return .userDefault
+        case .server: return .default
+        case .fallback: return .fallback
+        }
     }
 }

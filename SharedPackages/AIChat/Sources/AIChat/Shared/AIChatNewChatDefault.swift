@@ -70,20 +70,29 @@ public struct AIChatOverLimitNewChatDefault: Equatable, Sendable {
 
 /// The model and effort a new chat starts on. A `nil` effort leaves it to the model's own default.
 public struct AIChatNewChatSelection: Equatable, Sendable {
-    /// Whether the selection is the server's default or a fallback because the server had no usable one.
+    /// Whether the selection is a server default, the user's own default, or a fallback because neither was usable.
     public enum Origin: Equatable, Sendable {
         case server
+        /// The "Default AI Model" setting from Duck.ai settings.
+        case user
         case fallback
     }
 
     public let modelId: String
     public let reasoningEffort: AIChatReasoningEffort?
     public let origin: Origin
+    /// The user set a default model, but the chat can't start on it.
+    public let isUserDefaultUnavailable: Bool
 
-    public init(modelId: String, reasoningEffort: AIChatReasoningEffort?, origin: Origin) {
+    public init(modelId: String, reasoningEffort: AIChatReasoningEffort?, origin: Origin, isUserDefaultUnavailable: Bool = false) {
         self.modelId = modelId
         self.reasoningEffort = reasoningEffort
         self.origin = origin
+        self.isUserDefaultUnavailable = isUserDefaultUnavailable
+    }
+
+    func markingUserDefaultUnavailable() -> AIChatNewChatSelection {
+        AIChatNewChatSelection(modelId: modelId, reasoningEffort: reasoningEffort, origin: origin, isUserDefaultUnavailable: true)
     }
 
     /// The default effort applies only while the input is on the default model.

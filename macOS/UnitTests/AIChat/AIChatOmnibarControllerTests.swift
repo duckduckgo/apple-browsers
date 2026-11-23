@@ -3390,7 +3390,8 @@ private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
 extension AIChatOmnibarControllerTests {
 
     private func makeNewChatDefaultController(surface: DuckAIPromptSurface = .addressBar,
-                                              usageLimitsStore: DuckAiUsageLimitsStore? = nil) -> AIChatOmnibarController {
+                                              usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+                                              userDefaultStorage: DuckAiNativeStorageHandler? = nil) -> AIChatOmnibarController {
         featureFlagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         mockModelsService.modelsToReturn = [
@@ -3413,7 +3414,8 @@ extension AIChatOmnibarControllerTests {
             modelsService: mockModelsService,
             subscriptionManager: mockSubscriptionManager,
             subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
-            usageLimitsStore: usageLimitsStore
+            usageLimitsStore: usageLimitsStore,
+            userDefaultModel: userDefaultStorage.map { DuckAiUserDefaultModelStore(storage: $0) }
         )
     }
 
@@ -3425,6 +3427,12 @@ extension AIChatOmnibarControllerTests {
         "newChatDefault": {"modelId": "luna"}}
         """)
         return DuckAiUsageLimitsStore(storageHandler: storage, featureFlagger: featureFlagger)
+    }
+
+    private func makeUserDefaultStorage(_ modelId: String) throws -> DuckAiNativeStorageHandler {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: "\"\(modelId)\"")
+        return storage
     }
 
     private func submittedQuery() -> AIChatNativePrompt.Query? {
@@ -3443,6 +3451,47 @@ extension AIChatOmnibarControllerTests {
         XCTAssertEqual(controller.persistedModelId, "terra")
         XCTAssertEqual(controller.currentModelId, "terra")
         XCTAssertEqual(controller.selectedReasoningEffort, AIChatReasoningEffort.none)
+    }
+
+    func testWhenUserDefaultIsSet_ThenNewChatStartsOnItAndFollowsChanges() async throws {
+        let storage = try makeUserDefaultStorage("luna")
+        let controller = makeNewChatDefaultController(userDefaultStorage: storage)
+        var changeCount = 0
+        controller.onSelectedModelChanged = { changeCount += 1 }
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        XCTAssertEqual(controller.currentModelId, "luna")
+        XCTAssertNil(controller.selectedReasoningEffort)
+
+        changeCount = 0
+        try storage.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue)
+
+        XCTAssertEqual(controller.currentModelId, "terra")
+        XCTAssertEqual(changeCount, 1)
+    }
+
+    func testWhenUserDefaultSubmitted_ThenPixelReportsUserDefaultSource() async throws {
+        let controller = makeNewChatDefaultController(userDefaultStorage: try makeUserDefaultStorage("luna"))
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        controller.submit()
+
+        XCTAssertEqual(submittedNewChatModelParameters()??["model_source"], "user_default")
+    }
+
+    func testWhenUserDefaultIsUnavailable_ThenChatStartsOnServerDefaultAndPixelReportsIt() async throws {
+        let controller = makeNewChatDefaultController(userDefaultStorage: try makeUserDefaultStorage("gone-model"))
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        XCTAssertEqual(controller.currentModelId, "terra")
+        controller.submit()
+
+        XCTAssertEqual(submittedNewChatModelParameters()??["model_source"], "user_default_unavailable")
     }
 
     func testWhenNewChatDefaultIsOnAndModelPicked_ThenPreferencesAreNotWritten() async {

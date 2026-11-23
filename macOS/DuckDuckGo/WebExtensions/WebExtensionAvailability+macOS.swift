@@ -54,6 +54,6 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     }
 
     var isExtensionManagementAvailable: Bool {
-        isAvailable && featureFlagger.isFeatureOn(.webExtensions)
+        isAvailable && (featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal))
     }
 }

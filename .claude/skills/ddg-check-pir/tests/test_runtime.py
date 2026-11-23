@@ -42,8 +42,8 @@ class FakeTools:
         self.products_override = None
 
     def materialize(self, mac):
-        app = self.root / ("DerivedData/verify-pir/macos/deployment/Applications/DEBUG/DuckDuckGo.app" if mac else
-                           "DerivedData/verify-pir/ios/build/Build/Products/Debug-iphonesimulator/DuckDuckGo.app")
+        app = self.root / ("DerivedData/ddg-check-pir/macos/deployment/Applications/DEBUG/DuckDuckGo.app" if mac else
+                           "DerivedData/ddg-check-pir/ios/build/Build/Products/Debug-iphonesimulator/DuckDuckGo.app")
         info = {"CFBundleIdentifier": runtime.BROWSER_BUNDLE if mac else runtime.BUNDLES["ios"],
                 "CFBundleExecutable": "DuckDuckGo"}
         if mac:
@@ -86,20 +86,20 @@ class FakeTools:
                 overrides.write_text(previous + "\nDEPLOYMENT_LOCATION[config=Debug] = YES\n")
         elif command[0] == "xcodebuild":
             mac = command[command.index("-scheme") + 1] == "macOS Browser"
-            app = self.root / ("DerivedData/verify-pir/macos/deployment/Applications/DEBUG/DuckDuckGo.app" if mac else
-                               "DerivedData/verify-pir/ios/build/Build/Products/Debug-iphonesimulator/DuckDuckGo.app")
+            app = self.root / ("DerivedData/ddg-check-pir/macos/deployment/Applications/DEBUG/DuckDuckGo.app" if mac else
+                               "DerivedData/ddg-check-pir/ios/build/Build/Products/Debug-iphonesimulator/DuckDuckGo.app")
             if "-showBuildSettings" in command:
                 self.settings = {"TARGET_BUILD_DIR": str(app.parent), "FULL_PRODUCT_NAME": app.name,
                                  "PRODUCT_BUNDLE_IDENTIFIER": runtime.BROWSER_BUNDLE if mac else runtime.BUNDLES["ios"],
                                  "DEPLOYMENT_LOCATION": "YES" if mac else "NO",
-                                 "BUILT_PRODUCTS_DIR": str(self.products_override or (self.root / "DerivedData/verify-pir" /
+                                 "BUILT_PRODUCTS_DIR": str(self.products_override or (self.root / "DerivedData/ddg-check-pir" /
                                      ("macos" if mac else "ios") / "build/Build/Products" / ("Debug" if mac else "Debug-iphonesimulator")))}
                 output = json.dumps([{"action": "build", "target": "DuckDuckGo", "buildSettings": self.settings}])
             else:
                 if mac:
                     link = Path(self.settings["BUILT_PRODUCTS_DIR"]) / "Applications"
                     assert link.is_symlink(), "Build must not enter the global deployment branch"
-                    assert link.resolve() == (self.root / "DerivedData/verify-pir/macos/deployment/Applications").resolve()
+                    assert link.resolve() == (self.root / "DerivedData/ddg-check-pir/macos/deployment/Applications").resolve()
                 self.materialize(mac)
                 if self.source_changes_during_build:
                     (self.root / "iOS/input.swift").write_text("changed during build")
@@ -191,7 +191,7 @@ class LifecycleTests(unittest.TestCase):
         (self.root / "macOS").mkdir()
         (self.root / "macOS/LocalOverrides.xcconfig").write_text("UNRELATED_SETTING = preserve\n")
         (self.root / ".gitignore").write_text("macOS/LocalOverrides.xcconfig\n")
-        self.skill = self.root / ".claude/skills/verify-pir/runtime.py"
+        self.skill = self.root / ".claude/skills/ddg-check-pir/runtime.py"
         self.skill.parent.mkdir(parents=True)
         REAL_RUN(["git", "init", "-q", str(self.root)], check=True)
         REAL_RUN(["git", "-C", str(self.root), "add", "iOS/input.swift", ".gitignore"], check=True)
@@ -389,7 +389,7 @@ class LifecycleTests(unittest.TestCase):
             runtime.fcntl.flock(held, runtime.fcntl.LOCK_EX)
             launched = instance.launch_scheduler("reseed", fixture)
         self.assertEqual(launched["simulator"]["udid"], OWNED_SIM)
-        self.assertIn("verify-pir-ipad-", launched["simulator"]["name"])
+        self.assertIn("ddg-check-pir-ipad-", launched["simulator"]["name"])
         command, options = next((c, o) for c, o in self.tools.calls if c[:3] == ["xcrun", "simctl", "launch"])
         self.assertNotIn(fixture, command)
         env = options["env"]
@@ -484,7 +484,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(options["env"]["PIR_DEBUG_ENVIRONMENT"], "staging")
         self.assertNotIn("PRIVATE_SERVICE_TOKEN", options["env"])
         self.assertEqual(command[command.index("-pirDebugPort") + 1], str(instance.port))
-        self.assertEqual(launched["product"]["browserPath"], str((self.root / "DerivedData/verify-pir/macos/deployment/Applications/DEBUG/DuckDuckGo.app").resolve()))
+        self.assertEqual(launched["product"]["browserPath"], str((self.root / "DerivedData/ddg-check-pir/macos/deployment/Applications/DEBUG/DuckDuckGo.app").resolve()))
         instance.stop()
         self.assertFalse(self.tools.processes)
 

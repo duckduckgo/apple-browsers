@@ -42,7 +42,7 @@ final class DebugHTTPPythonContractTests: XCTestCase {
 
         var root = URL(fileURLWithPath: #filePath)
         for _ in 0..<5 { root.deleteLastPathComponent() }
-        let script = root.appendingPathComponent(".claude/skills/verify-pir/tests/native_contract.py")
+        let script = root.appendingPathComponent(".claude/skills/ddg-check-pir/tests/native_contract.py")
         XCTAssertTrue(FileManager.default.fileExists(atPath: script.path), script.path)
         let outputURL = directory.appendingPathComponent("python.log")
         XCTAssertTrue(FileManager.default.createFile(atPath: outputURL.path, contents: nil))

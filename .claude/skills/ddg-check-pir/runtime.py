@@ -28,7 +28,7 @@ class RuntimeError(builtins.RuntimeError):
 BUNDLES = {"ios": "com.duckduckgo.mobile.ios",
            "macos": "com.duckduckgo.macos.DBP.backgroundAgent.debug"}
 BROWSER_BUNDLE = "com.duckduckgo.macos.browser.debug"
-SCHEDULER_LOCK = Path(f"/tmp/verify-pir-scheduler-{os.getuid()}.lock")
+SCHEDULER_LOCK = Path(f"/tmp/ddg-check-pir-scheduler-{os.getuid()}.lock")
 SCHEDULER_SETUP_TIMEOUT = 180
 FLAGS = ["isRunningUITests", "-ff.dbpCustomWebViewUserAgent", "true",
          "-ff.dbpExtractedProfileRefresh", "true"]
@@ -126,7 +126,7 @@ class Runtime:
         self.platform, self.device = platform, device
         self.instance, self.port, self.keep = instance, port, keep
         self.pir_environment = pir_environment
-        self.base = self.root / "DerivedData" / "verify-pir" / platform
+        self.base = self.root / "DerivedData" / "ddg-check-pir" / platform
         self.derived = self.base / "build"
         self.deployment = self.base / "deployment"
         self.state = self.base / "build.json"
@@ -339,7 +339,7 @@ class Runtime:
         choices = [entry for entry in types if entry["name"].startswith(prefix) and entry["identifier"] in supported]
         if not choices:
             raise RuntimeError(f"No {prefix} device type supports the installed runtime")
-        name = f"verify-pir-{self.device}-{self.instance}"
+        name = f"ddg-check-pir-{self.device}-{self.instance}"
         if any(device.get("name") == name for device in self._simulators()):
             raise RuntimeError("A simulator already exists for this instance; refusing to adopt it")
         identifier = self._simctl("create", name, choices[0]["identifier"], runtime["identifier"]).strip()
@@ -485,7 +485,7 @@ class Runtime:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             lock.close()
-            raise RuntimeError("Another verify-pir command is seeding the DEBUG store") from error
+            raise RuntimeError("Another ddg-check-pir command is seeding the DEBUG store") from error
         except BaseException:
             lock.close()
             raise

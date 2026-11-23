@@ -521,7 +521,7 @@ def execute(args, runtime_factory=None):
         raise ValueError("selftest does not accept scenario, credential, check-config or keep options")
     token = None
     if is_selftest:
-        token = "verify-pir-selftest-dummy-credential"
+        token = "ddg-check-pir-selftest-dummy-credential"
     elif args.command != "scheduler":
         token = read_token(args)
     if args.command == "run" and not args.config:

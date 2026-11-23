@@ -465,7 +465,11 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    /// Surfaces controller startup messages in the same banner as session errors.
+    /// Surfaces controller-side start failures in the same banner as session errors.
+    ///
+    /// Failures that abort before a tunnel session exists are only reported by the controller.
+    /// Store its latest message and recompute the banner, or clear the stored errors when the
+    /// controller reports `nil` at the start of a new attempt.
     private func setUpControllerErrorPublisher() {
         controllerErrorPublisher
             .receive(on: DispatchQueue.main)

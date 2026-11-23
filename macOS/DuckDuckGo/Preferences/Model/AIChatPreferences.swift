@@ -37,6 +37,7 @@ final class AIChatPreferences: ObservableObject {
     let promptBarPreferences: PromptBarPreferences
     private let localModelService: AIChatLocalModelService?
     private let confirmLocalModelTurnOn: @MainActor () async -> Bool
+    private let localModelInstrumentation: AIChatLocalModelInstrumentation
     private var localModelAvailabilityCancellable: AnyCancellable?
     // Lazy: built on first use, not during early/transient inits when the store isn't ready yet.
     private lazy var serpSettings: SERPSettingsProviding = SERPSettingsProvider()
@@ -48,7 +49,8 @@ final class AIChatPreferences: ObservableObject {
          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging = LocalDuckAIChromeButtonsVisibilityManager(),
          promptBarPreferences: PromptBarPreferences = Application.appDelegate.promptBarPreferences,
          localModelService: AIChatLocalModelService? = nil,
-         confirmLocalModelTurnOn: @escaping @MainActor () async -> Bool = { NSAlert.turnOnLocalModelConfirmation().runModal() == .OK }) {
+         confirmLocalModelTurnOn: @escaping @MainActor () async -> Bool = { NSAlert.turnOnLocalModelConfirmation().runModal() == .OK },
+         localModelInstrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
         self.storage = storage
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.windowControllersManager = windowControllersManager
@@ -57,6 +59,7 @@ final class AIChatPreferences: ObservableObject {
         self.promptBarPreferences = promptBarPreferences
         self.localModelService = localModelService
         self.confirmLocalModelTurnOn = confirmLocalModelTurnOn
+        self.localModelInstrumentation = localModelInstrumentation
         pageSummariesModel = storage.pageSummariesModel
 
         isAIFeaturesEnabled = storage.isAIFeaturesEnabled
@@ -182,10 +185,15 @@ final class AIChatPreferences: ObservableObject {
     func turnOnLocalModel() async {
         guard await confirmLocalModelTurnOn() else { return }
         pageSummariesModel = .appleIntelligence
+        localModelInstrumentation.fire(.selected(.appleIntelligence, source: .settings))
     }
 
     func turnOffLocalModel() {
+        let wasOn = isLocalModelOn
         pageSummariesModel = .duckAI
+        if wasOn {
+            localModelInstrumentation.fire(.selected(.duckAI, source: .settings))
+        }
     }
 
     var shouldShowDuckAiSettingsLink: Bool {

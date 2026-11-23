@@ -18,7 +18,6 @@
 
 import XCTest
 import NetworkExtension
-import Networking
 @testable import VPN
 
 final class VPNStartupMonitorTests: XCTestCase {
@@ -79,26 +78,6 @@ final class VPNStartupMonitorTests: XCTestCase {
     }
 
     // MARK: - Disconnection Failures
-
-    func testDisconnectErrorCodeUsesCauseOfGenericProviderFailure() {
-        let tokenError = OAuthClientError.invalidTokenRequest(.invalid)
-        let providerError = PacketTunnelProvider.TunnelError.otherTunnelStartError(internalError: tokenError) as NSError
-        let startupError = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: providerError)
-
-        XCTAssertEqual(startupError.disconnectErrorCode, 11003)
-    }
-
-    func testDisconnectErrorCodeUsesSystemDisconnectReason() {
-        let systemError = NSError(domain: "NEVPNConnectionErrorDomain", code: 14)
-        let startupError = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: systemError)
-
-        XCTAssertEqual(startupError.disconnectErrorCode, 14)
-    }
-
-    func testDisconnectErrorCodeIsNilWithoutDisconnectReason() {
-        XCTAssertNil(VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: nil).disconnectErrorCode)
-        XCTAssertNil(VPNStartupMonitor.StartupError.startTunnelTimedOut.disconnectErrorCode)
-    }
 
     func testThrowsDisconnectedErrorWhenStatusBecomesDisconnected() async {
         let connection = tunnelManager.connection

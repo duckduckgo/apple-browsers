@@ -727,18 +727,6 @@
         }
       }
     },
-    "vpn.connection.failed.error-code" : {
-      "comment" : "VPN connection failure message showing the numeric reason for the disconnect.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "VPN couldn’t connect (error %ld)."
-          }
-        }
-      }
-    },
     "vpn.status-view.excluded-apps.menu-item.title" : {
       "comment" : "The VPN status view's 'Excluded Apps' menu item for our status menu app.",
       "extractionState" : "extracted_with_value",

@@ -618,8 +618,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 #endif
             case .simulateControllerFailureError:
                 return "Simulated a controller error as requested"
-            case .startTunnelFailure(let error),
-                    .failedToFetchAuthToken(let error):
+            case .startTunnelFailure(let error):
+                return vpnStartupErrorDescription(for: error)
+            case .failedToFetchAuthToken(let error):
                 return error.localizedDescription
             }
         }
@@ -732,12 +733,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             // Always keep the first error message shown, as it's the more actionable one.
             if controllerErrorStore.lastErrorMessage == nil {
-                if case StartError.startTunnelFailure(let startupError as VPNStartupMonitor.StartupError) = error,
-                   let code = startupError.disconnectErrorCode {
-                    controllerErrorStore.lastErrorMessage = UserText.vpnConnectionFailed(errorCode: code)
-                } else {
-                    controllerErrorStore.lastErrorMessage = error.localizedDescription
-                }
+                controllerErrorStore.lastErrorMessage = error.localizedDescription
             }
 
             completeAndCleanupConnectionWideEvent(status: .failure, error: error, description: error.contextualizedDescription())

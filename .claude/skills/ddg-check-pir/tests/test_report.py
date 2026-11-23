@@ -92,6 +92,7 @@ class ReportTests(unittest.TestCase):
         self.assertIn("Findings outside the scenarios", page)
         self.assertIn("misses ages on every card", page)
         self.assertIn("All 1 scenario runs got their expected verdict", page)
+        self.assertIn("class='cell ok'", page)
 
 
 if __name__ == "__main__":

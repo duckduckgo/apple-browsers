@@ -27,25 +27,23 @@ import XCTest
 struct AssistedOptOutQueueTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [true, false])
-    func interruptedOrNilDateAttemptEntersAwaitingOnceAndDashboardReadsReuseScopedSnapshot(interrupted: Bool) async throws {
+    func interruptedOrNilDateRecordIsListedWithoutAWriteAndDashboardReadsReuseScopedSnapshot(interrupted: Bool) async throws {
         let fixture = Fixture(history: interrupted ? .optOutStarted : .optOutRequested, deprecated: true,
                               preferredRunDate: interrupted ? .distantFuture : nil)
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
-        try await queue.refresh()
-        try await queue.refresh()
         let first = try await queue.assistedOptOuts()
         let second = try await queue.assistedOptOuts()
         #expect(first == second)
         #expect(first.map(\.state) == [.waiting])
-        #expect(fixture.database.optOutEvents.map(\.type) == [.optOutAwaitingUserAssistance])
+        #expect(fixture.database.optOutEvents.isEmpty)
         #expect(fixture.database.scopedProfileFetchCount == 1)
         #expect(!fixture.database.wasFetchActiveBrokerProfileQueryDataCalled)
         #expect(!fixture.database.wasFetchAllBrokerProfileQueryDataCalled)
+        #expect(!fixture.database.wasFetchAllDataBrokersCalled)
         #expect(!fixture.database.wasUpdatedPreferredRunDateForOptOutCalled)
         queue.invalidate()
         _ = try await queue.assistedOptOuts()
         #expect(fixture.database.scopedProfileFetchCount == 2)
-        #expect(fixture.database.optOutEvents.count == 1)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -64,7 +62,6 @@ struct AssistedOptOutQueueTests {
         #expect(presenter.presentations.count == 3)
         #expect(presenter.presentations.allSatisfy { $0 === session })
         #expect(session.phase == .ready)
-        #expect(!fixture.dependencies.runningAssistedOptOuts.contains(fixture.id))
         #expect(!fixture.dependencies.mockAssistedOptOutRunner.wasOptOutCalled)
         session.requestCancel()
         #expect(queue.activeSessions.isEmpty)
@@ -73,72 +70,27 @@ struct AssistedOptOutQueueTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func flagOffDuringLoadCannotInstallSnapshotOrWriteAwaitingAndLoadFailuresThrow() async throws {
+    func flagOffHidesTheListAndLoadFailuresThrow() async throws {
         let fixture = Fixture(history: .optOutStarted)
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
-        let entered = XCTestExpectation(description: "Scoped read entered")
-        let release = DispatchSemaphore(value: 0)
-        let data = fixture.database.brokerProfileQueryDataToReturn
-        fixture.database.scopedProfileFetchHandler = { _ in
-            #expect(!Thread.isMainThread)
-            entered.fulfill()
-            _ = release.wait(timeout: .now() + 10)
-            return data
-        }
-        let refresh = Task { try await queue.refresh() }
-        let enteredResult = await XCTWaiter.fulfillment(of: [entered], timeout: 5)
-        #expect(enteredResult == .completed)
         fixture.flagger.isUserAssistanceOn = false
-        queue.configurationDidChange()
-        release.signal()
-        try await refresh.value
-        #expect(fixture.database.optOutEvents.isEmpty)
         #expect(try await queue.assistedOptOuts().isEmpty)
         fixture.flagger.isUserAssistanceOn = true
         fixture.database.scopedProfileFetchHandler = { _ in throw DataBrokerProtectionError.jobTimeout }
         await #expect(throws: DataBrokerProtectionError.self) { try await queue.assistedOptOuts() }
         fixture.database.scopedProfileFetchHandler = nil
-        try await queue.refresh()
         #expect(try await queue.assistedOptOuts().count == 1)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func invalidationDuringLoadDoesNotTreatSupersededSnapshotAsEmptyOrCancelOpenSession() async throws {
-        let fixture = Fixture()
-        let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
-        try await queue.start(id: fixture.id)
-        let session = try #require(queue.activeSessions.first)
-        queue.invalidate()
-        let entered = XCTestExpectation(description: "Scoped read entered")
-        let release = DispatchSemaphore(value: 0)
-        let data = fixture.database.brokerProfileQueryDataToReturn
-        fixture.database.scopedProfileFetchHandler = { _ in
-            entered.fulfill()
-            _ = release.wait(timeout: .now() + 10)
-            return data
-        }
-        let refresh = Task { try await queue.refresh() }
-        #expect(await XCTWaiter.fulfillment(of: [entered], timeout: 5) == .completed)
-        queue.invalidate()
-        fixture.database.scopedProfileFetchHandler = nil
-        release.signal()
-        try await refresh.value
-        #expect(queue.activeSessions.first === session)
-        #expect(try await queue.assistedOptOuts().count == 1)
-        queue.cancelAll()
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [SnapshotRead.refresh, .list, .start])
-    func postLoadAuthenticationCannotConsumeSnapshotInvalidatedWhileItSuspends(operation: SnapshotRead) async throws {
+    @Test(.timeLimit(.minutes(1)), arguments: [SnapshotRead.list, .start])
+    func readResumingAfterTheSignInCheckUsesCurrentRecords(operation: SnapshotRead) async throws {
         let fixture = Fixture(history: .optOutStarted)
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
         let authentication = AuthenticationGate()
         fixture.dependencies.isAuthenticatedUserProvider = { await authentication.check() }
         let oldRead = Task {
             switch operation {
-            case .refresh: try await queue.refresh()
             case .list: _ = try await queue.assistedOptOuts()
             case .start: try await queue.start(id: fixture.id)
             }
@@ -154,7 +106,6 @@ struct AssistedOptOutQueueTests {
                                                                 scanJobData: data.scanJobData, optOutJobData: [job])]
         fixture.database.optOutToReturn = job
         queue.invalidate()
-        try await queue.refresh()
         let currentID = AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 2)
         try await queue.start(id: currentID)
         let currentSession = try #require(queue.activeSessions.first)
@@ -168,7 +119,7 @@ struct AssistedOptOutQueueTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [Ending.cancelled, .flagOff, .revoked, .timedOut, .failed, .submitted])
-    func runningRegistryOutlivesCancellationAndTeardownAndOutcomeIsRecorded(ending: Ending) async throws {
+    func outcomeIsRecordedAfterCancellationAndTeardown(ending: Ending) async throws {
         let fixture = Fixture()
         let metrics = Metrics()
         let finished = XCTestExpectation(description: "Attempt finished")
@@ -179,7 +130,6 @@ struct AssistedOptOutQueueTests {
         let tearingDown = XCTestExpectation(description: "Runner tearing down")
         let teardownGate = TeardownGate()
         fixture.dependencies.mockAssistedOptOutRunner.optOutHandler = {
-            #expect(fixture.dependencies.runningAssistedOptOuts.contains(fixture.id))
             entered.fulfill()
             switch ending {
             case .failed: throw DataBrokerProtectionError.unknown("failed")
@@ -195,7 +145,6 @@ struct AssistedOptOutQueueTests {
         try await queue.start(id: fixture.id)
         let session = try #require(queue.activeSessions.first)
         session.begin()
-        #expect(fixture.dependencies.runningAssistedOptOuts.contains(fixture.id))
         let enteredResult = await XCTWaiter.fulfillment(of: [entered], timeout: 5)
         #expect(enteredResult == .completed)
         if ending == .cancelled { session.requestCancel() }
@@ -210,15 +159,14 @@ struct AssistedOptOutQueueTests {
         if ending == .cancelled || ending == .flagOff || ending == .revoked || ending == .timedOut {
             let teardownResult = await XCTWaiter.fulfillment(of: [tearingDown], timeout: 5)
             #expect(teardownResult == .completed)
-            #expect(fixture.dependencies.runningAssistedOptOuts.contains(fixture.id))
+            #expect(queue.activeSessions.count == 1)
             await teardownGate.release()
         }
         let finishedResult = await XCTWaiter.fulfillment(of: [finished], timeout: 5)
         #expect(finishedResult == .completed)
-        #expect(!fixture.dependencies.runningAssistedOptOuts.contains(fixture.id))
         #expect(metrics.starts == 1)
         #expect(metrics.outcomes == [ending.outcome])
-        #expect(queue.activeSessions.map(\.phase) == (ending == .submitted ? [.submitted] : []))
+        #expect(queue.activeSessions.isEmpty)
         if ending != .submitted {
             #expect(!fixture.database.wasUpdatedPreferredRunDateForOptOutCalled)
             #expect(fixture.database.optOutEvents.last?.type == .optOutAwaitingUserAssistance)
@@ -227,41 +175,14 @@ struct AssistedOptOutQueueTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func brokerStartingToNeedTheUserLeavesLiveRegularRecordOwnedUntilItsRunnerFinishes() async throws {
-        let fixture = Fixture(history: .optOutStarted)
-        let assistedData = try #require(fixture.database.brokerProfileQueryDataToReturn.first)
-        let data = BrokerProfileQueryData(dataBroker: .mock, profileQuery: assistedData.profileQuery,
-                                          scanJobData: assistedData.scanJobData, optOutJobData: assistedData.optOutJobData)
-        let entered = XCTestExpectation(description: "Regular runner entered")
-        let regularGate = TeardownGate()
-        fixture.dependencies.mockOptOutRunner.optOutHandler = {
-            entered.fulfill()
-            await regularGate.wait()
-        }
-        let regular = Task {
-            try await BrokerProfileOptOutSubJob(dependencies: fixture.dependencies).runOptOut(
-                for: data.optOutJobData[0].extractedProfile, brokerProfileQueryData: data,
-                showWebView: false, shouldRunNextStep: { true })
-        }
-        let enteredResult = await XCTWaiter.fulfillment(of: [entered], timeout: 5)
-        #expect(enteredResult == .completed)
+    func submittedRecordIsListedAgainOnlyWhenItIsDue() async throws {
+        let fixture = Fixture()
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
-        try await queue.refresh()
-        try await queue.start(id: fixture.id)
-        #expect(queue.activeSessions.isEmpty)
-        #expect(try await queue.assistedOptOuts().isEmpty)
-        #expect(fixture.database.optOutEvents.map(\.type) == [.optOutStarted])
-        #expect(!fixture.dependencies.mockAssistedOptOutRunner.wasOptOutCalled)
-        await regularGate.release()
-        #expect(try await regular.value)
-        #expect(!fixture.dependencies.runningAssistedOptOuts.contains(fixture.id))
         fixture.setHistory(.optOutRequested, preferredRunDate: .distantFuture)
         queue.invalidate()
-        try await queue.refresh()
         #expect(try await queue.assistedOptOuts().isEmpty)
         fixture.setHistory(.optOutRequested, preferredRunDate: nil)
         queue.invalidate()
-        try await queue.refresh()
         try await queue.start(id: fixture.id)
         #expect(queue.activeSessions.count == 1)
         queue.cancelAll()
@@ -282,16 +203,14 @@ struct AssistedOptOutQueueTests {
         session.begin()
         #expect(queue.activeSessions.isEmpty)
         #expect(!fixture.dependencies.mockAssistedOptOutRunner.wasOptOutCalled)
-        #expect(!fixture.dependencies.runningAssistedOptOuts.contains(fixture.id))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func unauthenticatedQueueCannotEnrollListOrStart() async throws {
+    func unauthenticatedQueueCannotListOrStart() async throws {
         let fixture = Fixture(history: .optOutStarted)
         fixture.dependencies.isAuthenticatedUserProvider = { false }
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
-        try await queue.refresh()
         try await queue.start(id: fixture.id)
         #expect(try await queue.assistedOptOuts().isEmpty)
         #expect(queue.activeSessions.isEmpty)
@@ -326,7 +245,7 @@ struct AssistedOptOutQueueTests {
         #expect(metrics.outcomes == [.submitted])
     }
 
-    enum SnapshotRead: Sendable { case refresh, list, start }
+    enum SnapshotRead: Sendable { case list, start }
 
     enum Ending: Sendable {
         case cancelled, flagOff, revoked, timedOut, failed, submitted
@@ -353,6 +272,9 @@ private struct Fixture {
     init(history: HistoryEvent.EventType = .optOutAwaitingUserAssistance, records: Int = 1, deprecated: Bool = false, preferredRunDate: Date? = .distantPast) {
         dependencies.database = database
         dependencies.featureFlagger = flagger
+        let privacyConfig = PrivacyConfigurationMock()
+        privacyConfig.subfeatureSettings = #"{"enabledBrokers":["testbroker.com"]}"#
+        manager.privacyConfig = privacyConfig
         dependencies.privacyConfig = manager
         let jobs = (1...records).map { index in
             OptOutJobData(brokerId: 1, profileQueryId: 1, createdDate: .distantPast, preferredRunDate: preferredRunDate,
@@ -423,16 +345,12 @@ private actor TeardownGate {
 }
 
 private actor AuthenticationGate {
-    nonisolated let entered = XCTestExpectation(description: "Post-load authentication entered")
+    nonisolated let entered = XCTestExpectation(description: "Authentication entered")
     private let gate = TeardownGate()
-    private var calls = 0
 
     func check() async -> Bool {
-        calls += 1
-        if calls == 2 {
-            entered.fulfill()
-            await gate.wait()
-        }
+        entered.fulfill()
+        await gate.wait()
         return true
     }
 

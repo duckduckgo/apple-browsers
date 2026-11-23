@@ -1313,6 +1313,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         brokerToReturn ?? dataBrokersToReturn.first { $0.id == id }
     }
 
+    public func fetchBroker(withURL url: String) throws -> DataBroker? {
+        dataBrokersToReturn.first { $0.url == url }
+    }
+
     public func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
         profileQueryToReturn ?? ProfileQuery.mock
     }

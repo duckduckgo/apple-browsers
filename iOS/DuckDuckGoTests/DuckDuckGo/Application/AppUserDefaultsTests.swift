@@ -85,6 +85,19 @@ class AppUserDefaultsTests: XCTestCase {
 
     }
 
+    func testWhenSettingIsChangedThroughAnotherHandleOnSameSuiteThenExistingInstanceReadsNewValue() {
+
+        let appUserDefaults = AppUserDefaults(groupName: testGroupName)
+        XCTAssertTrue(appUserDefaults.autocomplete)
+
+        AppUserDefaults(groupName: testGroupName).autocomplete = false
+        XCTAssertFalse(appUserDefaults.autocomplete)
+
+        UserDefaults(suiteName: testGroupName)?.set(true, forKey: AppUserDefaults.Keys.autocompleteKey)
+        XCTAssertTrue(appUserDefaults.autocomplete)
+
+    }
+
     func testWhenReadingAutocompleteDefaultThenTrueIsReturned() {
 
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)

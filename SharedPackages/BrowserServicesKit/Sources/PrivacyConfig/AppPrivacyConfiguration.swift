@@ -42,7 +42,7 @@ public struct AppPrivacyConfiguration: PrivacyConfiguration {
                 identifier: String,
                 localProtection: DomainsProtectionStore,
                 internalUserDecider: InternalUserDecider,
-                userDefaults: UserDefaults = UserDefaults(),
+                userDefaults: UserDefaults = .standard,
                 locale: Locale = Locale.current,
                 installDate: Date? = nil) {
         self.data = data

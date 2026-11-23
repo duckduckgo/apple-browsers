@@ -184,7 +184,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
 
         let activeSteps = OnboardingSteps.allCases.filter(isStepActive)
-        // `exclude` only lists steps the v4 page knows.
+        // `exclude` only lists steps the v4 page knows. POC: the mocked page knows `topSitesPicker`.
         let excludedSteps = OnboardingSteps.allCases.filter { $0 != .searchOrChat && !isStepActive($0) }
 
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
@@ -202,8 +202,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .welcome, .getStarted, .makeDefaultSingle, .systemSettings, .customize, .addressBarMode:
             true
         case .topSitesPicker:
-            // POC: always shown. The experiment enrols only users with fewer than 5 favorites after the import step.
-            true
+            // POC: local debug flag. The experiment enrols only users with fewer than 5 favorites after the import step.
+            featureFlagger.isFeatureOn(.onboardingTopSitesPicker)
         case .duckPlayerSingle:
             false
         case .searchOrChat:

@@ -121,8 +121,8 @@ class OnboardingManagerTests: XCTestCase {
         )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: ["duckPlayerSingle"],
-            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "topSitesPicker", "addressBarMode"],
+            exclude: ["duckPlayerSingle", "topSitesPicker"],
+            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"],
             order: "v4",
             env: "development",
             locale: "en",
@@ -138,8 +138,8 @@ class OnboardingManagerTests: XCTestCase {
         let manager = makeManager(enabledFlags: [.onboardingSearchOrChat], aiChatPreferencesStorage: MockAIChatPreferencesStorage(),
                                   homepageSearchModeSeedPersistor: HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
 
-        XCTAssertEqual(manager.configuration.steps, ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "topSitesPicker", "addressBarMode", "searchOrChat"])
-        XCTAssertEqual(manager.configuration.exclude, ["duckPlayerSingle"])
+        XCTAssertEqual(manager.configuration.steps, ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode", "searchOrChat"])
+        XCTAssertEqual(manager.configuration.exclude, ["duckPlayerSingle", "topSitesPicker"])
         XCTAssertEqual(manager.configuration.order, "v4")
     }
 
@@ -191,8 +191,8 @@ class OnboardingManagerTests: XCTestCase {
         )
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
-            exclude: ["duckPlayerSingle"],
-            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "topSitesPicker", "addressBarMode"],
+            exclude: ["duckPlayerSingle", "topSitesPicker"],
+            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"],
             order: "v4",
             env: "development",
             locale: "en",

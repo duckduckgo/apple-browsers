@@ -112,11 +112,10 @@ final class PreferencesSubscriptionWithdrawalModel: ObservableObject {
             featureNames.append(UserText.identityTheftRestorationServiceTitle)
         }
         if entitlements.contains(.paidAIChat) {
-            featureNames.append(UserText.withdrawDialogFeatureAdvancedDuckAI)
+            featureNames.append(UserText.paidAIChatTitle)
         }
         guard !featureNames.isEmpty, let list = listFormatter.string(from: featureNames) else { return message }
-        let featuresMessage = UserText.withdrawDialogFeaturesMessage(features: list)
-        return message + "\n\n" + featuresMessage.prefix(1).uppercased(with: locale) + featuresMessage.dropFirst()
+        return message + "\n\n" + UserText.withdrawDialogFeaturesMessage(features: list)
     }
 
     @MainActor

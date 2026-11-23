@@ -171,16 +171,16 @@ enum WebExtensionManagerFactory {
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             isCPMNetworkProcessRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+                featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
-            cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             isCPMBackgroundLoadRestartEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
             },
             isCPMStableBaseURLEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
+                featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },
-            isCPMUpgradeBeforeLoadEnabled: Application.appDelegate.featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
+            isCPMUpgradeBeforeLoadEnabled: featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
@@ -203,7 +203,7 @@ enum WebExtensionManagerFactory {
                                            isAppStoreBuild: buildType.isAppStoreBuild,
                                            unsupportedExtensionIDs: unsupportedExtensionIDs),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
-            isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+            isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensions) && featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
             updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             canApplyUpdatesWhileInactive: updateApplicationPolicy(for: manager),
             updateApplicationActivityUpdates: updateActivity,

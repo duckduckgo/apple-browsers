@@ -40,10 +40,9 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let chipHeight: CGFloat = 40
         static let chipCornerRadius: CGFloat = 20
         static let chipHorizontalPadding: CGFloat = 16
-        /// The simplified prompt box's chip: 8pt padding and a 16pt ✕, 60pt wide in all.
+        /// The simplified prompt box's chip: 8pt padding around today's icon and ✕, 68pt wide in all.
         static let simplifiedChipHorizontalPadding: CGFloat = 8
-        static let simplifiedClearButtonSize: CGFloat = 16
-        /// The simplified chip's ✕ is the only way to turn a tool off, so it keeps a full-size tap area around its 16pt glyph.
+        /// The simplified chip's ✕ is the only way to turn a tool off, so it takes taps beyond its 24pt button.
         static let simplifiedClearButtonHitTarget: CGFloat = 44
         static let chipSpacing: CGFloat = 4
         static let minimumGroupGap: CGFloat = 8
@@ -425,16 +424,13 @@ final class UnifiedToggleInputToolbarView: UIView {
         button.tintColor = UIColor(designSystemColor: .textPrimary)
         button.accessibilityLabel = UserText.aiChatToolbarClearSelectedToolAccessibilityLabel
         button.addTarget(self, action: #selector(selectedToolClearTapped), for: .primaryActionTriggered)
-        let width = button.widthAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize)
-        let height = button.heightAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize)
-        selectedToolClearButtonWidth = width
-        selectedToolClearButtonHeight = height
-        NSLayoutConstraint.activate([width, height])
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize),
+            button.heightAnchor.constraint(equalToConstant: Constants.selectedToolClearButtonSize),
+        ])
         return button
     }()
 
-    private var selectedToolClearButtonWidth: NSLayoutConstraint?
-    private var selectedToolClearButtonHeight: NSLayoutConstraint?
     private var selectedToolChipLeading: NSLayoutConstraint?
     private var selectedToolChipTrailing: NSLayoutConstraint?
 
@@ -682,7 +678,7 @@ extension UnifiedToggleInputToolbarView {
         static let toolChipWidth = 2 * Constants.chipHorizontalPadding + Constants.selectedToolIconSize
             + Constants.chipSpacing + Constants.selectedToolClearButtonSize
         static let simplifiedToolChipWidth = 2 * Constants.simplifiedChipHorizontalPadding + Constants.selectedToolIconSize
-            + Constants.chipSpacing + Constants.simplifiedClearButtonSize
+            + Constants.chipSpacing + Constants.selectedToolClearButtonSize
         static let mergedToolChipWidth = 2 * Constants.chipHorizontalPadding + Constants.selectedToolIconSize
 
         private static func stackWidth(_ widths: [CGFloat], spacing: CGFloat) -> CGFloat {
@@ -860,14 +856,9 @@ private extension UnifiedToggleInputToolbarView {
     private func updateSelectedToolChipStyle() {
         _ = selectedToolChipView
         let padding = usesSimplifiedPromptBox ? Constants.simplifiedChipHorizontalPadding : Constants.chipHorizontalPadding
-        let clearSize = usesSimplifiedPromptBox ? Constants.simplifiedClearButtonSize : Constants.selectedToolClearButtonSize
         selectedToolChipLeading?.constant = padding
         selectedToolChipTrailing?.constant = -padding
-        selectedToolClearButtonWidth?.constant = clearSize
-        selectedToolClearButtonHeight?.constant = clearSize
         selectedToolClearButton.minimumHitTarget = usesSimplifiedPromptBox ? Constants.simplifiedClearButtonHitTarget : 0
-        selectedToolClearButton.setImage(usesSimplifiedPromptBox ? DesignSystemImages.Glyphs.Size16.closeSmall
-                                                                 : DesignSystemImages.Glyphs.Size16.close, for: .normal)
     }
 
     private func updateChipVisibility() {

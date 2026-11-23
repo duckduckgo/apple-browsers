@@ -80,7 +80,7 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
 
     var aiChatURL: URL {
         // 1. First check for debug URL override
-        if let debugURL = debugURLSettings.customURLOrTempDevURL,
+        if let debugURL = debugURLSettings.customURL,
            let url = URL(string: debugURL) {
             return url
         }

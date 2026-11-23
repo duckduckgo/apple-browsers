@@ -411,7 +411,7 @@ final class AIChatDebugMenu: NSMenu {
     }
 
     private func updateWebUIMenuItemsState() {
-        customURLLabelMenuItem.title = "Custom URL: [\(debugStorage.customURLOrTempDevURL ?? "")]"
+        customURLLabelMenuItem.title = "Custom URL: [\(debugStorage.customURL ?? "")]"
     }
 
     private func showCustomURLAlert(callback: @escaping (String?) -> Bool) {

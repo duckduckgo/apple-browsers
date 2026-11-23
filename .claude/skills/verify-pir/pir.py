@@ -393,6 +393,8 @@ def parser():
     cli.add_argument("--check-config", action="store_true", help="validate inputs without building or launching")
     cli.add_argument("--keep", action="store_true", help="retain simulator after stopping owned app and agent")
     cli.add_argument("--scenario", help="title of the scenario this attempt runs; recorded in result.json")
+    cli.add_argument("--expect", choices=("pass", "fail", "inconclusive"),
+                     help="verdict the scenario expects; recorded in result.json (default: pass)")
     scheduler = cli.add_argument_group("scheduler")
     scheduler.add_argument("--profile-file", dest="scheduler_profile", type=Path, help="profile JSON for seed or reseed")
     scheduler.add_argument("--port", dest="scheduler_port", type=int, help="observe: local PIR debug server port (default: 8474)")
@@ -435,6 +437,8 @@ def rerun_command(args):
         command += ["--keep"]
     if args.scenario:
         command += ["--scenario", args.scenario]
+    if args.expect:
+        command += ["--expect", args.expect]
     if args.command == "scheduler":
         if args.scheduler_mode == "observe":
             command += ["--since", args.scheduler_since]
@@ -494,6 +498,8 @@ def execute(args, runtime_factory=None):
     scope, seed = None, None
     if args.scenario is not None and args.command not in ("run", "scheduler"):
         raise ValueError("--scenario applies only to run and scheduler")
+    if args.expect is not None and args.scenario is None:
+        raise ValueError("--expect applies only with --scenario")
     if args.command == "scheduler":
         if args.config or args.token_file or args.token_env or args.check_config:
             raise ValueError("scheduler commands do not accept scenario, credential or check-config options")
@@ -553,7 +559,7 @@ def execute(args, runtime_factory=None):
     context.result.update(platform=args.platform, command=args.command, instanceID=instance, port=port,
                           startedAt=time.time(), rerun=rerun_command(args), evidence=str(evidence))
     if args.scenario:
-        context.result["scenario"] = args.scenario
+        context.result.update(scenario=args.scenario, expected=args.expect or "pass")
     runtime, client = None, None
 
     def collect_snapshots():

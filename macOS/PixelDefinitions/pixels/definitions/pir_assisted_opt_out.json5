@@ -3,7 +3,7 @@
         "description": "User begins an assisted opt-out from the introduction.",
         "owners": ["quanganhdo"],
         "triggers": ["user_interaction"],
-        "parameters": ["appVersion"]
+        "parameters": ["appVersion", "channel"]
     },
     "pir_assisted_opt_out_user_turn_macos": {
         "description": "An assisted opt-out first hands control to the user.",
@@ -11,6 +11,7 @@
         "triggers": ["feature_lifecycle"],
         "parameters": [
             "appVersion",
+            "channel",
             {
                 "key": "duration_bucket",
                 "type": "string",
@@ -25,6 +26,7 @@
         "triggers": ["feature_lifecycle"],
         "parameters": [
             "appVersion",
+            "channel",
             {
                 "key": "outcome",
                 "type": "string",

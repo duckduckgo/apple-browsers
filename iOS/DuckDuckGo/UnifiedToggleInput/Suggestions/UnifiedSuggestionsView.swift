@@ -102,7 +102,10 @@ struct UnifiedSuggestionsView: View {
                                                    isAddressBarAtBottom: isAddressBarAtBottom,
                                                    contentTopInset: viewModel.contentTopInset,
                                                    usesScrollableEscapeHatch: usesScrollableEscapeHatch,
-                                                   onEscapeHatchGeometryChange: { viewModel.setEmbeddedEscapeHatchGeometry($0) })
+                                                   // The hidden hatch has no logo to place, so it reports no geometry.
+                                                   onEscapeHatchGeometryChange: { [showsFocusedLayerEscapeHatch] geometry in
+                                                       viewModel.setEmbeddedEscapeHatchGeometry(showsFocusedLayerEscapeHatch ? geometry : nil)
+                                                   })
                     .background(usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout ? Color.clear : Color(designSystemColor: .background))
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.

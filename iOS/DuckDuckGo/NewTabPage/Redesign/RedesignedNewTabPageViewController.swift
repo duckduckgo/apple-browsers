@@ -556,12 +556,12 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     private func applyFocusedPose() {
         let isFocused = focusedPose != nil
         focusedBackdropView.alpha = isFocused ? Metrics.focusedBackdropAlpha : 0
-        let inputTransform = CGAffineTransform(translationX: 0, y: focusedPose?.inputOffset ?? 0)
-        searchInputView?.transform = inputTransform
+        searchInputView?.transform = CGAffineTransform(translationX: 0, y: focusedPose?.inputOffset ?? 0)
+        let greetingTransform = CGAffineTransform(translationX: 0, y: focusedPose?.greetingOffset ?? 0)
         let welcomeView = blocks.first { $0.id == .welcome }?.viewController.view
         welcomeView?.alpha = isFocused ? 0 : 1
         welcomeView?.transform = isFocused
-            ? inputTransform.scaledBy(x: Metrics.focusedWelcomeScale, y: Metrics.focusedWelcomeScale)
+            ? greetingTransform.scaledBy(x: Metrics.focusedWelcomeScale, y: Metrics.focusedWelcomeScale)
             : .identity
         guard focusedPose?.showsModules != false else {
             hideFocusedModules(animated: true)

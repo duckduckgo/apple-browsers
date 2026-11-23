@@ -96,14 +96,17 @@ protocol NewTabPage: UIViewController,
 
 struct NewTabPageFocusedPose: Equatable {
     var inputOffset: CGFloat
+    /// How far the greeting travels while it fades. It follows the input only when the input moves up the page.
+    var greetingOffset: CGFloat
     var modulesOffset: CGFloat
     var showsModules: Bool
     var bottomInputHeight: CGFloat
 
     static let bottomInputModulesTopMargin: CGFloat = 8
 
-    init(inputOffset: CGFloat, modulesOffset: CGFloat, showsModules: Bool, bottomInputHeight: CGFloat = 0) {
+    init(inputOffset: CGFloat, greetingOffset: CGFloat? = nil, modulesOffset: CGFloat, showsModules: Bool, bottomInputHeight: CGFloat = 0) {
         self.inputOffset = inputOffset
+        self.greetingOffset = greetingOffset ?? inputOffset
         self.modulesOffset = modulesOffset
         self.showsModules = showsModules
         self.bottomInputHeight = bottomInputHeight
@@ -122,7 +125,8 @@ struct NewTabPageFocusedPose: Equatable {
                       showsModules: showsModules)
         case .bottom:
             let modulesTop = safeAreaTop + Self.bottomInputModulesTopMargin
-            self.init(inputOffset: 0,
+            self.init(inputOffset: focusedInputFrame.midY - restingInputFrame.midY,
+                      greetingOffset: 0,
                       modulesOffset: modulesTop - restingInputFrame.maxY,
                       showsModules: showsModules,
                       bottomInputHeight: bottomInputHeight)

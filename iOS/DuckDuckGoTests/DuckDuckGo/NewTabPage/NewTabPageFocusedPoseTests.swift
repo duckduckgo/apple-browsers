@@ -37,22 +37,25 @@ struct NewTabPageFocusedPoseTests {
                                          showsModules: true)
 
         #expect(pose.inputOffset == focusedInputFrame.midY - restingInputFrame.midY)
+        #expect(pose.greetingOffset == pose.inputOffset)
         #expect(pose.modulesOffset == focusedInputFrame.maxY - restingInputFrame.maxY)
         #expect(pose.showsModules)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Bottom input keeps the resting input in place and raises the modules below the status bar", .timeLimit(.minutes(1)))
+    @Test("Bottom input moves the resting input to the focused input, keeps the greeting in place and raises the modules below the status bar",
+          .timeLimit(.minutes(1)))
     func bottomInputPoseRaisesModulesToTop() {
+        let bottomFocusedInputFrame = CGRect(x: 8, y: 700, width: 320, height: 64)
         let pose = NewTabPageFocusedPose(restingInputFrame: restingInputFrame,
-                                         focusedInputFrame: focusedInputFrame,
+                                         focusedInputFrame: bottomFocusedInputFrame,
                                          cardPosition: .bottom,
                                          safeAreaTop: 47,
                                          showsModules: false)
 
-        #expect(pose.inputOffset == 0)
+        #expect(pose.inputOffset == bottomFocusedInputFrame.midY - restingInputFrame.midY)
+        #expect(pose.greetingOffset == 0)
         #expect(restingInputFrame.maxY + pose.modulesOffset == 47 + NewTabPageFocusedPose.bottomInputModulesTopMargin)
-        #expect(pose.focusedInputRestingTransform == .identity)
         #expect(!pose.showsModules)
     }
 
@@ -129,19 +132,17 @@ struct RestingSearchCardHandoffTests {
         #expect(handoff == .staysUnderTravellingCard)
         #expect(timing.delay == NewTabPageInputPresentation.inlineInputCardSwapDuration)
         #expect(abs(timing.delay + timing.duration - 0.4) < 0.0001)
-        #expect(handoff.alphaWhenDismissStarts == 1)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Bottom input hides the resting card across the whole transition", .timeLimit(.minutes(1)))
-    func bottomInputHidesRestingCardWithFocusedCard() {
+    @Test("Bottom input swaps the resting card for the travelling focused card at the start", .timeLimit(.minutes(1)))
+    func bottomInputSwapsRestingCardWithFocusedCard() {
         let handoff = RestingSearchCardHandoff(cardPosition: .bottom)
         let timing = handoff.showFadeTiming(transitionDuration: 0.4)
 
-        #expect(handoff == .hidesWithFocusedCard)
+        #expect(handoff == .swapsWithFocusedCard)
         #expect(timing.delay == 0)
-        #expect(timing.duration == 0.4)
-        #expect(handoff.alphaWhenDismissStarts == 0)
+        #expect(timing.duration == NewTabPageInputPresentation.inlineInputCardSwapDuration)
     }
 
     @available(iOS 16, macOS 13, *)

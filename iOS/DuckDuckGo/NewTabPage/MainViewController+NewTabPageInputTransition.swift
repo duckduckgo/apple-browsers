@@ -106,8 +106,8 @@ extension MainViewController {
         let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
         let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
         let source = transitionSource?.searchInputView
-        let restingTransform = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource)?
-            .focusedInputRestingTransform ?? .identity
+        let measuredPose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource)
+        let restingTransform = measuredPose?.focusedInputRestingTransform ?? .identity
         let contentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         let contentOffset = UIAccessibility.isReduceMotionEnabled ? 0 : InlineNTPTransitionMetrics.contentTravel
         let finish: () -> Void = { [weak self] in
@@ -133,8 +133,14 @@ extension MainViewController {
             contentContainer.alpha = 0
         }
         let outgoingContent = focusedSnapshot ?? contentContainer
+        if let measuredPose, let currentPose = transitionSource?.focusedPose, measuredPose != currentPose {
+            // The bottom input's pose is measured at focus before the keyboard rises.
+            // Start the resting card's return from where the focused card is now.
+            UIView.performWithoutAnimation { transitionSource?.setFocusedPose(measuredPose) }
+        }
         let focusedPose = transitionSource?.focusedPose
-        source?.alpha = RestingSearchCardHandoff(cardPosition: coordinator.cardPosition).alphaWhenDismissStarts
+        // The resting card carries the dismiss travel, as the focused card fades out at the start.
+        source?.alpha = 1
 
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             transition: .inlineInput,
@@ -208,18 +214,20 @@ extension MainViewController {
 
 enum RestingSearchCardHandoff: Equatable {
     case staysUnderTravellingCard
-    case hidesWithFocusedCard
+    case swapsWithFocusedCard
 
     init(cardPosition: UnifiedToggleInputCardPosition) {
-        self = cardPosition.isBottom ? .hidesWithFocusedCard : .staysUnderTravellingCard
+        self = cardPosition.isBottom ? .swapsWithFocusedCard : .staysUnderTravellingCard
     }
 
     func showFadeTiming(transitionDuration: TimeInterval) -> (delay: TimeInterval, duration: TimeInterval) {
+        let swapDuration = min(NewTabPageInputPresentation.inlineInputCardSwapDuration, transitionDuration)
         switch self {
-        case .hidesWithFocusedCard:
-            return (0, transitionDuration)
+        case .swapsWithFocusedCard:
+            // The bottom focused card is measured before the keyboard rises, so a travelling resting card would
+            // drift away from it. The focused card carries the travel instead.
+            return (0, swapDuration)
         case .staysUnderTravellingCard:
-            let swapDuration = min(NewTabPageInputPresentation.inlineInputCardSwapDuration, transitionDuration)
             return (swapDuration, transitionDuration - swapDuration)
         }
     }
@@ -228,13 +236,6 @@ enum RestingSearchCardHandoff: Equatable {
         let timing = showFadeTiming(transitionDuration: transitionDuration)
         UIView.animateOnOwnTiming(duration: timing.duration, delay: timing.delay, options: .curveEaseInOut) {
             restingInput?.alpha = 0
-        }
-    }
-
-    var alphaWhenDismissStarts: CGFloat {
-        switch self {
-        case .staysUnderTravellingCard: 1
-        case .hidesWithFocusedCard: 0
         }
     }
 }

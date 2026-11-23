@@ -264,95 +264,7 @@ final class AIChatNativePermissionTests: XCTestCase {
         XCTAssertEqual(replacement.prompts.count, 1)
     }
 
-    func testPresenterWaitsForPresentationThenDismissalAndCompletesEachWaiterOnce() throws {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 300, height: 500))
-        let owner = UIViewController()
-        window.rootViewController = owner
-        window.isHidden = false
-        defer { window.isHidden = true }
-        var finishPresentation: (() -> Void)?
-        var finishDismissal: (() -> Void)?
-        var shownAlert: UIAlertController?
-        var dismissals = 0
-        let presenter = AIChatNativePermissionPresenter(surface: { owner }, show: { _, alert, completion in
-            shownAlert = alert
-            finishPresentation = completion
-            return true
-        }, dismiss: { _, animated, completion in
-            XCTAssertFalse(animated)
-            dismissals += 1
-            finishDismissal = completion
-        })
-        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
-        XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in XCTFail("No action selected") })
-        let alert = try XCTUnwrap(shownAlert)
-        XCTAssertTrue(presenter.owns(alert))
-        XCTAssertFalse(presenter.owns(UIViewController()))
-        XCTAssertTrue(presenter.isSurfaceAvailable)
-        let anotherPrompt = ClientToolPermissionPrompt(requestID: "second", callID: "another-call", toolName: "listOpenTabs", targetsOtherTab: false)
-        XCTAssertFalse(presenter.present(anotherPrompt, message: "Permission") { _ in XCTFail("Another prompt must wait") })
-        var completions = 0
-        presenter.withdraw(requestID: "first") { completions += 1 }
-        presenter.withdraw(requestID: "first") { completions += 1 }
-        XCTAssertEqual(dismissals, 0)
-        finishPresentation?()
-        XCTAssertEqual(dismissals, 1)
-        finishPresentation?()
-        presenter.withdrawActive { completions += 1 }
-        XCTAssertEqual(dismissals, 1)
-        XCTAssertEqual(completions, 0)
-        XCTAssertFalse(presenter.present(prompt, message: "Permission") { _ in })
-        finishDismissal?()
-        finishDismissal?()
-        XCTAssertEqual(completions, 3)
-        XCTAssertFalse(presenter.isPresentingPermission)
-        XCTAssertFalse(presenter.owns(alert))
-        XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in })
-        finishPresentation?()
-        presenter.withdrawActive {}
-        finishDismissal?()
-        finishPresentation = nil
-        finishDismissal = nil
-    }
-
-    func testWithdrawnPresenterSurvivesUntilPendingPresentationAndDismissalFinish() {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 300, height: 500))
-        let owner = UIViewController()
-        window.rootViewController = owner
-        window.isHidden = false
-        defer { window.isHidden = true }
-        var finishPresentation: (() -> Void)?
-        var finishDismissal: (() -> Void)?
-        var dismissals = 0
-        var presenter: AIChatNativePermissionPresenter? = AIChatNativePermissionPresenter(surface: { owner }, show: { _, _, completion in
-            finishPresentation = completion
-            return true
-        }, dismiss: { _, animated, completion in
-            XCTAssertFalse(animated)
-            dismissals += 1
-            finishDismissal = completion
-        })
-        weak var retainedPresenter = presenter
-        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
-        XCTAssertTrue(presenter?.present(prompt, message: "Permission") { _ in XCTFail("No action selected") } == true)
-        var completions = 0
-        presenter?.withdrawActive { completions += 1 }
-        presenter = nil
-        XCTAssertNotNil(retainedPresenter)
-        XCTAssertEqual(dismissals, 0)
-        finishPresentation?()
-        finishPresentation = nil
-        XCTAssertNotNil(retainedPresenter)
-        XCTAssertEqual(dismissals, 1)
-        XCTAssertEqual(completions, 0)
-        finishDismissal?()
-        finishDismissal?()
-        finishDismissal = nil
-        XCTAssertEqual(completions, 1)
-        XCTAssertNil(retainedPresenter)
-    }
-
-    func testFailedPresentationReleasesOccupancyAndParentModalRejectsPrompt() throws {
+    func testParentModalRejectsPromptAndDismissalRestoresSurfaceAvailability() {
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 300, height: 500))
         let parent = PermissionModalOwner()
         let owner = UIViewController()
@@ -362,17 +274,14 @@ final class AIChatNativePermissionTests: XCTestCase {
         owner.didMove(toParent: parent)
         window.isHidden = false
         defer { window.isHidden = true }
-        var attempts = 0
-        let presenter = AIChatNativePermissionPresenter(surface: { owner }, show: { _, _, _ in attempts += 1; return false })
+        let presenter = AIChatToolPermissionPresenter(surface: { .init(owner) })
         let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
+        XCTAssertTrue(presenter.isSurfaceAvailable)
         parent.modal = UIViewController()
         XCTAssertFalse(presenter.isSurfaceAvailable)
-        XCTAssertFalse(presenter.present(prompt, message: "Permission") { _ in })
-        XCTAssertEqual(attempts, 0)
+        XCTAssertFalse(presenter.present(prompt) { _ in })
         parent.modal = nil
         XCTAssertTrue(presenter.isSurfaceAvailable)
-        XCTAssertFalse(presenter.present(prompt, message: "Permission") { _ in })
-        XCTAssertEqual(attempts, 1)
         XCTAssertFalse(presenter.isPresentingPermission)
         var withdrawn = false
         presenter.withdrawActive { withdrawn = true }

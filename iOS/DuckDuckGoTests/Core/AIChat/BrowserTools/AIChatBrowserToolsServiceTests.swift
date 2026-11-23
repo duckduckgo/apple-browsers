@@ -36,7 +36,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
     func testDebugSessionInvokesThroughSharedPermissionCoordinator() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
-        fixture.presenter.autoAnswer = .always
+        fixture.presenter.autoAnswer = .allowOnce
         let session = BrowserToolsDebugSession(service: fixture.service, scope: try XCTUnwrap(fixture.makeScope()),
                                                presenter: fixture.presenter, isNormalMode: { true })
         defer { session.close() }
@@ -44,9 +44,8 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let result = await fixture.service.invoke(try request(), from: session)
 
         XCTAssertEqual(result, fixture.success)
-        XCTAssertEqual(fixture.presenter.prompts.count, 1)
-        XCTAssertEqual(fixture.presenter.messages, ["Duck.ai wants to see your open tabs."])
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .allow)
+        XCTAssertEqual(fixture.presenter.prompts.map(\.toolName), ["listOpenTabs"])
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
     }
 
     func testDebugSessionSwitchesTabWithoutPromptingOrChangingOwner() async throws {
@@ -427,7 +426,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: { scope })
         fixture.presenter.autoAnswer = nil
         let prompt = ClientToolPermissionPrompt(requestID: "pending", callID: "pending-call", toolName: "listOpenTabs", targetsOtherTab: false)
-        XCTAssertTrue(fixture.presenter.present(prompt, message: "Permission") { _ in XCTFail("No decision selected") })
+        XCTAssertTrue(fixture.presenter.present(prompt) { _ in XCTFail("No decision selected") })
         defer { fixture.presenter.withdrawActive {} }
         let result = await service.invoke(try request(name: "switchToTab", input: ["tabId": "target"]), from: fixture.script)
         XCTAssertEqual(result, .success(callId: "call", value: ["tabId": "target"]))

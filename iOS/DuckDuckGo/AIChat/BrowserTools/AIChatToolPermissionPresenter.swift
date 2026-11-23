@@ -23,6 +23,21 @@ import SwiftUI
 import UIKit
 
 @MainActor
+protocol AIChatNativePermissionPresenting: AnyObject {
+    var isSurfaceAvailable: Bool { get }
+    var isPresentingPermission: Bool { get }
+    var preservesPermissionOnSurfaceChange: Bool { get }
+    func owns(_ viewController: UIViewController) -> Bool
+    func present(_ prompt: ClientToolPermissionPrompt, decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool
+    func withdraw(requestID: String, completion: @escaping @MainActor () -> Void)
+    func withdrawActive(completion: @escaping @MainActor () -> Void)
+}
+
+extension AIChatNativePermissionPresenting {
+    var preservesPermissionOnSurfaceChange: Bool { false }
+}
+
+@MainActor
 final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
 
     struct Surface {
@@ -76,9 +91,6 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
 
     private let allowsPartialSelection: @MainActor () -> Bool
     private let surface: @MainActor () -> Surface?
-    private lazy var nativePresenter = AIChatNativePermissionPresenter(surface: { [surface = self.surface] in
-        surface()?.controller
-    })
     private var active: Presentation?
 
     init(allowsPartialSelection: @escaping @MainActor () -> Bool = { true },
@@ -93,23 +105,19 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
         }
     }
 
-    var isSurfaceAvailable: Bool { nativePresenter.isSurfaceAvailable }
+    var isSurfaceAvailable: Bool { Self.canPresent(from: surface()?.controller) }
 
-    var isPresentingPermission: Bool { active != nil || nativePresenter.isPresentingPermission }
+    var isPresentingPermission: Bool { active != nil }
 
     var preservesPermissionOnSurfaceChange: Bool { active != nil }
 
     func owns(_ viewController: UIViewController) -> Bool {
-        active?.window.rootViewController === viewController || nativePresenter.owns(viewController)
+        active?.window.rootViewController === viewController
     }
 
     func present(_ prompt: ClientToolPermissionPrompt,
-                 message: String,
                  decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool {
-        guard let cardPrompt = AIChatToolPermissionView.Prompt(prompt) else {
-            guard prompt.accessToolNames == nil, active == nil else { return false }
-            return nativePresenter.present(prompt, message: message, decision: decision)
-        }
+        guard let cardPrompt = AIChatToolPermissionView.Prompt(prompt) else { return false }
         return presentCard(requestID: prompt.requestID, prompt: cardPrompt, decision: decision)
     }
 
@@ -120,11 +128,24 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
     }
 #endif
 
+    private static func canPresent(from owner: UIViewController?) -> Bool {
+        guard let owner, owner.viewIfLoaded?.window != nil else { return false }
+        var branch: UIViewController? = owner
+        var child: UIViewController?
+        while let controller = branch {
+            guard !controller.isBeingDismissed, !controller.isBeingPresented else { return false }
+            if let presented = controller.presentedViewController, presented !== child { return false }
+            child = controller
+            branch = controller.parent ?? controller.presentingViewController
+        }
+        return true
+    }
+
     private func presentCard(requestID: String,
                              prompt: AIChatToolPermissionView.Prompt,
                              decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool {
         guard !isPresentingPermission,
-              let surface = surface(), AIChatNativePermissionPresenter.canPresent(from: surface.controller),
+              let surface = surface(), Self.canPresent(from: surface.controller),
               let window = surface.controller.viewIfLoaded?.window, let scene = window.windowScene else { return false }
 
         let overlay = UIWindow(windowScene: scene)
@@ -161,7 +182,7 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
 
     func withdraw(requestID: String, completion: @escaping @MainActor () -> Void) {
         guard let active, active.requestID == requestID else {
-            nativePresenter.withdraw(requestID: requestID, completion: completion)
+            completion()
             return
         }
         hideOverlay(active)
@@ -170,7 +191,7 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
 
     func withdrawActive(completion: @escaping @MainActor () -> Void) {
         guard let active else {
-            nativePresenter.withdrawActive(completion: completion)
+            completion()
             return
         }
         hideOverlay(active)

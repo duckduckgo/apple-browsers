@@ -39,42 +39,31 @@ struct AIChatToolPermissionView: View {
         init?(name: String, targetsOtherTab: Bool = false) {
             typealias Icons = DesignSystemImages.Glyphs.Size16
             id = name
+            let copy: Copy.ToolText
             switch AIChatBrowserToolsSubfeature(rawValue: name) {
             case .readTabContent:
-                self.name = String(localized: "Tab Content")
-                title = targetsOtherTab
-                    ? String(localized: "Allow Duck.ai to read the content of another tab?")
-                    : String(localized: "Allow Duck.ai to read the content of this tab?")
-                detail = String(localized: "It will see the page’s title, address, and text.")
+                copy = Copy.tabContent(targetsOtherTab: targetsOtherTab)
                 icon = Icons.tabContent
                 rowIcon = Icons.file
-                accessibilityName = self.name
             case .searchHistory:
-                self.name = String(localized: "Browsing History")
-                title = String(localized: "Allow Duck.ai to search your browsing history?")
-                detail = String(localized: "It will see sites you’ve visited, including before this chat.")
+                copy = Copy.browsingHistory
                 icon = Icons.history
                 rowIcon = icon
-                accessibilityName = String(localized: "Search Browsing History")
             case .listOpenTabs:
-                self.name = String(localized: "Open Tabs")
-                title = String(localized: "Allow Duck.ai to see your open tabs?")
-                detail = String(localized: "It will see the title and address of each tab in this window.")
+                copy = Copy.openTabs
                 icon = Icons.windowsAndTabs
                 rowIcon = icon
-                accessibilityName = String(localized: "List Open Tabs")
             case .findInPage:
-                self.name = UserText.findInPage
-                title = targetsOtherTab
-                    ? String(localized: "Allow Duck.ai to use Find in Page on another tab?")
-                    : String(localized: "Allow Duck.ai to use Find in Page on this tab?")
-                detail = String(localized: "It will see short snippets around each match.")
+                copy = Copy.findInPage(targetsOtherTab: targetsOtherTab)
                 icon = Icons.searchSite
                 rowIcon = icon
-                accessibilityName = self.name
             default:
                 return nil
             }
+            self.name = copy.name
+            title = copy.title
+            detail = copy.detail
+            accessibilityName = copy.accessibilityName ?? copy.name
         }
 
 #if DEBUG || ALPHA
@@ -98,8 +87,8 @@ struct AIChatToolPermissionView: View {
 
             var buttonTitle: LocalizedStringKey {
                 switch self {
-                case .once: "Allow Once"
-                case .chat, .access: "Allow in This Chat"
+                case .once: Copy.allowOnce
+                case .chat, .access: Copy.allowInThisChat
                 }
             }
 
@@ -282,11 +271,11 @@ struct AIChatToolPermissionView: View {
                 .padding(.leading, 6)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(singleTool?.title ?? String(localized: "Allow Duck.ai to do the following:"))
+                Text(singleTool?.title ?? Copy.multipleToolsTitle)
                     .font(.headline)
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .accessibilityAddTraits(.isHeader)
-                Text(singleTool?.detail ?? String(localized: "Duck.ai can take these actions without asking again in this chat."))
+                Text(singleTool?.detail ?? Copy.multipleToolsDetail)
                     .font(.subheadline)
                     .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
@@ -309,7 +298,7 @@ struct AIChatToolPermissionView: View {
             Button {
                 respond(.dontAllow)
             } label: {
-                actionLabel("Don’t Allow", primary: false)
+                actionLabel(Copy.dontAllow, primary: false)
             }
             .accessibilityIdentifier("AIChatToolPermission.DontAllow")
             .keyboardShortcut(.cancelAction)
@@ -417,6 +406,61 @@ struct AIChatToolPermissionView: View {
             ScrollView(content: content).scrollBounceBehavior(.basedOnSize)
         } else {
             ScrollView(content: content)
+        }
+    }
+}
+
+private extension AIChatToolPermissionView {
+    enum Copy {
+        struct ToolText {
+            let name: String
+            let title: String
+            let detail: String
+            var accessibilityName: String?
+        }
+
+        static var multipleToolsTitle: String { String(localized: "Allow Duck.ai to do the following:") }
+        static var multipleToolsDetail: String { String(localized: "Duck.ai can take these actions without asking again in this chat.") }
+        static var allowOnce: LocalizedStringKey { "Allow Once" }
+        static var allowInThisChat: LocalizedStringKey { "Allow in This Chat" }
+        static var dontAllow: LocalizedStringKey { "Don’t Allow" }
+
+        static func tabContent(targetsOtherTab: Bool) -> ToolText {
+            ToolText(
+                name: String(localized: "Tab Content"),
+                title: targetsOtherTab
+                    ? String(localized: "Allow Duck.ai to read the content of another tab?")
+                    : String(localized: "Allow Duck.ai to read the content of this tab?"),
+                detail: String(localized: "It will see the page’s title, address, and text.")
+            )
+        }
+
+        static var browsingHistory: ToolText {
+            ToolText(
+                name: String(localized: "Browsing History"),
+                title: String(localized: "Allow Duck.ai to search your browsing history?"),
+                detail: String(localized: "It will see sites you’ve visited, including before this chat."),
+                accessibilityName: String(localized: "Search Browsing History")
+            )
+        }
+
+        static var openTabs: ToolText {
+            ToolText(
+                name: String(localized: "Open Tabs"),
+                title: String(localized: "Allow Duck.ai to see your open tabs?"),
+                detail: String(localized: "It will see the title and address of each tab in this window."),
+                accessibilityName: String(localized: "List Open Tabs")
+            )
+        }
+
+        static func findInPage(targetsOtherTab: Bool) -> ToolText {
+            ToolText(
+                name: UserText.findInPage,
+                title: targetsOtherTab
+                    ? String(localized: "Allow Duck.ai to use Find in Page on another tab?")
+                    : String(localized: "Allow Duck.ai to use Find in Page on this tab?"),
+                detail: String(localized: "It will see short snippets around each match.")
+            )
         }
     }
 }

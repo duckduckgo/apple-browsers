@@ -209,44 +209,10 @@ extension AIChatBrowserToolsService {
         return binding(for: source)?.presenter?.isSurfaceAvailable == true ? nil : .cancelled
     }
 
-    private func permissionMessage(for prompt: ClientToolPermissionPrompt) -> String {
-        switch (prompt.toolName, prompt.targetsOtherTab) {
-        case (AIChatBrowserToolsSubfeature.listOpenTabs.rawValue, _):
-            NotLocalizedString("browserTools.ListOpenTabsBrowserTool.permission",
-                               value: "Duck.ai wants to see your open tabs.",
-                               comment: "Browser tool permission reason")
-        case (AIChatBrowserToolsSubfeature.readTabContent.rawValue, true):
-            NotLocalizedString("browserTools.ReadTabContentBrowserTool.permission.otherTab",
-                               value: "Allow Duck.ai to read the content of another tab?",
-                               comment: "Browser tool permission message for reading another tab")
-        case (AIChatBrowserToolsSubfeature.readTabContent.rawValue, false):
-            NotLocalizedString("browserTools.ReadTabContentBrowserTool.permission",
-                               value: "Duck.ai wants to read this tab's content.",
-                               comment: "Browser tool permission reason")
-        case (AIChatBrowserToolsSubfeature.searchHistory.rawValue, _):
-            NotLocalizedString("browserTools.SearchHistoryBrowserTool.permission",
-                               value: "Duck.ai wants to search your browsing history.",
-                               comment: "Browser tool permission reason")
-        case (AIChatBrowserToolsSubfeature.findInPage.rawValue, true):
-            NotLocalizedString("browserTools.FindInPageBrowserTool.permission.otherTab",
-                               value: "Allow Duck.ai to use Find in Page on another tab?",
-                               comment: "Browser tool permission message for finding text in another tab")
-        case (AIChatBrowserToolsSubfeature.findInPage.rawValue, false):
-            NotLocalizedString("browserTools.FindInPageBrowserTool.permission",
-                               value: "Duck.ai wants to find text on this page.",
-                               comment: "Browser tool permission reason")
-        default:
-            NotLocalizedString("browserTools.permission.default",
-                               value: "Duck.ai wants to use a browser tool.",
-                               comment: "Generic browser tool permission reason")
-        }
-    }
-
     func presentPermissionPrompt(_ prompt: ClientToolPermissionPrompt, from source: AIChatUserScript) -> Bool {
         guard permissionAdmissionFailure(toolName: prompt.toolName, from: source) == nil,
               let binding = binding(for: source) else { return false }
-        let message = permissionMessage(for: prompt)
-        return binding.presenter?.present(prompt, message: message) { [weak self, weak source, weak binding] decision in
+        return binding.presenter?.present(prompt) { [weak self, weak source, weak binding] decision in
             guard let self, let source, let binding, self.binding(for: source) === binding else { return }
             let response = self.permissionAdmissionFailure(toolName: prompt.toolName, from: source) == nil ? decision : .dismiss
             self.clientToolPermissions.respond(to: prompt, decision: response, from: source)
@@ -420,8 +386,7 @@ extension AIChatBrowserToolsService {
 
     func presentPermissionPrompt(_ prompt: ClientToolPermissionPrompt, from session: BrowserToolsDebugSession) -> Bool {
         guard debugAdmissionFailure(toolName: prompt.toolName, from: session) == nil else { return false }
-        let message = permissionMessage(for: prompt)
-        return session.presenter.present(prompt, message: message) { [weak self, weak session] decision in
+        return session.presenter.present(prompt) { [weak self, weak session] decision in
             guard let self, let session else { return }
             let admitted = self.debugAdmissionFailure(toolName: prompt.toolName, from: session) == nil
             self.clientToolPermissions.respond(to: prompt, decision: admitted ? decision : .dismiss, from: session)

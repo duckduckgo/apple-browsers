@@ -279,10 +279,10 @@ private final class BrowserToolsDebugModel: ObservableObject {
         self.surface = surface
         guard session == nil else { return }
         guard let owner, let scope = tabManager.makeBrowserToolScope(for: owner) else { return }
-        let presenter = AIChatNativePermissionPresenter(surface: { [weak surface] in
-            guard surface?.viewIfLoaded?.window?.windowScene?.activationState == .foregroundActive else { return nil }
-            return surface
-        })
+        let presenter = AIChatToolPermissionPresenter { [weak surface] in
+            guard let surface, surface.viewIfLoaded?.window?.windowScene?.activationState == .foregroundActive else { return nil }
+            return .init(surface)
+        }
         session = BrowserToolsDebugSession(service: tabManager.browserToolsService, scope: scope, presenter: presenter,
                                           isNormalMode: { [weak tabManager] in tabManager?.currentBrowsingMode == .normal })
     }
@@ -409,7 +409,6 @@ private struct BrowserToolsDebugSurface: UIViewControllerRepresentable {
             super.viewWillDisappear(animated)
             dismissKeyboard()
             removeKeyboardDismissalGesture()
-            if transitionCoordinator?.viewController(forKey: .to) is UIAlertController { return }
             model.leaveScreen()
         }
 

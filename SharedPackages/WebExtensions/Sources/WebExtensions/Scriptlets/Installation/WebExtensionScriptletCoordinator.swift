@@ -58,6 +58,11 @@ public final class WebExtensionScriptletCoordinator {
     private var enabledTypes: Set<DuckDuckGoWebExtensionType> = []
     private var installationTasks: [DuckDuckGoWebExtensionType: Task<Void, Never>] = [:]
 
+    /// Installs are held until the first load of installed extensions: each install reloads its
+    /// extension, which would load it ahead of that load (for example while the app is in the background).
+    private var isInitialLoadFinished = false
+    private var pendingInstallations: [DuckDuckGoWebExtensionType: (scriptlets: [Scriptlet], version: String)] = [:]
+
     public init(
         scriptletProvider: ScriptletProviding,
         installationTracker: ScriptletInstallationTracking,
@@ -89,9 +94,21 @@ public final class WebExtensionScriptletCoordinator {
         enabledTypes.remove(type)
         installationTasks[type]?.cancel()
         installationTasks.removeValue(forKey: type)
+        pendingInstallations.removeValue(forKey: type)
         cancellables.removeValue(forKey: type)
         installationTracker.clearInstalledVersion(for: type)
         scriptletProvider.stop(for: type)
+    }
+
+    /// Call after the first load of installed extensions. Runs the installs held until then.
+    public func initialLoadDidFinish() async {
+        guard !isInitialLoadFinished else { return }
+        isInitialLoadFinished = true
+        let pending = pendingInstallations
+        pendingInstallations.removeAll()
+        for (type, installation) in pending {
+            await installScriptlets(installation.scriptlets, version: installation.version, for: type)
+        }
     }
 
     // MARK: - Private
@@ -131,6 +148,13 @@ public final class WebExtensionScriptletCoordinator {
     }
 
     private func installScriptlets(_ scriptlets: [Scriptlet], version: String, for type: DuckDuckGoWebExtensionType) async {
+        guard isInitialLoadFinished else {
+            // The latest held version replaces an earlier one, as installing it would.
+            pendingInstallations[type] = (scriptlets, version)
+            Logger.webExtensions.info("[Scriptlets] Holding v\(version) for '\(type.rawValue)' until the initial load finishes")
+            return
+        }
+
         if let existingTask = installationTasks[type] {
             await existingTask.value
         }

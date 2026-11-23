@@ -107,6 +107,23 @@
                 "key": "has_pasted_text",
                 "type": "boolean",
                 "description": "Whether the prompt included pasted text (pasted-text chips) when submitted"
+            },
+            {
+                "key": "model_source",
+                "description": "Where the model of a new chat's first prompt came from: the server default, a pick before sending, or a fallback when the server sent no usable default. onboarding, user_default and user_default_unavailable are reserved for parity with other platforms. Sent only while new chats start on the default model, and only when a model is sent.",
+                "type": "string",
+                "enum": ["default", "picked", "onboarding", "fallback", "user_default", "user_default_unavailable"]
+            },
+            {
+                "key": "model_id",
+                "description": "Id of the model sent with the prompt. Sent alongside model_source.",
+                "type": "string"
+            },
+            {
+                "key": "reasoning_effort",
+                "description": "Reasoning effort sent with the prompt, as its wire value. Absent when no effort is sent (e.g. image generation, or the model has no reasoning picker). Sent alongside model_source.",
+                "type": "string",
+                "enum": ["none", "minimal", "low", "medium", "high"]
             }
         ]
     },

@@ -1581,6 +1581,89 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isInputFirstResponder)
     }
 
+    // MARK: - New chats start on the default (flag on)
+
+    func test_newChatDefault_whenChatChanges_userPickResetsToDefault() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.modelStore.updateSelectedModel("gpt-5.6-terra", isNewChatContext: true)
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
+    func test_newChatDefault_whenOpenedWithExplicitModel_thatChatStartsOnIt() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.updateSelectedModel("gpt-5.6-terra")
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+        XCTAssertNil(mockPreferences.selectedModelId)
+    }
+
+    func test_newChatDefault_explicitModelAppliesToTheOpenedChatOnly() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.updateSelectedModel("gpt-5.6-terra")
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
+    func test_newChatDefault_whenTabHasNoPick_itFollowsADefaultChangeAfterATabSwitch() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.activateForTab("tab-B")
+
+        coordinator.modelStore.overLimitNewChatDefault = .model(id: "gpt-5.6-terra", reasoningEffort: nil)
+        coordinator.activateForTab("tab-A")
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+        XCTAssertNil(coordinator.modelStore.currentModelId)
+    }
+
+    func test_newChatDefault_whenTabHasAPick_itSurvivesATabSwitch() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.modelStore.updateSelectedModel("gpt-5.6-terra", isNewChatContext: true)
+        coordinator.activateForTab("tab-B")
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+
+        coordinator.activateForTab("tab-A")
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+    }
+
+    func test_newChatDefault_voicePromptInExistingChat_sendsNeitherModelNorEffort() {
+        let coordinator = makeNewChatDefaultCoordinator(supportedReasoningEffort: [.none, .low, .high])
+        XCTAssertNotNil(coordinator.voicePromptSubmissionConfiguration.reasoningEffort)
+
+        coordinator.bindToTab(makeTestUserScript(), hasExistingChat: true)
+
+        XCTAssertNil(coordinator.voicePromptSubmissionConfiguration.modelId)
+        XCTAssertNil(coordinator.voicePromptSubmissionConfiguration.reasoningEffort)
+    }
+
+    private func makeNewChatDefaultCoordinator(supportedReasoningEffort: [AIChatReasoningEffort] = []) -> UnifiedToggleInputCoordinator {
+        let models = ["gpt-6-luna", "gpt-5.6-terra"].map {
+            AIChatModel(id: $0, name: $0, provider: .openAI, supportsImageUpload: false, entityHasAccess: true,
+                        supportedReasoningEffort: supportedReasoningEffort)
+        }
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            modelsService: AppOpenModelsService(models: []),
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewChatDefaultModel]),
+            scheduleInputFocus: { _ in })
+        coordinator.modelStore.models = models
+        coordinator.activateForTab("tab-A")
+        return coordinator
+    }
+
     private func makeAppOpenCoordinator(isFloatingUIEnabled: Bool = false,
                                         schedule: @escaping (@escaping () -> Void) -> Void) -> UnifiedToggleInputCoordinator {
         let remoteModel = AIChatRemoteModel(id: "app-open-model", name: "App Open Model", provider: "openai",

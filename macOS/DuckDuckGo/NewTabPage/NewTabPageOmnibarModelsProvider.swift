@@ -37,6 +37,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     /// Kept so usage warnings resolve without repeating the subscription lookup. Empty until first fetch.
     private(set) var lastResolvedUserTier: AIChatUserTier = .free
     private(set) var lastFetchedModels: [AIChatModel] = []
+    private(set) var lastNewChatDefault: AIChatNewChatDefault = .unavailable
 
     var allowsSubscriptionUpsell: Bool {
         lastResolvedUserTier.allowsSubscriptionUpsell(isPurchaseEligible: subscriptionManager.isSubscriptionPurchaseEligible)
@@ -72,7 +73,8 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
         subscriptionManager: any SubscriptionManager = Application.appDelegate.subscriptionManager,
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
-        self.modelsService = modelsService ?? AIChatModelsService(accessTokenProvider: subscriptionManager)
+        self.modelsService = modelsService ?? AIChatModelsService(baseURL: AIChatModelsService.baseURL(forChatURL: AIChatRemoteSettings().aiChatURL),
+                                                                  accessTokenProvider: subscriptionManager)
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
     }
@@ -86,6 +88,7 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
             lastResolvedUserTier = userTier
             lastFetchedModels = models
+            lastNewChatDefault = response.newChatDefault
 
             // Recommended = backend-labelled models, shown first with the label as a subtitle.
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)

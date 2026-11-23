@@ -27,12 +27,15 @@ import PixelKit
 final class IPadOmnibarDraft {
     var text = ""
     var attachments: [UnifiedToggleInputAttachment] = []
+    /// The unsent model pick on this tab; `nil` means the new-chat default.
+    var modelSelection = UTIModelSelection()
     private(set) var generation = UUID()
     private(set) var isValid = true
 
     func clear() {
         text = ""
         attachments = []
+        modelSelection = UTIModelSelection()
         generation = UUID()
     }
 

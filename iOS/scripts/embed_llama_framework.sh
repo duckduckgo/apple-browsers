@@ -56,8 +56,13 @@ ditto "${source_framework}" "${destination}"
 # Headers and the module map are for linking, which nothing does.
 rm -rf "${destination}/Headers" "${destination}/Modules"
 
-# App Store Connect can reject a nested framework that claims a higher minimum than the app. Only iOS 16.4
-# and later ever open this one, so it can claim the app's minimum.
+# App Store Connect can reject a nested framework whose minimum is above the app's, or whose Info.plist claims
+# a lower minimum than its binary (ITMS-90208). Both now claim the app's minimum, which is safe because only
+# iOS 16.4 and later ever open this framework.
+binary="${destination}/llama"
+sdk_version="$(xcrun vtool -show-build "${binary}" | awk '$1 == "sdk" { print $2; exit }')"
+xcrun vtool -set-build-version ios "${IPHONEOS_DEPLOYMENT_TARGET}" "${sdk_version}" -replace -output "${binary}.min" "${binary}"
+mv "${binary}.min" "${binary}"
 /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion ${IPHONEOS_DEPLOYMENT_TARGET}" "${destination}/Info.plist"
 
 # The release has no license files. Copied before signing, so the signature covers them.

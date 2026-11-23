@@ -91,7 +91,6 @@ struct NewTabPageCustomizationStore: NewTabPageCustomizationPersisting {
         }
     }
 
-    /// Every retained page and module observes the same persisted preference, including pages in other tabs.
     var themePublisher: AnyPublisher<NewTabPageTheme, Never> {
         Deferred {
             NotificationCenter.default.publisher(for: Self.themeDidChange)

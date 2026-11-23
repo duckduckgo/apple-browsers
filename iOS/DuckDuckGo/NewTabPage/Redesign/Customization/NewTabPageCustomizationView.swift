@@ -193,7 +193,7 @@ private struct NewTabPageCustomizationRow: View {
     private var label: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             if let image {
-                Image(uiImage: theme.tileImage)
+                Image(uiImage: image)
                     .foregroundColor(Color(designSystemColor: .icons))
                     .alignmentGuide(.firstTextBaseline, computeValue: iconBaseline)
                     .accessibilityHidden(true)

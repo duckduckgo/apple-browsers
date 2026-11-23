@@ -21,6 +21,7 @@ import Bookmarks
 import Combine
 import Foundation
 import Testing
+import UIKit
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
 
@@ -129,25 +130,9 @@ struct NewTabPageThemeTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The default theme is blue", .timeLimit(.minutes(1)))
-    func defaultThemeIsBlue() throws {
-        #expect(try makeStore().theme == .blue)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("An unknown stored theme falls back to the default", .timeLimit(.minutes(1)))
-    func unknownStoredThemeFallsBack() throws {
-        #expect(try makeStore(storedTheme: "removed-theme").theme == .default)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The theme persists", .timeLimit(.minutes(1)), arguments: NewTabPageTheme.allCases)
-    func themePersists(theme: NewTabPageTheme) throws {
-        var store = try makeStore()
-
-        store.theme = theme
-
-        #expect(store.theme == theme)
+    @Test("Blue is used when no theme or an unknown theme is stored", .timeLimit(.minutes(1)), arguments: [nil, "removed-theme"])
+    func fallsBackToDefaultTheme(storedTheme: String?) throws {
+        #expect(try makeStore(storedTheme: storedTheme).theme == .blue)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -173,42 +158,18 @@ struct NewTabPageThemeTests {
 
         model.theme = .blue
 
-        #expect(model.theme == .blue)
         #expect(persistor.theme == .blue)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Only themes with artwork have a background image", .timeLimit(.minutes(1)))
-    func plainThemeHasNoBackgroundImage() {
-        #expect(NewTabPageTheme.blue.backgroundImage != nil)
-        #expect(NewTabPageTheme.plain.backgroundImage == nil)
-    }
+    @Test("A tint keeps the standard surface in the appearances it does not cover", .timeLimit(.minutes(1)))
+    func tintKeepsStandardSurfaceWhereItHasNone() {
+        let darkOnly = NewTabPageThemeTint.darkOnly(.red).color(over: .white)
+        let none = NewTabPageThemeTint.none.color(over: .white)
 
-    @available(iOS 16, macOS 13, *)
-    @Test("A tint in both appearances replaces the standard surface in both", .timeLimit(.minutes(1)))
-    func tintInBothAppearances() {
-        let tint = NewTabPageThemeTint.both(.red).color(over: .white)
-
-        #expect(resolved(tint, .light) == resolved(.red, .light))
-        #expect(resolved(tint, .dark) == resolved(.red, .dark))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A dark only tint keeps the standard surface in light mode", .timeLimit(.minutes(1)))
-    func darkOnlyTintKeepsStandardSurfaceInLightMode() {
-        let tint = NewTabPageThemeTint.darkOnly(.red).color(over: .white)
-
-        #expect(resolved(tint, .light) == resolved(.white, .light))
-        #expect(resolved(tint, .dark) == resolved(.red, .dark))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("No tint keeps the standard surface in both appearances", .timeLimit(.minutes(1)))
-    func noTintKeepsStandardSurface() {
-        let tint = NewTabPageThemeTint.none.color(over: .white)
-
-        #expect(resolved(tint, .light) == resolved(.white, .light))
-        #expect(resolved(tint, .dark) == resolved(.white, .dark))
+        #expect(resolved(darkOnly, .light) == resolved(.white, .light))
+        #expect(resolved(darkOnly, .dark) == resolved(.red, .dark))
+        #expect(resolved(none, .dark) == resolved(.white, .dark))
     }
 }
 

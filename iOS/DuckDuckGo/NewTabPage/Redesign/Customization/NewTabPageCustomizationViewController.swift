@@ -79,8 +79,6 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
     }
 
     /// Reads the list's laid out height, since a SwiftUI `List` reports no intrinsic height of its own.
-    /// The list's `contentSize` includes trailing padding, so this measures to the bottom of the last row.
-    /// The sheet adds the bottom safe area on top of the detent height, so it is not counted here.
     private func updateFittingContentHeight() {
         guard let collectionView = view.firstDescendant(ofType: UICollectionView.self) else { return }
         let contentBounds = CGRect(origin: .zero, size: collectionView.collectionViewLayout.collectionViewContentSize)

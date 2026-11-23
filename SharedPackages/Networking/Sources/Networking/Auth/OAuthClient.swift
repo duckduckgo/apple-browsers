@@ -170,7 +170,9 @@ public protocol OAuthClient {
     /// The backup must have been issued after the cut-off recorded at the last `logout()`.
     /// - Parameter expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
     /// - Returns: The new current token container, already stored.
-    /// - Throws: `TokenBackupError` when there is no usable backup, `.readFailed` when it can't be read; `TokenBackupError.sessionChanged`,
+    /// - Throws: `TokenBackupError` when there is no usable backup, `.readFailed` when it can't be read;
+    ///   `TokenBackupError.accountMismatch` when the call shares a restore that another caller started and the restored token container
+    ///   belongs to an account other than `expectedExternalID`, leaving the restored tokens stored; `TokenBackupError.sessionChanged`,
     ///   storing nothing, when while the restore was in progress this client signed out, adopted or activated a token
     ///   container, or another current token container was stored, or the current one can't be read; the storage error when reading the
     ///   current token container before the restore fails (nothing is refreshed then); otherwise the error of the first refresh call or of
@@ -266,6 +268,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     private var refreshOngoingTask: Task<TokenContainer, Error>?
     private var backupRestoreOngoingTask: Task<TokenContainer, Error>?
     private var backupRenewalTask: Task<Void, Never>?
+    /// The number of callers waiting for the result of a backup restore that another caller started.
+    private(set) var sharedBackupRestoreWaiterCount = 0
     private let sessionGeneration = SessionGeneration()
     private let refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?
     private let backupEventMapping: EventMapping<OAuthClientBackupEvent>?
@@ -590,7 +594,14 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     public func restoreFromBackup(expectedExternalID: String?) async throws -> TokenContainer {
         if let task = backupRestoreOngoingTask {
             Logger.OAuthClient.log("Awaiting result from existing backup restore operation")
-            return try await task.value
+            sharedBackupRestoreWaiterCount += 1
+            defer { sharedBackupRestoreWaiterCount -= 1 }
+            let restored = try await task.value
+            if let expectedExternalID, restored.decodedAccessToken.externalID != expectedExternalID {
+                Logger.OAuthClient.log("The shared backup restore restored another account than the expected one")
+                throw TokenBackupError.accountMismatch
+            }
+            return restored
         }
         let task = Task {
             defer {

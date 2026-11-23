@@ -24,9 +24,10 @@ import JWTKit
 import SubscriptionTestingUtilities
 @_spi(Testing) import WideEvent
 
-/// Runs the manager with a real `DefaultOAuthClient` wired as in the apps, with the backup token feature off.
+/// Runs the manager with a real `DefaultOAuthClient` wired as in the apps, with the backup token feature off until a test turns it on.
 final class SubscriptionManagerBackupDisabledTests: XCTestCase {
 
+    private var isBackupEnabled = false
     private var oAuthService: MockOAuthService!
     private var primaryStorage: MockTokenStorage!
     private var backupStorage: MockTokenStorage!
@@ -51,20 +52,23 @@ final class SubscriptionManagerBackupDisabledTests: XCTestCase {
         refresher = DefaultTokenRefresher(authService: oAuthService, clientID: "c", refreshEventMapping: nil)
 
         let userDefaults = UserDefaults(suiteName: "SubscriptionManagerBackupDisabledTests.\(UUID().uuidString)")!
+        isBackupEnabled = false
         oAuthClient = DefaultOAuthClient(tokensStorage: primaryStorage,
-                                             authService: oAuthService,
-                                             refreshEventMapping: nil,
-                                             tokenRefresher: refresher,
-                                             backupStorage: backupStorage,
-                                             isBackupEnabled: { false },
-                                             backupUserDefaults: userDefaults,
-                                             backupEventMapping: pixelHandler.backupEventMapping())
+                                         authService: oAuthService,
+                                         refreshEventMapping: nil,
+                                         tokenRefresher: refresher,
+                                         backupStorage: backupStorage,
+                                         isBackupEnabled: { [weak self] in self?.isBackupEnabled ?? false },
+                                         backupUserDefaults: userDefaults,
+                                         backupEventMapping: pixelHandler.backupEventMapping())
         let wideEvent = WideEventMock()
+        let subscriptionEndpointService = SubscriptionEndpointServiceMock()
+        subscriptionEndpointService.getSubscriptionResult = .failure(.noData)
         subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: StorePurchaseManagerMock(),
             oAuthClient: oAuthClient,
             userDefaults: userDefaults,
-            subscriptionEndpointService: SubscriptionEndpointServiceMock(),
+            subscriptionEndpointService: subscriptionEndpointService,
             subscriptionCachingService: SubscriptionCachingServiceMock(),
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
             pixelHandler: pixelHandler,
@@ -149,6 +153,46 @@ final class SubscriptionManagerBackupDisabledTests: XCTestCase {
         XCTAssertFalse(subscriptionManager.cachedIsUserAuthenticated)
         XCTAssertNil(try primaryStorage.getTokenContainer())
         XCTAssertEqual(try backupStorage.getTokenContainer(), storedBackup)
+    }
+
+    // MARK: - Flag turned on after an action taken while it was off
+
+    func testAutomaticSignOutWhileOff_thenOn_restoresTheKeptBackup() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        oAuthService.refreshAccessTokenResponse = .failure(OAuthTokensFactory.makeAuthAPIError(.invalidTokenRequest, tokenStatus: .reused))
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+        XCTAssertNil(try primaryStorage.getTokenContainer())
+        XCTAssertEqual(try backupStorage.getTokenContainer(), storedBackup)
+
+        isBackupEnabled = true
+        oAuthService.refreshAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        let restoredBackup = OAuthTokensFactory.makeTokenContainer(accessToken: "restoredBackupA", refreshToken: "restoredBackupR")
+        let restoredPrimary = OAuthTokensFactory.makeTokenContainer(accessToken: "restoredA", refreshToken: "restoredR")
+        await refresher.setTestingDecodedTokenContainers([restoredBackup, restoredPrimary])
+        await subscriptionManager.restoreMissingTokenIfPossible()
+
+        XCTAssertEqual(oAuthService.refreshAccessTokenRequestedTokens.suffix(2), ["backupR", "backupR"])
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), restoredPrimary)
+        XCTAssertEqual(try backupStorage.getTokenContainer(), restoredBackup)
+        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertEqual(pixelHandler.backupPixels, [.backupRestored(.missingToken)])
+    }
+
+    func testExplicitSignOutWhileOff_thenOn_doesNotRestoreTheSignedOutAccount() async throws {
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(accessToken: "currentA", refreshToken: "currentR"))
+        oAuthService.logoutError = nil
+        await subscriptionManager.signOut(notifyUI: false, userInitiated: true)
+        XCTAssertNil(try primaryStorage.getTokenContainer())
+        XCTAssertNil(try backupStorage.getTokenContainer())
+
+        isBackupEnabled = true
+        await subscriptionManager.restoreMissingTokenIfPossible()
+
+        XCTAssertEqual(oAuthService.refreshAccessTokenCallCount, 0)
+        XCTAssertNil(try primaryStorage.getTokenContainer())
+        XCTAssertNil(try backupStorage.getTokenContainer())
+        XCTAssertFalse(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertEqual(pixelHandler.backupPixels.count, 0)
     }
 }
 

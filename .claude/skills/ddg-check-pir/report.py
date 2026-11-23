@@ -109,16 +109,17 @@ def snapshots(folder):
 
 
 def inline(text):
-    parts = re.split(r"(`[^`]*`)", text)
-    out = []
-    for part in parts:
-        if part.startswith("`") and part.endswith("`") and len(part) > 1:
-            out.append(f"<code>{html.escape(part[1:-1])}</code>")
-            continue
+    def prose(part):
         part = html.escape(part)
         part = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", part)
-        part = re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r"<a href='\2'>\1</a>", part)
-        out.append(part)
+        return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r"<a href='\2'>\1</a>", part)
+
+    out, last = [], 0
+    for span in re.finditer(r"(`+)(.+?)\1(?!`)", text):
+        out.append(prose(text[last:span.start()]))
+        out.append(f"<code>{html.escape(span.group(2).strip())}</code>")
+        last = span.end()
+    out.append(prose(text[last:]))
     return "".join(out)
 
 
@@ -287,7 +288,7 @@ def render(batch, rows, baseline=None):
         r["file"], r["title"] = file, title
         verdict = (f"expected {r['expected']}, got {r['status']}" if r["expected"] != "pass" or not as_expected else r["status"])
         r["line"] = f"{verdict} · {r['review']}" + (f" · {len(r['findings'])} finding(s)" if r["findings"] else "")
-        found = ("<h4>Findings</h4><ul>" + "".join(f"<li>{e(f)}</li>" for f in r["findings"]) + "</ul>") if r["findings"] else ""
+        found = ("<h4>Findings</h4><ul>" + "".join(f"<li>{inline(f)}</li>" for f in r["findings"]) + "</ul>") if r["findings"] else ""
         why = (f"<p class='why status'>{icon(r['state'])}<span>{e('; '.join(reasons))}</span></p>" if reasons else
                f"<p class='why status'>{icon(r['state'])}<span>{'dispute already in the baseline' if known else e(r['line'])}</span></p>")
         compared = (f"<p><b>Baseline:</b> {e(before)} <b>{e(change)}</b></p>" if baseline is not None and counted else "")
@@ -335,16 +336,19 @@ def render(batch, rows, baseline=None):
         for state in ("ok", "warn", "fail")) for p in platforms)
     pending_note = ("<p class=pending>Review pending: " + ", ".join(link(r) for r in pending) + "</p>") if pending else ""
     with_findings = [r for r in scenario_runs if r["findings"]]
-    findings_note = ("<div class=findings><div class=status>" + icon("warn") + "<b>Findings outside the scenarios</b></div><ul>" +
-                     "".join(f"<li>{link(r)}: {e(f)}</li>" for r in with_findings for f in r["findings"]) + "</ul></div>") if with_findings else ""
+    finding_count = sum(len(r["findings"]) for r in with_findings)
+    findings_note = ("<details class=findings><summary><span class=status>" + icon("warn") +
+                     f"<b>Findings outside the scenarios: {finding_count}</b></span></summary><ul>" +
+                     "".join(f"<li>{link(r)}: {inline(f)}</li>" for r in with_findings for f in r["findings"]) + "</ul></details>") if with_findings else ""
     if not scenario_runs:
         banner = f"<div class='banner warn'><div class=status>{icon('warn')}<b>No scenario runs in this batch.</b></div></div>"
     elif attention:
-        banner = (f"<div class='banner attn'><div class=status>{icon('fail')}<b>Needs attention: {len(attention)} of {len(scenario_runs)} scenario runs.</b></div><ul>" +
-                  "".join(f"<li>{link(r)}: {e(', '.join(r['reasons']))}</li>" for r in attention) + f"</ul>{pending_note}</div>{findings_note}")
+        banner = (f"<details class='banner attn' open><summary><span class=status>{icon('fail')}<b>Needs attention: {len(attention)} of "
+                  f"{len(scenario_runs)} scenario runs.</b></span></summary><ul>" +
+                  "".join(f"<li>{link(r)}: {e(', '.join(r['reasons']))}</li>" for r in attention) + f"</ul>{pending_note}</details>{findings_note}")
     elif pending:
-        banner = (f"<div class='banner warn'><div class=status>{icon('warn')}<b>No problems found, but {len(pending)} of {len(scenario_runs)} scenario runs "
-                  f"still need a review.</b></div>{pending_note}</div>{findings_note}")
+        banner = (f"<details class='banner warn' open><summary><span class=status>{icon('warn')}<b>No problems found, but {len(pending)} of "
+                  f"{len(scenario_runs)} scenario runs still need a review.</b></span></summary>{pending_note}</details>{findings_note}")
     else:
         banner = (f"<div class='banner ok'><div class=status>{icon('ok')}<b>All {len(scenario_runs)} scenario runs got their expected verdict and were confirmed"
                   f"{' with no change from the baseline' if baseline is not None else ''}.</b></div></div>{findings_note}")
@@ -357,7 +361,11 @@ def render(batch, rows, baseline=None):
 <style>
 :root {{ color-scheme:light dark; --bg:#fff; --fg:#1d1d1f; --muted:#6e6e73; --line:#d2d2d7; --flag:#fff4e5; --sel:#e8f0fe; --pass:#1a7f37; --fail:#c62828; --warn:#b26a00; --link:#0b57d0; --code:#f2f2f7; }}
 @media (prefers-color-scheme: dark) {{ :root {{ --bg:#1c1c1e; --fg:#f2f2f7; --muted:#a1a1a6; --line:#3a3a3c; --flag:#3a2a10; --sel:#1f3a5f; --pass:#4caf50; --fail:#ef5350; --warn:#ffb74d; --link:#8ab4f8; --code:#2c2c2e; }} }}
-* {{ box-sizing:border-box; }} a {{ color:var(--link); }} code {{ background:var(--code); padding:0 3px; border-radius:3px; }}
+* {{ box-sizing:border-box; }} a {{ color:var(--link); }}
+code {{ font:12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--code); padding:1px 5px; border-radius:4px;
+       border:1px solid var(--line); overflow-wrap:anywhere; }}
+pre {{ background:var(--code); border:1px solid var(--line); border-radius:6px; padding:10px 12px; overflow:auto; }}
+pre code {{ background:none; border:0; padding:0; white-space:pre; overflow-wrap:normal; }}
 body {{ background:var(--bg); color:var(--fg); font:14px/1.45 -apple-system, system-ui, sans-serif; margin:0; display:flex; flex-direction:column; height:100vh; }}
 header {{ padding:12px 16px; border-bottom:1px solid var(--line); }} header h1 {{ font-size:18px; margin:0 0 4px; }}
 .muted, header p {{ color:var(--muted); }} header p {{ margin:2px 0; font-size:13px; }}
@@ -372,14 +380,19 @@ tr.group th {{ position:sticky; top:0; background:var(--bg); font-size:15px; pad
 th .status {{ align-items:center; }} th .status > .icon {{ margin-top:0; }}
 .count {{ display:inline-flex; align-items:center; gap:3px; margin-right:8px; vertical-align:middle; }}
 .icon.ok {{ fill:var(--pass); }} .icon.fail {{ fill:var(--fail); }} .icon.warn {{ fill:var(--warn); }} .icon.none {{ color:var(--muted); }}
-.banner {{ margin:10px 0 2px; padding:8px 12px; border-radius:8px; border:1px solid var(--line); }} .banner ul {{ margin:4px 0 0; padding-left:20px; max-height:9.5em; overflow:auto; }}
+.banner {{ margin:10px 0 2px; padding:8px 12px; border-radius:8px; border:1px solid var(--line); }} .banner ul {{ margin:4px 0 0; padding-left:20px; }}
 .pending {{ color:var(--muted); margin:6px 0 0; }} .banner.warn {{ border-color:var(--warn); }} .banner.ok {{ border-color:var(--pass); }}
 .banner.attn {{ border-color:var(--fail); background:var(--flag); }}
-.findings {{ margin:8px 0 2px; padding:8px 12px; border-radius:8px; border:1px solid var(--warn); }} .findings ul {{ margin:4px 0 0; padding-left:44px; max-height:7em; overflow:auto; }} .banner ul {{ padding-left:44px; }} .why {{ font-weight:500; }}
+details.banner > summary, details.findings > summary {{ cursor:pointer; list-style:none; }}
+details.banner > summary::-webkit-details-marker, details.findings > summary::-webkit-details-marker {{ display:none; }}
+details.banner > summary::after, details.findings > summary::after {{ content:"Show"; margin-left:auto; color:var(--link); font-size:12px; }}
+details[open].banner > summary::after, details[open].findings > summary::after {{ content:"Hide"; }}
+summary .status {{ align-items:center; }} summary .status > .icon {{ margin-top:0; }} details > summary {{ display:flex; align-items:center; }}
+.findings {{ margin:8px 0 2px; padding:8px 12px; border-radius:8px; border:1px solid var(--warn); }} .findings ul {{ margin:4px 0 0; padding-left:44px; }} .banner ul {{ padding-left:44px; }} .why {{ font-weight:500; }}
 .pass {{ color:var(--pass); }} .fail {{ color:var(--fail); }}
 .shots {{ display:flex; flex-wrap:wrap; gap:12px; }} .shots a {{ width:320px; color:var(--muted); font-size:12px; }}
 .shots img {{ width:100%; border:1px solid var(--line); }} .review {{ border-left:3px solid var(--line); padding-left:12px; }}
-pre {{ white-space:pre-wrap; }} .js .attempt {{ display:none; }} .js .attempt.active {{ display:block; }}
+.js .attempt {{ display:none; }} .js .attempt.active {{ display:block; }}
 @media (max-width: 800px) {{ body {{ display:block; height:auto; }} main {{ display:block; }} #list {{ max-height:50vh; }} }}
 </style></head><body>
 <header><h1>PIR batch {e(batch.name)}</h1>

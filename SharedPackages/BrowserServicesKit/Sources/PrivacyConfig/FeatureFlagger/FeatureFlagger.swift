@@ -425,6 +425,16 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         if allowOverride, allowOverrides(), let localOverride = localOverrides?.override(for: featureFlag) {
             return localOverride
         }
+        #if os(iOS)
+        // Ship-review branch only: enable audit-log features without waiting for remote rollout.
+        switch featureFlag.rawValue {
+        case "syncLoginAuditLog", "syncLoginNotification", "syncAuditLogBackgroundPolling":
+            return true
+        default:
+            break
+        }
+        #endif
+
         switch featureFlag.source {
         case .disabled:
             return false

@@ -18,10 +18,8 @@
 
 import AIChat
 import AppKitExtensions
-import Combine
 import FeatureFlags_macOS
 import Foundation
-import Persistence
 import PrivacyConfig
 
 extension AIChatLocalModelService {
@@ -58,61 +56,5 @@ extension AIChatDownloadableLocalModel {
         }
         return AIChatDownloadableLocalModel(engine: engine,
                                             installer: AIChatLocalModelDownloader(spec: spec, directory: directory))
-    }
-}
-
-/// Debug menu: which engine runs local summaries, on any Mac. Switching keeps the downloaded
-/// model, so switching back is instant.
-enum LocalModelEngineOverride: String, CaseIterable {
-    case automatic
-    case appleIntelligence
-    case llama
-
-    var title: String {
-        switch self {
-        case .automatic: return "Automatic"
-        case .appleIntelligence: return "Apple Intelligence"
-        case .llama: return "Downloadable Model (llama.cpp)"
-        }
-    }
-
-    var engineKind: AIChatLocalModelEngineKind? {
-        switch self {
-        case .automatic: return nil
-        case .appleIntelligence: return .appleIntelligence
-        case .llama: return .llama
-        }
-    }
-}
-
-struct LocalModelEngineOverridePersistor {
-
-    static let key = "aichat.localModel.engineOverride"
-    static let didChangeNotification = Notification.Name("LocalModelEngineOverrideDidChange")
-
-    private let keyValueStore: KeyValueStoring
-    private let notificationCenter: NotificationCenter
-
-    init(keyValueStore: KeyValueStoring = UserDefaults.standard, notificationCenter: NotificationCenter = .default) {
-        self.keyValueStore = keyValueStore
-        self.notificationCenter = notificationCenter
-    }
-
-    var current: LocalModelEngineOverride {
-        get {
-            (keyValueStore.object(forKey: Self.key) as? String).flatMap(LocalModelEngineOverride.init) ?? .automatic
-        }
-        nonmutating set {
-            if newValue == .automatic {
-                keyValueStore.removeObject(forKey: Self.key)
-            } else {
-                keyValueStore.set(newValue.rawValue, forKey: Self.key)
-            }
-            notificationCenter.post(name: Self.didChangeNotification, object: nil)
-        }
-    }
-
-    var updates: AnyPublisher<Void, Never> {
-        notificationCenter.publisher(for: Self.didChangeNotification).map { _ in () }.eraseToAnyPublisher()
     }
 }

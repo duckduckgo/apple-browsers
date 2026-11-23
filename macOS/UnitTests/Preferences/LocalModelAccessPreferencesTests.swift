@@ -206,26 +206,6 @@ final class DownloadableLocalModelPreferencesTests {
         #expect(installer.userCalls == ["install", "cancel", "uninstall"])
         #expect(llama.unloadCount == 1)
     }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The debug override keeps its choice and forgets Automatic", .timeLimit(.minutes(1)))
-    func overrideIsStored() {
-        let store = InMemoryKeyValueStore()
-        let notificationCenter = NotificationCenter()
-        let persistor = LocalModelEngineOverridePersistor(keyValueStore: store, notificationCenter: notificationCenter)
-        var updates = 0
-        let cancellable = persistor.updates.sink { updates += 1 }
-
-        persistor.current = .llama
-        #expect(persistor.current == .llama)
-        #expect(persistor.current.engineKind == .llama)
-
-        persistor.current = .automatic
-        #expect(store.object(forKey: LocalModelEngineOverridePersistor.key) == nil)
-        #expect(persistor.current.engineKind == nil)
-        #expect(updates == 2)
-        cancellable.cancel()
-    }
 }
 
 private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalModelUnloading {

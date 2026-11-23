@@ -128,9 +128,10 @@ protocol OnboardingDownloadReasonPixelReporting {
     func measureTryVPNImpression()
     func measureTryVPNAction()
     func measureSkipTryVPNAction()
-    func measureTryVPNPaywallRestored()
+    func measureTryVPNPaywallEvent(_ event: SubscriptionFlowEvent)
     func measureVPNActivationImpression()
     func measureVPNActivationContinue(isVPNOn: Bool)
+    func measureVPNActivationFailed(_ reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason)
     func measureSubscriptionReminderImpression()
     func measureSubscriptionReminderContinue()
 }
@@ -644,8 +645,16 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
         fireSharedPixel(.tryVPN(.clicked(.dismiss)))
     }
 
-    func measureTryVPNPaywallRestored() {
-        fireSharedPixel(.tryVPNPaywall(.restored))
+    /// Purchase failures and found subscriptions on the paywall opened from Try VPN, and restores from it.
+    func measureTryVPNPaywallEvent(_ event: SubscriptionFlowEvent) {
+        switch event {
+        case .purchaseFailed:
+            fireSharedPixel(.tryVPNPaywall(.purchaseFailed))
+        case .subscriptionFound:
+            fireSharedPixel(.tryVPNPaywall(.subscriptionFound))
+        case .subscriptionRestored:
+            fireSharedPixel(.tryVPNPaywall(.restored))
+        }
     }
 
     func measureVPNActivationImpression() {
@@ -655,6 +664,10 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
     /// "Next" once the VPN is on, or "Skip" while it's off.
     func measureVPNActivationContinue(isVPNOn: Bool) {
         fireSharedPixel(.vpnActivation(.clicked(isVPNOn ? .engage : .dismiss)))
+    }
+
+    func measureVPNActivationFailed(_ reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) {
+        fireSharedPixel(.vpnActivation(.failed(reason)))
     }
 
     func measureSubscriptionReminderImpression() {

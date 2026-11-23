@@ -25,6 +25,8 @@ import FeatureFlags_iOS
 import Persistence
 import Subscription
 import SubscriptionTestingUtilities
+import WebKit
+import BrowserServicesKitTestsUtils
 @_spi(Testing) import WideEvent
 @testable import DuckDuckGo
 
@@ -283,7 +285,7 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.treatment,
                                                               isAlreadyAssigned: false)
         let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock())
-        let sut = makeViewModel(subFeature: subFeature, featureFlagger: featureFlagger, onSubscriptionRestored: nil)
+        let sut = makeViewModel(subFeature: subFeature, featureFlagger: featureFlagger, onFlowEvent: nil)
 
         await sut.setupTransactionObserver()
         subFeature.onAppStoreTransactionCompleted?(true)
@@ -292,40 +294,97 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
     }
 
     @MainActor
-    func test_restoreAppstoreTransaction_restoreSucceeds_callsOnSubscriptionRestored() async {
+    func test_restoreAppstoreTransaction_restoreSucceeds_reportsSubscriptionRestored() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         restoreFlow.restoreAccountFromPastPurchaseResult = .success("transactionJWS")
-        let restored = expectation(description: "onSubscriptionRestored called")
+        let reported = expectation(description: "onFlowEvent called")
+        var events: [SubscriptionFlowEvent] = []
         let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow),
                                 featureFlagger: PrivacyConfig.MockFeatureFlagger(),
-                                onSubscriptionRestored: { restored.fulfill() })
+                                onFlowEvent: { events.append($0); reported.fulfill() })
 
         sut.restoreAppstoreTransaction()
 
-        await fulfillment(of: [restored], timeout: 1.0)
+        await fulfillment(of: [reported], timeout: 1.0)
+        XCTAssertEqual(events, [.subscriptionRestored])
     }
 
     @MainActor
-    func test_restoreAppstoreTransaction_restoreFails_doesNotCallOnSubscriptionRestored() async {
+    func test_restoreAppstoreTransaction_restoreFails_reportsNothing() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         restoreFlow.restoreAccountFromPastPurchaseResult = .failure(.missingAccountOrTransactions)
-        let restored = expectation(description: "onSubscriptionRestored called")
-        restored.isInverted = true
+        let reported = expectation(description: "onFlowEvent called")
+        reported.isInverted = true
         let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow),
                                 featureFlagger: PrivacyConfig.MockFeatureFlagger(),
-                                onSubscriptionRestored: { restored.fulfill() })
+                                onFlowEvent: { _ in reported.fulfill() })
 
         sut.restoreAppstoreTransaction()
 
-        await fulfillment(of: [restored], timeout: 1.0)
+        await fulfillment(of: [reported], timeout: 1.0)
+    }
+
+    @MainActor
+    func test_purchaseFails_reportsPurchaseFailed() async {
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.purchaseFailed(NSError(domain: "test", code: 1)))
+        let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock(), purchaseFlow: purchaseFlow)
+        let reported = expectation(description: "onFlowEvent called")
+        var events: [SubscriptionFlowEvent] = []
+        let sut = makeViewModel(subFeature: subFeature,
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { events.append($0); reported.fulfill() })
+        await sut.setupTransactionObserver()
+
+        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage())
+
+        await fulfillment(of: [reported], timeout: 1.0)
+        XCTAssertEqual(events, [.purchaseFailed])
+    }
+
+    @MainActor
+    func test_purchaseFindsExistingSubscription_reportsSubscriptionFound() async {
+        let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock(), hasActiveSubscription: true)
+        let reported = expectation(description: "onFlowEvent called")
+        var events: [SubscriptionFlowEvent] = []
+        let sut = makeViewModel(subFeature: subFeature,
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { events.append($0); reported.fulfill() })
+        await sut.setupTransactionObserver()
+
+        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage())
+
+        await fulfillment(of: [reported], timeout: 1.0)
+        XCTAssertEqual(events, [.subscriptionFound])
+    }
+
+    @MainActor
+    func test_purchaseCancelled_reportsNothing() async {
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
+        let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock(), purchaseFlow: purchaseFlow)
+        let reported = expectation(description: "onFlowEvent called")
+        reported.isInverted = true
+        let sut = makeViewModel(subFeature: subFeature,
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { _ in reported.fulfill() })
+        await sut.setupTransactionObserver()
+
+        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage())
+
+        await fulfillment(of: [reported], timeout: 1.0)
     }
 
     // MARK: - Helper
 
     @MainActor
-    private func makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock) -> DefaultSubscriptionPagesUseSubscriptionFeature {
+    private func makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock,
+                                         purchaseFlow: AppStorePurchaseFlowMock = AppStorePurchaseFlowMock(),
+                                         hasActiveSubscription: Bool = false) -> DefaultSubscriptionPagesUseSubscriptionFeature {
         let subscriptionManager = SubscriptionManagerMock()
-        let purchaseFlow = AppStorePurchaseFlowMock()
+        let storePurchaseManager = StorePurchaseManagerMock()
+        storePurchaseManager.hasActiveSubscriptionResult = hasActiveSubscription
+        subscriptionManager.resultStorePurchaseManager = storePurchaseManager
         let wideEvent = WideEventMock()
         return DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: subscriptionManager,
@@ -346,9 +405,16 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
     }
 
     @MainActor
+    private func makePurchaseMessage() -> WKScriptMessage {
+        WKScriptMessage.mock(name: "subscriptionSelected",
+                             body: "",
+                             webView: MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!))
+    }
+
+    @MainActor
     private func makeViewModel(subFeature: DefaultSubscriptionPagesUseSubscriptionFeature,
                                featureFlagger: FeatureFlagger,
-                               onSubscriptionRestored: (() -> Void)?) -> SubscriptionFlowViewModel {
+                               onFlowEvent: ((SubscriptionFlowEvent) -> Void)?) -> SubscriptionFlowViewModel {
         SubscriptionFlowViewModel(initialURL: URL(string: "https://duckduckgo.com/subscriptions")!,
                                   flowType: .firstPurchase,
                                   userScript: SubscriptionPagesUserScript(),
@@ -360,7 +426,7 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
                                   dataBrokerProtectionViewControllerProvider: nil,
                                   onboardingKeyValueStore: InMemoryOnboardingStore(),
                                   meetsPIRLocaleRequirement: { false },
-                                  onSubscriptionRestored: onSubscriptionRestored)
+                                  onFlowEvent: onFlowEvent)
     }
 }
 

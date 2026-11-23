@@ -58,6 +58,16 @@ enum SubscriptionFlowType {
     }
 }
 
+/// What happened in a subscription flow, for the code that opened it to report.
+enum SubscriptionFlowEvent: Equatable {
+    /// The purchase failed, for reasons other than the user cancelling it.
+    case purchaseFailed
+    /// The App Store found a subscription the user already has ("Subscription Found").
+    case subscriptionFound
+    /// "Subscription Found" → Restore succeeded.
+    case subscriptionRestored
+}
+
 final class SubscriptionFlowViewModel: ObservableObject {
     
     let userScript: SubscriptionPagesUserScript
@@ -116,8 +126,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     /// `nil` unless this flow came from `makePurchaseFlowV2`; falls back to `SubscriptionOnboardingDuckAIChatLauncher`.
     private let onRequestDuckAIChatHandler: ((String?) -> Bool)?
-    /// Called when "Subscription Found" → Restore succeeds. The restore keeps running if the flow is closed meanwhile.
-    private let onSubscriptionRestored: (() -> Void)?
+    /// Called with what happens in this flow. The restore keeps running, and still reports, if the flow is closed meanwhile.
+    private let onFlowEvent: ((SubscriptionFlowEvent) -> Void)?
 
     private var didHandOffToDuckAI = false
 
@@ -245,7 +255,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          onboardingKeyValueStore: ThrowingKeyValueStoring?,
          meetsPIRLocaleRequirement: @escaping () -> Bool,
-         onSubscriptionRestored: (() -> Void)?,
+         onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
          onRequestDuckAIChat: ((String?) -> Bool)? = nil) {
         self.initialURL = initialURL
         self.flowType = flowType
@@ -260,7 +270,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
         self.onRequestDuckAIChatHandler = onRequestDuckAIChat
-        self.onSubscriptionRestored = onSubscriptionRestored
+        self.onFlowEvent = onFlowEvent
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -353,6 +363,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
        
     }
 
+    /// Reports `.purchaseFailed` for the same errors as the purchase failure pixels.
     @MainActor
     private func handleTransactionError(error: UseSubscriptionError) {
         // Reset the transaction Status
@@ -363,14 +374,17 @@ final class SubscriptionFlowViewModel: ObservableObject {
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureStoreError,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .purchaseFailed
+            onFlowEvent?(.purchaseFailed)
         case .purchasePendingTransaction:
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureStoreError,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .purchasePendingTransaction
+            onFlowEvent?(.purchaseFailed)
         case .missingEntitlements:
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureBackendError,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .missingEntitlements
+            onFlowEvent?(.purchaseFailed)
         case .failedToGetSubscriptionOptions:
             state.transactionError = .failedToGetSubscriptionOptions
         case .failedToSetSubscription:
@@ -381,8 +395,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureAccountNotCreated,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .generalError
+            onFlowEvent?(.purchaseFailed)
         case .activeSubscriptionAlreadyPresent:
             state.transactionError = .hasActiveSubscription
+            onFlowEvent?(.subscriptionFound)
         case .restoreFailedDueToNoSubscription:
             // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .generalError
@@ -396,6 +412,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureOther,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .generalError
+            onFlowEvent?(.purchaseFailed)
         }
     }
     
@@ -566,7 +583,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 
                 data.appleAccountRestoreDuration?.complete()
                 wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-                onSubscriptionRestored?()
+                onFlowEvent?(.subscriptionRestored)
                 
                 backButtonEnabled(false)
                 await webViewModel.navigationCoordinator.reload()

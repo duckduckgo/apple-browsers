@@ -426,9 +426,10 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureTryVPNImpression = false
     private(set) var didCallMeasureTryVPNAction = false
     private(set) var didCallMeasureSkipTryVPNAction = false
-    private(set) var didCallMeasureTryVPNPaywallRestored = false
+    private(set) var capturedTryVPNPaywallEvents: [SubscriptionFlowEvent] = []
     private(set) var didCallMeasureVPNActivationImpression = false
     private(set) var capturedVPNActivationContinueIsVPNOn: Bool?
+    private(set) var capturedVPNActivationFailureReasons: [OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason] = []
     private(set) var didCallMeasureSubscriptionReminderImpression = false
     private(set) var didCallMeasureSubscriptionReminderContinue = false
 
@@ -444,8 +445,8 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureSkipTryVPNAction = true
     }
 
-    func measureTryVPNPaywallRestored() {
-        didCallMeasureTryVPNPaywallRestored = true
+    func measureTryVPNPaywallEvent(_ event: SubscriptionFlowEvent) {
+        capturedTryVPNPaywallEvents.append(event)
     }
 
     func measureVPNActivationImpression() {
@@ -454,6 +455,10 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureVPNActivationContinue(isVPNOn: Bool) {
         capturedVPNActivationContinueIsVPNOn = isVPNOn
+    }
+
+    func measureVPNActivationFailed(_ reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) {
+        capturedVPNActivationFailureReasons.append(reason)
     }
 
     func measureSubscriptionReminderImpression() {

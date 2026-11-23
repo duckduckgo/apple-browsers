@@ -570,6 +570,9 @@ extension OnboardingView {
                     animateContentTransition {
                         model.vpnActivationContinueAction(isVPNOn: isVPNOn)
                     }
+                },
+                failureAction: { reason in
+                    model.vpnActivationFailedAction(reason: reason)
                 }
             )
         }

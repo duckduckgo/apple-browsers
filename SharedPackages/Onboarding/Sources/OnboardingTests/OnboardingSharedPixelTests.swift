@@ -589,9 +589,13 @@ final class OnboardingSharedPixelTests: XCTestCase {
             (.tryVPN(.clicked(.engage)), "onboarding_try-vpn", "clicked", "engage"),
             (.tryVPN(.clicked(.dismiss)), "onboarding_try-vpn", "clicked", "dismiss"),
             (.tryVPNPaywall(.restored), "onboarding_try-vpn-paywall", "restored", nil),
+            (.tryVPNPaywall(.purchaseFailed), "onboarding_try-vpn-paywall", "purchase_failed", nil),
+            (.tryVPNPaywall(.subscriptionFound), "onboarding_try-vpn-paywall", "subscription_found", nil),
             (.vpnActivation(.shown), "onboarding_vpn-activation", "shown", nil),
             (.vpnActivation(.clicked(.engage)), "onboarding_vpn-activation", "clicked", "engage"),
             (.vpnActivation(.clicked(.dismiss)), "onboarding_vpn-activation", "clicked", "dismiss"),
+            (.vpnActivation(.failed(.permissionDenied)), "onboarding_vpn-activation", "failed", "permission_denied"),
+            (.vpnActivation(.failed(.connectionFailed)), "onboarding_vpn-activation", "failed", "connection_failed"),
             (.subscriptionReminder(.shown), "onboarding_subscription-reminder", "shown", nil),
             (.subscriptionReminder(.clicked(.engage)), "onboarding_subscription-reminder", "clicked", "engage")
         ]

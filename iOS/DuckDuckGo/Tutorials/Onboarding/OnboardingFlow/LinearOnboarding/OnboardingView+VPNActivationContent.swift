@@ -47,15 +47,19 @@ extension OnboardingView {
         private let content: OnboardingVPNActivationContent
         /// Called with whether the VPN is on: "Next" once it's on, "Skip" while it's off.
         private let continueAction: (_ isVPNOn: Bool) -> Void
+        /// Called when the user declines the system VPN prompt, or the VPN fails to connect.
+        private let failureAction: (_ reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) -> Void
 
         init(
             content: OnboardingVPNActivationContent,
             isVisible: Binding<Bool>,
-            continueAction: @escaping (_ isVPNOn: Bool) -> Void
+            continueAction: @escaping (_ isVPNOn: Bool) -> Void,
+            failureAction: @escaping (_ reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) -> Void
         ) {
             self.content = content
             self._isVisible = isVisible
             self.continueAction = continueAction
+            self.failureAction = failureAction
         }
 
         private var isOn: Bool {
@@ -79,6 +83,12 @@ extension OnboardingView {
             .onBubbleVisibilityChanged(isVisible: $isVisible, shouldStartTyping: $shouldStartTyping, showContent: $showContent)
             .onAppear { viewModel.onAppear() }
             .onDisappear { viewModel.onDisappear() }
+            .onChange(of: viewModel.didDenyVPNPermission) { didDeny in
+                if didDeny { failureAction(.permissionDenied) }
+            }
+            .onChange(of: viewModel.didFailToStartVPN) { didFail in
+                if didFail { failureAction(.connectionFailed) }
+            }
         }
 
         private var header: some View {

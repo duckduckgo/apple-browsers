@@ -4897,7 +4897,7 @@ class MainViewController: UIViewController {
             redirectURLComponents: redirectURLComponents,
             includesPostPurchaseOnboarding: true,
             subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
-            onSubscriptionRestored: nil
+            onFlowEvent: nil
         )
 
         let presenter = topMostPresentedViewController() ?? self
@@ -4915,11 +4915,11 @@ class MainViewController: UIViewController {
     /// - Parameters:
     ///   - includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
     ///   - subscriptionExperimentAttributionProvider: The experiments sent with a purchase made in this flow.
-    ///   - onSubscriptionRestored: Called when "Subscription Found" → Restore succeeds in this flow, even if it was closed meanwhile.
+    ///   - onFlowEvent: Called with what happens in this flow. A restore still reports if the flow was closed meanwhile.
     private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
                                                     includesPostPurchaseOnboarding: Bool,
                                                     subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding,
-                                                    onSubscriptionRestored: (() -> Void)?) -> UIViewController {
+                                                    onFlowEvent: ((SubscriptionFlowEvent) -> Void)?) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
             privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -4945,7 +4945,7 @@ class MainViewController: UIViewController {
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
             subscriptionExperimentAttributionProvider: subscriptionExperimentAttributionProvider,
-            onSubscriptionRestored: onSubscriptionRestored,
+            onFlowEvent: onFlowEvent,
             onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
         ))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
@@ -9972,8 +9972,8 @@ extension MainViewController: OnboardingDelegate {
                 wrapping: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
                 entry: PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry
             ),
-            onSubscriptionRestored: { [weak self] in
-                self?.contextualOnboardingPixelReporter.measureTryVPNPaywallRestored()
+            onFlowEvent: { [weak self] event in
+                self?.contextualOnboardingPixelReporter.measureTryVPNPaywallEvent(event)
             }
         )
         let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)

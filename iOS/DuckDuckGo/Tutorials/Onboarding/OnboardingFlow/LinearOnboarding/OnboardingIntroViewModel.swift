@@ -377,6 +377,12 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
+    /// Turning on the VPN failed on the Turn on VPN step after Try VPN.
+    func vpnActivationFailedAction(reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) {
+        guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureVPNActivationFailed(reason)
+    }
+
     /// The button on the "If you change your mind" step after Try VPN.
     func subscriptionReminderContinueAction() {
         guard currentIntroStep == .tryVPNFollowUp else { return }

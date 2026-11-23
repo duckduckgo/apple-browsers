@@ -2288,11 +2288,13 @@ struct OnboardingTryVPNFollowUpTests {
 
         // WHEN
         sut.vpnActivationContinueAction(isVPNOn: true)
+        sut.vpnActivationFailedAction(reason: .permissionDenied)
         sut.subscriptionReminderContinueAction()
 
         // THEN
         #expect(sut.state.intro?.type == .tryVPNDialog(content: .mock))
         #expect(pixelReporter.capturedVPNActivationContinueIsVPNOn == nil)
+        #expect(pixelReporter.capturedVPNActivationFailureReasons.isEmpty)
         #expect(!pixelReporter.didCallMeasureSubscriptionReminderContinue)
     }
 
@@ -2338,6 +2340,27 @@ struct OnboardingTryVPNFollowUpTests {
         #expect(pixelReporter.didCallMeasureVPNActivationImpression)
         #expect(pixelReporter.capturedVPNActivationContinueIsVPNOn == isVPNOn)
         #expect(sut.state.intro?.type == .chooseSearchExperienceDialog(content: .mock))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The Turn on VPN screen measures failures to turn on the VPN and stays on the step", .timeLimit(.minutes(1)))
+    func vpnActivationFailurePixels() async {
+        // GIVEN
+        let sut = makeSUTOnTryVPN()
+        var dismissPaywall: (() -> Void)?
+        sut.onTryVPNFromOnboarding = { dismissPaywall = $0 }
+        sut.tryVPNAction()
+        followUpProvider.hasVPNAccessValue = true
+        dismissPaywall?()
+        await waitForIntroType(.vpnActivationDialog(content: .mock), in: sut)
+
+        // WHEN
+        sut.vpnActivationFailedAction(reason: .permissionDenied)
+        sut.vpnActivationFailedAction(reason: .connectionFailed)
+
+        // THEN
+        #expect(pixelReporter.capturedVPNActivationFailureReasons == [.permissionDenied, .connectionFailed])
+        #expect(sut.state.intro?.type == .vpnActivationDialog(content: .mock))
     }
 
     @available(iOS 16, macOS 13, *)

@@ -1302,10 +1302,14 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureTryVPNImpression()
         sut.measureTryVPNAction()
         sut.measureSkipTryVPNAction()
-        sut.measureTryVPNPaywallRestored()
+        sut.measureTryVPNPaywallEvent(.purchaseFailed)
+        sut.measureTryVPNPaywallEvent(.subscriptionFound)
+        sut.measureTryVPNPaywallEvent(.subscriptionRestored)
         sut.measureVPNActivationImpression()
         sut.measureVPNActivationContinue(isVPNOn: true)
         sut.measureVPNActivationContinue(isVPNOn: false)
+        sut.measureVPNActivationFailed(.permissionDenied)
+        sut.measureVPNActivationFailed(.connectionFailed)
         sut.measureSubscriptionReminderImpression()
         sut.measureSubscriptionReminderContinue()
 
@@ -1314,10 +1318,14 @@ final class OnboardingPixelReporterTests: XCTestCase {
             .tryVPN(.shown),
             .tryVPN(.clicked(.engage)),
             .tryVPN(.clicked(.dismiss)),
+            .tryVPNPaywall(.purchaseFailed),
+            .tryVPNPaywall(.subscriptionFound),
             .tryVPNPaywall(.restored),
             .vpnActivation(.shown),
             .vpnActivation(.clicked(.engage)),
             .vpnActivation(.clicked(.dismiss)),
+            .vpnActivation(.failed(.permissionDenied)),
+            .vpnActivation(.failed(.connectionFailed)),
             .subscriptionReminder(.shown),
             .subscriptionReminder(.clicked(.engage))
         ])

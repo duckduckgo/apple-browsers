@@ -30,9 +30,11 @@ public enum DuckAiNativeStorageConsent {
     /// The web app's own record of Terms of Service acceptance, stored as the string `"true"`.
     public static let termsOfServiceEntryKey = "duckaiHasAgreedToTerms"
 
+    /// Fire mode reads these through from normal storage; the user's default model is included so fire tabs start on it.
     public static let entryKeys: Set<String> = [
         termsOfServiceEntryKey,
-        "hasVoiceModeConsent"
+        "hasVoiceModeConsent",
+        DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue
     ]
 
     /// Whether `value`, as stored under `termsOfServiceEntryKey`, records an acceptance. The web app

@@ -24,14 +24,15 @@ public final class AIChatNewChatDefaultSource {
 
     /// `nil` until `models` holds a model the user can use.
     public var selection: AIChatNewChatSelection? {
-        let candidates = [AIChatNewChatDefaultResolver.Candidate(overLimitDefault.newChatDefault(at: now()), origin: .server),
-                          AIChatNewChatDefaultResolver.Candidate(serverDefault, origin: .server)]
-        return AIChatNewChatDefaultResolver.resolve(candidates, models: models, userTier: userTier)
+        let userDefaultModelId = userDefaultModel?.modelId
+        let selection = AIChatNewChatDefaultResolver.resolve(candidates(userDefaultModelId: userDefaultModelId), models: models, userTier: userTier)
+        guard userDefaultModelId != nil, selection?.origin != .user else { return selection }
+        return selection?.markingUserDefaultUnavailable()
     }
 
-    /// Emits after web writes a different over-limit default, so open inputs can refresh.
-    public var overLimitDefaultChanges: AnyPublisher<Void, Never> {
-        overLimitDefaultChangesSubject.eraseToAnyPublisher()
+    /// Emits after web writes a different over-limit or user default, so open inputs can refresh.
+    public var defaultChanges: AnyPublisher<Void, Never> {
+        defaultChangesSubject.eraseToAnyPublisher()
     }
 
     public var models: [AIChatModel] = []
@@ -43,8 +44,10 @@ public final class AIChatNewChatDefaultSource {
     public var overLimitDefault: AIChatOverLimitNewChatDefault = .notOverLimit
 
     private let now: () -> Date
-    private let overLimitDefaultChangesSubject = PassthroughSubject<Void, Never>()
+    private let defaultChangesSubject = PassthroughSubject<Void, Never>()
     private var overLimitDefaultsCancellable: AnyCancellable?
+    private var userDefaultModel: AIChatUserDefaultModelProviding?
+    private var userDefaultModelChangesCancellable: AnyCancellable?
 
     public init(now: @escaping () -> Date = Date.init) {
         self.now = now
@@ -75,7 +78,39 @@ public final class AIChatNewChatDefaultSource {
         guard newDefault != overLimitDefault else { return }
         overLimitDefault = newDefault
         if announcesChange {
-            overLimitDefaultChangesSubject.send()
+            defaultChangesSubject.send()
         }
+    }
+
+    /// Follows `userDefaultModel` instead of any earlier one; `nil` stops using a user default.
+    public func observeUserDefaultModel(_ userDefaultModel: AIChatUserDefaultModelProviding?) {
+        self.userDefaultModel = userDefaultModel
+        userDefaultModelChangesCancellable = userDefaultModel?.changes.sink { [weak self] in
+            self?.defaultChangesSubject.send()
+        }
+    }
+
+    /// The user default, then the over-limit default, then the `/models` default.
+    private func candidates(userDefaultModelId: String?) -> [AIChatNewChatDefaultResolver.Candidate] {
+        let overLimitDefault = overLimitDefault.newChatDefault(at: now())
+        return [Self.userDefaultCandidate(userDefaultModelId, allowedBy: overLimitDefault),
+                AIChatNewChatDefaultResolver.Candidate(overLimitDefault, origin: .server),
+                AIChatNewChatDefaultResolver.Candidate(serverDefault, origin: .server)].compactMap { $0 }
+    }
+
+    /// Over the limit, the over-limit default is the only model native knows is allowed, so the user default must match it.
+    private static func userDefaultCandidate(_ modelId: String?,
+                                             allowedBy overLimitDefault: AIChatNewChatDefault) -> AIChatNewChatDefaultResolver.Candidate? {
+        guard let modelId, overLimitDefault.allows(modelId) else { return nil }
+        return AIChatNewChatDefaultResolver.Candidate(.model(id: modelId, reasoningEffort: nil), origin: .user)
+    }
+}
+
+private extension AIChatNewChatDefault {
+
+    /// Whether an over-limit default leaves `modelId` usable; no over-limit default allows every model.
+    func allows(_ modelId: String) -> Bool {
+        guard case let .model(id, _) = self else { return true }
+        return id == modelId
     }
 }

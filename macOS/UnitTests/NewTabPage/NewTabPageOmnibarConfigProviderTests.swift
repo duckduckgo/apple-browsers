@@ -1395,7 +1395,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     private func makeNewChatDefaultProvider(persistor: AIChatPreferencesPersisting,
                                             modelsLoaded: Bool = true,
-                                            userTier: AIChatUserTier? = .free) throws -> NewTabPageOmnibarConfigProvider {
+                                            userTier: AIChatUserTier? = .free,
+                                            storage: DuckAiNativeStorageHandling? = nil) throws -> NewTabPageOmnibarConfigProvider {
         let flagger = flaggerWithReasoningOn()
         flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
         let models = [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
@@ -1411,6 +1412,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             featureFlagger: flagger,
             aiChatPreferencesPersistor: persistor,
             searchPreferences: makeSearchPreferences(),
+            windowControllersManager: WindowControllersManagerMock(),
+            duckAiStorageHandlerProvider: { _ in storage },
             availableModelsProvider: { models },
             newChatDefaults: newChatDefaults,
             firePixel: { _ in }
@@ -1496,6 +1499,32 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         XCTAssertEqual(provider.selectedModelId, "terra")
         XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenUserDefaultIsSet_ThenNewChatStartsOnItAndReportsUserDefault() throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""luna""#)
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
+
+        provider.refreshUsageLimits(requestingWebView: nil)
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+        XCTAssertNil(provider.selectedReasoningEffort)
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: nil)?.parameters["model_source"], "user_default")
+    }
+
+    func testWhenUserDefaultChanges_ThenOpenPagesAreToldToRefresh() throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
+        provider.refreshUsageLimits(requestingWebView: nil)
+        var refreshCount = 0
+        let cancellable = provider.usageLimitsPublisher.sink { refreshCount += 1 }
+
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""luna""#)
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+        XCTAssertEqual(refreshCount, 1)
+        cancellable.cancel()
     }
 
     func testWhenNewChatDefaultIsOnAndModelsHaveNotLoaded_ThenLocalTierDefaultModelAndEffortAreSelected() throws {

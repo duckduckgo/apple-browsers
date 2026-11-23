@@ -609,6 +609,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         )
         config.supportsResponseStateReporting = true
         config.supportsiPadNativeChatList = isIPadNativeChatListOn
+        config.supportsDefaultModelSetting = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
         return config
     }
 

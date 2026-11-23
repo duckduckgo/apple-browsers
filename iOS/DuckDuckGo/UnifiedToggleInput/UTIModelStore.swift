@@ -81,7 +81,8 @@ final class UTIModelStore {
         subscriptionManager: any SubscriptionManager,
         isUpdatedModelPickerEnabled: Bool,
         startsNewChatsOnDefault: Bool = false,
-        overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil
+        overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil,
+        userDefaultModel: AIChatUserDefaultModelProviding? = nil
     ) {
         self.modelsService = modelsService
         self.subscriptionManager = subscriptionManager
@@ -93,17 +94,19 @@ final class UTIModelStore {
             updateFreeTrialEligibilityFromSubscriptionCache()
         }
         subscribeToAppStoreProductAvailability()
-        observeNewChatDefaults(overLimitDefaults: overLimitNewChatDefaults)
+        observeNewChatDefaults(overLimitDefaults: overLimitNewChatDefaults, userDefaultModel: userDefaultModel)
     }
 
-    private func observeNewChatDefaults(overLimitDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>?) {
+    private func observeNewChatDefaults(overLimitDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>?,
+                                        userDefaultModel: AIChatUserDefaultModelProviding?) {
         guard let newChatDefaults else { return }
-        newChatDefaults.overLimitDefaultChanges
+        newChatDefaults.defaultChanges
             .sink { [weak self] in self?.onModelsUpdated?() }
             .store(in: &cancellables)
         if let overLimitDefaults {
             newChatDefaults.observeOverLimitDefaults(overLimitDefaults)
         }
+        newChatDefaults.observeUserDefaultModel(userDefaultModel)
     }
 
     var persistedModelId: String? {

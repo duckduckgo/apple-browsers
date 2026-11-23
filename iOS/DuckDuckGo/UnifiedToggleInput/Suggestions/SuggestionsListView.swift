@@ -171,7 +171,6 @@ private struct SuggestionsSectionCard: View {
     let usesCardSurface: Bool
 
     @Environment(\.displayScale) private var displayScale
-    @Environment(\.redesignedNewTabPageUsesLiquidGlass) private var usesLiquidGlass
 
     private typealias Metrics = SuggestionsListView.Metrics
 
@@ -199,7 +198,7 @@ private struct SuggestionsSectionCard: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .background {
             if usesCardSurface {
-                RedesignedNewTabPageCardBackground(usesLiquidGlass: usesLiquidGlass)
+                RedesignedNewTabPageModuleBackground()
             }
         }
     }

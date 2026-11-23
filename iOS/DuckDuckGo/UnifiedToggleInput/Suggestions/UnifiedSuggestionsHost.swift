@@ -63,7 +63,6 @@ final class UnifiedSuggestionsHost {
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
 
     var isShowingRedesignedSearchModules: Bool { showsRedesignedSearchModules }
-    private var usesLiquidGlass = false
 
     var onSearchModulesVisibilityChange: ((Bool) -> Void)?
 
@@ -128,10 +127,8 @@ final class UnifiedSuggestionsHost {
     func start<P: Publisher>(in containerView: UIView,
                              parentViewController: UIViewController,
                              isFloatingUIEnabled: Bool = false,
-                             usesLiquidGlass: Bool = false,
                              textPublisher: P) where P.Output == String, P.Failure == Never {
         guard hostingController == nil else { return }
-        self.usesLiquidGlass = usesLiquidGlass
 
         config.source.start(textPublisher: textPublisher.eraseToAnyPublisher())
 
@@ -153,7 +150,6 @@ final class UnifiedSuggestionsHost {
             usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
             embedsRedesignedModules: redesignedFocusedSurface == .webPage,
-            usesLiquidGlass: usesLiquidGlass,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)
@@ -649,7 +645,6 @@ final class UnifiedSuggestionsHost {
             usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
             embedsRedesignedModules: redesignedFocusedSurface == .webPage,
-            usesLiquidGlass: usesLiquidGlass,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)

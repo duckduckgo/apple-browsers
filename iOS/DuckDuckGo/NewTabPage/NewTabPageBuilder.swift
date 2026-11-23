@@ -144,13 +144,11 @@ struct NewTabPageBuilder {
                 onAddFavorite: {
                     guard let newTabPage else { return }
                     newTabPage.delegate?.newTabPageDidRequestAddFavorite(newTabPage)
-                }), usesLiquidGlass: usesLiquidGlass),
+                })),
             NewTabPageSwiftUIBlock(id: .escapeHatch,
-                                  rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel),
-                                  usesLiquidGlass: usesLiquidGlass),
+                                  rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
             NewTabPageSwiftUIBlock(id: .messages,
-                                  rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel),
-                                  usesLiquidGlass: usesLiquidGlass)
+                                  rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel))
         ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel,
            onboardingCoordinator: NewTabPageOnboardingCoordinator(newTabDialogFactory: daxDialogFactory,
                                                                   daxDialogsManager: daxDialogsManager,

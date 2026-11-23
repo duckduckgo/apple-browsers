@@ -784,7 +784,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         host.start(in: containerView,
                    parentViewController: self,
                    isFloatingUIEnabled: isFloatingUIEnabled,
-                   usesLiquidGlass: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
                    textPublisher: searchTextPublisher)
         host.setAdditionalTopInset(0)
         host.setIsFireTab(switchBarHandler.isFireTab)

@@ -20,21 +20,18 @@
 import DesignResourcesKit
 import SwiftUI
 
+/// Frosted surface shared by redesigned NTP cards, independent of the search input's raised or Liquid Glass card.
 struct RedesignedNewTabPageModuleBackground: View {
-    @Environment(\.redesignedNewTabPageUsesLiquidGlass) private var usesLiquidGlass
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        RedesignedNewTabPageCardBackground(usesLiquidGlass: usesLiquidGlass)
-    }
-}
-
-private struct RedesignedNewTabPageUsesLiquidGlassKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-extension EnvironmentValues {
-    var redesignedNewTabPageUsesLiquidGlass: Bool {
-        get { self[RedesignedNewTabPageUsesLiquidGlassKey.self] }
-        set { self[RedesignedNewTabPageUsesLiquidGlassKey.self] = newValue }
+        let shape = RoundedRectangle(cornerRadius: RedesignedNewTabPageCardBackground.cornerRadius, style: .continuous)
+        if reduceTransparency {
+            shape.fill(Color(designSystemColor: .surfaceSecondary))
+        } else {
+            shape
+                .fill(.ultraThinMaterial)
+                .overlay(shape.fill(Color(singleUseColor: .newTabPageModuleTint)))
+        }
     }
 }

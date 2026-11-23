@@ -32,7 +32,6 @@ struct UnifiedSuggestionsView: View {
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
     var embedsRedesignedModules = false
-    var usesLiquidGlass = false
     var mode: TextEntryMode = .search
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
@@ -48,7 +47,6 @@ struct UnifiedSuggestionsView: View {
             }
             fireLayer
         }
-        .environment(\.redesignedNewTabPageUsesLiquidGlass, usesLiquidGlass)
         // UIKit already bounds this host with its keyboard layout guide. Keep container
         // safe areas and the input-bar inset, without a second SwiftUI keyboard adjustment.
         .ignoresSafeArea(.keyboard, edges: .bottom)

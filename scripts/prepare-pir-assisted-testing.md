@@ -1,23 +1,17 @@
 # Prepare local assisted PIR testing
 
-Use this setup with the DEBUG browser and its PIR Agent stopped. Requires Python
-3.12 or later and `gh` authenticated to the internal GitHub host.
+Use this setup with the DEBUG browser and its PIR Agent stopped. You need a
+privacy-configuration URL with `userAssistance` enabled and a deployed PIR
+dashboard that has the assisted opt-out UI.
 
-1. Set `PRIVACY_CONFIG_URL` to the test macOS privacy-configuration URL.
-2. Prepare the dashboard and DEBUG preferences:
-
-   ```sh
-   scripts/prepare-pir-assisted-testing.py prepare "$PRIVACY_CONFIG_URL" \
-     --refresh-bundled-brokers
-   ```
-
-3. Keep the dashboard server running in a terminal:
+1. Point the DEBUG browser at both:
 
    ```sh
-   scripts/prepare-pir-assisted-testing.py serve
+   scripts/prepare-pir-assisted-testing.py prepare \
+     "$PRIVACY_CONFIG_URL" "$DASHBOARD_URL" --refresh-bundled-brokers
    ```
 
-4. Build the DEBUG browser with FlowDeck and launch the deployed app with the
+2. Build the DEBUG browser with FlowDeck and launch the deployed app with the
    same privacy-configuration URL:
 
    ```sh
@@ -26,10 +20,9 @@ Use this setup with the DEBUG browser and its PIR Agent stopped. Requires Python
      -privacyConfigURL "$PRIVACY_CONFIG_URL"
    ```
 
-The script downloads and verifies the pinned FE CI export, then serves `/dbp` at
-`http://127.0.0.1:8765`. Pass the same `--cache-dir` and `--port` to both commands
-to change those defaults. Each preparation saves the previous values of only the
-preference keys it changes. Restore them with the app and Agent stopped:
+Each preparation saves the previous values of only the preference keys it
+changes, under `~/Library/Application Support/pir-assisted-testing` unless you
+pass `--backup-dir`. Restore them with the app and Agent stopped:
 
 ```sh
 scripts/prepare-pir-assisted-testing.py restore <printed-preference-backup.plist>

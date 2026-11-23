@@ -50,6 +50,14 @@ struct UserAssistanceSchedulingTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [nil, "not json", #"{"enabledBrokers":["*"]}"#] as [String?])
+    func missingMalformedOrWildcardSettingsEnableNoBrokers(settings: String?) {
+        let privacyConfig = PrivacyConfigurationMock()
+        privacyConfig.subfeatureSettings = settings
+        #expect(UserAssistanceConfig(privacyConfig: privacyConfig).enabledBrokers.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [RegularScheduling.needsUserWithFlagOn, .needsUserWithFlagOff, .needsNoUser])
     func regularJobKeepsScansAndLeavesOptOutsThatNeedTheUser(state: RegularScheduling) async throws {
         let dependencies = MockBrokerProfileJobDependencies()

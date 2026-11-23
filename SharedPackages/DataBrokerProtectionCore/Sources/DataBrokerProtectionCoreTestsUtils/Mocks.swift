@@ -214,7 +214,9 @@ public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManagin
 }
 
 public final class PrivacyConfigurationMock: PrivacyConfiguration {
+    public init() {}
 
+    public var subfeatureSettings: String?
     public var identifier: String = "mock"
     public var version: String? = "123456789"
 
@@ -272,7 +274,7 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
     }
 
     public func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
-        return nil
+        return subfeatureSettings
     }
 
     public func allSubfeatureSettings(for feature: PrivacyFeature) -> [SubfeatureID: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings] {

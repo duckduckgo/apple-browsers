@@ -202,6 +202,22 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertEqual(service.cancelledOwnerIDs, [ObjectIdentifier(webView)])
     }
 
+    /// The run may have been started by the script this one replaced.
+    @MainActor func testClosingThePageEndsItsRunsThroughTheScriptThatServesItNow() async throws {
+        let service = RecordingLocalModelService()
+        let webView = ClientToolsDocumentWebView()
+        var script: AIChatUserScript? = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: nil, localModelService: service)
+        script?.webView = webView
+
+        script?.webView = nil
+        script = nil
+        for _ in 0..<50 where service.cancelledOwnerIDs.isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        XCTAssertEqual(service.cancelledOwnerIDs, [ObjectIdentifier(webView)])
+    }
+
     @MainActor func testLocalModelAccessIsAskedOnlyOnPagesThatGetItsPushes() async throws {
         let prompt = StubLocalModelAccessPrompt(answer: .allowed)
         userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: nil,
@@ -1147,8 +1163,6 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
     private(set) var cancelledOwnerIDs: [ObjectIdentifier] = []
 
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
-
-    func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing) {}
 
     func cancelRuns(ownerID: ObjectIdentifier) {
         cancelledOwnerIDs.append(ownerID)

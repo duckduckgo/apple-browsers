@@ -53,8 +53,6 @@ public protocol AIChatLocalModelServing: AnyObject {
     func register(_ pusher: AIChatLocalModelPushing)
     func startRun(_ request: AIChatLocalRunRequest, for pusher: AIChatLocalModelPushing) throws -> AIChatLocalRunStartReply
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing)
-    /// For a script replaced under a page that stays open: the page's runs carry on through the new script.
-    func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing)
     func cancelRuns(ownerID: ObjectIdentifier)
     func requestAccess(ask: @MainActor (AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result
 }
@@ -371,13 +369,6 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
 
     public func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {
         runQueue.cancel(requestId: requestId, ownerID: pusher.localModelPageID)
-    }
-
-    public func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing) {
-        guard pusher !== replacement else { return }
-        runQueue.reassign(ownerID: ObjectIdentifier(pusher), to: ObjectIdentifier(replacement)) { [weak replacement] chunk in
-            replacement?.pushLocalRunChunk(chunk)
-        }
     }
 
     /// Ends the runs of a page that's gone, identified by its `localModelPageID`.

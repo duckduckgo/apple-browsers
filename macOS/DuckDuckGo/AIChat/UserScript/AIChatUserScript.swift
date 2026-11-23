@@ -30,7 +30,13 @@ final class AIChatUserScript: NSObject, Subfeature {
     public let handler: AIChatUserScriptHandling
     public let featureName: String = "aiChat"
     weak var broker: UserScriptMessageBroker?
-    weak var webView: WKWebView?
+    weak var webView: WKWebView? {
+        didSet {
+            if let webView {
+                localModelRunPageID = ObjectIdentifier(webView)
+            }
+        }
+    }
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     let messageFramePolicy: MessageFramePolicy
@@ -65,8 +71,8 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     private let browserTools: AIChatBrowserToolsService?
     private let localModelService: AIChatLocalModelServing?
-    /// The page this script last started a local run for. `deinit` can't ask a web view that's
-    /// already gone for its identity.
+    /// The page whose local runs this script ends when it goes, including runs a script it
+    /// replaced started. `deinit` can't ask a web view that's already gone for its identity.
     private var localModelRunPageID: ObjectIdentifier?
     /// Nil uses the app's, which lives on the main actor and so can't be a default argument here.
     private let localModelAccessPrompt: LocalModelAccessAsking?

@@ -251,6 +251,16 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         }
     }
 
+    func testKillSwitchDisabledIsDailyAndCountWithBucketedCount() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.killSwitchDisabled(count: 3))
+
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.name, "web_extension_kill_switch_disabled_macos")
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertEqual(call.pixel.parameters, ["count": "2"])
+    }
+
     func testInstalledCountIsDaily() throws {
         let pixels = PixelKitMock()
         MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.installedCount(installed: 1, enabled: 0))

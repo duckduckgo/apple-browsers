@@ -210,6 +210,21 @@ class AppPrivacyConfigurationTests: XCTestCase {
         XCTAssertTrue(config.isUserUnprotected(domain: "enabled2.com"))
     }
 
+    func testWhenUserDisablesProtectionForUppercaseDomain_ThenItIsStoredInLowercase() {
+        let mockProtectionStore = MockDomainsProtectionStore()
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: MockEmbeddedDataProvider(data: embeddedConfig, etag: embeddedConfigETag),
+                                                  localProtection: mockProtectionStore,
+                                                  internalUserDecider: MockInternalUserDecider())
+        let config = manager.privacyConfig
+
+        config.userDisabledProtection(forDomain: "Example.COM")
+
+        XCTAssertEqual(config.userUnprotectedDomains, ["example.com"])
+        XCTAssertTrue(config.isUserUnprotected(domain: "example.com"))
+    }
+
     func testWhenRequestingUnprotectedSites_ThenTheyAreConsistentlyOrdered() {
         let mockEmbeddedData = MockEmbeddedDataProvider(data: embeddedConfig, etag: embeddedConfigETag)
 

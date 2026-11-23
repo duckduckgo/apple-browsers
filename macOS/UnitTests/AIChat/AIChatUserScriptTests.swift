@@ -100,8 +100,10 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertEqual(clientTools.protocolVersion, 1)
         XCTAssertEqual(clientTools.capabilities.map(\.name), ["listOpenTabs"])
         XCTAssertEqual(clientTools.capabilities.map(\.version), [1])
+        XCTAssertTrue(config.supportsBrowserToolsAnswerMetrics)
         var remainingConfig = config
         remainingConfig.clientTools = nil
+        remainingConfig.supportsBrowserToolsAnswerMetrics = false
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         XCTAssertEqual(try encoder.encode(remainingConfig), try encoder.encode(baseConfig))
@@ -122,11 +124,13 @@ final class AIChatUserScriptTests: XCTestCase {
 
         let fireConfig = try await nativeConfig(from: webView)
         XCTAssertNil(fireConfig.clientTools)
+        XCTAssertFalse(fireConfig.supportsBrowserToolsAnswerMetrics)
 
         mockHandler.isFireWindowProvider = { false }
         webView.documentURL = URL(string: "https://example.com")
         let unrelatedPageConfig = try await nativeConfig(from: webView)
         XCTAssertNil(unrelatedPageConfig.clientTools)
+        XCTAssertFalse(unrelatedPageConfig.supportsBrowserToolsAnswerMetrics)
 
         webView.documentURL = nil
         let missingURLConfig = try await nativeConfig(from: webView)

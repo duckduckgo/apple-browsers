@@ -5663,9 +5663,9 @@ class MainViewController: UIViewController {
     }
 
     private func updateAIChatSelectedModel(for request: AIChatOpeningRequest) {
-        if request.shouldPresent, let modelID = request.modelID {
-            unifiedToggleInputCoordinator?.updateSelectedModel(modelID)
-        }
+        guard request.shouldPresent, let modelID = request.modelID else { return }
+        // The model picked in onboarding applies to the onboarding chat only, so new chats don't start on it.
+        unifiedToggleInputCoordinator?.updateSelectedModel(modelID, persistsSelection: request.source != .onboarding)
     }
 
     /// Tags the tab about to load Duck.ai with its door, any address-bar hand-over and the native prompt flow.
@@ -6099,6 +6099,8 @@ extension MainViewController: BrowserChromeDelegate {
         if currentTab?.isLoading == true { return false }
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
+        // Keep bars shown under a contextual onboarding dialog. The classic UI keeps hiding the bars on scroll.
+        if isFloatingUIEnabled, currentTab?.daxContextualOnboardingController != nil { return false }
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
     }
 

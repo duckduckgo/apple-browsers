@@ -25,12 +25,13 @@ import FoundationExtensions
 import os.log
 import PrivacyConfig
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct AddToDockVideoSheet: View {
 
     private enum Layout {
-        static let minWidth: CGFloat = 416
-        static let maxWidth: CGFloat = 544
+        static let minWidth: CGFloat = 384
+        static let maxWidth: CGFloat = 424
     }
 
     let videoURL: URL
@@ -68,9 +69,12 @@ struct AddToDockVideoSheet: View {
                 .frame(minWidth: Layout.minWidth, maxWidth: Layout.maxWidth)
 
             if showsInstructions {
-                Text(.init(UserText.addToDockInstructionsCaption))
-                    .frame(minWidth: Layout.minWidth, maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .top, spacing: 8) {
+                    Image(nsImage: DesignSystemImages.Color.Size16.addToDock)
+                    Text(.init(UserText.addToDockInstructionsCaption))
+                }
+                .frame(minWidth: Layout.minWidth, maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
             }
 
             HStack {

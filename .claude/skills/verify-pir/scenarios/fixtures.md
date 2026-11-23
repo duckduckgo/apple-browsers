@@ -1,7 +1,7 @@
 # Fixtures
 
 Scenarios name these in their `setup` line. Keep fixtures for your own scenarios in `fixtures.local.md` next to this
-file, with the same tables, and leave it out of commits.
+file, with the same tables. It and local profiles are gitignored.
 
 ## Profiles
 

@@ -84,29 +84,40 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
     // MARK: - Per download reason
 
     @available(iOS 16, macOS 13, *)
-    @Test("App use fires per reason on D5-7 only", .timeLimit(.minutes(1)))
+    @Test("App use fires per reason on D1, D5-7 and D8-14", .timeLimit(.minutes(1)))
     func appUseByReason() {
         reasonToken = "vpn"
 
         makeSUT().fireAppUseMetrics()
 
-        #expect(windows(for: "download_reason_app_use_vpn", threshold: 1) == [5...7])
+        #expect(windows(for: "download_reason_app_use_vpn", threshold: 1) == [1...1, 5...7, 8...14])
         #expect(thresholdCalls.allSatisfy { $0.metric == "download_reason_app_use_vpn" })
         #expect(subfeatureIDs == ["onboardingVPNDownloadReasonExperiment"])
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Search fires per reason on D5-7 only, at every threshold", .timeLimit(.minutes(1)))
+    @Test("Search fires per reason on D0, D1, D5-7 and D8-14", .timeLimit(.minutes(1)))
     func searchByReason() {
         reasonToken = "ad-blocking"
 
         makeSUT().fireSearchMetrics()
 
         let metric = "download_reason_search_retention_ad-blocking"
-        for threshold in [1, 4, 6, 11, 21, 30] {
-            #expect(windows(for: metric, threshold: threshold) == [5...7])
+        #expect(windows(for: metric, threshold: 1) == [0...0, 1...1, 5...7, 8...14])
+        for threshold in [4, 6, 11, 21, 30] {
+            #expect(windows(for: metric, threshold: threshold) == [5...7, 8...14])
         }
-        #expect(thresholdCalls.count == 6)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Duck.ai prompts fire per reason on D0, D1, D5-7 and D8-14", .timeLimit(.minutes(1)))
+    func aiPromptByReason() {
+        reasonToken = "ai-chat"
+
+        makeSUT().fireAIPromptMetrics()
+
+        #expect(windows(for: "download_reason_ai_prompt_ai-chat", threshold: 1) == [0...0, 1...1, 5...7, 8...14])
+        #expect(thresholdCalls.count == 4)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -117,6 +128,7 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
 
         sut.fireAppUseMetrics()
         sut.fireSearchMetrics()
+        sut.fireAIPromptMetrics()
 
         #expect(thresholdCalls.isEmpty)
     }
@@ -131,6 +143,21 @@ final class OnboardingVPNDownloadReasonExperimentMetricsTests {
         #expect(windows(for: "search_only", threshold: 1) == [0...0, 1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7, 8...14])
         for threshold in [4, 6, 11, 21, 30] {
             #expect(windows(for: "search_only", threshold: threshold) == [5...7, 8...14])
+        }
+        #expect(thresholdCalls.allSatisfy { $0.metric == "search_only" })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Search only also fires per reason, with the per-reason search windows", .timeLimit(.minutes(1)))
+    func searchOnlyByReason() {
+        reasonToken = "no-ai"
+
+        makeSUT().fireSearchOnlyMetrics()
+
+        let metric = "download_reason_search_only_no-ai"
+        #expect(windows(for: metric, threshold: 1) == [0...0, 1...1, 5...7, 8...14])
+        for threshold in [4, 6, 11, 21, 30] {
+            #expect(windows(for: metric, threshold: threshold) == [5...7, 8...14])
         }
     }
 

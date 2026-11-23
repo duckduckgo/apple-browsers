@@ -125,6 +125,14 @@ protocol OnboardingDownloadReasonPixelReporting {
     func measureKeepDuckAISelection(shouldKeep: Bool)
     func measureAdBlockingImpression()
     func measureAdBlockingSelection(youTubeAdBlockingEnabled: Bool, cookiePopUpProtectionEnabled: Bool, popUpsWithoutOptOutsEnabled: Bool)
+    func measureTryVPNImpression()
+    func measureTryVPNAction()
+    func measureSkipTryVPNAction()
+    func measureTryVPNPaywallRestored()
+    func measureVPNActivationImpression()
+    func measureVPNActivationContinue(isVPNOn: Bool)
+    func measureSubscriptionReminderImpression()
+    func measureSubscriptionReminderContinue()
 }
 
 typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingDownloadReasonPixelReporting
@@ -410,7 +418,9 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureScreenImpression(_ event: OnboardingSharedPixelEvent) {
         if event == .end(.shown) || event == .endTryDuckAI(.shown) {
-            downloadReasonExperimentMetric.measureDownloadReasonExperimentOnboardingCompleted()
+            downloadReasonExperimentMetric.measureDownloadReasonExperimentOnboardingCompleted(
+                downloadReasonToken: OnboardingDownloadReasonStore.currentPixelToken(userDefaults)
+            )
         }
 
         fireSharedPixel(event)
@@ -620,6 +630,41 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
         fireSharedPixel(.preferencesAdBlocking(.clicked(youTubeAdBlockingEnabled: youTubeAdBlockingEnabled, cookiePopUpProtectionEnabled: cookiePopUpProtectionEnabled, popUpsWithoutOptOutsEnabled: popUpsWithoutOptOutsEnabled)))
     }
 
+    // MARK: VPN download-reason path
+
+    func measureTryVPNImpression() {
+        fireSharedPixel(.tryVPN(.shown))
+    }
+
+    func measureTryVPNAction() {
+        fireSharedPixel(.tryVPN(.clicked(.engage)))
+    }
+
+    func measureSkipTryVPNAction() {
+        fireSharedPixel(.tryVPN(.clicked(.dismiss)))
+    }
+
+    func measureTryVPNPaywallRestored() {
+        fireSharedPixel(.tryVPNPaywall(.restored))
+    }
+
+    func measureVPNActivationImpression() {
+        fireSharedPixel(.vpnActivation(.shown))
+    }
+
+    /// "Next" once the VPN is on, or "Skip" while it's off.
+    func measureVPNActivationContinue(isVPNOn: Bool) {
+        fireSharedPixel(.vpnActivation(.clicked(isVPNOn ? .engage : .dismiss)))
+    }
+
+    func measureSubscriptionReminderImpression() {
+        fireSharedPixel(.subscriptionReminder(.shown))
+    }
+
+    func measureSubscriptionReminderContinue() {
+        fireSharedPixel(.subscriptionReminder(.clicked(.engage)))
+    }
+
 }
 
 private extension OnboardingSharedPixelEvent.DownloadChoiceEvent.Value {
@@ -663,7 +708,6 @@ struct OnboardingDownloadReasonExperimentMetric {
         case downloadReasonSelectedAdBlocking = "download_reason_selected_ad-blocking"
         case downloadReasonSelectedVPN = "download_reason_selected_vpn"
         case setDefault = "set_default"
-        case vpnPaywallRestored = "vpn_paywall_restored"
     }
 
     private static let conversionWindowD0: ConversionWindow = 0...0
@@ -674,19 +718,17 @@ struct OnboardingDownloadReasonExperimentMetric {
         self.experimentPixelFiring = experimentPixelFiring
     }
 
-    func measureDownloadReasonExperimentOnboardingCompleted() {
+    /// Fires `onboarding_completed`, and the same metric for the user's download reason when they picked one.
+    func measureDownloadReasonExperimentOnboardingCompleted(downloadReasonToken: String?) {
         fire(metric: .onboardingCompleted)
+        if let downloadReasonToken {
+            fire(metricName: "download_reason_onboarding_completed_\(downloadReasonToken)")
+        }
     }
 
     /// The set-as-default guardrail: the user tapped "Set as default" in onboarding.
     func measureSetDefaultTapped() {
         fire(metric: .setDefault)
-    }
-
-    /// The paywall opened from the Try VPN step signed the user in to a subscription they already had,
-    /// instead of selling one ("Subscription Found" → Restore).
-    func measureVPNPaywallRestored() {
-        fire(metric: .vpnPaywallRestored)
     }
 
     /// Fires the per-reason "selected" metric (one metric per option, empty value, d0) when the user
@@ -703,9 +745,13 @@ struct OnboardingDownloadReasonExperimentMetric {
     }
 
     private func fire(metric: Name) {
+        fire(metricName: metric.rawValue)
+    }
+
+    private func fire(metricName: String) {
         experimentPixelFiring.fireExperimentPixel(
             for: PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue,
-            metric: metric.rawValue,
+            metric: metricName,
             conversionWindowDays: Self.conversionWindowD0,
             value: ""
         )

@@ -579,6 +579,37 @@ final class OnboardingSharedPixelTests: XCTestCase {
             XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(pixelEvent)")
         }
     }
+
+    // MARK: - VPN download-reason path
+
+    func testWhenVPNPathEventThenUsesExpectedNameEventAndValue() throws {
+        // GIVEN
+        let cases: [(OnboardingSharedPixelEvent, String, String, String?)] = [
+            (.tryVPN(.shown), "onboarding_try-vpn", "shown", nil),
+            (.tryVPN(.clicked(.engage)), "onboarding_try-vpn", "clicked", "engage"),
+            (.tryVPN(.clicked(.dismiss)), "onboarding_try-vpn", "clicked", "dismiss"),
+            (.tryVPNPaywall(.restored), "onboarding_try-vpn-paywall", "restored", nil),
+            (.vpnActivation(.shown), "onboarding_vpn-activation", "shown", nil),
+            (.vpnActivation(.clicked(.engage)), "onboarding_vpn-activation", "clicked", "engage"),
+            (.vpnActivation(.clicked(.dismiss)), "onboarding_vpn-activation", "clicked", "dismiss"),
+            (.subscriptionReminder(.shown), "onboarding_subscription-reminder", "shown", nil),
+            (.subscriptionReminder(.clicked(.engage)), "onboarding_subscription-reminder", "clicked", "engage")
+        ]
+
+        for (pixelEvent, expectedName, expectedEvent, expectedValue) in cases {
+            let pixelFiring = PixelKitMock()
+            let pixelHandler = makeHandler(pixelFiring: pixelFiring)
+
+            // WHEN
+            pixelHandler.fire(pixelEvent)
+
+            // THEN
+            let event = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+            XCTAssertEqual(event.pixel.name, expectedName, "Failed for \(pixelEvent)")
+            XCTAssertEqual(event.pixel.parameters?["event"], expectedEvent, "Failed for \(pixelEvent)")
+            XCTAssertEqual(event.pixel.parameters?["value"], expectedValue, "Failed for \(pixelEvent)")
+        }
+    }
 }
 
 private extension OnboardingSharedPixelHandling {

@@ -45,12 +45,13 @@ extension OnboardingView {
         @Binding private var isVisible: Bool
 
         private let content: OnboardingVPNActivationContent
-        private let continueAction: () -> Void
+        /// Called with whether the VPN is on: "Next" once it's on, "Skip" while it's off.
+        private let continueAction: (_ isVPNOn: Bool) -> Void
 
         init(
             content: OnboardingVPNActivationContent,
             isVisible: Binding<Bool>,
-            continueAction: @escaping () -> Void
+            continueAction: @escaping (_ isVPNOn: Bool) -> Void
         ) {
             self.content = content
             self._isVisible = isVisible
@@ -130,7 +131,7 @@ extension OnboardingView {
         @ViewBuilder
         private var actions: some View {
             if isOn {
-                Button(action: continueAction) {
+                Button(action: { continueAction(true) }) {
                     Text(content.nextCTA)
                 }
                 .buttonStyle(onboardingTheme.primaryButtonStyle.style)
@@ -146,7 +147,7 @@ extension OnboardingView {
                     .buttonStyle(onboardingTheme.primaryButtonStyle.style)
                     .disabled(viewModel.isActivating)
 
-                    Button(action: continueAction) {
+                    Button(action: { continueAction(false) }) {
                         Text(content.skipCTA)
                     }
                     .buttonStyle(onboardingTheme.secondaryButtonStyle.style)

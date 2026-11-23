@@ -1267,6 +1267,28 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.contains("onboarding_completed"))
     }
 
+    func testWhenOnboardingCompletesWithStoredDownloadReasonThenPerReasonCompletedMetricFires() {
+        // GIVEN
+        userDefaultsMock.set(OnboardingDownloadReason.vpn.rawValue, forKey: OnboardingDownloadReasonStore.key)
+
+        // WHEN
+        sut.measureScreenImpression(.end(.shown))
+
+        // THEN
+        XCTAssertEqual(MockExperimentPixelFiring.firedMetrics, ["onboarding_completed", "download_reason_onboarding_completed_vpn"])
+    }
+
+    func testWhenOnboardingCompletesWithoutDownloadReasonThenOnlyOnboardingCompletedFires() {
+        // GIVEN
+        userDefaultsMock.removeObject(forKey: OnboardingDownloadReasonStore.key)
+
+        // WHEN
+        sut.measureScreenImpression(.end(.shown))
+
+        // THEN
+        XCTAssertEqual(MockExperimentPixelFiring.firedMetrics, ["onboarding_completed"])
+    }
+
     func testWhenMeasureChooseBrowserCTAActionThenSetDefaultExperimentMetricFires() {
         // WHEN
         sut.measureChooseBrowserCTAAction()
@@ -1275,12 +1297,31 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(MockExperimentPixelFiring.firedMetrics, ["set_default"])
     }
 
-    func testWhenMeasureVPNPaywallRestoredThenRestoredExperimentMetricFires() {
+    func testWhenMeasuringVPNPathThenFiresMatchingSharedPixels() {
         // WHEN
-        OnboardingDownloadReasonExperimentMetric(experimentPixelFiring: MockExperimentPixelFiring.self).measureVPNPaywallRestored()
+        sut.measureTryVPNImpression()
+        sut.measureTryVPNAction()
+        sut.measureSkipTryVPNAction()
+        sut.measureTryVPNPaywallRestored()
+        sut.measureVPNActivationImpression()
+        sut.measureVPNActivationContinue(isVPNOn: true)
+        sut.measureVPNActivationContinue(isVPNOn: false)
+        sut.measureSubscriptionReminderImpression()
+        sut.measureSubscriptionReminderContinue()
 
         // THEN
-        XCTAssertEqual(MockExperimentPixelFiring.firedMetrics, ["vpn_paywall_restored"])
+        XCTAssertEqual(sharedPixelHandlerMock.eventsFired, [
+            .tryVPN(.shown),
+            .tryVPN(.clicked(.engage)),
+            .tryVPN(.clicked(.dismiss)),
+            .tryVPNPaywall(.restored),
+            .vpnActivation(.shown),
+            .vpnActivation(.clicked(.engage)),
+            .vpnActivation(.clicked(.dismiss)),
+            .subscriptionReminder(.shown),
+            .subscriptionReminder(.clicked(.engage))
+        ])
+        XCTAssertTrue(MockExperimentPixelFiring.firedMetrics.isEmpty)
     }
 
     func testWhenMeasureScreenImpressionOtherSharedEventThenOnboardingCompletedExperimentMetricDoesNotFire() {

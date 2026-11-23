@@ -248,6 +248,12 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     case preferencesDuckAI(DuckAIEvent)
     case preferencesAdBlocking(AdBlockingEngagementEvent)
 
+    // VPN download-reason path — iOS only
+    case tryVPN(EngagementEvent) // "Try for Free" is engage, "Skip" is dismiss
+    case tryVPNPaywall(TryVPNPaywallEvent)
+    case vpnActivation(EngagementEvent) // "Next" with the VPN on is engage, "Skip" is dismiss
+    case subscriptionReminder(EngagementEvent)
+
     public enum TimeLimitReason: String {
         case days
         case appOpens = "app-opens"
@@ -262,6 +268,12 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
         case shown
         case clicked(Value)
         case confirmed
+    }
+
+    /// The paywall opened from the Try VPN step.
+    public enum TryVPNPaywallEvent: Equatable {
+        /// The user restored a subscription they already had ("Subscription Found" → Restore).
+        case restored
     }
 
     public enum SearchExperienceEvent: Equatable {
@@ -444,6 +456,10 @@ private extension OnboardingSharedPixelEvent {
         case .preferencesAISearch: return "preferences_ai-search"
         case .preferencesDuckAI: return "preferences_duck-ai"
         case .preferencesAdBlocking: return "preferences_ad-blocking"
+        case .tryVPN: return "try-vpn"
+        case .tryVPNPaywall: return "try-vpn-paywall"
+        case .vpnActivation: return "vpn-activation"
+        case .subscriptionReminder: return "subscription-reminder"
         }
     }
 
@@ -452,6 +468,7 @@ private extension OnboardingSharedPixelEvent {
         static let clicked = "clicked"
         static let dismiss = "dismiss"
         static let confirmed = "confirmed"
+        static let restored = "restored"
     }
 
     var eventType: String {
@@ -471,7 +488,10 @@ private extension OnboardingSharedPixelEvent {
                 .fireButton(let event),
                 .end(let event),
                 .endTryDuckAI(let event),
-                .subscriptionPromo(let event):
+                .subscriptionPromo(let event),
+                .tryVPN(let event),
+                .vpnActivation(let event),
+                .subscriptionReminder(let event):
             switch event {
             case .shown:
                 return ParameterValues.shown
@@ -479,6 +499,11 @@ private extension OnboardingSharedPixelEvent {
                 return ParameterValues.clicked
             case .confirmed:
                 return ParameterValues.confirmed
+            }
+        case .tryVPNPaywall(let event):
+            switch event {
+            case .restored:
+                return ParameterValues.restored
             }
         case .appIconColor(let event):
             switch event {
@@ -585,13 +610,18 @@ private extension OnboardingSharedPixelEvent {
                 .fireButton(let event),
                 .end(let event),
                 .endTryDuckAI(let event),
-                .subscriptionPromo(let event):
+                .subscriptionPromo(let event),
+                .tryVPN(let event),
+                .vpnActivation(let event),
+                .subscriptionReminder(let event):
             switch event {
             case .shown, .confirmed:
                 return nil
             case .clicked(let value):
                 return value.rawValue
             }
+        case .tryVPNPaywall:
+            return nil
         case .appIconColor(let event):
             switch event {
             case .shown:

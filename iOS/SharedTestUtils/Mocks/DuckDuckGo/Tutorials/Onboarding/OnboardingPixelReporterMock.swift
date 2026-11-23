@@ -421,6 +421,49 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCaptureAdBlockingSelection = (youTubeAdBlockingEnabled, cookiePopUpProtectionEnabled, popUpsWithoutOptOutsEnabled)
     }
 
+    // MARK: - VPN download-reason path
+
+    private(set) var didCallMeasureTryVPNImpression = false
+    private(set) var didCallMeasureTryVPNAction = false
+    private(set) var didCallMeasureSkipTryVPNAction = false
+    private(set) var didCallMeasureTryVPNPaywallRestored = false
+    private(set) var didCallMeasureVPNActivationImpression = false
+    private(set) var capturedVPNActivationContinueIsVPNOn: Bool?
+    private(set) var didCallMeasureSubscriptionReminderImpression = false
+    private(set) var didCallMeasureSubscriptionReminderContinue = false
+
+    func measureTryVPNImpression() {
+        didCallMeasureTryVPNImpression = true
+    }
+
+    func measureTryVPNAction() {
+        didCallMeasureTryVPNAction = true
+    }
+
+    func measureSkipTryVPNAction() {
+        didCallMeasureSkipTryVPNAction = true
+    }
+
+    func measureTryVPNPaywallRestored() {
+        didCallMeasureTryVPNPaywallRestored = true
+    }
+
+    func measureVPNActivationImpression() {
+        didCallMeasureVPNActivationImpression = true
+    }
+
+    func measureVPNActivationContinue(isVPNOn: Bool) {
+        capturedVPNActivationContinueIsVPNOn = isVPNOn
+    }
+
+    func measureSubscriptionReminderImpression() {
+        didCallMeasureSubscriptionReminderImpression = true
+    }
+
+    func measureSubscriptionReminderContinue() {
+        didCallMeasureSubscriptionReminderContinue = true
+    }
+
     // MARK: - Try Duck.ai End of Journey
 
     private(set) var didCallMeasureEndOfJourneyTryDuckAICTAAction = false

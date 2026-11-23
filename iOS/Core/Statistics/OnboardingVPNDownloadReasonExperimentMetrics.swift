@@ -50,15 +50,28 @@ public struct OnboardingVPNDownloadReasonExperimentMetrics {
 
         static func appUse(reasonToken: String) -> String { "download_reason_app_use_\(reasonToken)" }
         static func search(reasonToken: String) -> String { "download_reason_search_retention_\(reasonToken)" }
+        static func searchOnly(reasonToken: String) -> String { "download_reason_search_only_\(reasonToken)" }
+        static func aiPrompt(reasonToken: String) -> String { "download_reason_ai_prompt_\(reasonToken)" }
     }
 
     /// Thresholds (number of actions) mapped to the conversion windows they're reported for.
     typealias ThresholdWindows = [NumberOfCalls: [ConversionWindow]]
 
     enum Windows {
-        /// Per download reason, D5-7 only, as agreed in the experiment design. Same thresholds as the standard metrics.
-        static let appUseByReason: ThresholdWindows = [1: [5...7]]
-        static let searchByReason: ThresholdWindows = [1: [5...7], 4: [5...7], 6: [5...7], 11: [5...7], 21: [5...7], 30: [5...7]]
+        /// Per download reason: the standard windows, limited to D0, D1, D5-7 and D8-14 as asked by the onboarding metrics
+        /// objective. App use has no D0, like the standard `app_use`.
+        static let appUseByReason: ThresholdWindows = [1: [1...1, 5...7, 8...14]]
+        /// Also used for searches only, per reason.
+        static let searchByReason: ThresholdWindows = [
+            1: [0...0, 1...1, 5...7, 8...14],
+            4: [5...7, 8...14],
+            6: [5...7, 8...14],
+            11: [5...7, 8...14],
+            21: [5...7, 8...14],
+            30: [5...7, 8...14]
+        ]
+        /// Matches the standard `duck_ai_prompt_sent` metric.
+        static let aiPromptByReason: ThresholdWindows = [1: [0...0, 1...1, 5...7, 8...14]]
         /// Matches the standard `search` metric, so the two compare directly.
         static let searchOnly: ThresholdWindows = [
             1: [0...0, 1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7, 8...14],
@@ -133,6 +146,15 @@ public struct OnboardingVPNDownloadReasonExperimentMetrics {
     /// Call for searches only, not for Duck.ai prompts.
     public func fireSearchOnlyMetrics() {
         fire(Metric.searchOnly, Windows.searchOnly)
+        if let reasonToken = downloadReasonToken() {
+            fire(Metric.searchOnly(reasonToken: reasonToken), Windows.searchByReason)
+        }
+    }
+
+    /// Call wherever the standard Duck.ai prompt metric fires.
+    public func fireAIPromptMetrics() {
+        guard let reasonToken = downloadReasonToken() else { return }
+        fire(Metric.aiPrompt(reasonToken: reasonToken), Windows.aiPromptByReason)
     }
 
     // MARK: - Events

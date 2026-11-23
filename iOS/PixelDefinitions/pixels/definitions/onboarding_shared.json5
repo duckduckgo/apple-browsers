@@ -488,5 +488,92 @@
             "onboardingVariantSearchExperience",
             "onboardingVariantDownloadReason"
         ]
+    },
+    "m_ios_onboarding_try-vpn": {
+        "description": "Fired during linear onboarding on the Try VPN step, shown to users who picked VPN as their download reason (treatment cohort).",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: engage for Try for Free, dismiss for Skip",
+                "enum": ["engage", "dismiss"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
+    "m_ios_onboarding_try-vpn-paywall": {
+        "description": "Fired when the subscription paywall opened from the Try VPN onboarding step restores a subscription the user already had (Subscription Found, then Restore).",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "event",
+                "type": "string",
+                "description": "The paywall restored an existing subscription",
+                "enum": ["restored"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
+    "m_ios_onboarding_vpn-activation": {
+        "description": "Fired during linear onboarding on the Turn on VPN step, shown after Try VPN to users with VPN access.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: engage for Next with the VPN on, dismiss for Skip with the VPN off",
+                "enum": ["engage", "dismiss"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
+    "m_ios_onboarding_subscription-reminder": {
+        "description": "Fired during linear onboarding on the If you change your mind step, shown after Try VPN to users without VPN access.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: the user continued",
+                "enum": ["engage"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
     }
 }

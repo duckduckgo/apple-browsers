@@ -9972,8 +9972,8 @@ extension MainViewController: OnboardingDelegate {
                 wrapping: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
                 entry: PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry
             ),
-            onSubscriptionRestored: {
-                OnboardingDownloadReasonExperimentMetric().measureVPNPaywallRestored()
+            onSubscriptionRestored: { [weak self] in
+                self?.contextualOnboardingPixelReporter.measureTryVPNPaywallRestored()
             }
         )
         let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)

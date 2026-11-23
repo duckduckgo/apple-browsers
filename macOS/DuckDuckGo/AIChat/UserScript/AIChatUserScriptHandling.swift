@@ -1332,6 +1332,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         }
 
         switch metric.metricName {
+        case .browserToolsAnswerCompleted, .browserToolsAnswerRated:
+            if isFireWindowProvider?() != true {
+                BrowserToolsPixel.answerPixels(for: metric).forEach { pixelFiring?.fire($0) }
+            }
+            completion?()
         case .userDidSubmitFirstPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
@@ -1476,8 +1481,14 @@ extension AIChatUserScriptHandler {
             isBurner: ownerCollection.isBurner,
             isDetached: message.messageWebView?.window is AIChatFloatingWindow
         )
-        let response = await browserTools.invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
-        return response.limitedToResultBytes()
+        let (response, trace) = await browserTools.invoker.invokeClientToolWithTrace(request, context: context, permissionPrompter: permissionPrompter)
+        // Reported after the size limit, so an oversized success counts as the `execution_failed` Duck.ai receives.
+        let limitedResponse = response.limitedToResultBytes()
+        if let trace {
+            BrowserToolsPixelInstrumentation(pixelFiring: pixelFiring)
+                .toolCallDidFinish(tool: request.capability.name, response: limitedResponse, trace: trace)
+        }
+        return limitedResponse
     }
 
     /// The Duck.ai owner tab this message belongs to — the host tab for a sidebar or detached

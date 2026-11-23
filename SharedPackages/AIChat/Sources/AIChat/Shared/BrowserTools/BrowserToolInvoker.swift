@@ -36,9 +36,27 @@ public final class BrowserToolInvoker {
     public func invokeClientTool(_ request: ExecuteClientToolRequest,
                                  context: BrowserToolCallContext,
                                  permissionPrompter: (any ClientToolPermissionPrompting)?) async -> ExecuteClientToolResponse {
+        await invokeClientToolWithTrace(request, context: context, permissionPrompter: permissionPrompter).response
+    }
+
+    /// Also returns how the call was allowed and how long it ran. `trace` is nil for `requestAccess`
+    /// and in Fire windows, which are never reported.
+    public func invokeClientToolWithTrace(_ request: ExecuteClientToolRequest,
+                                          context: BrowserToolCallContext,
+                                          permissionPrompter: (any ClientToolPermissionPrompting)?) async
+    -> (response: ExecuteClientToolResponse, trace: BrowserToolCallTrace?) {
         if request.capability == .requestAccess {
-            return await requestAccess(request, context: context, permissionPrompter: permissionPrompter)
+            return (await requestAccess(request, context: context, permissionPrompter: permissionPrompter), nil)
         }
+        var trace = BrowserToolCallTrace()
+        let response = await invokeTool(request, context: context, permissionPrompter: permissionPrompter, trace: &trace)
+        return (response, context.isBurner ? nil : trace)
+    }
+
+    private func invokeTool(_ request: ExecuteClientToolRequest,
+                            context: BrowserToolCallContext,
+                            permissionPrompter: (any ClientToolPermissionPrompting)?,
+                            trace: inout BrowserToolCallTrace) async -> ExecuteClientToolResponse {
         guard !context.isBurner,
               let tool = catalog.tool(for: request.capability) else {
             return .failure(callId: request.callId, error: .unavailable)
@@ -53,8 +71,9 @@ public final class BrowserToolInvoker {
                                                                   target: target,
                                                                   chatID: catalog.offersRequestAccess ? request.chatId : nil, accessToolNames: nil,
                                                                   prompter: permissionPrompter)
+        trace.permissionPath = authorization.permissionPath
         switch authorization {
-        case .refused(.cancelled):
+        case .refused(.cancelled, _):
             return .failure(callId: request.callId, error: .cancelled)
         case .refused:
             guard !Task.isCancelled else { return .failure(callId: request.callId, error: .cancelled) }
@@ -62,10 +81,11 @@ public final class BrowserToolInvoker {
             break
         }
         let currentTool = context.isBurner ? nil : catalog.tool(for: request.capability)
-        if case .refused(let error) = authorization {
+        if case .refused(let error, _) = authorization {
             return .failure(callId: request.callId, error: currentTool == nil ? .unavailable : error)
         }
-        guard case .granted(let performExecution) = authorization,
+        let executionStart = ProcessInfo.processInfo.systemUptime
+        guard case .granted(_, let performExecution) = authorization,
               let executionResult = await performExecution({
                   guard let currentTool else { return .failure(.unavailable) }
                   guard !Task.isCancelled else { return .failure(.cancelled) }
@@ -76,6 +96,7 @@ public final class BrowserToolInvoker {
               }) else {
             return .failure(callId: request.callId, error: .cancelled)
         }
+        trace.executionDuration = ProcessInfo.processInfo.systemUptime - executionStart
         let result: BrowserToolResult
         switch executionResult {
         case .success(let value): result = tool.clientToolResult(from: value)
@@ -83,6 +104,7 @@ public final class BrowserToolInvoker {
         }
         switch result {
         case .success(let value):
+            trace.resultCount = tool.resultCount(of: value)
             return .success(callId: request.callId, value: value)
         case .failure(let error):
             return .failure(callId: request.callId, error: Self.clientToolError(error))
@@ -118,9 +140,9 @@ public final class BrowserToolInvoker {
             let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: requestAccessTool, targetsOtherTab: false, target: nil,
                                                                       chatID: chatID, accessToolNames: toAsk, prompter: permissionPrompter)
             switch authorization {
-            case .refused(let error):
+            case .refused(let error, _):
                 return .failure(callId: request.callId, error: error)
-            case .granted(let performExecution):
+            case .granted(_, let performExecution):
                 // Settles the granted entry; there is nothing to run.
                 guard await performExecution({ .success(.null) }) != nil else {
                     return .failure(callId: request.callId, error: .cancelled)

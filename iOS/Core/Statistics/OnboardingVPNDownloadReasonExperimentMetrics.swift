@@ -115,7 +115,8 @@ public struct OnboardingVPNDownloadReasonExperimentMetrics {
         OnboardingVPNDownloadReasonExperimentMetrics(
             downloadReasonToken: { OnboardingDownloadReasonStore.currentPixelToken(.app) },
             userDefaults: .app,
-            calendar: .current,
+            // Follows time zone changes, as PixelKit's conversion windows do.
+            calendar: .autoupdatingCurrent,
             fireExperimentPixel: PixelKit.fireExperimentPixel(for:metric:conversionWindowDays:value:),
             fireExperimentPixelIfThresholdReached: PixelKit.fireExperimentPixelIfThresholdReached(for:metric:conversionWindowDays:threshold:)
         )

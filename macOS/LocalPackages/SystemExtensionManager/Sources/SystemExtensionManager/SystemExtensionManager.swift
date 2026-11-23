@@ -590,7 +590,11 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
-        Self.logRequestFailure(error: error, request: request)
+        if case OSSystemExtensionError.requestCanceled = error {
+            Logger.systemExtensionManager.info("System extension request cancelled (requestCanceled): \(request.identifier, privacy: .public)")
+        } else {
+            Self.logRequestFailure(error: error, request: request)
+        }
         complete(with: .failure(error))
     }
 

@@ -148,6 +148,37 @@ final class AIChatLocalModelDownloaderTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A file that finished downloading before a relaunch is checked and installed, not asked for again", .timeLimit(.minutes(1)))
+    func completeFileIsInstalledAfterRelaunch() async throws {
+        try writePart(model)
+        defaults.set(spec.sha256, forKey: AIChatLocalModelDownloader.installRequestKey)
+        StubModelServer.respond { _ in .init(status: 416, body: Data()) }
+        let downloader = makeDownloader()
+
+        downloader.resumeIfNeeded()
+        await waitUntil { downloader.state.isInstalled }
+
+        #expect(downloader.state == .installed(installedURL))
+        #expect(try Data(contentsOf: installedURL) == model)
+        #expect(StubModelServer.requests.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A finished file that doesn't match its SHA-256 is deleted without asking the server", .timeLimit(.minutes(1)))
+    func completeButCorruptFileIsDeleted() async throws {
+        try writePart(Data(repeating: 0xFF, count: model.count))
+        defaults.set(spec.sha256, forKey: AIChatLocalModelDownloader.installRequestKey)
+        let downloader = makeDownloader()
+
+        downloader.resumeIfNeeded()
+        await waitUntil { downloader.state == .failed(.unknown) }
+
+        #expect(downloader.state == .failed(.unknown))
+        #expect(!FileManager.default.fileExists(atPath: partURL.path))
+        #expect(StubModelServer.requests.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A server that ignores the range sends the whole file, which replaces the partial one", .timeLimit(.minutes(1)))
     func fullResponseReplacesPartialFile() async throws {
         try writePart(Data(repeating: 0xFF, count: 400))

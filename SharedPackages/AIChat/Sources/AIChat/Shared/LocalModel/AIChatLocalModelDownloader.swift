@@ -158,6 +158,13 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         }
 
         let received = Self.fileSize(at: partURL) ?? 0
+        if received >= spec.bytes {
+            // Every byte arrived, but the app quit or the move failed before the file was checked.
+            // Asking for more would get a 416, which deletes the whole file.
+            state = .downloading(receivedBytes: received, totalBytes: spec.bytes)
+            verifyAndInstall()
+            return
+        }
         if let capacity = availableCapacity(directory), capacity < spec.bytes - received + Self.freeSpaceMargin {
             fail(.diskFull)
             return

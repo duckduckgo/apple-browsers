@@ -27,8 +27,6 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
     public init() {
         super.init { event, _, _, _ in
             switch event {
-            case .assistedOptOutStarted, .assistedOptOutUserTurn, .assistedOptOutEnded:
-                PixelKit.fire(event)
             case .mainAppSetUpFailedSecureVaultInitFailed(error: let error),
                     .backgroundAgentSetUpFailedSecureVaultInitFailed(error: let error),
                     .ipcServerProfileSavedXPCError(error: let error),

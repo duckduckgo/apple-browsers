@@ -457,16 +457,13 @@ extension DataImport.Source {
     var supportedDataTypes: Set<DataImport.DataType> {
         switch self {
         case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .vivaldi, .yandex:
-            return isHistoryImportEnabled ? [.bookmarks, .passwords, .history] : [.bookmarks, .passwords]
+            return [.bookmarks, .passwords, .history]
         case .safari, .safariTechnologyPreview:
             guard #available(macOS 15.2, *) else { return [.bookmarks, .passwords] }
-            var dataTypes: Set<DataImport.DataType> = [.bookmarks, .passwords]
+            // History comes from the "Export Browsing Data" archive, which needs macOS 15.2.
+            var dataTypes: Set<DataImport.DataType> = [.bookmarks, .passwords, .history]
             if Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {
                 dataTypes.insert(.creditCards)
-            }
-            // History comes from the "Export Browsing Data" archive, which needs macOS 15.2.
-            if isHistoryImportEnabled {
-                dataTypes.insert(.history)
             }
             return dataTypes
         case .tor:
@@ -478,10 +475,6 @@ extension DataImport.Source {
         case .fileImport:
             return [.bookmarks, .passwords]
         }
-    }
-
-    private var isHistoryImportEnabled: Bool {
-        Application.appDelegate.featureFlagger.isFeatureOn(.dataImportHistory)
     }
 
     var archiveImportSupportedFiles: Set<UTType> {

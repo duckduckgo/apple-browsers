@@ -104,6 +104,7 @@ public final class BrowserToolInvoker {
         }
         switch result {
         case .success(let value):
+            trace.resultCount = tool.resultCount(of: value)
             return .success(callId: request.callId, value: value)
         case .failure(let error):
             return .failure(callId: request.callId, error: Self.clientToolError(error))

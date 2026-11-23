@@ -24,7 +24,8 @@ import PixelKit
 enum BrowserToolsPixel: PixelKit.Event {
 
     /// Event Trigger: A browser tool call finished, whatever its result. `tool` is a slug from `toolSlugs`.
-    case call(tool: String, result: ClientToolError?, permissionPath: BrowserToolPermissionPath, duration: TimeInterval?)
+    /// `resultCount` is set for a successful search or list tool only.
+    case call(tool: String, result: ClientToolError?, permissionPath: BrowserToolPermissionPath, duration: TimeInterval?, resultCount: Int?)
 
     /// Event Trigger: A browser tool call succeeded. Fired daily.
     case used
@@ -87,9 +88,10 @@ enum BrowserToolsPixel: PixelKit.Event {
 
     var parameters: [String: String]? {
         switch self {
-        case .call(let tool, let result, let permissionPath, let duration):
+        case .call(let tool, let result, let permissionPath, let duration, let resultCount):
             var parameters = ["tool": tool, "result": result?.rawValue ?? "success", "permission_path": permissionPath.rawValue]
             parameters["duration"] = duration.map(Self.durationBucket)
+            parameters["result_count"] = resultCount.map(Self.resultCountBucket)
             return parameters
         case .permissionChanged(let tool, let from, let to, let source):
             return ["tool": tool, "from": from.rawValue, "to": to.rawValue, "source": source.rawValue]
@@ -148,6 +150,15 @@ enum BrowserToolsPixel: PixelKit.Event {
         default: "gte_10s"
         }
     }
+
+    static func resultCountBucket(_ count: Int) -> String {
+        switch count {
+        case ...0: "0"
+        case ...5: "1-5"
+        case ...20: "6-20"
+        default: "21_plus"
+        }
+    }
 }
 
 private extension BrowserToolsPixel.AnswerRow {
@@ -165,7 +176,7 @@ struct BrowserToolsPixelInstrumentation: BrowserToolsInstrumentation {
         guard let slug = BrowserToolsPixel.toolSlugs[tool] else { return }
         let error: ClientToolError? = if case .failure(_, let error) = response { error } else { nil }
         pixelFiring?.fire(BrowserToolsPixel.call(tool: slug, result: error, permissionPath: trace.permissionPath,
-                                                 duration: trace.executionDuration))
+                                                 duration: trace.executionDuration, resultCount: error == nil ? trace.resultCount : nil))
         guard error == nil else { return }
         pixelFiring?.fire(BrowserToolsPixel.used, frequency: .daily)
         pixelFiring?.fire(BrowserToolsPixel.usedTool(slug), frequency: .daily)

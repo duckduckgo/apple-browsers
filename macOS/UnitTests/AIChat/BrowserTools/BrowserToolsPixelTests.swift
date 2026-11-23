@@ -42,6 +42,26 @@ struct BrowserToolsPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A successful search or list call carries its bucketed result count; a failed one doesn't", .timeLimit(.minutes(1)))
+    func resultCountIsSentForSuccessfulCountedCallsOnly() {
+        instrumentation.toolCallDidFinish(tool: "searchHistory", response: .success(callId: "call", value: ["results": []]),
+                                          trace: BrowserToolCallTrace(permissionPath: .always, executionDuration: 0.01, resultCount: 7))
+        instrumentation.toolCallDidFinish(tool: "searchHistory", response: .failure(callId: "call", error: .executionFailed),
+                                          trace: BrowserToolCallTrace(permissionPath: .always, executionDuration: 0.01, resultCount: 7))
+
+        #expect(pixels.actualFireCalls[0].pixel.parameters?["result_count"] == "6-20")
+        #expect(pixels.actualFireCalls[3].pixel.name == "aichat_tools_call_macos")
+        #expect(pixels.actualFireCalls[3].pixel.parameters?["result_count"] == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Result counts fall into the spec's buckets", .timeLimit(.minutes(1)),
+          arguments: zip([0, 1, 5, 6, 20, 21, 500], ["0", "1-5", "1-5", "6-20", "6-20", "21_plus", "21_plus"]))
+    func resultCountBuckets(count: Int, bucket: String) {
+        #expect(BrowserToolsPixel.resultCountBucket(count) == bucket)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A refused call fires only the call pixel, without a duration", .timeLimit(.minutes(1)))
     func refusedCallFiresOnlyTheCallPixel() {
         instrumentation.toolCallDidFinish(tool: "searchHistory", response: .failure(callId: "call", error: .denied),

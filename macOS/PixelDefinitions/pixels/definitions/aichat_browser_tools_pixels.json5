@@ -39,6 +39,11 @@
                 "key": "duration",
                 "description": "How long the tool ran, without the wait for permission. Absent when it never ran",
                 "enum": ["lt_100ms", "lt_500ms", "lt_2s", "lt_10s", "gte_10s"]
+            },
+            {
+                "key": "result_count",
+                "description": "How many items a successful list_open_tabs, search_history, search_downloads or search_bookmarks call returned. Absent for other tools and failed calls",
+                "enum": ["0", "1-5", "6-20", "21_plus"]
             }
         ]
     },

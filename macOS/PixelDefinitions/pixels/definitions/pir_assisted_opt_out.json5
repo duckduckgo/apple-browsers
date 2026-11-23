@@ -13,10 +13,10 @@
             "appVersion",
             "channel",
             {
-                "key": "duration_bucket",
+                "key": "duration_seconds_bucket",
                 "type": "string",
-                "enum": ["under_1s", "1_5s", "5_15s", "15_30s", "30_60s", "1_2m", "2_5m", "5_10m", "10m_or_more"],
-                "description": "Time from beginning the attempt to the first user turn, bucketed."
+                "enum": ["0", "30", "60", "120", "240", "480"],
+                "description": "Seconds from beginning the attempt to the first user turn, as the lower bound of its bucket."
             }
         ]
     },
@@ -34,16 +34,16 @@
                 "description": "The terminal outcome of the attempt."
             },
             {
-                "key": "total_duration_bucket",
+                "key": "total_duration_seconds_bucket",
                 "type": "string",
-                "enum": ["under_1s", "1_5s", "5_15s", "15_30s", "30_60s", "1_2m", "2_5m", "5_10m", "10m_or_more"],
-                "description": "Total attempt duration, bucketed."
+                "enum": ["0", "30", "60", "120", "240", "480"],
+                "description": "Total attempt duration in seconds, as the lower bound of its bucket."
             },
             {
-                "key": "user_turn_duration_bucket",
+                "key": "user_turn_duration_seconds_bucket",
                 "type": "string",
-                "enum": ["under_1s", "1_5s", "5_15s", "15_30s", "30_60s", "1_2m", "2_5m", "5_10m", "10m_or_more"],
-                "description": "Cumulative duration spent in user turns, bucketed."
+                "enum": ["0", "30", "60", "120", "240", "480"],
+                "description": "Cumulative seconds spent in user turns, as the lower bound of their bucket."
             }
         ]
     }

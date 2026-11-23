@@ -112,7 +112,8 @@ def inline(text):
     def prose(part):
         part = html.escape(part)
         part = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", part)
-        return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", r"<a href='\2'>\1</a>", part)
+        return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)",
+                      lambda m: f"<a href='{m[2]}'>{m[1]}</a>" if re.match(r"https?:|[^:]*$", m[2]) else m[0], part)
 
     out, last = [], 0
     for span in re.finditer(r"(`+)(.+?)\1(?!`)", text):
@@ -268,8 +269,10 @@ def render(batch, rows, baseline=None):
     for number, r in enumerate(rows, 1):
         r["number"] = number
         before, change = compare(r, by_baseline) if baseline is not None and not r["retried"] else ("", "")
+        r["change"], r["known"] = change, False
         previous = by_baseline.get(key(r)) if baseline is not None else None
         known = previous is not None and previous["review"] == r["review"] == "disputed"
+        r["known"] = known
         as_expected = r["status"] == r["expected"]
         worse = previous is not None and ((previous["status"] == previous["expected"] and not as_expected) or
                                           (previous["review"] == "confirmed" and r["review"] in ("disputed", "unclear")))
@@ -349,9 +352,17 @@ def render(batch, rows, baseline=None):
     elif pending:
         banner = (f"<details class='banner warn' open><summary><span class=status>{icon('warn')}<b>No problems found, but {len(pending)} of "
                   f"{len(scenario_runs)} scenario runs still need a review.</b></span></summary>{pending_note}</details>{findings_note}")
+    elif any(r["known"] for r in scenario_runs):
+        known_runs = [r for r in scenario_runs if r["known"]]
+        banner = (f"<details class='banner warn' open><summary><span class=status>{icon('warn')}<b>No new problems, but {len(known_runs)} of "
+                  f"{len(scenario_runs)} scenario runs keep a dispute from the baseline.</b></span></summary><ul>" +
+                  "".join(f"<li>{link(r)}</li>" for r in known_runs) + f"</ul></details>{findings_note}")
     else:
+        drifted = sum(r["change"] != "same" for r in scenario_runs)
+        against = ("" if baseline is None else " with no change from the baseline" if not drifted else
+                   f"; {drifted} are new or changed since the baseline")
         banner = (f"<div class='banner ok'><div class=status>{icon('ok')}<b>All {len(scenario_runs)} scenario runs got their expected verdict and were confirmed"
-                  f"{' with no change from the baseline' if baseline is not None else ''}.</b></div></div>{findings_note}")
+                  f"{against}.</b></div></div>{findings_note}")
     first = attention[0]["number"] if attention else (scenario_runs[0]["number"] if scenario_runs else 1)
     when = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(min(starts))) if starts else ""
     return f"""<!doctype html>
@@ -435,7 +446,14 @@ def main(argv=None):
     batch = args.batch.expanduser().resolve()
     if not (batch / "evidence").is_dir():
         cli.error(f"{batch} has no evidence folder")
-    baseline = attempts(args.baseline.expanduser().resolve()) if args.baseline else None
+    baseline = None
+    if args.baseline:
+        baseline_dir = args.baseline.expanduser().resolve()
+        if not (baseline_dir / "evidence").is_dir():
+            cli.error(f"baseline {baseline_dir} has no evidence folder")
+        baseline = attempts(baseline_dir)
+        if not any(r["scenario"] for r in baseline):
+            cli.error(f"baseline {baseline_dir} has no scenario runs")
     out = batch / "report.html"
     out.write_text(render(batch, attempts(batch), baseline))
     print(out)

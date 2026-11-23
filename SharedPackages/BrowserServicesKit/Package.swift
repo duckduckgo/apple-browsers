@@ -57,7 +57,9 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "21.4.0"),
+        // POC ONLY (top sites picker): local C-S-S 21.4.0 + mocked `topSitesPicker` onboarding step. Revert to:
+        // .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "21.4.0"),
+        .package(path: "/private/tmp/claude-502/-Users-work-Developer-apple-browsers--claude-worktrees-asana-task-pr-09d08b/d203336d-0cd4-4994-a743-c2a924e8dad6/scratchpad/content-scope-scripts"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),

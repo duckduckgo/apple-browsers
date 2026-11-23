@@ -83,6 +83,7 @@ class OnboardingManagerTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
+            bookmarkManager: MockBookmarkManager(),
             aiChatURL: { URL(string: "https://duckduckgo.com/?ia=chat&duckai=5")! },
             featureFlagger: MockFeatureFlagger(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
@@ -121,7 +122,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: ["duckPlayerSingle"],
-            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"],
+            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "topSitesPicker", "addressBarMode"],
             order: "v4",
             env: "development",
             locale: "en",
@@ -137,7 +138,7 @@ class OnboardingManagerTests: XCTestCase {
         let manager = makeManager(enabledFlags: [.onboardingSearchOrChat], aiChatPreferencesStorage: MockAIChatPreferencesStorage(),
                                   homepageSearchModeSeedPersistor: HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
 
-        XCTAssertEqual(manager.configuration.steps, ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode", "searchOrChat"])
+        XCTAssertEqual(manager.configuration.steps, ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "topSitesPicker", "addressBarMode", "searchOrChat"])
         XCTAssertEqual(manager.configuration.exclude, ["duckPlayerSingle"])
         XCTAssertEqual(manager.configuration.order, "v4")
     }
@@ -179,6 +180,7 @@ class OnboardingManagerTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
+            bookmarkManager: MockBookmarkManager(),
             featureFlagger: MockFeatureFlagger(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
@@ -190,7 +192,7 @@ class OnboardingManagerTests: XCTestCase {
         let expectedConfig = OnboardingConfiguration(
             stepDefinitions: stepDefinitions,
             exclude: ["duckPlayerSingle"],
-            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "addressBarMode"],
+            steps: ["welcome", "getStarted", "makeDefaultSingle", "systemSettings", "customize", "topSitesPicker", "addressBarMode"],
             order: "v4",
             env: "development",
             locale: "en",
@@ -735,6 +737,7 @@ class OnboardingManagerTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
+            bookmarkManager: MockBookmarkManager(),
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
@@ -804,6 +807,7 @@ class OnboardingManagerTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
+            bookmarkManager: MockBookmarkManager(),
             aiChatPreferencesStorage: aiChatPreferencesStorage,
             homepageSearchModeSeedPersistor: homepageSearchModeSeedPersistor,
             featureFlagger: featureFlagger,
@@ -871,6 +875,7 @@ private extension OnboardingManagerTests {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             dataImportProvider: importProvider,
+            bookmarkManager: MockBookmarkManager(),
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller

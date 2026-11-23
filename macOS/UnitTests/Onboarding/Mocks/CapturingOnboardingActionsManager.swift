@@ -55,6 +55,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var duckAiInAddressBarEnabled: Bool?
     var reportedTelemetryEvent: OnboardingUserScript.TelemetryEvent?
     var submittedQuery: OnboardingUserScript.SubmitQuery?
+    var addedFavorites: [OnboardingUserScript.FavoriteSite]?
 
     func onboardingStarted() {
         onboardingStartedCalled = true
@@ -124,5 +125,9 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     func submitQuery(_ query: OnboardingUserScript.SubmitQuery) {
         submittedQuery = query
+    }
+
+    func addFavorites(_ sites: [OnboardingUserScript.FavoriteSite]) {
+        addedFavorites = sites
     }
 }

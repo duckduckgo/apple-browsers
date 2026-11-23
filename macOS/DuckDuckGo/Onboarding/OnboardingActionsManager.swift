@@ -38,6 +38,7 @@ enum OnboardingSteps: String, CaseIterable {
     case systemSettings
     case duckPlayerSingle
     case customize
+    case topSitesPicker
     case addressBarMode
     case searchOrChat
 }
@@ -103,6 +104,9 @@ protocol OnboardingActionsManaging {
 
     /// At the end of the onboarding the user submits a search or a Duck.ai prompt
     func submitQuery(_ query: OnboardingUserScript.SubmitQuery)
+
+    /// At user input adds the sites picked on the top sites picker step as favorites, in pick order
+    func addFavorites(_ sites: [OnboardingUserScript.FavoriteSite])
 }
 
 protocol OnboardingNavigating: AnyObject {
@@ -122,6 +126,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let appearancePreferences: AppearancePreferences
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
+    private let bookmarkManager: BookmarkManager
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
     /// Read on submit: the remote settings aren't ready when the onboarding scripts are created.
     private let aiChatURL: () -> URL
@@ -196,6 +201,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         switch step {
         case .welcome, .getStarted, .makeDefaultSingle, .systemSettings, .customize, .addressBarMode:
             true
+        case .topSitesPicker:
+            // POC: always shown. The experiment enrols only users with fewer than 5 favorites after the import step.
+            true
         case .duckPlayerSingle:
             false
         case .searchOrChat:
@@ -244,6 +252,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager, pinningManager: pinningManager),
+            bookmarkManager: bookmarkManager,
             aiChatPreferencesStorage: DefaultAIChatPreferencesStorage(),
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
@@ -265,6 +274,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
         dataImportProvider: DataImportStatusProviding,
+        bookmarkManager: BookmarkManager,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
         aiChatURL: @escaping () -> URL = { AIChatRemoteSettings().aiChatURL },
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
@@ -279,6 +289,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.appearancePreferences = appearancePreferences
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
+        self.bookmarkManager = bookmarkManager
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
         self.aiChatURL = aiChatURL
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
@@ -365,6 +376,22 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
     }
 
+    /// New bookmarks go in one batch: each bookmark store save uses its own context, so separate saves can land out of order.
+    /// Sites already bookmarked are marked as favorites separately, so their order relative to the new ones isn't kept.
+    func addFavorites(_ sites: [OnboardingUserScript.FavoriteSite]) {
+        var newFavorites: [WebsiteInfo] = []
+        for site in sites {
+            if let bookmark = bookmarkManager.getBookmark(for: site.url) {
+                guard !bookmark.isFavorite else { continue }
+                bookmark.isFavorite = true
+                bookmarkManager.update(bookmark: bookmark)
+            } else {
+                newFavorites.append(WebsiteInfo(url: site.url, title: site.title))
+            }
+        }
+        bookmarkManager.makeBookmarks(for: newFavorites, isFavorite: true, index: nil, parent: nil)
+    }
+
     func setAsDefault() {
         try? defaultBrowserProvider.presentDefaultBrowserPrompt()
         onboardingSharedPixelHandler.fire(.setDefault(.clicked(.engage)))
@@ -431,6 +458,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .addressBarMode:
             // No pixel for addressBarMode as it's the last step before final
             pixel = nil
+        case .topSitesPicker:
+            // POC: no pixels yet
+            pixel = nil
         case .searchOrChat:
             // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
             pixel = nil
@@ -471,6 +501,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .addressBarMode:
             let value: OnboardingSharedPixelEvent.SearchExperienceEvent.Value = aiChatPreferencesStorage.showSearchAndDuckAIToggle ? .searchPlusDuckAI : .searchOnly
             pixel = .searchExperience(.clicked(value))
+        case .topSitesPicker:
+            // POC: no pixels yet
+            pixel = nil
         case .searchOrChat:
             // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
             pixel = nil
@@ -500,6 +533,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             pixel = .customization(.shown)
         case .addressBarMode:
             pixel = .searchExperience(.shown)
+        case .topSitesPicker:
+            // POC: no pixels yet
+            pixel = nil
         case .searchOrChat:
             // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
             pixel = nil

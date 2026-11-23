@@ -6,6 +6,10 @@
 #
 # The headers in SharedPackages/LlamaRuntime/Sources/CLlama/include come from the same release.
 # Update both together.
+#
+# Temporary, for the internal release and evals. Downloading llama.cpp's prebuilt release at build
+# time, the hand-copied headers and opening the framework at runtime will be refactored before an
+# external release.
 
 set -euo pipefail
 

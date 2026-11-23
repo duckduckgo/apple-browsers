@@ -304,6 +304,16 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
+        case .bookmarkFavoriteSwipeBackground:
+            return DynamicColor(staticColor: .yellow60)
+        case .autofillSelectedRowBackground:
+            return DynamicColor(lightColor: .gray40, darkColor: .gray80)
+        case .syncScreenBackground:
+            return DynamicColor(staticColor: .gray90)
+        case .vpnSnoozeCountdownText:
+            return DynamicColor(staticColor: .yellow60)
+        case .vpnActiveCountdownText:
+            return DynamicColor(staticColor: .green60)
         case .purchaseProgressShadow:
             return DynamicColor(lightColor: .gray50, darkColor: .gray100)
         case .syncDevelopmentBadgeBackground:

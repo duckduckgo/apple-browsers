@@ -34,7 +34,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         static let entranceDuration: TimeInterval = 0.25
         static let focusedModulesHideDuration: TimeInterval = 0.1
         static let focusedWelcomeScale: CGFloat = 0.85
-        static let focusedBackdropAlpha: CGFloat = 0.5
+        static let focusedBackdropAlpha: CGFloat = 0
     }
 
     private static let focusedModuleIDs: [NewTabPageBlockID] = [.favorites, .escapeHatch, .messages]

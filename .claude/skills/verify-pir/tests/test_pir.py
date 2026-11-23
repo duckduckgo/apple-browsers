@@ -275,6 +275,10 @@ class WorkflowTests(unittest.TestCase):
         result = self.execute("--scenario", "Scan finds the profile's record")
         self.assertEqual(result["scenario"], "Scan finds the profile's record")
         self.assertIn("--scenario", result["rerun"])
+        self.assertEqual(result["expected"], "pass")
+        expected_fail = self.execute("--scenario", "A broker JSON with a userAssist step is handled safely", "--expect", "fail")
+        self.assertEqual(expected_fail["expected"], "fail")
+        self.assertIn("--expect fail", expected_fail["rerun"])
         with self.assertRaisesRegex(ValueError, "--scenario applies only to run and scheduler"):
             pir.execute(pir.parser().parse_args(["selftest", "--platform", "macos", "--scenario", "x"]))
 

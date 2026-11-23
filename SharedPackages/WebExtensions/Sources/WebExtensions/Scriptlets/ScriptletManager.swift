@@ -53,6 +53,7 @@ public final class ScriptletManager: ScriptletProviding {
     private let store: ScriptletStoring
     private let pixelFiring: WebExtensionPixelFiring
     private let isProduction: Bool
+    private let acceptsUnsignedScriptlets: @MainActor () -> Bool
 
     @Published private var availabilities: [DuckDuckGoWebExtensionType: ScriptletAvailability] = [:]
 
@@ -66,7 +67,8 @@ public final class ScriptletManager: ScriptletProviding {
         validator: ScriptletValidating,
         store: ScriptletStoring,
         pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
-        isProduction: Bool = true
+        isProduction: Bool = true,
+        acceptsUnsignedScriptlets: @escaping @MainActor () -> Bool = { false }
     ) {
         self.configProvider = configProvider
         self.fetcher = fetcher
@@ -74,6 +76,7 @@ public final class ScriptletManager: ScriptletProviding {
         self.store = store
         self.pixelFiring = pixelFiring
         self.isProduction = isProduction
+        self.acceptsUnsignedScriptlets = acceptsUnsignedScriptlets
     }
 
     // MARK: - ScriptletProviding
@@ -142,6 +145,16 @@ public final class ScriptletManager: ScriptletProviding {
 
     // MARK: - Private
 
+    // Prototype only: lets test builds load unpublished scriptlets from a preview config.
+    private func acceptsUnsigned(_ manifest: ScriptletManifest) -> Bool {
+        guard acceptsUnsignedScriptlets() else { return false }
+        return manifest.scriptlets.allSatisfy { descriptor in
+            let url = descriptor.url
+            guard url.scheme == "https" else { return false }
+            return (url.host == "raw.githubusercontent.com" && url.path.hasPrefix("/duckduckgo/")) || url.host == "duckduckgo.github.io"
+        }
+    }
+
     private func clearCachedScriptletsIfNeeded(for extensionType: DuckDuckGoWebExtensionType) {
         guard availabilities[extensionType] != nil,
               availabilities[extensionType] != .notAvailable else { return }
@@ -197,7 +210,7 @@ public final class ScriptletManager: ScriptletProviding {
                 try validator.validate(fetched)
                 Logger.webExtensions.info("[Scriptlets] Signature validation passed for '\(extensionType.rawValue)' (\(fetched.count) scriptlet(s))")
             } catch {
-                if isProduction {
+                if isProduction && !acceptsUnsigned(manifest) {
                     pixelFiring.fire(.scriptletValidationError(type: extensionType, error: error))
                     throw error
                 }

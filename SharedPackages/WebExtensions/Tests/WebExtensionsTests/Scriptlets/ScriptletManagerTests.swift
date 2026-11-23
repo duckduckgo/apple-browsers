@@ -338,6 +338,50 @@ final class ScriptletManagerTests: XCTestCase {
         XCTAssertEqual(manager.availability(for: testExtensionType), .available([existingScriptlet]))
     }
 
+    func testWhenValidatorFailsAndUnsignedAcceptedFromDDGHostThenScriptletsAreSaved() async {
+        let manager = makeManager(acceptsUnsigned: true)
+        givenUnsignedScriptlet(from: "https://raw.githubusercontent.com/duckduckgo/content-blocker-extension/abc/src/test.js")
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertNotNil(mockStore.savedFetched)
+    }
+
+    func testWhenValidatorFailsAndUnsignedNotAcceptedThenScriptletsAreRejected() async {
+        let manager = makeManager(acceptsUnsigned: false)
+        givenUnsignedScriptlet(from: "https://raw.githubusercontent.com/duckduckgo/content-blocker-extension/abc/src/test.js")
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertNil(mockStore.savedFetched)
+    }
+
+    func testWhenValidatorFailsAndUnsignedAcceptedFromOtherHostThenScriptletsAreRejected() async {
+        let manager = makeManager(acceptsUnsigned: true)
+        givenUnsignedScriptlet(from: "https://raw.githubusercontent.com/someone-else/repo/abc/src/test.js")
+
+        await manager.start(for: testExtensionType)
+
+        XCTAssertNil(mockStore.savedFetched)
+    }
+
+    private func makeManager(acceptsUnsigned: Bool) -> ScriptletManager {
+        ScriptletManager(
+            configProvider: mockConfigProvider,
+            fetcher: mockFetcher,
+            validator: mockValidator,
+            store: mockStore,
+            acceptsUnsignedScriptlets: { acceptsUnsigned }
+        )
+    }
+
+    private func givenUnsignedScriptlet(from url: String) {
+        let descriptor = ScriptletDescriptor(name: "test.js", url: URL(string: url)!, signature: "sig")
+        mockConfigProvider.manifests[testExtensionType] = ScriptletManifest(version: "1.0", scriptlets: [descriptor])
+        mockFetcher.fetchedScriptlets = [FetchedScriptlet(descriptor: descriptor, data: Data("test".utf8))]
+        mockValidator.shouldThrowError = true
+    }
+
     func testWhenCachedVersionMatchesManifestThenNoFetchIsTriggered() async {
         let scriptlets = [Scriptlet(path: "test.js", relativeCachedPath: "ext/1.0/test.js")]
         mockStore.cachedScriptlets = CachedScriptlets(version: "1.0", scriptlets: scriptlets)

@@ -29,6 +29,7 @@ public enum ScriptletManagerFactory {
         baseDirectory: URL,
         pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
         isProduction: Bool = true,
+        acceptsUnsignedScriptlets: @escaping @MainActor () -> Bool = { false },
         defaults: UserDefaults = .standard,
         installer: ScriptletInstalling = ScriptletInstaller()
     ) -> ScriptletConfiguration {
@@ -54,7 +55,8 @@ public enum ScriptletManagerFactory {
             validator: validator,
             store: store,
             pixelFiring: pixelFiring,
-            isProduction: isProduction
+            isProduction: isProduction,
+            acceptsUnsignedScriptlets: acceptsUnsignedScriptlets
         )
 
         return ScriptletConfiguration(

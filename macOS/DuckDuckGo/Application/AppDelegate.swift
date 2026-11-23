@@ -2474,7 +2474,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory,
             pixelFiring: MacOSWebExtensionPixelFiring(),
-            isProduction: !StandardApplicationBuildType().isDebugBuild
+            isProduction: !StandardApplicationBuildType().isDebugBuild,
+            acceptsUnsignedScriptlets: { [weak self] in
+                let buildType = StandardApplicationBuildType()
+                guard buildType.isAlphaBuild || buildType.isReviewBuild, let urlProvider = self?.configurationURLProvider else { return false }
+                return urlProvider.isCustomURLEnabled && urlProvider.isURLOverridden(for: .privacyConfiguration)
+            }
         )
     }
 

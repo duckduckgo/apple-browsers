@@ -583,7 +583,15 @@ final class MainCoordinator {
             apiService: DefaultAPIService(),
             baseDirectory: scriptletsDirectory,
             pixelFiring: iOSWebExtensionPixelFiring(),
-            isProduction: !isDebugBuild
+            isProduction: !isDebugBuild,
+            acceptsUnsignedScriptlets: {
+#if ALPHA
+                let urlProvider = AppDependencyProvider.shared.configurationURLProvider
+                return urlProvider.isCustomURLEnabled && urlProvider.isURLOverridden(for: .privacyConfiguration)
+#else
+                return false
+#endif
+            }
         )
     }
 

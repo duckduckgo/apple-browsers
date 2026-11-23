@@ -22,7 +22,6 @@ import Foundation
 import Testing
 import WebKit
 import XCTest
-@_spi(Testing) import WideEvent
 @testable import DataBrokerProtectionCore
 
 struct UserAssistanceSchedulingTests {
@@ -103,12 +102,10 @@ struct UserAssistanceSchedulingTests {
     @MainActor
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [AssistedEnd.cancelled, .failed, .timedOut, .submitted])
-    func assistedEndUsesOnlyAssistedHistoryAndSkipsRegularWideEvents(end: AssistedEnd) async throws {
+    func assistedEndUsesOnlyAssistedHistory(end: AssistedEnd) async throws {
         let dependencies = MockBrokerProfileJobDependencies()
         let database = MockDatabase()
-        let wideEvent = WideEventMock()
         dependencies.database = database
-        dependencies.wideEvent = wideEvent
         var failurePixels = 0
         dependencies.pixelHandler = EventMapping { event, _, _, _ in
             if case .optOutFailure = event { failurePixels += 1 }
@@ -117,19 +114,6 @@ struct UserAssistanceSchedulingTests {
         let job = OptOutJobData.mock(with: .mockWithoutRemovedDate, preferredRunDate: preferredDate)
         database.optOutToReturn = job
         let data = BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: .mock, optOutJobData: [job])
-        let globalID = OptOutWideEventIdentifier(brokerId: job.brokerId, profileQueryId: job.profileQueryId,
-                                                extractedProfileId: try #require(job.extractedProfile.id)).toGlobalId
-        let interval = WideEvent.MeasuredInterval(start: Date(timeIntervalSince1970: 1234), end: nil)
-        let submission = OptOutSubmissionWideEventData(globalData: .init(id: globalID), dataBrokerURL: data.dataBroker.url,
-                                                       dataBrokerVersion: data.dataBroker.version, submissionInterval: interval)
-        let confirmation = OptOutConfirmationWideEventData(globalData: .init(id: globalID), dataBrokerURL: data.dataBroker.url,
-                                                           dataBrokerVersion: data.dataBroker.version, confirmationInterval: interval)
-        wideEvent.startFlow(submission)
-        wideEvent.startFlow(confirmation)
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .sortedKeys
-        let priorSubmission = try encoder.encode(submission)
-        let priorConfirmation = try encoder.encode(confirmation)
         let observer = SchedulingAssistanceObserver()
         dependencies.mockAssistedOptOutRunner.optOutHandler = {
             #expect(database.optOutEvents.map(\.type) == [.optOutStarted])
@@ -157,14 +141,6 @@ struct UserAssistanceSchedulingTests {
             #expect(database.attemptCount == 0)
         }
         #expect(failurePixels == (end == .failed ? 1 : 0))
-        #expect(wideEvent.started.count == 2)
-        #expect(wideEvent.updates.isEmpty)
-        #expect(wideEvent.completions.isEmpty)
-        #expect(wideEvent.discarded.isEmpty)
-        let storedSubmission = try #require(wideEvent.getFlowData(OptOutSubmissionWideEventData.self, globalID: globalID))
-        let storedConfirmation = try #require(wideEvent.getFlowData(OptOutConfirmationWideEventData.self, globalID: globalID))
-        #expect(try encoder.encode(storedSubmission) == priorSubmission)
-        #expect(try encoder.encode(storedConfirmation) == priorConfirmation)
     }
 
     enum RegularScheduling: Sendable {

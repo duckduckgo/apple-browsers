@@ -2326,7 +2326,6 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var featureFlagger: DBPFeatureFlagging
     public var wideEvent: WideEventManaging?
     public var contentBlocking: DBPWebViewContentBlocking?
-    public var runningAssistedOptOuts = RunningAssistedOptOuts()
     public var assistedRunnerObserver: OptOutAssistanceObserving?
     public var mockAssistedOptOutRunner = MockOptOutSubJobWebRunner()
     public var isAuthenticatedUserProvider: () async -> Bool = { true }

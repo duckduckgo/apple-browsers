@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import SwiftUI
 import Subscription
 import Networking
@@ -54,17 +55,23 @@ public final class SubscriptionTokensDebugViewModel: ObservableObject {
     private let keychainManager: any KeychainManaging
     private let getTokenContainer: (AuthTokensCachePolicy) async throws -> TokenContainer
     private let fork: (TokenContainer) async throws -> TokenContainer
+    /// The Terminal command that deletes the VPN system extension's token from the System keychain, or `nil` to leave it out.
+    let vpnExtensionTokenRemovalCommand: String?
 
     /// - Parameters:
     ///   - keychainManager: Reads and deletes the subscription token keychain items.
     ///   - getTokenContainer: Gets the token through the subscription manager with the given policy.
     ///   - fork: Spends the refresh token of the given container once and returns the new pair, without storing anything.
+    ///   - vpnSystemExtensionBundleID: The bundle ID of the VPN system extension, used to build the command that deletes its token,
+    ///     or `nil` when the VPN doesn't run as a system extension.
     public init(keychainManager: any KeychainManaging,
                 getTokenContainer: @escaping (AuthTokensCachePolicy) async throws -> TokenContainer,
-                fork: @escaping (TokenContainer) async throws -> TokenContainer) {
+                fork: @escaping (TokenContainer) async throws -> TokenContainer,
+                vpnSystemExtensionBundleID: String? = nil) {
         self.keychainManager = keychainManager
         self.getTokenContainer = getTokenContainer
         self.fork = fork
+        self.vpnExtensionTokenRemovalCommand = vpnSystemExtensionBundleID.map(Self.vpnExtensionTokenRemovalCommand(bundleID:))
         reload()
     }
 
@@ -105,6 +112,17 @@ public final class SubscriptionTokensDebugViewModel: ObservableObject {
 
     func reload() {
         tokens = Field.allCases.map { Token(field: $0, state: read($0)) }
+    }
+
+    /// Builds the `security` command that deletes the token the VPN system extension with the given bundle ID stores in the System keychain.
+    static func vpnExtensionTokenRemovalCommand(bundleID: String) -> String {
+        "sudo security delete-generic-password -s '\(bundleID).authTokenContainer' -a '\(bundleID).tokenContainer' /Library/Keychains/System.keychain"
+    }
+
+    func copyVPNExtensionTokenRemovalCommand() {
+        guard let vpnExtensionTokenRemovalCommand else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(vpnExtensionTokenRemovalCommand, forType: .string)
     }
 
     func remove(_ field: Field) {
@@ -152,7 +170,9 @@ public struct SubscriptionTokensDebugView: View {
                     tokenSection(token)
                 }
 
-                vpnExtensionTokenSection
+                if let command = model.vpnExtensionTokenRemovalCommand {
+                    vpnExtensionTokenSection(command: command)
+                }
             }
             .padding(20)
         }
@@ -222,18 +242,15 @@ public struct SubscriptionTokensDebugView: View {
         }
     }
 
-    private var vpnExtensionTokenSection: some View {
+    private func vpnExtensionTokenSection(command: String) -> some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 8) {
-                Text("The VPN system extension keeps its own copy of the token in the System keychain, which this window can't read. To remove it:")
-                Text("1. Open the Keychain Access app and select the System keychain.")
-                Text("2. Search for \"DuckDuckGo Network Protection Auth Token Container\".")
-                Text("3. Delete the item whose Account is com.duckduckgo.macos.vpn.network-extension.tokenContainer. Debug, Review and Alpha builds add .debug, .review or .alpha after network-extension. macOS asks for an administrator password.")
-                Text("Items whose Where ends in .authToken are left over from the old sign-in and don't matter. To see the effect, start the VPN again, for example by restarting the Mac.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Text("The VPN system extension keeps its own copy of the token in the System keychain. Run this in Terminal to delete it:")
+                Text(command)
+                    .font(.footnote.monospaced())
+                    .textSelection(.enabled)
+                Button("Copy") { model.copyVPNExtensionTokenRemovalCommand() }
             }
-            .textSelection(.enabled)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(4)

@@ -1224,6 +1224,8 @@ final class MainMenu: NSMenu {
                                   wideEvent: Application.appDelegate.wideEvent,
                                   subscriptionSelectionHandler: subscriptionSelectionHandler,
                                   makeTokensDebugModel: {
+                                      // The App Store VPN runs as an app extension and keeps its token in the data protection keychain, not the System keychain.
+                                      let vpnSystemExtensionBundleID = AppVersion.isAppStoreBuild ? nil : Bundle.main.object(forInfoDictionaryKey: "SYSEX_BUNDLE_ID") as? String
                                       let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
                                       let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType),
                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
@@ -1237,7 +1239,8 @@ final class MainMenu: NSMenu {
                                                                               },
                                                                               fork: { container in
                                                                                   try await tokenRefresher.refresh(container, refreshID: nil)
-                                                                              })
+                                                                              },
+                                                                              vpnSystemExtensionBundleID: vpnSystemExtensionBundleID)
                                   })
 
             NSMenuItem(title: "TipKit") {

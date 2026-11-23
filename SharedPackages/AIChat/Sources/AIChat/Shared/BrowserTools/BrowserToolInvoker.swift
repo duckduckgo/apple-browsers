@@ -27,6 +27,9 @@ public final class BrowserToolInvoker {
     private let clientToolPermissions: any ClientToolPermissionCoordinating
     private let requestAccessTool = RequestAccessTool()
 
+    /// Reports `requestAccess` calls. Tool calls are reported by the caller, after its size limit.
+    public var instrumentation: (any BrowserToolsInstrumentation)?
+
     public init(catalog: BrowserToolCatalog,
                 clientToolPermissions: any ClientToolPermissionCoordinating) {
         self.catalog = catalog
@@ -73,7 +76,7 @@ public final class BrowserToolInvoker {
                                                                   prompter: permissionPrompter)
         trace.permissionPath = authorization.permissionPath
         switch authorization {
-        case .refused(.cancelled, _):
+        case .refused(.cancelled, _, _):
             return .failure(callId: request.callId, error: .cancelled)
         case .refused:
             guard !Task.isCancelled else { return .failure(callId: request.callId, error: .cancelled) }
@@ -81,7 +84,7 @@ public final class BrowserToolInvoker {
             break
         }
         let currentTool = context.isBurner ? nil : catalog.tool(for: request.capability)
-        if case .refused(let error, _) = authorization {
+        if case .refused(let error, _, _) = authorization {
             return .failure(callId: request.callId, error: currentTool == nil ? .unavailable : error)
         }
         let executionStart = ProcessInfo.processInfo.systemUptime
@@ -104,6 +107,7 @@ public final class BrowserToolInvoker {
         }
         switch result {
         case .success(let value):
+            trace.resultCount = tool.resultCount(of: value)
             return .success(callId: request.callId, value: value)
         case .failure(let error):
             return .failure(callId: request.callId, error: Self.clientToolError(error))
@@ -116,42 +120,71 @@ public final class BrowserToolInvoker {
     private func requestAccess(_ request: ExecuteClientToolRequest,
                                context: BrowserToolCallContext,
                                permissionPrompter: (any ClientToolPermissionPrompting)?) async -> ExecuteClientToolResponse {
-        guard !context.isBurner, catalog.offersRequestAccess else {
+        guard !context.isBurner else {
+            return .failure(callId: request.callId, error: .unavailable)
+        }
+        guard catalog.offersRequestAccess else {
+            instrumentation?.accessRequestDidFinish(BrowserToolAccessRequestOutcome(decision: .unavailable))
             return .failure(callId: request.callId, error: .unavailable)
         }
         guard let chatID = request.chatId, let requested = Self.requestedCapabilities(request.input) else {
+            instrumentation?.accessRequestDidFinish(BrowserToolAccessRequestOutcome(decision: .invalid))
             return .failure(callId: request.callId, error: .invalidArguments)
         }
         var access: [String: BrowserToolAccessLevel] = [:]
+        var results: [String: BrowserToolAccessRequestOutcome.ToolResult] = [:]
         var toAsk: [String] = []
         for name in requested {
             guard let tool = catalog.tool(named: name), !tool.asksEveryTime else {
                 access[name] = .notGranted
+                results[name] = .unavailable
                 continue
             }
             if let level = clientToolPermissions.accessLevel(for: tool, chatID: chatID) {
                 access[name] = level
+                results[name] = level == .never ? .never : .alreadyAllowed
             } else {
                 toAsk.append(name)
             }
         }
-        if !toAsk.isEmpty {
-            let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: requestAccessTool, targetsOtherTab: false, target: nil,
-                                                                      chatID: chatID, accessToolNames: toAsk, prompter: permissionPrompter)
-            switch authorization {
-            case .refused(let error, _):
-                return .failure(callId: request.callId, error: error)
-            case .granted(_, let performExecution):
-                // Settles the granted entry; there is nothing to run.
-                guard await performExecution({ .success(.null) }) != nil else {
-                    return .failure(callId: request.callId, error: .cancelled)
-                }
+        func report(_ decision: BrowserToolAccessRequestOutcome.Decision) {
+            instrumentation?.accessRequestDidFinish(BrowserToolAccessRequestOutcome(
+                decision: decision, requested: requested.count, asked: toAsk.count,
+                removed: toAsk.count(where: { results[$0] == .removed }),
+                results: requested.compactMap { name in results[name].map { (tool: name, result: $0) } }))
+        }
+        guard !toAsk.isEmpty else {
+            report(.noPrompt)
+            return .success(callId: request.callId, value: ["access": .object(access.mapValues { .string($0.rawValue) })])
+        }
+        let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: requestAccessTool, targetsOtherTab: false, target: nil,
+                                                                  chatID: chatID, accessToolNames: toAsk, prompter: permissionPrompter)
+        switch authorization {
+        case .refused(let error, _, let answer):
+            toAsk.forEach { results[$0] = .denied }
+            let decision: BrowserToolAccessRequestOutcome.Decision = switch answer {
+            case .timeout: .timeout
+            case .dismiss: .dismiss
+            case .never: .dontAllow
+            case .withdrawn, .allowOnce, .allowForChat, .always, nil: .withdrawn
             }
-            for name in toAsk {
-                let tool = catalog.tool(named: name)
-                access[name] = tool.flatMap { clientToolPermissions.accessLevel(for: $0, chatID: chatID) } == .chat ? .chat : .notGranted
+            report(decision)
+            return .failure(callId: request.callId, error: error)
+        case .granted(_, let performExecution):
+            // Settles the granted entry; there is nothing to run.
+            guard await performExecution({ .success(.null) }) != nil else {
+                toAsk.forEach { results[$0] = .denied }
+                report(.withdrawn)
+                return .failure(callId: request.callId, error: .cancelled)
             }
         }
+        for name in toAsk {
+            let tool = catalog.tool(named: name)
+            let granted = tool.flatMap { clientToolPermissions.accessLevel(for: $0, chatID: chatID) } == .chat
+            access[name] = granted ? .chat : .notGranted
+            results[name] = granted ? .granted : .removed
+        }
+        report(.allow)
         return .success(callId: request.callId, value: ["access": .object(access.mapValues { .string($0.rawValue) })])
     }
 

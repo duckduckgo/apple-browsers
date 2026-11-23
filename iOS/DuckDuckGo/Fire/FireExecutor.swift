@@ -70,6 +70,8 @@ struct FireRequest {
         // Note: this case is not currently invoked in production code paths.
         case normalMode
         case all
+        /// Closes the chat tabs and deletes every saved Duck.ai chat of one browsing mode. Clears no website data.
+        case allChats(BrowsingMode)
     }
     
     enum Source: String {
@@ -408,8 +410,8 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func browserToolsTarget(for scope: FireRequest.Scope) -> AIChatBrowserToolsClearingTarget? {
         switch scope {
-        case .all, .normalMode: return .all
-        case .fireMode: return nil
+        case .all, .normalMode, .allChats(.normal): return .all
+        case .fireMode, .allChats(.fire): return nil
         case .tab(let viewModel): return viewModel.tab.fireTab ? nil : .owner(tabID: viewModel.tab.uid)
         }
     }
@@ -503,6 +505,8 @@ class FireExecutor: FireExecuting {
             if !tabManager.isCurrentTab(viewModel.tab) {
                 tabManager.prepareTab(viewModel.tab)
             }
+        case .allChats:
+            break
         }
     }
     
@@ -550,6 +554,8 @@ class FireExecutor: FireExecuting {
             dataClearingWideEventService?.start(.clearFaviconCache)
             let faviconResult = favicons.removeTabFavicons(forDomains: domains)
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
+        case .allChats:
+            break
         }
     }
 
@@ -584,15 +590,17 @@ class FireExecutor: FireExecuting {
             }
         }
         let duration = pixelsReporter.duration(of: measurement)
-        pixelsReporter.fireDataClearingCompletionPixel(dataClearingCompletionPixel(for: scope,
-                                                                                  domains: domainResult.map { (try? $0.get()) ?? [] },
-                                                                                  duration: duration))
+        if let pixel = dataClearingCompletionPixel(for: scope,
+                                                   domains: domainResult.map { (try? $0.get()) ?? [] },
+                                                   duration: duration) {
+            pixelsReporter.fireDataClearingCompletionPixel(pixel)
+        }
     }
 
     @MainActor
     private func dataClearingCompletionPixel(for scope: FireRequest.Scope,
                                              domains: [String]?,
-                                             duration: TimeInterval) -> DataClearingCompletionPixels {
+                                             duration: TimeInterval) -> DataClearingCompletionPixels? {
         switch scope {
         case .tab(let viewModel):
             return .singleTabDataCleared(duration: duration,
@@ -608,6 +616,8 @@ class FireExecutor: FireExecuting {
         case .all:
             return .allDataCleared(duration: duration,
                                    tabCount: self.tabManager.allTabsModel.count)
+        case .allChats:
+            return nil
         }
     }
     
@@ -615,17 +625,20 @@ class FireExecutor: FireExecuting {
     
     /// For auto-clear: User configures what to clear via the settings UI
     /// For manual fire: AI chats clear only if autoClearAIChatHistory setting is enabled
-    /// For single chat burning: The user setting autoClearAIChatHistory should be ignored
+    /// For chat burning (one chat or all chats): The user setting autoClearAIChatHistory should be ignored
     private func shouldBurnAIHistory(_ request: FireRequest) -> Bool {
         let chosenThroughAutoClearUI = request.trigger != .manualFire
             && request.trigger != .fireModeAutoClear
 
-        var singleChatBurn: Bool = false
-        if case .tab = request.scope { singleChatBurn = true }
+        let chatBurn: Bool
+        switch request.scope {
+        case .tab, .allChats: chatBurn = true
+        case .all, .fireMode, .normalMode: chatBurn = false
+        }
 
         let shouldAllowAIChatsBurn = chosenThroughAutoClearUI
         || appSettings.autoClearAIChatHistory
-        || singleChatBurn
+        || chatBurn
 
         return request.options.contains(.aiChats) && shouldAllowAIChatsBurn
     }
@@ -647,6 +660,10 @@ class FireExecutor: FireExecuting {
             result = await burnNormalModeAIHistory(trigger: request.trigger, applicationState: applicationState, browserToolsToken: browserToolsToken)
         case .all:
             result = await burnAllAIHistory(trigger: request.trigger, options: request.options, applicationState: applicationState, browserToolsToken: browserToolsToken)
+        case .allChats(.normal):
+            result = await burnNormalModeAIHistory(trigger: request.trigger, applicationState: applicationState, browserToolsToken: browserToolsToken)
+        case .allChats(.fire):
+            result = await burnFireModeAIHistory(trigger: request.trigger, applicationState: applicationState)
         }
         dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }

@@ -928,7 +928,7 @@ final class DataClearingWideEventDataTests: XCTestCase {
         #elseif os(macOS)
         XCTAssertEqual(DataClearingWideEventData.metadata.type, "macos-data-clearing")
         #endif
-        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.6")
+        XCTAssertEqual(DataClearingWideEventData.metadata.version, "1.1.7")
     }
 
     func testClearingTimeout_is15Minutes() {

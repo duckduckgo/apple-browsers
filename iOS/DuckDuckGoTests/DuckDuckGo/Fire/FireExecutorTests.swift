@@ -1698,6 +1698,35 @@ final class FireExecutorTests: XCTestCase {
 
         XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false, "Normal-mode burn must route through normal native storage")
     }
+
+    // MARK: - All Chats Scope Tests
+
+    func testWhenBurningAllNormalChatsThenNormalChatsAreClearedRegardlessOfUserSetting() async {
+        mockAppSettings.autoClearAIChatHistory = false
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: [.tabs, .aiChats], scope: .allChats(.normal)), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, false)
+        XCTAssertFalse(mockAIChatSyncCleaner.recordLocalClearDates.isEmpty, "Deleting normal chats should record the clear for sync")
+        XCTAssertFalse(mockDelegate.willStartBurningDataCalled, "Deleting chats clears no website data")
+        XCTAssertFalse(mockTabManager.removeAllCalled)
+    }
+
+    func testWhenBurningAllFireChatsThenOnlyFireModeChatsAreCleared() async {
+        mockAppSettings.autoClearAIChatHistory = false
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: [.tabs, .aiChats], scope: .allChats(.fire)), applicationState: .unknown)
+
+        XCTAssertEqual(mockHistoryCleaner.cleanAIChatHistoryCallCount, 1)
+        XCTAssertEqual(mockHistoryCleaner.lastIsFireMode, true)
+        XCTAssertTrue(mockAIChatSyncCleaner.recordLocalClearDates.isEmpty, "Fire-mode chats never sync")
+        XCTAssertFalse(mockDelegate.willStartBurningDataCalled, "Deleting chats clears no website data")
+    }
 }
 
 @MainActor

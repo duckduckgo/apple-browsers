@@ -4,7 +4,7 @@
         "owners": ["hanyutang-sandra"],
         "meta": {
             "type": "ios-data-clearing",
-            "version": "1.6"
+            "version": "1.7"
         },
         "feature": {
             "name": "data-clearing",
@@ -29,7 +29,7 @@
                     "scope": {
                         "type": "string",
                         "description": "Scope of the clearing action.",
-                        "enum": ["tab", "all", "fireMode", "normalMode"]
+                        "enum": ["tab", "all", "fireMode", "normalMode", "allChats"]
                     },
                     "source": {
                         "type": "string",

@@ -11,7 +11,7 @@
                 "key": "scope",
                 "description": "Scope of the accepted manual burn",
                 "type": "string",
-                "enum": ["tab", "fire_mode", "normal_mode", "all"]
+                "enum": ["tab", "fire_mode", "normal_mode", "all", "all_chats"]
             },
             {
                 "key": "source",
@@ -86,7 +86,7 @@
                 "key": "scope",
                 "description": "What the dropped burn would have cleared",
                 "type": "string",
-                "enum": ["tab", "fire_mode", "normal_mode", "all"]
+                "enum": ["tab", "fire_mode", "normal_mode", "all", "all_chats"]
             },
             {
                 "key": "elapsed",

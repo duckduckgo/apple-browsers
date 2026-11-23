@@ -56,6 +56,8 @@ extension FireExecutorWorker {
             } else {
                 await burnNormalModeData()
             }
+        case .allChats:
+            break
         }
     }
 

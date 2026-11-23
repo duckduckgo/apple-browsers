@@ -9597,11 +9597,15 @@ extension MainViewController {
             return tabManager.tabsModel(for: .normal).count
         case .all:
             return tabManager.allTabsModel.count
+        case .allChats:
+            return 0
         }
     }
     
     @MainActor
     private func presentPostBurnMessage(tabsCount: Int, request: FireRequest) {
+        // The message counts deleted tabs, which doesn't describe deleting chats.
+        if case .allChats = request.scope { return }
         let message = UserText.scopedFireConfirmationTabsDeletedToast(tabCount: tabsCount)
         // Escape-hatch-hide burns restore the keyboard, which would cover a bottom toast — show it at the top.
         let location: ActionMessageView.PresentationLocation = isEscapeHatchBurn(request)
@@ -9785,6 +9789,8 @@ extension MainViewController: FireExecutorDelegate {
             PixelKit.fire(Pixel.Event.fireModeBurnExecuted, frequency: .dailyAndCount, options: .parameters(params))
         case .normalMode:
             PixelKit.fire(Pixel.Event.normalModeBurnExecuted, frequency: .dailyAndCount, options: .parameters(params))
+        case .allChats:
+            break
         }
     }
     
@@ -9805,7 +9811,7 @@ extension MainViewController: FireExecutorDelegate {
                 tabs = tabManager.tabsModel(for: .fire).tabs
             case .normalMode:
                 tabs = tabManager.tabsModel(for: .normal).tabs
-            case .tab:
+            case .tab, .allChats:
                 tabs = []
             }
             for tab in tabs {
@@ -9825,6 +9831,8 @@ extension MainViewController: FireExecutorDelegate {
             refreshUIAfterClear()
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
+            return
+        case .allChats:
             return
         }
     }
@@ -10749,6 +10757,8 @@ extension MainViewController {
             return tabManager.tabsModel(for: .normal).tabs
         case .tab(let viewModel):
             return [viewModel.tab]
+        case .allChats:
+            return []
         }
     }
 

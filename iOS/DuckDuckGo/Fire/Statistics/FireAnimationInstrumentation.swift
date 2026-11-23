@@ -52,6 +52,7 @@ final class DefaultFireAnimationInstrumentation: FireAnimationInstrumentation {
         case .tab: scope = "tab"
         case .fireMode: scope = "fire_mode"
         case .normalMode: scope = "normal_mode"
+        case .allChats: scope = "all_chats"
         }
     }
 

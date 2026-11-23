@@ -146,6 +146,7 @@ private extension FireRequest.Scope {
         case .fireMode: return "fire_mode"
         case .normalMode: return "normal_mode"
         case .all: return "all"
+        case .allChats: return "all_chats"
         }
     }
 }

@@ -229,6 +229,8 @@ private extension FireRequest {
             return .fireMode
         case .normalMode:
             return .normalMode
+        case .allChats:
+            return .allChats
         }
     }
 

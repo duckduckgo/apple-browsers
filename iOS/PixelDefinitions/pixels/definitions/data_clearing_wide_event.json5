@@ -61,7 +61,7 @@
                 "key": "feature.data.ext.scope",
                 "type": "string",
                 "description": "Scope of the clearing action",
-                "enum": ["tab", "fireMode", "normalMode", "all"]
+                "enum": ["tab", "fireMode", "normalMode", "all", "allChats"]
             },
             {
                 "key": "feature.data.ext.source",

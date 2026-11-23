@@ -66,7 +66,6 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     struct DeleteAllChatsOption {
         let chatCount: Int
         let isChatSyncEnabled: Bool
-        let onDelete: () -> Void
     }
 
     // MARK: - Constants
@@ -247,7 +246,11 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         case .contextualChat(let onDelete):
             // Single "Delete Chat" button calling contextual onDelete, or the delete-all variant
             if let deleteAllChats {
-                return makeChatButtons(deleteAllChats: deleteAllChats, onDeleteThisChat: onDelete)
+                return makeChatButtons(deleteAllChats: deleteAllChats,
+                                       browsingMode: browsingMode,
+                                       source: source,
+                                       onDeleteThisChat: onDelete,
+                                       onConfirm: onConfirm)
             }
             return [FireConfirmationButton(title: UserText.contextualChatDeleteConfirmationButton,
                                style: .primary,
@@ -296,7 +299,10 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         // AI tab + refinements: single "Delete This Chat" (tab-scoped burn), or the delete-all variant
         if isSingleChatConfirmation {
             return makeChatButtons(deleteAllChats: deleteAllChats,
-                                   onDeleteThisChat: { burnTab(tabViewModel: tabViewModel, source: source, onConfirm: onConfirm) })
+                                   browsingMode: browsingMode,
+                                   source: source,
+                                   onDeleteThisChat: { burnTab(tabViewModel: tabViewModel, source: source, onConfirm: onConfirm) },
+                                   onConfirm: onConfirm)
         }
 
         let deleteAllAction = { burnAll(browsingMode: browsingMode, source: source, onConfirm: onConfirm) }
@@ -345,6 +351,11 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         onConfirm(request)
     }
 
+    private static func burnAllChats(browsingMode: BrowsingMode, source: FireRequest.Source, onConfirm: (FireRequest) -> Void) {
+        let request = FireRequest(options: [.tabs, .aiChats], trigger: .manualFire, scope: .allChats(browsingMode), source: source)
+        onConfirm(request)
+    }
+
     private static func performCustomRequest(source: FireRequest.Source, onConfirm: (FireRequest) -> Void) {
         let request = FireRequest(options: .all, trigger: .manualFire, scope: .all, source: source)
         onConfirm(request)
@@ -362,7 +373,10 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     }
 
     private static func makeChatButtons(deleteAllChats: DeleteAllChatsOption?,
-                                        onDeleteThisChat: @escaping () -> Void) -> [FireConfirmationButton] {
+                                        browsingMode: BrowsingMode,
+                                        source: FireRequest.Source,
+                                        onDeleteThisChat: @escaping () -> Void,
+                                        onConfirm: @escaping (FireRequest) -> Void) -> [FireConfirmationButton] {
         let thisChatButton = FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteThisChatButton,
                                                    style: .primary,
                                                    action: onDeleteThisChat,
@@ -372,7 +386,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
         let isOnlyChat = deleteAllChats.chatCount == 1
         let allChatsButton = FireConfirmationButton(title: UserText.scopedFireConfirmationDeleteAllChatsButton,
                                                    style: isOnlyChat ? .primary : .secondary,
-                                                   action: deleteAllChats.onDelete,
+                                                   action: { burnAllChats(browsingMode: browsingMode, source: source, onConfirm: onConfirm) },
                                                    accessibilityIdentifier: AccessibilityIdentifiers.deleteAllChats)
         return isOnlyChat ? [allChatsButton] : [thisChatButton, allChatsButton]
     }

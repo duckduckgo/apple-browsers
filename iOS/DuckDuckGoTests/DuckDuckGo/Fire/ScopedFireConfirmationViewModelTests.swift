@@ -841,24 +841,27 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         assertSameConfirmation(sut, existing)
     }
 
-    func testDuckAITabDeleteAllChatsCallsOnlyDeleteAllChatsAction() throws {
+    func testDuckAITabDeleteAllChatsRequestsAllChatsOfTheBrowsingMode() throws {
         mockDataClearingCapability.isFireButtonRefinementsEnabled = true
-        var didDeleteAll = false
-        let sut = makeSUT(tabViewModel: createAITabViewModel(),
-                          deleteAllChats: deleteAllChats(count: 1, onDelete: { didDeleteAll = true }),
-                          onConfirm: { _ in XCTFail("Unexpected tab deletion") })
-        try XCTUnwrap(sut.buttons.first).action()
-        XCTAssertTrue(didDeleteAll)
+        for mode in [BrowsingMode.normal, .fire] {
+            var request: FireRequest?
+            let sut = makeSUT(tabViewModel: createAITabViewModel(),
+                              browsingMode: mode,
+                              deleteAllChats: deleteAllChats(count: 1),
+                              onConfirm: { request = $0 })
+            try XCTUnwrap(sut.buttons.first).action()
+            assertAllChatsRequest(request, mode: mode)
+        }
     }
 
     func testContextualSliderDeletesAllAndDeleteThisChatOnlyDeletesCurrentChat() throws {
         mockFeatureFlagger.enabledFeatureFlags = [.slideToDelete]
         var deleteThisChatCalls = 0
-        var deleteAllChatsCalls = 0
+        var requests: [FireRequest] = []
         let sut = makeSUT(tabViewModel: nil,
                           fireContext: .contextualChat(onDelete: { deleteThisChatCalls += 1 }),
-                          deleteAllChats: deleteAllChats(count: 2, onDelete: { deleteAllChatsCalls += 1 }),
-                          onConfirm: { _ in XCTFail("Unexpected tab deletion") })
+                          deleteAllChats: deleteAllChats(count: 2),
+                          onConfirm: { requests.append($0) })
 
         assertChatButtons(sut, [
             (UserText.scopedFireConfirmationDeleteThisChatButton, .primary, "Fire.Confirmation.Button.ThisTab"),
@@ -866,10 +869,11 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         ])
         try XCTUnwrap(sut.buttons.first).action()
         XCTAssertEqual(deleteThisChatCalls, 1)
-        XCTAssertEqual(deleteAllChatsCalls, 0)
+        XCTAssertTrue(requests.isEmpty)
         try XCTUnwrap(sut.buttons.last).action()
         XCTAssertEqual(deleteThisChatCalls, 1)
-        XCTAssertEqual(deleteAllChatsCalls, 1)
+        XCTAssertEqual(requests.count, 1)
+        assertAllChatsRequest(requests.first, mode: .normal)
     }
 
     func testDuckAITabSliderKeepsDeleteThisChatAsAButton() throws {
@@ -878,7 +882,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         let tab = createAITabViewModel()
         var request: FireRequest?
         let sut = makeSUT(tabViewModel: tab,
-                          deleteAllChats: deleteAllChats(count: 2, onDelete: { XCTFail("Unexpected delete-all action") }),
+                          deleteAllChats: deleteAllChats(count: 2),
                           onConfirm: { request = $0 })
 
         assertChatButtons(sut, [
@@ -924,10 +928,17 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func deleteAllChats(count: Int,
-                                isChatSyncEnabled: Bool = false,
-                                onDelete: @escaping () -> Void = {}) -> ScopedFireConfirmationViewModel.DeleteAllChatsOption {
-        ScopedFireConfirmationViewModel.DeleteAllChatsOption(chatCount: count, isChatSyncEnabled: isChatSyncEnabled, onDelete: onDelete)
+    private func deleteAllChats(count: Int, isChatSyncEnabled: Bool = false) -> ScopedFireConfirmationViewModel.DeleteAllChatsOption {
+        ScopedFireConfirmationViewModel.DeleteAllChatsOption(chatCount: count, isChatSyncEnabled: isChatSyncEnabled)
+    }
+
+    private func assertAllChatsRequest(_ request: FireRequest?, mode: BrowsingMode, file: StaticString = #filePath, line: UInt = #line) {
+        guard let request, case .allChats(let requestedMode) = request.scope else {
+            return XCTFail("Expected an all-chats request", file: file, line: line)
+        }
+        XCTAssertEqual(requestedMode, mode, file: file, line: line)
+        XCTAssertEqual(request.options, [.tabs, .aiChats], file: file, line: line)
+        XCTAssertEqual(request.trigger, .manualFire, file: file, line: line)
     }
 
     private func assertSameConfirmation(_ sut: ScopedFireConfirmationViewModel,

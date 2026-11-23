@@ -38,7 +38,7 @@ public class DataClearingWideEventData: WideEventData {
         featureName: "data-clearing",
         mobileMetaType: "ios-data-clearing",
         desktopMetaType: "macos-data-clearing",
-        version: "1.1.6"
+        version: "1.1.7"
     )
 
     public static let clearingTimeout: TimeInterval = .minutes(15)
@@ -309,6 +309,7 @@ extension DataClearingWideEventData {
         case all
         case fireMode
         case normalMode
+        case allChats
     }
 
     /// Entry point that triggered the data clearing flow (iOS only).

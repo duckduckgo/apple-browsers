@@ -149,9 +149,8 @@ struct AIChatDebugView: View {
     private func showLocalModelAccessPrompt(_ localModel: AIChatLocalModelDependencies) {
         Task { @MainActor in
             let window = UIApplication.shared.firstKeyWindow
-            let modelName = localModel.service.model.name
-            _ = try? await localModel.service.requestAccess { _ in
-                await localModel.accessPrompt.ask(in: window, modelName: modelName)
+            _ = try? await localModel.service.requestAccess { request in
+                await localModel.accessPrompt.ask(in: window, request: request)
             }
         }
     }

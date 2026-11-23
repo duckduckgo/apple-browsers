@@ -174,10 +174,18 @@ struct Launching: LaunchingHandling {
             }
         )
 
+        // The flag also gates Apple Intelligence, so remote config could turn it on for everyone. The
+        // downloadable model stays internal either way. Decided at launch: a change in internal status
+        // applies after a relaunch.
+        let downloadableModel = featureFlagger.internalUserDecider.isInternalUser
+            ? DownloadableLlamaModel(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
+            : nil
         let localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
-                                                        storage: AIChatSettings(featureFlagger: featureFlagger))
+                                                        storage: AIChatSettings(featureFlagger: featureFlagger),
+                                                        downloadableModel: downloadableModel?.model)
         let aiChatLocalModel = AIChatLocalModelDependencies(service: localModelService,
-                                                            accessPrompt: LocalModelAccessPrompt())
+                                                            accessPrompt: LocalModelAccessPrompt(),
+                                                            downloadableModelLifecycle: downloadableModel?.lifecycle)
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,

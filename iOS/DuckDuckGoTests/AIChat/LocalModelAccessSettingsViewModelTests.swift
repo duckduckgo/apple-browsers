@@ -43,6 +43,16 @@ final class LocalModelAccessSettingsViewModelTests {
         LocalModelAccessSettingsViewModel(service: service)
     }
 
+    private let llama = UnloadableStubEngine()
+    private let installer = RecordingInstaller()
+
+    private lazy var serviceWithDownloadableModel = AIChatLocalModelService(isFeatureFlagOn: { true },
+                                                                           featureFlagUpdates: flagUpdates.eraseToAnyPublisher(),
+                                                                           storage: storage,
+                                                                           engine: engine,
+                                                                           downloadableModel: AIChatDownloadableLocalModel(engine: llama, installer: installer),
+                                                                           notificationCenter: notificationCenter)
+
     @available(iOS 16, macOS 13, *)
     @Test("The section shows only with the flag on, and follows the flag while Settings is open", .timeLimit(.minutes(1)))
     func flagDecidesVisibility() async {
@@ -130,12 +140,66 @@ final class LocalModelAccessSettingsViewModelTests {
         #expect(!viewModel.isConfirmingTurnOn)
     }
 
+    // MARK: - Downloadable model
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without Apple Intelligence, the section shows the downloadable model", .timeLimit(.minutes(1)))
+    func showsTheDownloadableModelWithoutAppleIntelligence() {
+        engine.availability = .deviceNotEligible
+
+        let viewModel = LocalModelAccessSettingsViewModel(service: serviceWithDownloadableModel)
+
+        #expect(viewModel.isAvailable)
+        #expect(viewModel.downloadableModelState == .notInstalled)
+        #expect(viewModel.modelName == llama.model.name)
+        #expect(viewModel.downloadableModelBytes == installer.spec.bytes)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Where Apple Intelligence is ready, the section shows its switch", .timeLimit(.minutes(1)))
+    func showsTheSwitchWithAppleIntelligence() {
+        engine.availability = .available
+
+        let viewModel = LocalModelAccessSettingsViewModel(service: serviceWithDownloadableModel)
+
+        #expect(viewModel.isAvailable)
+        #expect(viewModel.downloadableModelState == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Install, Cancel and Uninstall reach the installer, and Uninstall frees the model first", .timeLimit(.minutes(1)))
+    func rowActionsReachTheInstaller() {
+        engine.availability = .deviceNotEligible
+        let viewModel = LocalModelAccessSettingsViewModel(service: serviceWithDownloadableModel)
+
+        viewModel.installDownloadableModel()
+        viewModel.cancelDownloadableModelInstall()
+        viewModel.uninstallDownloadableModel()
+
+        #expect(installer.userCalls == ["install", "cancel", "uninstall"])
+        #expect(llama.unloadCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Download progress reaches the row", .timeLimit(.minutes(1)))
+    func progressReachesTheRow() async {
+        engine.availability = .deviceNotEligible
+        let viewModel = LocalModelAccessSettingsViewModel(service: serviceWithDownloadableModel)
+
+        installer.state = .downloading(receivedBytes: 500, totalBytes: 1_000)
+
+        await waitUntil { viewModel.downloadableModelState == .downloading(receivedBytes: 500, totalBytes: 1_000) }
+        #expect(viewModel.downloadableModelState == .downloading(receivedBytes: 500, totalBytes: 1_000))
+    }
+
+    // MARK: - Prompt
+
     @available(iOS 16, macOS 13, *)
     @Test("The prompt answers No Thanks when there's no window to show it in", .timeLimit(.minutes(1)))
     func promptWithoutWindowDeclines() async {
         let prompt = LocalModelAccessPrompt()
 
-        let answer = await prompt.ask(in: nil, modelName: "Apple Intelligence")
+        let answer = await prompt.ask(in: nil, request: .connect(AIChatLocalModelInfo(id: "apple", name: "Apple Intelligence")))
 
         #expect(answer == .declined)
     }
@@ -162,4 +226,51 @@ private final class InMemoryPageSummariesModelStore: AIChatPageSummariesModelSto
     var pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> {
         subject.eraseToAnyPublisher()
     }
+}
+
+private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalModelUnloading {
+    let model = AIChatLocalModelSpec.granite.info
+    var availability: AIChatLocalModelAvailability = .available
+    private(set) var unloadCount = 0
+
+    func run(_ request: AIChatLocalRunRequest) -> AsyncThrowingStream<AIChatLocalModelEngineEvent, Error> {
+        AsyncThrowingStream { $0.finish() }
+    }
+
+    func unloadModel() {
+        unloadCount += 1
+    }
+}
+
+private final class RecordingInstaller: AIChatLocalModelInstalling {
+    let spec = AIChatLocalModelSpec.granite
+    private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
+    private(set) var userCalls: [String] = []
+
+    var state: AIChatLocalModelInstallState {
+        get { subject.value }
+        set { subject.send(newValue) }
+    }
+
+    var statePublisher: AnyPublisher<AIChatLocalModelInstallState, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func install() {
+        userCalls.append("install")
+        state = .downloading(receivedBytes: 0, totalBytes: spec.bytes)
+    }
+
+    func cancel() {
+        userCalls.append("cancel")
+        state = .notInstalled
+    }
+
+    func uninstall() {
+        userCalls.append("uninstall")
+        state = .notInstalled
+    }
+
+    func pause() {}
+    func resumeIfNeeded() {}
 }

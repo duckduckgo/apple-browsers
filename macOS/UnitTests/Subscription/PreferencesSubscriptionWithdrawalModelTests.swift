@@ -168,7 +168,7 @@ final class PreferencesSubscriptionWithdrawalModelTests {
         let features = listFormatter.string(from: [UserText.vpnServiceTitle,
                                                    UserText.personalInformationRemovalServiceTitle,
                                                    UserText.identityTheftRestorationServiceTitle,
-                                                   UserText.paidAIChatTitle])!
+                                                   UserText.withdrawDialogFeatureAdvancedDuckAI])!
 
         #expect(model.confirmationMessage(for: offer) == UserText.withdrawDialogMessage(tierName: "Plus", refundAmount: "£9.99")
                 + "\n\n" + UserText.withdrawDialogFeaturesMessage(features: features))

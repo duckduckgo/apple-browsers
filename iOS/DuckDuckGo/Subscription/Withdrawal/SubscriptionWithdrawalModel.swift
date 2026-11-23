@@ -109,7 +109,7 @@ final class SubscriptionWithdrawalModel: ObservableObject {
                 case .vpn: return UserText.settingsPProVPNTitle
                 case .pir: return UserText.settingsPProDBPTitle
                 case .idtr: return UserText.settingsPProITRTitle
-                case .duckAI: return UserText.settingsSubscriptionAiChatTitle
+                case .duckAI: return UserText.subscriptionWithdrawConfirmFeatureAdvancedDuckAI
                 }
             }
         guard !featureNames.isEmpty else { return message }

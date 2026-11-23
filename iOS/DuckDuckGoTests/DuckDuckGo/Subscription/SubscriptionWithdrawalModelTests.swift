@@ -144,7 +144,7 @@ struct SubscriptionWithdrawalModelTests {
         let features = listFormatter.string(from: [UserText.settingsPProVPNTitle,
                                                    UserText.settingsPProDBPTitle,
                                                    UserText.settingsPProITRTitle,
-                                                   UserText.settingsSubscriptionAiChatTitle])!
+                                                   UserText.subscriptionWithdrawConfirmFeatureAdvancedDuckAI])!
 
         #expect(model.confirmationMessage(for: offer) == UserText.subscriptionWithdrawConfirmMessage(tierName: "Plus", refundAmount: "£9.99")
                 + "\n\n" + UserText.subscriptionWithdrawConfirmFeaturesMessage(features: features))

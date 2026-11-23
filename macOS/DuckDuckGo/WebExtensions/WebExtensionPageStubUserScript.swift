@@ -67,6 +67,7 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
     let messageNames: [String] = [WebExtensionAPICompatibilityScript.messageHandlerName,
                                   WebExtensionAPIStubScript.downloadMessageHandlerName,
                                   WebExtensionAPIStubScript.idleMessageHandlerName,
+                                  WebExtensionAPIStubScript.clipboardReadMessageHandlerName,
                                   WebExtensionAPIStubScript.privacyMessageHandlerName,
                                   WebExtensionAPIStubScript.permissionsMessageHandlerName]
 
@@ -87,6 +88,8 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
             manager.handleDownloadMessage(message, replyHandler: replyHandler)
         } else if message.name == WebExtensionAPIStubScript.idleMessageHandlerName {
             manager.handleIdleMessage(message, replyHandler: replyHandler)
+        } else if message.name == WebExtensionAPIStubScript.clipboardReadMessageHandlerName {
+            manager.handleClipboardReadMessage(message, replyHandler: replyHandler)
         } else if message.name == WebExtensionAPIStubScript.privacyMessageHandlerName {
             manager.handlePrivacyMessage(message, replyHandler: replyHandler)
         } else if message.name == WebExtensionAPIStubScript.permissionsMessageHandlerName {

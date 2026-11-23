@@ -176,7 +176,7 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             fireCPMPixel(name: "web_extension_cpm_breakage", parameters: parameters)
         case .cpmMessagingBreakagePersistent:
             fireCPMPixel(name: "web_extension_cpm_breakage_persistent", parameters: [:])
-        case .enabled, .disabled, .remotelyDisabled:
+        case .enabled, .disabled, .remotelyDisabled, .killSwitchDisabled:
             // Store pixels are macOS-only, but iOS debug-menu toggles still reach here, so drop rather than assert.
             break
         case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified, .updateApplied, .updateInstallFailed:

@@ -21,6 +21,7 @@ import Foundation
 /// Features whose `rawValue` should be the key to access their corresponding `PrivacyConfigurationData.PrivacyFeature` object
 public enum PrivacyFeature: String {
     case contentBlocking
+    case trackerProtection
     case duckPlayer
     case fingerprintingTemporaryStorage
     case fingerprintingBattery
@@ -824,7 +825,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionOnboardingPaidSubsOct2026
     case subscriptionOnboardingFreeTrialsNov2026
     case subscriptionOnboardingPaidSubsNov2026
-    case onboardingSubscriptionUpsellExperiment
 
     /// Gates the server-rendered first paywall.
     case performanceOptimizedPaywalls
@@ -921,6 +921,15 @@ public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
     case tdsNextExperiment028
     case tdsNextExperiment029
     case tdsNextExperiment030
+}
+
+/// Subfeatures of the `trackerProtection` feature, which configures the content-scope-scripts tracker protection (surrogates).
+/// Named with `Config` to avoid clashing with `TrackerProtectionSubfeature`, the content-scope-scripts message handler.
+public enum TrackerProtectionConfigSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .trackerProtection }
+
+    /// Serve surrogates from the embedded web extension instead of content-scope-scripts.
+    case appleSurrogateRedirection
 }
 
 public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
@@ -1043,9 +1052,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
 
-    /// Kill switch for the "Update available" promo.
-    case updateAvailablePromo
-
     /// Kill switch for the VPN toolbar upsell button and dot badge promos.
     case vpnUpsellPromo
 
@@ -1054,12 +1060,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the "Sync your autofill data" promo.
     case syncSetupAutofillPromo
-
-    /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
-    case bookmarksBarSyncPromo
-
-    /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
-    case bookmarkAddedSyncPromo
 
     /// Kill switch for the default browser win-back modal.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true

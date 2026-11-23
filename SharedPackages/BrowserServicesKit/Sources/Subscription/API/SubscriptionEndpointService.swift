@@ -169,12 +169,24 @@ public protocol SubscriptionEndpointService {
 public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
 
     private let apiService: APIService
-    private let baseURL: URL
+    private let resolveBaseURL: () -> URL
+
+    private var baseURL: URL {
+        resolveBaseURL()
+    }
 
     public init(apiService: APIService,
                 baseURL: URL) {
+        self.init(apiService: apiService, resolveBaseURL: { baseURL })
+    }
+
+    /// - Parameters:
+    ///   - apiService: Performs the requests.
+    ///   - resolveBaseURL: Returns the base URL of the subscription API. Called for every request.
+    public init(apiService: APIService,
+                resolveBaseURL: @escaping () -> URL) {
         self.apiService = apiService
-        self.baseURL = baseURL
+        self.resolveBaseURL = resolveBaseURL
     }
 
     // MARK: - Subscription

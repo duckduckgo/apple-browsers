@@ -55,6 +55,29 @@ enum BrowserToolsPixel: PixelKit.Event {
     /// Event Trigger: A call to this tool succeeded. Fired daily. `tool` is a slug from `toolSlugs`.
     case usedTool(String)
 
+    /// Event Trigger: The user changed a tool's permission in Settings or in the tab bar panel, including a row reset.
+    case permissionChanged(tool: String, from: BrowserToolPermissionState, to: BrowserToolPermissionState, source: PermissionSource)
+
+    /// Event Trigger: The user reset every tool permission in Settings.
+    case permissionsReset
+
+    /// Event Trigger: Duck.ai reported that an answer finished in a chat with browser tools. One per row of `answerRows`.
+    case answerCompleted(AnswerRow, modelTier: String)
+
+    /// Event Trigger: The user rated such an answer with a thumb. One per row of `answerRows`.
+    case answerRated(AnswerRow, modelTier: String, rating: String)
+
+    /// `tool` is a slug, `any` (the answer used tools) or `none` (it used none, and has no `toolResult`).
+    struct AnswerRow: Equatable {
+        let tool: String
+        let toolResult: String?
+        let toolsInAnswer: String
+    }
+
+    enum PermissionSource: String {
+        case settings, panel
+    }
+
     /// Catalog names to pixel slugs. Any other name came from the page and is never sent.
     static let toolSlugs = [
         "listOpenTabs": "list_open_tabs",
@@ -83,33 +106,78 @@ enum BrowserToolsPixel: PixelKit.Event {
         case .enabled: "aichat_tools_enabled_macos"
         case .protocolError: "aichat_tools_protocol_error_macos"
         case .usedTool(let tool): "aichat_tools_used_\(tool)_macos"
+        case .permissionChanged: "aichat_tools_permission_changed_macos"
+        case .permissionsReset: "aichat_tools_permissions_reset_macos"
+        case .answerCompleted: "aichat_tools_answer_completed_macos"
+        case .answerRated: "aichat_tools_answer_rated_macos"
         }
     }
 
     var parameters: [String: String]? {
-        if case .promptAnswered(let tool, let answer, let number, let timeToAnswer) = self {
+        switch self {
+        case .call(let tool, let result, let permissionPath, let duration, let resultCount):
+            var parameters = ["tool": tool, "result": result?.rawValue ?? "success", "permission_path": permissionPath.rawValue]
+            parameters["duration"] = duration.map(Self.durationBucket)
+            parameters["result_count"] = resultCount.map(Self.resultCountBucket)
+            return parameters
+        case .promptAnswered(let tool, let answer, let number, let timeToAnswer):
             var parameters = ["tool": tool, "answer": answer.rawValue, "time_to_answer": Self.timeToAnswerBucket(timeToAnswer)]
             parameters["prompt_number_in_chat"] = number.map { $0 >= 4 ? "4_plus" : String($0) }
             return parameters
-        }
-        if case .accessRequested(let outcome) = self {
+        case .accessRequested(let outcome):
             var parameters = ["decision": outcome.decision.rawValue]
             parameters["requested"] = outcome.requested.map(String.init)
             parameters["asked"] = outcome.asked.map(String.init)
             parameters["removed"] = outcome.removed.map(String.init)
             return parameters
-        }
-        if case .accessResult(let tool, let access) = self {
+        case .accessResult(let tool, let access):
             return ["tool": tool, "access": access.rawValue]
-        }
-        if case .protocolError(let reason, let tool) = self {
+        case .protocolError(let reason, let tool):
             return ["reason": reason.rawValue, "tool": tool.flatMap { Self.toolSlugs[$0] } ?? "unknown"]
+        case .permissionChanged(let tool, let from, let to, let source):
+            return ["tool": tool, "from": from.rawValue, "to": to.rawValue, "source": source.rawValue]
+        case .answerCompleted(let row, let modelTier):
+            return row.parameters(modelTier: modelTier)
+        case .answerRated(let row, let modelTier, let rating):
+            return row.parameters(modelTier: modelTier).merging(["rating": rating]) { $1 }
+        case .used, .enabled, .usedTool, .permissionsReset:
+            return nil
         }
-        guard case .call(let tool, let result, let permissionPath, let duration, let resultCount) = self else { return nil }
-        var parameters = ["tool": tool, "result": result?.rawValue ?? "success", "permission_path": permissionPath.rawValue]
-        parameters["duration"] = duration.map(Self.durationBucket)
-        parameters["result_count"] = resultCount.map(Self.resultCountBucket)
-        return parameters
+    }
+
+    /// The pixels for a browser tools answer metric from Duck.ai. Unknown tools and results are dropped;
+    /// a rating other than `up` or `down` drops the metric.
+    static func answerPixels(for metric: AIChatMetric) -> [BrowserToolsPixel] {
+        let rows = answerRows(metric.browserTools ?? [])
+        let modelTier = (metric.modelTier ?? .unknown).rawValue
+        switch metric.metricName {
+        case .browserToolsAnswerCompleted:
+            return rows.map { .answerCompleted($0, modelTier: modelTier) }
+        case .browserToolsAnswerRated:
+            guard let rating = metric.rating, ["up", "down"].contains(rating) else { return [] }
+            return rows.map { .answerRated($0, modelTier: modelTier, rating: rating) }
+        default:
+            return []
+        }
+    }
+
+    /// Results from worst to best.
+    private static let answerResultRanks = ["error": 0, "not_allowed": 1, "success": 2]
+
+    /// One row per known tool, plus `any`, whose result is the best of them. An answer without known tools is one `none` row.
+    static func answerRows(_ tools: [AIChatBrowserToolAnswerTool]) -> [AnswerRow] {
+        var ranks: [String: Int] = [:]
+        for tool in tools {
+            guard let slug = toolSlugs[tool.name], let rank = answerResultRanks[tool.result] else { continue }
+            ranks[slug] = max(ranks[slug] ?? rank, rank)
+        }
+        let count = ranks.count < 4 ? String(ranks.count) : "4_plus"
+        let result = { (rank: Int) in answerResultRanks.first { $0.value == rank }?.key }
+        guard let best = ranks.values.max() else {
+            return [AnswerRow(tool: "none", toolResult: nil, toolsInAnswer: count)]
+        }
+        return ranks.sorted { $0.key < $1.key }.map { AnswerRow(tool: $0.key, toolResult: result($0.value), toolsInAnswer: count) }
+            + [AnswerRow(tool: "any", toolResult: result(best), toolsInAnswer: count)]
     }
 
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
@@ -140,6 +208,14 @@ enum BrowserToolsPixel: PixelKit.Event {
         case ...20: "6-20"
         default: "21_plus"
         }
+    }
+}
+
+private extension BrowserToolsPixel.AnswerRow {
+    func parameters(modelTier: String) -> [String: String] {
+        var parameters = ["tool": tool, "tools_in_answer": toolsInAnswer, "model_tier": modelTier]
+        parameters["tool_result"] = toolResult
+        return parameters
     }
 }
 

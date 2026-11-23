@@ -465,8 +465,10 @@ extension OnboardingIntroContentProvider {
         guard let reason = downloadReasonProvider() else { return defaultSetDefaultBrowserContent }
 
         let title = switch reason {
-        case .browserPrivately, .privateAIChat, .vpn:
+        case .browserPrivately, .privateAIChat:
             UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
+        case .vpn:
+            UserText.Onboarding.BrowsersComparison.titleVPNDownloadReasonExperiment
         case .noAI:
             UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
         case .blockAds:

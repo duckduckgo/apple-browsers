@@ -88,7 +88,7 @@ final class DockCustomizer: DockCustomization {
     }
 
     var supportsAddingToDock: Bool {
-        !applicationBuildType.isAppStoreBuild
+        false
     }
 
     private let applicationBuildType: ApplicationBuildType

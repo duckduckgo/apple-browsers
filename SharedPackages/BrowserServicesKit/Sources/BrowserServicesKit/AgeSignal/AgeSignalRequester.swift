@@ -55,15 +55,12 @@ public final class AgeSignalRequester {
     }
 
     public func requestAgeRange(isReinstall: Bool, in anchor: AgeRangeAnchor) async -> Bool {
-        do {
-            try await service.requestAgeRange(in: anchor)
-        } catch {
+        guard await request(in: anchor) else {
             // No marker is stored, so the next launch retries.
             return false
         }
 
-        try? storage.set(now(), for: \.lastRequestDate)
-        try? storage.set(isReinstall, for: \.handledReinstall)
+        markRequested(isReinstall: isReinstall)
         return true
     }
 
@@ -74,5 +71,22 @@ public final class AgeSignalRequester {
         }
 
         return (try? storage.lastRequestDate) == nil
+    }
+}
+
+private extension AgeSignalRequester {
+
+    func request(in anchor: AgeRangeAnchor) async -> Bool {
+        do {
+            try await service.requestAgeRange(in: anchor)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    func markRequested(isReinstall: Bool) {
+        try? storage.set(now(), for: \.lastRequestDate)
+        try? storage.set(isReinstall, for: \.handledReinstall)
     }
 }

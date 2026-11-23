@@ -33,8 +33,8 @@ WHY_DENIED = [
     ("Bash(git remote", "The agent pushes only to this repo's origin."),
     ("Bash(claude", "No nested Claude sessions."),
     ("Bash(codex", "Other models aren't available in the worker."),
-    ("Bash(node", "This auto script needs credentials or network the worker doesn't give (Azure, Codex, dub) or "
-                  "would change setup."),
+    ("Bash(node", "This auto script needs credentials or network the worker doesn't give (Codex, dub), signs in "
+                  "interactively, or would change setup."),
     ("Edit(./.claude", "The checkout's .claude holds scripts the agent runs."),
     ("Write(./.claude", "The checkout's .claude holds scripts the agent runs."),
     ("Edit(./.git", "The agent changes git state with git commands only."),
@@ -52,6 +52,14 @@ HINTS = [
     (r"refusing to allow a GitHub App to create or update workflow",
      "The change touches `.github/workflows/`, and the app has no Workflows permission on purpose. The agent "
      "shouldn't change workflows."),
+    (r"AUTO_DEPENDENCIES_UNPREPARED|dependencies are not prepared",
+     "auto's npm dependencies weren't prepared. Check that the `Set up auto plugin` step ran setup-deps without "
+     "errors."),
+    (r"Azure evidence|AADSTS|AuthorizationPermissionMismatch|ManagedIdentityCredential|WorkloadIdentityCredential",
+     "auto's upload-evidence couldn't sign in to or write to auto's artifact storage. Check that the `Azure identity "
+     "for auto` step ran and its refresher was still running (`azure_identity.sh`), that ARTIFACTS_CLIENT_ID's "
+     "identity has a federated credential for the agent-worker environment, and that it can create blobs in the "
+     "`auto` container."),
     (r"Resource not accessible by integration|HTTP 403",
      "The ddg-apple-agent-publish app is missing a permission for this call. Compare the call with the app's "
      "permissions (contents and pull requests write, checks, statuses read, actions write) and the `permissions` "

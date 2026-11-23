@@ -50,6 +50,18 @@ final class PrivacyConfigurationManagerUserAllowlistTests: XCTestCase {
         XCTAssertEqual(store.unprotectedDomains, [])
     }
 
+    func testWhenToggleLeavesTheListUnchangedThenPublisherDoesNotFire() {
+        let manager = makeManager(store: MockDomainsProtectionStore())
+        var fired = 0
+        manager.userUnprotectedDomainsPublisher.sink { fired += 1 }.store(in: &cancellables)
+
+        manager.privacyConfig.userEnabledProtection(forDomain: "example.com")
+        manager.privacyConfig.userDisabledProtection(forDomain: "example.com")
+        manager.privacyConfig.userDisabledProtection(forDomain: "example.com")
+
+        XCTAssertEqual(fired, 1)
+    }
+
     func testWhenConfigIsReloadedThenPublisherDoesNotFire() {
         let manager = makeManager(store: MockDomainsProtectionStore())
         var fired = false

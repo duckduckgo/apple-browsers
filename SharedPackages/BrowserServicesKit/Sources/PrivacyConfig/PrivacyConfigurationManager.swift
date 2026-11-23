@@ -33,7 +33,8 @@ public protocol PrivacyConfigurationManaging: AnyObject {
     var currentConfig: Data { get }
     var updatesPublisher: AnyPublisher<Void, Never> { get }
     /// Fires after the user turns protections off or on for a site, as soon as the change is stored and before
-    /// content blocking rules are rebuilt for it. Read `privacyConfig.userUnprotectedDomains` for the new list.
+    /// content blocking rules are rebuilt for it. It doesn't fire for writes that leave the list unchanged. Read
+    /// `privacyConfig.userUnprotectedDomains` for the new list.
     var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> { get }
     var privacyConfig: PrivacyConfiguration { get }
     var internalUserDecider: InternalUserDecider { get }

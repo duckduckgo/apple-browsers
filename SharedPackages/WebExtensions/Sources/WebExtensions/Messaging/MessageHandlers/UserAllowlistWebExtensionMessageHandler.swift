@@ -27,11 +27,6 @@ import PrivacyConfig
 /// list. The extension sends the version it holds, and gets the list back only when the versions differ.
 public struct UserAllowlistSnapshot: Equatable {
 
-    /// Reads the user's allowlist from the privacy configuration.
-    static func allowlist(from privacyConfigurationManager: PrivacyConfigurationManaging) -> () -> [String] {
-        { [privacyConfigurationManager] in privacyConfigurationManager.privacyConfig.userUnprotectedDomains }
-    }
-
     public let domains: [String]
     public let version: String
 
@@ -65,7 +60,7 @@ public final class UserAllowlistWebExtensionMessageHandler: WebExtensionMessageH
 
     /// Answers with `privacyConfigurationManager.privacyConfig.userUnprotectedDomains`.
     public convenience init(privacyConfigurationManager: PrivacyConfigurationManaging) {
-        self.init(allowlist: UserAllowlistSnapshot.allowlist(from: privacyConfigurationManager))
+        self.init(allowlist: { [privacyConfigurationManager] in privacyConfigurationManager.privacyConfig.userUnprotectedDomains })
     }
 
     public func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {

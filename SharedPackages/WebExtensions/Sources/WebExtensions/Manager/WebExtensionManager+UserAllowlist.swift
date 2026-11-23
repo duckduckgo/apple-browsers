@@ -30,36 +30,21 @@ public enum UserAllowlistSync {
     public static let changedSubscriptionName = "onAllowlistChanged"
 }
 
-/// Tells the embedded extension when the user's allowlist changes.
-///
-/// `changes` may fire without the list changing, for example when protections are turned back on for a site that
-/// wasn't on the list, so the notifier compares allowlist versions and signals the extension only on a real change.
+/// Tells the embedded extension when the user's allowlist changes, by passing the current list to `notify` on the
+/// main thread each time `changes` fires.
 @MainActor
 public final class UserAllowlistChangeNotifier {
 
-    private let allowlist: () -> [String]
-    private let notify: @MainActor (UserAllowlistSnapshot) -> Void
-    private var lastVersion: String
     private var cancellable: AnyCancellable?
 
     public init(changes: AnyPublisher<Void, Never>,
                 allowlist: @escaping () -> [String],
                 notify: @escaping @MainActor (UserAllowlistSnapshot) -> Void) {
-        self.allowlist = allowlist
-        self.notify = notify
-        self.lastVersion = UserAllowlistSnapshot(domains: allowlist()).version
-        cancellable = changes.sink { [weak self] in
+        cancellable = changes.sink {
             DispatchQueue.main.asyncOrNow {
-                self?.checkForChange()
+                notify(UserAllowlistSnapshot(domains: allowlist()))
             }
         }
-    }
-
-    func checkForChange() {
-        let snapshot = UserAllowlistSnapshot(domains: allowlist())
-        guard snapshot.version != lastVersion else { return }
-        lastVersion = snapshot.version
-        notify(snapshot)
     }
 }
 
@@ -79,7 +64,7 @@ extension WebExtensionManager {
         guard userAllowlistNotifier == nil else { return }
         userAllowlistNotifier = UserAllowlistChangeNotifier(
             changes: privacyConfigurationManager.userUnprotectedDomainsPublisher,
-            allowlist: UserAllowlistSnapshot.allowlist(from: privacyConfigurationManager)
+            allowlist: { [privacyConfigurationManager] in privacyConfigurationManager.privacyConfig.userUnprotectedDomains }
         ) { [weak self] snapshot in
             Logger.webExtensions.debug("🛡️ Allowlist changed (\(snapshot.domains.count, privacy: .public) domains)")
             self?.sendSubscriptionEvent(WebExtensionSubscriptionEvent(

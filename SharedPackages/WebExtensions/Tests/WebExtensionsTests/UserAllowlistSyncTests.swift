@@ -85,30 +85,21 @@ final class UserAllowlistWebExtensionMessageHandlerTests: XCTestCase {
 @MainActor
 final class UserAllowlistChangeNotifierTests: XCTestCase {
 
-    func testNotifiesOnlyWhenTheAllowlistChanges() {
+    func testNotifiesWithTheCurrentAllowlistOnEachChange() {
         let changes = PassthroughSubject<Void, Never>()
         var domains = ["a.com"]
-        var notifications = 0
-        var lastSnapshot: UserAllowlistSnapshot?
+        var snapshots: [UserAllowlistSnapshot] = []
         let notifier = UserAllowlistChangeNotifier(changes: changes.eraseToAnyPublisher(), allowlist: { domains }) {
-            notifications += 1
-            lastSnapshot = $0
+            snapshots.append($0)
         }
-
-        changes.send()
-        XCTAssertEqual(notifications, 0, "an update that leaves the list unchanged is not a change")
+        XCTAssertTrue(snapshots.isEmpty, "Installing the notifier doesn't read or send the list")
 
         domains.append("b.com")
         changes.send()
-        XCTAssertEqual(notifications, 1)
-        XCTAssertEqual(lastSnapshot, UserAllowlistSnapshot(domains: ["a.com", "b.com"]))
-
-        changes.send()
-        XCTAssertEqual(notifications, 1)
-
         domains.removeAll()
         changes.send()
-        XCTAssertEqual(notifications, 2)
+
+        XCTAssertEqual(snapshots, [UserAllowlistSnapshot(domains: ["a.com", "b.com"]), UserAllowlistSnapshot(domains: [])])
         withExtendedLifetime(notifier) {}
     }
 }

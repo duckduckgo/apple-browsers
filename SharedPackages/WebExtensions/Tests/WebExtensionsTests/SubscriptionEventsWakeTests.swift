@@ -84,7 +84,6 @@ final class SubscriptionEventsWakeTests: XCTestCase {
         for permission in webExtension.requestedPermissions {
             context.setPermissionStatus(.grantedExplicitly, for: permission)
         }
-        host.extensionIdentifier = context.uniqueIdentifier
 
         let controller = WKWebExtensionController(configuration: .nonPersistent())
         controller.delegate = host
@@ -164,7 +163,6 @@ final class SubscriptionEventsWakeTests: XCTestCase {
 @MainActor
 private final class TestNativeHost: NSObject, WKWebExtensionControllerDelegate {
 
-    var extensionIdentifier = ""
     private let router = WebExtensionMessageRouter()
     private let reports = TestReportHandler()
 

@@ -217,7 +217,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testWhenEmbeddedExtensionIsUnloaded_ThenSubscriptionEventStaysQueued() async throws {
         let manager = makeManager()
-        let context = try await loadCommandRecordingEmbeddedContext("embedded", into: manager)
+        let context = try await loadCommandRecordingEmbeddedContext(into: manager)
         try manager.controller.unload(context)
 
         manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
@@ -229,7 +229,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testWhenEmbeddedExtensionIsLoaded_ThenSubscriptionEventIsQueuedAndTheEventCommandPerformed() async throws {
         let manager = makeManager()
-        let context = try await loadCommandRecordingEmbeddedContext("embedded", into: manager)
+        let context = try await loadCommandRecordingEmbeddedContext(into: manager)
         defer { manager.unloadAllExtensions() }
 
         manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
@@ -242,7 +242,7 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testWhenEmbeddedExtensionHasNoEventCommand_ThenSubscriptionEventStaysQueued() async throws {
         let manager = makeManager()
-        let context = try await loadCommandRecordingEmbeddedContext("embedded", into: manager, declaresEventCommand: false)
+        let context = try await loadCommandRecordingEmbeddedContext(into: manager, declaresEventCommand: false)
         defer { manager.unloadAllExtensions() }
 
         manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
@@ -252,9 +252,9 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    private func loadCommandRecordingEmbeddedContext(_ identifier: String,
-                                                     into manager: WebExtensionManager,
+    private func loadCommandRecordingEmbeddedContext(into manager: WebExtensionManager,
                                                      declaresEventCommand: Bool = true) async throws -> CommandRecordingContext {
+        let identifier = "embedded"
         let directory = try makeTestExtensionDirectory(embeddedType: .embedded)
         if declaresEventCommand {
             let manifestURL = directory.appendingPathComponent("manifest.json")

@@ -91,8 +91,14 @@ public enum BrowserToolAccessLevel: String, Sendable {
 }
 
 public enum ClientToolPermissionAuthorization {
-    case granted(performExecution: @MainActor (@escaping @MainActor () async -> BrowserToolResult) async -> BrowserToolResult?)
-    case refused(ClientToolError)
+    case granted(BrowserToolPermissionPath, performExecution: @MainActor (@escaping @MainActor () async -> BrowserToolResult) async -> BrowserToolResult?)
+    case refused(ClientToolError, BrowserToolPermissionPath)
+
+    public var permissionPath: BrowserToolPermissionPath {
+        switch self {
+        case .granted(let path, _), .refused(_, let path): path
+        }
+    }
 }
 
 @MainActor
@@ -121,6 +127,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let deadline: TimeInterval
         let cancellation: ClientToolCancellationSignal
         var state: State = .queued
+        var permissionPath = BrowserToolPermissionPath.beforePermission
         var continuation: CheckedContinuation<ClientToolPermissionAuthorization, Never>?
         var executionContinuation: CheckedContinuation<BrowserToolResult?, Never>?
         var executionTask: Task<Void, Never>?
@@ -189,7 +196,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let requestID = UUID().uuidString
         let deadline = now() + Self.permissionTimeout
         return await withTaskCancellationHandler {
-            guard !Task.isCancelled, !cancellation.isCancelled else { return .refused(.cancelled) }
+            guard !Task.isCancelled, !cancellation.isCancelled else { return .refused(.cancelled, .beforePermission) }
             return await withCheckedContinuation { continuation in
                 let entry = Entry(requestID: requestID, callID: callID, tool: tool, targetsOtherTab: targetsOtherTab, target: target,
                                   chatID: chatID, accessToolNames: accessToolNames, prompter: prompter,
@@ -369,7 +376,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         let continuation = entry.continuation
         entry.continuation = nil
         let requestID = entry.requestID
-        continuation?.resume(returning: .granted(performExecution: { [weak self] operation in
+        continuation?.resume(returning: .granted(entry.permissionPath, performExecution: { [weak self] operation in
             await self?.performExecution(requestID: requestID, operation: operation)
         }))
         processPendingPermissionQueues()
@@ -393,7 +400,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         releaseQueue(entry)
         let continuation = entry.continuation
         entry.continuation = nil
-        continuation?.resume(returning: .refused(error))
+        continuation?.resume(returning: .refused(error, entry.permissionPath))
         executionContinuation?.resume(returning: nil)
         processPendingPermissionQueues()
     }
@@ -432,8 +439,12 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
             guard case .queued = entry.state else { continue }
             switch state(for: entry.tool, chatID: entry.chatID) {
             case .allow:
+                // `state(for:chatID:)` allows a tool that would ask only through a chat grant.
+                entry.permissionPath = permissions.effectiveState(for: entry.tool) == .ask ? .chat
+                    : entry.tool.permissionMode == .auto ? .auto : .always
                 grant(entry)
             case .deny:
+                entry.permissionPath = .never
                 finish(requestID, error: .denied)
             case .ask:
                 presentPrompt(for: entry)
@@ -447,6 +458,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
             return
         }
         entry.state = .awaitingDecision
+        entry.permissionPath = .prompt
         let shown = prompter.presentClientToolPermissionPrompt(.init(requestID: entry.requestID, callID: entry.callID,
                                                                     toolName: entry.tool.name, targetsOtherTab: entry.targetsOtherTab,
                                                                     target: entry.target, offersAlways: !entry.tool.asksEveryTime,
@@ -454,6 +466,7 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
                                                                     offersAllowForChat: entry.chatID != nil && entry.accessToolNames == nil
                                                                         && !entry.tool.asksEveryTime))
         if !shown, entries[entry.requestID] === entry, case .awaitingDecision = entry.state {
+            entry.permissionPath = .beforePermission
             finish(entry.requestID, error: .cancelled, withdrawingPrompt: false)
         }
     }

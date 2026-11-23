@@ -27869,7 +27869,7 @@
       }
     },
     "contextual.onboarding.thats-duck-ai.message" : {
-      "comment" : "Message of the contextual onboarding dialog shown on Duck.ai after its first answer, inviting the user to delete the chat with the Fire Button (do not remove the *).",
+      "comment" : "Message of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. It invites them to delete that chat with the browser's Fire Button, which clears browsing data. Keep \"Fire Button\" as the app's name for it, and keep the * around it: they make it bold.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -27881,7 +27881,7 @@
       }
     },
     "contextual.onboarding.thats-duck-ai.title" : {
-      "comment" : "Title of the contextual onboarding dialog shown on Duck.ai after its first answer.",
+      "comment" : "Title of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. \"Duck.ai\" is a product name: keep it as is.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {

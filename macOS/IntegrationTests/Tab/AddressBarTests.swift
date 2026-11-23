@@ -1307,13 +1307,23 @@ class AddressBarTests: XCTestCase {
         weak var suggestionWindow: NSWindow?
 
         autoreleasepool {
+            // Suggestion windows left over from earlier tests aren't this test's concern:
+            // remember them (weakly) so the lookup below finds only the new window's one
+            let preexistingSuggestionWindows = NSHashTable<NSWindow>.weakObjects()
+            NSApp.windows
+                .filter { $0.contentViewController is SuggestionViewController }
+                .forEach { preexistingSuggestionWindows.add($0) }
+
             // GIVEN the Ask AI Chat button is expanded because the address bar has a user-typed value
             let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
             let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
             window = WindowsManager.openNewWindow(with: viewModel)!
             addressBarButtonsViewController = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!
             tabCollectionViewModel = viewModel
-            suggestionWindow = NSApp.windows.first(where: { $0.contentViewController is SuggestionViewController })
+            suggestionWindow = NSApp.windows.first(where: {
+                $0.contentViewController is SuggestionViewController && !preexistingSuggestionWindows.contains($0)
+            })
+            XCTAssertNotNil(suggestionWindow, "The new window should have its own suggestion window")
 
             _=window.makeFirstResponder(addressBarTextField)
             XCTAssertTrue(isAddressBarFirstResponder)

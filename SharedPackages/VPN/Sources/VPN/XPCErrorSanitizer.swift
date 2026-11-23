@@ -46,6 +46,14 @@ struct SanitizedError: CustomNSError {
 
 public struct XPCErrorSanitizer {
 
+    public static func originalDomainAndCode(of error: NSError) -> (domain: String, code: Int) {
+        if let domain = error.userInfo["OriginalErrorDomain"] as? String,
+           let code = error.userInfo["OriginalErrorCode"] as? Int {
+            return (domain, code)
+        }
+        return (error.domain, error.code)
+    }
+
     public static func sanitize(_ error: Error) -> Error {
         let nsError = error as NSError
 

@@ -571,13 +571,15 @@ private final class AIChatNativePermissionCoordinator: ClientToolPermissionCoord
     func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?, chatID: String?, accessToolNames: [String]?,
                    prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         let requiresRequestAccess = chatID != nil && !tool.asksEveryTime
-        if let failure = admission(tool.name, requiresRequestAccess, prompter) { return .refused(failure.clientToolError) }
+        if let failure = admission(tool.name, requiresRequestAccess, prompter) {
+            return .refused(failure.clientToolError, .beforePermission)
+        }
         let authorization = await base.authorize(callID: callID, tool: tool, targetsOtherTab: targetsOtherTab,
                                                  target: target, chatID: chatID, accessToolNames: accessToolNames, prompter: prompter)
-        guard case .granted(let performExecution) = authorization else { return authorization }
+        guard case .granted(let permissionPath, let performExecution) = authorization else { return authorization }
         let requiresPrompter = prompter != nil
         let toolName = tool.name
-        return .granted(performExecution: { [weak prompter, admission] operation in
+        return .granted(permissionPath, performExecution: { [weak prompter, admission] operation in
             await performExecution { [weak prompter] in
                 guard !Task.isCancelled, !requiresPrompter || prompter != nil else { return .failure(.cancelled) }
                 if let failure = admission(toolName, requiresRequestAccess, prompter) { return .failure(failure.browserToolFailure) }

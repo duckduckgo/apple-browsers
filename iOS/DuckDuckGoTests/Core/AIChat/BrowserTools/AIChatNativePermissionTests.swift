@@ -152,7 +152,7 @@ final class AIChatNativePermissionTests: XCTestCase {
     func testSourceDepartureCancelsGrantedLease() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
             return XCTFail("Expected native authorization")
         }
         fixture.service.sourceWillDisappear(fixture.script)
@@ -168,7 +168,7 @@ final class AIChatNativePermissionTests: XCTestCase {
     func testFullSourceCancellationStillCancelsExecutingOperation() async throws {
         for cause in ["document", "fire", "detach"] {
             let fixture = BrowserToolsBridgeFixture()
-            guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
                 fixture.cleanUp()
                 return XCTFail("Expected native authorization")
             }

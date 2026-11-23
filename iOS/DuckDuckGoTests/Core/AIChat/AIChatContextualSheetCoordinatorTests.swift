@@ -45,7 +45,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         sut.browserToolsPermissionPresenter = fixture.presenter
         webController.configureContentHandler(with: fixture.script)
         fixture.script.webView = fixture.webView
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
             return XCTFail("Expected native authorization")
         }
         sut.tabWillLeaveScreen()
@@ -56,7 +56,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNil(retained)
         let allowed = await fixture.invoke()
         XCTAssertEqual(allowed, fixture.success)
-        guard case .granted(let performAfterClearing) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performAfterClearing) = try await fixture.authorizeListing() else {
             return XCTFail("Expected native authorization")
         }
         sut.clearActiveChat()

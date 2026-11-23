@@ -116,7 +116,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         sut.configureContentHandler(with: fixture.script)
         let actualWebView = try XCTUnwrap(fixture.script.webView)
         fixture.script.webView = fixture.webView
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
             return XCTFail("Expected native authorization")
         }
         sut.viewWillDisappear(false)
@@ -159,7 +159,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         sut.configureContentHandler(with: fixture.script)
         let actualWebView = try XCTUnwrap(fixture.script.webView)
         fixture.script.webView = fixture.webView
-        guard case .granted(let performAfterForeignCommit) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performAfterForeignCommit) = try await fixture.authorizeListing() else {
             return XCTFail("Expected native authorization")
         }
         sut.webView(WKWebView(), didCommit: nil)
@@ -167,7 +167,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         XCTAssertEqual(retained, .success([:]))
         let unaffected = await fixture.invoke()
         XCTAssertEqual(unaffected, fixture.success)
-        guard case .granted(let performAfterOwnCommit) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performAfterOwnCommit) = try await fixture.authorizeListing() else {
             return XCTFail("Expected native authorization")
         }
         sut.webView(actualWebView, didCommit: nil)

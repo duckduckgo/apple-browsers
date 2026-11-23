@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Foundation
 @_spi(Testing) import Persistence
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
@@ -52,7 +53,7 @@ struct ContextualDialogsManagerPathTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("The search path never locks the UI", .timeLimit(.minutes(1)))
-    func searchPathDoesNotLock() {
+    func searchPathDoesNotLock() async {
         #expect(manager.uiLock == .unlocked)
 
         manager.startPath(.search)
@@ -61,55 +62,61 @@ struct ContextualDialogsManagerPathTests {
         manager.state = .onboardingCompleted
 
         #expect(manager.uiLock == .unlocked)
+        await lockUpdatesDelivered()
         #expect(uiLocker.calls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("The Duck.ai path locks all but Fire once, until Fire is used", .timeLimit(.minutes(1)))
-    func duckAIPathLocksUntilFire() {
+    func duckAIPathLocksUntilFire() async {
         manager.startPath(.duckAI)
         manager.state = .ongoing
 
         #expect(manager.uiLock == .locked(except: [.fire]))
+        await lockUpdatesDelivered()
         #expect(uiLocker.calls == [.locked(except: [.fire])])
 
         manager.fireButtonUsed()
 
         #expect(manager.uiLock == .unlocked)
+        await lockUpdatesDelivered()
         #expect(uiLocker.calls == [.locked(except: [.fire]), .unlocked])
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Ending or restarting onboarding unlocks the UI", .timeLimit(.minutes(1)),
           arguments: [ContextualOnboardingState.onboardingCompleted, .notStarted])
-    func endingOnboardingUnlocks(newState: ContextualOnboardingState) {
+    func endingOnboardingUnlocks(newState: ContextualOnboardingState) async {
         manager.startPath(.duckAI)
 
         manager.state = newState
 
         #expect(manager.uiLock == .unlocked)
+        await lockUpdatesDelivered()
         #expect(uiLocker.calls == [.locked(except: [.fire]), .unlocked])
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Fire used before the Duck.ai path starts doesn't unlock it", .timeLimit(.minutes(1)))
-    func fireBeforeDuckAIPathStillLocks() {
+    func fireBeforeDuckAIPathStillLocks() async {
         manager.fireButtonUsed()
 
         manager.startPath(.duckAI)
 
         #expect(manager.uiLock == .locked(except: [.fire]))
+        await lockUpdatesDelivered()
         #expect(uiLocker.calls == [.locked(except: [.fire])])
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("A relaunch during the Duck.ai path locks the UI again", .timeLimit(.minutes(1)))
-    func relaunchRelocks() {
+    func relaunchRelocks() async {
         manager.startPath(.duckAI)
         manager.state = .ongoing
 
         let relaunchLocker = CapturingUILocker()
         _ = relaunchedManager(uiLocker: relaunchLocker)
+        await lockUpdatesDelivered()
 
         #expect(relaunchLocker.calls == [.locked(except: [.fire])])
     }
@@ -117,7 +124,7 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("A relaunch after Fire, or on the search path, sends no lock", .timeLimit(.minutes(1)),
           arguments: [true, false])
-    func relaunchWithoutLock(duckAIPathAfterFire: Bool) {
+    func relaunchWithoutLock(duckAIPathAfterFire: Bool) async {
         if duckAIPathAfterFire {
             manager.startPath(.duckAI)
             manager.state = .ongoing
@@ -129,8 +136,16 @@ struct ContextualDialogsManagerPathTests {
 
         let relaunchLocker = CapturingUILocker()
         _ = relaunchedManager(uiLocker: relaunchLocker)
+        await lockUpdatesDelivered()
 
         #expect(relaunchLocker.calls.isEmpty)
+    }
+
+    /// The manager sends locks on the main queue; this waits until the ones already sent arrive.
+    private func lockUpdatesDelivered() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
     }
 
     private func relaunchedManager(uiLocker: CapturingUILocker) -> ContextualDialogsManager {

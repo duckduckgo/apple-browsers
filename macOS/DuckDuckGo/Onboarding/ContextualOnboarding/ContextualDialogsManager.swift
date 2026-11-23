@@ -67,7 +67,7 @@ protocol ContextualOnboardingPathStarting: AnyObject {
 
 /// Locks the browser UI while contextual onboarding needs the user to stay on one tab.
 protocol ContextualOnboardingUILocking: AnyObject {
-    func setUILock(_ lock: UserInteractionLock)
+    @MainActor func setUILock(_ lock: UserInteractionLock)
 }
 
 /// Protocol for storing onboarding state data.
@@ -206,7 +206,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         // Only send changes, so an unlocked path doesn't lift the welcome onboarding's lock.
         guard lock != appliedUILock else { return }
         appliedUILock = lock
-        uiLocker?.setUILock(lock)
+        DispatchQueue.main.async { [weak uiLocker] in uiLocker?.setUILock(lock) }
     }
 
     /// Called from the junction with the path the user picked.

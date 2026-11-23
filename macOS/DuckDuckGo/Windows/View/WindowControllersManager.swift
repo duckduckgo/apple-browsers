@@ -673,7 +673,7 @@ extension WindowControllersManager {
     }
 }
 
-extension WindowControllersManager: @preconcurrency ContextualOnboardingUILocking {
+extension WindowControllersManager: ContextualOnboardingUILocking {
     func setUILock(_ lock: UserInteractionLock) {
         setUserInteractionLock(lock)
     }

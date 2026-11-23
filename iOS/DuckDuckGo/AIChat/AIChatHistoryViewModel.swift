@@ -87,6 +87,8 @@ final class AIChatHistoryViewModel: ObservableObject {
     }
 
     weak var delegate: AIChatHistoryViewModelDelegate?
+    /// Runs Delete All through the Fire button, which plays its own animation. Gets `isFireMode`.
+    var onDeleteAllChats: ((Bool) -> Void)?
 
     init(
         reader: ChatHistoryReading,
@@ -266,6 +268,16 @@ final class AIChatHistoryViewModel: ObservableObject {
             return IndexPath(row: row, section: Section.recent.rawValue)
         }
         return nil
+    }
+
+    /// With `fireButtonDeleteAllChats` on, hands Delete All to `onDeleteAllChats` and returns `true`.
+    /// Otherwise returns `false`, and the caller runs `burnAllChats()` instead.
+    func deleteAllChatsThroughFireButton() -> Bool {
+        guard featureFlagger.isFeatureOn(.fireButtonDeleteAllChats), let onDeleteAllChats else { return false }
+        // Reached only after the user confirms the delete-all action.
+        instrumentation.fireAllConfirmed()
+        onDeleteAllChats(isFireMode)
+        return true
     }
 
     func burnAllChats() async {

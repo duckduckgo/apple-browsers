@@ -335,7 +335,8 @@ class FireExecutor: FireExecuting {
         }
         let domains = domainResult.map { (try? $0.get()) ?? [] }
         
-        // Start async tasks
+        // Start async tasks. Neither starts before this method suspends below, so for `.allChats`
+        // `burnTabs` closes the chat tabs before any chat is deleted.
         async let dataTask: Void = shouldBurnData ? burnDataWithDelegateCallbacks(
             request: request,
             applicationState: applicationState,
@@ -554,8 +555,11 @@ class FireExecutor: FireExecuting {
             dataClearingWideEventService?.start(.clearFaviconCache)
             let faviconResult = favicons.removeTabFavicons(forDomains: domains)
             dataClearingWideEventService?.update(.clearFaviconCache, result: faviconResult)
-        case .allChats:
-            break
+        case .allChats(let mode):
+            // Runs before the chats are deleted, so no chat can be replied to while it's being deleted.
+            dataClearingWideEventService?.start(.clearTabs)
+            tabManager.closeChatTabsForDeletingAllChats(in: mode)
+            dataClearingWideEventService?.update(.clearTabs, result: .success(()))
         }
     }
 
@@ -674,7 +678,7 @@ class FireExecutor: FireExecuting {
             result = await burnFireModeAIHistory(trigger: request.trigger, source: .fireButtonAll, applicationState: applicationState)
         }
         if case .allChats(let mode) = request.scope, case .success = result {
-            tabManager.reloadOpenChats(in: mode)
+            tabManager.reloadIdleChatTabs(in: mode)
         }
         dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }

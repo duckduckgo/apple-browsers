@@ -69,6 +69,7 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the contextual chat URL changes, used to persist for cold restore.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?)
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didFindDeletedChatWithID chatID: String)
 
     /// Called when the user requests to open a downloaded file.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestOpenDownloadWithFileName fileName: String)
@@ -218,7 +219,9 @@ final class AIChatContextualSheetCoordinator {
               sessionState.hasActiveChat,
               let chatID = sessionState.contextualChatURL?.duckAIChatID,
               persistedChatIDs.contains(chatID) else { return }
-        guard await isChatDeleted(chatID: chatID) else { return }
+        let conversationID = sessionState.conversationID
+        guard await isChatDeleted(chatID: chatID),
+              conversationID == sessionState.conversationID, !isSheetPresented else { return }
         Logger.aiChat.debug("[Contextual] Active chat was deleted, clearing it")
         pixelHandler.fireSheetOpenedOnDeletedChat()
         persistedChatIDs.remove(chatID)
@@ -227,11 +230,16 @@ final class AIChatContextualSheetCoordinator {
 
     private func vettedRestoreURL(_ restoreURL: URL?) async -> URL? {
         guard let chatID = restoreURL?.duckAIChatID else { return restoreURL }
-        guard await isChatDeleted(chatID: chatID) else {
+        let conversationID = sessionState.conversationID
+        let currentChatID = sessionState.contextualChatURL?.duckAIChatID
+        let deleted = await isChatDeleted(chatID: chatID)
+        guard sessionState.conversationID == conversationID,
+              sessionState.contextualChatURL?.duckAIChatID == currentChatID else { return nil }
+        guard deleted else {
             persistedChatIDs.insert(chatID)
             return restoreURL
         }
-        delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
+        delegate?.aiChatContextualSheetCoordinator(self, didFindDeletedChatWithID: chatID)
         return nil
     }
 
@@ -380,13 +388,14 @@ final class AIChatContextualSheetCoordinator {
                       skippingAutoAttach: Bool = false,
                       attachingPage: Bool = false,
                       opensOntoSubmittedChat: Bool = false) async {
+        let conversationID = sessionState.conversationID
         let restoreURL = await vettedRestoreURL(restoreURL)
         await discardActiveChatIfDeleted()
         sessionState.refreshAutoAttachSetting()
         sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
         clearStaleManualContextIfNeeded()
         // Before collecting: the offer needs `hasActiveChat`, which a restore is what establishes.
-        if let restoreURL {
+        if let restoreURL, conversationID == sessionState.conversationID {
             sessionState.restoreChat(with: restoreURL)
         }
 
@@ -943,15 +952,18 @@ final class AIChatContextualSheetCoordinator {
     // Mirrors handleSheetDismissed but deliberately skips startSessionTimer — a fire-button
     // clear nukes the chat and doesn't want a pending timer firing afterwards. Keep aligned
     // when adding side effects to handleSheetDismissed.
-    func clearActiveChat(reason: DuckAISelectionJourneyWideEventData.TerminalReason = .chatCleared) {
+    func clearActiveChat(reason: DuckAISelectionJourneyWideEventData.TerminalReason = .chatCleared,
+                         dismissPresentedSheet: Bool = false) {
         browserToolsWebViewController?.detachBrowserTools()
         browserToolsWebViewController = nil
         let sheetInSidebar = isSheetInSidebar ? sheetViewController : nil
+        let modalPresenter = dismissPresentedSheet ? sheetViewController?.presentingViewController : nil
         let parkedSheet = parkedSheetViewController
         parkedSheetViewController = nil
         persistentUTIHost?.discardTabAttachments()
         selectionJourneyInstrumentation.selectionsCleared(reason: reason)
         sheetViewController?.notifySheetDismissed()
+        sheetViewController?.delegate = nil
         if isSheetPresented && !isAwayWithTab {
             delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self, chatDeleted: reason == .chatCleared)
         }
@@ -960,14 +972,17 @@ final class AIChatContextualSheetCoordinator {
         sheetViewController = nil
         persistentUTIHost = nil
         stopObservingContextUpdates()
+        stopSessionTimer()
         pageContextHandler.clear()
         sessionState.resetToNoChat()
         pixelHandler.reset()
         // The chat is leaving this tab either way, so it must not keep a URL that would restore it.
         delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
-        // The sidebar can't go on showing a chat that is gone. Taken out last, so its leaving winds nothing down.
+        // Dismiss after clearing the session so dismissal cannot start its inactivity timer.
         if let sheetInSidebar {
             dismissSurface(of: sheetInSidebar)
+        } else {
+            modalPresenter?.dismiss(animated: true)
         }
         parkedSheet?.closeWhileOffScreen()
     }
@@ -1717,8 +1732,10 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         _ viewController: AIChatContextualSheetViewController
     ) async -> FireChatConfirmationPreparation? {
         guard isSheetPresented, sheetViewController === viewController, parkedSheetViewController == nil else { return nil }
+        let conversationID = sessionState.conversationID
         let preparation = await delegate?.aiChatContextualSheetCoordinatorPrepareFireChatConfirmation(self)
-        guard isSheetPresented, sheetViewController === viewController, parkedSheetViewController == nil else { return nil }
+        guard isSheetPresented, sheetViewController === viewController, parkedSheetViewController == nil,
+              sessionState.conversationID == conversationID else { return nil }
         return preparation
     }
 

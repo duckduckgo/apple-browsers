@@ -111,6 +111,11 @@ public class Tab: NSObject, NSCoding {
         type == .aiChat
     }
 
+    /// Returns true if the tab's link is a saved Duck.ai chat
+    var isShowingSavedAIChat: Bool {
+        isAITab && link?.url.duckAIChatID != nil
+    }
+
     var isHomeTab: Bool {
         link == nil
     }

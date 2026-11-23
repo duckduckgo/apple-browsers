@@ -929,10 +929,8 @@ private extension AIChatContextualSheetViewController {
             browsingMode: preparation?.browsingMode ?? .normal,
             deleteAllChats: preparation?.deleteAllChats,
             onConfirm: { [weak self] request in
-                // Delete All Chats: close this sheet and run the request like the Fire button does.
-                self?.dismissFireConfirmation { [weak self] in
-                    guard let self else { return }
-                    delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
+                // Delete All Chats runs like the Fire button does. Closing the chat tabs also closes this sheet.
+                self?.dismissFireConfirmation {
                     preparation?.burn(request)
                 }
             },
@@ -1350,6 +1348,7 @@ extension AIChatContextualSheetViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {
+        sessionState.didStartNewConversation()
         persistentUTIHost?.discardTabAttachments()
         webViewController?.cancelPendingTabAttachmentPrompt()
     }

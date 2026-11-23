@@ -1728,6 +1728,19 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertFalse(mockDelegate.willStartBurningDataCalled, "Deleting chats clears no website data")
     }
 
+    func testWhenBurningAllChatsThenChatTabsCloseBeforeTheChatsAreCleared() async {
+        let tabManager = mockTabManager!
+        var closedModesWhenClearing: [BrowsingMode]?
+        mockHistoryCleaner.onCleanAIChatHistory = { closedModesWhenClearing = tabManager.closeChatTabsForDeletingAllChatsModes }
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: [.tabs, .aiChats], scope: .allChats(.normal)), applicationState: .unknown)
+
+        XCTAssertEqual(closedModesWhenClearing, [.normal])
+        XCTAssertTrue(mockDelegate.willStartBurningTabsCalled)
+        XCTAssertTrue(mockDelegate.didFinishBurningTabsCalled)
+    }
+
     func testWhenBurningAllChatsThenDeletePixelsReportTheFireButtonAllSource() async throws {
         let executor = makeFireExecutor()
         await executor.burn(request: makeFireRequest(options: [.tabs, .aiChats], scope: .allChats(.normal)), applicationState: .unknown)

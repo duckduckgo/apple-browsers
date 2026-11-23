@@ -121,6 +121,16 @@ class MockTabManager: TabManaging {
         setBrowsingModeCalledWith = mode
     }
 
+    var chatTabsToCloseReturnValue: [Tab] = []
+    func chatTabsToClose(in mode: BrowsingMode) -> [Tab] {
+        chatTabsToCloseReturnValue
+    }
+
+    private(set) var closeChatTabsForDeletingAllChatsModes: [BrowsingMode] = []
+    func closeChatTabsForDeletingAllChats(in mode: BrowsingMode) {
+        closeChatTabsForDeletingAllChatsModes.append(mode)
+    }
+
     var tabsModelForModeReturnValue: TabsModelManaging = TabsModel(desktop: false)
     func tabsModel(for mode: BrowsingMode) -> TabsModelManaging {
         return tabsModelForModeReturnValue

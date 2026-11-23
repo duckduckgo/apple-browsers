@@ -261,10 +261,14 @@ extension MainViewController {
             legacyBurnAllChats(isFireMode: isFireMode)
             return
         }
-        forgetAllWithAnimation(request: FireRequest(options: [.tabs, .aiChats],
-                                                    trigger: .manualFire,
-                                                    scope: .allChats(isFireMode ? .fire : .normal),
-                                                    source: .browsing))
+        forgetAllChats(in: isFireMode ? .fire : .normal)
+    }
+
+    /// Closes the chat tabs and deletes every saved chat in `mode` through the Fire button.
+    func forgetAllChats(in mode: BrowsingMode) {
+        // The Chats sheet and sidebar stay usable during a burn; a second request would be dropped.
+        guard !fireExecutor.burnInProgress else { return }
+        forgetAllWithAnimation(request: FireRequest(options: [.tabs, .aiChats], trigger: .manualFire, scope: .allChats(mode), source: .browsing))
     }
 
     /// The path used while `fireButtonDeleteAllChats` is off: deletes the chats without closing tabs, then reloads open chats.

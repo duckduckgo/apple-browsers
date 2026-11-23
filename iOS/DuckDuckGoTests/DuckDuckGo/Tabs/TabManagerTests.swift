@@ -340,6 +340,101 @@ final class TabManagerTests: XCTestCase {
         XCTAssertTrue(manager.tabsModel(for: .normal).tabs.first === normalTab, "Normal model should still contain the original tab instance")
     }
 
+    // MARK: - Closing saved chat tabs
+
+    func testCloseSavedChatTabsReplacesSelectedChatWithNewTabPageAndClearsContextualChats() throws {
+        let selectedChat = Tab(link: Link(title: nil, url: URL.duckAi.withChatID("selected")))
+        let otherChat = Tab(link: Link(title: nil, url: URL.duckAi.withChatID("other")))
+        let emptyChat = Tab(link: Link(title: nil, url: .duckAi),
+                            contextualChatURL: URL.duckAi.withChatID("unloaded-contextual").absoluteString)
+        let website = Tab(link: Link(title: nil, url: URL(string: "https://example.com")!))
+        let model = TabsModel(tabs: [selectedChat, emptyChat, otherChat, website], desktop: false)
+        let manager = try makeManager(model)
+        let websiteController = try XCTUnwrap(manager.controller(for: website, createIfNeeded: true))
+        let contextualSession = websiteController.aiChatContextualSheetCoordinator.sessionState
+        contextualSession.restoreChat(with: URL.duckAi.withChatID("contextual"))
+        let tabsAboutToClose = manager.chatTabsToClose(in: .normal)
+
+        manager.closeChatTabsForDeletingAllChats(in: .normal)
+
+        let replacement = try XCTUnwrap(model.currentTab)
+        XCTAssertTrue(replacement.isHomeTab)
+        XCTAssertFalse(replacement.fireTab)
+        XCTAssertEqual(Set(tabsAboutToClose.map(\.uid)), Set([selectedChat.uid, otherChat.uid]))
+        XCTAssertEqual(model.tabs, [emptyChat, website, replacement])
+        XCTAssertFalse(contextualSession.hasActiveChat)
+        XCTAssertNil(emptyChat.contextualChatURL)
+    }
+
+    func testCloseSavedChatTabsKeepsAnEmptyChatOrWebsiteSelected() throws {
+        let savedChat = Tab(link: Link(title: nil, url: URL.duckAi.withChatID("saved")))
+        let emptyChat = Tab(link: Link(title: nil, url: .duckAi))
+        let website = Tab(link: Link(title: nil, url: URL(string: "https://example.com")!))
+
+        for selectedTab in [emptyChat, website] {
+            let model = TabsModel(tabs: [savedChat, emptyChat, website], desktop: false)
+            model.select(tab: selectedTab)
+            let manager = try makeManager(model)
+
+            manager.closeChatTabsForDeletingAllChats(in: .normal)
+
+            XCTAssertTrue(model.currentTab === selectedTab)
+            XCTAssertEqual(model.tabs, [emptyChat, website])
+        }
+    }
+
+    func testCloseSavedChatTabsInInactiveFireModeKeepsFireSessionAndNormalTabs() throws {
+        let normalChat = Tab(link: Link(title: nil, url: URL.duckAi.withChatID("normal")))
+        let fireChat = Tab(link: Link(title: nil, url: URL.duckAi.withChatID("fire")), fireTab: true)
+        let otherFireChat = Tab(link: Link(title: nil, url: URL.duckAi.withChatID("other-fire")), fireTab: true)
+        let normalModel = TabsModel(tabs: [normalChat], desktop: false)
+        let fireModel = TabsModel(tabs: [fireChat, otherFireChat], desktop: false, mode: .fire)
+        let manager = try makeManager(normalModel, fireModel: fireModel, featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let fireModeDelegate = MockTabManagerFireModeDelegate()
+        manager.fireModeDelegate = fireModeDelegate
+
+        manager.closeChatTabsForDeletingAllChats(in: .fire)
+
+        let replacement = try XCTUnwrap(fireModel.currentTab)
+        XCTAssertTrue(replacement.isHomeTab)
+        XCTAssertTrue(replacement.fireTab)
+        XCTAssertEqual(fireModel.tabs, [replacement])
+        XCTAssertFalse(fireModeDelegate.didCloseLastFireTab)
+        XCTAssertEqual(manager.currentBrowsingMode, .normal)
+        XCTAssertTrue(normalModel.currentTab === normalChat)
+        XCTAssertEqual(normalModel.tabs, [normalChat])
+    }
+
+    func testDeleteAllKeepsChatTabsWithAnInitialPromptInFlight() async throws {
+        let webViewsReleased = expectation(description: "Chat web views released")
+        webViewsReleased.expectedFulfillmentCount = 2
+        try autoreleasepool {
+            for link in [Link(title: nil, url: .duckAi), Link(title: nil, url: URL.duckAi.withChatID("saved"))] {
+                let controller = TabViewController.fake(
+                    customWebView: { InitialPromptRetryWebView(frame: .zero, configuration: $0) },
+                    specialErrorPageNavigationHandler: SpecialErrorPageNavigationHandler(
+                        maliciousSiteProtectionNavigationHandler: MaliciousSiteProtectionNavigationHandler(
+                            maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager()
+                        )
+                    ),
+                    link: link)
+                let webView = try XCTUnwrap(controller.webView as? InitialPromptRetryWebView)
+                webView.onDeinit { webViewsReleased.fulfill() }
+                webView.currentURL = link.url
+                let isSavedChat = link.url.duckAIChatID != nil
+                XCTAssertEqual(controller.isShowingSavedAIChat, isSavedChat)
+                XCTAssertEqual(controller.isShowingIdleAIChat, !isSavedChat)
+
+                controller.setInitialAIChatTabAttachmentPrompt(AIChatInitialPromptDelivery(prompt: .queryPrompt("prompt", autoSubmit: true)) {})
+
+                XCTAssertFalse(controller.isShowingSavedAIChat)
+                XCTAssertFalse(controller.isShowingIdleAIChat)
+                controller.cancelPendingAIChatTabAttachmentPrompt()
+            }
+        }
+        await fulfillment(of: [webViewsReleased], timeout: 3.0)
+    }
+
     // MARK: - removeAll(browsingMode:) Isolation
 
     func testWhenRemoveAllWithFireMode() throws {
@@ -1614,6 +1709,15 @@ private final class CapturingCPMMonitor: CPMMessagingHealthMonitoring, @unchecke
     func handle(_ event: CPMMessagingHealthEvent) {
         guard case .tabClosed(let tabIdentifier) = event else { return }
         closedTabIdentifiers.append(tabIdentifier)
+    }
+}
+
+@MainActor
+private final class MockTabManagerFireModeDelegate: TabManagerFireModeDelegate {
+    private(set) var didCloseLastFireTab = false
+
+    func tabManagerDidCloseLastFireTab() {
+        didCloseLastFireTab = true
     }
 }
 

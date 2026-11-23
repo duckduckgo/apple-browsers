@@ -214,6 +214,8 @@ class TabSwitcherPageViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self, self.canUpdateCollection else { return }
+                // Removing tabs elsewhere shifts the indices, so the selection follows the model's current tab.
+                self.currentSelection = self.tabsModel.currentIndex
                 self.reloadData()
             }
     }

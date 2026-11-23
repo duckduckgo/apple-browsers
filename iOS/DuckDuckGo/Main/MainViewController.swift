@@ -8784,6 +8784,18 @@ extension MainViewController: TabDelegate {
         let content = AIChatHistoryViewController(viewModel: viewModel, fireButtonAnimator: fireButtonAnimator)
         let navigationController = UINavigationController(rootViewController: content)
         navigationController.modalPresentationStyle = .automatic
+        let historyTab = tabManager.currentTabsModel.currentTab
+        viewModel.onDeleteAllChats = { [weak self, weak navigationController, weak historyTab] isFireMode in
+            guard let self else { return }
+            let mode: BrowsingMode = isFireMode ? .fire : .normal
+            // The sheet can't stay over a tab that is closing.
+            if let navigationController, let historyTab, presentedViewController === navigationController,
+               tabManager.chatTabsToClose(in: mode).contains(where: { $0 === historyTab }) {
+                duckAIInputFocus.forget()
+                navigationController.dismiss(animated: false)
+            }
+            forgetAllChats(in: mode)
+        }
         duckAIInputFocus.setAside()
         present(navigationController, animated: true)
     }
@@ -9818,7 +9830,9 @@ extension MainViewController: FireExecutorDelegate {
                 tabs = tabManager.tabsModel(for: .fire).tabs
             case .normalMode:
                 tabs = tabManager.tabsModel(for: .normal).tabs
-            case .tab, .allChats:
+            case .allChats(let mode):
+                tabs = tabManager.chatTabsToClose(in: mode)
+            case .tab:
                 tabs = []
             }
             for tab in tabs {
@@ -9839,8 +9853,24 @@ extension MainViewController: FireExecutorDelegate {
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
             return
-        case .allChats:
-            return
+        case .allChats(let mode):
+            refreshUIAfterClosingChatTabs(in: mode)
+        }
+    }
+
+    private func refreshUIAfterClosingChatTabs(in mode: BrowsingMode) {
+        guard tabManager.currentBrowsingMode == mode else { return }
+        let tabsModel = tabManager.currentTabsModel
+        if currentTab?.tabModel !== tabsModel.currentTab {
+            // The selected chat closed, so a new tab page replaced it.
+            tabsBarController?.refresh(tabsModel: tabsModel, scrollToSelected: true)
+            dismissOmniBar(animated: false)
+            updateCurrentTab()
+            showBars()
+        } else {
+            tabsBarController?.refreshStyleInPlace(tabsModel: tabsModel, scrollToSelected: true)
+            refreshTabIcon()
+            swipeTabsCoordinator?.refresh(tabsModel: tabsModel, scrollToSelected: true)
         }
     }
     
@@ -10764,8 +10794,8 @@ extension MainViewController {
             return tabManager.tabsModel(for: .normal).tabs
         case .tab(let viewModel):
             return [viewModel.tab]
-        case .allChats:
-            return []
+        case .allChats(let mode):
+            return tabManager.chatTabsToClose(in: mode)
         }
     }
 

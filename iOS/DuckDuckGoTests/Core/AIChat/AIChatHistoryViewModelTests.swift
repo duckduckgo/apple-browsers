@@ -232,6 +232,21 @@ final class AIChatHistoryViewModelTests: XCTestCase {
                        "a successful clear must flush sync so the deletion isn't re-pulled")
     }
 
+    func testDeleteAllChatsGoesThroughTheFireButtonOnlyWhileTheFlagIsOn() {
+        let fireExecutor = MockChatHistoryFireExecutor()
+        let flagger = MockFeatureFlagger()
+        let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: fireExecutor, isFireMode: true, featureFlagger: flagger)
+        var deletedModes: [Bool] = []
+        sut.onDeleteAllChats = { deletedModes.append($0) }
+
+        XCTAssertFalse(sut.deleteAllChatsThroughFireButton())
+        flagger.enabledFeatureFlags = [.fireButtonDeleteAllChats]
+        XCTAssertTrue(sut.deleteAllChatsThroughFireButton())
+
+        XCTAssertEqual(deletedModes, [true])
+        XCTAssertTrue(fireExecutor.burnedAllChatsIsFireMode.isEmpty, "The Fire button deletes the chats, not the sheet")
+    }
+
     func testBurnAllChats_noFireExecutor_isNoOp() {
         let sut = makeSUT(chats: [chat(id: "p1", pinned: true)], fireExecutor: nil)
         // No fire executor — must not crash.
@@ -761,11 +776,11 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         isFireMode: Bool = false,
         mutationQueue: DispatchQueue = .main,
         instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation(),
-        featureFlagger: FeatureFlagger? = nil
+        featureFlagger: FeatureFlagger = MockFeatureFlagger()
     ) -> AIChatHistoryViewModel {
         let sut = AIChatHistoryViewModel(
             reader: MockChatHistoryReader(chats: chats),
-            featureFlagger: featureFlagger ?? AppDependencyProvider.shared.featureFlagger,
+            featureFlagger: featureFlagger,
             fireExecutor: fireExecutor,
             downloader: downloader,
             modelDisplays: modelDisplays,

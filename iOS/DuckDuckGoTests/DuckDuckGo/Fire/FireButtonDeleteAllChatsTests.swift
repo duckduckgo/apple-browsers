@@ -53,9 +53,9 @@ final class FireButtonDeleteAllChatsTests: XCTestCase {
         }
     }
 
-    func testMenuStillReadsBeforeMigration() async throws {
+    func testRecentChatsCanReadBeforeMigration() async throws {
         let storage = FireChatsStorage()
-        storage.onMigration = { XCTFail("The menu does not require migration"); return false }
+        storage.onMigration = { XCTFail("Reading recent chats does not require migration"); return false }
         let result = await NativeChatsReader.read(storageHandler: storage, isStorageEnabled: true)
         XCTAssertEqual(try result.get().count, 0)
     }

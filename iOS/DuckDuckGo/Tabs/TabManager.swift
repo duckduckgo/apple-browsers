@@ -56,6 +56,9 @@ protocol TabManaging {
     @MainActor func closeTabAndNavigateToHomepage(_ tab: Tab, clearTabHistory: Bool)
     @MainActor func closeTabAndOpenNewChat(_ tab: Tab, clearTabHistory: Bool)
     @MainActor func setBrowsingMode(_ mode: BrowsingMode, source: FireModeSwitchSource)
+    /// The tabs in `mode` that show a saved Duck.ai chat, which Delete All Chats closes.
+    @MainActor func chatTabsToClose(in mode: BrowsingMode) -> [Tab]
+    @MainActor func closeChatTabsForDeletingAllChats(in mode: BrowsingMode)
 }
 
 extension TabManaging {
@@ -66,6 +69,15 @@ extension TabManaging {
             guard let controller = controller(for: tab) else { continue }
             controller.reloadFullModeAIChatIfNeeded()
             controller.reloadContextualAIChatIfNeeded()
+        }
+    }
+
+    /// Reloads Duck.ai tabs that kept an empty chat through Delete All Chats, so they stop listing deleted chats.
+    @MainActor
+    func reloadIdleChatTabs(in mode: BrowsingMode) {
+        for tab in tabsModel(for: mode).tabs {
+            guard let controller = controller(for: tab), controller.isShowingIdleAIChat else { continue }
+            controller.reloadFullModeAIChatIfNeeded()
         }
     }
 }
@@ -786,6 +798,37 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
         save()
         return controller
+    }
+
+    @MainActor
+    func chatTabsToClose(in mode: BrowsingMode) -> [Tab] {
+        tabsModel(for: mode).tabs.filter { tab in
+            controller(for: tab).map(\.isShowingSavedAIChat) ?? tab.isShowingSavedAIChat
+        }
+    }
+
+    /// Closes the tabs showing saved Duck.ai chats and clears contextual chats in `mode`, before Delete All Chats deletes them.
+    /// Adds a new tab first when closing would leave no tab selected, so closing the last Fire Tab doesn't end the Fire session.
+    @MainActor
+    func closeChatTabsForDeletingAllChats(in mode: BrowsingMode) {
+        let model = tabsModel(for: mode)
+        let tabsToClose = chatTabsToClose(in: mode)
+        if !tabsToClose.isEmpty {
+            if tabsToClose.count == model.count || tabsToClose.contains(where: { $0 === model.currentTab }) {
+                // Removing the last Fire Tab triggers a burn that also clears site data.
+                addHomeTab(in: model)
+            }
+            bulkRemoveTabs(tabsToClose, in: model)
+        }
+
+        for tab in model.tabs {
+            if let controller = controller(for: tab) {
+                controller.clearContextualChatAfterDeleteAll()
+            } else {
+                tab.contextualChatURL = nil
+            }
+        }
+        save()
     }
 
     /// Warning! This will leave the underlying tabs empty.  This is intentional so that the the

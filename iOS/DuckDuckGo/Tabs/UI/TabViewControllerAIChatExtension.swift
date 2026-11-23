@@ -139,6 +139,19 @@ extension TabViewController: AITabController {
             webView.reload()
         }
     }
+
+    /// Whether the tab shows a saved Duck.ai chat. A chat whose initial prompt is still being delivered doesn't count.
+    var isShowingSavedAIChat: Bool {
+        guard !isProtectedFromCacheEviction, tabModel.isShowingSavedAIChat, let chatID = tabModel.link?.url.duckAIChatID else { return false }
+        return (webView?.url ?? tabModel.link?.url)?.duckAIChatID == chatID
+    }
+
+    /// Whether the tab shows an empty Duck.ai chat with nothing loading or submitted.
+    var isShowingIdleAIChat: Bool {
+        guard isAITab, !isProtectedFromCacheEviction, let webView, !webView.isLoading,
+              (webView.url ?? tabModel.link?.url)?.duckAIChatID == nil else { return false }
+        return userScripts?.aiChatUserScript.hasSubmittedPrompt != true
+    }
 }
 
 extension TabViewController {

@@ -124,7 +124,11 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .subscriptionUpsell:
             return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .thatsDuckAI:
-            return AnyView(OnboardingRebranding.OnboardingThatsDuckAIDialog())
+            // Opens Fire without dismissing the dialog or the Fire highlight: cancelling Fire leaves both in place.
+            return AnyView(OnboardingRebranding.OnboardingThatsDuckAIDialog { [onboardingPixelReporter, fireCoordinator] in
+                onboardingPixelReporter.measureFireButtonTryIt()
+                fireCoordinator.fireButtonAction()
+            })
         }
     }
 

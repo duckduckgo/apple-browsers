@@ -21,18 +21,28 @@ import Onboarding
 
 extension OnboardingRebranding {
 
-    /// Shown on Duck.ai after its first answer. It has no buttons and can't be closed: using Fire moves on.
+    /// Shown on Duck.ai after its first answer. It can't be closed, and stays up until Fire is used.
     struct OnboardingThatsDuckAIDialog: View {
+        @Environment(\.onboardingTheme) private var theme
+
         let title = NSAttributedString(string: UserText.ContextualOnboarding.onboardingThatsDuckAITitle)
         let message = NSMutableAttributedString.attributedString(
             from: UserText.ContextualOnboarding.onboardingThatsDuckAIMessage,
             fontSize: OnboardingDialogsContants.messageFontSize
         )
+        let onTryIt: @MainActor () -> Void
 
         var body: some View {
             OnboardingBubbleView(tailPosition: nil) {
-                OnboardingRebranding.ContextualDaxDialogContent(title: title, message: message) {
-                    EmptyView()
+                OnboardingRebranding.ContextualDaxDialogContent(
+                    orientation: .horizontalStack(alignment: .center),
+                    title: title,
+                    message: message
+                ) {
+                    Button(UserText.ContextualOnboarding.onboardingTryFireButtonButton) {
+                        onTryIt()
+                    }
+                    .buttonStyle(theme.primaryButtonStyle.style)
                 }
             }
             .contextualOnboardingPanelLayout()

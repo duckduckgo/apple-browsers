@@ -46,9 +46,9 @@ extension NSAlert {
 
     static func turnOnLocalModelConfirmation() -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = UserText.localModelTurnOnConfirmationTitle
-        alert.informativeText = UserText.localModelTurnOnConfirmationMessage
-        alert.addButton(withTitle: UserText.localModelAccessTurnOn, response: .OK)
+        alert.messageText = UserText.localModelConnectConfirmationTitle
+        alert.informativeText = UserText.localModelConnectConfirmationMessage
+        alert.addButton(withTitle: UserText.localModelConnect, response: .OK)
         alert.addButton(withTitle: UserText.cancel, response: .cancel, keyEquivalent: .escape)
         return alert
     }

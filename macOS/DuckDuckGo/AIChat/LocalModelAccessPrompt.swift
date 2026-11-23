@@ -125,22 +125,22 @@ struct LocalModelAccessPromptView: View {
     }
 
     private var titleFormat: String {
-        isInstall ? UserText.localModelInstallPromptTitle : UserText.localModelAccessPromptTitle
+        UserText.localModelPromptTitle
     }
 
     private var message: String {
         switch request {
-        case .connect:
-            return UserText.localModelAccessPromptMessage
+        case .connect(let model):
+            return String(format: UserText.localModelPromptMessage, model.name)
         case .install(let model, _):
-            return String(format: UserText.localModelInstallPromptMessage, model.name)
+            return String(format: UserText.localModelPromptMessage, model.name) + "\n\n" + UserText.localModelInstallPromptFutureUse
         }
     }
 
     private var acceptTitle: String {
         switch request {
         case .connect:
-            return UserText.localModelAccessTurnOn
+            return UserText.localModelConnect
         case .install(_, let bytes):
             return String(format: UserText.localModelInstallButton, ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
         }
@@ -189,15 +189,14 @@ struct LocalModelAccessPromptView: View {
                 }
                 HStack(spacing: 6) {
                     switch request {
-                    case .connect(let model):
+                    case .connect:
                         AppleIntelligenceGlyph(size: 16)
-                        Text(model.name)
                     case .install:
                         Image(nsImage: DesignSystemImages.Glyphs.Size12.chip)
                             .foregroundColor(color(.iconsPrimary))
                             .accessibilityHidden(true)
-                        Text(UserText.localModelInstallPromptChip)
                     }
+                    Text(UserText.localModelPromptChip)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)

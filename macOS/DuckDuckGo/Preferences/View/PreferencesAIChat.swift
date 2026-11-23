@@ -268,17 +268,23 @@ private struct LocalModelAccessRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            AppleIntelligenceGlyph(size: 20)
+            icon
+                .frame(width: 20, height: 20)
             VStack(alignment: .leading, spacing: 2) {
-                Text(modelName)
-                    .font(.system(size: 13))
-                    .foregroundColor(color(.textPrimary))
-                Text(UserText.localModelAccessSettingsAppleIntelligenceCaption)
+                HStack(spacing: 6) {
+                    Text(UserText.localModelSettingsSystemAITitle)
+                        .font(.system(size: 13))
+                        .foregroundColor(color(.textPrimary))
+                    Text(isOn ? UserText.localModelSettingsActive : UserText.localModelSettingsAvailable)
+                        .font(.system(size: 13))
+                        .foregroundColor(color(.textSecondary))
+                }
+                Text(String(format: UserText.localModelSettingsModelCaption, modelName))
                     .font(.system(size: 11))
                     .foregroundColor(color(.textSecondary))
             }
             Spacer()
-            Button(isOn ? UserText.localModelAccessTurnOff : UserText.localModelAccessTurnOn) {
+            Button(isOn ? UserText.localModelDisconnect : UserText.localModelConnect) {
                 isOn ? turnOff() : turnOn()
             }
             .accessibilityIdentifier("Preferences.AIChat.localModelAccessButton")
@@ -287,6 +293,16 @@ private struct LocalModelAccessRow: View {
         .padding(.vertical, 12)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(color(.surfaceSecondary)))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(color(.containerBorderPrimary), lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        if isOn {
+            Image(nsImage: DesignSystemImages.Glyphs.Size20.checkSolid)
+                .foregroundColor(color(.statusGreen))
+        } else {
+            AppleIntelligenceGlyph(size: 20)
+        }
     }
 
     private func color(_ color: DesignSystemColor) -> Color {
@@ -311,7 +327,7 @@ private struct DownloadableLocalModelRow: View {
                 .frame(width: 20, height: 20)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(modelName)
+                    Text(UserText.localModelSettingsLocalAITitle)
                         .font(.system(size: 13))
                         .foregroundColor(color(.textPrimary))
                     Text(sizeLabel)

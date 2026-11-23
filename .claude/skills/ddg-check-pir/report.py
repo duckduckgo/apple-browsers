@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes an HTML report for a batch of verify-pir attempts.
+"""Writes an HTML report for a batch of ddg-check-pir attempts.
 
 Usage: report.py BATCH [--baseline BASELINE_BATCH]
 

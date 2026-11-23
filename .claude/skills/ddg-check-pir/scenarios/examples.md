@@ -1,6 +1,6 @@
 # Example scenarios
 
-Examples that anyone can run, for instance to try a pull request: `/verify-pir Run the example scenarios as one batch.`
+Examples that anyone can run, for instance to try a pull request: `/ddg-check-pir Run the example scenarios as one batch.`
 They send no opt-outs, only the read-only requests a scan makes. `example` is the profile in
 `fixtures/profiles/example.json`, a made-up person.
 

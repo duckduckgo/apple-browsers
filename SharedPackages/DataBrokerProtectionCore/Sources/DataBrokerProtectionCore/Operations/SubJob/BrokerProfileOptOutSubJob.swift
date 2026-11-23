@@ -96,20 +96,6 @@ struct BrokerProfileOptOutSubJob {
         if kind.isRegular, brokerProfileQueryData.dataBroker.requiresUserAssistance {
             return false
         }
-        // Claim the record so the user can't start an assisted run on it at the same time.
-        let regularID: AssistedOptOutID?
-        if kind.isRegular, let extractedID = extractedProfile.id,
-           let brokerID = brokerProfileQueryData.dataBroker.id, let profileID = brokerProfileQueryData.profileQuery.id {
-            let id = AssistedOptOutID(brokerId: brokerID,
-                                      profileQueryId: profileID, extractedProfileId: extractedID)
-            guard dependencies.runningAssistedOptOuts.tryInsertRegular(id) else { return false }
-            regularID = id
-        } else {
-            regularID = nil
-        }
-        defer {
-            if let regularID { dependencies.runningAssistedOptOuts.remove(regularID) }
-        }
         guard let identifiers = try validateOptOutPreconditions(for: extractedProfile,
                                                                 brokerProfileQueryData: brokerProfileQueryData,
                                                                 database: dependencies.database) else {

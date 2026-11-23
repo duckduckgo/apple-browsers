@@ -669,6 +669,13 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
+    "web_extension_kill_switch_disabled_macos": {
+        "description": "Fires once per enforcement pass that turns off installed, enabled Chrome Web Store extensions because the webExtensions feature flag (extensionManagement isLaunchedExtensions) is off. Matches win_extensions_kill_switch_disabled. The extensions stay off when the flag turns back on. Sideloaded and bundled extensions are not affected.",
+        "owners": ["ayoy"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension_count", "channel"]
+    },
     "web_extension_installed_count_macos": {
         "description": "Fires once a day, on the first tab switch or page navigation, while the Chrome Web Store catalog is available, with how many Chrome Web Store extensions are installed and how many of those are enabled. Bundled extensions are not counted. Every device that can install from the store reports, zero included, so it is the denominator for adoption.",
         "owners": ["ayoy"],

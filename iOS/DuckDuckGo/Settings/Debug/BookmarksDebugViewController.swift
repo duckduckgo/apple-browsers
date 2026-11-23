@@ -24,6 +24,7 @@ import Combine
 import Persistence
 import Bookmarks
 import CoreData
+import WidgetKit
 
 class BookmarksDebugViewController: UIHostingController<BookmarksDebugRootView> {
 
@@ -200,6 +201,7 @@ class BookmarksDebugViewModel: ObservableObject {
                 switch result {
                 case .success:
                     self.fetch()
+                    WidgetCenter.shared.reloadAllTimelines()
                     self.operationCompleteMessage = "Bookmarks deleted"
                     self.showingOperationComplete = true
                 case .failure(let error):

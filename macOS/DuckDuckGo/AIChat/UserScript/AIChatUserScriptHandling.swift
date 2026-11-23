@@ -1332,6 +1332,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         }
 
         switch metric.metricName {
+        case .browserToolsAnswerCompleted, .browserToolsAnswerRated:
+            if isFireWindowProvider?() != true {
+                BrowserToolsPixel.answerPixels(for: metric).forEach { pixelFiring?.fire($0) }
+            }
+            completion?()
         case .userDidSubmitFirstPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)

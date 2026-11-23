@@ -94,6 +94,19 @@ struct BrowserToolsPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Answer rows keep each tool's best result, bucket the count and give any the best result", .timeLimit(.minutes(1)))
+    func answerRowsBucketAndRank() {
+        let tools = [("listOpenTabs", "error"), ("listOpenTabs", "not_allowed"), ("pinTab", "error"), ("openTab", "error"),
+                     ("closeTabs", "error"), ("searchHistory", "error")].map { AIChatBrowserToolAnswerTool(name: $0.0, result: $0.1) }
+
+        let rows = BrowserToolsPixel.answerRows(tools)
+
+        #expect(rows.map(\.tool) == ["close_tabs", "list_open_tabs", "open_tab", "pin_tab", "search_history", "any"])
+        #expect(rows.map(\.toolResult) == ["error", "not_allowed", "error", "error", "error", "not_allowed"])
+        #expect(Set(rows.map(\.toolsInAnswer)) == ["4_plus"])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Every catalog tool has a slug", .timeLimit(.minutes(1)))
     func everyCatalogToolHasASlug() {
         #expect(Set(BrowserToolsPixel.toolSlugs.keys) == Set(ClientToolCapability.browserTools.map(\.name)))

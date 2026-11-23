@@ -883,16 +883,34 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case fromKeychain
     }
 
-    /// Applies the environment in the VPN settings sent with `startupOptions`, when there are any, before the token is loaded,
-    /// so the token is read and refreshed against that environment, and logs the environment the tunnel starts with.
+    /// Loads the subscription environment from the VPN settings sent with `startupOptions`, when there are any,
+    /// and logs the environment the tunnel starts with. Call it before the token is loaded, so the token is read
+    /// and refreshed against that environment.
     /// - Parameter startupOptions: The options the tunnel was started with.
     @MainActor
-    private func applyEnvironment(from startupOptions: StartupOptions) {
+    private func loadSubscriptionEnvironment(from startupOptions: StartupOptions) {
         let previousEnvironment = settings.selectedEnvironment
-        if startupOptions.applyEnvironment(to: settings) {
+        if Self.loadSubscriptionEnvironment(from: startupOptions, into: settings) {
             Logger.networkProtection.log("Starting the tunnel with environment \(self.settings.selectedEnvironment.rawValue, privacy: .public), switched from \(previousEnvironment.rawValue, privacy: .public)")
         } else {
             Logger.networkProtection.log("Starting the tunnel with environment \(self.settings.selectedEnvironment.rawValue, privacy: .public)")
+        }
+    }
+
+    /// Sets the environment of `settings` to the one in the VPN settings snapshot in `options`, when there is one.
+    /// - Parameters:
+    ///   - options: The options the tunnel was started with.
+    ///   - settings: The settings to update.
+    /// - Returns: Whether the environment changed.
+    @discardableResult
+    static func loadSubscriptionEnvironment(from options: StartupOptions, into settings: VPNSettings) -> Bool {
+        switch options.vpnSettings {
+        case .set(let snapshot):
+            guard snapshot.selectedEnvironment != settings.selectedEnvironment else { return false }
+            settings.selectedEnvironment = snapshot.selectedEnvironment
+            return true
+        case .useExisting, .reset:
+            return false
         }
     }
 
@@ -951,7 +969,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             if startupGuard.prepareForStartup(startupMethod: startupOptions.startupMethod) == .blocked {
                 throw TunnelError.reconnectBlocked
             }
-            applyEnvironment(from: startupOptions)
+            loadSubscriptionEnvironment(from: startupOptions)
             try await loadToken(from: tokenSource, startupOptions: startupOptions)
             try await load(options: startupOptions)
             Logger.networkProtection.log("🟢 Startup options loaded correctly")

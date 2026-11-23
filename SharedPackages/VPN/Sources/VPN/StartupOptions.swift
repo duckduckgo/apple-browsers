@@ -276,16 +276,3 @@ public struct StartupOptions {
     }
 
 }
-
-extension StartupOptions {
-
-    /// Sets the environment of `settings` to the one in the VPN settings sent with these options, when there are any.
-    /// - Parameter settings: The settings to update.
-    /// - Returns: Whether the environment changed.
-    @discardableResult
-    func applyEnvironment(to settings: VPNSettings) -> Bool {
-        guard case .set(let snapshot) = vpnSettings, snapshot.selectedEnvironment != settings.selectedEnvironment else { return false }
-        settings.selectedEnvironment = snapshot.selectedEnvironment
-        return true
-    }
-}

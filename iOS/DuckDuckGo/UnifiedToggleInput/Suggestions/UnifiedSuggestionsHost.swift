@@ -653,10 +653,13 @@ final class UnifiedSuggestionsHost {
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)
+        NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
     }
 }
 
-private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView> {
+/// Over a web page the modules use the favorites controller's models without mounting that controller.
+/// Report visibility from their actual host, so hierarchy and modal checks still apply.
+private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView>, RemoteMessagePresenting {
 
     var isFloatingUIEnabled = false
     /// Fires when the keyboard starts lowering, which can precede its notifications during an interactive dismiss.
@@ -701,5 +704,13 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
         viewport.size.height = max(0, keyboardTop - viewport.minY - view.safeAreaInsets.bottom)
         guard rootView.viewModel.logoViewportFrame != viewport else { return }
         rootView.viewModel.logoViewportFrame = viewport
+    }
+
+    func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
+        rootView.embedsRedesignedModules &&
+        rootView.showsRedesignedSearchModules &&
+        !rootView.viewModel.isFireTab &&
+        !rootView.viewModel.isFadingOut &&
+        rootView.favoritesPresentation.hasAppearedRemoteMessage(withID: messageID)
     }
 }

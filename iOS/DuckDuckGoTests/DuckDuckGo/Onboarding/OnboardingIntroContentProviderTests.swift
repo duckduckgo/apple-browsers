@@ -424,8 +424,10 @@ struct OnboardingIntroContentProviderTests {
 
             // THEN
             let expectedTitle: String = switch reason {
-            case .browserPrivately, .privateAIChat, .vpn:
+            case .browserPrivately, .privateAIChat:
                 UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
+            case .vpn:
+                UserText.Onboarding.BrowsersComparison.titleVPNDownloadReasonExperiment
             case .noAI:
                 UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
             case .blockAds:

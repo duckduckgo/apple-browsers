@@ -58,6 +58,7 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
         XCTAssertEqual(script.messageNames, [WebExtensionAPICompatibilityScript.messageHandlerName,
                                              WebExtensionAPIStubScript.downloadMessageHandlerName,
                                              WebExtensionAPIStubScript.idleMessageHandlerName,
+                                             WebExtensionAPIStubScript.clipboardReadMessageHandlerName,
                                              WebExtensionAPIStubScript.privacyMessageHandlerName,
                                              WebExtensionAPIStubScript.permissionsMessageHandlerName])
     }

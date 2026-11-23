@@ -147,6 +147,8 @@ public enum WebExtensionPixelEvent {
     case enabled(extension: WebExtensionPixelExtension)
     case disabled(extension: WebExtensionPixelExtension)
     case remotelyDisabled(extension: WebExtensionPixelExtension)
+    /// Extension management stopped being launched and an enforcement pass turned off `count` Chrome Web Store extensions.
+    case killSwitchDisabled(count: Int)
     case retained14Days(extension: WebExtensionPixelExtension)
     case churned14Days(extension: WebExtensionPixelExtension)
     case installedCount(installed: Int, enabled: Int)

@@ -362,7 +362,7 @@
                 "key": "value",
                 "type": "string",
                 "description": "On the engagement (clicked) event: the provider of the selected AI model",
-                "enum": ["anthropic", "openai", "mistral", "unknown"]
+                "enum": ["anthropic", "openai", "tinfoil", "mistral", "unknown"]
             },
             "onboardingInstallType",
             "onboardingDaysSinceInstall",

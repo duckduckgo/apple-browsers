@@ -84,6 +84,7 @@ public enum FeatureFlag: String, CaseIterable {
     case webExtensions
 
     /// Enables web extensions for internal users, independently of `webExtensions`.
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1220747893847476
     case webExtensionsInternal
 
     /// Controls Chrome Web Store update discovery when the extension manager is created.

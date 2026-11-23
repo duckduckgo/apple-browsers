@@ -133,6 +133,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
+    private let topSitesPickerExperiment: TopSitesPickerExperimentProtocol
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
     private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     private var cancellables = Set<AnyCancellable>()
@@ -202,8 +203,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .welcome, .getStarted, .makeDefaultSingle, .systemSettings, .customize, .addressBarMode:
             true
         case .topSitesPicker:
-            // POC: local debug flag. The experiment enrols only users with fewer than 5 favorites after the import step.
-            featureFlagger.isFeatureOn(.onboardingTopSitesPicker)
+            topSitesPickerExperiment.shouldShowStep
         case .duckPlayerSingle:
             false
         case .searchOrChat:
@@ -255,6 +255,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             bookmarkManager: bookmarkManager,
             aiChatPreferencesStorage: DefaultAIChatPreferencesStorage(),
             featureFlagger: featureFlagger,
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger),
             onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
                 platform: .macOS,
                 installTypeProvider: {
@@ -279,6 +280,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         aiChatURL: @escaping () -> URL = { AIChatRemoteSettings().aiChatURL },
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
+        topSitesPickerExperiment: TopSitesPickerExperimentProtocol,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
         chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     ) {
@@ -295,6 +297,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
+        self.topSitesPickerExperiment = topSitesPickerExperiment
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
     }

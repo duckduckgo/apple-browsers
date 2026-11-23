@@ -86,6 +86,7 @@ class OnboardingManagerTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             aiChatURL: { URL(string: "https://duckduckgo.com/?ia=chat&duckai=5")! },
             featureFlagger: MockFeatureFlagger(),
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: MockFeatureFlagger()),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -182,6 +183,7 @@ class OnboardingManagerTests: XCTestCase {
             dataImportProvider: importProvider,
             bookmarkManager: MockBookmarkManager(),
             featureFlagger: MockFeatureFlagger(),
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: MockFeatureFlagger()),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -739,6 +741,7 @@ class OnboardingManagerTests: XCTestCase {
             dataImportProvider: importProvider,
             bookmarkManager: MockBookmarkManager(),
             featureFlagger: featureFlagger,
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -811,6 +814,7 @@ class OnboardingManagerTests: XCTestCase {
             aiChatPreferencesStorage: aiChatPreferencesStorage,
             homepageSearchModeSeedPersistor: homepageSearchModeSeedPersistor,
             featureFlagger: featureFlagger,
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -877,6 +881,7 @@ private extension OnboardingManagerTests {
             dataImportProvider: importProvider,
             bookmarkManager: MockBookmarkManager(),
             featureFlagger: featureFlagger,
+            topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )

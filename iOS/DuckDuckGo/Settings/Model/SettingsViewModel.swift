@@ -841,28 +841,28 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - YouTube Sponsor Skipping (internal MVP)
 
     /// Same file-backed store as the tabs' instance, so writes here reach open YouTube tabs through its change notification.
-    lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+    lazy var segmentSkipPreferences = SegmentSkipPreferences(store: keyValueStore)
 
-    var isSponsorBlockAvailable: Bool {
-        featureFlagger.isFeatureOn(.sponsorBlock)
+    var isSegmentSkipAvailable: Bool {
+        featureFlagger.isFeatureOn(.segmentSkip)
     }
 
-    var sponsorBlockEnabled: Binding<Bool> {
+    var segmentSkipEnabled: Binding<Bool> {
         Binding<Bool>(
-            get: { self.sponsorBlockPreferences.isEnabled },
+            get: { self.segmentSkipPreferences.isEnabled },
             set: {
                 self.objectWillChange.send()
-                self.sponsorBlockPreferences.isEnabled = $0
+                self.segmentSkipPreferences.isEnabled = $0
             }
         )
     }
 
-    var sponsorBlockSkipMode: Binding<SponsorBlockSkipMode> {
-        Binding<SponsorBlockSkipMode>(
-            get: { self.sponsorBlockPreferences.skipMode },
+    var segmentSkipSkipMode: Binding<SegmentSkipSkipMode> {
+        Binding<SegmentSkipSkipMode>(
+            get: { self.segmentSkipPreferences.skipMode },
             set: {
                 self.objectWillChange.send()
-                self.sponsorBlockPreferences.skipMode = $0
+                self.segmentSkipPreferences.skipMode = $0
             }
         )
     }

@@ -1,5 +1,5 @@
 //
-//  SponsorBlockSubfeature.swift
+//  SegmentSkipSubfeature.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -22,13 +22,13 @@ import os.log
 import UserScript
 import WebKit
 
-/// Subfeature that handles messages from the content-scope-scripts `sponsorBlock` feature.
+/// Subfeature that handles messages from the content-scope-scripts `segmentSkip` feature.
 ///
-/// Register it with the isolated `ContentScopeUserScript`, since `sponsorBlock` runs in the isolated world.
-public final class SponsorBlockSubfeature: NSObject, Subfeature {
+/// Register it with the isolated `ContentScopeUserScript`, since `segmentSkip` runs in the isolated world.
+public final class SegmentSkipSubfeature: NSObject, Subfeature {
 
     /// The feature name used for message routing. Must match the JavaScript feature name.
-    public static let featureNameValue = "sponsorBlock"
+    public static let featureNameValue = "segmentSkip"
     /// Bump when the `getConfig` payload changes; the page keeps understanding older versions.
     static let contractVersion = 1
 
@@ -41,19 +41,19 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
         .exact(hostname: "www.youtube-nocookie.com")
     ])
 
-    public let featureName: String = SponsorBlockSubfeature.featureNameValue
+    public let featureName: String = SegmentSkipSubfeature.featureNameValue
 
     public weak var broker: UserScriptMessageBroker?
 
-    private let segmentsProvider: SponsorBlockSegmentsProvider
-    private let preferences: SponsorBlockPreferences
+    private let segmentsProvider: SegmentSkipSegmentsProvider
+    private let preferences: SegmentSkipPreferences
     private let isFeatureFlagOn: () -> Bool
     /// The page that asked for config; `onConfigChanged` is pushed back into it.
     private weak var webView: WKWebView?
     private var preferencesCancellable: AnyCancellable?
 
-    public init(segmentsProvider: SponsorBlockSegmentsProvider,
-                preferences: SponsorBlockPreferences,
+    public init(segmentsProvider: SegmentSkipSegmentsProvider,
+                preferences: SegmentSkipPreferences,
                 isFeatureFlagOn: @escaping () -> Bool) {
         self.segmentsProvider = segmentsProvider
         self.preferences = preferences
@@ -79,7 +79,7 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     static let onConfigChanged = "onConfigChanged"
 
     struct GetSegmentsResponse: Encodable {
-        let segments: [SponsorBlockSegmentsProvider.Segment]
+        let segments: [SegmentSkipSegmentsProvider.Segment]
     }
 
     struct ConfigResponse: Encodable, Equatable {
@@ -90,14 +90,14 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     }
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        Logger.sponsorBlock.debug("message received: \(methodName, privacy: .public)")
+        Logger.segmentSkip.debug("message received: \(methodName, privacy: .public)")
         switch MessageNames(rawValue: methodName) {
         case .getSegments:
             return { [weak self] in try await self?.handleGetSegments(params: $0, original: $1) }
         case .getConfig:
             return { [weak self] in try await self?.handleGetConfig(params: $0, original: $1) }
         default:
-            Logger.sponsorBlock.debug("unknown method: \(methodName, privacy: .public)")
+            Logger.segmentSkip.debug("unknown method: \(methodName, privacy: .public)")
             return nil
         }
     }
@@ -106,33 +106,33 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     private func handleGetConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         webView = original.webView
         let response = ConfigResponse(enabled: isEnabled, skipMode: preferences.skipMode.rawValue, version: Self.contractVersion)
-        Logger.sponsorBlock.debug("getConfig answered: enabled=\(response.enabled) skipMode=\(response.skipMode, privacy: .public) version=\(Self.contractVersion)")
+        Logger.segmentSkip.debug("getConfig answered: enabled=\(response.enabled) skipMode=\(response.skipMode, privacy: .public) version=\(Self.contractVersion)")
         return response
     }
 
     private func pushConfigChanged() {
         guard let broker, let webView else { return }
         let update = ConfigResponse(enabled: isEnabled, skipMode: preferences.skipMode.rawValue)
-        Logger.sponsorBlock.debug("onConfigChanged pushed: enabled=\(update.enabled) skipMode=\(update.skipMode, privacy: .public)")
+        Logger.segmentSkip.debug("onConfigChanged pushed: enabled=\(update.enabled) skipMode=\(update.skipMode, privacy: .public)")
         broker.push(method: Self.onConfigChanged, params: update, for: self, into: webView)
     }
 
     /// Rejects malformed params, but every lookup failure resolves to an empty list: the page never retries.
     private func handleGetSegments(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        let query = try SponsorBlockSegmentsProvider.Query(params: params)
+        let query = try SegmentSkipSegmentsProvider.Query(params: params)
         guard isEnabled else {
-            Logger.sponsorBlock.debug("getSegments skipped: featureFlag=\(self.isFeatureFlagOn()) userSetting=\(self.preferences.isEnabled)")
+            Logger.segmentSkip.debug("getSegments skipped: featureFlag=\(self.isFeatureFlagOn()) userSetting=\(self.preferences.isEnabled)")
             return GetSegmentsResponse(segments: [])
         }
         do {
             let segments = try await segmentsProvider.segments(for: query)
             // Count only: segment times would identify the video.
-            Logger.sponsorBlock.debug("getSegments answered with \(segments.count) segments")
+            Logger.segmentSkip.debug("getSegments answered with \(segments.count) segments")
             return GetSegmentsResponse(segments: segments)
         } catch {
             // Domain and code only: a URLError description can carry the request URL, which holds the hash prefix.
             let error = error as NSError
-            Logger.sponsorBlock.error("getSegments lookup failed: \(error.domain, privacy: .public) \(error.code)")
+            Logger.segmentSkip.error("getSegments lookup failed: \(error.domain, privacy: .public) \(error.code)")
             return GetSegmentsResponse(segments: [])
         }
     }

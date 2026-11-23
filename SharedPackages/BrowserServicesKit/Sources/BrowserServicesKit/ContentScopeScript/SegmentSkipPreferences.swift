@@ -1,5 +1,5 @@
 //
-//  SponsorBlockPreferences.swift
+//  SegmentSkipPreferences.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,31 +20,31 @@ import Combine
 import Foundation
 import Persistence
 
-public enum SponsorBlockSkipMode: String, CaseIterable {
+public enum SegmentSkipSkipMode: String, CaseIterable {
     case manual
     case auto
 }
 
-public struct SponsorBlockSettings: StoringKeys {
-    public let isEnabled = StorageKey<Bool>(SponsorBlockStorageKey.isEnabled)
-    public let skipMode = StorageKey<SponsorBlockSkipMode>(SponsorBlockStorageKey.skipMode)
+public struct SegmentSkipSettings: StoringKeys {
+    public let isEnabled = StorageKey<Bool>(SegmentSkipStorageKey.isEnabled)
+    public let skipMode = StorageKey<SegmentSkipSkipMode>(SegmentSkipStorageKey.skipMode)
 
     public init() {}
 }
 
-enum SponsorBlockStorageKey: String, StorageKeyDescribing {
-    case isEnabled = "sponsorBlockMVPEnabled"
-    case skipMode = "sponsorBlockMVPSkipMode"
+enum SegmentSkipStorageKey: String, StorageKeyDescribing {
+    case isEnabled = "segmentSkipMVPEnabled"
+    case skipMode = "segmentSkipMVPSkipMode"
 }
 
 /// User settings for sponsor skipping, shared by both apps. Unset values fall back to the MVP defaults: on, manual.
 ///
 /// Changes are posted on `didChangeNotification`, so observers re-read the store (the file-backed iOS store has no publisher).
-public final class SponsorBlockPreferences {
+public final class SegmentSkipPreferences {
 
-    public static let didChangeNotification = Notification.Name("sponsorBlockPreferencesDidChange")
+    public static let didChangeNotification = Notification.Name("segmentSkipPreferencesDidChange")
 
-    private let settings: any ThrowingKeyedStoring<SponsorBlockSettings>
+    private let settings: any ThrowingKeyedStoring<SegmentSkipSettings>
     private let notificationCenter: NotificationCenter
 
     public init(store: ThrowingKeyValueStoring, notificationCenter: NotificationCenter = .default) {
@@ -57,7 +57,7 @@ public final class SponsorBlockPreferences {
         set { set(newValue, for: \.isEnabled) }
     }
 
-    public var skipMode: SponsorBlockSkipMode {
+    public var skipMode: SegmentSkipSkipMode {
         get { (try? settings.skipMode) ?? .manual }
         set { set(newValue, for: \.skipMode) }
     }
@@ -67,7 +67,7 @@ public final class SponsorBlockPreferences {
         notificationCenter.publisher(for: Self.didChangeNotification).map { _ in () }.eraseToAnyPublisher()
     }
 
-    private func set<Value>(_ value: Value, for keyPath: KeyPath<SponsorBlockSettings, StorageKey<Value>>) {
+    private func set<Value>(_ value: Value, for keyPath: KeyPath<SegmentSkipSettings, StorageKey<Value>>) {
         try? settings.set(value, for: keyPath)
         notificationCenter.post(name: Self.didChangeNotification, object: nil)
     }

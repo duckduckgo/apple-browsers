@@ -27,7 +27,7 @@ import WebKit
 struct AssistedOptOutWindowTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [AssistedAttemptPhase.ready, .queued, .agentInControl, .userTurn, .submitted], [false, true])
-    func unfinishedNativeCloseCancelsOnceIncludingSynchronousDismissal(phase: AssistedAttemptPhase, directClose: Bool) async throws {
+    func nativeCloseRequestsCancelOnceIncludingSynchronousDismissal(phase: AssistedAttemptPhase, directClose: Bool) async throws {
         let session = makeSession()
         advance(session, to: phase)
         let window = makeOffscreenWindow()
@@ -52,7 +52,7 @@ struct AssistedOptOutWindowTests {
         try await Task.sleep(nanoseconds: 20_000_000)
         let isRunning = phase == .queued || phase == .agentInControl || phase == .userTurn
         #expect(confirmations == (isRunning && !directClose ? 1 : 0))
-        #expect(cancellations == (phase == .submitted ? 0 : 1))
+        #expect(cancellations == 1)
         #expect(!window.isVisible)
         #expect(!session.isWindowKey)
         #expect(controller == nil)

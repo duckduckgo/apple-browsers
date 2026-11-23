@@ -216,6 +216,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 #if os(macOS)
     /// Answers `chrome.idle.queryState` for extension pages.
     private let idleHandler = WebExtensionIdleMessageHandler()
+    private let clipboardReadHandler: WebExtensionClipboardReadMessageHandler
+    private let downloadHandler: WebExtensionDownloadMessageHandler
 
     /// Answers `chrome.privacy.services` calls for extension pages.
     private let privacyHandler = WebExtensionPrivacyMessageHandler()
@@ -322,9 +324,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                                                                                 name: WebExtensionAPICompatibilityScript.messageHandlerName)
 
 #if os(macOS)
+        downloadHandler = WebExtensionDownloadMessageHandler()
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            downloadHandler, contentWorld: .page, name: WebExtensionAPIStubScript.downloadMessageHandlerName)
         // `chrome.idle.queryState` asks the app for the idle state and waits for the reply.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             idleHandler, contentWorld: .page, name: WebExtensionAPIStubScript.idleMessageHandlerName)
+        clipboardReadHandler = WebExtensionClipboardReadMessageHandler()
+        controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
+            clipboardReadHandler, contentWorld: .page, name: WebExtensionAPIStubScript.clipboardReadMessageHandlerName)
         // `chrome.privacy.services` settings are kept by the app, which decides who controls each one.
         controllerConfiguration.webViewConfiguration.userContentController.addScriptMessageHandler(
             privacyHandler, contentWorld: .page, name: WebExtensionAPIStubScript.privacyMessageHandlerName)
@@ -412,7 +420,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             self?.extensionContext(for: url) != nil
         }
 
+        downloadHandler.automaticDownloadDirectory = { configuration.automaticDownloadDirectory }
+        downloadHandler.contextForOrigin = { [weak self] in self?.extensionContext(for: $0) }
+        downloadHandler.backgroundWebView = { [weak self] in self?.backgroundWebView(in: $0) }
+        downloadHandler.presentationWindow = { [weak self] in self?.downloadPresentationWindow(for: $0, context: $1, boundTo: $2) }
+        downloadHandler.permissionController = { [weak self] in self?.permissionController }
         privacyHandler.store = privacySettings
+        clipboardReadHandler.extensionContext = { [weak self] in self?.extensionContext(for: $0) }
+        clipboardReadHandler.hasPermission = { [weak self] in self?.permissionController?.isGranted(.clipboardRead, to: $0.uniqueIdentifier) == true }
         privacyHandler.extensionIdentifier = { [weak self] url in
             self?.extensionContext(for: url)?.uniqueIdentifier
         }
@@ -1578,10 +1593,39 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     }
 
 #if os(macOS)
+    @MainActor
+    func downloadPresentationWindow(for webView: WKWebView, context: WKWebExtensionContext, boundTo originalWindow: NSWindow? = nil) -> NSWindow? {
+        let source: NSWindow?
+        if backgroundWebView(in: context) === webView {
+            // A background request can arrive after the user switches apps while 1Password fetches the attachment.
+            source = originalWindow ?? NSApp.keyWindow ?? NSApp.mainWindow ?? windowTabProvider.lastActiveWindowForDownload
+        } else {
+            source = webView.window
+        }
+        guard let source else { return nil }
+        for window in sequence(first: source, next: { $0.parent ?? $0.sheetParent }) {
+            guard let controller = window.windowController as? any WKWebExtensionWindow else { continue }
+            guard originalWindow == nil || originalWindow === window,
+                  controller.isPrivate?(for: context) == false || context.hasAccessToPrivateData else { return nil }
+            return window.isVisible || window.isMiniaturized ? window : nil
+        }
+        return nil
+    }
+
+    @MainActor
+    public func handleDownloadMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        downloadHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
     /// Answers an idle state request from an extension page in a tab, where the controller's own
     /// message handlers are not installed.
     public func handleIdleMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         idleHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
+    @MainActor
+    public func handleClipboardReadMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        replyHandler(clipboardReadHandler.readText(for: message), nil)
     }
 
     /// Answers a `chrome.privacy.services` call from an extension page in a tab, where the

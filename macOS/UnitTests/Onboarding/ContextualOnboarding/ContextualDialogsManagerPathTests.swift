@@ -18,6 +18,7 @@
 
 import Foundation
 @_spi(Testing) import Persistence
+import SubscriptionTestingUtilities
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -33,7 +34,7 @@ struct ContextualDialogsManagerPathTests {
 
     init() {
         manager = .withSearchPath(trackerMessageProvider: MockTrackerMessageProvider(),
-                                  subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling(),
+                                  subscriptionManager: SubscriptionManagerMock.notUpsellEligible(),
                                   stateStorage: stateStorage,
                                   searchPathStorage: searchPathStorage,
                                   settings: store.throwingKeyedStoring(),
@@ -150,7 +151,7 @@ struct ContextualDialogsManagerPathTests {
 
     private func relaunchedManager(uiLocker: CapturingUILocker) -> ContextualDialogsManager {
         .withSearchPath(trackerMessageProvider: MockTrackerMessageProvider(),
-                        subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling(),
+                        subscriptionManager: SubscriptionManagerMock.notUpsellEligible(),
                         stateStorage: stateStorage,
                         searchPathStorage: searchPathStorage,
                         settings: store.throwingKeyedStoring(),

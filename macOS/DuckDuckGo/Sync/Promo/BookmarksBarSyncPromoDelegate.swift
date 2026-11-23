@@ -102,8 +102,7 @@ final class BookmarksBarSyncPromoDelegate: InternalPromoDelegate, SyncDeviceButt
     }
 
     private func computeEligibility(authState: SyncAuthState?) -> Bool {
-        guard featureFlagger.isFeatureOn(.promoQueueBookmarksBarSyncPromo),
-              featureFlagger.isNewSyncEntryPointsFeatureOn,
+        guard featureFlagger.isNewSyncEntryPointsFeatureOn,
               syncService != nil,
               authState == .inactive,
               isBookmarksBarSettingOn() else {

@@ -58,8 +58,7 @@ final class StatisticsLoader: DuckAIPromptAtbRefreshing {
     /// once none remain.
     static let experimentsExcludedFromDuckAISearchMetric: Set<SubfeatureID> = [
         MacOSBrowserConfigSubfeature.onboardingChromeExtension.rawValue,
-        AutoconsentSubfeature.heuristicAction.rawValue,
-        PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment.rawValue
+        AutoconsentSubfeature.heuristicAction.rawValue
     ]
 
     init(

@@ -56,7 +56,9 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
 
     func testThatScriptListensForCompatibilityReportsIdleRequestsPrivacySettingsAndPermissions() {
         XCTAssertEqual(script.messageNames, [WebExtensionAPICompatibilityScript.messageHandlerName,
+                                             WebExtensionAPIStubScript.downloadMessageHandlerName,
                                              WebExtensionAPIStubScript.idleMessageHandlerName,
+                                             WebExtensionAPIStubScript.clipboardReadMessageHandlerName,
                                              WebExtensionAPIStubScript.privacyMessageHandlerName,
                                              WebExtensionAPIStubScript.permissionsMessageHandlerName])
     }

@@ -439,10 +439,10 @@ enum AIChatPixel: PixelKit.Event {
     case aiChatNtpScreenshotFailed(reason: AIChatScreenshotFailureReason)
 
     /// Event Trigger: Duck.ai's `captureScreenshot` request returned a screenshot
-    case aiChatDuckAiScreenshotTaken(kind: AIChatScreenshotKind, source: AIChatScreenshotSource)
+    case aiChatDuckAiScreenshotTaken(kind: AIChatScreenshotKind, source: AIChatScreenshotRequestSource)
 
     /// Event Trigger: Duck.ai's `captureScreenshot` request failed. Never on cancel or a missing Screen Recording permission
-    case aiChatDuckAiScreenshotFailed(reason: AIChatScreenshotFailureReason, source: AIChatScreenshotSource)
+    case aiChatDuckAiScreenshotFailed(reason: AIChatScreenshotFailureReason, source: AIChatScreenshotRequestSource)
 
     /// Event Trigger: An image chip is added to the New Tab Page omnibar (reported by the page)
     case aiChatNtpImageAttached(source: AIChatImageAttachmentSource)

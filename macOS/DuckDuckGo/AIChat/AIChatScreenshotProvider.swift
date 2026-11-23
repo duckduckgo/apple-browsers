@@ -24,7 +24,7 @@ import PrivacyConfig
 import WebKit
 
 /// Which surface hosted the Duck.ai page that asked for the screenshot. Raw values are the pixel `source` parameter.
-enum AIChatScreenshotSource: String {
+enum AIChatScreenshotRequestSource: String {
     case sidebar
     case duckai
 }
@@ -61,7 +61,7 @@ protocol AIChatScreenshotProviding: AnyObject {
     /// Replies once the capture is taken, fails or is cancelled, however long the user takes.
     func captureScreenshot(mode: String,
                            requestingWebView: WKWebView?,
-                           source: AIChatScreenshotSource) async -> AIChatCaptureScreenshotResponse
+                           source: AIChatScreenshotRequestSource) async -> AIChatCaptureScreenshotResponse
 }
 
 @MainActor
@@ -91,7 +91,7 @@ final class AIChatScreenshotProvider: AIChatScreenshotProviding {
 
     func captureScreenshot(mode: String,
                            requestingWebView webView: WKWebView?,
-                           source: AIChatScreenshotSource) async -> AIChatCaptureScreenshotResponse {
+                           source: AIChatScreenshotRequestSource) async -> AIChatCaptureScreenshotResponse {
         guard screenshotModes != nil, let mode = AIChatScreenshotMode(rawValue: mode) else { return .cancelled }
 
         // Switching tabs hides the chat that asked (a sidebar or a Duck.ai tab), so it ends the capture.

@@ -2820,11 +2820,11 @@ private final class MockAIChatScreenshotProvider: AIChatScreenshotProviding {
     var screenshotModes: [String]?
     var response: AIChatCaptureScreenshotResponse = .cancelled
     private(set) var capturedModes: [String] = []
-    private(set) var capturedSources: [AIChatScreenshotSource] = []
+    private(set) var capturedSources: [AIChatScreenshotRequestSource] = []
 
     func captureScreenshot(mode: String,
                            requestingWebView: WKWebView?,
-                           source: AIChatScreenshotSource) async -> AIChatCaptureScreenshotResponse {
+                           source: AIChatScreenshotRequestSource) async -> AIChatCaptureScreenshotResponse {
         capturedModes.append(mode)
         capturedSources.append(source)
         return response

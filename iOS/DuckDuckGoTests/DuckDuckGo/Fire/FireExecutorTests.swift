@@ -440,7 +440,7 @@ final class FireExecutorTests: XCTestCase {
         }
         XCTAssertNil(cancelled)
         XCTAssertEqual(fixture.listings, 0)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
     }
 
     func testDirectBurnReleasesBlockAfterSnapshotCleanupEvenIfFeatureIsDisabled() async {
@@ -525,7 +525,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(fixture.listings, 0)
         let fresh = await fixture.invoke()
         XCTAssertEqual(fresh, fixture.success)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
     }
 
     func testGeneralBurnBlocksBrowserToolsDuringActualHistoryDeletionAndSnapshotCleanup() async {
@@ -1181,8 +1181,7 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockWebsiteDataManager.clearCalledWithFireMode, false)
     }
 
-    func testWhenSitePermissionsFeatureIsOffThenBurnStillClearsSitePermissions() async {
-        XCTAssertFalse(mockFeatureFlagger.enabledFeatureFlags.contains(.sitePermissions))
+    func testWhenBurningDataThenSitePermissionsAreCleared() async {
         storePermission(for: "cleared.example")
         let executor = makeFireExecutor()
 

@@ -1,7 +1,7 @@
 {
   "name": "PhoneBooks",
   "url": "phonebooks.com",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "addedDatetime": 1791417600000,
   "optOutUrl": "https://www.phonebooks.com/opt-out",
   "steps": [
@@ -287,5 +287,5 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "removedAt": null
+  "removedAt": 1794919553683
 }

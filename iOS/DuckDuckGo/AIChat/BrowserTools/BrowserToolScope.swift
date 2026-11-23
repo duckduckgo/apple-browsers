@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import Foundation
 
 typealias BrowserToolScopeProvider = @MainActor (BrowserToolCallContext) -> BrowserToolScope?
@@ -32,6 +33,7 @@ final class BrowserToolScope {
     let selectTab: (Tab) -> Bool
     private weak var owner: Tab?
     private var isRevoked = false
+    let revocations = PassthroughSubject<Void, Never>()
 
     init(owner: Tab, source: MultiTabAttachmentSource, selectedTabID: @escaping () -> String?,
          selectTab: @escaping (Tab) -> Bool = { _ in false }) {
@@ -56,7 +58,14 @@ final class BrowserToolScope {
         isValid && tab.mode == .normal && source.tabsProvider().contains { $0 === tab }
     }
 
+    func canRead(_ tab: Tab) -> Bool {
+        guard contains(tab), let url = tab.link?.url else { return false }
+        return !AIChatTabMetadata.shouldExcludeFromTabPicker(url)
+    }
+
     func revoke() {
+        guard !isRevoked else { return }
         isRevoked = true
+        revocations.send(())
     }
 }

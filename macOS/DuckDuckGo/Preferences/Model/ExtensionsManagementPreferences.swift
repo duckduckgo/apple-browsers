@@ -38,8 +38,8 @@ final class ExtensionsManagementPreferences: ObservableObject {
         }
     }
 
-    /// Opened when the configuration doesn't set `learnMoreUrlRemoteDisable`, matching Windows.
-    private static let remoteDisableLearnMoreFallbackURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages")!
+    /// Opened when the configuration doesn't set `learnMoreUrl` or `learnMoreUrlRemoteDisable` to an absolute URL, matching Windows.
+    private static let learnMoreFallbackURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages")!
 
     private let configurationManager: PrivacyConfigurationManaging
     private let webExtensionManager: WebExtensionManaging?
@@ -108,18 +108,25 @@ final class ExtensionsManagementPreferences: ObservableObject {
     }
 
     func openLearnMore() {
-        guard let url = webExtensionManager?.chromeWebStore?.learnMoreURL else {
-            return
-        }
+        fire(.learnMoreClicked)
+        openConfiguredLearnMore(settingsKey: "learnMoreUrl")
+    }
 
-        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    func openNativeMessagingLearnMore() {
+        windowControllersManager.show(url: .ddgLearnMore, source: .ui, newTab: true, selected: true)
     }
 
     func openRemoteDisableLearnMore() {
-        let configuredURL = configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrlRemoteDisable"] as? String
-        let url = configuredURL.flatMap(URL.init(string:)) ?? Self.remoteDisableLearnMoreFallbackURL
+        fire(.learnMoreRemoteDisableClicked)
+        openConfiguredLearnMore(settingsKey: "learnMoreUrlRemoteDisable")
+    }
 
-        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    private func openConfiguredLearnMore(settingsKey: String) {
+        let configuredURL = (configurationManager.privacyConfig.settings(for: .extensionManagement)[settingsKey] as? String)
+            .flatMap(URL.init(string:))
+            .flatMap { $0.scheme == nil ? nil : $0 }
+
+        windowControllersManager.show(url: configuredURL ?? Self.learnMoreFallbackURL, source: .ui, newTab: true, selected: true)
     }
 }
 
@@ -134,6 +141,7 @@ extension ExtensionsManagementPreferences {
         let permissions: [String]
         let matchPatterns: [String]
         let hasAccessToPrivateData: Bool?
+        let hasHitNativeMessagingLimitation: Bool
 
         var id: String { record.uniqueIdentifier }
         var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
@@ -159,6 +167,7 @@ private extension ExtensionsManagementPreferences {
             .publisher(for: .chromeWebStoreExtensionChanged)
             .merge(with: NotificationCenter.default.publisher(for: .webExtensionsDidChangeLoadedExtensions))
             .merge(with: NotificationCenter.default.publisher(for: .webExtensionPrivateAccessDidChange))
+            .merge(with: NotificationCenter.default.publisher(for: .webExtensionNativeMessagingLimitationDidChange))
             .asVoid()
 
         configurationManager.updatesPublisher
@@ -215,7 +224,8 @@ private extension ExtensionsManagementPreferences {
                                                 isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier),
                                                 permissions: manager.extensionPermissions(for: identifier),
                                                 matchPatterns: manager.extensionMatchPatterns(for: identifier),
-                                                hasAccessToPrivateData: manager.hasAccessToPrivateData(for: identifier))
+                                                hasAccessToPrivateData: manager.hasAccessToPrivateData(for: identifier),
+                                                hasHitNativeMessagingLimitation: manager.hasHitNativeMessagingLimitation(identifier: identifier))
             entries.append(entry)
             seenListingIDs.insert(listing.id)
         }

@@ -272,6 +272,15 @@
       }
     },
     {
+      "identity" : "translate-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/translate-kit",
+      "state" : {
+        "revision" : "06dde3379a8c3e038432ee7106b6c9c7450e74fb",
+        "version" : "0.4.0"
+      }
+    },
+    {
       "identity" : "wireguard-apple",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/wireguard-apple",

@@ -2440,6 +2440,9 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Ar verta žiūrėti? Aprašyk neatskleisdamas siužeto.";
 
+/* Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat. */
+"duckai.swipe.new-chat.label" = "Naujas pokalbis";
+
 /* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
 "duckai.text-selection.context-title" = "Pasirinktas tekstas";
 
@@ -3039,6 +3042,9 @@
 
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "Kokioje svetainėje susidūrėte su problema?";
+
+/* Clear Find in Page query */
+"findInPage.clear" = "Valyti paiešką";
 
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d iš %2$d";
@@ -3774,6 +3780,63 @@
 
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Taikyti griežtą maršruto parinkimą (rekomenduojama)";
+
+/* Dax greeting on the New Tab page. Refers to private AI chat. */
+"new-tab-page.dax-greeting.askMe" = "Klausk bet ko.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.duckDuckHello" = "„DuckDuckGo“ sako labas.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.friday" = "Jau beveik savaitgalis.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.goodbyeAds" = "Sudie, įkyrios reklamos!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.heyThere" = "Labas.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.howCanIHelp" = "Kuo šiandien galiu padėti?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsDoThis" = "Pirmyn!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsExplore" = "Patyrinėkime.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.monday" = "Šiandien pirmadienis. Pirmyn.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.morning" = "Labas rytas, saulute.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.newDayNewTabs" = "Nauja diena, naujos kortelės.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.niceToSeeYou" = "Smagu tave matyti.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.nightOwl" = "Iš tikrųjų esu pelėda.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyToSearchPrivately" = "Metas ieškoti privačiai?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyWhenYouAre" = "Viskas paruošta – laukiu tik tavęs.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.stillAwake" = "Aš niekada nemiegu.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whatsOnYourMind" = "Apie ką galvoji?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereShouldWeStart" = "Nuo ko pradėsime?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereToToday" = "Kur pasuksime šiandien?";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Patvirtinti";
@@ -5595,6 +5658,9 @@
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "%1$@ prenumerata baigsis iš karto, o %2$@ per 14 dienų grąžinsime pradiniu mokėjimo būdu.";
+
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "Tavo „%@“ prenumerata baigsis iš karto, o per 14 dienų pradiniu mokėjimo būdu atgausi visą sumą.";
 
 /* Title of the alert confirming withdrawal from the subscription contract */
 "subscription.withdraw.confirm.title" = "Atsisakyti prenumeratos?";

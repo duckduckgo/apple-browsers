@@ -805,11 +805,21 @@ final class NavigationBarViewController: NSViewController {
                                                            themeManager: appThemeManager,
                                                            container: menuButtons,
                                                            isPrivateWindow: tabCollectionViewModel.isBurner,
-                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab },
+                                                           nativeMessagingAlertPresenter: makeNativeMessagingAlertPresenter())
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
             subscribeToWebExtensionInstalls(updater: updater)
         }
+    }
+
+    @available(macOS 15.4, *)
+    private func makeNativeMessagingAlertPresenter() -> NativeMessagingAlertPresenter {
+        NativeMessagingAlertPresenter(
+            limitationProvider: { NSApp.delegateTyped.webExtensionManager },
+            alertPresenter: WebExtensionAlertPresenter(windowProvider: { [weak self] in self?.view.window }, themeManager: appThemeManager),
+            windowControllersManager: Application.appDelegate.windowControllersManager
+        )
     }
 
     /// Only the window the install started from shows the popover.
@@ -1729,7 +1739,10 @@ final class NavigationBarViewController: NSViewController {
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
                                    dockCustomizer: dockCustomization,
-                                   defaultBrowserPreferences: defaultBrowserPreferences)
+                                   defaultBrowserPreferences: defaultBrowserPreferences,
+                                   addToDockMenuAction: AddToDockMenuAction(dockCustomization: dockCustomization,
+                                                                            featureFlagger: featureFlagger,
+                                                                            videoPresenter: Application.appDelegate.addToDockVideoPresenter))
 
         menu.actionDelegate = self
         let location = NSPoint(x: -menu.size.width + sender.bounds.width, y: sender.bounds.height + 4)

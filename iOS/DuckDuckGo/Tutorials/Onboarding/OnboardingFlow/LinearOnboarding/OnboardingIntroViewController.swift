@@ -36,11 +36,12 @@ final class OnboardingIntroViewController<Content: View>: UIHostingController<Co
             guard let self else { return }
             self.delegate?.onboardingCompleted(controller: self)
         }
-        viewModel.onOpenAIChatFromOnboarding = { [weak self] query, autoSend in
+        viewModel.onOpenAIChatFromOnboarding = { [weak self] query, autoSend, modelId in
             guard let self, let delegate else { return }
             delegate.openAIChatFromOnboarding(
                 query,
                 autoSend: autoSend,
+                modelId: modelId,
                 flowType: .mobileAppOnboarding
             )
         }
@@ -51,6 +52,13 @@ final class OnboardingIntroViewController<Content: View>: UIHostingController<Co
         viewModel.onOnboardingInterlude = { [weak self] interlude in
             guard let self, let delegate else { return }
             delegate.didStartOnboardingInterlude(interlude)
+        }
+        viewModel.onTryVPNFromOnboarding = { [weak self] onPaywallDismissed in
+            guard let self, let delegate else {
+                onPaywallDismissed()
+                return
+            }
+            delegate.presentSubscriptionPaywallFromOnboarding(from: self, onDismiss: onPaywallDismissed)
         }
     }
 

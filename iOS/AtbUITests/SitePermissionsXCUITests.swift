@@ -81,24 +81,12 @@ final class SitePermissionsXCUITests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    func testWhenFlagIsOffThenWebKitPromptsAndPermissionManagementIsHidden() {
-        // Existing records must stay hidden after rollback too.
-        launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { camera = allow; }; }")
-        openPermissionPage()
-        request("camera")
-        denyWebKitPrompt(for: "camera")
-
-        openMenu()
-        XCTAssertFalse(element("BrowsingMenu.SitePermissions").exists)
-        assertSitePermissionSettingsHidden()
+    func testWhenOrdinaryTabRunsOnIOS15ThenItUsesLegacyPermissions() throws {
+        try assertIOS15UsesLegacyPermissions(fireMode: false)
     }
 
-    func testWhenFlagOverrideIsOnThenOrdinaryTabUsesLegacyPermissionsOnIOS15() throws {
-        try assertIOS15OverrideUsesLegacyPermissions(fireMode: false)
-    }
-
-    func testWhenFlagOverrideIsOnThenFireTabUsesLegacyPermissionsOnIOS15() throws {
-        try assertIOS15OverrideUsesLegacyPermissions(fireMode: true)
+    func testWhenFireTabRunsOnIOS15ThenItUsesLegacyPermissions() throws {
+        try assertIOS15UsesLegacyPermissions(fireMode: true)
     }
 
     func testWhenCameraIsAllowedThenSiteDialogPrecedesSystemPromptAndDecisionPersists() {
@@ -875,10 +863,6 @@ final class SitePermissionsXCUITests: XCTestCase {
         }
     }
 
-    func testWhenFlagIsOffThenMicrophoneUsesWebKitDespiteSavedDenial() {
-        assertWebKitMediaRollback(permission: "microphone")
-    }
-
     func testWhenRemovalIsUndoneThenPermissionsSheetReopensForTheSite() {
         launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = deny; }; }")
         openPermissionPage()
@@ -930,29 +914,6 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSheetDecision("Camera", contains: "Ask Each Time")
         assertSheetDecision("Microphone", contains: "Ask Each Time")
         XCTAssertFalse(element("SitePermissions.Sheet.Geolocation").exists)
-    }
-
-    func testWhenFlagIsOffThenCombinedMediaUsesWebKitDespiteSavedDenials() {
-        assertWebKitMediaRollback(permission: "camera and microphone")
-    }
-
-    func testWhenFlagIsOffThenLocationUsesWebKitDespiteSavedDenial() throws {
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        launchApp()
-        openPermissionPage()
-        request("location")
-        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
-        answerSystemAlert(for: "location", allow: true)
-        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
-
-        // Establish OS authorization first so this checks the native site prompt independently.
-        app.terminate()
-        launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { geolocation = deny; }; }")
-        openPermissionPage()
-        request("location")
-        denyWebKitPrompt(for: "location")
-        assertResult("location error 1 1")
-        assertNoPermissionPrompt()
     }
 
     func testWhenFireClearsDataThenFireproofPermissionsAndGlobalDefaultsAreKept() {
@@ -1016,26 +977,6 @@ final class SitePermissionsXCUITests: XCTestCase {
         enablePrivateVoiceSearch()
         tap(element("SitePermissions.Reminder.ChangePermissions"))
         XCTAssertTrue(XCUIApplication(bundleIdentifier: "com.apple.Preferences").wait(for: .runningForeground, timeout: timeout))
-    }
-
-    func testWhenSettingsVoiceSearchMicrophoneIsDeniedWithFeatureOffThenLegacyAlertIsUsed() {
-        launchApp(flagEnabled: false)
-        openVoiceSearchSettings()
-        enablePrivateVoiceSearch()
-        answerSystemAlert(for: "microphone", allow: false)
-
-        let alert = app.alerts["Microphone Access Required"]
-        XCTAssertTrue(alert.waitForExistence(timeout: timeout))
-        XCTAssertTrue(alert.staticTexts["Please allow Microphone access in iOS System Settings for DuckDuckGo to use voice features."].exists)
-        XCTAssertEqual(alert.buttons.count, 1)
-        XCTAssertFalse(element("SitePermissions.Reminder").exists)
-        tap(alert.buttons["OK"])
-        XCTAssertTrue(alert.waitForNonExistence(timeout: timeout))
-
-        enablePrivateVoiceSearch()
-        XCTAssertTrue(alert.waitForExistence(timeout: timeout))
-        assertNoSystemAlert()
-        tap(alert.buttons["OK"])
     }
 
     private func showAndCancelVoicePermissionReminder(duckAI: Bool, isVoiceChat: Bool) {
@@ -1162,15 +1103,14 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertNoPermissionPrompt()
     }
 
-    private func launchApp(flagEnabled: Bool = true, seedPermissions: String? = nil, additionalArguments: [String] = []) {
+    private func launchApp(seedPermissions: String? = nil, additionalArguments: [String] = []) {
         app.launchArguments = [
             "-clearAllDefaults", "isRunningUITests",
             "-isOnboardingCompleted", "true",
-            "-ff.sitePermissions", String(flagEnabled),
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
-            // The app-open keyboard can cover the toolbar, including the Tab Switcher.
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
+            // These tests don't cover the keyboard; keep the New Tab page's launch keyboard from covering the toolbar.
+            "-com.duckduckgo.ios.keyboard.newtab", "<false/>",
             "-AppleLanguages", "(en)", "-AppleLocale", "en_GB"
         ]
         if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
@@ -1476,16 +1416,6 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(app.buttons[decision == "deny" ? "Never Allow" : "Ask Each Time"])
     }
 
-    private func assertWebKitMediaRollback(permission: String) {
-        launchApp(flagEnabled: false, seedPermissions: "{ \"127.0.0.1\" = { camera = deny; microphone = deny; geolocation = deny; }; }")
-        openPermissionPage()
-        request(permission)
-        denyWebKitPrompt(for: permission)
-        assertResult("NotAllowedError 1")
-        assertResult("tracks video=0 audio=0")
-        assertNoPermissionPrompt()
-    }
-
     private func denyWebKitPrompt(for permission: String) {
         let alert = app.alerts.containing(NSPredicate(format: "label CONTAINS[c] %@", "127.0.0.1")).firstMatch
         XCTAssertTrue(alert.waitForExistence(timeout: timeout), app.debugDescription)
@@ -1524,12 +1454,11 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: timeout))
     }
 
-    private func assertIOS15OverrideUsesLegacyPermissions(fireMode: Bool) throws {
+    private func assertIOS15UsesLegacyPermissions(fireMode: Bool) throws {
         if #available(iOS 16.0, *) {
-            throw XCTSkip("Legacy permissions with a forced-on override require iOS 15")
+            throw XCTSkip("Legacy permissions require iOS 15")
         }
-        launchApp(flagEnabled: true,
-                  seedPermissions: "{ \"127.0.0.1\" = { camera = ask; }; }",
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = ask; }; }",
                   additionalArguments: ["-ff.fireMode", String(fireMode)])
         if fireMode {
             openNewPermissionTab(fireMode: true)

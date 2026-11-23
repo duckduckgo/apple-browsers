@@ -2440,6 +2440,9 @@
 /* Suggested prompt submitted text: is a movie/show worth watching */
 "duckai.suggestion.worth-watching.prompt" = "Vai to ir vērts skatīties? Sniedz man pārskatu, neatklājot sižeta pavērsienus.";
 
+/* Caption under the compose button that appears when the user pulls up past the bottom of a Duck.ai chat; releasing opens a new chat. */
+"duckai.swipe.new-chat.label" = "Jauna tērzēšanas saruna";
+
 /* Generic title sent to Duck.ai for an attached text selection rather than a full web page */
 "duckai.text-selection.context-title" = "Teksta fragments";
 
@@ -3039,6 +3042,9 @@
 
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "Kurai vietnei ir problēmas?";
+
+/* Clear Find in Page query */
+"findInPage.clear" = "Notīrīt meklēšanu";
 
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d no %2$d";
@@ -3774,6 +3780,63 @@
 
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Ieslēgt stingro maršrutēšanu (ieteicams)";
+
+/* Dax greeting on the New Tab page. Refers to private AI chat. */
+"new-tab-page.dax-greeting.askMe" = "Jautā man jebko.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.duckDuckHello" = "Pēk, pēk, čau.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.friday" = "Nedēļas nogale jau gandrīz klāt.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.goodbyeAds" = "Vairs nekādu reklāmu, kas tev seko!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.heyThere" = "Sveiki!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.howCanIHelp" = "Kā šodien varu tev palīdzēt?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsDoThis" = "Sāksim!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.letsExplore" = "Atklāsim ko jaunu.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.monday" = "Ir pirmdiena. Aiziet!";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.morning" = "Labrīt, saulīt.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.newDayNewTabs" = "Jauna diena, jaunas cilnes.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.niceToSeeYou" = "Prieks tevi redzēt.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.nightOwl" = "Esmu īsta nakts pūce.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyToSearchPrivately" = "Sāksim meklēt privāti?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.readyWhenYouAre" = "Varam sākt, kad vien vēlies.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.stillAwake" = "Es nekad neguļu.";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whatsOnYourMind" = "Kas tev prātā?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereShouldWeStart" = "Ar ko sāksim?";
+
+/* Dax greeting on the New Tab page. */
+"new-tab-page.dax-greeting.whereToToday" = "Kurp šodien?";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Apstiprināt";
@@ -5595,6 +5658,9 @@
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "Tavs %1$@ abonements nekavējoties beigsies, un 14 dienu laikā mēs tev atmaksāsim %2$@, izmantojot sākotnējo maksājuma veidu.";
+
+/* Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus). */
+"subscription.withdraw.confirm.message.no.amount" = "Tavs %@ abonements tiks nekavējoties pārtraukts, un 14 dienu laikā veiksim pilnu naudas atmaksu, izmantojot sākotnējo maksājuma veidu.";
 
 /* Title of the alert confirming withdrawal from the subscription contract */
 "subscription.withdraw.confirm.title" = "Vai atteikties no abonementa?";

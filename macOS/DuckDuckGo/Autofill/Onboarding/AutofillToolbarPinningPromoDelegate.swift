@@ -17,9 +17,7 @@
 //
 
 import Combine
-import FeatureFlags_macOS
 import Foundation
-import PrivacyConfig
 
 /// Presents the "Add passwords shortcut?" popover on behalf of the promo queue.
 ///
@@ -35,16 +33,13 @@ protocol AutofillToolbarPinningPromoPresenting: AnyObject {
 /// Offers to pin the passwords shortcut to the toolbar right after the user saves their first password
 final class AutofillToolbarPinningPromoDelegate: InternalPromoDelegate {
 
-    private let featureFlagger: FeatureFlagger
     private let pinningManager: PinningManager
     private let presenterProvider: @MainActor () -> AutofillToolbarPinningPromoPresenting?
     private var showContinuation: CheckedContinuation<PromoResult, Never>?
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(false)
 
-    init(featureFlagger: FeatureFlagger,
-         pinningManager: PinningManager,
+    init(pinningManager: PinningManager,
          presenterProvider: @escaping @MainActor () -> AutofillToolbarPinningPromoPresenting?) {
-        self.featureFlagger = featureFlagger
         self.pinningManager = pinningManager
         self.presenterProvider = presenterProvider
     }
@@ -60,8 +55,7 @@ final class AutofillToolbarPinningPromoDelegate: InternalPromoDelegate {
     }
 
     private func computeEligibility() -> Bool {
-        featureFlagger.isFeatureOn(.promoQueueAutofillToolbarPinningPromo)
-            && !pinningManager.isPinned(.autofill)
+        !pinningManager.isPinned(.autofill)
     }
 
     @MainActor

@@ -301,13 +301,9 @@ extension MainViewController {
         guard isMenuCommandAllowed(.newTab) else { return }
         guard tabSwitcherController == nil else { return }
         guard isShortcutEnabled() else { return }
-        
-        if featureFlagger.isFeatureOn(.ipadMenuBar) || currentTab != nil || featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) {
-            recordUserOpenedTab()
-            newTab()
-        } else {
-            currentTab?.requestFindInPage()
-        }
+
+        recordUserOpenedTab()
+        newTab()
     }
 
     @objc func keyboardNewFireTab() {

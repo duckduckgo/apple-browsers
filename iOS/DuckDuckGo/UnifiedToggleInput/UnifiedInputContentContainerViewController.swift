@@ -107,16 +107,18 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     /// The one resolver-driven host that serves both surfaces; its container pinned directly in
     /// `contentContainerView`.
-    var usesRedesignedNewTabPageLayout = false {
+    var redesignedFocusedSurface: RedesignedFocusedSurface? {
         didSet {
-            guard oldValue != usesRedesignedNewTabPageLayout else { return }
-            unifiedSuggestionsHost?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
-            if isViewLoaded {
+            guard oldValue != redesignedFocusedSurface else { return }
+            unifiedSuggestionsHost?.setRedesignedFocusedSurface(redesignedFocusedSurface)
+            if (oldValue == .newTabPage) != usesRedesignedNewTabPageLayout, isViewLoaded {
                 view.setNeedsLayout()
                 applyRequestedContentInset()
             }
         }
     }
+
+    var usesRedesignedNewTabPageLayout: Bool { redesignedFocusedSurface == .newTabPage }
 
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
@@ -665,7 +667,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let customizationStore = NewTabPageCustomizationStore()
         let hasFavorites: () -> Bool = { [weak self] in
-            let isVisible = self?.usesRedesignedNewTabPageLayout != true || customizationStore.isFavoritesSectionVisible
+            let usesRedesignedFavorites = self?.redesignedFocusedSurface != nil
+            let isVisible = !usesRedesignedFavorites || customizationStore.isFavoritesSectionVisible
             return isVisible && !dependencies.favoritesViewModel.favorites.isEmpty
         }
         let hasMessages: () -> Bool = {
@@ -725,7 +728,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let host = UnifiedSuggestionsHost(config: config, usesScrollableEscapeHatch: usesScrollableEscapeHatch)
         host.setEscapeHatch(escapeHatchModel)
-        host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
+        host.setRedesignedFocusedSurface(redesignedFocusedSurface)
         host.onContentChanged = { [weak self] in
             self?.updateFocusedContent()
             self?.refreshVisibleContent(animateContentUpdates: true)

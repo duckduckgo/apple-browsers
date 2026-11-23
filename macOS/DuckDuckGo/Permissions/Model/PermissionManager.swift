@@ -208,9 +208,7 @@ final class PermissionManager: PermissionManagerProtocol {
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        permissions = permissions.filter {
-            fireproofDomains.isFireproof(fireproofDomain: $0.key)
-        }
+        permissions = Self.keepingBurnSurvivors(of: permissions) { fireproofDomains.isFireproof(fireproofDomain: $0) }
         publishPersistedPermissions()
         store.clear(except: permissions.values.reduce(into: [StoredPermission](), {
             $0.append(contentsOf: $1.values)
@@ -226,10 +224,7 @@ final class PermissionManager: PermissionManagerProtocol {
     func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        permissions = permissions.filter { permission in
-            let baseDomain = tld.eTLDplus1(permission.key) ?? ""
-            return !baseDomains.contains(baseDomain)
-        }
+        permissions = Self.keepingBurnSurvivors(of: permissions) { !baseDomains.contains(tld.eTLDplus1($0) ?? "") }
         publishPersistedPermissions()
         store.clear(except: permissions.values.reduce(into: [StoredPermission](), {
             $0.append(contentsOf: $1.values)
@@ -240,6 +235,21 @@ final class PermissionManager: PermissionManagerProtocol {
                 completion(.success(()))
             }
         })
+    }
+
+    /// Keeps every permission of a kept domain, and on other domains only what a burn must not loosen: a Duck.ai
+    /// browser tool's Never allow or Always ask, so Fire never lets a tool run without asking. Always allow is cleared.
+    private static func keepingBurnSurvivors(of permissions: [String: [PermissionType: StoredPermission]],
+                                             keepingDomain: (String) -> Bool) -> [String: [PermissionType: StoredPermission]] {
+        permissions.reduce(into: [:]) { result, entry in
+            let kept = keepingDomain(entry.key) ? entry.value : entry.value.filter { type, permission in
+                guard case .browserTool = type else { return false }
+                return permission.decision != .allow
+            }
+            if !kept.isEmpty {
+                result[entry.key] = kept
+            }
+        }
     }
 
     func removePermission(forDomain domain: String, permissionType: PermissionType) {

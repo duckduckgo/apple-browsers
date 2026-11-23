@@ -130,8 +130,9 @@ public enum WebExtensionPixelEvent {
     case scriptletInstalled(type: DuckDuckGoWebExtensionType, version: String)
     case scriptletInstallError(type: DuckDuckGoWebExtensionType, error: Error)
 
-    /// One report for each tab that stayed silent after a page loaded.
-    case cpmMessagingBreakage(tabs: CPMSilentTabs)
+    /// One report for each tab that stayed silent after a page loaded, with the furthest init step the extension
+    /// reported for the page. The step is left out while the `cpmInitProgress` subfeature is off.
+    case cpmMessagingBreakage(lastStage: CPMLastStage, tabs: CPMSilentTabs)
     /// Sent once when a second tab goes silent without any answer from the extension in between.
     case cpmMessagingBreakagePersistent
 
@@ -146,9 +147,13 @@ public enum WebExtensionPixelEvent {
     case enabled(extension: WebExtensionPixelExtension)
     case disabled(extension: WebExtensionPixelExtension)
     case remotelyDisabled(extension: WebExtensionPixelExtension)
+    /// Extension management stopped being launched and an enforcement pass turned off `count` Chrome Web Store extensions.
+    case killSwitchDisabled(count: Int)
     case retained14Days(extension: WebExtensionPixelExtension)
     case churned14Days(extension: WebExtensionPixelExtension)
     case installedCount(installed: Int, enabled: Int)
+    /// The first time an extension tries to reach an app on the Mac in a build that refuses it, such as the App Store build.
+    case nativeMessagingBlocked(extension: WebExtensionPixelExtension)
 }
 
 /// How many tabs have been silent since the extension last answered anything.

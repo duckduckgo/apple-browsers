@@ -21,6 +21,7 @@ import Foundation
 /// Features whose `rawValue` should be the key to access their corresponding `PrivacyConfigurationData.PrivacyFeature` object
 public enum PrivacyFeature: String {
     case contentBlocking
+    case trackerProtection
     case duckPlayer
     case fingerprintingTemporaryStorage
     case fingerprintingBattery
@@ -245,6 +246,14 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220580902953934
     case fastTrackingParameterFilter
+
+    /// Shows the Add to Dock instructions video in the App Store build from calls to action that only offer Add to Dock: the menu items, the New Tab Page card, and Default Browser and Dock prompts that only offer Add to Dock.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220563610417806
+    case appStoreAddToDockOnlyCTA
+
+    /// Shows the Add to Dock instructions video before Set as Default in the App Store build, from Default Browser and Dock prompts that offer both actions.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220622522685112
+    case appStoreBothDefaultBrowserAndDockCTA
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -655,6 +664,34 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Paints previously-found matches on a page.
     case highlightInPage
+
+    /// Pins open tabs in the owner tab's window.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case pinTab
+
+    /// Opens a URL in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case openTab
+
+    /// Closes open tabs in the owner tab's window.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case closeTabs
+
+    /// Bookmarks an open tab, optionally into a folder path.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case bookmarkTab
+
+    /// Searches completed downloads by file name and source URL.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case searchDownloads
+
+    /// Searches bookmarks by title, URL and folder, optionally within a folder path.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case searchBookmarks
+
+    /// One prompt for the browser tools a chat expects to use, granted for that chat.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1220527012152895
+    case requestAccess
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -757,7 +794,11 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case filterlist
     case heuristicAction
     case heuristicHitTest
+    case popupMutationObserver
     case cookiePopupOptInDialog
+    /// The extension reports how far each page's init got, and the app puts the last step in the breakage pixel.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1220422645861893?focus=true
+    case cpmInitProgress
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
@@ -883,6 +924,15 @@ public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
     case tdsNextExperiment030
 }
 
+/// Subfeatures of the `trackerProtection` feature, which configures the content-scope-scripts tracker protection (surrogates).
+/// Named with `Config` to avoid clashing with `TrackerProtectionSubfeature`, the content-scope-scripts message handler.
+public enum TrackerProtectionConfigSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .trackerProtection }
+
+    /// Serve surrogates from the embedded web extension instead of content-scope-scripts.
+    case appleSurrogateRedirection
+}
+
 public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
@@ -942,8 +992,6 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
-    /// Controls permission prompts and persistence on macOS.
-    case permissions
     /// Controls Chrome Web Store update discovery on macOS.
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case updateDiscovery
@@ -1002,20 +1050,11 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
-    case autofillToolbarPinningPromo
-
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
 
-    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay.
-    case duckPlayerOverlayPromo
-
     /// Kill switch for the "Update available" promo.
     case updateAvailablePromo
-
-    /// Kill switch for the "Browser updated" promo.
-    case browserUpdatedPromo
 
     /// Kill switch for the VPN toolbar upsell button and dot badge promos.
     case vpnUpsellPromo
@@ -1031,12 +1070,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
     case bookmarkAddedSyncPromo
-
-    /// Kill switch for the import/sync promo on the Bookmarks "No bookmarks yet" empty state.
-    case bookmarksEmptyStatePromo
-
-    /// Kill switch for the import/sync promo on the Passwords panel empty states.
-    case autofillEmptyStatePromo
 
     /// Kill switch for the default browser win-back modal.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true

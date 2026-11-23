@@ -69,8 +69,9 @@ struct RebrandedOnboardingComparisonTableView: View {
         /// Display available features with an animated checkmark that springs in with a staggered delay
         /// - Parameters:
         ///   - startAnimation: When true, triggers the checkmark animation sequence
+        ///   - drawsCheckmark: When false, the checkmark springs in already drawn, like the subscription badge
         ///   - staggeredDelay: Base delay interval multiplied by row index to create staggered effect
-        case animated(startAnimation: Bool, staggeredDelay: TimeInterval = 0.1)
+        case animated(startAnimation: Bool, drawsCheckmark: Bool, staggeredDelay: TimeInterval = 0.1)
     }
 
     let header: Header
@@ -199,13 +200,13 @@ private struct FeatureRow: View {
     @ViewBuilder
     private var ddgAvailableFeature: some View {
         switch availableFeatureAnimation {
-        case let .animated(startAnimation, staggeredDelay) where feature.ddgAvailability == .available:
+        case let .animated(startAnimation, true, staggeredDelay) where feature.ddgAvailability == .available:
             CircleCheckView(
                 size: ComparisonTableMetrics.circleCheckViewSize,
                 shouldAnimate: startAnimation,
                 staggerDelay: staggeredDelay * Double(index + 1)
             )
-        case let .animated(startAnimation, staggeredDelay) where feature.ddgAvailability == .subscription:
+        case let .animated(startAnimation, _, staggeredDelay) where feature.ddgAvailability == .available || feature.ddgAvailability == .subscription:
             BouncingAvailabilityIcon(
                 image: feature.ddgAvailability.image,
                 shouldAnimate: startAnimation,

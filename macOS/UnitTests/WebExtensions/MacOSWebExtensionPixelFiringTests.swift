@@ -25,16 +25,40 @@ import WebExtensions
 final class MacOSWebExtensionPixelFiringTests: XCTestCase {
     func testBreakageUsesCanonicalPixelKitContract() throws {
         let pixels = PixelKitMock()
-        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(tabs: .many))
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .reached(.configRead), tabs: .many))
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixels.actualFireCalls.first)
         XCTAssertEqual(call.pixel.name, "web_extension_cpm_breakage_macos")
         XCTAssertEqual(call.pixel.namePrefix, .none)
         XCTAssertEqual(call.frequency, .dailyAndCount)
-        XCTAssertEqual(call.pixel.parameters, ["tabs": "many"])
+        XCTAssertEqual(call.pixel.parameters, ["last_stage": "config_read", "tabs": "many"])
         XCTAssertEqual(call.pixel.standardParameters, [.pixelSource])
         XCTAssertNil(call.additionalParameters)
         XCTAssertTrue(call.includeAppVersionParameter)
+    }
+
+    func testBreakageWithoutMeasuringLeavesOutTheStage() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .notMeasured, tabs: .one))
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.parameters, ["tabs": "one"])
+    }
+
+    func testBreakageWithoutAReportedStageSendsNone() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmMessagingBreakage(lastStage: .noMark, tabs: .one))
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.parameters, ["last_stage": "none", "tabs": "one"])
+    }
+
+    func testNativeMessagingBlockedFiresEveryTimeTheManagerReportsIt() {
+        let pixels = PixelKitMock()
+
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.nativeMessagingBlocked(extension: .catalog(.onePassword)))
+
+        XCTAssertEqual(pixels.actualFireCalls, [
+            ExpectedFireCall(pixel: WebExtensionPixel.nativeMessagingBlocked(extension: .catalog(.onePassword)), frequency: .standard)
+        ])
     }
 
     func testUpdatePixelsUseOnlyAllowedParameters() throws {
@@ -225,6 +249,16 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
             XCTAssertEqual(try XCTUnwrap(pixels.actualFireCalls.first).frequency, .standard, "\(event)")
         }
+    }
+
+    func testKillSwitchDisabledIsDailyAndCountWithBucketedCount() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.killSwitchDisabled(count: 3))
+
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.name, "web_extension_kill_switch_disabled_macos")
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertEqual(call.pixel.parameters, ["count": "2"])
     }
 
     func testInstalledCountIsDaily() throws {

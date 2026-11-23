@@ -42,6 +42,8 @@ final class PageContextUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
     let messageOriginPolicy: MessageOriginPolicy = .all
+    /// Page context describes the tab's document, so an iframe must not be able to supply it.
+    let messageFramePolicy: MessageFramePolicy = .mainFrame
 
     private let collectionResultSubject = PassthroughSubject<PageContextCollectionResult, Never>()
 

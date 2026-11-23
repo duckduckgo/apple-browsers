@@ -1793,7 +1793,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.suggestionsScope, .selection)
     }
 
-    func testDocumentContextReachesTheResolverSoSummarizeIsWordedForADocument() {
+    func testDocumentContextReachesTheResolverSoSummarizeIsWordedForADocument() async {
         let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
         sessionState = AIChatContextualChatSessionState(
@@ -1815,7 +1815,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.markPendingSignalsOnlyCollection()
         sessionState.updateContext(makeDocumentContext())
 
-        wait(for: [loaded], timeout: 1.0)
+        await fulfillment(of: [loaded], timeout: 5)
         XCTAssertTrue(mockProvider.lastInput?.isDocument == true)
     }
 

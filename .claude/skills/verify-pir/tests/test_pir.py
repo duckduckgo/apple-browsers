@@ -278,7 +278,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(result["cleanup"]["stopped"])
         evidence = Path(result["evidence"])
         responses = [json.loads(p.read_text()) for p in evidence.glob("pir-http-*.json")]
-        logs = [r for r in responses if r["path"] == "/api/logs?limit=1000"]
+        logs = [r for r in responses if r["path"].startswith("/api/logs?since=") and r["path"].endswith("&limit=5000")]
         self.assertEqual(len(logs), 1)
         self.assertEqual(logs[0]["status"], 200)
         self.assertIsInstance(logs[0]["response"], list)
@@ -399,6 +399,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result["status"], "pass", result)
         self.assertFalse(any(path.endswith(("/email-confirmation/check", "/continue")) for _, path, *_ in self.calls))
         self.assertIn("PIR opt-out", [item["what"] for item in result["unverified"]])
+        self.assertIn("skipped the opt-out", result["reason"])
         self.assertNotIn("selected record opt-out flow confirmed", [check["check"] for check in result["checks"]])
 
     def test_optout_without_injected_token_requires_ready_saved_subscription_before_scan(self):

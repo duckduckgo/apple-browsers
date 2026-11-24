@@ -16,8 +16,12 @@ runs:
   steps:
     - name: Send pixel request
       shell: bash
+      env:
+        PIXEL_BASE_URL: ${{ inputs.base-url }}
+        PIXEL_NAME: ${{ inputs.pixel-name }}
+        PIXEL_QUERY_PARAMS: ${{ inputs.query-params }}
       run: |
-        PIXEL_URL="${{ inputs.base-url }}${{ inputs.pixel-name }}"
+        PIXEL_URL="${PIXEL_BASE_URL}${PIXEL_NAME}"
 
         # Construct workflow URL automatically (same format as env.WORKFLOW_URL)
         WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"
@@ -26,8 +30,8 @@ runs:
         QUERY_STRING="workflow=$(printf '%s' "${WORKFLOW_URL}" | yq -r '@uri')"
 
         # Add user-provided query params if any
-        if [[ -n "${{ inputs.query-params }}" ]]; then
-          USER_PARAMS=$(yq -r 'to_entries | map("\(.key)=\(.value | tostring | @uri)") | join("&")' <<< '${{ inputs.query-params }}')
+        if [[ -n "$PIXEL_QUERY_PARAMS" ]]; then
+          USER_PARAMS=$(yq -r 'to_entries | map("\(.key)=\(.value | tostring | @uri)") | join("&")' <<< "$PIXEL_QUERY_PARAMS")
 
           if [[ -n "${USER_PARAMS}" && "${USER_PARAMS}" != "null" ]]; then
             QUERY_STRING="${QUERY_STRING}&${USER_PARAMS}"

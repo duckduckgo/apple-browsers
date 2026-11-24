@@ -976,6 +976,7 @@ extension DataBrokerProtectionIOSManager {
             try deleteAllUserProfileData()
             freemiumDBPUserStateManager.resetAllState()
         }
+        managedSeed.applyBrokerSelection(to: resources.jobDependencies.dataBrokerProtectionSettings)
         // A fresh install's first broker update can remove bundled brokers after the plan names them.
         try? await refreshRemoteBrokerJSON()
         try await saveProfileAndPrepareForInitialScans(profile)

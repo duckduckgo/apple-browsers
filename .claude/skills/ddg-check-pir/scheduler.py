@@ -44,6 +44,7 @@ class SeedRequest:
     timeout: float
     platform: str = "macos"
     port: int = 8474
+    brokers: tuple[str, ...] = ()
 
 
 def _date(value):
@@ -96,8 +97,15 @@ def parse_seed(args):
         raise ValueError("seed and reseed discover the agent, cutoff and jobs automatically")
     if args.scheduler_profile is None:
         raise ValueError("seed and reseed require --profile-file")
+    brokers = tuple(getattr(args, "scheduler_brokers", None) or ())
+    for broker in brokers:
+        if (not broker or broker.strip() != broker or any(c.isspace() or ord(c) < 32 for c in broker)
+                or "/" in broker or ":" in broker):
+            raise ValueError("--broker takes a bare broker URL such as peoplefinders.com")
+    if len(set(brokers)) != len(brokers):
+        raise ValueError("--broker values must be unique")
     return SeedRequest(args.scheduler_mode, args.scheduler_profile.expanduser().resolve(), _timeout(args.scheduler_timeout),
-                       args.platform)
+                       args.platform, brokers=brokers)
 
 
 def receipt_scope(receipt, request, instance):
@@ -107,6 +115,8 @@ def receipt_scope(receipt, request, instance):
         error = receipt.get("errorCode")
         if error == "profileAlreadyExists":
             raise RuntimeError("The DEBUG PIR store already has a profile. Use observe or explicitly choose reseed.")
+        if error == "unknownBroker":
+            raise RuntimeError("A --broker value has no eligible scan job in this build; check it against GET /api")
         if error == "authenticatedAccount":
             raise RuntimeError("Scheduler seeding found the DEBUG account still signed in")
         raise RuntimeError("The DEBUG app did not complete scheduler setup; see scheduler-launch.json")

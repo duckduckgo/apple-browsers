@@ -62,8 +62,8 @@ final class LocalModelAccessPrompt: LocalModelAccessAsking {
         let controller = LocalModelAccessPromptHostingController(rootView: card) { [weak self] in
             guard let self else { return }
             let result = self.answer ?? .declined
-            if let pixel = AIChatLocalModelPixel.promoAnswered(result) {
-                self.instrumentation.fire(pixel)
+            if result == .declined {
+                self.instrumentation.fire(.promoClosed)
             }
             self.finish(result)
         }

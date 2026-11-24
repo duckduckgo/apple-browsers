@@ -26,7 +26,7 @@ public enum AIChatLocalModelPixel: Equatable, Sendable {
     case state(selected: AIChatPageSummariesModel, state: AIChatLocalModelState, availability: AIChatLocalModelAvailability)
     /// The prompt Duck.ai asks for is showing.
     case promoShown
-    /// The prompt closed without Turn On.
+    /// The prompt closed without Turn On. Turn On sends `selected` from the service instead.
     case promoClosed
     /// The user changed the model that writes page summaries.
     case selected(AIChatPageSummariesModel, source: SelectionSource)
@@ -41,16 +41,6 @@ public enum AIChatLocalModelPixel: Equatable, Sendable {
         case standard
         case daily
         case dailyAndCount
-    }
-
-    /// Turn On in the prompt picks the model; anything else closes the offer. Nothing offers a
-    /// download yet, so `installing` sends nothing until the downloaded model brings its own pixels.
-    public static func promoAnswered(_ result: AIChatLocalModelAccessReply.Result) -> AIChatLocalModelPixel? {
-        switch result {
-        case .allowed: return .selected(.appleIntelligence, source: .duckAIPromo)
-        case .declined: return .promoClosed
-        case .installing: return nil
-        }
     }
 
     public var name: String {
@@ -86,7 +76,7 @@ public enum AIChatLocalModelPixel: Equatable, Sendable {
 }
 
 /// Sends local-model pixels. Each app implements it with PixelKit, which this package doesn't use.
-/// Not tied to the main actor, because some settings code that turns the model on and off isn't.
+/// Not tied to the main actor, so the apps can build one in a default argument.
 public protocol AIChatLocalModelInstrumentation {
     func fire(_ pixel: AIChatLocalModelPixel)
 }

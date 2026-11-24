@@ -33,13 +33,10 @@ final class LocalModelAccessSettingsViewModel: ObservableObject {
     let modelName: String
 
     private let service: AIChatLocalModelService
-    private let instrumentation: AIChatLocalModelInstrumentation
     private var cancellable: AnyCancellable?
 
-    init(service: AIChatLocalModelService,
-         instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
+    init(service: AIChatLocalModelService) {
         self.service = service
-        self.instrumentation = instrumentation
         self.modelName = service.model.name
         update()
         cancellable = service.changesPublisher
@@ -59,11 +56,7 @@ final class LocalModelAccessSettingsViewModel: ObservableObject {
                 if isOn {
                     self.isConfirmingTurnOn = true
                 } else {
-                    let wasOn = self.service.isOptedIn
-                    self.service.optOut()
-                    if wasOn {
-                        self.instrumentation.fire(.selected(.duckAI, source: .settings))
-                    }
+                    self.service.select(.duckAI, source: .settings)
                 }
             }
         )
@@ -77,8 +70,7 @@ final class LocalModelAccessSettingsViewModel: ObservableObject {
 
     func confirmTurnOn() {
         isConfirmingTurnOn = false
-        service.optIn()
-        instrumentation.fire(.selected(.appleIntelligence, source: .settings))
+        service.select(.appleIntelligence, source: .settings)
     }
 
     func cancelTurnOn() {

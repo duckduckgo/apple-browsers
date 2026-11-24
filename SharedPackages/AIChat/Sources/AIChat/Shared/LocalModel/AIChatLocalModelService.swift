@@ -88,22 +88,15 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
 
         featureFlagUpdates
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.refreshAvailability()
-                self?.reportState()
-            }
+            .sink { [weak self] in self?.refreshAvailabilityAndReportState() }
             .store(in: &cancellables)
 
         // Apple Intelligence is turned on and off in System Settings, so check again whenever the user comes back.
         notificationCenter.publisher(for: Self.didBecomeActiveNotification)
-            .sink { [weak self] _ in
-                self?.refreshAvailability()
-                self?.reportState()
-            }
+            .sink { [weak self] _ in self?.refreshAvailabilityAndReportState() }
             .store(in: &cancellables)
 
-        refreshAvailability()
-        reportState()
+        refreshAvailabilityAndReportState()
     }
 
     /// Stands in while the flag is off, so launch doesn't touch Foundation Models for everyone else.
@@ -166,6 +159,14 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         setPageSummariesModel(.duckAI)
     }
 
+    /// The user's own choice. Sends `selected` only when the choice changes, so the prompt and
+    /// Settings count a change once even when both happen.
+    public func select(_ model: AIChatPageSummariesModel, source: AIChatLocalModelPixel.SelectionSource) {
+        guard storage.pageSummariesModel != model else { return }
+        setPageSummariesModel(model)
+        instrumentation?.fire(.selected(model, source: source))
+    }
+
     private func setPageSummariesModel(_ model: AIChatPageSummariesModel) {
         // The storage publisher fires during the write and the push reads `storage` again. Writing
         // through the stored property would overlap the two accesses and trap; the copy writes to
@@ -226,15 +227,20 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
 
         let result = await ask()
         if result == .allowed {
-            optIn()
+            select(.appleIntelligence, source: .duckAIPromo)
         }
         return result
     }
 
     // MARK: - Pixels
 
-    /// The pixel is daily, so firing it at launch, on every return to the app and on flag updates
-    /// counts each person once a day, including one whose flag turns on mid-session.
+    /// The state pixel is daily, so sending it at launch, on every return to the app and on flag
+    /// updates counts each person once a day, including one whose flag turns on mid-session.
+    private func refreshAvailabilityAndReportState() {
+        refreshAvailability()
+        reportState()
+    }
+
     private func reportState() {
         guard let state = currentState else { return }
         instrumentation?.fire(.state(selected: storage.pageSummariesModel, state: state, availability: availability))

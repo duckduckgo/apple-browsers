@@ -21,7 +21,7 @@
         ]
     },
     "startup_failure_returned": {
-        "description": "The first foreground launch attempt after a recorded startup failure. The attempt can still fail; it does not close the failure episode.",
+        "description": "The app reaches the foreground for the first time after a recorded startup failure. Recovery is recorded separately when the browser becomes usable.",
         "owners": ["diegoreymendez"],
         "triggers": ["startup"],
         "suffixes": ["platform", "form_factor"],

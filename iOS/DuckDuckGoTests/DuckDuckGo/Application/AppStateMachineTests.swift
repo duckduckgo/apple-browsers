@@ -29,7 +29,7 @@ private final class TestStartupFailureInstrumentation: StartupFailureInstrumenta
 
     func configure(featureFlagger: any FeatureFlagger, feature: any FeatureFlagDescribing) {}
     func recordFailure() { failureCount += 1 }
-    func recordReturn() {}
+    func recordUserReturnedToApp() {}
     func recordSuccessfulStartup() {}
 }
 

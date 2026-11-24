@@ -724,7 +724,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let startupFailureInstrumentation = StartupFailureMetrics()
         self.startupFailureInstrumentation = startupFailureInstrumentation
         if AppVersion.runType.requiresEnvironment {
-            startupFailureInstrumentation.recordReturn()
+            startupFailureInstrumentation.recordUserReturnedToApp()
         }
 
 #if DEBUG
@@ -862,7 +862,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.featureFlagger = featureFlagger
         startupFailureInstrumentation.configure(featureFlagger: featureFlagger, feature: FeatureFlag.startupFailureMetrics)
         if AppVersion.runType.requiresEnvironment {
-            startupFailureInstrumentation.recordReturn()
+            startupFailureInstrumentation.recordUserReturnedToApp()
         }
         self.dockCustomization = DockCustomizer(featureFlagger: featureFlagger)
         self.addToDockVideoPresenter = AddToDockVideoPresenter()

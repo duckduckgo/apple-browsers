@@ -24,7 +24,7 @@ import PrivacyConfig
 public protocol StartupFailureInstrumentation {
     func configure(featureFlagger: any FeatureFlagger, feature: any FeatureFlagDescribing)
     func recordFailure()
-    func recordReturn()
+    func recordUserReturnedToApp()
     func recordSuccessfulStartup()
 }
 
@@ -117,9 +117,9 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
         pixelFiring?.fire(StartupFailurePixel.failure, frequency: .standard, options: .withRetry)
     }
 
-    /// Reports the first launch attempt after a recorded failure.
+    /// Reports the first observed return after a recorded failure.
     /// This does not rearm failure reporting: only a successful startup closes the episode.
-    public func recordReturn() {
+    public func recordUserReturnedToApp() {
         guard defaults.bool(forKey: Self.enabledKey) else { return }
         let pixelFiring = pixelFiringProvider()
         lock.lock()

@@ -129,8 +129,7 @@ struct Foreground: ForegroundHandling {
     /// This ensures that each service manages its own async execution without unnecessary indirection.
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
-        // Also covers an app that launched in the background and is now opened by the user.
-        appDependencies.startupFailureInstrumentation.recordReturn()
+        appDependencies.startupFailureInstrumentation.recordUserReturnedToApp()
 
         // Close the previous session before foreground work can report another prompt.
         appDependencies.mainCoordinator.promptExposureReporter.appDidEnterForeground()

@@ -28,6 +28,7 @@ public final class PixelKitMock: PixelFiring {
     /// The actual fire calls
     ///
     public private(set) var actualFireCalls = [ExpectedFireCall]()
+    public private(set) var actualFireOptions = [PixelKit.Options]()
 
     /// When set, every subsequent `fire` call completes with this error instead of succeeding.
     ///
@@ -48,6 +49,7 @@ public final class PixelKitMock: PixelFiring {
                                         additionalParameters: options.additionalParameters,
                                         includeAppVersionParameter: options.includeAppVersionParameter)
         actualFireCalls.append(fireCall)
+        actualFireOptions.append(options)
 
         // A multi-request frequency completes once per leg and `fireAsync` waits for all of them,
         // so completing once here would leave an awaiting caller suspended forever.

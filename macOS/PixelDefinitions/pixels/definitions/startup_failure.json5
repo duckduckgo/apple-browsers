@@ -3,7 +3,22 @@
         "description": "A known startup failure prevents the app from becoming usable. Sent once per failure episode; further failures are suppressed until a successful startup.",
         "owners": ["diegoreymendez"],
         "triggers": ["exception"],
-        "parameters": ["appVersion", "channel"]
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "originalPixelTimestamp",
+                "type": "string",
+                "description": "ISO 8601 timestamp of the original failed send. Present only when PixelKit replays a persisted pixel.",
+                "examples": ["2026-10-31T13:00:00Z"]
+            },
+            {
+                "key": "retriedPixel",
+                "type": "string",
+                "description": "Marks a replay from PixelKit's persistent retry queue. Absent on the original send.",
+                "enum": ["1"]
+            }
+        ]
     },
     "startup_failure_returned_macos": {
         "description": "The first launch attempt after a recorded startup failure. The attempt can still fail; it does not close the failure episode.",
@@ -15,8 +30,20 @@
             {
                 "key": "days_since_first_failure",
                 "type": "string",
-                "description": "Whole elapsed 24-hour periods since the episode's first failure. 7+ caps all later returns; unknown covers a clock moving backwards. No failure date or timestamp is sent.",
+                "description": "Whole elapsed 24-hour periods since the episode's first failure. 7+ caps all later returns; unknown covers a clock moving backwards. The bucket contains no exact failure time.",
                 "enum": ["0", "1", "2", "3", "4", "5", "6", "7+", "unknown"]
+            },
+            {
+                "key": "originalPixelTimestamp",
+                "type": "string",
+                "description": "ISO 8601 timestamp of the original failed send. Present only when PixelKit replays a persisted pixel.",
+                "examples": ["2026-10-31T13:00:00Z"]
+            },
+            {
+                "key": "retriedPixel",
+                "type": "string",
+                "description": "Marks a replay from PixelKit's persistent retry queue. Absent on the original send.",
+                "enum": ["1"]
             }
         ]
     },
@@ -30,8 +57,20 @@
             {
                 "key": "days_since_first_failure",
                 "type": "string",
-                "description": "Whole elapsed 24-hour periods since the episode's first failure. 7+ caps all later recoveries; unknown covers a clock moving backwards. No failure date or timestamp is sent.",
+                "description": "Whole elapsed 24-hour periods since the episode's first failure. 7+ caps all later recoveries; unknown covers a clock moving backwards. The bucket contains no exact failure time.",
                 "enum": ["0", "1", "2", "3", "4", "5", "6", "7+", "unknown"]
+            },
+            {
+                "key": "originalPixelTimestamp",
+                "type": "string",
+                "description": "ISO 8601 timestamp of the original failed send. Present only when PixelKit replays a persisted pixel.",
+                "examples": ["2026-10-31T13:00:00Z"]
+            },
+            {
+                "key": "retriedPixel",
+                "type": "string",
+                "description": "Marks a replay from PixelKit's persistent retry queue. Absent on the original send.",
+                "enum": ["1"]
             }
         ]
     }

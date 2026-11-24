@@ -37,7 +37,8 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
     private struct State: Codable {
         let firstFailureDate: Date
         var didReportReturn = false
-        var didSuccessfullyStart = false
+        // Earlier builds kept completed episodes on disk.
+        var didSuccessfullyStart: Bool?
     }
 
     private let storageURLProvider: () -> URL?
@@ -105,15 +106,14 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
             guard defaults.bool(forKey: Self.enabledKey) else { return }
             didFailInThisProcess = true
             guard pixelFiring != nil, let storageURL = storageURLProvider() else { return }
-            let state = try readState(from: storageURL)
-            guard state == nil || state?.didSuccessfullyStart == true else { return }
+            guard try readState(from: storageURL) == nil else { return }
             try writeState(State(firstFailureDate: dateProvider()), to: storageURL)
         } catch {
             // Measurement must not introduce another failure or count an episode we cannot persist.
             return
         }
 
-        pixelFiring?.fire(StartupFailurePixel.failure, frequency: .standard)
+        pixelFiring?.fire(StartupFailurePixel.failure, frequency: .standard, options: .withRetry)
     }
 
     /// Reports the first launch attempt after a recorded failure.
@@ -127,7 +127,7 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
             defer { lock.unlock() }
             guard defaults.bool(forKey: Self.enabledKey), !didFailInThisProcess, pixelFiring != nil, let storageURL = storageURLProvider(),
                   var state = try readState(from: storageURL),
-                  !state.didReportReturn, !state.didSuccessfullyStart else { return }
+                  !state.didReportReturn else { return }
             daysSinceFailure = Self.daysSinceFailure(from: state.firstFailureDate, to: dateProvider())
             state.didReportReturn = true
             // Persist before sending so another launch cannot count the same return twice.
@@ -136,7 +136,7 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
             return
         }
 
-        pixelFiring?.fire(StartupFailurePixel.returned(daysSinceFailure: daysSinceFailure), frequency: .standard)
+        pixelFiring?.fire(StartupFailurePixel.returned(daysSinceFailure: daysSinceFailure), frequency: .standard, options: .withRetry)
     }
 
     /// Reports recovery and closes the episode once the browser is ready for user interaction.
@@ -148,22 +148,22 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
         do {
             defer { lock.unlock() }
             guard defaults.bool(forKey: Self.enabledKey), !didFailInThisProcess, pixelFiring != nil, let storageURL = storageURLProvider(),
-                  var state = try readState(from: storageURL),
-                  state.didReportReturn, !state.didSuccessfullyStart else { return }
+                  let state = try readState(from: storageURL),
+                  state.didReportReturn else { return }
             daysSinceFailure = Self.daysSinceFailure(from: state.firstFailureDate, to: dateProvider())
-            state.didSuccessfullyStart = true
-            try writeState(state, to: storageURL)
+            try FileManager.default.removeItem(at: storageURL)
         } catch {
-            // Keep the episode open if closing it cannot be persisted.
+            // Keep the episode open if its file cannot be removed.
             return
         }
 
-        pixelFiring?.fire(StartupFailurePixel.recovered(daysSinceFailure: daysSinceFailure), frequency: .standard)
+        pixelFiring?.fire(StartupFailurePixel.recovered(daysSinceFailure: daysSinceFailure), frequency: .standard, options: .withRetry)
     }
 
     private func readState(from url: URL) throws -> State? {
         do {
-            return try JSONDecoder().decode(State.self, from: Data(contentsOf: url))
+            let state = try JSONDecoder().decode(State.self, from: Data(contentsOf: url))
+            return state.didSuccessfullyStart == true ? nil : state
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             return nil
         }

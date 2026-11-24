@@ -287,6 +287,8 @@ final class StartupFailureMetricsTests: XCTestCase {
         recovery.recordSuccessfulStartup()
         recovery.recordSuccessfulStartup()
 
+        XCTAssertFalse(FileManager.default.fileExists(atPath: storageURL.path))
+
         now.addTimeInterval(10 * 24 * 60 * 60)
         makeSubject().recordFailure()
         now.addTimeInterval(24 * 60 * 60)
@@ -299,6 +301,20 @@ final class StartupFailureMetricsTests: XCTestCase {
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "1"), frequency: .standard)
         ])
+    }
+
+    func testPreviouslyCompletedStateAllowsANewFailureEpisode() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let completedState = #"{"firstFailureDate":0,"didReportReturn":true,"didSuccessfullyStart":true}"#
+        try Data(completedState.utf8).write(to: storageURL)
+
+        let healthyLaunch = makeSubject()
+        healthyLaunch.recordReturn()
+        healthyLaunch.recordSuccessfulStartup()
+        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
+
+        makeSubject().recordFailure()
+        XCTAssertEqual(pixels.actualFireCalls, [ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard)])
     }
 
     func testSuccessfulStartupAfterRepeatedFailedReturnsReportsRecoveryOnce() {
@@ -398,14 +414,20 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls.count, 2)
     }
 
-    func testPixelsContainOnlyBucketedAgeWithoutTimestampsOrIdentifiers() {
+    func testOriginalPixelPayloadsContainOnlyBucketedAgeAndOptIntoRetry() {
         makeSubject().recordFailure()
-        makeSubject().recordReturn()
+        let nextLaunch = makeSubject()
+        nextLaunch.recordReturn()
+        nextLaunch.recordSuccessfulStartup()
 
         XCTAssertNil(pixels.actualFireCalls.first?.pixel.parameters)
-        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.parameters, ["days_since_first_failure": "0"])
+        XCTAssertEqual(pixels.actualFireCalls.dropFirst().compactMap { $0.pixel.parameters }, [
+            ["days_since_first_failure": "0"],
+            ["days_since_first_failure": "0"]
+        ])
         XCTAssertTrue(pixels.actualFireCalls.allSatisfy { $0.frequency == .standard })
         XCTAssertTrue(pixels.actualFireCalls.allSatisfy { $0.includeAppVersionParameter })
+        XCTAssertEqual(pixels.actualFireOptions, [.withRetry, .withRetry, .withRetry])
     }
 
     private func makeSubject(storageURL: URL? = nil) -> StartupFailureMetrics {

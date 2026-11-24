@@ -73,6 +73,18 @@ protocol IdleReturnLaunchDelegate: AnyObject {
     func releaseHeldNewTabPage()
 }
 
+/// What was on screen when the app came to the foreground. The after-idle treatment waits for App Lock and
+/// Automatically Clear Data, and the user can already open a screen or a page during that wait.
+struct IdleReturnForegroundScreen {
+    weak var presented: UIViewController?
+    let wasOnNewTabPage: Bool
+
+    func userActed(presented current: UIViewController?, isOnNewTabPage: Bool) -> Bool {
+        if let current, current !== presented { return true }
+        return wasOnNewTabPage && !isOnNewTabPage
+    }
+}
+
 enum IdleReturnNewTabPageResult {
     case keptCurrent
     case openedNewTab

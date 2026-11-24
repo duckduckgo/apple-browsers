@@ -109,6 +109,7 @@ final class MainCoordinator {
     let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
 
     private var hasPresentedOnboarding = false
+    private var idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: nil, wasOnNewTabPage: false)
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -714,6 +715,8 @@ final class MainCoordinator {
     // MARK: App Lifecycle handling
 
     func onForeground(isFirstForeground: Bool) {
+        idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: controller.presentedViewController,
+                                                                wasOnNewTabPage: tabManager.currentTabsModel.currentTab?.link == nil)
         daxGreetingActivity.recordForegroundOpen()
         daxDialogs.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
@@ -970,6 +973,14 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, isFirstForeground: Bool, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
         if voiceSessionStateManager.isVoiceSessionActive {
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+            completion(.suppressed)
+            return
+        }
+
+        // Leave alone a screen or page the user opened while launch waited for App Lock or Automatically Clear Data.
+        if idleReturnForegroundScreen.userActed(presented: controller.presentedViewController,
+                                                isOnNewTabPage: tabManager.currentTabsModel.currentTab?.link == nil) {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
             completion(.suppressed)
             return

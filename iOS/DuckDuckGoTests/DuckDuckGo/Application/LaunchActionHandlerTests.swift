@@ -603,3 +603,23 @@ final class LaunchActionHandlerTests {
     }
 
 }
+
+@MainActor
+struct IdleReturnForegroundScreenTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A screen or page opened during the launch wait counts as the user acting", .timeLimit(.minutes(1)))
+    func userActedDuringLaunchWait() {
+        let screenLeftOpen = UIViewController()
+        let onNewTabPage = IdleReturnForegroundScreen(presented: nil, wasOnNewTabPage: true)
+        let withScreenLeftOpen = IdleReturnForegroundScreen(presented: screenLeftOpen, wasOnNewTabPage: false)
+
+        #expect(!onNewTabPage.userActed(presented: nil, isOnNewTabPage: true))
+        #expect(onNewTabPage.userActed(presented: UIViewController(), isOnNewTabPage: true))
+        #expect(onNewTabPage.userActed(presented: nil, isOnNewTabPage: false))
+        #expect(!withScreenLeftOpen.userActed(presented: screenLeftOpen, isOnNewTabPage: false))
+        #expect(!withScreenLeftOpen.userActed(presented: nil, isOnNewTabPage: true))
+        #expect(withScreenLeftOpen.userActed(presented: UIViewController(), isOnNewTabPage: false))
+        withExtendedLifetime(screenLeftOpen) {}
+    }
+}

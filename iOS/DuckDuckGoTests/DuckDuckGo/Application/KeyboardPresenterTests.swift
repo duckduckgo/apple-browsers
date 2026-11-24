@@ -425,4 +425,17 @@ final class KeyboardPresenterTests {
         #expect((target.windowVisibleHandler == nil) == endsBeforeRequest)
         #expect(target.allowedKeyboardCallCount == 0)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An idle return closes only the screen open when the foreground began, not one opened during the launch wait",
+          .timeLimit(.minutes(1)))
+    func idleReturnKeepsScreenOpenedDuringLaunchWait() {
+        _ = presenter
+        target.presentedViewController = UIViewController()
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+
+        #expect(target.closeScreensCallCount == 1)
+        #expect(target.closedScreen == nil)
+    }
 }

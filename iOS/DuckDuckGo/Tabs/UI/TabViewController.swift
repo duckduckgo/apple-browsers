@@ -1304,9 +1304,15 @@ class TabViewController: UIViewController {
     private func applyWebViewLayout(for barsVisibilityPercent: CGFloat, forceFloatingUIInsets: Bool = false) {
         if floatingUIManager.isFloatingUIEnabled {
             updateWebViewLayoutForFloatingUI(for: barsVisibilityPercent, forceInsets: forceFloatingUIInsets)
+            if translationBannerPresenter.isPresented {
+                translationBannerPresenter.chromeInsets = chromeDelegate?.floatingWebViewObscuredInsets(for: 0) ?? .zero
+            }
         } else {
             updateWebViewBottomConstraint(for: barsVisibilityPercent)
             updateWebViewLayoutForClassicUI(for: barsVisibilityPercent)
+        }
+        if translationBannerPresenter.isPresented {
+            translationBannerPresenter.followAddressBar()
         }
     }
 
@@ -3148,9 +3154,12 @@ extension TabViewController: WKNavigationDelegate {
     private func showTranslationBanner(_ offer: TranslationOffer) {
         guard view.window != nil,
               delegate?.tabIsShowingOtherPrompt(self) != true,
-              let addressBar = chromeDelegate?.omniBar.barView,
+              let addressBar = chromeDelegate?.addressBarChromeView,
               addressBar.window === view.window else {
             return
+        }
+        if floatingUIManager.isFloatingUIEnabled, let chromeDelegate {
+            translationBannerPresenter.chromeInsets = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
         }
         translationBannerPresenter.present(offer, in: self, nextTo: addressBar)
     }

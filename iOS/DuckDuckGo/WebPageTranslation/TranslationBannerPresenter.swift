@@ -47,6 +47,20 @@ final class TranslationBannerPresenter {
         self.isVoiceOverRunning = isVoiceOverRunning
     }
 
+    private weak var addressBar: UIView?
+    private var nextToBarConstraint: NSLayoutConstraint?
+    private var clearOfChromeConstraint: NSLayoutConstraint?
+
+    /// How far the chrome reaches in from the host's edges once the address bar has scrolled away (the
+    /// collapsed pill included). The banner never goes past it, so it stays on screen while the bar is gone.
+    var chromeInsets: UIEdgeInsets = .zero {
+        didSet { updateClearOfChromeConstraint() }
+    }
+    
+    private var isBarAtBottom: Bool {
+        appSettings.currentAddressBarPosition == .bottom
+    }
+
     var isPresented: Bool {
         hostingController != nil
     }
@@ -78,18 +92,37 @@ final class TranslationBannerPresenter {
 
         host.addChild(controller)
         host.view.addSubview(controller.view)
-        let edgeConstraint = appSettings.currentAddressBarPosition == .bottom
-            ? controller.view.bottomAnchor.constraint(equalTo: addressBar.topAnchor, constant: -Constants.verticalMargin)
-            : controller.view.topAnchor.constraint(equalTo: addressBar.bottomAnchor, constant: Constants.verticalMargin)
+        let bannerView: UIView = controller.view
+        let safeArea = host.view.safeAreaLayoutGuide
+        // Next to the bar while it's on screen; once it scrolls away, held clear of the safe area and the chrome.
+        // Pinned to where the bar is drawn, not to the bar: the chrome hides and shrinks it with transforms, which
+        // Auto Layout doesn't see. followAddressBar() keeps the two in step.
+        let nextToBar = isBarAtBottom
+            ? bannerView.bottomAnchor.constraint(equalTo: host.view.topAnchor)
+            : bannerView.topAnchor.constraint(equalTo: host.view.topAnchor)
+        nextToBar.priority = .defaultHigh
+        // The window's, not the tab's: the tab's safe area covers the chrome, so it would hold the banner where the bar was.
+        let screenSafeArea = (host.view.window ?? host.view).safeAreaLayoutGuide
+        let inSafeArea = isBarAtBottom
+            ? bannerView.bottomAnchor.constraint(lessThanOrEqualTo: screenSafeArea.bottomAnchor, constant: -Constants.verticalMargin)
+            : bannerView.topAnchor.constraint(greaterThanOrEqualTo: screenSafeArea.topAnchor, constant: Constants.verticalMargin)
+        let clearOfChrome = isBarAtBottom
+            ? bannerView.bottomAnchor.constraint(lessThanOrEqualTo: host.view.bottomAnchor)
+            : bannerView.topAnchor.constraint(greaterThanOrEqualTo: host.view.topAnchor)
         NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: host.view.safeAreaLayoutGuide.leadingAnchor,
-                                                     constant: Constants.horizontalMargin),
-            controller.view.trailingAnchor.constraint(equalTo: host.view.safeAreaLayoutGuide.trailingAnchor,
-                                                      constant: -Constants.horizontalMargin),
-            edgeConstraint
+            bannerView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor, constant: Constants.horizontalMargin),
+            bannerView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor, constant: -Constants.horizontalMargin),
+            nextToBar,
+            inSafeArea,
+            clearOfChrome
         ])
         controller.didMove(toParent: host)
         hostingController = controller
+        self.addressBar = addressBar
+        nextToBarConstraint = nextToBar
+        clearOfChromeConstraint = clearOfChrome
+        followAddressBar()
+        updateClearOfChromeConstraint()
 
         controller.view.alpha = 0
         UIView.animate(withDuration: 0.3) { controller.view.alpha = 1 }
@@ -100,6 +133,8 @@ final class TranslationBannerPresenter {
         autoDismissTask?.cancel()
         guard let controller = hostingController else { return }
         hostingController = nil
+        nextToBarConstraint = nil
+        clearOfChromeConstraint = nil
 
         let remove = {
             controller.willMove(toParent: nil)
@@ -115,6 +150,22 @@ final class TranslationBannerPresenter {
         } else {
             remove()
         }
+    }
+
+    /// Moves the banner with the address bar as the bar shows, hides or shrinks.
+    func followAddressBar() {
+        guard let constraint = nextToBarConstraint, let addressBar, let hostView = hostingController?.view.superview else { return }
+        let barFrame = addressBar.convert(addressBar.bounds, to: hostView)
+        constraint.constant = isBarAtBottom
+            ? barFrame.minY - Constants.verticalMargin
+            : barFrame.maxY + Constants.verticalMargin
+    }
+
+    private func updateClearOfChromeConstraint() {
+        guard let constraint = clearOfChromeConstraint else { return }
+        constraint.constant = isBarAtBottom
+            ? -(chromeInsets.bottom + Constants.verticalMargin)
+            : chromeInsets.top + Constants.verticalMargin
     }
 
     /// A VoiceOver user may still be on their way to the button, so the banner stays for them.

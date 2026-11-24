@@ -52,6 +52,17 @@ class ReportTests(unittest.TestCase):
         self.assertIn("fromHash[1] : 1)", page)
 
 
+    def test_refresh_keeps_the_baseline_until_the_report_is_written_without_one(self):
+        baseline = self.batch("baseline", "pass", review="confirmed")
+        batch = self.batch("stack", "pass", review="disputed", matches=0)
+        report.main([str(batch), "--baseline", str(baseline)])
+        (batch / "report.html").unlink()
+        report.refresh(batch)
+        self.assertIn("changed: review, result", (batch / "report.html").read_text())
+        report.main([str(batch)])
+        report.refresh(batch)
+        self.assertNotIn("changed:", (batch / "report.html").read_text())
+
     def test_latest_attempt_counts_and_brokers_with_the_same_title_stay_apart(self):
         batch = self.batch("stack", "fail", review="disputed")
         evidence = batch / "evidence"

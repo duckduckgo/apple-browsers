@@ -4,7 +4,8 @@
 Usage: report.py BATCH [--baseline BASELINE_BATCH]
 
 BATCH is the batch folder whose evidence/ holds one folder per attempt. The report goes to BATCH/report.html and links
-snapshots in place, so keep it next to its evidence: snapshots and records show real people's data.
+snapshots in place, so keep it next to its evidence: snapshots and records show real people's data. The baseline is
+remembered in BATCH, so pir.py can refresh the report after each scenario attempt with the same comparison.
 """
 
 import argparse
@@ -438,6 +439,26 @@ show(fromHash ? fromHash[1] : {first});
 """
 
 
+BASELINE_FILE = ".report-baseline"
+
+
+def write(batch, baseline_dir=None):
+    out = batch / "report.html"
+    page = render(batch, attempts(batch), attempts(baseline_dir) if baseline_dir else None)
+    # Attempts can finish together, so a reader never sees a half-written page.
+    temporary = out.with_name(f".report-{os.getpid()}.html")
+    temporary.write_text(page)
+    os.replace(temporary, out)
+    return out
+
+
+def refresh(batch):
+    """Rewrites the report of a batch that ddg-check-pir just added an attempt to, keeping its saved baseline."""
+    saved = (batch / BASELINE_FILE).read_text().strip() if (batch / BASELINE_FILE).is_file() else ""
+    baseline_dir = Path(saved) if saved and (Path(saved) / "evidence").is_dir() else None
+    return write(batch, baseline_dir)
+
+
 def main(argv=None):
     cli = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     cli.add_argument("batch", type=Path)
@@ -446,17 +467,17 @@ def main(argv=None):
     batch = args.batch.expanduser().resolve()
     if not (batch / "evidence").is_dir():
         cli.error(f"{batch} has no evidence folder")
-    baseline = None
+    baseline_dir = None
     if args.baseline:
         baseline_dir = args.baseline.expanduser().resolve()
         if not (baseline_dir / "evidence").is_dir():
             cli.error(f"baseline {baseline_dir} has no evidence folder")
-        baseline = attempts(baseline_dir)
-        if not any(r["scenario"] for r in baseline):
+        if not any(r["scenario"] for r in attempts(baseline_dir)):
             cli.error(f"baseline {baseline_dir} has no scenario runs")
-    out = batch / "report.html"
-    out.write_text(render(batch, attempts(batch), baseline))
-    print(out)
+        (batch / BASELINE_FILE).write_text(f"{baseline_dir}\n")
+    else:
+        (batch / BASELINE_FILE).unlink(missing_ok=True)
+    print(write(batch, baseline_dir))
     return 0
 
 

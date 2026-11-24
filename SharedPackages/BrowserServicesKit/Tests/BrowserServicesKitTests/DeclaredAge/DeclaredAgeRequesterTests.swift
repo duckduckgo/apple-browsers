@@ -126,10 +126,11 @@ private final class ServiceMock: DeclaredAgeServicing {
         isRequired
     }
 
-    func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws {
+    func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws -> Bool {
         requestCount += 1
         if let requestError {
             throw requestError
         }
+        return true
     }
 }

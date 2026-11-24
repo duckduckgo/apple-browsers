@@ -77,12 +77,7 @@ public final class DeclaredAgeRequester {
 private extension DeclaredAgeRequester {
 
     func request(in anchor: DeclaredAgeAnchor) async -> Bool {
-        do {
-            try await service.requestDeclaredAge(in: anchor)
-            return true
-        } catch {
-            return false
-        }
+        (try? await service.requestDeclaredAge(in: anchor)) ?? false
     }
 
     func markRequested(isReinstall: Bool) {

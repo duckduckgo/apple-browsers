@@ -28,7 +28,8 @@ public typealias DeclaredAgeAnchor = UIViewController
 @MainActor
 public protocol DeclaredAgeServicing {
     func isRequestRequired() async throws -> Bool
-    func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws
+    /// Returns false when the OS cannot show the prompt, so callers must not treat it as asked.
+    func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws -> Bool
 }
 
 public extension DeclaredAgeServicing {
@@ -44,10 +45,6 @@ public extension DeclaredAgeServicing {
     }
 }
 
-enum DeclaredAgeServiceError: Error {
-    case unavailable
-}
-
 @MainActor
 public final class DefaultDeclaredAgeService: DeclaredAgeServicing {
 
@@ -55,12 +52,13 @@ public final class DefaultDeclaredAgeService: DeclaredAgeServicing {
 
     private let defaultAgeBracket = 16
 
-    public func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws {
+    public func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws -> Bool {
         guard #available(iOS 26.2, macOS 26.2, *) else {
-            throw DeclaredAgeServiceError.unavailable
+            return false
         }
 
         // Legal requires keeping only the request date, so the response is dropped.
         _ = try await AgeRangeService.shared.requestAgeRange(ageGates: defaultAgeBracket, in: anchor)
+        return true
     }
 }

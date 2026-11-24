@@ -91,6 +91,7 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
 
     private let surface: @MainActor () -> Surface?
     private var active: Presentation?
+    private var pendingRequestID: String?
 
     init(surface: @escaping @MainActor () -> Surface?) {
         self.surface = surface
@@ -140,15 +141,32 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
 
     private func presentCard(requestID: String,
                              prompt: AIChatToolPermissionView.Prompt,
+                             waitsForKeyboard: Bool = true,
                              decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool {
-        guard !isPresentingPermission,
+        guard !isPresentingPermission, pendingRequestID == nil,
               let surface = surface(), Self.canPresent(from: surface.controller),
               let window = surface.controller.viewIfLoaded?.window, let scene = window.windowScene else { return false }
 
-        let overlay = UIWindow(windowScene: scene)
-        overlay.windowLevel = UIWindow.Level(rawValue: window.windowLevel.rawValue + 1)
-        guard canTakeFocus(from: window, at: overlay.windowLevel) else { return false }
+        let overlayLevel = UIWindow.Level(rawValue: window.windowLevel.rawValue + 1)
+        guard canTakeFocus(from: window, at: overlayLevel) else {
+            guard waitsForKeyboard, !window.isHidden, scene.activationState == .foregroundActive,
+                  window.keyboardLayoutGuide.layoutFrame.height > window.safeAreaInsets.bottom else { return false }
 
+            pendingRequestID = requestID
+            let wait = NewTabKeyboardHideWait(pixelFiring: nil) { [weak self] in
+                guard let self, pendingRequestID == requestID else { return }
+                pendingRequestID = nil
+                if !presentCard(requestID: requestID, prompt: prompt, waitsForKeyboard: false, decision: decision) {
+                    decision(.dismiss)
+                }
+            }
+            wait.start()
+            window.endEditing(true)
+            return true
+        }
+
+        let overlay = UIWindow(windowScene: scene)
+        overlay.windowLevel = overlayLevel
         let presentation = Presentation(requestID: requestID, window: overlay,
                                         browserWindow: window, owner: surface.controller)
         let content = AIChatToolPermissionView(prompt: prompt,
@@ -178,6 +196,7 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
     }
 
     func withdraw(requestID: String, completion: @escaping @MainActor () -> Void) {
+        if pendingRequestID == requestID { pendingRequestID = nil }
         guard let active, active.requestID == requestID else {
             completion()
             return
@@ -187,6 +206,7 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
     }
 
     func withdrawActive(completion: @escaping @MainActor () -> Void) {
+        pendingRequestID = nil
         guard let active else {
             completion()
             return
@@ -200,6 +220,7 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
         presentation.focusChanges = notifications.publisher(for: UIWindow.didBecomeKeyNotification, object: browserWindow)
             .merge(with: notifications.publisher(for: UIWindow.didBecomeHiddenNotification))
             .merge(with: notifications.publisher(for: UIScene.didActivateNotification, object: scene))
+            .merge(with: notifications.publisher(for: UIResponder.keyboardDidHideNotification))
             .receive(on: DispatchQueue.main)
             .sink { [weak self, weak presentation, weak browserWindow] _ in
                 guard let self, let presentation, let browserWindow, active === presentation,

@@ -37,7 +37,7 @@ def review(folder):
     except OSError:
         return "not reviewed", ""
     first = next((line.strip().lower() for line in text.splitlines() if line.strip()), "")
-    return (first if first in ("confirmed", "disputed") else "unclear"), text
+    return (first if first in ("confirmed", "disputed", "broker blocked") else "unclear"), text
 
 
 def summary(folder, result):
@@ -266,7 +266,7 @@ def render(batch, rows, baseline=None):
             by_baseline[key(row)] = row
     fingerprints = sorted({(r["result"].get("launch") or {}).get("sourceSHA256", "")[:12] for r in rows} - {""})
     starts = [r["started"] for r in rows if r["started"]]
-    panels, attention, pending = [], [], []
+    panels, attention, pending, blocked = [], [], [], []
     for number, r in enumerate(rows, 1):
         r["number"] = number
         before, change = compare(r, by_baseline) if baseline is not None and not r["retried"] else ("", "")
@@ -286,6 +286,8 @@ def render(batch, rows, baseline=None):
             attention.append(r)
         if counted and r["review"] == "not reviewed":
             pending.append(r)
+        if counted and r["review"] == "broker blocked":
+            blocked.append(r)
         r["reasons"] = reasons
         r["state"] = "fail" if reasons else ("warn" if r["review"] != "confirmed" or known else "ok")
         file, title = scenario_parts(r["scenario"]) if r["scenario"] else ("", f"({r['command']})")
@@ -339,6 +341,8 @@ def render(batch, rows, baseline=None):
         f"<span class=count>{icon(state)}{sum(r['platform'] == p and r['state'] == state for r in scenario_runs)}</span>"
         for state in ("ok", "warn", "fail")) for p in platforms)
     pending_note = ("<p class=pending>Review pending: " + ", ".join(link(r) for r in pending) + "</p>") if pending else ""
+    blocked_note = ("<p class=pending>Blocked by the broker, so not exercised; rerun or use another broker: " +
+                    ", ".join(link(r) for r in blocked) + "</p>") if blocked else ""
     with_findings = [r for r in scenario_runs if r["findings"]]
     finding_count = sum(len(r["findings"]) for r in with_findings)
     findings_note = ("<details class=findings><summary><span class=status>" + icon("warn") +
@@ -349,10 +353,14 @@ def render(batch, rows, baseline=None):
     elif attention:
         banner = (f"<details class='banner attn' open><summary><span class=status>{icon('fail')}<b>Needs attention: {len(attention)} of "
                   f"{len(scenario_runs)} scenario runs.</b></span></summary><ul>" +
-                  "".join(f"<li>{link(r)}: {e(', '.join(r['reasons']))}</li>" for r in attention) + f"</ul>{pending_note}</details>{findings_note}")
+                  "".join(f"<li>{link(r)}: {e(', '.join(r['reasons']))}</li>" for r in attention) +
+                  f"</ul>{pending_note}{blocked_note}</details>{findings_note}")
     elif pending:
         banner = (f"<details class='banner warn' open><summary><span class=status>{icon('warn')}<b>No problems found, but {len(pending)} of "
-                  f"{len(scenario_runs)} scenario runs still need a review.</b></span></summary>{pending_note}</details>{findings_note}")
+                  f"{len(scenario_runs)} scenario runs still need a review.</b></span></summary>{pending_note}{blocked_note}</details>{findings_note}")
+    elif blocked:
+        banner = (f"<details class='banner warn' open><summary><span class=status>{icon('warn')}<b>No problems found, but {len(blocked)} of "
+                  f"{len(scenario_runs)} scenario runs were blocked by the broker.</b></span></summary>{blocked_note}</details>{findings_note}")
     elif any(r["known"] for r in scenario_runs):
         known_runs = [r for r in scenario_runs if r["known"]]
         banner = (f"<details class='banner warn' open><summary><span class=status>{icon('warn')}<b>No new problems, but {len(known_runs)} of "

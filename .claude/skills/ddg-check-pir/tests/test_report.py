@@ -52,6 +52,15 @@ class ReportTests(unittest.TestCase):
         self.assertIn("fromHash[1] : 1)", page)
 
 
+    def test_a_broker_blocked_review_warns_without_needing_attention(self):
+        baseline = self.batch("baseline", "pass", review="confirmed")
+        batch = self.batch("stack", "pass", review="broker blocked")
+        report.main([str(batch), "--baseline", str(baseline)])
+        page = (batch / "report.html").read_text()
+        self.assertNotIn("Needs attention", page)
+        self.assertIn("1 of 1 scenario runs were blocked by the broker", page)
+        self.assertIn("pass · broker blocked", page)
+
     def test_refresh_keeps_the_baseline_until_the_report_is_written_without_one(self):
         baseline = self.batch("baseline", "pass", review="confirmed")
         batch = self.batch("stack", "pass", review="disputed", matches=0)

@@ -3548,3 +3548,122 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
         return (sut, collection)
     }
 }
+
+@MainActor
+final class SwipeTabsFullScreenSnapshotTests: XCTestCase {
+
+    // The coordinator holds these weakly.
+    private var mainViewCoordinator: MainViewCoordinator!
+    private var previewsSource: MockTabPreviewsSource!
+    private var tabsModel: TabsModel!
+    private var window: UIWindow?
+
+    override func tearDown() {
+        window?.isHidden = true
+        window = nil
+        mainViewCoordinator = nil
+        previewsSource = nil
+        tabsModel = nil
+        super.tearDown()
+    }
+
+    func testWhenViewIsOnScreenAndAppIsActiveThenSnapshotIsStoredForTab() {
+        let sut = makeSUT(inWindow: true, applicationState: .active)
+        let tab = makeTab()
+
+        sut.updateFullScreenSnapshot(forTab: tab)
+
+        XCTAssertEqual(previewsSource.updatedFullScreenSnapshots.count, 1)
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.first?.tab === tab)
+    }
+
+    func testWhenViewIsOnScreenAndAppIsActiveThenCurrentTabSnapshotIsStored() {
+        let sut = makeSUT(inWindow: true, applicationState: .active)
+
+        sut.updateFullScreenSnapshotForCurrentTab()
+
+        XCTAssertEqual(previewsSource.updatedFullScreenSnapshots.count, 1)
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.first?.tab === tabsModel.currentTab)
+    }
+
+    func testWhenViewIsNotInAWindowThenNoSnapshotIsStored() {
+        let sut = makeSUT(inWindow: false, applicationState: .active)
+
+        sut.updateFullScreenSnapshot(forTab: makeTab())
+
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.isEmpty)
+    }
+
+    func testWhenAppIsInactiveThenNoSnapshotIsStored() {
+        let sut = makeSUT(inWindow: true, applicationState: .inactive)
+
+        sut.updateFullScreenSnapshot(forTab: makeTab())
+
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.isEmpty)
+    }
+
+    func testWhenAppIsInBackgroundThenNoSnapshotIsStored() {
+        let sut = makeSUT(inWindow: true, applicationState: .background)
+
+        sut.updateFullScreenSnapshot(forTab: makeTab())
+
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.isEmpty)
+    }
+
+    func testWhenAppIsInactiveThenCurrentTabSnapshotIsNotStored() {
+        let sut = makeSUT(inWindow: true, applicationState: .inactive)
+
+        sut.updateFullScreenSnapshotForCurrentTab()
+
+        XCTAssertTrue(previewsSource.updatedFullScreenSnapshots.isEmpty)
+    }
+
+    private func makeTab() -> Tab {
+        Tab(link: Link(title: "Example", url: URL(string: "https://example.com")!))
+    }
+
+    private func makeSUT(inWindow: Bool, applicationState: UIApplication.State) -> SwipeTabsCoordinator {
+        let parentController = UIViewController()
+        let coordinator = MainViewCoordinator(parentController: parentController)
+        mainViewCoordinator = coordinator
+        coordinator.navigationBarCollectionView = MainViewFactory.NavigationBarCollectionView(
+            frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
+            collectionViewLayout: UICollectionViewFlowLayout()
+        )
+        coordinator.omniBar = MockOmniBar()
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        parentController.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        if inWindow {
+            let window = UIWindow(frame: parentController.view.frame)
+            window.rootViewController = parentController
+            window.isHidden = false
+            self.window = window
+        }
+        previewsSource = MockTabPreviewsSource()
+        let sut = SwipeTabsCoordinator(
+            coordinator: coordinator,
+            tabPreviewsSource: previewsSource,
+            appSettings: AppSettingsMock(),
+            omnibarDependencies: MockOmnibarDependency(),
+            floatingUIManager: FloatingUIManager(
+                isFloatingUIFeatureEnabled: false,
+                isPadProvider: { false },
+                isSupportedOSProvider: { true },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            ),
+            liveTabControllerProvider: { _ in nil },
+            inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
+            isPaidAIChatEnabledProvider: { false },
+            allowsSubscriptionUpsellProvider: { false },
+            pixelFiring: nil,
+            applicationStateProvider: { applicationState },
+            selectTab: { _ in },
+            newTab: {},
+            onSwipeStarted: {}
+        )
+        tabsModel = TabsModel(tabs: [makeTab()], desktop: false)
+        sut.tabsModel = tabsModel
+        return sut
+    }
+}

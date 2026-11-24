@@ -68,7 +68,8 @@ def attempt(folder):
     status, text = review(folder)
     started, finished = result.get("startedAt"), result.get("finishedAt")
     broker = (load(folder / "pir-broker.json", {}) or {}).get("url", "") if result.get("command") == "run" else ""
-    return dict(folder=folder, result=result, scenario=result.get("scenario") or "", broker=broker, platform=result.get("platform", ""),
+    return dict(folder=folder, result=result, scenario=result.get("scenario") or "", step=result.get("step") or "",
+                broker=broker, platform=result.get("platform", ""),
                 command=result.get("command", ""), status=result.get("status", ""), expected=result.get("expected", "pass"),
                 review=status, verification=text, findings=findings(text),
                 summary=summary(folder, result), started=started,
@@ -84,10 +85,11 @@ def attempts(batch):
     found = [a for a in (attempt(folder) for folder in sorted((batch / "evidence").glob("*")) if folder.is_dir()) if a]
     latest = {}
     for a in found:
-        if a["scenario"] and (key(a) not in latest or (a["started"] or 0) > (latest[key(a)]["started"] or 0)):
+        # A step attempt runs only part of a scenario, so it never stands in for the scenario's own run.
+        if a["scenario"] and not a["step"] and (key(a) not in latest or (a["started"] or 0) > (latest[key(a)]["started"] or 0)):
             latest[key(a)] = a
     for a in found:
-        a["retried"] = bool(a["scenario"]) and latest[key(a)] is not a
+        a["retried"] = bool(a["scenario"]) and not a["step"] and latest[key(a)] is not a
     return sorted(found, key=lambda a: (a["platform"], a["scenario"] == "", a["scenario"], a["broker"], a["started"] or 0))
 
 
@@ -262,7 +264,7 @@ def render(batch, rows, baseline=None):
     rows = [r for r in rows if r["scenario"]]
     by_baseline = {}
     for row in baseline or []:
-        if row["scenario"] and not row["retried"]:
+        if row["scenario"] and not row["retried"] and not row["step"]:
             by_baseline[key(row)] = row
     fingerprints = sorted({(r["result"].get("launch") or {}).get("sourceSHA256", "")[:12] for r in rows} - {""})
     starts = [r["started"] for r in rows if r["started"]]
@@ -281,7 +283,7 @@ def render(batch, rows, baseline=None):
         reasons = ([f"expected {r['expected']}, got {r['status']}"] if not as_expected else []) + \
                   ([r["review"]] if r["review"] in ("disputed", "unclear") and not known else []) + \
                   (["worse than the baseline"] if worse else [])
-        counted = bool(r["scenario"]) and not r["retried"]
+        counted = bool(r["scenario"]) and not r["retried"] and not r["step"]
         if counted and reasons:
             attention.append(r)
         if counted and r["review"] == "not reviewed":
@@ -293,7 +295,8 @@ def render(batch, rows, baseline=None):
         file, title = scenario_parts(r["scenario"]) if r["scenario"] else ("", f"({r['command']})")
         r["file"], r["title"] = file, title
         verdict = (f"expected {r['expected']}, got {r['status']}" if r["expected"] != "pass" or not as_expected else r["status"])
-        r["line"] = f"{verdict} · {r['review']}" + (f" · {len(r['findings'])} finding(s)" if r["findings"] else "")
+        r["line"] = (f"step: {r['step']} · " if r["step"] else "") + f"{verdict} · {r['review']}" + \
+            (f" · {len(r['findings'])} finding(s)" if r["findings"] else "")
         found = ("<h4>Findings</h4><ul>" + "".join(f"<li>{inline(f)}</li>" for f in r["findings"]) + "</ul>") if r["findings"] else ""
         why = (f"<p class='why status'>{icon(r['state'])}<span>{e('; '.join(reasons))}</span></p>" if reasons else
                f"<p class='why status'>{icon(r['state'])}<span>{'dispute already in the baseline' if known else e(r['line'])}</span></p>")

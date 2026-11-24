@@ -474,6 +474,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables handing a PDF tab to Duck.ai as page context (bytes instead of markdown)
     case pdfPageContext
 
+    /// "Ask about page" in the context menu of links on DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case askAboutSerpPage
+
+    /// "Ask about page" in the context menu of links on any page other than DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case askAboutLinkedPage
+
     /// Attaches page context to the sidebar by default; a manual remove lasts across navigation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219574855267767?focus=true
     case pageContextAutoAttach

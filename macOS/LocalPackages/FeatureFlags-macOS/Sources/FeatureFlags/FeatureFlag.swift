@@ -399,6 +399,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1217621296618559
     case aiChatPdfPageContext
 
+    /// "Ask about page" in the context menu of links on DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case aiChatAskAboutSerpPage
+
+    /// "Ask about page" in the context menu of links on any page other than DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case aiChatAskAboutLinkedPage
+
     /// Attaches page context to the sidebar by default, replacing the auto-send setting. A manual
     /// remove lasts across navigation until the user attaches again or reopens the sidebar.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219574855267767?focus=true
@@ -973,6 +981,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts), category: .duckAI)
         case .aiChatPdfPageContext:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
+        case .aiChatAskAboutSerpPage:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.askAboutSerpPage), category: .duckAI)
+        case .aiChatAskAboutLinkedPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.askAboutLinkedPage), category: .duckAI)
         case .aiChatPageContextAutoAttach:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pageContextAutoAttach), category: .duckAI)
         case .aiChatOmnibarImageGeneration:

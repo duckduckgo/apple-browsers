@@ -306,7 +306,62 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertTrue(upsellPresenter.presentedPurchaseFlows.isEmpty)
     }
 
+    // MARK: - New chats start on the default, built the way the iPad omnibar builds it
+
+    func testWhenOnlyAStorageHandlerIsPassedThenNewChatsStartOnTheOverLimitDefault() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: """
+        {"notice": {"id": "weeklyReachedDegraded", "window": "weekly", "resetsAt": "2030-01-01T00:00:00Z"}, \
+        "newChatDefault": {"modelId": "gpt-5.6-terra"}}
+        """)
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let sut = makeNewChatDefaultSUT(duckAiNativeStorageHandler: storage)
+
+        await activateAndWaitForModels(sut)
+
+        XCTAssertEqual(sut.currentModelId, "gpt-5.6-terra")
+    }
+
+    func testWhenNewChatsStartOnTheDefaultThenTheTierAppliesBeforeModelsLoadAndTheServerDefaultAfter() async {
+        subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
+        modelsService.result = .failure(URLError(.notConnectedToInternet))
+        let sut = makeNewChatDefaultSUT()
+
+        await activateAndWaitForModels(sut)
+        XCTAssertEqual(sut.currentModelId, "gpt-5.6-terra")
+
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        await activateAndWaitForModels(sut)
+        XCTAssertEqual(sut.currentModelId, "gpt-6-luna")
+    }
+
     // MARK: - Helpers
+
+    private var newChatDefaultModels: [AIChatRemoteModel] {
+        ["gpt-6-luna", "gpt-5.6-terra"].map { makeRemoteModel(id: $0, shortName: $0) }
+    }
+
+    private func makeNewChatDefaultSUT(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> IPadOmnibarModelPickerController {
+        IPadOmnibarModelPickerController(
+            modelsService: modelsService,
+            preferences: preferences,
+            subscriptionManager: subscriptionManager,
+            upsellPresenter: upsellPresenter,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            startsNewChatsOnDefault: true,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler
+        )
+    }
+
+    private func activateAndWaitForModels(_ sut: IPadOmnibarModelPickerController) async {
+        let updated = expectation(description: "models updated")
+        sut.onModelsUpdated = { updated.fulfill() }
+        sut.activate()
+        await fulfillment(of: [updated], timeout: 1)
+        sut.onModelsUpdated = nil
+    }
 
     private func makeSUTWithUpdatedModelPickerEnabled(userTier: AIChatUserTier) -> IPadOmnibarModelPickerController {
         let sut = makeSUT(updatedModelPickerEnabled: true)

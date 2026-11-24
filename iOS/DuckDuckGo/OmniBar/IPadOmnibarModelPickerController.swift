@@ -54,7 +54,7 @@ final class IPadOmnibarModelPickerController {
         upsellPresenter: DuckAISubscriptionUpselling? = nil,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         startsNewChatsOnDefault: Bool = false,
-        overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil
+        duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.startsNewChatsOnDefault = startsNewChatsOnDefault
@@ -70,10 +70,19 @@ final class IPadOmnibarModelPickerController {
             subscriptionManager: subscriptionManager,
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
             startsNewChatsOnDefault: startsNewChatsOnDefault,
-            overLimitNewChatDefaults: overLimitNewChatDefaults
+            overLimitNewChatDefaults: Self.overLimitNewChatDefaults(from: duckAiNativeStorageHandler)
         )
         store.onModelsUpdated = { [weak self] in
             self?.onModelsUpdated?()
+        }
+    }
+
+    /// Over the usage limit, new chats start on the default web sends in the usage-limits snapshot.
+    private static func overLimitNewChatDefaults(
+        from storageHandler: DuckAiNativeStorageHandling?
+    ) -> AnyPublisher<AIChatOverLimitNewChatDefault, Never>? {
+        storageHandler.map {
+            DuckAiUsageLimitsStore(storageHandler: $0).overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
         }
     }
 

@@ -57,6 +57,10 @@ struct AIChatToolPermissionView: View {
                 copy = Copy.findInPage(targetsOtherTab: targetsOtherTab, offersAllowForChat: offersAllowForChat)
                 icon = Icons.searchSite
                 rowIcon = icon
+            case .switchToTab:
+                copy = Copy.switchToTab
+                icon = Icons.arrowCircleRight
+                rowIcon = icon
             default:
                 return nil
             }
@@ -457,6 +461,14 @@ private extension AIChatToolPermissionView {
                 name: String(localized: "List Open Tabs"),
                 title: String(localized: "Allow Duck.ai to see your open tabs?"),
                 detail: String(localized: "It will see the title and address of each tab in this window.")
+            )
+        }
+
+        static var switchToTab: ToolText {
+            ToolText(
+                name: UserText.settingsBrowserAccessSwitchToTab,
+                title: UserText.settingsBrowserAccessSwitchToTabPrompt,
+                detail: UserText.settingsBrowserAccessSwitchToTabDetail
             )
         }
 

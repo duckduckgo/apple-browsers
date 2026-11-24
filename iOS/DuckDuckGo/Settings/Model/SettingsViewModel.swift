@@ -188,6 +188,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
     let isSitePermissionsEnabled: Bool
+    @MainActor var browserToolsService: AIChatBrowserToolsService?
     @MainActor private var sitePermissionsStore: SitePermissionsStore?
     @MainActor private var sitePermissionsFavicons: SitePermissionsFaviconStore?
     @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }

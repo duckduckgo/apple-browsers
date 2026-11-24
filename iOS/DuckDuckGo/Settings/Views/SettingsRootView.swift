@@ -173,8 +173,7 @@ struct SettingsRootView: View {
                                                              performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
                                                              onboardingKeyValueStore: viewModel.keyValueStore,
                                                              meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
-                                                             subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
-                                                                featureFlagger: featureFlagger),
+                                                             subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
                                                              onFlowEvent: nil,
                                                              onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
     }

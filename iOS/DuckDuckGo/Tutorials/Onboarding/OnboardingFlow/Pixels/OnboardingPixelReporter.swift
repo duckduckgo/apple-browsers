@@ -720,6 +720,11 @@ struct OnboardingDownloadReasonExperimentMetric {
         case downloadReasonSelectedNoAI = "download_reason_selected_no-ai"
         case downloadReasonSelectedAdBlocking = "download_reason_selected_ad-blocking"
         case downloadReasonSelectedVPN = "download_reason_selected_vpn"
+        case downloadReasonOnboardingCompletedSearch = "download_reason_onboarding_completed_search"
+        case downloadReasonOnboardingCompletedAIChat = "download_reason_onboarding_completed_ai-chat"
+        case downloadReasonOnboardingCompletedNoAI = "download_reason_onboarding_completed_no-ai"
+        case downloadReasonOnboardingCompletedAdBlocking = "download_reason_onboarding_completed_ad-blocking"
+        case downloadReasonOnboardingCompletedVPN = "download_reason_onboarding_completed_vpn"
         case setDefault = "set_default"
     }
 
@@ -732,10 +737,19 @@ struct OnboardingDownloadReasonExperimentMetric {
     }
 
     /// Fires `onboarding_completed`, and the same metric for the user's download reason when they picked one.
+    /// - Parameter downloadReasonToken: The stored reason's pixel token (see `OnboardingDownloadReasonStore`).
     func measureDownloadReasonExperimentOnboardingCompleted(downloadReasonToken: String?) {
         fire(metric: .onboardingCompleted)
-        if let downloadReasonToken {
-            fire(metricName: "download_reason_onboarding_completed_\(downloadReasonToken)")
+        let perReasonMetric: Name? = switch downloadReasonToken {
+        case "search": .downloadReasonOnboardingCompletedSearch
+        case "ai-chat": .downloadReasonOnboardingCompletedAIChat
+        case "no-ai": .downloadReasonOnboardingCompletedNoAI
+        case "ad-blocking": .downloadReasonOnboardingCompletedAdBlocking
+        case "vpn": .downloadReasonOnboardingCompletedVPN
+        default: nil
+        }
+        if let perReasonMetric {
+            fire(metric: perReasonMetric)
         }
     }
 
@@ -758,13 +772,9 @@ struct OnboardingDownloadReasonExperimentMetric {
     }
 
     private func fire(metric: Name) {
-        fire(metricName: metric.rawValue)
-    }
-
-    private func fire(metricName: String) {
         experimentPixelFiring.fireExperimentPixel(
             for: PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue,
-            metric: metricName,
+            metric: metric.rawValue,
             conversionWindowDays: Self.conversionWindowD0,
             value: ""
         )

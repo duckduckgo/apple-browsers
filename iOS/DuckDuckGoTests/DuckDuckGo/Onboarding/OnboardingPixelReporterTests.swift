@@ -1268,14 +1268,25 @@ final class OnboardingPixelReporterTests: XCTestCase {
     }
 
     func testWhenOnboardingCompletesWithStoredDownloadReasonThenPerReasonCompletedMetricFires() {
-        // GIVEN
-        userDefaultsMock.set(OnboardingDownloadReason.vpn.rawValue, forKey: OnboardingDownloadReasonStore.key)
+        let expectedMetrics: [(OnboardingDownloadReason, String)] = [
+            (.browserPrivately, "download_reason_onboarding_completed_search"),
+            (.privateAIChat, "download_reason_onboarding_completed_ai-chat"),
+            (.noAI, "download_reason_onboarding_completed_no-ai"),
+            (.blockAds, "download_reason_onboarding_completed_ad-blocking"),
+            (.vpn, "download_reason_onboarding_completed_vpn")
+        ]
 
-        // WHEN
-        sut.measureScreenImpression(.end(.shown))
+        for (reason, expectedMetric) in expectedMetrics {
+            // GIVEN
+            MockExperimentPixelFiring.reset()
+            userDefaultsMock.set(reason.rawValue, forKey: OnboardingDownloadReasonStore.key)
 
-        // THEN
-        XCTAssertEqual(MockExperimentPixelFiring.firedMetrics, ["onboarding_completed", "download_reason_onboarding_completed_vpn"])
+            // WHEN
+            sut.measureScreenImpression(.end(.shown))
+
+            // THEN
+            XCTAssertEqual(MockExperimentPixelFiring.firedMetrics, ["onboarding_completed", expectedMetric], "Failed for reason \(reason)")
+        }
     }
 
     func testWhenOnboardingCompletesWithoutDownloadReasonThenOnlyOnboardingCompletedFires() {

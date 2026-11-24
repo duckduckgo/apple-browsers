@@ -411,11 +411,54 @@ class SchedulerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'does not take a profile file or brokers'):
                 pir.execute(pir.parser().parse_args(['scheduler', 'observe', '--platform', 'macos', '--since', CUTOFF,
                                                      '--job', BROKER, '1', '--broker', 'a.com']))
-            unknown = FakeSeedRuntime(receipt_changes={'status': 'error', 'errorCode': 'unknownBroker'})
+            unknown = FakeSeedRuntime(receipt_changes={'status': 'error', 'errorCode': 'unknownBroker',
+                                                       'missingBrokers': {'missing.com': 'requiresSubscription'}})
             with patch.object(pir, 'Client', side_effect=AssertionError('contacted a listener')):
                 result = pir.execute(pir.parser().parse_args(base + ['--broker', 'missing.com']), runtime_factory=unknown.create)
             self.assertEqual(result['status'], 'inconclusive')
-            self.assertIn('no eligible scan job', result['reason'])
+            self.assertIn('missing.com (requiresSubscription)', result['reason'])
+
+    def test_upgrade_refreshes_scans_now_and_observes_the_queued_jobs(self):
+        later = '2099-01-01T00:00:01Z'
+        class UpgradeClient(Client):
+            def __init__(self):
+                super().__init__([[dict(type='scanStarted', date=later), dict(type='noMatchFound', date=later)]], broker='example.test')
+                self.posted = []
+            def request(self, method, path, body=None, timeout=None):
+                self.calls.append((method, path, timeout))
+                if method == 'POST':
+                    self.posted.append((path, body))
+                    return dict(id='refresh' if path.endswith('refresh') else 'scans', status='pending')
+                if path == '/api/debug/maintenance/refresh':
+                    return dict(status='succeeded', result=[dict(url='beenverified.com', version='0.12.0', isRemoved=False, id=7)])
+                if path == '/api/debug/maintenance/scans':
+                    return dict(status='succeeded', result=dict(queued=[dict(brokerURL='example.test', profileQueryId=1)], notQueued=[]))
+                return super().request(method, path, timeout)
+        with tempfile.TemporaryDirectory() as directory:
+            args = pir.parser().parse_args(['scheduler', 'upgrade', '--platform', 'macos', '--broker', 'example.test',
+                                            '--evidence-dir', directory, '--scenario', 'An upgrade', '--step', 'upgrade'])
+            native = FakeSeedRuntime()
+            client = UpgradeClient()
+            with patch.object(scheduler, '_identity', return_value=IDENTITY), patch.object(pir, 'Client', return_value=client), \
+                    patch.object(scheduler.time, 'sleep'):
+                result = pir.execute(args, runtime_factory=native.create)
+            self.assertEqual(result['status'], 'pass', result)
+            self.assertTrue(native.launched_existing)
+            self.assertEqual(client.posted, [('/api/debug/broker-json/refresh', dict(resetDelivery=False)),
+                                             ('/api/debug/scans/immediate', dict(brokers=['example.test']))])
+            self.assertEqual(result['upgrade']['brokers'][0]['version'], '0.12.0')
+            self.assertEqual(result['step'], 'upgrade')
+            self.assertIn('--step upgrade', result['rerun'])
+            self.assertTrue((Path(result['evidence']) / 'upgrade-scans.json').exists())
+        for extra, message in ((['--platform', 'macos'], 'requires --broker'),
+                               (['--platform', 'ios', '--broker', 'a.com'], '--simulator'),
+                               (['--platform', 'macos', '--broker', 'a.com', '--simulator', 'X'], '--simulator'),
+                               (['--platform', 'macos', '--broker', 'a.com', '--profile-file', '/p.json'], 'no profile')):
+            with self.subTest(extra=extra), self.assertRaisesRegex(ValueError, message):
+                pir.execute(pir.parser().parse_args(['scheduler', 'upgrade', *extra]))
+        with self.assertRaisesRegex(ValueError, 'only to scheduler upgrade'):
+            pir.execute(pir.parser().parse_args(['scheduler', 'seed', '--platform', 'macos', '--profile-file', '/p.json',
+                                                 '--reset-delivery']))
 
     def test_failed_seed_receipt_prevents_observing_an_old_agent(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -454,6 +497,10 @@ class FakeSeedRuntime:
     def launch_scheduler(self, mode, profile_json, brokers=()):
         self.launch_values = (mode, profile_json)
         self.brokers = brokers
+        return dict(product=dict(executable=IDENTITY['executable']), process=self.process)
+
+    def launch_existing(self, simulator=None):
+        self.launched_existing = True
         return dict(product=dict(executable=IDENTITY['executable']), process=self.process)
 
     def scheduler_receipt(self):

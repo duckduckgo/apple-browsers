@@ -65,7 +65,7 @@ final class TabTerminationErrorPageTests: XCTestCase {
 
     func testWhenSettingsHaveWrongTypesThenDefaultsAreUsed() {
         let settings = makeSettings(
-            json: "{\"terminationCount\": true, \"timeWindowSeconds\": \"30\", \"supportedFormFactors\": \"phone\", \"matchPage\": 0}")
+            json: "{\"terminationCount\": true, \"timeWindowSeconds\": \"30\", \"supportedFormFactors\": \"phone\", \"matchPage\": \"false\"}")
 
         XCTAssertEqual(settings.terminationCount, 3)
         XCTAssertEqual(settings.timeWindow, 60)

@@ -132,11 +132,7 @@ struct TabTerminationErrorPageSettings: TabTerminationErrorPageSettingsProviding
 
     /// When true, terminations are counted only while the tab stays on the same page.
     var matchesPage: Bool {
-        guard let number = value(forKey: Constants.matchPageKey) as? NSNumber,
-              CFGetTypeID(number) == CFBooleanGetTypeID() else {
-            return Constants.defaultMatchesPage
-        }
-        return number.boolValue
+        value(forKey: Constants.matchPageKey) as? Bool ?? Constants.defaultMatchesPage
     }
 
     private func number(forKey key: String) -> NSNumber? {

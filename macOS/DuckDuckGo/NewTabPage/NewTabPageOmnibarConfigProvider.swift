@@ -170,6 +170,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
         defaultChangesCancellable = self.newChatDefaults?.defaultChanges
             .sink { [weak self] in self?.usageLimitsChangedSubject.send(()) }
+        // One provider serves every page, so a Fire Window's page never re-points it.
+        self.newChatDefaults?.observeUserDefaultModel(in: duckAiStorageHandlerProvider(.regular), receivingUpdatesOn: DispatchQueue.main)
 
         // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
         // NTPs update without waiting for their own toggle. The NTP's own paths notify directly.
@@ -462,8 +464,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     func refreshUsageLimits(requestingWebView: WKWebView?) {
         guard let windowControllersManager else { return }
         let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
-        let storageHandler = duckAiStorageHandlerProvider(burnerMode)
-        let store = DuckAiUsageLimitsStore(storageHandler: storageHandler, featureFlagger: featureFlagger)
+        let store = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
+                                           featureFlagger: featureFlagger)
         usageLimitsCancellables.removeAll()
         usageWarningViewModel = store.makeWarningViewModel(
             modelSuggester: DuckAiModelSuggester(
@@ -495,8 +497,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .sink { [weak self] in self?.usageWarningViewModel?.refresh() }
             .store(in: &usageLimitsCancellables)
         observeOverLimitNewChatDefault(in: store)
-        // The requesting page's storage, so a Fire Window reads the setting through its own handler.
-        newChatDefaults?.observeUserDefaultModel(in: storageHandler)
         // After the first resolve, so entering Duck.ai mode doesn't push an update on top of the
         // `getConfig` response that triggered it.
         usageWarningViewModel?.$warning

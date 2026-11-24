@@ -45,8 +45,8 @@ public final class DuckAiUserDefaultModelStore: AIChatUserDefaultModelProviding 
         self.storage = storage
         self.changes = changesSubject.eraseToAnyPublisher()
         let observing = storage as? DuckAiNativeEntriesObserving
-        // Only a value whose every change is announced can be cached; anything else is read live.
-        self.cachesModelId = observing?.announcesEveryChange(to: Self.entryKey) ?? false
+        // Only storage that announces changes can be cached; anything else is read live.
+        self.cachesModelId = observing != nil
         storageUpdatesCancellable = observing?.updates(of: Self.entryKey).sink { [weak self] in
             self?.invalidateCachedModelId()
             self?.changesSubject.send()

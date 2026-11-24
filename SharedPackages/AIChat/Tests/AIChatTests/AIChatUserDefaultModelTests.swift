@@ -100,3 +100,80 @@ struct DuckAiUserDefaultModelStoreTests {
         #expect(store.modelId == "claude-haiku-5-5")
     }
 }
+
+@Suite("User default model: fire storage")
+struct DuckAiUserDefaultModelFireStorageTests {
+
+    private static let entryKey = DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue
+
+    private func makeStorages(userDefault: String = "gpt-6-luna") throws -> (normal: DuckAiNativeStorageHandler, fire: DuckAiNativeStorageHandler) {
+        let normal = try DuckAiNativeStorageHandler(.memory())
+        try normal.putUserDefaultModel(userDefault)
+        return (normal, try DuckAiNativeStorageHandler(.memory(seedSource: normal)))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Clearing the setting in fire storage hides the normal one", .timeLimit(.minutes(1)))
+    func clearedInFireStorage() throws {
+        let (normal, fire) = try makeStorages()
+        let store = DuckAiUserDefaultModelStore(storage: fire)
+
+        try fire.deleteEntry(key: Self.entryKey)
+
+        #expect(store.modelId == nil)
+        #expect(try fire.getAllEntries()[Self.entryKey] == nil)
+        #expect(DuckAiUserDefaultModelStore(storage: normal).modelId == "gpt-6-luna")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Deleting a consent entry in fire storage still reads it through", .timeLimit(.minutes(1)))
+    func consentStillReadsThrough() throws {
+        let (normal, fire) = try makeStorages()
+        try normal.putEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey, value: "true")
+
+        try fire.deleteEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey)
+
+        #expect(try fire.getEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey) as? String == "true")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Wiping fire storage shows the normal setting again", .timeLimit(.minutes(1)))
+    func wipeShowsNormalSettingAgain() throws {
+        let (_, fire) = try makeStorages()
+        try fire.deleteEntry(key: Self.entryKey)
+
+        try fire.deleteAllEntries()
+
+        #expect(DuckAiUserDefaultModelStore(storage: fire).modelId == "gpt-6-luna")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Fire storage announces a setting changed in normal storage", .timeLimit(.minutes(1)))
+    func announcesNormalChanges() throws {
+        let (normal, fire) = try makeStorages()
+        var updates: [DuckAiNativeStorageReservedEntryKeys] = []
+        let cancellable = fire.reservedEntryUpdatesPublisher.sink { updates.append($0) }
+
+        try normal.putUserDefaultModel("claude-haiku-5-5")
+        try normal.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: "{}")
+
+        #expect(updates == [.defaultDuckaiModel])
+        cancellable.cancel()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A fire store announces and serves a setting changed in normal storage", .timeLimit(.minutes(1)))
+    func storeFollowsNormalChanges() throws {
+        let (normal, fire) = try makeStorages()
+        let store = DuckAiUserDefaultModelStore(storage: fire)
+        #expect(store.modelId == "gpt-6-luna")
+        var changeCount = 0
+        let cancellable = store.changes.sink { changeCount += 1 }
+
+        try normal.putUserDefaultModel("claude-haiku-5-5")
+
+        #expect(changeCount == 1)
+        #expect(store.modelId == "claude-haiku-5-5")
+        cancellable.cancel()
+    }
+}

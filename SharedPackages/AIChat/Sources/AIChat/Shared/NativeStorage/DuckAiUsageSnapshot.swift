@@ -156,12 +156,16 @@ public struct DuckAiUsageSnapshot: Equatable {
         guard let notice = notice(from: root["notice"], now: now) else {
             return DuckAiUsageSnapshot(notice: nil, cta: nil, signature: signature(for: entryValue))
         }
-        // Read only next to a live notice, so it expires with the limit.
-        let overLimitNewChatDefault = AIChatOverLimitNewChatDefault(.overLimitDefault(from: root["newChatDefault"]), resetsAt: notice.resetsAt)
         return DuckAiUsageSnapshot(notice: notice,
                                    cta: cta(from: root["cta"]),
                                    signature: signature(for: entryValue),
-                                   overLimitNewChatDefault: overLimitNewChatDefault)
+                                   overLimitNewChatDefault: overLimitNewChatDefault(from: root["newChatDefault"], notice: notice))
+    }
+
+    /// Read only next to a reached notice, so it expires with the limit.
+    private static func overLimitNewChatDefault(from value: Any?, notice: DuckAiUsageNotice) -> AIChatOverLimitNewChatDefault {
+        guard notice.reached else { return .notOverLimit }
+        return AIChatOverLimitNewChatDefault(.overLimitDefault(from: value), resetsAt: notice.resetsAt)
     }
 
     // MARK: - Notice

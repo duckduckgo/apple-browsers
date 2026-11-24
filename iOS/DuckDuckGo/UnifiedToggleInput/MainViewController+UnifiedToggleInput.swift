@@ -93,6 +93,9 @@ extension MainViewController {
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            userDefaultModelStorage: { [weak self] isFireTab in
+                isFireTab ? self?.duckAiFireModeStorageHandler : self?.duckAiNativeStorageHandler
+            },
             floatingUIManager: floatingUIManager,
             scheduleInputFocus: { [weak self] focus in self?.newTabTransitions.scheduleInputFocus(focus) }
         )

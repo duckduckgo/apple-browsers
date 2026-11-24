@@ -26,6 +26,11 @@ public enum AIChatNewChatDefault: Equatable, Sendable {
     case noDefault
     /// `reasoningEffort` is `nil` when the server omits it or sends one the app doesn't know.
     case model(id: String, reasoningEffort: AIChatReasoningEffort?)
+
+    var modelId: String? {
+        guard case let .model(id, _) = self else { return nil }
+        return id
+    }
 }
 
 extension AIChatNewChatDefault {
@@ -52,6 +57,7 @@ extension AIChatNewChatDefault {
 
 /// The default the usage-limits snapshot sends while the user is over their limit.
 public struct AIChatOverLimitNewChatDefault: Equatable, Sendable {
+    /// `.unavailable` when over the limit without a named model.
     public let newChatDefault: AIChatNewChatDefault
     public let resetsAt: Date
 
@@ -64,7 +70,12 @@ public struct AIChatOverLimitNewChatDefault: Equatable, Sendable {
 
     /// Lapses when the limit resets, so new chats go back to the regular default without a new snapshot.
     public func newChatDefault(at date: Date) -> AIChatNewChatDefault {
-        date < resetsAt ? newChatDefault : .unavailable
+        isOverLimit(at: date) ? newChatDefault : .unavailable
+    }
+
+    /// Over the limit until it resets.
+    public func isOverLimit(at date: Date) -> Bool {
+        date < resetsAt
     }
 }
 

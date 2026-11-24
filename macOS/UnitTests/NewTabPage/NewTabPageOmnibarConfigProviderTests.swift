@@ -1396,7 +1396,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     private func makeNewChatDefaultProvider(persistor: AIChatPreferencesPersisting,
                                             modelsLoaded: Bool = true,
                                             userTier: AIChatUserTier? = .free,
-                                            storage: DuckAiNativeStorageHandling? = nil) throws -> NewTabPageOmnibarConfigProvider {
+                                            storage: DuckAiNativeStorageHandling? = nil,
+                                            burnerStorage: DuckAiNativeStorageHandling? = nil) throws -> NewTabPageOmnibarConfigProvider {
         let flagger = flaggerWithReasoningOn()
         flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
         let models = [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
@@ -1413,7 +1414,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             aiChatPreferencesPersistor: persistor,
             searchPreferences: makeSearchPreferences(),
             windowControllersManager: WindowControllersManagerMock(),
-            duckAiStorageHandlerProvider: { _ in storage },
+            duckAiStorageHandlerProvider: { $0.isBurner ? burnerStorage : storage },
             availableModelsProvider: { models },
             newChatDefaults: newChatDefaults,
             firePixel: { _ in }
@@ -1526,18 +1527,31 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: nil)?.parameters["model_source"], "user_default")
     }
 
-    func testWhenUserDefaultChanges_ThenOpenPagesAreToldToRefresh() throws {
+    func testWhenUserDefaultChanges_ThenOpenPagesAreToldToRefreshOnMain() async throws {
         let storage = try DuckAiNativeStorageHandler(.memory())
         let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
-        provider.refreshUsageLimits(requestingWebView: nil)
-        var refreshCount = 0
-        let cancellable = provider.usageLimitsPublisher.sink { refreshCount += 1 }
+        let refreshed = expectation(description: "pages told to refresh")
+        let cancellable = provider.usageLimitsPublisher.sink {
+            XCTAssertTrue(Thread.isMainThread)
+            refreshed.fulfill()
+        }
 
+        DispatchQueue.global().async { try? storage.putUserDefaultModel("luna") }
+
+        await fulfillment(of: [refreshed], timeout: 1)
+        XCTAssertEqual(provider.selectedModelId, "luna")
+        cancellable.cancel()
+    }
+
+    func testWhenUserDefaultIsSet_ThenItAppliesOutsideDuckAiModeFromRegularStorage() throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
         try storage.putUserDefaultModel("luna")
+        let burnerStorage = try DuckAiNativeStorageHandler(.memory())
+        try burnerStorage.putUserDefaultModel("terra")
+
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage, burnerStorage: burnerStorage)
 
         XCTAssertEqual(provider.selectedModelId, "luna")
-        XCTAssertEqual(refreshCount, 1)
-        cancellable.cancel()
     }
 
     func testWhenNewChatDefaultIsOnAndModelsHaveNotLoaded_ThenLocalTierDefaultModelAndEffortAreSelected() throws {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify live PIR broker flows or observe persisted scheduler scans."""
+"""Check live PIR broker flows or observe persisted scheduler scans."""
 import argparse
 import dataclasses
 import hashlib

@@ -33,7 +33,7 @@ def findings(text):
 
 def review(folder):
     try:
-        text = (folder / "verification.md").read_text()
+        text = (folder / "review.md").read_text()
     except OSError:
         return "not reviewed", ""
     first = next((line.strip().lower() for line in text.splitlines() if line.strip()), "")

@@ -135,11 +135,11 @@ No match is inconclusive, and an error never counts as an empty scan. A broker b
 captcha, email, authentication and `jobTimeout`, and any activity timeout, is our failure and fails the run. An accepted
 HTTP request is not completion; the runner polls the run ID and checks the selected result and history.
 
-Then have a fresh subagent review the evidence of every run as `.claude/skills/ddg-check-pir/verify.md` describes, and
+Then have a fresh subagent review the evidence of every run as `.claude/skills/ddg-check-pir/review.md` describes, and
 report its `confirmed` or `disputed` next to the verdict. To run a batch of scenarios, follow
 `.claude/skills/ddg-check-pir/scenarios/README.md`.
 
-## 6. Verify persisted scans
+## 6. Check persisted scans
 
 Choose by what should happen to the DEBUG profile:
 
@@ -199,7 +199,7 @@ for every job, then is inconclusive and names those brokers to rerun. Any other 
 finished, and so does a timeout with jobs missing, incomplete or ambiguous. Listener or HTTP setup problems are
 inconclusive. Recurring scheduler ticks and opt-outs are separate checks.
 
-## 7. Test the verifier
+## 7. Test the checker
 
 Unit tests, without a simulator or backend:
 

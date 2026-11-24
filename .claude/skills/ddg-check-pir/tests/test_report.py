@@ -25,7 +25,7 @@ class ReportTests(unittest.TestCase):
             checks=[dict(check="scan emitted Scan Started", passed=True)], startedAt=0, finishedAt=19)))
         (folder / "pir-final-run.json").write_text(json.dumps(dict(results=[{}] * matches, events=[])))
         if review:
-            (folder / "verification.md").write_text(f"{review}\n\n1. ...\n")
+            (folder / "review.md").write_text(f"{review}\n\n1. ...\n")
         build = self.root / name / "evidence" / "macos-build-1"
         build.mkdir()
         (build / "result.json").write_text(json.dumps(dict(command="build", platform="macos", status="pass")))
@@ -79,7 +79,7 @@ class ReportTests(unittest.TestCase):
             folder = evidence / name
             folder.mkdir()
             (folder / "pir-broker.json").write_text(json.dumps(dict(url=broker)))
-            (folder / "verification.md").write_text("confirmed\n")
+            (folder / "review.md").write_text("confirmed\n")
             (folder / "result.json").write_text(json.dumps(dict(
                 command="run", platform="macos", status=status, scenario="Scan finds the profile's record",
                 startedAt=started, finishedAt=started + 5)))
@@ -105,7 +105,7 @@ class ReportTests(unittest.TestCase):
 
     def test_findings_outside_the_scenario_warn_without_failing(self):
         batch = self.batch("stack", "pass", review="confirmed")
-        (batch / "evidence" / "macos-run-1" / "verification.md").write_text(
+        (batch / "evidence" / "macos-run-1" / "review.md").write_text(
             "confirmed\n\n## Findings\n\n- The broker JSON misses ages on every card.\n")
         report.main([str(batch)])
         page = (batch / "report.html").read_text()

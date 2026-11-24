@@ -1,4 +1,4 @@
-# Verify a ddg-check-pir result
+# Review a ddg-check-pir result
 
 The runner's verdict comes from the app's own history events. This review checks that the evidence supports that
 verdict and, for a scenario run, each of the scenario's expectations. Review every run.
@@ -46,7 +46,7 @@ eligible. Check what the evidence shows. Differences between builds show up when
 
 ## Output
 
-Write `verification.md` in the attempt folder. Its first line is one of:
+Write `review.md` in the attempt folder. Its first line is one of:
 
 - `confirmed` when the answers to all three questions support the run.
 - `broker blocked` when the broker refused the app before the flow reached what the scenario checks, and nothing in the
@@ -64,7 +64,7 @@ Leave them out or put them in the answers. Findings don't change the first line.
 Report the reviewer's result next to the runner's verdict. In a baseline, keep a `disputed` run with its finding: it
 records a failure the baseline build already has, so a later run that shows the same failure isn't a regression.
 
-Snapshots and records show real people's data. Keep `verification.md` with the evidence, outside the checkout.
+Snapshots and records show real people's data. Keep `review.md` with the evidence, outside the checkout.
 
 ## Negative controls
 

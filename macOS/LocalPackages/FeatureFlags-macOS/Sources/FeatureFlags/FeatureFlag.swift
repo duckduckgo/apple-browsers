@@ -617,6 +617,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219191518131269
     case syncImprovedPairingFlow
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220822581493341
+    case sendSyncSetupWideEvent
+
     /// Kill switch for the privacy disclosure shown while a file or image attachment is staged in
     /// a Duck.ai input.
     case aiChatAttachmentPrivacyDisclosure
@@ -1116,6 +1119,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
         case .syncImprovedPairingFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
+        case .sendSyncSetupWideEvent:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncSubfeature.sendSyncSetupWideEvent), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:

@@ -35,18 +35,8 @@ public struct SiteBreakageExperimentMetrics {
     public typealias FirePixelExperiment = (SubfeatureID, String, ConversionWindow, String) -> Void
     public typealias FireDebugExperiment = (_ parameters: [String: String]) -> Void
 
-    private struct ExperimentConfig {
-        static var firePixelExperiment: FirePixelExperiment = { subfeatureID, metric, conversionWindow, value in
-            PixelKit.fireExperimentPixel(for: subfeatureID, metric: metric, conversionWindowDays: conversionWindow, value: value)
-        }
-    }
-
-    static func configureSiteBreakageExperimentMetrics(firePixelExperiment: @escaping FirePixelExperiment) {
-        ExperimentConfig.firePixelExperiment = firePixelExperiment
-    }
-
     public static var activeTDSExperimentNameWithCohort: String? {
-        guard let featureFlagger = PixelKit.ExperimentConfig.featureFlagger else { return nil }
+        guard let featureFlagger = PixelKit.experimentConfig.featureFlagger else { return nil }
 
         return TDSExperimentType.allCases.compactMap { experimentType in
             guard let experimentData = featureFlagger.allActiveExperiments[experimentType.subfeature.rawValue] else { return nil }
@@ -54,16 +44,19 @@ public struct SiteBreakageExperimentMetrics {
         }.first
     }
 
-    public static func fireTDSExperimentMetric( metricType: BreakageExperimentMetricType,
-                                                etag: String,
-                                                fireDebugExperiment: @escaping FireDebugExperiment) {
+    public static func fireTDSExperimentMetric(metricType: BreakageExperimentMetricType,
+                                               etag: String,
+                                               fireDebugExperiment: @escaping FireDebugExperiment) {
+        fireTDSExperimentMetric(metricType: metricType, etag: etag, firePixelExperiment: PixelKit.fireExperimentPixel, fireDebugExperiment: fireDebugExperiment)
+    }
+
+    public static func fireTDSExperimentMetric(metricType: BreakageExperimentMetricType,
+                                               etag: String,
+                                               firePixelExperiment: FirePixelExperiment,
+                                               fireDebugExperiment: FireDebugExperiment) {
         for experiment in TDSExperimentType.allCases {
             for day in 0...5 {
-                ExperimentConfig.firePixelExperiment(experiment.subfeature.rawValue,
-                                                     metricType.rawValue,
-                                                     0...day,
-                                                     "1"
-                )
+                firePixelExperiment(experiment.subfeature.rawValue, metricType.rawValue, 0...day, "1")
                 fireDebugBreakageExperiment(experimentType: experiment,
                                             etag: etag,
                                             fire: fireDebugExperiment
@@ -74,9 +67,9 @@ public struct SiteBreakageExperimentMetrics {
 
     private static func fireDebugBreakageExperiment(experimentType: TDSExperimentType,
                                                     etag: String,
-                                                    fire: @escaping FireDebugExperiment) {
+                                                    fire: FireDebugExperiment) {
         guard
-            let featureFlagger = PixelKit.ExperimentConfig.featureFlagger,
+            let featureFlagger = PixelKit.experimentConfig.featureFlagger,
             let experimentData = featureFlagger.allActiveExperiments[experimentType.subfeature.rawValue]
         else { return }
 

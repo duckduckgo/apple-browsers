@@ -33,6 +33,7 @@ struct SettingsBrowserAccessView: View {
     var body: some View {
         let canSee = enabledRows(BrowserAccessTool.canSee)
         let canDo = enabledRows(BrowserAccessTool.canDo)
+        let canResetAll = (canSee + canDo).contains { storedStates[$0.id] != nil }
 
         List {
             if !canSee.isEmpty {
@@ -50,12 +51,12 @@ struct SettingsBrowserAccessView: View {
                     } label: {
                         Text(UserText.settingsBrowserAccessResetAll)
                             .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: storedStates.isEmpty ? .textSecondary : .accentTextPrimary))
+                            .foregroundColor(Color(designSystemColor: canResetAll ? .accentTextPrimary : .textSecondary))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .disabled(storedStates.isEmpty)
+                    .disabled(!canResetAll)
                     .accessibilityIdentifier("Settings.BrowserAccess.ResetAll")
                 }
                 .listRowBackground(Color(designSystemColor: .surfaceTertiary))

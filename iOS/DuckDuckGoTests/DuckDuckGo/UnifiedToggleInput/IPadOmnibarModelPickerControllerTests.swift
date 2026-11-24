@@ -364,7 +364,8 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
             upsellPresenter: upsellPresenter,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
             startsNewChatsOnDefault: true,
-            duckAiNativeStorageHandler: duckAiNativeStorageHandler
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.utiDuckAIWarnings])
         )
     }
 

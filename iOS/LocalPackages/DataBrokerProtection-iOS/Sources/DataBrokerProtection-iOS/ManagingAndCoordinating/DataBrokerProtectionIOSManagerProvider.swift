@@ -58,6 +58,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   profileStateManager: DBPProfileStateManaging,
                                   isWebViewInspectable: Bool = false,
                                   freeTrialConversionService: FreeTrialConversionInstrumentationService? = nil,
+                                  vpnBypassService: VPNBypassFeatureProvider?,
                                   contentBlocking: DBPWebViewContentBlocking) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
@@ -93,7 +94,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                 eventsHandler: eventsHandler,
                 contentBlocking: contentBlocking,
                 dbpSettings: dbpSettings,
-                contentScopeProperties: contentScopeProperties
+                contentScopeProperties: contentScopeProperties,
+                vpnBypassService: vpnBypassService
             )
         }
 
@@ -127,7 +129,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                                            eventsHandler: EventMapping<JobEvent>,
                                            contentBlocking: DBPWebViewContentBlocking,
                                            dbpSettings: DataBrokerProtectionSettings,
-                                           contentScopeProperties: ContentScopeProperties) throws -> DBPVaultResources {
+                                           contentScopeProperties: ContentScopeProperties,
+                                           vpnBypassService: VPNBypassFeatureProvider?) throws -> DBPVaultResources {
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
@@ -182,7 +185,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             emailConfirmationDataService: emailConfirmationDataService,
             captchaService: captchaService,
             featureFlagger: featureFlagger,
-            vpnBypassService: nil,
+            vpnBypassService: vpnBypassService,
             jobSortPredicate: BrokerJobDataComparators.byPriorityForBackgroundTask,
             wideEvent: wideEvent,
             contentBlocking: contentBlocking,

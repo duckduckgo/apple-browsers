@@ -30,9 +30,13 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "Freemium"),
+            name: "Freemium",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
         .testTarget(
             name: "FreemiumTests",
-            dependencies: ["Freemium"]),
+            dependencies: ["Freemium"],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
     ]
 )

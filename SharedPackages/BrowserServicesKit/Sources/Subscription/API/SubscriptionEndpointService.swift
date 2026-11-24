@@ -71,7 +71,7 @@ public struct GetSubscriptionTierFeaturesResponse: Codable {
     public let features: [String: [TierFeature]]
 }
 
-public struct GetTierProductsResponse: Codable {
+public struct GetTierProductsResponse: Codable, Sendable {
     public let products: [TierProduct]
 }
 
@@ -80,7 +80,7 @@ public enum TierProductsLocation: Equatable {
     case legacyUSRegion
 }
 
-public struct TierProduct: Codable, Equatable {
+public struct TierProduct: Codable, Equatable, Sendable {
     public let productName: String
     public let tier: TierName
     public let regions: [String]
@@ -88,7 +88,7 @@ public struct TierProduct: Codable, Equatable {
     public let billingCycles: [BillingCycle]
 }
 
-public struct BillingCycle: Codable, Equatable {
+public struct BillingCycle: Codable, Equatable, Sendable {
     public let productId: String
     public let period: String  // "Monthly", "Yearly"
     public let price: String
@@ -169,12 +169,24 @@ public protocol SubscriptionEndpointService {
 public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
 
     private let apiService: APIService
-    private let baseURL: URL
+    private let resolveBaseURL: () -> URL
+
+    private var baseURL: URL {
+        resolveBaseURL()
+    }
 
     public init(apiService: APIService,
                 baseURL: URL) {
+        self.init(apiService: apiService, resolveBaseURL: { baseURL })
+    }
+
+    /// - Parameters:
+    ///   - apiService: Performs the requests.
+    ///   - resolveBaseURL: Returns the base URL of the subscription API. Called for every request.
+    public init(apiService: APIService,
+                resolveBaseURL: @escaping () -> URL) {
         self.apiService = apiService
-        self.baseURL = baseURL
+        self.resolveBaseURL = resolveBaseURL
     }
 
     // MARK: - Subscription

@@ -31,7 +31,7 @@ final class ContentBlockingService {
     public let common: ContentBlocking
     public let updating: ContentBlockingUpdating
     public let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
-    public let sponsorBlockPreferences: SponsorBlockPreferences
+    public let segmentSkipPreferences: SegmentSkipPreferences
     public let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     public let fireModeStorageController: FireModeNativeStorageController?
     public let adBlockingAvailability: AdBlockingAvailabilityProviding
@@ -69,9 +69,9 @@ final class ContentBlockingService {
                                                                            aiChatBonusOffer: aiChatBonusOffer,
                                                                            aiChatLocalModel: aiChatLocalModel)
 
-        sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+        segmentSkipPreferences = SegmentSkipPreferences(store: keyValueStore)
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-                                           sponsorBlockPreferences: sponsorBlockPreferences)
+                                           segmentSkipPreferences: segmentSkipPreferences)
     }
 }

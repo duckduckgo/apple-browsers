@@ -356,6 +356,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private let featureFlagger: FeatureFlagger
+    private let simplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding
 
     private let attachmentsChangeSubject = PassthroughSubject<Void, Never>()
     var attachmentsChangePublisher: AnyPublisher<Void, Never> {
@@ -429,6 +430,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.featureFlagger = featureFlagger
+        self.simplifiedPromptBoxFeature = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger)
         self.scheduleInputFocus = scheduleInputFocus
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.featureDiscovery = featureDiscovery
@@ -512,7 +514,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 isToggleVisible: self.isToggleVisible,
                 pageType: self.resolvedPromptPageType,
                 duckAIEntrySource: self.duckAIEntrySourceProvider?(),
-                addressBarPosition: self.addressBarPositionProvider?()
+                addressBarPosition: self.addressBarPositionProvider?(),
+                usesSimplifiedPromptBox: self.simplifiedPromptBoxFeature.isAvailable
             )
         })
         wideEventReporter = UTIWideEventReporter(
@@ -607,7 +610,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 isPastedTextEnabled: { [weak self] in self?.isPastedTextEnabled ?? false },
                 isEditing: { [weak self] in self?.isEditing ?? false },
                 isVoiceSessionActive: { [weak self] in self?.isVoiceSessionActive ?? false },
-                pastedTextSheetMode: { [weak self] in self?.promptLengthGate.sheetMode(for: $0) ?? .editable(limit: 0) }
+                pastedTextSheetMode: { [weak self] in self?.promptLengthGate.sheetMode(for: $0) ?? .editable(limit: 0) },
+                usesSimplifiedAttachMenu: { [weak self] in self?.simplifiedPromptBoxFeature.isAvailable ?? false },
+                attachMenuTools: { [weak self] in self?.attachMenuTools }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -1543,12 +1548,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // together; otherwise the content snaps while the toolbar is still growing.
         let applyModeChange = { [self] in
             viewController.performInputModeChanges {
-                // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
-                // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
-                refreshFooterSuppression()
-                if needsViewSync {
-                    viewController.setInputMode(effectiveMode, animated: animated)
-                }
+                applyFooterAndViewInputMode(effectiveMode, syncsView: needsViewSync, animated: animated)
             }
             if didModeChange {
                 modeChangeSubject.send(effectiveMode)
@@ -1573,6 +1573,20 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             recordUserChoiceToStore()
             syncInputOutcomeMeasurement()
         }
+    }
+
+    /// Shows or suppresses the Duck.ai footer and applies `mode` to the input view, in the order the mode change needs.
+    private func applyFooterAndViewInputMode(_ mode: TextEntryMode, syncsView: Bool, animated: Bool) {
+        // The Duck.ai footer joins the bar before the bar resizes for the mode, so every height the
+        // content follows already includes it. The first switch builds the toolbar slowly enough to show it.
+        // Leaving Duck.ai, it goes after the mode: the mode moves focus to another text control, and the
+        // keyboard reload lays the window out unanimated, which would stretch the card into the footer's room.
+        let footerChangesFirst = mode == .aiChat
+        if footerChangesFirst { refreshFooterSuppression() }
+        if syncsView {
+            viewController.setInputMode(mode, animated: animated)
+        }
+        if !footerChangesFirst { refreshFooterSuppression() }
     }
 
     func syncInputModeFromExternalSource(_ mode: TextEntryMode) {
@@ -1911,8 +1925,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.clearRejectionBanner()
     }
 
-    func updateSelectedModel(_ modelId: String) {
-        modelSelector.updateSelectedModel(modelId)
+    /// - Parameter persistsSelection: When `false`, `modelId` applies to the current chat only and is not
+    ///   saved as the model that new chats start on.
+    func updateSelectedModel(_ modelId: String, persistsSelection: Bool = true) {
+        modelSelector.updateSelectedModel(modelId, persistsSelection: persistsSelection)
     }
 
     /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
@@ -2249,6 +2265,24 @@ extension UnifiedToggleInputCoordinator {
             return
         }
         let currentTool = toolsController.selectedTool
+        fireToolToggleTransitionPixel(previous: previousTool, current: currentTool)
+        refreshToolsPresentation()
+        recordUserChoiceToStore()
+    }
+
+    func handleAttachMenuToolSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
+        let previousTool = toolsController.selectedTool
+        switch identifier {
+        case .webSearch:
+            toolsController.select(.webSearch, for: modelStore)
+        case .imageGeneration:
+            guard previousTool != .imageGeneration else { return }
+            selectImageGeneration(entryPoint: .toolsMenu)
+        case .customizeResponses:
+            return
+        }
+        let currentTool = toolsController.selectedTool
+        guard currentTool != previousTool else { return }
         fireToolToggleTransitionPixel(previous: previousTool, current: currentTool)
         refreshToolsPresentation()
         recordUserChoiceToStore()
@@ -2870,25 +2904,34 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func refreshToolsPresentation() {
-        let presentation = toolsController.presentation(
-            isActive: isActive,
-            modelStore: modelStore,
-            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem,
-            createImagePolicy: createImageMenuPolicy
-        )
+        let usesSimplifiedPromptBox = simplifiedPromptBoxFeature.isAvailable
+        let wasSimplifiedPromptBox = viewController.usesSimplifiedPromptBox
+        let presentation = toolsPresentation
         if toolsController.selectedTool != .imageGeneration {
             footerController?.clearModelSwitchNotice()
         }
-        let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
-            self?.toolsMenuFactory.makeMenu(menu) { identifier in
-                self?.handleToolsMenuSelection(identifier)
-            }
-        } ?? nil
-        viewController.applyToolsPresentation(
-            isToolsButtonHidden: presentation.isToolsButtonHidden,
-            selectedTool: presentation.selectedTool,
-            toolsMenu: toolsMenu
-        )
+        viewController.usesSimplifiedPromptBox = usesSimplifiedPromptBox
+        if usesSimplifiedPromptBox {
+            viewController.applyToolsPresentation(
+                isToolsButtonHidden: true,
+                selectedTool: presentation.selectedTool,
+                toolsMenu: nil
+            )
+        } else {
+            let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
+                self?.toolsMenuFactory.makeMenu(menu) { identifier in
+                    self?.handleToolsMenuSelection(identifier)
+                }
+            } ?? nil
+            viewController.applyToolsPresentation(
+                isToolsButtonHidden: presentation.isToolsButtonHidden,
+                selectedTool: presentation.selectedTool,
+                toolsMenu: toolsMenu
+            )
+        }
+        if usesSimplifiedPromptBox || wasSimplifiedPromptBox {
+            attachmentController?.updateAttachButtonPresentation()
+        }
         // Tool selection toggles the model-chip + reasoning-picker visibility. Route through the
         // canonical updaters so we don't clobber the other signals (`hasSubmittedPrompt`, `host`).
         modelSelector.updateModelChipVisibility()
@@ -2902,6 +2945,22 @@ private extension UnifiedToggleInputCoordinator {
     func resetToolsSelection() {
         toolsController.clearSelection()
         refreshToolsPresentation()
+    }
+
+    private var toolsPresentation: UTIToolsController.Presentation {
+        toolsController.presentation(
+            isActive: isActive,
+            modelStore: modelStore,
+            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem && !simplifiedPromptBoxFeature.isAvailable,
+            createImagePolicy: createImageMenuPolicy
+        )
+    }
+
+    var attachMenuTools: UTIAttachMenuTools? {
+        guard simplifiedPromptBoxFeature.isAvailable, let menu = toolsPresentation.toolsMenu else { return nil }
+        return UTIAttachMenuTools(menu: menu) { [weak self] identifier in
+            self?.handleAttachMenuToolSelection(identifier)
+        }
     }
 
     var createImageMenuPolicy: CreateImageMenuPolicy {

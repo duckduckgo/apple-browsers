@@ -133,5 +133,21 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "aichat_header_plus_menu_item_selected": {
+        "description": "Fires when the user picks an item from the + menu in the Duck.ai tab's chat header. Counts every item, including New Tab and New Search, which m_aichat_entry_point doesn't. The do-no-harm guardrail for the simplified prompt box's circled-plus button",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "simplified_prompt_box",
+            {
+                "key": "item",
+                "description": "The menu item picked. new_fire_tab shows only with Fire mode on; new_tab and new_fire_tab are missing from the menu layout that groups new chat, voice chat, image and search under New Tab",
+                "type": "string",
+                "enum": ["new_chat", "new_voice_chat", "new_image", "new_tab", "new_search", "new_fire_tab"]
+            }
+        ]
     }
 }

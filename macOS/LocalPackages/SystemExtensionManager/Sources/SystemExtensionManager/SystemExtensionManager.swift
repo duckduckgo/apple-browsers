@@ -20,6 +20,7 @@ import Foundation
 import Cocoa
 import Combine
 import os.log
+import Security
 import SystemExtensions
 
 protocol SystemExtensionRequestManaging: AnyObject {
@@ -431,6 +432,40 @@ extension SystemExtensionActivationStateObserver: OSSystemExtensionsWorkspaceObs
     }
 }
 
+/// The identity of a system extension build: its versions and the hash of its signed code.
+struct SystemExtensionBuild: Equatable {
+    let shortVersion: String
+    let version: String
+    /// The code directory hash (CDHash) of the bundle, or `nil` when it can't be read.
+    let codeDirectoryHash: Data?
+}
+
+extension SystemExtensionBuild {
+
+    init(_ properties: OSSystemExtensionProperties) {
+        self.init(shortVersion: properties.bundleShortVersion,
+                  version: properties.bundleVersion,
+                  codeDirectoryHash: Self.codeDirectoryHash(ofBundleAt: properties.url))
+    }
+
+    /// - Parameter url: The URL of a signed bundle.
+    /// - Returns: The code directory hash (CDHash) of the bundle, or `nil` when it can't be read.
+    static func codeDirectoryHash(ofBundleAt url: URL) -> Data? {
+        var staticCode: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(url as CFURL, [], &staticCode) == errSecSuccess, let staticCode else {
+            return nil
+        }
+
+        var information: CFDictionary?
+        guard SecCodeCopySigningInformation(staticCode, [], &information) == errSecSuccess,
+              let information = information as? [String: Any] else {
+            return nil
+        }
+
+        return information[kSecCodeInfoUnique as String] as? Data
+    }
+}
+
 final class SystemExtensionRequest: NSObject {
 
     private let request: OSSystemExtensionRequest
@@ -563,8 +598,29 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
 
     func request(_ request: OSSystemExtensionRequest, actionForReplacingExtension existing: OSSystemExtensionProperties, withExtension ext: OSSystemExtensionProperties) -> OSSystemExtensionRequest.ReplacementAction {
 
-        updateVersion(to: ext.bundleShortVersion + "." + ext.bundleVersion)
-        return .replace
+        replacementAction(replacing: SystemExtensionBuild(existing),
+                          existingIsActive: existing.isEnabled && !existing.isAwaitingUserApproval && !existing.isUninstalling,
+                          with: SystemExtensionBuild(ext))
+    }
+
+    /// Decides whether to replace the active extension with the one being activated.
+    ///
+    /// - Parameters:
+    ///   - existing: The installed extension.
+    ///   - existingIsActive: Whether the installed extension is enabled, approved and not being uninstalled.
+    ///   - new: The extension being activated.
+    /// - Returns: `.cancel` when the installed extension is active and both are the same build with the same signed code,
+    ///   otherwise `.replace`.
+    func replacementAction(replacing existing: SystemExtensionBuild,
+                           existingIsActive: Bool,
+                           with new: SystemExtensionBuild) -> OSSystemExtensionRequest.ReplacementAction {
+        guard existingIsActive, existing.codeDirectoryHash != nil, existing == new else {
+            updateVersion(to: new.shortVersion + "." + new.version)
+            return .replace
+        }
+
+        Logger.systemExtensionManager.log("Keeping the active system extension \(new.shortVersion, privacy: .public) (\(new.version, privacy: .public)): the build being activated is identical")
+        return .cancel
     }
 
     func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {
@@ -590,7 +646,11 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
-        Self.logRequestFailure(error: error, request: request)
+        if case OSSystemExtensionError.requestCanceled = error {
+            Logger.systemExtensionManager.info("System extension wasn't replaced because the version didn't change (requestCanceled): \(request.identifier, privacy: .public)")
+        } else {
+            Self.logRequestFailure(error: error, request: request)
+        }
         complete(with: .failure(error))
     }
 

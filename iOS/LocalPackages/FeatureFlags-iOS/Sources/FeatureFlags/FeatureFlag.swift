@@ -681,6 +681,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
 
+    /// Declared Age Range: age signal request
+    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1220879781552636
+    case declaredAgeRange
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219783104084617?focus=true
     case singleTabBurnOptimization
 
@@ -1208,6 +1212,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.pageSignals))
+        case .declaredAgeRange:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.declaredAgeRange))
         case .singleTabBurnOptimization:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.singleTabBurnOptimization))
         case .aiChatLimitExtensionPromo:

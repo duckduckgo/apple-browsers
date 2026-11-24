@@ -47,7 +47,7 @@ struct RedesignedNewTabPageCardBackground: View {
 
     @ViewBuilder
     private var content: some View {
-        if #available(iOS 26, *), usesLiquidGlass, !reduceTransparency, theme.backgroundImage != nil {
+        if #available(iOS 26, *), usesLiquidGlass, !reduceTransparency {
             Color.clear.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         } else {
             raisedSurface

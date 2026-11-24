@@ -6,7 +6,9 @@ build, and compare the two. The `main` build comes from a worktree of `anh/share
 
 Scheduler scenarios scan five brokers whose scans finished cleanly on this machine: searchpeoplefree.com,
 freepeopledirectory.com and floridaparcels.com (matches), and spydialer.com and cyberbackgroundchecks.com (no match).
-A full broker list takes over 30 minutes per seed and mostly adds broker noise.
+A full broker list takes over 30 minutes per seed and mostly adds broker noise. Seeds are always signed-out Freemium runs, so
+the scheduler scenarios cover Freemium eligibility only; the opt-out scenarios use a token and cover the subscriber's
+scan and opt-out steps.
 
 This branch differs from `main` in two inputs besides the code:
 

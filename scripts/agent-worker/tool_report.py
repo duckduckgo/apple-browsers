@@ -140,9 +140,10 @@ def bash_allowed(command, allow):
 
 def bash_fix(command, allow):
     """What to do about a denied Bash command that no deny rule names"""
-    if re.match(r"\s*git\s+-C\s", command):
-        return ("`git -C <path>` doesn't match the git rules, which start with the subcommand. The prompt asks the agent "
-                "to run git from the repository directory. Nothing to change unless it keeps happening.")
+    if re.match(r"\s*git\s+-C\s", command) and not bash_allowed(command, allow):
+        return ("`git -C <path>` doesn't match the git rules, which start with the subcommand, except `git -C <checkout> "
+                "show`. The prompt asks the agent to run git from the repository directory. Nothing to change unless it "
+                "keeps happening.")
     chain = parts(command)
     if chain:
         missing = [p for p in chain if not bash_allowed(p, allow)]

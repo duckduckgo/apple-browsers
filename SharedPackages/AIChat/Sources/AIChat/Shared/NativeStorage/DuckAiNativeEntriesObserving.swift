@@ -24,4 +24,17 @@ import Foundation
 public protocol DuckAiNativeEntriesObserving {
     /// No initial value: subscribers already read on activation.
     var reservedEntryUpdatesPublisher: AnyPublisher<DuckAiNativeStorageReservedEntryKeys, Never> { get }
+    /// `false` when `key` can also change unannounced, such as a key read through from another storage.
+    func announcesEveryChange(to key: DuckAiNativeStorageReservedEntryKeys) -> Bool
+}
+
+public extension DuckAiNativeEntriesObserving {
+
+    /// Emits after `key` is written or deleted.
+    func updates(of key: DuckAiNativeStorageReservedEntryKeys) -> AnyPublisher<Void, Never> {
+        reservedEntryUpdatesPublisher
+            .filter { $0 == key }
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
 }

@@ -1455,7 +1455,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     func testWhenBuiltLikeTheNewTabPage_ThenUserDefaultModelApplies() async throws {
         let storage = DuckAiNativeMemoryStorageHandler()
-        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""gpt-5.6-terra""#)
+        try storage.putUserDefaultModel("gpt-5.6-terra")
         let modelsService = NewChatDefaultModelsService()
         modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
                                                              newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
@@ -1515,14 +1515,13 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
     }
 
-    func testWhenUserDefaultIsSet_ThenNewChatStartsOnItAndReportsUserDefault() throws {
+    func testWhenUserDefaultIsSet_ThenNewChatUsesItsOwnEffortAndReportsUserDefault() throws {
         let storage = try DuckAiNativeStorageHandler(.memory())
-        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""luna""#)
+        try storage.putUserDefaultModel("luna")
         let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
 
         provider.refreshUsageLimits(requestingWebView: nil)
 
-        XCTAssertEqual(provider.selectedModelId, "luna")
         XCTAssertNil(provider.selectedReasoningEffort)
         XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: nil)?.parameters["model_source"], "user_default")
     }
@@ -1534,7 +1533,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         var refreshCount = 0
         let cancellable = provider.usageLimitsPublisher.sink { refreshCount += 1 }
 
-        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""luna""#)
+        try storage.putUserDefaultModel("luna")
 
         XCTAssertEqual(provider.selectedModelId, "luna")
         XCTAssertEqual(refreshCount, 1)

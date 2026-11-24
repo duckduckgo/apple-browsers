@@ -143,8 +143,8 @@ struct AIChatNewChatUserDefaultSourceTests {
                             now: @escaping () -> Date = { Date(timeIntervalSince1970: 1_000) }) -> AIChatNewChatDefaultSource {
         let source = AIChatNewChatDefaultSource(now: now)
         source.update(models: [Self.model("gpt-6-luna"), Self.model("gpt-5.6-terra"), Self.model("claude-haiku"), Self.model("claude-pro", access: false)],
-                      userTier: .free,
                       serverDefault: serverDefault)
+        source.userTier = .free
         source.overLimitDefault = overLimit
         source.observeUserDefaultModel(userDefault)
         return source
@@ -174,8 +174,7 @@ struct AIChatNewChatUserDefaultSourceTests {
           arguments: ["claude-pro", "gone-model"])
     func unusableUserDefault(userDefault: String) {
         let source = makeSource(userDefault: StubUserDefaultModel(userDefault))
-        #expect(source.selection == AIChatNewChatSelection(modelId: "gpt-5.6-terra", reasoningEffort: .low, origin: .server,
-                                                           isUserDefaultUnavailable: true))
+        #expect(source.selection == AIChatNewChatSelection(modelId: "gpt-5.6-terra", reasoningEffort: .low, origin: .userDefaultUnavailable))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -183,7 +182,7 @@ struct AIChatNewChatUserDefaultSourceTests {
     func unusableUserDefaultLocalDefault() {
         let source = makeSource(userDefault: StubUserDefaultModel("claude-pro"), serverDefault: .unavailable)
         #expect(source.selection == AIChatNewChatSelection(modelId: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none,
-                                                           origin: .fallback, isUserDefaultUnavailable: true))
+                                                           origin: .userDefaultUnavailable))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -191,7 +190,7 @@ struct AIChatNewChatUserDefaultSourceTests {
     func overLimitBeatsUserDefault() {
         let source = makeSource(userDefault: StubUserDefaultModel("claude-haiku"), overLimit: Self.overLimit)
         #expect(source.selection == AIChatNewChatSelection(modelId: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none,
-                                                           origin: .server, isUserDefaultUnavailable: true))
+                                                           origin: .userDefaultUnavailable))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -212,8 +211,8 @@ struct AIChatNewChatUserDefaultSourceTests {
     @available(iOS 16, macOS 13, *)
     @Test("Without a user default nothing is reported unavailable", .timeLimit(.minutes(1)))
     func noUserDefault() {
-        #expect(makeSource(userDefault: StubUserDefaultModel(nil)).selection?.isUserDefaultUnavailable == false)
-        #expect(makeSource(userDefault: nil).selection?.isUserDefaultUnavailable == false)
+        #expect(makeSource(userDefault: StubUserDefaultModel(nil)).selection?.origin == .server)
+        #expect(makeSource(userDefault: nil).selection?.origin == .server)
     }
 
     @available(iOS 16, macOS 13, *)

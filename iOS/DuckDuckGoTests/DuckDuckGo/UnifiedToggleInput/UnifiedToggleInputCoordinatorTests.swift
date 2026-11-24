@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
@@ -1682,31 +1683,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_newChatDefault_whenBuiltLikeTheAddressBar_userDefaultModelApplies() async throws {
-        let storage = DuckAiNativeMemoryStorageHandler()
-        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""gpt-5.6-terra""#)
-        let modelsService = NewChatDefaultModelsService()
-        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
-                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
-        let coordinator = makeLoadingNewChatDefaultCoordinator(host: .omnibar, duckAiNativeStorageHandler: storage, modelsService: modelsService)
-
-        await fetchModelsAndWait(coordinator)
-
-        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+        try await assertUserDefaultModelApplies { storage, modelsService in
+            self.makeLoadingNewChatDefaultCoordinator(host: .omnibar, duckAiNativeStorageHandler: storage, modelsService: modelsService)
+        }
     }
 
     func test_newChatDefault_whenBuiltLikeTheContextualSheet_userDefaultModelApplies() async throws {
-        let storage = DuckAiNativeMemoryStorageHandler()
-        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""gpt-5.6-terra""#)
-        let modelsService = NewChatDefaultModelsService()
-        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
-                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
-        let coordinator = makeLoadingNewChatDefaultCoordinator(host: .contextualChat,
-                                                               userDefaultModel: DuckAiUserDefaultModelStore(storage: storage),
-                                                               modelsService: modelsService)
-
-        await fetchModelsAndWait(coordinator)
-
-        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+        try await assertUserDefaultModelApplies { storage, modelsService in
+            self.makeLoadingNewChatDefaultCoordinator(host: .contextualChat, userDefaultModelStorage: storage, modelsService: modelsService)
+        }
     }
 
     func test_newChatDefault_whenTabHasNoPick_itFollowsADefaultChangeAfterATabSwitch() {
@@ -1779,10 +1764,27 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     /// Leaves tier and models to the coordinator's own `/models` fetch, as production does.
+    private func assertUserDefaultModelApplies(
+        whenBuilt makeCoordinator: (DuckAiNativeStorageHandling, AIChatModelsProviding) -> UnifiedToggleInputCoordinator,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putUserDefaultModel("gpt-5.6-terra")
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let coordinator = makeCoordinator(storage, modelsService)
+
+        await fetchModelsAndWait(coordinator)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra", file: file, line: line)
+    }
+
     private func makeLoadingNewChatDefaultCoordinator(host: UnifiedToggleInputHost,
                                                       duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                                       usageLimitsStore: DuckAiUsageLimitsStore? = nil,
-                                                      userDefaultModel: AIChatUserDefaultModelProviding? = nil,
+                                                      userDefaultModelStorage: DuckAiNativeStorageHandling? = nil,
                                                       modelsService: AIChatModelsProviding) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(
             host: host,
@@ -1794,7 +1796,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             toggleModeStorage: mockToggleModeStorage,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
             usageLimitsStore: usageLimitsStore,
-            userDefaultModel: userDefaultModel,
+            userDefaultModelStorage: userDefaultModelStorage,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewChatDefaultModel]),
             scheduleInputFocus: { _ in })
     }

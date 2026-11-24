@@ -1,0 +1,74 @@
+{
+    "app-store-dock-rollout_combined_prompt-shown_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired in the App Store build when a default browser prompt (popover, banner, inactive-user modal or win-back modal) is shown with the combined ('Set as Default & Add to Dock') content to a user who has not set DuckDuckGo as default and does not have it in the Dock.",
+        "owners": ["rachelmcr"],
+        "triggers": ["impression"],
+        "parameters": ["appVersion", "channel"],
+        "expires": "2027-03-31"
+    },
+    "app-store-dock-rollout_set-as-default_prompt-shown_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired in the App Store build when a default browser prompt (popover, banner, inactive-user modal or win-back modal) is shown with the 'Set as Default' content to a user who has not set DuckDuckGo as default and does not have it in the Dock. This is the comparison group, when the combined prompt is off.",
+        "owners": ["rachelmcr"],
+        "triggers": ["impression"],
+        "parameters": ["appVersion", "channel"],
+        "expires": "2027-03-31"
+    },
+    "app-store-dock-rollout_combined_default-requested_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired in the App Store build when the app asks macOS to make DuckDuckGo the default browser from a combined prompt.",
+        "owners": ["rachelmcr"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "channel"],
+        "expires": "2027-03-31"
+    },
+    "app-store-dock-rollout_set-as-default_default-requested_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired in the App Store build when the app asks macOS to make DuckDuckGo the default browser from a 'Set as Default' prompt.",
+        "owners": ["rachelmcr"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "channel"],
+        "expires": "2027-03-31"
+    },
+    "app-store-dock-rollout_combined_in-dock-7d_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired in the App Store build at the first app launch or activation at least 7 days after a combined prompt was shown, when DuckDuckGo is in the Dock.",
+        "owners": ["rachelmcr"],
+        "triggers": ["scheduled"],
+        "parameters": ["appVersion", "channel"],
+        "expires": "2027-03-31"
+    },
+    "app-store-dock-rollout_combined_not-in-dock-7d_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired in the App Store build at the first app launch or activation at least 7 days after a combined prompt was shown, when DuckDuckGo is not in the Dock.",
+        "owners": ["rachelmcr"],
+        "triggers": ["scheduled"],
+        "parameters": ["appVersion", "channel"],
+        "expires": "2027-03-31"
+    },
+    "app-store-dock-rollout_set-as-default_in-dock-7d_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired in the App Store build at the first app launch or activation at least 7 days after a 'Set as Default' prompt was shown to a user without DuckDuckGo in the Dock, when DuckDuckGo is now in the Dock.",
+        "owners": ["rachelmcr"],
+        "triggers": ["scheduled"],
+        "parameters": ["appVersion", "channel"],
+        "expires": "2027-03-31"
+    },
+    "app-store-dock-rollout_set-as-default_not-in-dock-7d_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired in the App Store build at the first app launch or activation at least 7 days after a 'Set as Default' prompt was shown to a user without DuckDuckGo in the Dock, when DuckDuckGo is still not in the Dock.",
+        "owners": ["rachelmcr"],
+        "triggers": ["scheduled"],
+        "parameters": ["appVersion", "channel"],
+        "expires": "2027-03-31"
+    },
+    "app-store-dock-rollout_store_read-failed_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired when we fail to read or decode the stored rollout state: the pending 7-day Dock check or the last prompt counted as shown.",
+        "owners": ["rachelmcr"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"],
+        "expires": "2027-03-31"
+    },
+    "app-store-dock-rollout_store_write-failed_macos": {
+        "description": "Temporary, for the rollout analysis of the combined 'Set as Default & Add to Dock' prompt. Fired when we fail to save the rollout state: the pending 7-day Dock check or the last prompt counted as shown.",
+        "owners": ["rachelmcr"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"],
+        "expires": "2027-03-31"
+    }
+}

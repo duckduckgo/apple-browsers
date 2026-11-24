@@ -31,6 +31,7 @@ extension PromoServiceFactory {
             churnState: dependencies.userChurnService,
             promptStore: service.store,
             confirmationMonitor: dependencies.defaultBrowserWinBackConfirmationMonitor,
+            rolloutMonitor: service.rolloutMonitor,
             isFeatureEnabled: { featureFlagger.isFeatureOn(.defaultBrowserWinBackPromo) },
             uiHosting: service.uiHosting,
             modalFactory: { type, onConfirm, onDismiss in

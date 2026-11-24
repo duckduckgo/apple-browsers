@@ -153,6 +153,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let dateProvider: () -> Date
     private let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?
     private let featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
+    private let rolloutMonitor: AppStoreDockRolloutMonitoring?
 
     init(
         promptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding,
@@ -161,6 +162,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger,
         isOnboardingCompleted: @escaping () -> Bool,
         actionPerformer: DefaultBrowserAndDockActionPerforming,
+        rolloutMonitor: AppStoreDockRolloutMonitoring? = nil,
         pixelFiring: PixelFiring? = PixelKit.shared,
         dateProvider: @escaping () -> Date = Date.init
     ) {
@@ -168,6 +170,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         self.store = store
         self.isOnboardingCompleted = isOnboardingCompleted
         self.actionPerformer = actionPerformer
+        self.rolloutMonitor = rolloutMonitor
         self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
         self.notificationPresenter = notificationPresenter
@@ -267,13 +270,16 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         case .active(.popover):
             setPopoverSeen()
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: evaluatePromptEligibility))
+            rolloutMonitor?.promptShown(evaluatePromptEligibility, promptID: "popover")
         case .active(.banner):
             // We set the banner show occurrences only when the user interact with the banner.
             // We cannot increment the number of banners shown here because this returns a value every time the browser is focused.
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: evaluatePromptEligibility, numberOfBannersShown: formattedNumberOfBannersShown(value: store.bannerShownOccurrences + 1)), frequency: .uniqueByNameAndParameters)
+            rolloutMonitor?.promptShown(evaluatePromptEligibility, promptID: "banner-\(store.bannerShownOccurrences + 1)")
         case .inactive:
             setInactiveUserModalSeen()
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: evaluatePromptEligibility))
+            rolloutMonitor?.promptShown(evaluatePromptEligibility, promptID: "inactive-modal")
         case .none:
             break
         }
@@ -320,7 +326,9 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         setPromptSeen()
         fireConfirmActionPixel()
         MainActor.assumeMainThread {
-            actionPerformer.performPendingActions(from: prompt.addToDockVideoEntryPoint)
+            actionPerformer.performPendingActions(from: prompt.addToDockVideoEntryPoint) { [rolloutMonitor] in
+                rolloutMonitor?.setAsDefaultRequested()
+            }
         }
         promptDismissedSubject.send((prompt, .actioned()))
         activePrompt = nil

@@ -264,5 +264,6 @@ final class PromoDebugMenu: NSMenu {
         NSApp.delegateTyped.promoService?.resetDebugState()
         NSApp.delegateTyped.defaultBrowserAndDockPromptService.resetDebugState()
         NSApp.delegateTyped.defaultBrowserWinBackConfirmationMonitor.cancel()
+        NSApp.delegateTyped.defaultBrowserAndDockPromptService.rolloutMonitor.cancel()
     }
 }

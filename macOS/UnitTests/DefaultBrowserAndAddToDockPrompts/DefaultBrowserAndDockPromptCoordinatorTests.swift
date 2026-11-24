@@ -33,6 +33,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     private var storeMock: MockDefaultBrowserAndDockPromptStore!
     private var notificationPresenterMock: MockDefaultBrowserAndDockPromptNotificationPresenter!
     private var pixelKitMock: PixelKitMock!
+    private var rolloutMonitorMock: MockAppStoreDockRolloutMonitor!
     private var timeTraveller: TimeTraveller!
     private var isOnboardingCompleted = true
     private static let now = Date(timeIntervalSince1970: 1747872000) // 22 May 2025 12:00:00 AM
@@ -45,6 +46,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         dockCustomizerMock = DockCustomizerMock()
         storeMock = MockDefaultBrowserAndDockPromptStore()
         notificationPresenterMock = MockDefaultBrowserAndDockPromptNotificationPresenter()
+        rolloutMonitorMock = MockAppStoreDockRolloutMonitor()
         timeTraveller = TimeTraveller(date: Self.now)
     }
 
@@ -55,6 +57,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         dockCustomizerMock = nil
         storeMock = nil
         notificationPresenterMock = nil
+        rolloutMonitorMock = nil
         timeTraveller = nil
         pixelKitMock = nil
 
@@ -77,6 +80,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
                                                                                      defaultBrowserProvider: defaultBrowserProviderMock,
                                                                                      featureFlagger: MockFeatureFlagger(),
                                                                                      videoPresenter: MainActor.assumeIsolated { CapturingAddToDockVideoPresenter() }),
+            rolloutMonitor: rolloutMonitorMock,
             pixelFiring: pixelKitMock,
             dateProvider: timeTraveller.getDate
         )
@@ -1265,6 +1269,62 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
         XCTAssertEqual(received?.type, .active(.banner))
         XCTAssertEqual(received?.result, .noChange)
+    }
+
+    // MARK: - App Store Dock rollout monitor tests
+
+    func testGetPromptTypeReportsShownPromptToRolloutMonitor() {
+        let expected: [(DefaultBrowserAndDockPromptPresentationType, String)] = [
+            (.active(.popover), "popover"),
+            (.active(.banner), "banner-3"),
+            (.inactive, "inactive-modal")
+        ]
+        for (prompt, promptID) in expected {
+            rolloutMonitorMock = MockAppStoreDockRolloutMonitor()
+            storeMock.bannerShownOccurrences = 2
+            let actionPerformer = MockDefaultBrowserAndDockActionPerformer()
+            actionPerformer.pendingPromptType = .bothDefaultBrowserAndDockPrompt
+            promptTypeDeciderMock.promptTypeToReturn = prompt
+            let sut = makeSUT(actionPerformer: actionPerformer)
+
+            _ = sut.getPromptType()
+
+            XCTAssertEqual(rolloutMonitorMock.shownPrompts, [.init(type: .bothDefaultBrowserAndDockPrompt, promptID: promptID)], "prompt: \(prompt)")
+        }
+    }
+
+    func testGetPromptTypeDoesNotReportToRolloutMonitorWhenNoPrompt() {
+        let actionPerformer = MockDefaultBrowserAndDockActionPerformer()
+        actionPerformer.pendingPromptType = .setAsDefaultPrompt
+        promptTypeDeciderMock.promptTypeToReturn = nil
+        let sut = makeSUT(actionPerformer: actionPerformer)
+
+        _ = sut.getPromptType()
+
+        XCTAssertTrue(rolloutMonitorMock.shownPrompts.isEmpty)
+    }
+
+    func testConfirmActionReportsSetAsDefaultRequestToRolloutMonitor() {
+        let actionPerformer = MockDefaultBrowserAndDockActionPerformer()
+        actionPerformer.pendingPromptType = .bothDefaultBrowserAndDockPrompt
+        let sut = makeSUT(actionPerformer: actionPerformer)
+
+        sut.confirmAction(for: .active(.popover))
+
+        XCTAssertEqual(rolloutMonitorMock.setAsDefaultRequestedCallCount, 1)
+    }
+
+    func testConfirmActionDoesNotReportToRolloutMonitorUntilSetAsDefaultRequested() {
+        let actionPerformer = MockDefaultBrowserAndDockActionPerformer()
+        actionPerformer.pendingPromptType = .bothDefaultBrowserAndDockPrompt
+        actionPerformer.requestsSetAsDefault = false
+        let sut = makeSUT(actionPerformer: actionPerformer)
+
+        sut.confirmAction(for: .active(.popover))
+        XCTAssertEqual(rolloutMonitorMock.setAsDefaultRequestedCallCount, 0)
+
+        actionPerformer.onSetAsDefaultRequested?()
+        XCTAssertEqual(rolloutMonitorMock.setAsDefaultRequestedCallCount, 1)
     }
 
 }

@@ -52,6 +52,16 @@ enum UpsellFlowType: String {
     case upgrade
 }
 
+/// Who chose the model a chat opens with.
+enum UTIOpeningModelOrigin {
+    /// The user, through an entry point; it is kept as their pick.
+    case user
+    /// Onboarding: it applies to the onboarding chat only, and that chat's first prompt reports `onboarding`.
+    case onboarding
+
+    var persistsSelection: Bool { self == .user }
+}
+
 private struct PromptSubmissionConfiguration {
     let modelId: String?
     let reasoningEffort: AIChatReasoningEffort?
@@ -358,8 +368,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private let featureFlagger: FeatureFlagger
     private var openingChatModelId: String?
-    /// The explicit model this chat was opened with, kept until its first prompt for the pixel.
-    private var openedWithModelId: String?
+    /// The model onboarding opened this chat with, kept until its first prompt for the pixel.
+    private var onboardingModelId: String?
 
     private let attachmentsChangeSubject = PassthroughSubject<Void, Never>()
     var attachmentsChangePublisher: AnyPublisher<Void, Never> {
@@ -962,7 +972,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Only the first prompt of a new chat reports where its model came from; image generation picks its own model.
     private var newChatModelSourceForSubmitPixel: DuckAINewChatModelSource? {
         guard isNewChatContext, toolsController.selectedTool != .imageGeneration else { return nil }
-        return modelStore.newChatModelSource(openedWithModelId: openedWithModelId)
+        return modelStore.newChatModelSource(onboardingModelId: onboardingModelId)
     }
 
     private func clearStoreEntryAfterSubmission() {
@@ -1944,14 +1954,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.clearRejectionBanner()
     }
 
-    /// A model an entry point opens a chat with (e.g. onboarding). It wins over the default for that chat only.
-    /// - Parameter persistsSelection: When `false`, `modelId` applies to the current chat only and is not
-    ///   saved as the model that new chats start on.
-    func updateSelectedModel(_ modelId: String, persistsSelection: Bool = true) {
+    /// A model an entry point opens a chat with. It wins over the default for that chat only.
+    func updateSelectedModel(_ modelId: String, origin: UTIOpeningModelOrigin = .user) {
         openingChatModelId = modelId
-        openedWithModelId = modelId
+        onboardingModelId = origin == .onboarding ? modelId : nil
         Logger.unifiedInputState.debug("opening chat with explicit model '\(modelId, privacy: .public)'")
-        modelSelector.updateSelectedModel(modelId, persistsSelection: persistsSelection)
+        modelSelector.updateSelectedModel(modelId, persistsSelection: origin.persistsSelection)
     }
 
     /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
@@ -2431,7 +2439,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             resubmitDelay: resubmitDelay(of: text, mode: .aiChat),
             modelSource: newChatModelSourceForSubmitPixel
         )
-        openedWithModelId = nil
+        onboardingModelId = nil
         pixelReporter.reportToolSubmittedIfNeeded(
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments

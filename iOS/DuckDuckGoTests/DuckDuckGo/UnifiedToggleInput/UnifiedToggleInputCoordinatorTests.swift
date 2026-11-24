@@ -1612,11 +1612,34 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
     }
 
+    func test_newChatModelSource_whenAnEntryPointOpenedTheChatOnTheSentModel_isNotOnboarding() {
+        let pixelKit = PixelKitMock()
+        let coordinator = makeNewChatDefaultCoordinator(pixelKit: pixelKit)
+        coordinator.updateSelectedModel("gpt-5.6-terra")
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(promptSubmittedModelSource(in: pixelKit), "picked")
+    }
+
+    func test_newChatModelSource_whenOnboardingOpenedTheChatOnTheSentModel_isOnboarding() {
+        let pixelKit = PixelKitMock()
+        let coordinator = makeNewChatDefaultCoordinator(pixelKit: pixelKit)
+        coordinator.updateSelectedModel("gpt-5.6-terra", origin: .onboarding)
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(promptSubmittedModelSource(in: pixelKit), "onboarding")
+    }
+
     func test_newChatDefault_whenTabHasNoPick_itFollowsADefaultChangeAfterATabSwitch() {
         let coordinator = makeNewChatDefaultCoordinator()
         coordinator.activateForTab("tab-B")
 
-        coordinator.modelStore.newChatDefaults?.overLimitDefault = .model(id: "gpt-5.6-terra", reasoningEffort: nil)
+        coordinator.modelStore.newChatDefaults?.overLimitDefault = AIChatOverLimitNewChatDefault(.model(id: "gpt-5.6-terra", reasoningEffort: nil),
+                                                                                                  resetsAt: .distantFuture)
         coordinator.activateForTab("tab-A")
 
         XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
@@ -1644,7 +1667,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertNil(coordinator.voicePromptSubmissionConfiguration.reasoningEffort)
     }
 
-    private func makeNewChatDefaultCoordinator(supportedReasoningEffort: [AIChatReasoningEffort] = []) -> UnifiedToggleInputCoordinator {
+    private func promptSubmittedModelSource(in pixelKit: PixelKitMock) -> String? {
+        pixelKit.actualFireCalls.last { $0.pixel.name == "m_aichat_unified_input_prompt_submitted" }?.additionalParameters?["model_source"]
+    }
+
+    private func makeNewChatDefaultCoordinator(supportedReasoningEffort: [AIChatReasoningEffort] = [],
+                                               pixelKit: PixelKitMock? = nil) -> UnifiedToggleInputCoordinator {
         let models = ["gpt-6-luna", "gpt-5.6-terra"].map {
             AIChatModel(id: $0, name: $0, provider: .openAI, supportsImageUpload: false, entityHasAccess: true,
                         supportedReasoningEffort: supportedReasoningEffort)
@@ -1656,6 +1684,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             preferences: mockPreferences,
             subscriptionManager: subscriptionManager,
             toggleModeStorage: mockToggleModeStorage,
+            pixelFiring: UTIPixelFiring(pixelKit: { pixelKit }),
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewChatDefaultModel]),
             scheduleInputFocus: { _ in })
@@ -3020,7 +3049,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
     }
 
-    func test_updateSelectedModel_withoutPersistingSelection_onNewChat_doesNotChangePreferredModel() {
+    func test_updateSelectedModel_fromOnboarding_onNewChat_doesNotChangePreferredModel() {
         sut.modelStore.models = [
             makeModel(id: "haiku", access: true),
             makeModel(id: "mistral", access: true)
@@ -3028,7 +3057,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.updateSelectedModel("haiku")
         XCTAssertFalse(sut.hasSubmittedPrompt)
 
-        sut.updateSelectedModel("mistral", persistsSelection: false)
+        sut.updateSelectedModel("mistral", origin: .onboarding)
 
         XCTAssertEqual(mockPreferences.selectedModelId, "haiku",
                        "a chat-only pick must not retarget the new-chat default")

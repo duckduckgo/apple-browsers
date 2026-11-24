@@ -193,20 +193,30 @@ struct AIChatOverLimitNewChatDefaultSnapshotTests {
     @Test("Over-limit default is read next to a live notice", .timeLimit(.minutes(1)))
     func readWithNotice() {
         let value = snapshot(notice: true, newChatDefault: #"{"modelId": "gpt-6-luna", "reasoningEffort": "none"}"#)
-        #expect(value.overLimitNewChatDefault == .model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none))
+        #expect(value.overLimitNewChatDefault.newChatDefault(at: now) == .model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Over-limit default lapses when the notice's limit resets", .timeLimit(.minutes(1)))
+    func lapsesAtNoticeReset() {
+        let value = snapshot(notice: true, newChatDefault: #"{"modelId": "gpt-6-luna"}"#)
+        let resetsAt = ISO8601DateFormatter().date(from: "2030-01-01T00:00:00Z")!
+
+        #expect(value.overLimitNewChatDefault.newChatDefault(at: resetsAt.addingTimeInterval(-1)) == .model(id: "gpt-6-luna", reasoningEffort: nil))
+        #expect(value.overLimitNewChatDefault.newChatDefault(at: resetsAt) == .unavailable)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Over-limit default is ignored without a live notice", .timeLimit(.minutes(1)))
     func ignoredWithoutNotice() {
         let value = snapshot(notice: false, newChatDefault: #"{"modelId": "gpt-6-luna"}"#)
-        #expect(value.overLimitNewChatDefault == .unavailable)
+        #expect(value.overLimitNewChatDefault.newChatDefault(at: now) == .unavailable)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Null over-limit default leaves the regular default", .timeLimit(.minutes(1)))
     func nullLeavesRegularDefault() {
         let value = snapshot(notice: true, newChatDefault: "null")
-        #expect(value.overLimitNewChatDefault == .unavailable)
+        #expect(value.overLimitNewChatDefault.newChatDefault(at: now) == .unavailable)
     }
 }

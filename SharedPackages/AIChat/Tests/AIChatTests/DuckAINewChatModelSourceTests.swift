@@ -28,12 +28,12 @@ struct DuckAINewChatModelSourceTests {
     private func resolve(_ sentModelId: String,
                          sendsDefaultEffort: Bool = true,
                          isPicked: Bool = false,
-                         openedWithModelId: String? = nil,
+                         onboardingModelId: String? = nil,
                          newChatDefault: AIChatNewChatSelection?) -> DuckAINewChatModelSource? {
         DuckAINewChatModelSource.resolve(sentModelId: sentModelId,
                                          sendsDefaultEffort: sendsDefaultEffort,
                                          isPicked: isPicked,
-                                         openedWithModelId: openedWithModelId,
+                                         onboardingModelId: onboardingModelId,
                                          newChatDefault: newChatDefault)
     }
 
@@ -68,9 +68,9 @@ struct DuckAINewChatModelSourceTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Sending the model the chat was opened with reports onboarding", .timeLimit(.minutes(1)))
-    func openedWithModelIsOnboarding() {
-        #expect(resolve("terra", openedWithModelId: "terra", newChatDefault: serverDefault) == .onboarding)
+    @Test("Sending the model onboarding opened the chat with reports onboarding", .timeLimit(.minutes(1)))
+    func onboardingModelIsOnboarding() {
+        #expect(resolve("terra", onboardingModelId: "terra", newChatDefault: serverDefault) == .onboarding)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -83,7 +83,6 @@ struct DuckAINewChatModelSourceTests {
     @Test("Raw values match the pixel parameter", .timeLimit(.minutes(1)))
     func rawValuesMatchPixel() {
         #expect(DuckAINewChatModelSource.pixelParameterKey == "model_source")
-        #expect(DuckAINewChatModelSource.userDefault.rawValue == "user_default")
-        #expect(DuckAINewChatModelSource.userDefaultUnavailable.rawValue == "user_default_unavailable")
+        #expect(DuckAINewChatModelSource.allCases.map(\.rawValue) == ["default", "picked", "onboarding", "fallback"])
     }
 }

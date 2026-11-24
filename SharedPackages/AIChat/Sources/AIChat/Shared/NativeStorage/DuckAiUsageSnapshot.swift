@@ -131,7 +131,7 @@ public struct DuckAiUsageSnapshot: Equatable {
     /// So "has web published a new snapshot since the user acted on this one?" is answerable.
     public let signature: String?
     /// Web sends it only while the user is over their limit; new chats start on it instead of the `/models` default.
-    public let overLimitNewChatDefault: AIChatNewChatDefault
+    public let overLimitNewChatDefault: AIChatOverLimitNewChatDefault
 
     public static let noData = DuckAiUsageSnapshot(notice: nil, cta: nil, signature: nil)
 
@@ -140,7 +140,7 @@ public struct DuckAiUsageSnapshot: Equatable {
     public init(notice: DuckAiUsageNotice?,
                 cta: DuckAiUsageCta?,
                 signature: String? = nil,
-                overLimitNewChatDefault: AIChatNewChatDefault = .unavailable) {
+                overLimitNewChatDefault: AIChatOverLimitNewChatDefault = .notOverLimit) {
         self.notice = notice
         self.cta = cta
         self.signature = signature
@@ -157,10 +157,11 @@ public struct DuckAiUsageSnapshot: Equatable {
             return DuckAiUsageSnapshot(notice: nil, cta: nil, signature: signature(for: entryValue))
         }
         // Read only next to a live notice, so it expires with the limit.
+        let overLimitNewChatDefault = AIChatOverLimitNewChatDefault(.overLimitDefault(from: root["newChatDefault"]), resetsAt: notice.resetsAt)
         return DuckAiUsageSnapshot(notice: notice,
                                    cta: cta(from: root["cta"]),
                                    signature: signature(for: entryValue),
-                                   overLimitNewChatDefault: AIChatNewChatDefault.overLimitDefault(from: root["newChatDefault"]))
+                                   overLimitNewChatDefault: overLimitNewChatDefault)
     }
 
     // MARK: - Notice

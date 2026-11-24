@@ -42,11 +42,28 @@ struct AIChatNewChatDefaultSourceTests {
         let source = makeSource()
         #expect(source.selection == AIChatNewChatSelection(modelId: "gpt-5.6-terra", reasoningEffort: .low, origin: .server))
 
-        source.overLimitDefault = .model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none)
+        source.overLimitDefault = AIChatOverLimitNewChatDefault(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none),
+                                                                resetsAt: .distantFuture)
         #expect(source.selection?.modelId == "gpt-6-luna")
 
         source.models = []
         #expect(source.selection == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Over-limit default lapses once its limit resets", .timeLimit(.minutes(1)))
+    func overLimitDefaultLapsesAtReset() {
+        var now = Date(timeIntervalSince1970: 1_000)
+        let source = AIChatNewChatDefaultSource(now: { now })
+        source.models = Self.models
+        source.serverDefault = .model(id: "gpt-5.6-terra", reasoningEffort: .low)
+        source.overLimitDefault = AIChatOverLimitNewChatDefault(.model(id: "gpt-6-luna", reasoningEffort: nil),
+                                                                resetsAt: Date(timeIntervalSince1970: 2_000))
+        #expect(source.selection?.modelId == "gpt-6-luna")
+
+        now = Date(timeIntervalSince1970: 2_000)
+
+        #expect(source.selection?.modelId == "gpt-5.6-terra")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -65,7 +82,8 @@ struct AIChatNewChatDefaultSourceTests {
     @Test("Observed over-limit default applies quietly first, then announces each change", .timeLimit(.minutes(1)))
     func observedOverLimitDefault() {
         let source = makeSource()
-        let defaults = CurrentValueSubject<AIChatNewChatDefault, Never>(.model(id: "gpt-6-luna", reasoningEffort: nil))
+        let overLimit = AIChatOverLimitNewChatDefault(.model(id: "gpt-6-luna", reasoningEffort: nil), resetsAt: .distantFuture)
+        let defaults = CurrentValueSubject<AIChatOverLimitNewChatDefault, Never>(overLimit)
         var changeCount = 0
         let cancellable = source.overLimitDefaultChanges.sink { changeCount += 1 }
 
@@ -73,8 +91,8 @@ struct AIChatNewChatDefaultSourceTests {
         #expect(source.selection?.modelId == "gpt-6-luna")
         #expect(changeCount == 0)
 
-        defaults.send(.unavailable)
-        defaults.send(.unavailable)
+        defaults.send(.notOverLimit)
+        defaults.send(.notOverLimit)
         #expect(source.selection?.modelId == "gpt-5.6-terra")
         #expect(changeCount == 1)
         cancellable.cancel()

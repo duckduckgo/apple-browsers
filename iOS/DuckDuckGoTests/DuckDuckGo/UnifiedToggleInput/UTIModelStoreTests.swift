@@ -656,7 +656,8 @@ final class UTIModelStoreTests: XCTestCase {
     func test_newChatDefault_whenOverLimit_startsOnTheOverLimitDefault() async {
         let sut = await makeSUTWithFetchedDefault(.model(id: "gpt-5.6-terra", reasoningEffort: AIChatReasoningEffort.none))
 
-        sut.newChatDefaults?.overLimitDefault = .model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none)
+        sut.newChatDefaults?.overLimitDefault = AIChatOverLimitNewChatDefault(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none),
+                                                                              resetsAt: .distantFuture)
 
         XCTAssertEqual(sut.persistedModelId, "gpt-6-luna")
     }
@@ -666,7 +667,7 @@ final class UTIModelStoreTests: XCTestCase {
 
         sut.updateSelectedReasoningMode(.reasoning)
 
-        XCTAssertEqual(sut.newChatModelSource(openedWithModelId: nil), .picked)
+        XCTAssertEqual(sut.newChatModelSource(onboardingModelId: nil), .picked)
     }
 
     func test_newChatModelSource_whenTheDefaultEffortIsPickedBack_isDefault() async {
@@ -675,20 +676,20 @@ final class UTIModelStoreTests: XCTestCase {
         sut.updateSelectedReasoningMode(.reasoning)
         sut.updateSelectedReasoningMode(.fast)
 
-        XCTAssertEqual(sut.newChatModelSource(openedWithModelId: nil), .default)
+        XCTAssertEqual(sut.newChatModelSource(onboardingModelId: nil), .default)
     }
 
-    func test_newChatModelSource_whenOpenedWithTheSentModel_isOnboarding() async {
+    func test_newChatModelSource_whenOnboardingOpenedTheChatOnTheSentModel_isOnboarding() async {
         let sut = await makeSUTWithFetchedDefault(.model(id: "gpt-5.6-terra", reasoningEffort: AIChatReasoningEffort.none))
 
-        XCTAssertEqual(sut.newChatModelSource(openedWithModelId: "gpt-5.6-terra"), .onboarding)
+        XCTAssertEqual(sut.newChatModelSource(onboardingModelId: "gpt-5.6-terra"), .onboarding)
     }
 
     func test_newChatModelSource_whenServerSendsNoDefault_isFallback() {
         let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true)
         sut.models = [makeModel(id: "free", access: true)]
 
-        XCTAssertEqual(sut.newChatModelSource(openedWithModelId: nil), .fallback)
+        XCTAssertEqual(sut.newChatModelSource(onboardingModelId: nil), .fallback)
     }
 
     func test_newChatDefault_whenFlagOff_keepsSavedPick() async {
@@ -742,7 +743,20 @@ final class UTIModelStoreTests: XCTestCase {
         let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true)
 
         XCTAssertEqual(sut.persistedModelId, "gpt-6-luna")
-        XCTAssertEqual(sut.newChatModelSource(openedWithModelId: nil), .fallback)
+        XCTAssertEqual(sut.newChatModelSource(onboardingModelId: nil), .fallback)
+    }
+
+    func test_newChatDefault_whenFlagOnBeforeModelsLoad_sendsTheLocalDefaultEffort() {
+        let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true)
+
+        XCTAssertEqual(sut.submissionReasoningEffort, AIChatReasoningEffort.none)
+    }
+
+    func test_newChatDefault_whenFlagOffBeforeModelsLoad_sendsNoEffort() {
+        preferences.selectedModelId = "gpt-5.6-terra"
+        let sut = makeSUT(isUpdatedModelPickerEnabled: false)
+
+        XCTAssertNil(sut.submissionReasoningEffort)
     }
 
     func test_newChatDefault_whenFlagOffBeforeModelsLoad_keepsSavedPick() {
@@ -753,14 +767,15 @@ final class UTIModelStoreTests: XCTestCase {
     }
 
     func test_overLimitNewChatDefault_whenItChanges_notifiesModelsUpdated() {
-        let overLimitDefaults = CurrentValueSubject<AIChatNewChatDefault, Never>(.unavailable)
+        let overLimitDefaults = CurrentValueSubject<AIChatOverLimitNewChatDefault, Never>(.notOverLimit)
+        let overLimit = AIChatOverLimitNewChatDefault(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none), resetsAt: .distantFuture)
         let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true,
                           overLimitNewChatDefaults: overLimitDefaults.eraseToAnyPublisher())
         var updateCount = 0
         sut.onModelsUpdated = { updateCount += 1 }
 
-        overLimitDefaults.send(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none))
-        overLimitDefaults.send(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none))
+        overLimitDefaults.send(overLimit)
+        overLimitDefaults.send(overLimit)
 
         XCTAssertEqual(updateCount, 1)
     }
@@ -769,7 +784,7 @@ final class UTIModelStoreTests: XCTestCase {
 
     private func makeSUT(isUpdatedModelPickerEnabled: Bool,
                          startsNewChatsOnDefault: Bool = false,
-                         overLimitNewChatDefaults: AnyPublisher<AIChatNewChatDefault, Never>? = nil) -> UTIModelStore {
+                         overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil) -> UTIModelStore {
         UTIModelStore(
             modelsService: modelsService,
             preferences: preferences,

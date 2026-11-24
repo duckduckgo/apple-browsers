@@ -1391,13 +1391,15 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     // MARK: - New chat default
 
-    private func makeNewChatDefaultProvider(persistor: AIChatPreferencesPersisting) throws -> NewTabPageOmnibarConfigProvider {
+    private func makeNewChatDefaultProvider(persistor: AIChatPreferencesPersisting, modelsLoaded: Bool = true) throws -> NewTabPageOmnibarConfigProvider {
         let flagger = flaggerWithReasoningOn()
         flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
         let models = [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
                       makeModel(id: "terra", supportedReasoningEffort: [.none, .high])]
         let newChatDefaults = AIChatNewChatDefaultSource()
-        newChatDefaults.update(models: models, userTier: .free, serverDefault: .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none))
+        if modelsLoaded {
+            newChatDefaults.update(models: models, userTier: .free, serverDefault: .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none))
+        }
         return NewTabPageOmnibarConfigProvider(
             keyValueStore: try makeStore(),
             aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
@@ -1417,6 +1419,13 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let provider = try makeNewChatDefaultProvider(persistor: persistor)
 
         XCTAssertEqual(provider.selectedModelId, "terra")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndModelsHaveNotLoaded_ThenLocalTierDefaultModelAndEffortAreSelected() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), modelsLoaded: false)
+
+        XCTAssertEqual(provider.selectedModelId, "gpt-6-luna")
         XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
     }
 

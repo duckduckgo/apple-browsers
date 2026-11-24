@@ -91,40 +91,34 @@ The baseline for the previous three scenarios, on a build from a worktree of `an
 
 ## macOS reactivates a stored, removed BeenVerified 0.11.0 as 0.12.0
 
-Existing users get the assisted file as an update over their stored, removed 0.11.0. Seed first on a build from a
-worktree of `anh/shared/pir/verify-pir-extras`, which bundles 0.11.0, then switch to a build of this branch.
+Existing users get the assisted file as an update over their stored, removed 0.11.0. Both steps scan only the control
+broker; BeenVerified isn't forced, because whether a Freemium account scans it is what this checks.
 
 - tags: gate2, scheduler, scan, live, upgrade, freemium
 - platform: macOS
 - setup: `john-smith-houston`, `empty-store`
-- action: `scheduler seed --broker searchpeoplefree.com` on the `verify-pir-extras` build; then, with the DEBUG browser
-  and agent stopped, clear the saved local broker-version check so the next launch upserts the bundled 0.12.0:
-  `defaults delete com.duckduckgo.macos.browser.debug macos.browser.data-broker-protection.LastLocalVersionChecked` and
-  the same key in `com.duckduckgo.macos.DBP.backgroundAgent.debug`; then `scheduler observe` on this branch's build
-  while its scans run, with `--job` for searchpeoplefree.com only
+- action: `scheduler seed --broker searchpeoplefree.com --step seed` from a worktree of
+  `anh/shared/pir/verify-pir-extras`, which bundles 0.11.0; then `scheduler upgrade --broker searchpeoplefree.com
+  --step upgrade` from this branch's worktree
 - expect:
-  - Before the upgrade, `/api` lists beenverified.com 0.11.0 with `isRemoved` true.
-  - After it, `/api` lists beenverified.com 0.12.0 with `isRemoved` false and the same broker ID.
-  - BeenVerified gets no fresh `scanStarted`, because the seeded account is Freemium. The skill doesn't check this;
-    read BeenVerified's history in `/api/brokers/beenverified.com`.
-  - searchpeoplefree.com gets a fresh `scanStarted` and reaches a terminal event.
+  - After the seed, `/api` lists beenverified.com 0.11.0 with `isRemoved` true.
+  - After the upgrade's refresh, `upgrade-refresh.json` lists beenverified.com 0.12.0 with `isRemoved` false and the same
+    broker ID.
+  - `upgrade-scans.json` queues searchpeoplefree.com, and it reaches a terminal event.
+  - BeenVerified gets no fresh `scanStarted`, because the account is Freemium. The skill doesn't check this; read
+    `/api/brokers/beenverified.com` from the upgrade's evidence.
 
 ## iOS keeps a stored, removed BeenVerified 0.11.0 when the assisted 0.12.0 arrives
-
-The same upgrade on one simulator. `--keep` leaves the seeded simulator in place, and `scheduler observe` reads any
-simulator whose debug server is on.
 
 - tags: gate2, scheduler, scan, live, upgrade
 - platform: iOS
 - setup: `john-smith-houston`
-- action: `scheduler seed --platform ios --keep --broker searchpeoplefree.com` on a build from a worktree of
-  `anh/shared/pir/verify-pir-extras`, which bundles 0.11.0; set `UDID` to the `simulator.udid` in that seed's launch
-  record and install this branch's iOS build on it; clear the saved local broker-version check so the next launch tries
-  the bundled 0.12.0, with
-  `xcrun simctl spawn "$UDID" defaults delete com.duckduckgo.mobile.ios macos.browser.data-broker-protection.LastLocalVersionChecked`;
-  launch, turn on **Debug Server** in the PIR debug menu, start a scan, then `scheduler observe --platform ios` with
-  searchpeoplefree.com's broker URL and profile query ID from `GET /api`
+- action: `scheduler seed --platform ios --keep --broker searchpeoplefree.com --step seed` from a worktree of
+  `anh/shared/pir/verify-pir-extras`, which bundles 0.11.0; then, from this branch's worktree,
+  `scheduler upgrade --platform ios --broker searchpeoplefree.com --step upgrade`, with `--simulator` set to the
+  `simulator.udid` in the seed's `launch.json`
 - expect:
-  - The bundled 0.12.0 is skipped as unsupported, and `/api` still lists beenverified.com 0.11.0 with `isRemoved` true
-    and the same broker ID.
-  - searchpeoplefree.com gets a fresh `scanStarted` and reaches a terminal event.
+  - After the seed, `/api` lists beenverified.com 0.11.0 with `isRemoved` true.
+  - After the upgrade's refresh, `upgrade-refresh.json` still lists beenverified.com 0.11.0 with `isRemoved` true and the
+    same broker ID; the native logs show the bundled 0.12.0 skipped as unsupported.
+  - `upgrade-scans.json` queues searchpeoplefree.com, and it reaches a terminal event.

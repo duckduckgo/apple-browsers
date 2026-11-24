@@ -61,6 +61,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private let messagesModel: NewTabPageMessagesModel?
     private let searchInputModel: NewTabPageSearchInputModel?
     private let isStickyInputEnabled: Bool
+    private let returnSettings: NewTabPageReturnSettings
     private let customizationStateReporter = NewTabPageCustomizationStateReporter()
     private var isRemoteMessageSurfacePresented = false
     private var areFavoritesHidden = false
@@ -141,6 +142,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
          messagesModel: NewTabPageMessagesModel? = nil,
          searchInputModel: NewTabPageSearchInputModel? = nil,
          isStickyInputEnabled: Bool = false,
+         returnSettings: NewTabPageReturnSettings,
          onboardingCoordinator: NewTabPageOnboardingCoordinator? = nil) {
         self.onboardingCoordinator = onboardingCoordinator
         self.blocks = blocks
@@ -149,6 +151,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         self.messagesModel = messagesModel
         self.searchInputModel = searchInputModel
         self.isStickyInputEnabled = isStickyInputEnabled
+        self.returnSettings = returnSettings
         super.init(nibName: nil, bundle: nil)
         onboardingCoordinator?.page = self
         messagesModel?.onMessageVisibilityChanged = { [weak self] in
@@ -218,7 +221,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     @objc private func customizeButtonTapped() {
-        let model = NewTabPageCustomizationModel()
+        let model = NewTabPageCustomizationModel(returnSettings: returnSettings)
         model.reportOpening()
         let customizationViewController = NewTabPageCustomizationViewController(model: model)
         customizationViewController.onAllSettingsSelected = { [weak self] in

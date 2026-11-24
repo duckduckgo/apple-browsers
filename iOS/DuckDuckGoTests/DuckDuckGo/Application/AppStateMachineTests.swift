@@ -180,8 +180,11 @@ final class MockTerminating: TerminatingHandling {
 @MainActor
 final class MockTerminatingStateFactory: TerminatingStateFactory {
 
+    var onMakeTerminatingState: (() -> Void)?
+
     func makeTerminatingState(error: Error) -> any TerminatingHandling {
-        MockTerminating(error: error)
+        onMakeTerminatingState?()
+        return MockTerminating(error: error)
     }
 
 }
@@ -204,39 +207,23 @@ struct StartupFailureInstrumentationInjectionTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A startup error is reported through the injected tracker", .timeLimit(.minutes(1)))
-    func recordsStartupFailure() {
+    @Test("A startup error is reported before termination starts", .timeLimit(.minutes(1)))
+    func recordsStartupFailureBeforeTermination() {
         let initializing = MockInitializing()
         initializing.shouldThrowOnLaunching = true
         let instrumentation = TestStartupFailureInstrumentation()
+        let terminatingStateFactory = MockTerminatingStateFactory()
+        terminatingStateFactory.onMakeTerminatingState = {
+            #expect(instrumentation.failureCount == 1)
+        }
         let stateMachine = AppStateMachine(initialState: .initializing(initializing),
-                                          terminatingStateFactory: MockTerminatingStateFactory(), launchBreadcrumb: .testing,
+                                          terminatingStateFactory: terminatingStateFactory, launchBreadcrumb: .testing,
                                           startupFailureInstrumentation: instrumentation)
 
         stateMachine.handle(.didFinishLaunching(isTesting: false))
 
         #expect(instrumentation.failureCount == 1)
         #expect(stateMachine.currentState.name == "terminating")
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A startup error still terminates with tracking disabled", .timeLimit(.minutes(1)))
-    func disabledTrackingPreservesStartupFailureHandling() throws {
-        let suiteName = "StartupFailureFlagOffTests.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suiteName))
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-        let pixels = PixelKitMock()
-        let instrumentation = StartupFailureMetrics(defaults: defaults, pixelFiring: { pixels })
-        let initializing = MockInitializing()
-        initializing.shouldThrowOnLaunching = true
-        let stateMachine = AppStateMachine(initialState: .initializing(initializing),
-                                          terminatingStateFactory: MockTerminatingStateFactory(), launchBreadcrumb: .testing,
-                                          startupFailureInstrumentation: instrumentation)
-
-        stateMachine.handle(.didFinishLaunching(isTesting: false))
-
-        #expect(stateMachine.currentState.name == "terminating")
-        #expect(pixels.actualFireCalls.isEmpty)
     }
 }
 

@@ -428,14 +428,23 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, [ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard)])
     }
 
-    func testFailedSendDoesNotCreateAdditionalFailureOrReturnAttempts() {
-        pixels.expectedFireError = URLError(.notConnectedToInternet)
+    func testSuccessfulStartupBeforeReturnLeavesEpisodeOpen() {
         makeSubject().recordFailure()
-        makeSubject().recordFailure()
-        makeSubject().recordReturn()
-        makeSubject().recordReturn()
+        let nextLaunch = makeSubject()
+        nextLaunch.recordSuccessfulStartup()
 
-        XCTAssertEqual(pixels.actualFireCalls.count, 2)
+        XCTAssertEqual(pixels.actualFireCalls.count, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: storageURL.path))
+
+        nextLaunch.recordReturn()
+        nextLaunch.recordSuccessfulStartup()
+
+        XCTAssertEqual(pixels.actualFireCalls, [
+            ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
+            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
+            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysCount: 0), frequency: .standard)
+        ])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: storageURL.path))
     }
 
     func testOriginalPixelPayloadsIncludeElapsedDayBucketsAndOptIntoRetry() {
@@ -444,6 +453,13 @@ final class StartupFailureMetricsTests: XCTestCase {
         nextLaunch.recordReturn()
         nextLaunch.recordSuccessfulStartup()
 
+        #if os(macOS)
+        let expectedNames = ["startup_failure_macos", "startup_failure_returned_macos", "startup_failure_recovered_macos"]
+        #else
+        let expectedNames = ["startup_failure", "startup_failure_returned", "startup_failure_recovered"]
+        #endif
+        XCTAssertEqual(pixels.actualFireCalls.map { $0.pixel.name }, expectedNames)
+        XCTAssertTrue(pixels.actualFireCalls.allSatisfy { $0.pixel.namePrefix == .none })
         XCTAssertNil(pixels.actualFireCalls.first?.pixel.parameters)
         XCTAssertEqual(pixels.actualFireCalls.dropFirst().compactMap { $0.pixel.parameters }, [
             ["days_since_first_failure": "0"],

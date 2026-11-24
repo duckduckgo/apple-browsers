@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import PrivacyConfig
 import Subscription
 import UIKit
 
@@ -54,7 +55,8 @@ final class IPadOmnibarModelPickerController {
         upsellPresenter: DuckAISubscriptionUpselling? = nil,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         startsNewChatsOnDefault: Bool = false,
-        duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil
+        duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.startsNewChatsOnDefault = startsNewChatsOnDefault
@@ -70,7 +72,7 @@ final class IPadOmnibarModelPickerController {
             subscriptionManager: subscriptionManager,
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
             startsNewChatsOnDefault: startsNewChatsOnDefault,
-            overLimitNewChatDefaults: Self.overLimitNewChatDefaults(from: duckAiNativeStorageHandler),
+            overLimitNewChatDefaults: Self.overLimitNewChatDefaults(from: duckAiNativeStorageHandler, featureFlagger: featureFlagger),
             userDefaultModelStorage: duckAiNativeStorageHandler
         )
         store.onModelsUpdated = { [weak self] in
@@ -80,10 +82,12 @@ final class IPadOmnibarModelPickerController {
 
     /// Over the usage limit, new chats start on the default web sends in the usage-limits snapshot.
     private static func overLimitNewChatDefaults(
-        from storageHandler: DuckAiNativeStorageHandling?
+        from storageHandler: DuckAiNativeStorageHandling?,
+        featureFlagger: FeatureFlagger
     ) -> AnyPublisher<AIChatOverLimitNewChatDefault, Never>? {
         storageHandler.map {
-            DuckAiUsageLimitsStore(storageHandler: $0).overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
+            DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: featureFlagger)
+                .overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
         }
     }
 

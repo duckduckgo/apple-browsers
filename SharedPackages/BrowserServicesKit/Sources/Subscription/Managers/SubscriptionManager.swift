@@ -278,6 +278,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let isAuthV2WideEventEnabled: () -> Bool
     private let authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting?
     private let tierOptionsProvider: SubscriptionTierOptionsProviding
+    /// Measures the device clock against the auth server's from each token container received during a token request.
+    public let clockSkewMonitor: ClockSkewMonitor
+    private let invalidTokenRecoveryInterval: TimeInterval
+    private let now: () -> Date
+    private let recoveryLock = NSLock()
+    private var lastInvalidTokenRecovery: Date?
 
     public init(storePurchaseManager: StorePurchaseManager? = nil,
                 oAuthClient: any OAuthClient,
@@ -292,8 +298,14 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 isAuthV2WideEventEnabled: @escaping () -> Bool = { false },
                 authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting? = nil,
                 isStripeProductsByPlanCountryEnabled: @escaping () -> Bool = { true },
-                tierOptionsProvider: SubscriptionTierOptionsProviding? = nil) {
+                tierOptionsProvider: SubscriptionTierOptionsProviding? = nil,
+                clockSkewMonitor: ClockSkewMonitor = ClockSkewMonitor(),
+                invalidTokenRecoveryInterval: TimeInterval = .minutes(1),
+                now: @escaping () -> Date = { Date() }) {
         self._storePurchaseManager = storePurchaseManager
+        self.clockSkewMonitor = clockSkewMonitor
+        self.invalidTokenRecoveryInterval = invalidTokenRecoveryInterval
+        self.now = now
         self.oAuthClient = oAuthClient
         self.userDefaults = userDefaults
         self.subscriptionEndpointService = subscriptionEndpointService
@@ -717,6 +729,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         do {
             // Get the token, refreshing it or creating an account as the policy requires, and update the cached state
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
+            measureClockSkewIfReceived(resultTokenContainer, tokenBeforeAttempt: tokenBeforeAttempt)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
 
             self.updateCachedUserEntitlements(newEntitlements)
@@ -754,6 +767,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                    stored.refreshToken != before.refreshToken,
                    !stored.decodedRefreshToken.isExpired() {
                     Logger.subscriptionTokensManagement.log("Refresh was rejected but the stored token was already replaced, using it")
+                    measureClockSkewIfReceived(stored, tokenBeforeAttempt: tokenBeforeAttempt)
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded,
                                                                                     method: nil,
                                                                                     backupOutcome: .notAttempted,
@@ -772,15 +786,27 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     let recoveredTokenContainer = try await recoverToken(trigger: .invalidToken,
                                                                          deadPrimary: tokenBeforeAttempt.tokenContainer,
                                                                          report: &recoveryReport)
+                    let clockSkew = clockSkewMonitor.measure(freshlyIssued: recoveredTokenContainer)
                     updateCachedUserEntitlements(recoveredTokenContainer.decodedAccessToken.subscriptionEntitlements)
                     updateCachedIsUserAuthenticated(true)
-                    pixelHandler.handle(pixel: .invalidRefreshTokenRecovered(recoveryReport?.recoveredBy))
+                    pixelHandler.handle(pixel: .invalidRefreshTokenRecovered(recoveryReport?.recoveredBy, clockSkew))
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded,
                                                                                     method: recoveryReport?.recoveredBy,
                                                                                     backupOutcome: BackupRecoveryOutcome(recoveryReport?.result(of: .backup)),
                                                                                     error: nil,
                                                                                     signedOut: false)
                     return recoveredTokenContainer
+                } catch SubscriptionManagerError.tokenRecoveryDeferred {
+                    // A recovery succeeded moments ago and its token was rejected again: keep the session and fail this request
+                    // instead of recovering in a loop
+                    Logger.subscriptionTokensManagement.error("Refresh rejected again right after a recovery, keeping the token and deferring the recovery")
+                    pixelHandler.handle(pixel: .invalidRefreshTokenRecoveryDeferred(clockSkewMonitor.current))
+                    authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted,
+                                                                                    method: nil,
+                                                                                    backupOutcome: .notAttempted,
+                                                                                    error: nil,
+                                                                                    signedOut: false)
+                    throw SubscriptionManagerError.errorRetrievingTokenContainer(error: tokenRequestError)
                 } catch TokenBackupError.sessionChanged {
                     // The user signed out, signed in or switched account during the recovery: keep that session, don't sign out
                     Logger.subscriptionTokensManagement.log("The session changed during token recovery, keeping the current session")
@@ -877,14 +903,24 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     ///   - report: Set to what the recovery did. Left unchanged when no coordinator is set.
     /// - Returns: The recovered token container.
     /// - Throws: `SubscriptionManagerError.tokenRecoveryNotAttempted` when no coordinator is set or no recovery applies,
+    ///   `SubscriptionManagerError.tokenRecoveryDeferred` for an `.invalidToken` recovery within `invalidTokenRecoveryInterval` of the
+    ///   last successful one, without running it,
     ///   `TokenBackupError.sessionChanged` when the session changed during the recovery,
-    ///   `SubscriptionManagerError.noTokenAvailable` when the recovery left no usable token, otherwise the recovery failure.
+    ///   `SubscriptionManagerError.noTokenAvailable` when the recovery left no usable token,
+    ///   `SubscriptionManagerError.tokenRecoveryKeptRejectedToken` when the recovery left `deadPrimary`'s refresh token stored,
+    ///   otherwise the recovery failure.
     private func recoverToken(trigger: TokenRecoveryTrigger,
                               deadPrimary: TokenContainer?,
                               report: inout TokenRecoveryReport?) async throws -> TokenContainer {
         guard let tokenRecoveryCoordinator else {
             Logger.subscriptionTokensManagement.log("Token recovery not possible, no coordinator configured, trigger: \(trigger.rawValue, privacy: .public)")
             throw SubscriptionManagerError.tokenRecoveryNotAttempted
+        }
+
+        if trigger == .invalidToken, let lastRecovery = lastSuccessfulInvalidTokenRecovery(),
+           now().timeIntervalSince(lastRecovery) < invalidTokenRecoveryInterval {
+            Logger.subscriptionTokensManagement.log("Deferring the token recovery, the last one succeeded at \(lastRecovery, privacy: .public)")
+            throw SubscriptionManagerError.tokenRecoveryDeferred
         }
 
         Logger.subscriptionTokensManagement.log("Attempting token recovery, trigger: \(trigger.rawValue, privacy: .public)")
@@ -907,7 +943,36 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             Logger.subscriptionTokensManagement.log("Recovery failed: the refresh token is missing or still expired after the recovery attempt.")
             throw SubscriptionManagerError.noTokenAvailable
         }
+        if let deadPrimary, currentTokenContainer.refreshToken == deadPrimary.refreshToken {
+            Logger.subscriptionTokensManagement.error("Recovery failed: the rejected refresh token is still stored after the recovery attempt.")
+            throw SubscriptionManagerError.tokenRecoveryKeptRejectedToken
+        }
+        if trigger == .invalidToken {
+            setLastSuccessfulInvalidTokenRecovery(now())
+        }
         return currentTokenContainer
+    }
+
+    private func lastSuccessfulInvalidTokenRecovery() -> Date? {
+        recoveryLock.lock()
+        defer { recoveryLock.unlock() }
+        return lastInvalidTokenRecovery
+    }
+
+    private func setLastSuccessfulInvalidTokenRecovery(_ date: Date?) {
+        recoveryLock.lock()
+        defer { recoveryLock.unlock() }
+        lastInvalidTokenRecovery = date
+    }
+
+    /// Measures the clock skew from `tokenContainer` when it replaced the token stored at the start of the request, so the server issued it
+    /// during the request.
+    /// - Parameters:
+    ///   - tokenContainer: The token container the request returned.
+    ///   - tokenBeforeAttempt: The stored token at the start of the request.
+    private func measureClockSkewIfReceived(_ tokenContainer: TokenContainer, tokenBeforeAttempt: LocalTokenSnapshot) {
+        guard case .present(let before) = tokenBeforeAttempt, before.accessToken != tokenContainer.accessToken else { return }
+        clockSkewMonitor.measure(freshlyIssued: tokenContainer)
     }
 
     /// Whether the App Store restore ran during a recovery.
@@ -1047,6 +1112,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             }
         }
         subscriptionCachingService.reset()
+        setLastSuccessfulInvalidTokenRecovery(nil)
 
         if notifyUI {
                 updateCachedIsUserAuthenticated(false, userInitiated: userInitiated)

@@ -102,8 +102,16 @@
                 "type": "string",
                 "description": "How the session was recovered: from the backup token or by the App Store restore",
                 "enum": ["backup", "app_store"]
-            }
+            },
+            "subscriptionClockSkew"
         ]
+    },
+    "subscription_auth-recovery_deferred": {
+        "description": "Fired when the auth server rejects the refresh token again within a minute of a successful session recovery. The app keeps the token and skips the recovery instead of recovering in a loop",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "subscriptionClockSkew"]
     },
     // Backup token
     "subscription_auth-backup_restored": {

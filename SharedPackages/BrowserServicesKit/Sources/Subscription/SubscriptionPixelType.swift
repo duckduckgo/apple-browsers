@@ -26,8 +26,12 @@ public enum SubscriptionPixelType: Equatable {
     case getTokensError(AuthTokensCachePolicy, Error)
     case automaticSignOut(SubscriptionAutomaticSignOutPixelData, Error)
     case invalidRefreshTokenSignedOut
-    /// The invalid current token was recovered, by the method of the strategy that recovered it.
-    case invalidRefreshTokenRecovered(TokenRecoveryMethod?)
+    /// The invalid current token was recovered, by the method of the strategy that recovered it, with the clock skew measured from the
+    /// recovered token.
+    case invalidRefreshTokenRecovered(TokenRecoveryMethod?, ClockSkew?)
+    /// The refresh was rejected again right after a successful recovery, so the recovery was deferred and the token kept, with the last
+    /// measured clock skew, or nil when none was measured.
+    case invalidRefreshTokenRecoveryDeferred(ClockSkew?)
     case purchaseSuccessAfterPendingTransaction
     case pendingTransactionApproved
     /// The backup restored the token container, in a recovery with the associated trigger.
@@ -56,8 +60,10 @@ public enum SubscriptionPixelType: Equatable {
             return true
         case let (.automaticSignOut(lhsData, _), .automaticSignOut(rhsData, _)):
             return lhsData == rhsData
-        case let (.invalidRefreshTokenRecovered(lhsMethod), .invalidRefreshTokenRecovered(rhsMethod)):
-            return lhsMethod == rhsMethod
+        case let (.invalidRefreshTokenRecovered(lhsMethod, lhsSkew), .invalidRefreshTokenRecovered(rhsMethod, rhsSkew)):
+            return lhsMethod == rhsMethod && lhsSkew == rhsSkew
+        case let (.invalidRefreshTokenRecoveryDeferred(lhsSkew), .invalidRefreshTokenRecoveryDeferred(rhsSkew)):
+            return lhsSkew == rhsSkew
         case let (.backupRestored(lhsTrigger), .backupRestored(rhsTrigger)):
             return lhsTrigger == rhsTrigger
         case let (.backupRestoreFailed(lhsTrigger, lhsReason, _), .backupRestoreFailed(rhsTrigger, rhsReason, _)):

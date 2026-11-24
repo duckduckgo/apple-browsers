@@ -121,6 +121,11 @@ public struct JWTAccessToken: JWTPayload, Equatable {
     public var expirationDate: Date {
         exp.value
     }
+
+    /// When the auth server issued the token, by the server's clock.
+    public var issuedAt: Date {
+        iat.value
+    }
 }
 
 public struct JWTRefreshToken: JWTPayload, Equatable {

@@ -35,6 +35,11 @@ public enum SubscriptionManagerError: DDGError {
     /// Invalid-token recovery could not be attempted: no recovery handler was configured, or the
     /// purchase platform cannot restore. Distinct from a recovery that ran and failed.
     case tokenRecoveryNotAttempted
+    /// Invalid-token recovery was skipped because a recovery for a rejected refresh already succeeded moments ago.
+    /// The stored token is kept.
+    case tokenRecoveryDeferred
+    /// Invalid-token recovery reported success but left the rejected token stored.
+    case tokenRecoveryKeptRejectedToken
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
@@ -45,7 +50,9 @@ public enum SubscriptionManagerError: DDGError {
             (.noTokenAvailable, .noTokenAvailable),
             (.invalidPortalURL, .invalidPortalURL),
             (.noLocalSubscription, .noLocalSubscription),
-            (.tokenRecoveryNotAttempted, .tokenRecoveryNotAttempted):
+            (.tokenRecoveryNotAttempted, .tokenRecoveryNotAttempted),
+            (.tokenRecoveryDeferred, .tokenRecoveryDeferred),
+            (.tokenRecoveryKeptRejectedToken, .tokenRecoveryKeptRejectedToken):
             return true
         default:
             return false
@@ -61,6 +68,8 @@ public enum SubscriptionManagerError: DDGError {
         case .invalidPortalURL: "Invalid customer portal URL"
         case .noLocalSubscription: "No local subscription available"
         case .tokenRecoveryNotAttempted: "Token recovery was not attempted"
+        case .tokenRecoveryDeferred: "Token recovery was deferred after a recent recovery"
+        case .tokenRecoveryKeptRejectedToken: "Token recovery left the rejected token stored"
         }
     }
 
@@ -75,6 +84,8 @@ public enum SubscriptionManagerError: DDGError {
         case .invalidPortalURL: 12004
         case .noLocalSubscription: 12005
         case .tokenRecoveryNotAttempted: 12006
+        case .tokenRecoveryDeferred: 12007
+        case .tokenRecoveryKeptRejectedToken: 12008
         }
     }
 

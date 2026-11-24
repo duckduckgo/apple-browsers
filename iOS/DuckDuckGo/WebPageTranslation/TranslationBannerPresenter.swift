@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import ConcurrencyExtensions
 import os.log
 import SwiftUI
 import UIKit
@@ -172,7 +173,7 @@ final class TranslationBannerPresenter {
     private func scheduleAutoDismiss() {
         let delay = autoDismissDelay
         autoDismissTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            try? await Task.sleep(interval: delay)
             guard let self, !Task.isCancelled, !self.isVoiceOverRunning() else { return }
             self.dismiss(animated: true)
         }

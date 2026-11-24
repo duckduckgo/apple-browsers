@@ -29,6 +29,15 @@ enum SubscriptionTransactionErrorAlert {
         case appStore
         case backend
         case general
+        /// Any purchase failure when the paywall was opened from onboarding.
+        case onboardingPurchaseFailed
+    }
+
+    /// Like `displayContent(for:)`, but purchase failures share one message when the paywall was opened from onboarding.
+    static func displayContent(for error: SubscriptionPurchaseError?, isOpenedFromOnboarding: Bool) -> MessageType? {
+        guard let messageType = displayContent(for: error) else { return nil }
+        guard isOpenedFromOnboarding, messageType != .activeSubscription else { return messageType }
+        return .onboardingPurchaseFailed
     }
 
     /// Whether to show an alert and which message type. Returns nil when no alert should be shown (e.g. user cancelled).
@@ -68,6 +77,12 @@ enum SubscriptionTransactionErrorAlert {
             return Alert(
                 title: Text(UserText.subscriptionAppStoreErrorTitle),
                 message: Text(UserText.subscriptionAppStoreErrorMessage),
+                dismissButton: .cancel(Text(UserText.actionOK), action: onDismiss)
+            )
+        case .onboardingPurchaseFailed:
+            return Alert(
+                title: Text(UserText.subscriptionBackendErrorTitle),
+                message: Text(UserText.subscriptionBackendErrorMessage),
                 dismissButton: .cancel(Text(UserText.actionOK), action: onDismiss)
             )
         case .backend, .general:

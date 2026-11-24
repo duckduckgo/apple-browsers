@@ -30,6 +30,8 @@ final class AuthenticationService {
     private let authenticator: Authenticating
     private let overlayWindowManager: OverlayWindowManaging
     private let privacyStore: PrivacyStore
+    private var unlockSession = UUID()
+    private var pendingUnlockAction: (@MainActor () -> Void)?
     /// Whether the app has been unlocked, or needed no unlock, since launch.
     private(set) var hasCompletedAuthentication = false
     /// Whether the app is unlocked right now, or needs no unlock. Cleared each time the app locks.
@@ -43,9 +45,33 @@ final class AuthenticationService {
         self.privacyStore = privacyStore
     }
 
+    /// Creates an action that can be called after other foreground work finishes.
+    /// If called while locked, the latest action waits for unlock. Suspension discards it.
+    @MainActor
+    func makeUnlockAction(_ action: @escaping @MainActor () -> Void) -> @MainActor () -> Void {
+        let session = unlockSession
+        return { [weak self] in
+            guard let self, self.unlockSession == session else { return }
+            if self.isUnlocked {
+                action()
+            } else {
+                self.pendingUnlockAction = action
+            }
+        }
+    }
+
+    @MainActor
+    private func runPendingUnlockAction() {
+        let action = pendingUnlockAction
+        pendingUnlockAction = nil
+        action?()
+    }
+
     // MARK: - Suspend
 
     func suspend() {
+        unlockSession = UUID()
+        pendingUnlockAction = nil
         if privacyStore.authenticationEnabled {
             isUnlocked = false
             overlayWindowManager.displayBlankSnapshotWindow(for: .authentication)
@@ -62,6 +88,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
             overlayWindowManager.removeBlankSnapshotWindow(for: .authentication)
             hasCompletedAuthentication = true
             isUnlocked = true
+            runPendingUnlockAction()
             return
         }
         let authenticationViewController = showAuthenticationScreen()
@@ -80,6 +107,7 @@ extension AuthenticationService: AuthenticationServiceProtocol {
             isUnlocked = true
             overlayWindowManager.removeAnyOverlay()
             authenticationViewController.dismiss(animated: true)
+            runPendingUnlockAction()
         } else {
             authenticationViewController.showUnlockInstructions()
         }

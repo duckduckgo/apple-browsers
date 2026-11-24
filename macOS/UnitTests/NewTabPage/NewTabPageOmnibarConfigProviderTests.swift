@@ -1389,6 +1389,140 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
                                         notificationCenter: terms.notificationCenter)
     }
 
+    // MARK: - New chat default
+
+    private func makeNewChatDefaultProvider(persistor: AIChatPreferencesPersisting,
+                                            modelsLoaded: Bool = true,
+                                            userTier: AIChatUserTier? = .free) throws -> NewTabPageOmnibarConfigProvider {
+        let flagger = flaggerWithReasoningOn()
+        flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
+        let models = [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
+                      makeModel(id: "terra", supportedReasoningEffort: [.none, .high])]
+        let newChatDefaults = AIChatNewChatDefaultSource()
+        newChatDefaults.userTier = userTier
+        if modelsLoaded {
+            newChatDefaults.update(models: models, serverDefault: .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none))
+        }
+        return NewTabPageOmnibarConfigProvider(
+            keyValueStore: try makeStore(),
+            aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
+            featureFlagger: flagger,
+            aiChatPreferencesPersistor: persistor,
+            searchPreferences: makeSearchPreferences(),
+            availableModelsProvider: { models },
+            newChatDefaults: newChatDefaults,
+            firePixel: { _ in }
+        )
+    }
+
+    func testWhenNewChatDefaultIsOnAndNothingPicked_ThenDefaultModelAndEffortAreSelected() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "luna"
+        persistor.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+        let provider = try makeNewChatDefaultProvider(persistor: persistor)
+
+        XCTAssertEqual(provider.selectedModelId, "terra")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndModelsHaveNotLoaded_ThenLocalTierDefaultModelAndEffortAreSelected() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), modelsLoaded: false)
+
+        XCTAssertEqual(provider.selectedModelId, "gpt-6-luna")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndPaidUserModelsHaveNotLoaded_ThenPaidLocalDefaultIsSelected() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), modelsLoaded: false, userTier: .plus)
+
+        XCTAssertEqual(provider.selectedModelId, "gpt-5.6-terra")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndTierIsNotKnownBeforeModelsLoad_ThenNoModelOrEffortIsSelected() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), modelsLoaded: false, userTier: nil)
+
+        XCTAssertNil(provider.selectedModelId)
+        XCTAssertNil(provider.selectedReasoningEffort)
+    }
+
+    func testWhenNewChatDefaultIsOnAndModelPicked_ThenGlobalPreferencesAreNotWritten() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeNewChatDefaultProvider(persistor: persistor)
+
+        provider.selectedModelId = "luna"
+        provider.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.high.rawValue)
+        XCTAssertNil(persistor.selectedModelId)
+        XCTAssertNil(persistor.selectedReasoningEffort)
+    }
+
+    func testWhenNewChatDefaultIsOnAndOtherModelPicked_ThenDefaultEffortNoLongerApplies() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+
+        provider.selectedModelId = "luna"
+
+        XCTAssertNil(provider.selectedReasoningEffort)
+    }
+
+    func testWhenNewChatDefaultIsOnAndChatSubmitted_ThenPickResetsToDefault() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+        provider.selectedModelId = "luna"
+        provider.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
+
+        provider.chatSubmitted()
+
+        XCTAssertEqual(provider.selectedModelId, "terra")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndWebEchoesDefault_ThenItIsNotStoredAsPick() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+        var emissions: [String?] = []
+        let cancellable = provider.selectedModelIdPublisher.sink { emissions.append($0) }
+
+        provider.selectedModelId = "terra"
+
+        XCTAssertTrue(emissions.isEmpty)
+        cancellable.cancel()
+    }
+
+    func testWhenNewChatDefaultIsOn_ThenSubmitPixelParametersReportModelSource() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: "none")?.parameters,
+                       ["model_source": "default", "model_id": "terra", "reasoning_effort": "none"])
+        provider.selectedModelId = "luna"
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: nil)?.parameters,
+                       ["model_source": "picked", "model_id": "luna"])
+        XCTAssertNil(provider.newChatModelPixelParameters(sentModelId: nil, sentReasoningEffort: "none"))
+    }
+
+    func testWhenNewChatDefaultIsOnAndImageGenerationSubmitted_ThenPixelOmitsModelSource() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: nil, isImageGeneration: true)?.parameters,
+                       ["model_id": "terra"])
+    }
+
+    func testWhenNewChatDefaultIsOff_ThenSubmitPixelHasNoModelParameters() throws {
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting())
+
+        XCTAssertNil(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: "high"))
+    }
+
+    func testWhenNewChatDefaultIsOffAndChatSubmitted_ThenPersistedPickIsKept() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let provider = try makeProvider(persistor: persistor, availableModelsProvider: { [self] in [makeModel(id: "luna")] })
+        provider.selectedModelId = "luna"
+
+        provider.chatSubmitted()
+
+        XCTAssertEqual(persistor.selectedModelId, "luna")
+        XCTAssertEqual(provider.selectedModelId, "luna")
+    }
 }
 
 // MARK: - Mocks

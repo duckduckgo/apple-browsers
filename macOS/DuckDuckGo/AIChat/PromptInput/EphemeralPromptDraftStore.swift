@@ -32,6 +32,7 @@ final class EphemeralPromptDraftStore: DuckAIPromptDraftStoring {
     private(set) var aiChatAttachments: [AIChatImageAttachment] = []
     private(set) var aiChatTabAttachments: [AIChatTabAttachment] = []
     private(set) var aiChatFileAttachments: [AIChatFileAttachment] = []
+    private(set) var aiChatModelPick: DuckAIModelPick = .empty
 
     var textPublisher: AnyPublisher<String, Never> {
         $text.eraseToAnyPublisher()
@@ -74,6 +75,10 @@ final class EphemeralPromptDraftStore: DuckAIPromptDraftStoring {
         guard attachments != aiChatFileAttachments else { return }
         aiChatFileAttachments = attachments
         aiChatPanelAttachments = DuckAIPanelAttachmentReconciler.reconciled(aiChatPanelAttachments, replacingFilesWith: attachments)
+    }
+
+    func setAIChatModelPick(_ pick: DuckAIModelPick) {
+        aiChatModelPick = pick
     }
 
     /// Emits only when something actually changed, so resetting an empty store doesn't churn the

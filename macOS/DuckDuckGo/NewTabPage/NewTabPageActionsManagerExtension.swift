@@ -150,11 +150,15 @@ extension NewTabPageActionsManager {
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },
             availableModelsProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastFetchedModels ?? [] },
+            newChatDefaults: omnibarModelsProvider.newChatDefaults,
             isTrialEligibleProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.isEligibleForFreeTrial ?? false },
             allowsSubscriptionUpsellProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.allowsSubscriptionUpsell ?? false }
         )
         omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
             omnibarConfigProvider?.notifyCustomizeResponsesChanged()
+        }
+        omnibarActionHandler.newChatModelPixelParameters = { [weak omnibarConfigProvider] modelId, reasoningEffort, isImageGeneration in
+            omnibarConfigProvider?.newChatModelPixelParameters(sentModelId: modelId, sentReasoningEffort: reasoningEffort, isImageGeneration: isImageGeneration)
         }
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,

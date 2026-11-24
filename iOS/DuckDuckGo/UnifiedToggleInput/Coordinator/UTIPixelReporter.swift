@@ -289,7 +289,8 @@ final class UTIPixelReporter {
                                modelId: String?,
                                defaultOmnibarMode: DefaultOmnibarMode,
                                isFirstPromptNewInstall: Bool,
-                               resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil) {
+                               resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil,
+                               modelSource: DuckAINewChatModelSource? = nil) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -304,6 +305,7 @@ final class UTIPixelReporter {
                 isFirstPromptNewInstall: isFirstPromptNewInstall,
                 addressBarPosition: $0.addressBarPosition,
                 resubmitOfSearch: resubmitDelay,
+                modelSource: modelSource,
                 firing: firing
             )
         }

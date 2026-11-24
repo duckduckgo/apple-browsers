@@ -2436,6 +2436,186 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(inlineTitles.contains(UserText.aiChatToolbarImageGenerationToolTitle))
     }
 
+    // MARK: - Simplified prompt box
+
+    func test_simplifiedPromptBox_movesToolsIntoTheAttachMenuAndHidesTheToolsButton() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertTrue(sut.viewController.isToolsButtonHidden)
+        XCTAssertNil(sut.viewController.toolsMenu)
+        let children = sut.viewController.attachmentMenu?.children ?? []
+        let toolsSection = children.last as? UIMenu
+        XCTAssertEqual(toolsSection?.options.contains(.displayInline), true, "The tools sit in their own section below a divider")
+        XCTAssertEqual(toolsSection?.children.compactMap { ($0 as? UIAction)?.title },
+                       [UserText.aiChatToolbarImageGenerationToolTitle, UserText.aiChatToolbarWebSearchToolTitle])
+    }
+
+    func test_simplifiedPromptBox_attachMenuToolRowsNeverShowACheckmark() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.handleAttachMenuToolSelection(.webSearch)
+
+        let toolActions = (sut.viewController.attachmentMenu?.children.last as? UIMenu)?.children.compactMap { $0 as? UIAction } ?? []
+        XCTAssertFalse(toolActions.isEmpty)
+        XCTAssertTrue(toolActions.allSatisfy { $0.state == .off })
+        XCTAssertEqual(sut.viewController.selectedTool, .webSearch, "The chip carries the selection")
+    }
+
+    func test_simplifiedPromptBox_pickingTheActiveToolAgainKeepsItOn() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel()
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.handleAttachMenuToolSelection(.webSearch)
+        sut.handleAttachMenuToolSelection(.webSearch)
+
+        XCTAssertEqual(sut.selectedTool, .webSearch)
+        XCTAssertEqual(sut.viewController.selectedTool, .webSearch)
+    }
+
+    func test_simplifiedPromptBox_pickingTheOtherToolSwapsTheChip() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel()
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleAttachMenuToolSelection(.webSearch)
+
+        sut.handleAttachMenuToolSelection(.imageGeneration)
+
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
+    }
+
+    func test_simplifiedPromptBox_chipClearTurnsTheToolOff() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel()
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleAttachMenuToolSelection(.webSearch)
+
+        sut.clearSelectedTool()
+
+        XCTAssertNil(sut.selectedTool)
+        XCTAssertNil(sut.viewController.selectedTool)
+    }
+
+    func test_simplifiedPromptBox_keepsTheAttachButtonForAModelThatOnlySupportsATool() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel(supportsImageUpload: false, supportedTools: [.webSearch])
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertFalse(sut.viewController.isImageButtonHidden)
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+        XCTAssertNotNil(sut.viewController.attachmentMenu)
+    }
+
+    func test_simplifiedPromptBox_dropsCustomizeResponsesFromTheInput_onAITab() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.showExpanded()
+
+        let titles = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+            + toolsMenuActions().map(\.title)
+
+        XCTAssertFalse(titles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+    }
+
+    func test_simplifiedPromptBoxOff_keepsTheToolsButtonAndTheAttachMenuWithoutTools() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [])
+        )
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
+        XCTAssertNotNil(sut.viewController.toolsMenu)
+        let attachTitles = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+        XCTAssertFalse(attachTitles.contains(UserText.aiChatToolbarWebSearchToolTitle))
+    }
+
+    func test_simplifiedPromptBox_followsTheFlagWhenItChangesWhileTheAppRuns() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        sut = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: featureFlagger
+        )
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden, "Flag off: today's tools button")
+        XCTAssertTrue(toolsMenuActions().map(\.title).contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+
+        featureFlagger.enabledFeatureFlags = [.unifiedToggleInputSimplifiedPromptBox]
+        sut.showExpanded()
+        XCTAssertTrue(sut.viewController.isToolsButtonHidden, "Flag turned on: the tools move into the attach menu")
+        let attachTitles = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+        XCTAssertTrue(attachTitles.contains(UserText.aiChatToolbarWebSearchToolTitle))
+        XCTAssertFalse(attachTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+
+        featureFlagger.enabledFeatureFlags = []
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden, "Flag turned off again: the tools button is back")
+        XCTAssertTrue(toolsMenuActions().map(\.title).contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+        let attachTitlesAfter = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+        XCTAssertFalse(attachTitlesAfter.contains(UserText.aiChatToolbarWebSearchToolTitle))
+    }
+
+    func test_simplifiedPromptBoxPixels_reportTheToolRowsAndFollowTheFlagWhileTheAppRuns() throws {
+        guard #available(iOS 16.0, *) else {
+            throw XCTSkip("UIAction.performWithSender requires iOS 16")
+        }
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let pixelKitMock = PixelKitMock()
+        sut = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            pixelFiring: UTIPixelFiring(pixelKit: { pixelKitMock }),
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: featureFlagger
+        )
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.showExpanded()
+
+        sut.handleToolsMenuSelection(.webSearch)
+        XCTAssertEqual(firedParameters(pixelKitMock, "m_aichat_unified_input_web_search_selected").last?["simplified_prompt_box"], "off")
+
+        featureFlagger.enabledFeatureFlags = [.unifiedToggleInputSimplifiedPromptBox]
+        sut.clearSelectedTool()
+        sut.showExpanded()
+        let toolRows = (sut.viewController.attachmentMenu?.children.last as? UIMenu)?.children.compactMap { $0 as? UIAction } ?? []
+        try XCTUnwrap(toolRows.first { $0.title == UserText.aiChatToolbarWebSearchToolTitle }).performWithSender(nil, target: nil)
+        try XCTUnwrap(toolRows.first { $0.title == UserText.aiChatToolbarImageGenerationToolTitle }).performWithSender(nil, target: nil)
+
+        let picks = firedParameters(pixelKitMock, "m_aichat_unified_input_attach_menu_item_selected")
+        XCTAssertEqual(picks.map { $0["item"] }, ["web_search", "create_image"],
+                       "Each tool pick counts as a pick, so the open-without-pick guardrail doesn't trip")
+        XCTAssertEqual(picks.map { $0["simplified_prompt_box"] }, ["on", "on"])
+        XCTAssertEqual(firedParameters(pixelKitMock, "m_aichat_unified_input_web_search_selected").last?["simplified_prompt_box"], "on")
+        XCTAssertEqual(firedParameters(pixelKitMock, "m_aichat_unified_input_image_generation_selected").last?["simplified_prompt_box"], "on")
+    }
+
+    /// Parameters of each fire of `name`, whether the event carries them or the call passes them.
+    private func firedParameters(_ pixelKitMock: PixelKitMock, _ name: String) -> [[String: String]] {
+        pixelKitMock.actualFireCalls
+            .filter { $0.pixel.name == name }
+            .map { ($0.pixel.parameters ?? [:]).merging($0.additionalParameters ?? [:]) { $1 } }
+    }
+
     func test_handleToolsMenuSelection_customizeResponses_forwardsToHandler() {
         let exp = expectation(description: "didPressCustomizeResponsesButton fires")
         sut.didPressCustomizeResponsesButton
@@ -4106,6 +4286,36 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
             images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
         )
+    }
+
+    private func makeSimplifiedPromptBoxSUT() -> UnifiedToggleInputCoordinator {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputSimplifiedPromptBox])
+        )
+        coordinator.delegate = mockDelegate
+        return coordinator
+    }
+
+    private func configureSimplifiedPromptBoxModel(supportsImageUpload: Bool = false,
+                                                   supportedTools: [AIChatRAGTool] = [.webSearch, .imageGeneration]) {
+        mockPreferences.selectedModelId = "tools-model"
+        sut.modelStore.models = [makeModel(id: "tools-model", access: true,
+                                           supportsImageUpload: supportsImageUpload, supportedTools: supportedTools)]
+        sut.modelStore.attachmentLimits = makeLimits()
+    }
+
+    private func flattenedActions(_ elements: [UIMenuElement]) -> [UIAction] {
+        elements.flatMap { element -> [UIAction] in
+            if let action = element as? UIAction { return [action] }
+            if let submenu = element as? UIMenu { return flattenedActions(submenu.children) }
+            return []
+        }
     }
 
     private func toolsMenuActions() -> [UIAction] {

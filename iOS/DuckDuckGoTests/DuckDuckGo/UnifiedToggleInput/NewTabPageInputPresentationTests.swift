@@ -109,6 +109,11 @@ final class NewTabPageInputPresentationTests: XCTestCase {
         }
     }
 
+    func testWhenSwitchingModesThenOnlyTheNewTabPageSwapsTheLogoAtOnce() {
+        XCTAssertTrue(RedesignedFocusedSurface.newTabPage.swapsLogoOnModeChange)
+        XCTAssertFalse(RedesignedFocusedSurface.webPage.swapsLogoOnModeChange)
+    }
+
     private func resolve(usesUnifiedInput: Bool = true,
                          legacyEditing: Bool = false,
                          unifiedEditing: Bool = false,

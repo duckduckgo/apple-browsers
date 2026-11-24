@@ -454,6 +454,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
         self.stateMachine = UTIStateMachine(host: host, hidesToggleOnDuckAITab: hidesToggleOnDuckAITab)
         let startsNewChatsOnDefault = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
+        let usageLimitsStore = usageLimitsStore
+            ?? duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: featureFlagger) }
         self.stateStore = stateStore ?? UnifiedInputStateStore(
             preferences: preferences,
             toggleModeStorage: toggleModeStorage,
@@ -486,7 +488,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
         // rather than bound here — see `setUpFooter`.
         self.usageLimitsStore = usageLimitsStore
-            ?? duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: featureFlagger) }
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,

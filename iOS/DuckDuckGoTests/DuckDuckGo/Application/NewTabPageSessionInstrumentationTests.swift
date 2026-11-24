@@ -1017,7 +1017,7 @@ struct NewTabPageSessionInstrumentationTests {
         coordinator.schedule(for: page)
         #expect(coordinator.hasPresentedPage)
 
-        // The app returns with Settings still covering the page, and the user then closes it. Closing a sheet
+        // The app returns with Bookmarks still covering the page, and the user then closes it. Closing that sheet
         // posts nothing the coordinator observes, so the page stays unpresented.
         coordinator.backgrounded()
         visible = false
@@ -1053,6 +1053,39 @@ struct NewTabPageSessionInstrumentationTests {
         coordinator.cancel()
         notifications.post(name: UIApplication.willResignActiveNotification, object: nil)
         #expect(!coordinator.hasPresentedPage)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Closing Settings starts the visit for the page cleared data left behind it", .timeLimit(.minutes(1)))
+    func settingsDismissalStartsQueuedVisit() async {
+        let (instrumentation, wideEvent, _) = makeSUT()
+        var visible = false
+        let notifications = NotificationCenter()
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: notifications, isVisible: { visible })
+        let page = NSObject()
+
+        // Delete Tabs and Data in Settings attaches a fresh page while Settings still covers it.
+        coordinator.schedule(for: page, visit: {
+            instrumentation.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
+        })
+        #expect(wideEvent.started.isEmpty)
+
+        // Settings reports disappearing while it is still the presented view controller.
+        notifications.post(name: .settingsDidDisappear, object: nil)
+        visible = true
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        #expect(wideEvent.started.count == 1)
+        #expect(activeVisit(wideEvent)?.trigger == .newTabOpenedAfterFire)
+
+        // Closing Settings again with nothing queued starts no visit.
+        notifications.post(name: .settingsDidDisappear, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        #expect(wideEvent.started.count == 1)
     }
 
     @MainActor

@@ -112,26 +112,34 @@ jobs:
         working-directory: .
 
     steps:
-      # The schedule runs hourly, so report only when a failure follows a run that didn't fail.
-      - name: Check whether the previous scheduled run failed
+      # The schedule runs hourly, so report a failure only once: skip it when the previous run failed and
+      # its report succeeded. If reporting failed too, try again.
+      - name: Check whether the failure was already reported
         id: previous-run
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          conclusion=$(gh run list \
+          read -r run_id conclusion < <(gh run list \
             --repo "${{ github.repository }}" \
             --workflow macos_upload_version_metadata.yml \
             --event schedule \
             --branch "${{ github.ref_name }}" \
             --limit 20 \
             --json databaseId,status,conclusion \
-            --jq "map(select(.databaseId != ${{ github.run_id }} and .status == \"completed\" and .conclusion != \"cancelled\"))[0].conclusion // \"\"")
-          echo "Previous scheduled run: ${conclusion:-none}"
-          echo "failed=$([[ "$conclusion" == "failure" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+            --jq "map(select(.databaseId != ${{ github.run_id }} and .status == \"completed\" and .conclusion != \"cancelled\"))[0] // {} | \"\\(.databaseId // \"\") \\(.conclusion // \"\")\"")
+          report=""
+          if [[ "$conclusion" == "failure" ]]; then
+            report=$(gh run view "$run_id" \
+              --repo "${{ github.repository }}" \
+              --json jobs \
+              --jq '.jobs[] | select(.name == "Report Failure") | .conclusion')
+          fi
+          echo "Previous scheduled run: ${conclusion:-none}, failure report: ${report:-none}"
+          echo "reported=$([[ "$report" == "success" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - name: Resolve Asana assignee
         id: asana-assignee
-        if: steps.previous-run.outputs.failed != 'true'
+        if: steps.previous-run.outputs.reported != 'true'
         continue-on-error: true  # Fall back to an unassigned task if the lookup fails.
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
@@ -140,7 +148,7 @@ jobs:
           github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
 
       - name: Create Asana task
-        if: steps.previous-run.outputs.failed != 'true'
+        if: steps.previous-run.outputs.reported != 'true'
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: create-asana-task

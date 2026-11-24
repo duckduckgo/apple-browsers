@@ -68,12 +68,12 @@ struct VPNSnoozeLiveActivity: Widget {
             } compactTrailing: {
                 if let range {
                     Text(timerInterval: range, pauseTime: range.lowerBound, countsDown: true)
-                        .foregroundStyle(Color(singleUseColor: .vpnSnoozeCountdownText))
+                        .foregroundStyle(Color(designSystemColor: .statusYellowPrimary))
                         .frame(minWidth: 0, maxWidth: 55)
                         .multilineTextAlignment(.trailing)
                 } else {
                     Text(timerInterval: endDate...Date.distantFuture, countsDown: false)
-                        .foregroundStyle(Color(singleUseColor: .vpnActiveCountdownText))
+                        .foregroundStyle(Color(designSystemColor: .statusGreen))
                         .frame(minWidth: 0, maxWidth: 55)
                         .multilineTextAlignment(.trailing)
                 }
@@ -121,10 +121,10 @@ private struct VPNSnoozeLiveActivityPrimaryCountdownView: View {
 
                 if let countdownRange {
                     Text(timerInterval: countdownRange, pauseTime: countdownRange.lowerBound, countsDown: true)
-                        .foregroundStyle(Color(singleUseColor: .vpnSnoozeCountdownText))
+                        .foregroundStyle(Color(designSystemColor: .statusYellowPrimary))
                 } else {
                     Text(timerInterval: snoozeEndDate...Date.distantFuture, countsDown: false)
-                        .foregroundStyle(Color(singleUseColor: .vpnActiveCountdownText))
+                        .foregroundStyle(Color(designSystemColor: .statusGreen))
                 }
             }
 

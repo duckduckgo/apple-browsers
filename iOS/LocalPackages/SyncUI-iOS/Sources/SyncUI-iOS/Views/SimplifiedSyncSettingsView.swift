@@ -184,7 +184,7 @@ extension SimplifiedSyncSettingsView {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 2)
                     .foregroundColor(.white)
-                    .background(Color(singleUseColor: .syncDevelopmentBadgeBackground))
+                    .background(Color(designSystemColor: .statusRed))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             })
             .alert(isPresented: $isEnvironmentSwitcherInstructionsVisible) {

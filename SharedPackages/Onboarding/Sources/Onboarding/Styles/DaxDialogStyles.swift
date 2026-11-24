@@ -84,7 +84,7 @@ public extension OnboardingStyles {
 
         private func foregroundColor(isPressed: Bool, isHovered: Bool) -> Color {
 #if os(iOS)
-            return Color(designSystemColor: isPressed ? .buttonsGhostTextPressed : .buttonsGhostText)
+            return Color(designSystemColor: isPressed ? .accentTextTertiary : .accentTextPrimary)
 #else
             return Color(designSystemColor: .accentTextPrimary)
 #endif

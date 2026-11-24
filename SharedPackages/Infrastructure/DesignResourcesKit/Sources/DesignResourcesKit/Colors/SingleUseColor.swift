@@ -25,32 +25,17 @@ public enum SingleUseColor {
     case fireModeAccent
 
 #if os(iOS)
-    /// Fixed yellow background for the bookmark favorite swipe action, paired with a black icon.
-    case bookmarkFavoriteSwipeBackground
-
     /// Background of a selected (copied) row in the Autofill login details list.
     case autofillSelectedRowBackground
 
     /// Fixed screen background for the Sync pairing screens, which are always presented in dark appearance.
     case syncScreenBackground
 
-    /// Fixed yellow for the VPN snooze countdown on the Live Activity's black background.
-    case vpnSnoozeCountdownText
-
-    /// Fixed green for the VPN elapsed-time counter on the Live Activity's black background.
-    case vpnActiveCountdownText
-
     /// Shadow for the purchase-progress card, preserving its light and dark appearance across palettes.
     case purchaseProgressShadow
 
-    /// Fixed fill for the Sync development-environment badge.
-    case syncDevelopmentBadgeBackground
-
     /// Fixed background for rasterized fallback favicons, independent of appearance and palette.
     case fallbackFaviconBackground
-
-    /// Fixed green fill for onboarding comparison checkmarks, independent of the active palette and appearance.
-    case onboardingComparisonCheckmarkBackground
 
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground

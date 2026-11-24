@@ -916,5 +916,25 @@ Blokiral sem jih!
 			<string>%2$@ Sledilnikov</string>
 		</dict>
 	</dict>
+	<key>duckai.text-selection.word-count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@words@</string>
+		<key>words</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d beseda</string>
+			<key>two</key>
+			<string>%1$d besedi</string>
+			<key>few</key>
+			<string>%1$d besede</string>
+			<key>other</key>
+			<string>%1$d besed</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -224,7 +224,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Masquer les images générées par l'IA dans les résultats de recherche"
+            "value" : "Masquer les images générées par l’IA dans les résultats de recherche"
           }
         },
         "hr" : {
@@ -386,7 +386,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucune réponse générée par l'IA dans les résultats de recherche"
+            "value" : "Aucune réponse générée par l’IA dans les résultats de recherche"
           }
         },
         "hr" : {
@@ -404,7 +404,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuna risposta assistita dall'AI nella ricerca"
+            "value" : "Nessuna risposta assistita dall’AI nella ricerca"
           }
         },
         "ja" : {
@@ -440,7 +440,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bez odpowiedzi wspomaganych przez AI w wynikach wyszukiwania"
+            "value" : "Brak odpowiedzi wspomaganych przez AI w wynikach wyszukiwania"
           }
         },
         "pt" : {
@@ -716,7 +716,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Faites vos recherches sur le Web en privé avec les traqueurs bloqués"
+            "value" : "Fais tes recherches sur le Web en privé avec les traqueurs bloqués"
           }
         },
         "hr" : {
@@ -1430,7 +1430,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Odtwarzaj filmy w serwisie YouTube bez reklam"
+            "value" : "Odtwarzaj filmy na YouTube bez reklam"
           }
         },
         "pt" : {

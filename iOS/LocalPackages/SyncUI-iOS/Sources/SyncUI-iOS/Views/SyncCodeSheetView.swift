@@ -71,7 +71,11 @@ struct SyncCodeSheetView: View {
             VStack(spacing: 4) {
                 SyncOpenAppInstruction(format: UserText.simplifiedSyncCodeSheetOpenInstruction)
 
-                SyncInstructionText(markdown: UserText.simplifiedSyncCodeSheetScanInstruction)
+                if model.isSyncPairingUrlEnabled {
+                    SyncPairingURLInstruction(format: UserText.pairingURLShowCodeInstruction)
+                } else {
+                    SyncInstructionText(markdown: UserText.simplifiedSyncCodeSheetScanInstruction)
+                }
             }
         }
     }
@@ -190,13 +194,15 @@ struct SyncCodeSheetView_Previews: PreviewProvider {
         snapshots.previews
     }
 
-    static let snapshots = PreviewSnapshots<Void>(
+    static let snapshots = PreviewSnapshots<Bool>(
         configurations: [
-            .init(name: "Show Code", state: ())
+            .init(name: "Show Code", state: false),
+            .init(name: "Show Code - Pairing URL", state: true, scope: .previews)
         ],
-        configure: { _ in
+        configure: { isSyncPairingUrlEnabled in
             SyncCodeSheetView(
-                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
+                model: ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect,
+                                                isSyncPairingUrlEnabled: isSyncPairingUrlEnabled)
             )
         }
     )

@@ -86,6 +86,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     var showQRCodeModel: ShowQRCodeViewModel
     private let source: CodeCollectionSource
     let isImprovedPairingFlowEnabled: Bool
+    let isSyncPairingUrlEnabled: Bool
 
     var canPlayIntroAnimation: Bool {
         !isImprovedPairingFlowEnabled || videoPermission == .authorised
@@ -98,10 +99,12 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     public init(codeForDisplayOrPasting: String,
                 qrCodeString: String,
                 source: CodeCollectionSource,
-                isImprovedPairingFlowEnabled: Bool = false) {
+                isImprovedPairingFlowEnabled: Bool = false,
+                isSyncPairingUrlEnabled: Bool = false) {
         showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
         self.source = source
         self.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
+        self.isSyncPairingUrlEnabled = isSyncPairingUrlEnabled
     }
 
     func codeScanned(_ code: String) async -> Bool {

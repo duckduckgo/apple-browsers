@@ -53,7 +53,11 @@ struct EnterCodeTabView: View {
             VStack(spacing: 4) {
                 SyncOpenAppInstruction(format: UserText.simplifiedEnterCodeOpenInstruction)
 
-                SyncInstructionText(markdown: UserText.simplifiedEnterCodeStepsInstruction)
+                if model.isSyncPairingUrlEnabled {
+                    SyncPairingURLInstruction(format: UserText.pairingURLEnterCodeInstruction)
+                } else {
+                    SyncInstructionText(markdown: UserText.simplifiedEnterCodeStepsInstruction)
+                }
             }
         }
         .padding(.top, 24)
@@ -141,6 +145,7 @@ struct EnterCodeTabView_Previews: PreviewProvider {
     enum State {
         case empty
         case verifying
+        case pairingURL
     }
 
     static let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
@@ -152,7 +157,8 @@ struct EnterCodeTabView_Previews: PreviewProvider {
     static let snapshots = PreviewSnapshots<State>(
         configurations: [
             .init(name: "Enter Code", state: .empty),
-            .init(name: "Verifying", state: .verifying, scope: .previews)
+            .init(name: "Verifying", state: .verifying, scope: .previews),
+            .init(name: "Pairing URL", state: .pairingURL, scope: .previews)
         ],
         configure: { state in
             EnterCodeTabView(model: model(for: state))
@@ -162,7 +168,8 @@ struct EnterCodeTabView_Previews: PreviewProvider {
     )
 
     private static func model(for state: State) -> ScanOrPasteCodeViewModel {
-        let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect)
+        let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode, qrCodeString: sampleCode, source: .connect,
+                                             isSyncPairingUrlEnabled: state == .pairingURL)
         if state == .verifying {
             model.manuallyEnteredCode = sampleCode
             model.isValidating = true

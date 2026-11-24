@@ -7379,6 +7379,18 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device-v2.step-2-pairing-url" : {
+      "comment" : "Second pairing instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go to %@"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device-v2.step-4" : {
       "comment" : "Fourth pairing instruction, reminding the user to keep the dialog open",
       "extractionState" : "extracted_with_value",

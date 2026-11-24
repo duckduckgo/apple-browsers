@@ -130,6 +130,15 @@
 /* Message included when sharing a url via the system share sheet */
 "sync.get.other.devices.share.link.message" = "Install the DuckDuckGo browser on your devices to start securely syncing your bookmarks and autofill data:";
 
+/* Manual pairing instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder. */
+"sync.pairing-url.enter-code.instruction" = "go to %@ and Copy Text Code.";
+
+/* Scanner instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder. */
+"sync.pairing-url.scan.instruction" = "go to %@";
+
+/* QR code sharing instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder. */
+"sync.pairing-url.show-code.instruction" = "go to %@ and scan this code:";
+
 /* Sync passcode required alert - button */
 "sync.passcode.required.alert.go.to.settings.button" = "Go to Settings";
 

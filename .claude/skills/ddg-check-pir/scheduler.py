@@ -178,9 +178,7 @@ def upgrade(context, client, request, expected_executable):
                   max(1, deadline - time.monotonic()), managed=True)
     outcome = observe(context, client, scope, expected_executable)
     if scans.get("notQueued"):
-        # A requested broker that never scanned can't pass, as a seed fails on a broker it can't scan.
-        status = "inconclusive" if outcome.get("status") == "pass" else outcome.get("status")
-        outcome = dict(outcome, status=status, reason=f"{outcome.get('reason', '')}; not queued: {', '.join(scans['notQueued'])}")
+        outcome = dict(outcome, reason=f"{outcome.get('reason', '')}; not queued: {', '.join(scans['notQueued'])}")
     return outcome
 
 

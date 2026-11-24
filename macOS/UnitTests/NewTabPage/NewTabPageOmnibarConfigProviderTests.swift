@@ -1453,6 +1453,20 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(configProvider.selectedModelId, "gpt-5.6-terra")
     }
 
+    func testWhenBuiltLikeTheNewTabPage_ThenUserDefaultModelApplies() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""gpt-5.6-terra""#)
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let (modelsProvider, configProvider) = try makeNewTabPageNewChatDefaultComposition(storage: storage, modelsService: modelsService)
+
+        _ = await modelsProvider.fetchAIModelSections()
+        configProvider.refreshUsageLimits(requestingWebView: nil)
+
+        XCTAssertEqual(configProvider.selectedModelId, "gpt-5.6-terra")
+    }
+
     private var newChatDefaultRemoteModels: [AIChatRemoteModel] {
         ["gpt-6-luna", "gpt-5.6-terra"].map {
             AIChatRemoteModel(id: $0, name: $0, provider: "openai", entityHasAccess: true, supportsImageUpload: false,

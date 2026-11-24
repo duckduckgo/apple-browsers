@@ -375,6 +375,21 @@ final class PairingV2Coordinator {
 
         case .recoveryCodeDone(let message):
             commands = stateMachine.handle(.receivedRecoveryCodeDone(message.reason))
+            if message.reason == .success {
+                switch stateBeforeMessage {
+                case .hostWaitingForJoinStatus, .hostJoinOutcomeUnknown:
+                    // Do not delay pairing completion while checking the joiner's new login.
+                    Task { [syncService] in
+                        do {
+                            _ = try await syncService.pollAuditLog()
+                        } catch {
+                            Logger.sync.error("Failed to poll the audit log after pairing: \(String(reflecting: error), privacy: .private)")
+                        }
+                    }
+                default:
+                    break
+                }
+            }
 
         case .bye(let message):
             commands = stateMachine.handle(.receivedBye(message.reason))

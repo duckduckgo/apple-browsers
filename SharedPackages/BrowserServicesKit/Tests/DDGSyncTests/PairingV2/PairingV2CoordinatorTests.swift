@@ -871,6 +871,51 @@ final class PairingV2CoordinatorTests: XCTestCase {
         XCTAssertTrue(setup.messageExchanger.closeChannelCalls.isEmpty)
     }
 
+    func testWhenHostReceivesSuccessfulJoinReportThenPollsAuditLogWithoutFailingPairing() async throws {
+        let dependencies = MockSyncDependencies()
+        dependencies.isLoginAuditLogEnabled = { true }
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        let polled = expectation(description: "Audit log polled after successful pairing")
+        accountManager.fetchAuditLogHandler = { _, _, _ in
+            polled.fulfill()
+            throw URLError(.notConnectedToInternet)
+        }
+        let setup = try await makeV21HostWaitingForJoinStatus(joinStatusDeadline: 10, now: Date.init, dependencies: dependencies)
+        XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
+        setup.messageExchanger.fetchMessagesStub = [try encryptedDoneMessage(for: setup)]
+
+        try await setup.coordinator.pollOnce()
+
+        XCTAssertEqual(setup.coordinator.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
+        await fulfillment(of: [polled], timeout: 1)
+    }
+
+    func testWhenHostReceivesFailedJoinReportThenDoesNotPollAuditLog() async throws {
+        let dependencies = MockSyncDependencies()
+        dependencies.isLoginAuditLogEnabled = { true }
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        let accountManager = try XCTUnwrap(dependencies.account as? AccountManagingMock)
+        let polled = expectation(description: "Failed pairing does not poll the audit log")
+        polled.isInverted = true
+        accountManager.fetchAuditLogHandler = { _, _, _ in
+            polled.fulfill()
+            return AuditLogPage(entries: [], after: "cursor", before: nil)
+        }
+        let setup = try await makeV21HostWaitingForJoinStatus(joinStatusDeadline: 10, now: Date.init, dependencies: dependencies)
+        let encrypted = try setup.messageCrypto.encrypt(
+            .recoveryCodeDone(.init(reason: .loginFailed)),
+            recipientPublicKey: setup.payload.publicKey,
+            senderChannelID: setup.peerKeyPair.channelID
+        )
+        setup.messageExchanger.fetchMessagesStub = [.init(seq: 3, version: encrypted.version, payload: encrypted.payload)]
+
+        try await setup.coordinator.pollOnce()
+
+        XCTAssertEqual(setup.coordinator.state, .completed(.recoveryCodeSent(credentialKind: .ddg)))
+        await fulfillment(of: [polled], timeout: 0.1)
+    }
+
     func testRecoveryCodeDoneJustBeforeJoinStatusDeadlineCompletesHost() async throws {
         let clock = PairingV2CoordinatorTestClock()
         let setup = try await makeV21HostWaitingForJoinStatus(joinStatusDeadline: 10, now: { clock.now })
@@ -2292,7 +2337,8 @@ final class PairingV2CoordinatorTests: XCTestCase {
 
     private func makeV21HostWaitingForJoinStatus(
         joinStatusDeadline: TimeInterval,
-        now: @escaping () -> Date
+        now: @escaping () -> Date,
+        dependencies: MockSyncDependencies = MockSyncDependencies()
     ) async throws -> (
         coordinator: PairingV2Coordinator,
         messageExchanger: PairingV2MessageExchangingMock,
@@ -2301,7 +2347,6 @@ final class PairingV2CoordinatorTests: XCTestCase {
         payload: PairingV2QRCodePayload,
         confirmationDelegate: PairingV2ConfirmationDelegateMock
     ) {
-        let dependencies = MockSyncDependencies()
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
         let messageExchanger = PairingV2MessageExchangingMock()

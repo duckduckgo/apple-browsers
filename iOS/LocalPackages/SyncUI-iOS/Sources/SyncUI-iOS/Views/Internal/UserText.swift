@@ -18,7 +18,6 @@
 //
 
 import Foundation
-import UIKit
 
 public struct UserText {
 
@@ -69,24 +68,13 @@ public struct UserText {
     static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
 
     // Sync notification settings
-    static let syncNotificationsTitle = NotLocalizedString("sync.notifications.title", bundle: Bundle.module, value: "Safety Notifications", comment: "Sync login notification setting and permission card title")
-    static var syncNotificationsDescription: String {
-        syncNotificationsDescription(for: UIDevice.current.userInterfaceIdiom)
-    }
-
-    static func syncNotificationsDescription(for idiom: UIUserInterfaceIdiom) -> String {
-        switch idiom {
-        case .phone:
-            return NotLocalizedString("sync.notifications.description.iphone", bundle: Bundle.module, value: "Get notified whenever a new device syncs with this iPhone.", comment: "Explains Sync notifications on iPhone")
-        case .pad:
-            return NotLocalizedString("sync.notifications.description.ipad", bundle: Bundle.module, value: "Get notified whenever a new device syncs with this iPad.", comment: "Explains Sync notifications on iPad")
-        default:
-            return NotLocalizedString("sync.notifications.description", bundle: Bundle.module, value: "Get notified whenever a new device syncs with this device.", comment: "Fallback description for Sync notifications on other device types")
-        }
-    }
+    static let syncNotificationsTitle = NotLocalizedString("sync.notifications.title", bundle: Bundle.module, value: "Notify on New Connections", comment: "Sync notification permission card title")
+    static let syncNotificationsSettingLabel = NotLocalizedString("sync.notifications.setting.label", bundle: Bundle.module, value: "Notify on New Connections (recommended)", comment: "Sync notification setting label")
+    static let syncNotificationsDescription = NotLocalizedString("sync.notifications.description", bundle: Bundle.module, value: "Get notified whenever a new device is added to Sync & Backup.", comment: "Explains Sync notifications")
     static let syncNotificationsEnable = NotLocalizedString("sync.notifications.enable", bundle: Bundle.module, value: "Enable Notifications", comment: "Button requesting notification permission")
     static let syncNotificationsDismiss = NotLocalizedString("sync.notifications.dismiss", bundle: Bundle.module, value: "Dismiss notification suggestion", comment: "Accessibility label for dismissing the permission card")
-    static let syncNotificationsSettingsTitle = NotLocalizedString("sync.notifications.settings.title", bundle: Bundle.module, value: "Turn On Notifications?", comment: "Title shown when notification permission was denied")
+    static let syncNotificationsSettingsTitle = NotLocalizedString("sync.notifications.settings.title", bundle: Bundle.module, value: "Requires notification permission for DuckDuckGo", comment: "Title shown when notification permission was denied")
+    static let syncNotificationsSettingsMessage = NotLocalizedString("sync.notifications.settings.message", bundle: Bundle.module, value: "Enable notifications for DuckDuckGo in system Settings to turn on New Device Notifications.", comment: "Explains how to enable Sync notifications after permission was denied")
     static let syncNotificationsOpenSettings = NotLocalizedString("sync.notifications.settings.open", bundle: Bundle.module, value: "Go to Settings…", comment: "Opens app notification settings")
 
     // Device Activity

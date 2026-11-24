@@ -169,15 +169,6 @@ struct SyncNotificationSettingsViewModelTests {
         #expect(!provider.isEnabled)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func descriptionUsesDeviceTypeWithGenericFallback() {
-        #expect(UserText.syncNotificationsDescription(for: .phone) == "Get notified whenever a new device syncs with this iPhone.")
-        #expect(UserText.syncNotificationsDescription(for: .pad) == "Get notified whenever a new device syncs with this iPad.")
-        #expect(UserText.syncNotificationsDescription(for: .unspecified) == "Get notified whenever a new device syncs with this device.")
-        #expect(UserText.syncNotificationsDescription(for: .mac) == "Get notified whenever a new device syncs with this device.")
-    }
-
     private enum TestError: Error { case failed }
 }
 

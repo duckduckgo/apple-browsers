@@ -32,7 +32,7 @@ struct SyncNotificationPermissionCard: View {
                     HStack(alignment: .top, spacing: 8) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(UserText.syncNotificationsTitle)
-                                .daxBodyBold()
+                                .daxSubheadSemibold()
                                 .foregroundColor(Color(designSystemColor: .textPrimary))
                             Text(UserText.syncNotificationsDescription)
                                 .daxBodyRegular()
@@ -76,11 +76,11 @@ struct SyncNotificationSettingsRow: View {
             Task { await model.setEnabled(enabled) }
         })) {
             Label(title: {
-                Text(UserText.syncNotificationsTitle)
+                Text(UserText.syncNotificationsSettingLabel)
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
             }, icon: {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.bell)
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.bellNotification)
                     .foregroundColor(Color(designSystemColor: .icons))
             })
         }
@@ -105,7 +105,7 @@ private struct SyncNotificationSettingsModifier: ViewModifier {
                 }
                 Button(UserText.cancelButton, role: .cancel) { }
             } message: {
-                Text(UserText.syncNotificationsDescription)
+                Text(UserText.syncNotificationsSettingsMessage)
             }
     }
 }

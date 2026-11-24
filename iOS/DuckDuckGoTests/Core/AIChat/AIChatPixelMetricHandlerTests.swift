@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import GameController
 import XCTest
 import BrowserServicesKitTestsUtils
@@ -426,6 +427,31 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         let parameters = UsageContext(hardwareKeyboard: nil, layout: .compact).parameters
 
         XCTAssertEqual(parameters, ["layout": "compact"])
+    }
+
+    func testHardwareKeyboardMonitoringFlagAppliesWhenUsageContextIsCreated() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.hardwareKeyboardMonitoring])
+        let notificationCenter = NotificationCenter()
+        let queue = DispatchQueue(label: #function)
+        var monitorCount = 0
+
+        func makeMonitor() -> HardwareKeyboardMonitor {
+            monitorCount += 1
+            return HardwareKeyboardMonitor(notificationCenter: notificationCenter, queue: queue, isConnectedNow: { true })
+        }
+
+        let enabled = UsageContextProvider(featureFlagger: featureFlagger, keyboardMonitor: makeMonitor(), isLargeWidth: { true })
+        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        queue.sync {}
+        XCTAssertEqual(enabled.currentContext.parameters, ["layout": "regular", "hardware_keyboard": "true"])
+
+        featureFlagger.enabledFeatureFlags = []
+        featureFlagger.triggerUpdate()
+        XCTAssertEqual(enabled.currentContext.hardwareKeyboard, true)
+
+        let disabled = UsageContextProvider(featureFlagger: featureFlagger, keyboardMonitor: makeMonitor(), isLargeWidth: { true })
+        XCTAssertEqual(disabled.currentContext.parameters, ["layout": "regular"])
+        XCTAssertEqual(monitorCount, 1)
     }
 
     func testKeyboardMonitorFollowsConnectAndDisconnectNotifications() {

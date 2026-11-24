@@ -372,7 +372,7 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
-        let usageContextProvider = UsageContextProvider()
+        let usageContextProvider = UsageContextProvider(featureFlagger: featureFlagger)
         mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                               syncService: syncService,
                                               contentBlockingService: contentBlockingService,

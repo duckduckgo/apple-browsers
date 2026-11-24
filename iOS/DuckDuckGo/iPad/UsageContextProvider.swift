@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_iOS
 import GameController
+import PrivacyConfig
 import UIKit
 
 /// Coarse usage dimensions attached to Duck.ai pixels and wide events. Kept to closed, two-value enums.
@@ -55,11 +57,13 @@ struct UsageContextProvider: UsageContextProviding {
     private let windowAndScreenWidths: @MainActor () -> (window: CGFloat, screen: CGFloat)?
 
     init(isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
-         keyboardMonitor: HardwareKeyboardMonitor = HardwareKeyboardMonitor(),
+         featureFlagger: FeatureFlagger? = nil,
+         keyboardMonitor: @autoclosure () -> HardwareKeyboardMonitor = HardwareKeyboardMonitor(),
          isLargeWidth: @escaping () -> Bool = { AppWidthObserver.shared.isLargeWidth },
          windowAndScreenWidths: @escaping @MainActor () -> (window: CGFloat, screen: CGFloat)? = Self.keyWindowWidths) {
+        let monitor = featureFlagger?.isFeatureOn(.hardwareKeyboardMonitoring) == true ? keyboardMonitor() : nil
         self.isPad = isPad
-        self.isHardwareKeyboardConnected = { keyboardMonitor.isConnected }
+        self.isHardwareKeyboardConnected = { monitor?.isConnected }
         self.isLargeWidth = isLargeWidth
         self.windowAndScreenWidths = windowAndScreenWidths
     }
@@ -107,11 +111,10 @@ extension UsageContext {
 /// Keeps the hardware keyboard state for Duck.ai pixels and wide events, refreshed on each app activation and on
 /// keyboard connect and disconnect notifications.
 ///
-/// All GameController work runs on a background queue: its first use, including observing its notifications,
-/// starts a device session that can block for seconds, past the launch watchdog. Nothing on the main thread may
-/// touch GameController, or it waits for that setup. The state is unknown until the first activation or keyboard
-/// notification. A read straight after setup can say false with a keyboard attached, until the connect notification
-/// arrives a moment later.
+/// The monitor registers GameController observers and reads keyboard state on a background queue. First use can
+/// start a device session that blocks for seconds. WebKit can still wait on the main thread if it reaches that
+/// session while it is initializing. Keyboard state is unknown until the first read, which can return false for
+/// an attached keyboard until GameController posts the connect notification.
 final class HardwareKeyboardMonitor {
 
     private let lock = NSLock()

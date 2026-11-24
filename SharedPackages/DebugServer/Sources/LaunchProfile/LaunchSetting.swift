@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 
 /// One piece of app state a launch profile can set, declared once with the code that writes it.
@@ -78,7 +79,9 @@ public struct LaunchSetting {
 }
 
 /// Thrown from a setting's `validate` closure; its message is shown as the problem.
-public struct LaunchSettingInvalidValue: Error, CustomStringConvertible {
+public struct LaunchSettingInvalidValue: DDGError {
+    public static var errorDomain: String { "com.duckduckgo.launchProfile.invalidValue" }
+    public var errorCode: Int { 1 }
     public let description: String
 
     public init(_ description: String) {

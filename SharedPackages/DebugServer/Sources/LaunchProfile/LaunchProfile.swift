@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 
 /// The JSON passed in the `-launchProfile` launch argument: inline, or as an absolute path to a `.json` file.
@@ -56,7 +57,7 @@ public struct LaunchProfile: Equatable, Sendable {
     }
 }
 
-public enum LaunchProfileError: Error, Equatable, CustomStringConvertible {
+public enum LaunchProfileError: DDGError {
     case missingValue
     case unreadableFile(String)
     case invalidJSON(String)
@@ -68,6 +69,17 @@ public enum LaunchProfileError: Error, Equatable, CustomStringConvertible {
         case .unreadableFile(let path): return "Can't read the profile at \(path)."
         case .invalidJSON(let reason): return "The profile isn't valid JSON: \(reason)"
         case .notAnObject: return "The profile must be a JSON object."
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.launchProfile" }
+
+    public var errorCode: Int {
+        switch self {
+        case .missingValue: return 1
+        case .unreadableFile: return 2
+        case .invalidJSON: return 3
+        case .notAnObject: return 4
         }
     }
 }

@@ -1,6 +1,6 @@
 ---
 name: ddg-ios-launch-profile
-description: Use when starting the iOS app on a simulator in a given state — feature flags, experiments, internal user, onboarding skipped, Settings or Duck.ai settings, Debug menu values, a privacy config URL or open tabs — for example to follow a PR's testing steps or to reproduce a bug. Also use when writing iOS PR testing steps that need such a state, or when adding a Settings or Debug menu option.
+description: Use when starting the iOS app on a simulator in a set state (flags, experiments, settings, Debug menu values, tabs), e.g. to follow PR testing steps or reproduce a bug; when writing iOS PR testing steps; or when adding a Settings or Debug menu option.
 ---
 
 # iOS launch profile

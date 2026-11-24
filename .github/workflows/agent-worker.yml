@@ -33,8 +33,8 @@ env:
   ARTIFACTS_ACCOUNT: ddgartifactsuse
   # Apple agent runs have their own container, since code the agent runs can use the artifacts identity. auto's
   # upload-evidence and viewer links use it through DDG_AUTO_EVIDENCE_CONTAINER
-  ARTIFACTS_CONTAINER: apple-agent
-  DDG_AUTO_EVIDENCE_CONTAINER: apple-agent
+  ARTIFACTS_CONTAINER: apple
+  DDG_AUTO_EVIDENCE_CONTAINER: apple
   # Inputs are checked in the agent job's first step before any of these paths are used. Storage is
   # create-only, so each run gets its own prefix
   PLAN_BLOB: ${{ inputs.handoff }}/plan.md

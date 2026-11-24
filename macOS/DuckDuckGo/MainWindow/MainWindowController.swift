@@ -306,7 +306,6 @@ final class MainWindowController: NSWindowController {
                     didMoveTabBarForFireAnimation = true
                 } else if burningData == nil, didMoveTabBarForFireAnimation {
                     moveTabBarView(toTitlebarView: true)
-                    setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
                     didMoveTabBarForFireAnimation = false
                 }
             }
@@ -331,6 +330,9 @@ final class MainWindowController: NSWindowController {
             // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209999815083499?focus=true
             newParentView.layer?.masksToBounds = true
             newParentView.addSubview(tabBarViewController.view)
+            // The toolbar may have been rebuilt (e.g. when the tab bar is shown again in or after full screen),
+            // so restore the titlebar's opaque background whenever the tab bar is placed back into it.
+            setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
         } else {
             newParentView.addSubview(tabBarViewController.view, positioned: .below, relativeTo: mainViewController.fireViewController.view)
         }

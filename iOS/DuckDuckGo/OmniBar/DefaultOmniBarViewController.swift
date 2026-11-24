@@ -730,7 +730,8 @@ extension DefaultOmniBarViewController {
 
         let controller = IPadOmnibarModelPickerController(
             startsNewChatsOnDefault: dependencies.featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel),
-            duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler
+            duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
+            featureFlagger: dependencies.featureFlagger
         )
         modelPickerController = controller
 

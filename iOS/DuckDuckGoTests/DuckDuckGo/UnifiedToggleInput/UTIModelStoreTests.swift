@@ -673,17 +673,20 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(sut.newChatModelSource(onboardingModelId: nil), .userDefault)
     }
 
-    func test_newChatDefault_whenUserDefaultChanges_nextResolveUsesTheNewValue() async throws {
+    func test_newChatDefault_whenUserDefaultChangesOffTheMainQueue_theUpdateArrivesOnMain() async throws {
         let storage = try DuckAiNativeStorageHandler(.memory())
         let sut = await makeSUTWithFetchedDefault(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none),
                                                   userDefaultModelStorage: storage)
-        var updateCount = 0
-        sut.onModelsUpdated = { updateCount += 1 }
+        let updated = expectation(description: "models updated")
+        sut.onModelsUpdated = {
+            XCTAssertTrue(Thread.isMainThread)
+            updated.fulfill()
+        }
 
-        try storage.putUserDefaultModel("gpt-5.6-terra")
+        DispatchQueue.global().async { try? storage.putUserDefaultModel("gpt-5.6-terra") }
 
+        await fulfillment(of: [updated], timeout: 1)
         XCTAssertEqual(sut.persistedModelId, "gpt-5.6-terra")
-        XCTAssertEqual(updateCount, 1)
     }
 
     func test_newChatDefault_whenAPickIsMadeOnTheTab_itWinsOverTheUserDefault() async throws {

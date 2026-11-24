@@ -146,9 +146,11 @@ struct AIChatNewChatUserDefaultSourceTests {
                       serverDefault: serverDefault)
         source.userTier = .free
         source.overLimitDefault = overLimit
-        source.observeUserDefaultModel(userDefault)
+        source.observeUserDefaultModel(userDefault, receivingUpdatesOn: ImmediateScheduler.shared)
         return source
     }
+
+    private static let overLimitWithoutModel = AIChatOverLimitNewChatDefault(.unavailable, resetsAt: Date(timeIntervalSince1970: 2_000))
 
     @available(iOS 16, macOS 13, *)
     @Test("User default wins over the /models default, on the model's own effort", .timeLimit(.minutes(1)))
@@ -194,10 +196,44 @@ struct AIChatNewChatUserDefaultSourceTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Over the limit, a user default the limit allows is kept", .timeLimit(.minutes(1)))
+    @Test("Over the limit, a user default the limit allows is kept, on the limit's effort", .timeLimit(.minutes(1)))
     func overLimitKeepsAllowedUserDefault() {
         let source = makeSource(userDefault: StubUserDefaultModel("gpt-6-luna"), overLimit: Self.overLimit)
-        #expect(source.selection == AIChatNewChatSelection(modelId: "gpt-6-luna", reasoningEffort: nil, origin: .user))
+        #expect(source.selection == AIChatNewChatSelection(modelId: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none, origin: .user))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A user default on the /models default's model takes its effort", .timeLimit(.minutes(1)))
+    func userDefaultTakesServerEffort() {
+        let source = makeSource(userDefault: StubUserDefaultModel("gpt-5.6-terra"))
+        #expect(source.selection == AIChatNewChatSelection(modelId: "gpt-5.6-terra", reasoningEffort: .low, origin: .user))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Over the limit without a named model, the user default is passed over", .timeLimit(.minutes(1)))
+    func overLimitWithoutModelPassesOverUserDefault() {
+        let source = makeSource(userDefault: StubUserDefaultModel("claude-haiku"), overLimit: Self.overLimitWithoutModel)
+        #expect(source.selection == AIChatNewChatSelection(modelId: "gpt-5.6-terra", reasoningEffort: .low, origin: .userDefaultUnavailable))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Before models load, new chats start on the user default", .timeLimit(.minutes(1)))
+    func userDefaultBeforeModelsLoad() {
+        let source = AIChatNewChatDefaultSource()
+        source.observeUserDefaultModel(StubUserDefaultModel("claude-haiku"), receivingUpdatesOn: ImmediateScheduler.shared)
+
+        #expect(source.selectionOrLocalDefaultBeforeModelsLoad == AIChatNewChatSelection(modelId: "claude-haiku", reasoningEffort: nil, origin: .user))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Before models load, a user default the limit passes over leaves the local tier default", .timeLimit(.minutes(1)))
+    func passedOverUserDefaultBeforeModelsLoad() {
+        let source = AIChatNewChatDefaultSource(now: { Date(timeIntervalSince1970: 1_000) })
+        source.userTier = .free
+        source.overLimitDefault = Self.overLimitWithoutModel
+        source.observeUserDefaultModel(StubUserDefaultModel("claude-haiku"), receivingUpdatesOn: ImmediateScheduler.shared)
+
+        #expect(source.selectionOrLocalDefaultBeforeModelsLoad?.modelId == "gpt-6-luna")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -227,5 +263,25 @@ struct AIChatNewChatUserDefaultSourceTests {
 
         #expect(changeCount == 1)
         cancellable.cancel()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("User default changes are announced on the given scheduler", .timeLimit(.minutes(1)))
+    func announcesOnScheduler() async {
+        let queue = DispatchQueue(label: "user-default-announcements")
+        let queueKey = DispatchSpecificKey<Void>()
+        queue.setSpecific(key: queueKey, value: ())
+        let userDefault = StubUserDefaultModel(nil)
+        let source = AIChatNewChatDefaultSource()
+        source.observeUserDefaultModel(userDefault, receivingUpdatesOn: queue)
+        var cancellable: AnyCancellable?
+
+        let isOnQueue = await withCheckedContinuation { continuation in
+            cancellable = source.defaultChanges.first().sink { continuation.resume(returning: DispatchQueue.getSpecific(key: queueKey) != nil) }
+            userDefault.changesSubject.send()
+        }
+
+        #expect(isOnQueue)
+        cancellable?.cancel()
     }
 }

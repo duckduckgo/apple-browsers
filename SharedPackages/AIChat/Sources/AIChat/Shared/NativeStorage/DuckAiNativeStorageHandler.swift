@@ -41,13 +41,13 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
         case disk(path: URL,
                   keyStoreProvider: DuckAiKeyStoreProvider,
                   pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring())
-        /// In-memory storage. `seedSource`, when provided, is used by the memory handler
-        /// for consent-key read-through across modes — see `DuckAiNativeStorageConsent.entryKeys`.
+        /// In-memory storage. `seedSource`, when provided, is read through for consent and
+        /// settings across modes — see `DuckAiNativeEntriesReadThrough`.
         case memory(seedSource: DuckAiNativeStorageHandling? = nil)
     }
 
     private let backing: DuckAiNativeStorageHandling
-    private let hasSeedSource: Bool
+    private let seedEntryUpdates: AnyPublisher<DuckAiNativeStorageReservedEntryKeys, Never>
     private let reservedEntryUpdatesSubject = PassthroughSubject<DuckAiNativeStorageReservedEntryKeys, Never>()
 
     public init(_ mode: Mode) throws {
@@ -76,7 +76,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
                     settingsStore: settingsStore.throwingKeyedStoring(),
                     dataStore: dataStore
                 )
-                self.hasSeedSource = false
+                self.seedEntryUpdates = Empty().eraseToAnyPublisher()
                 Logger.aiChat.debug("DuckAiNativeStorageHandler: disk store initialized at \(path.path)")
             } catch {
                 pixelFiring.fire(.initError(error))
@@ -85,7 +85,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
 
         case .memory(let seedSource):
             self.backing = DuckAiNativeMemoryStorageHandler(seedSource: seedSource)
-            self.hasSeedSource = seedSource != nil
+            self.seedEntryUpdates = seedSource.map(DuckAiNativeEntriesReadThrough.seedEntryUpdates(from:)) ?? Empty().eraseToAnyPublisher()
         }
     }
 
@@ -149,12 +149,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
     // MARK: - DuckAiNativeEntriesObserving
 
     public var reservedEntryUpdatesPublisher: AnyPublisher<DuckAiNativeStorageReservedEntryKeys, Never> {
-        reservedEntryUpdatesSubject.eraseToAnyPublisher()
-    }
-
-    /// Writes to the seed source aren't announced here, so read-through keys can change silently.
-    public func announcesEveryChange(to key: DuckAiNativeStorageReservedEntryKeys) -> Bool {
-        !(hasSeedSource && DuckAiNativeStorageConsent.entryKeys.contains(key.rawValue))
+        reservedEntryUpdatesSubject.merge(with: seedEntryUpdates).eraseToAnyPublisher()
     }
 
     private func publishIfReserved(_ key: String) {

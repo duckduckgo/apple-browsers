@@ -56,9 +56,12 @@ public final class AIChatNewChatDefaultSource {
         self.serverDefault = serverDefault
     }
 
-    /// Before `/models` loads, the local tier default stands in for the selection, once the tier is known.
+    /// Before `/models` loads, the user default stands in for the selection, else the local tier default once the tier is known.
     public var selectionOrLocalDefaultBeforeModelsLoad: AIChatNewChatSelection? {
         guard models.isEmpty else { return selection }
+        if case let .model(id, reasoningEffort)? = userDefault(followedBy: serverDefaults()) {
+            return AIChatNewChatSelection(modelId: id, reasoningEffort: reasoningEffort, origin: .user)
+        }
         return userTier.map(AIChatNewChatDefaultResolver.resolveBeforeModelsLoad(userTier:))
     }
 
@@ -79,30 +82,49 @@ public final class AIChatNewChatDefaultSource {
         }
     }
 
-    /// Follows `userDefaultModel` instead of any earlier one; `nil` stops using a user default.
-    public func observeUserDefaultModel(_ userDefaultModel: AIChatUserDefaultModelProviding?) {
+    /// Follows `userDefaultModel` instead of any earlier one, announcing its changes on `scheduler`; `nil` stops using a user default.
+    public func observeUserDefaultModel<S: Scheduler>(_ userDefaultModel: AIChatUserDefaultModelProviding?, receivingUpdatesOn scheduler: S) {
         self.userDefaultModel = userDefaultModel
-        userDefaultModelChangesCancellable = userDefaultModel?.changes.sink { [weak self] in
-            self?.defaultChangesSubject.send()
-        }
+        userDefaultModelChangesCancellable = userDefaultModel?.changes
+            .receive(on: scheduler)
+            .sink { [weak self] in self?.defaultChangesSubject.send() }
     }
 
     /// Follows the user default `storage` holds; fire storage reads it through from normal storage.
-    public func observeUserDefaultModel(in storage: DuckAiNativeStorageHandling?) {
-        observeUserDefaultModel(storage.map(DuckAiUserDefaultModelStore.init(storage:)))
+    public func observeUserDefaultModel<S: Scheduler>(in storage: DuckAiNativeStorageHandling?, receivingUpdatesOn scheduler: S) {
+        observeUserDefaultModel(storage.map(DuckAiUserDefaultModelStore.init(storage:)), receivingUpdatesOn: scheduler)
     }
 
     /// The user default, then the over-limit default, then the `/models` default.
     private func candidates() -> [AIChatNewChatDefaultResolver.Candidate] {
-        let overLimitDefault = overLimitDefault.newChatDefault(at: now())
-        let serverCandidates = [AIChatNewChatDefaultResolver.Candidate(overLimitDefault, origin: .server),
-                                AIChatNewChatDefaultResolver.Candidate(serverDefault, origin: .server)]
-        guard let userDefaultModelId = userDefaultModel?.modelId else { return serverCandidates }
-        var userDefault = AIChatNewChatDefault.model(id: userDefaultModelId, reasoningEffort: nil)
-        // Over the limit only the over-limit model is known to be allowed, so a different user default is passed over.
-        if case let .model(overLimitModelId, _) = overLimitDefault, overLimitModelId != userDefaultModelId {
-            userDefault = .unavailable
-        }
+        let serverDefaults = serverDefaults()
+        let serverCandidates = serverDefaults.map { AIChatNewChatDefaultResolver.Candidate($0, origin: .server) }
+        guard let userDefault = userDefault(followedBy: serverDefaults) else { return serverCandidates }
         return [AIChatNewChatDefaultResolver.Candidate(userDefault, origin: .user)] + serverCandidates
+    }
+
+    private func serverDefaults() -> [AIChatNewChatDefault] {
+        [overLimitDefault.newChatDefault(at: now()), serverDefault]
+    }
+
+    /// `nil` when not set. On a server default's model it takes that default's effort.
+    private func userDefault(followedBy serverDefaults: [AIChatNewChatDefault]) -> AIChatNewChatDefault? {
+        guard let modelId = userDefaultModel?.modelId else { return nil }
+        guard isAllowedByUsageLimit(modelId: modelId) else { return .unavailable }
+        return .model(id: modelId, reasoningEffort: Self.reasoningEffort(forModelId: modelId, in: serverDefaults))
+    }
+
+    /// Over the limit only the model the limit names is known to be allowed.
+    private func isAllowedByUsageLimit(modelId: String) -> Bool {
+        let now = now()
+        guard overLimitDefault.isOverLimit(at: now) else { return true }
+        return overLimitDefault.newChatDefault(at: now).modelId == modelId
+    }
+
+    private static func reasoningEffort(forModelId modelId: String, in defaults: [AIChatNewChatDefault]) -> AIChatReasoningEffort? {
+        for case let .model(id, reasoningEffort) in defaults where id == modelId {
+            return reasoningEffort
+        }
+        return nil
     }
 }

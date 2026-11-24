@@ -979,9 +979,14 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         }
 
         // Leave alone a screen or page the user opened while launch waited for App Lock or Automatically Clear Data.
-        if idleReturnForegroundScreen.userActed(presented: controller.presentedViewController,
+        // Clearing every Fire tab presents the empty tab switcher itself, so that one isn't the user's.
+        let presented = controller.presentedViewController
+        let isEmptyTabSwitcher = presented != nil && presented === controller.tabSwitcherController
+            && controller.tabSwitcherController?.tabsModel.isEmpty == true
+        if idleReturnForegroundScreen.userActed(presented: isEmptyTabSwitcher ? nil : presented,
                                                 isOnNewTabPage: tabManager.currentTabsModel.currentTab?.link == nil) {
-            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+            // A Duck.ai page the user opened already recorded its own entry.
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs, reportsDuckAIEntry: false)
             completion(.suppressed)
             return
         }
@@ -1034,13 +1039,13 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     /// A return where no after-idle treatment was applied, so `after_idle` stays false and
     /// the post-idle event — which only reports on treated returns — is not started.
     /// `focused` starts from the input focus a short return keeps; an app-open keyboard raises it later.
-    private func startUntreatedReturnSession(timeAwayMs: Int?) {
+    private func startUntreatedReturnSession(timeAwayMs: Int?, reportsDuckAIEntry: Bool = true) {
         guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        startReturnSession(afterIdleSurface: nil)
+        startReturnSession(afterIdleSurface: nil, reportsDuckAIEntry: reportsDuckAIEntry)
     }
 
-    private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?) {
+    private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?, reportsDuckAIEntry: Bool = true) {
         let focused = controller.isInputFocused
         let landedOn = landedOnForCurrentTab()
         controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOn, afterIdleSurface: afterIdleSurface,
@@ -1048,7 +1053,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
                                                                  toggleEnabled: controller.isReturnSessionToggleEnabled,
                                                                  togglePosition: controller.returnSessionTogglePosition(focused: focused))
         // A live voice chat carries on from its own entry.
-        if landedOn == .duckAI, !voiceSessionStateManager.isVoiceSessionActive {
+        if landedOn == .duckAI, reportsDuckAIEntry, !voiceSessionStateManager.isVoiceSessionActive {
             controller.fireAIChatEntryPointPixel(source: .appOpen, opensNewTab: false, hasPrompt: false)
             // The Duck.ai tab is already on screen, so show it to the entry that just started.
             controller.reportDuckAISessionCurrentTab()

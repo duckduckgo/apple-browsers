@@ -84,6 +84,7 @@ struct NewTabPageBuilder {
                 // Must match the address bar's home-tab mode resolution.
                 defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
         })
+        let usesLiquidGlass = floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
         let searchInputView = NewTabPageSearchInputView(
             model: searchInputModel,
             onActivate: { textEntryMode in
@@ -92,7 +93,7 @@ struct NewTabPageBuilder {
             onVoiceSearch: { textEntryMode in
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
             },
-            usesLiquidGlass: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
+            usesLiquidGlass: usesLiquidGlass,
             aiChatMenu: {
                 newTabPage?.duckAIMenu()
             })

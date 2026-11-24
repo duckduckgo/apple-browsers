@@ -526,6 +526,7 @@ final class UnifiedToggleInputView: UIView {
                 let row = existingRow ?? makeFooterRow(with: item.message)
                 row.accessibilityIdentifier = "AIChat.Footer.Card.\(item.id)"
                 row.isBelowAnotherCard = index > 0
+                row.usesGlassSurface = usesFooterGlassSurface
                 if !previousMessages.contains(item) {
                     existingRow?.configure(with: item.message, animateIcon: true)
                 }
@@ -881,8 +882,24 @@ final class UnifiedToggleInputView: UIView {
         cardPosition == .bottom ? Constants.collapsedCardHeight / 2 : Constants.cardCornerRadiusCollapsed
     }
 
+    var usesNewTabPageCardBackground = false {
+        didSet {
+            guard oldValue != usesNewTabPageCardBackground else { return }
+            applyFireModeAppearance(isFireTab: handler.isFireTab)
+            footerCard.arrangedSubviews.compactMap { $0 as? UTIFooterCardView }.forEach { $0.usesGlassSurface = usesFooterGlassSurface }
+        }
+    }
+
+    /// Over the redesigned New Tab Page, the glass card casts no shadow around the footer, so the footer takes the same glass.
+    private var usesFooterGlassSurface: Bool {
+        usesNewTabPageCardBackground && hasFloatingInputGlass
+    }
+
     private func cardBackgroundColor(isFireTab: Bool) -> UIColor {
-        UIColor(singleUseColor: isFireTab ? .fireModeCardBackground : .unifiedToggleInputCardBackground)
+        if isFireTab {
+            return UIColor(singleUseColor: .fireModeCardBackground)
+        }
+        return UIColor(singleUseColor: usesNewTabPageCardBackground ? .newTabPageSearchCardBackground : .unifiedToggleInputCardBackground)
     }
 
     // MARK: - Constraints

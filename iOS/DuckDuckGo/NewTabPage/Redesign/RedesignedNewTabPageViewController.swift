@@ -32,7 +32,11 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         static let portraitContentTopInset: CGFloat = 96
         static let entranceTranslation: CGFloat = 12
         static let entranceDuration: TimeInterval = 0.25
+        static let focusedModulesHideDuration: TimeInterval = 0.1
+        static let focusedWelcomeScale: CGFloat = 0.85
     }
+
+    private static let focusedModuleIDs: [NewTabPageBlockID] = [.favorites, .escapeHatch, .messages]
 
     weak var delegate: NewTabPageControllerDelegate?
     weak var chromeDelegate: BrowserChromeDelegate?
@@ -61,6 +65,15 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private var entranceAnimator: UIViewPropertyAnimator?
     private var detachedContentOffset: CGPoint?
     private var inputEditingLayout: InputEditingLayout?
+    private(set) var focusedPose: NewTabPageFocusedPose?
+    private var isFocusedPoseSettled = false
+    private var focusedKeyboardObserver: NSObjectProtocol?
+    private var areFocusedModulesHidden = false
+    private var appliedAccessibilityReach = RedesignedNewTabPageAccessibilityReach.wholePage
+    var onFocusedModeSwitchSwipe: ((TextEntryMode) -> Void)?
+    private lazy var focusedModeSwitchSwipeController = ModeSwitchSwipeGestureController { [weak self] mode in
+        self?.onFocusedModeSwitchSwipe?(mode)
+    }
 
     private struct InputEditingLayout {
         let contentOffset: CGPoint
@@ -87,7 +100,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }()
 
     private let blocksStackView: UIStackView = {
-        let stackView = UIStackView()
+        let stackView = TransformedBlocksStackView()
         stackView.axis = .vertical
         return stackView
     }()
@@ -140,6 +153,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         view.clipsToBounds = true
         addSubviews()
         installBlocks()
+        focusedModeSwitchSwipeController.install(on: view)
+        focusedModeSwitchSwipeController.isEnabled = false
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -169,8 +184,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         onboardingCoordinator?.refreshContextualOnboardingDialogLayout()
         // Reattachment and keyboard transitions temporarily change the viewport and safe area.
         // Keep those layouts from changing the loaded page's resting scroll position.
-        let editingOffset = inputEditingLayout.flatMap { $0.isGeometryValid ? $0.contentOffset : nil }
-        if let preservedOffset = editingOffset ?? detachedContentOffset,
+        if let preservedOffset = pinnedEditingContentOffset ?? detachedContentOffset,
            scrollView.contentOffset != preservedOffset {
             scrollView.setContentOffset(preservedOffset, animated: false)
         }
@@ -238,7 +252,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
-        isRemoteMessageSurfacePresented && !isPresentingOnboardingDialog && messagesModel?.hasAppearedRemoteMessage(withID: messageID) == true
+        isRemoteMessageSurfacePresented && !isPresentingOnboardingDialog && focusedPose?.showsModules != false
+            && messagesModel?.hasAppearedRemoteMessage(withID: messageID) == true
     }
 
     private func notifyRemoteMessageSurfaceChanged() {
@@ -258,7 +273,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         contentContainerView.transform = .identity
     }
 
-    func finishEntranceAnimation() {
+    private func finishEntranceAnimation() {
         guard isEntranceAnimationPending || entranceAnimator != nil else { return }
         isEntranceAnimationPending = false
         entranceAnimator?.stopAnimation(true)
@@ -334,6 +349,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     func dismiss() {
+        unsettleFocusedPose()
         detachedContentOffset = scrollView.contentOffset
         onboardingCoordinator?.detach()
         delegate = nil
@@ -402,7 +418,7 @@ extension RedesignedNewTabPageViewController: NewTabPageOnboardingHosting {
     func setOnboardingContentHidden(_ hidden: Bool, for dialog: NewTabPageOnboardingDialogKind) {
         // Keep the scroll position and block sizes intact beneath the dialog.
         contentContainerView.isHidden = hidden
-        view.accessibilityElementsHidden = inputEditingLayout != nil && !isPresentingOnboardingDialog
+        applyAccessibilityReach()
         delegate?.newTabPageDidChangeOnboardingPresentation(self)
         notifyRemoteMessageSurfaceChanged()
     }
@@ -441,21 +457,154 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     }
 
     func searchInputTransitionFrame(in targetView: UIView) -> CGRect? {
+        searchInputFrame(in: targetView, scrolledBy: 0)
+    }
+
+    func focusedPoseSearchInputFrame(in targetView: UIView) -> CGRect? {
+        searchInputFrame(in: targetView, scrolledBy: scrollDistanceSinceEditingBegan)
+    }
+
+    private func searchInputFrame(in targetView: UIView, scrolledBy scrollDistance: CGFloat) -> CGRect? {
         guard canAnimateSearchInput else { return nil }
         guard let window = view.window else { return nil }
         if let inputEditingLayout, inputEditingLayout.isGeometryValid, inputEditingLayout.windowBounds == window.bounds {
             return inputEditingLayout.inputFrameInWindow.map { targetView.convert($0, from: window) }
         }
-        guard let frame = visibleSearchInputFrameInWindow() else { return nil }
+        guard let frame = visibleSearchInputFrameInWindow(scrolledBy: scrollDistance) else { return nil }
         return targetView.convert(frame, from: window)
     }
 
-    private func visibleSearchInputFrameInWindow() -> CGRect? {
+    private func visibleSearchInputFrameInWindow(scrolledBy scrollDistance: CGFloat = 0) -> CGRect? {
         guard let window = view.window, let searchInputView else { return nil }
-        let frame = searchInputView.convert(searchInputView.bounds, to: window)
+        let frame = searchInputView.untransformedFrame(of: searchInputView.bounds, in: window)
+            .offsetBy(dx: 0, dy: scrollDistance)
         let viewport = scrollView.convert(scrollView.bounds, to: window).intersection(window.bounds)
         // An offscreen resting card should not pull the editor beyond the visible page.
         return frame.intersects(viewport) ? frame : nil
+    }
+
+    private var scrollDistanceSinceEditingBegan: CGFloat {
+        guard let inputEditingLayout else { return 0 }
+        return scrollView.contentOffset.y - inputEditingLayout.contentOffset.y
+    }
+
+    func setFocusedPose(_ pose: NewTabPageFocusedPose?) {
+        if pose == nil {
+            UIView.performWithoutAnimation { unsettleFocusedPose() }
+            restorePinnedEditingContentOffset()
+        }
+        let showedModules = focusedPose?.showsModules
+        focusedPose = pose
+        favoritesModel?.isFocussedState = pose != nil
+        focusedModeSwitchSwipeController.isEnabled = pose?.showsModules == true
+        if isFocusedPoseSettled {
+            updateFocusedScrollInset(keyboardTop: view.keyboardLayoutGuide.layoutFrame.minY)
+        }
+        applyFocusedPose()
+        applyAccessibilityReach()
+        if pose?.showsModules != showedModules {
+            notifyRemoteMessageSurfaceChanged()
+        }
+    }
+
+    func settleFocusedPose() {
+        guard focusedPose != nil, !isFocusedPoseSettled else { return }
+        isFocusedPoseSettled = true
+        updateFocusedScrollInset(keyboardTop: view.keyboardLayoutGuide.layoutFrame.minY)
+        focusedKeyboardObserver = NotificationCenter.default.addObserver(
+            forName: UIResponder.keyboardWillChangeFrameNotification, object: nil, queue: .main) { [weak self] notification in
+            guard let self, let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            self.updateFocusedScrollInset(keyboardTop: self.view.convert(frame, from: nil).minY)
+        }
+        scrollView.keyboardDismissMode = .onDrag
+        scrollView.isScrollEnabled = true
+    }
+
+    private func unsettleFocusedPose() {
+        guard isFocusedPoseSettled else { return }
+        isFocusedPoseSettled = false
+        focusedKeyboardObserver.map(NotificationCenter.default.removeObserver)
+        focusedKeyboardObserver = nil
+        scrollView.contentInset.bottom = 0
+        scrollView.keyboardDismissMode = .none
+        scrollView.isScrollEnabled = inputEditingLayout == nil
+    }
+
+    /// Scrolls back to the offset the page had before editing, inside the caller's animation so the visible rows travel
+    /// back with the pose rather than jumping.
+    private func restorePinnedEditingContentOffset() {
+        guard let pinnedEditingContentOffset, scrollView.contentOffset != pinnedEditingContentOffset else { return }
+        scrollView.contentOffset = pinnedEditingContentOffset
+    }
+
+    private var pinnedEditingContentOffset: CGPoint? {
+        guard !isFocusedPoseSettled, let inputEditingLayout, inputEditingLayout.isGeometryValid else { return nil }
+        return inputEditingLayout.contentOffset
+    }
+
+    private func updateFocusedScrollInset(keyboardTop: CGFloat) {
+        let keyboardOverlap = max(0, view.bounds.maxY - keyboardTop)
+        scrollView.contentInset.bottom = keyboardOverlap + (focusedPose?.modulesOffset ?? 0) + (focusedPose?.bottomInputHeight ?? 0)
+    }
+
+    private var focusedModuleViews: [UIView] {
+        blocks.filter { Self.focusedModuleIDs.contains($0.id) }.compactMap { $0.viewController.view }
+    }
+
+    func focusedModulesContain(_ point: CGPoint, in targetView: UIView) -> Bool {
+        guard focusedPose?.showsModules == true else { return false }
+        return focusedModuleViews.contains { $0.convert($0.bounds, to: targetView).contains(point) }
+    }
+
+    private func applyFocusedPose() {
+        let isFocused = focusedPose != nil
+        searchInputView?.transform = CGAffineTransform(translationX: 0, y: focusedPose?.inputOffset ?? 0)
+        let greetingTransform = CGAffineTransform(translationX: 0, y: focusedPose?.greetingOffset ?? 0)
+        let welcomeView = blocks.first { $0.id == .welcome }?.viewController.view
+        welcomeView?.alpha = isFocused ? 0 : 1
+        welcomeView?.transform = isFocused
+            ? greetingTransform.scaledBy(x: Metrics.focusedWelcomeScale, y: Metrics.focusedWelcomeScale)
+            : .identity
+        guard focusedPose?.showsModules != false else {
+            hideFocusedModules(animated: true)
+            return
+        }
+        let modulesTransform = CGAffineTransform(translationX: 0, y: focusedPose?.modulesOffset ?? 0)
+        let moduleViews = focusedModuleViews
+        if areFocusedModulesHidden {
+            UIView.performWithoutAnimation { moduleViews.forEach { $0.transform = modulesTransform } }
+            areFocusedModulesHidden = false
+        }
+        for moduleView in moduleViews {
+            moduleView.alpha = 1
+            moduleView.transform = modulesTransform
+        }
+    }
+
+    private func hideFocusedModules(animated: Bool) {
+        areFocusedModulesHidden = true
+        let moduleViews = focusedModuleViews
+        guard animated else {
+            moduleViews.forEach { $0.alpha = 0 }
+            return
+        }
+        UIView.animateOnOwnTiming(duration: Metrics.focusedModulesHideDuration, options: [.beginFromCurrentState, .curveEaseOut]) {
+            moduleViews.forEach { $0.alpha = 0 }
+        }
+    }
+
+    private func applyAccessibilityReach() {
+        let reach = RedesignedNewTabPageAccessibilityReach(isEditing: inputEditingLayout != nil,
+                                                           isPresentingOnboardingDialog: isPresentingOnboardingDialog,
+                                                           focusedPose: focusedPose)
+        view.accessibilityElementsHidden = reach == .nothing
+        for block in blocks {
+            block.viewController.view.accessibilityElementsHidden = reach == .focusedModulesOnly && !Self.focusedModuleIDs.contains(block.id)
+        }
+        customizeButton.accessibilityElementsHidden = reach == .focusedModulesOnly
+        guard reach != appliedAccessibilityReach else { return }
+        appliedAccessibilityReach = reach
+        UIAccessibility.post(notification: .layoutChanged, argument: nil)
     }
 
     func setSearchInputEditing(_ isEditing: Bool) {
@@ -467,14 +616,41 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
                                                     inputFrameInWindow: visibleSearchInputFrameInWindow(),
                                                     windowBounds: view.window?.bounds)
         } else if !isEditing, let savedLayout = inputEditingLayout {
+            setFocusedPose(nil)
             inputEditingLayout = nil
             restoreScrollPosition(savedLayout.isGeometryValid ? savedLayout.contentOffset : scrollView.contentOffset)
         }
         searchInputView?.alpha = isEditing ? 0 : 1
-        view.accessibilityElementsHidden = isEditing && !isPresentingOnboardingDialog
+        applyAccessibilityReach()
         searchInputView?.isUserInteractionEnabled = !isEditing
         scrollView.isScrollEnabled = !isEditing
         customizeButton.alpha = isEditing ? 0 : 1
         customizeButton.isUserInteractionEnabled = !isEditing
+    }
+}
+
+enum RedesignedNewTabPageAccessibilityReach: Equatable {
+    case wholePage
+    case focusedModulesOnly
+    case nothing
+
+    init(isEditing: Bool, isPresentingOnboardingDialog: Bool, focusedPose: NewTabPageFocusedPose?) {
+        if !isEditing || isPresentingOnboardingDialog {
+            self = .wholePage
+        } else if focusedPose?.showsModules == true {
+            self = .focusedModulesOnly
+        } else {
+            self = .nothing
+        }
+    }
+}
+
+/// A stack view whose blocks stay tappable after a focused pose transform moves them outside its bounds.
+private final class TransformedBlocksStackView: UIStackView {
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        super.point(inside: point, with: event) || arrangedSubviews.contains { blockView in
+            !blockView.isHidden && blockView.alpha > 0 && blockView.bounds.contains(blockView.convert(point, from: self))
+        }
     }
 }

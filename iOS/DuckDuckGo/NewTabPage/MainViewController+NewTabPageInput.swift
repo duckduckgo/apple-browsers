@@ -54,7 +54,6 @@ extension MainViewController {
         // Keep editing chrome selected while dismissal restores the modules so they cannot flash before focus.
         let wasPerformingHandoff = isPerformingOnboardingInputHandoff
         isPerformingOnboardingInputHandoff = true
-        restingNewTabPageSnapshot = nil
         defer {
             isPerformingOnboardingInputHandoff = wasPerformingHandoff
             updateAddressBarSuppressionForNewTabPage()
@@ -69,9 +68,6 @@ extension MainViewController {
         // Update even when chrome is unchanged: the shared controller may now belong to another tab.
         updateUnifiedInputContentPresentation(presentation: presentation, isOnAITab: currentTab?.isAITab == true)
         guard viewCoordinator.newTabPageInputPresentation != presentation else { return }
-        if presentation.hidesNavigationContainer || presentation.transition != .inlineInput {
-            restingNewTabPageSnapshot = nil
-        }
         let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
         if !presentation.hidesNavigationContainer {
             // Capture the scrolled resting layout before chrome changes the page's viewport.
@@ -88,11 +84,6 @@ extension MainViewController {
 
     func revealAddressBarForEditing() {
         guard viewCoordinator.newTabPageInputPresentation.hidesNavigationContainer else { return }
-        if isPresentingNewTabInputDirectly {
-            restingNewTabPageSnapshot = nil
-        } else if unifiedToggleInputCoordinator != nil, !isIPadFullTabChatInput {
-            captureRestingNewTabPageSnapshot()
-        }
         isAddressBarHandOffInProgress = true
         updateAddressBarSuppressionForNewTabPage()
         view.layoutIfNeeded()

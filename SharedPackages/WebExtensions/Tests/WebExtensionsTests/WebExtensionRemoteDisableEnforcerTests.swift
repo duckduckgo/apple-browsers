@@ -142,15 +142,22 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         XCTAssertEqual(manager.disabledIdentifiers, [])
     }
 
-    func testWhenExtensionManagementIsNotLaunchedInConfiguration_ThenTheListIsIgnored() async throws {
+    func testWhenExtensionsAreEnabledButNotLaunchedInConfiguration_ThenListedExtensionsAreDisabled() async throws {
         configurationManager.privacyConfig = try makeConfiguration(disabledIDs: [listedStoreID], launchedState: "disabled")
         install(storeExtension("listed", storeID: listedStoreID))
 
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.disabledIdentifiers, [])
-        XCTAssertEqual(enforcer.remotelyDisabledExtensionIDs, [])
+        XCTAssertEqual(manager.disabledIdentifiers, ["listed"])
+        XCTAssertEqual(enforcer.remotelyDisabledExtensionIDs, [listedStoreID.lowercased()])
+    }
+
+    func testWhenExtensionsAreNotEnabledAndNotLaunchedInConfiguration_ThenTheListIsIgnored() throws {
+        configurationManager.privacyConfig = try makeConfiguration(disabledIDs: [listedStoreID], launchedState: "disabled")
+        isExtensionsEnabled = false
+
+        XCTAssertEqual(makeEnforcer().remotelyDisabledExtensionIDs, [])
     }
 
     func testWhenDisablingFails_ThenOtherListedExtensionsAreStillDisabled() async throws {

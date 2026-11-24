@@ -23,6 +23,11 @@ enum RedesignedFocusedSurface: Equatable {
     case newTabPage
     /// Only the favorites grid.
     case webPage
+
+    /// Whether a Search and Duck.ai switch swaps the empty-state logo at once, instead of keeping it in place.
+    var swapsLogoOnModeChange: Bool {
+        self == .newTabPage
+    }
 }
 
 enum NewTabPageInputPresentation: Equatable {

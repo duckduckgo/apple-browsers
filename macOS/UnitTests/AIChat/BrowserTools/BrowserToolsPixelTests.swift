@@ -55,6 +55,46 @@ struct BrowserToolsPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A closed prompt fires its answer, bucketed time and chat number", .timeLimit(.minutes(1)))
+    func closedPromptFiresPromptAnswered() {
+        instrumentation.promptDidClose(tool: "pinTab", answer: .allowForChat, promptNumberInChat: 5, timeToAnswer: 12)
+        instrumentation.promptDidClose(tool: "searchHistory", answer: .timeout, promptNumberInChat: nil, timeToAnswer: 120)
+        instrumentation.promptDidClose(tool: "https://example.com", answer: .never, promptNumberInChat: 1, timeToAnswer: 1)
+
+        #expect(pixels.actualFireCalls.map(\.pixel.name) == ["aichat_tools_prompt_answered_macos", "aichat_tools_prompt_answered_macos"])
+        #expect(pixels.actualFireCalls.map(\.frequency) == [.standard, .standard])
+        #expect(pixels.actualFireCalls.map(\.pixel.parameters) == [
+            ["tool": "pin_tab", "answer": "allow_for_chat", "prompt_number_in_chat": "4_plus", "time_to_answer": "lt_60s"],
+            ["tool": "search_history", "answer": "timeout", "time_to_answer": "gte_60s"]
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A finished requestAccess fires its counts and decision, then one result per known tool", .timeLimit(.minutes(1)))
+    func accessRequestFiresRequestedAndResults() {
+        instrumentation.accessRequestDidFinish(BrowserToolAccessRequestOutcome(
+            decision: .allow, requested: 3, asked: 2, removed: 1,
+            results: [("searchHistory", .granted), ("pinTab", .removed), ("https://example.com", .unavailable)]))
+        instrumentation.accessRequestDidFinish(BrowserToolAccessRequestOutcome(decision: .invalid))
+
+        #expect(pixels.actualFireCalls.map(\.pixel.name) == ["aichat_tools_access_requested_macos", "aichat_tools_access_result_macos",
+                                                             "aichat_tools_access_result_macos", "aichat_tools_access_requested_macos"])
+        #expect(pixels.actualFireCalls.map(\.pixel.parameters) == [
+            ["decision": "allow", "requested": "3", "asked": "2", "removed": "1"],
+            ["tool": "search_history", "access": "granted"],
+            ["tool": "pin_tab", "access": "removed"],
+            ["decision": "invalid"]
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Times to answer fall into the spec's buckets", .timeLimit(.minutes(1)),
+          arguments: zip([0, 1.999, 2, 9.999, 10, 59.999, 60, 600], ["lt_2s", "lt_2s", "lt_10s", "lt_10s", "lt_60s", "lt_60s", "gte_60s", "gte_60s"]))
+    func timeToAnswerBuckets(seconds: Double, bucket: String) {
+        #expect(BrowserToolsPixel.timeToAnswerBucket(seconds) == bucket)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Result counts fall into the spec's buckets", .timeLimit(.minutes(1)),
           arguments: zip([0, 1, 5, 6, 20, 21, 500], ["0", "1-5", "1-5", "6-20", "6-20", "21_plus", "21_plus"]))
     func resultCountBuckets(count: Int, bucket: String) {

@@ -88,6 +88,8 @@ struct MyView_Previews: PreviewProvider {
 In the test:
 
 ```swift
+@MainActor
+@available(iOS 16, macOS 13, *)
 @Test(.timeLimit(.minutes(1)))
 func testMyViewSnapshots() {
     assertImageSnapshots(MyView_Previews.snapshots, size: .screen)

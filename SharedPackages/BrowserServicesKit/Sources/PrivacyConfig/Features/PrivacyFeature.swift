@@ -71,7 +71,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
-    case sponsorBlock
+    case segmentSkip
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -203,10 +203,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Memory Usage Reporting
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
     case memoryUsageReporting
-
-    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
-    case crashCollectionLimitCallStackTreeDepth
 
     /// Ctrl+click compatibility fix to preserve right click behavior
     case controlClickFix
@@ -859,8 +855,8 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case nativeUI // Use Duckplayer's native UI
 }
 
-public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .sponsorBlock }
+public enum SegmentSkipPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .segmentSkip }
     case mvpEnabled
 }
 
@@ -1123,6 +1119,9 @@ public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extensionManagement }
 
     case isLaunchedExtensions
+    /// Enables web extensions for internal users on macOS, independently of `isLaunchedExtensions`.
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1220747893847476
+    case isLaunchedExtensionsInternal
 }
 
 public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature {

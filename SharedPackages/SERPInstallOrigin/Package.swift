@@ -37,6 +37,9 @@ let package = Package(
             name: "SERPInstallOrigin",
             dependencies: [
                 .product(name: "UserScript", package: "BrowserServicesKit")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         .testTarget(
@@ -45,7 +48,11 @@ let package = Package(
                 "SERPInstallOrigin",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit")
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         )
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )

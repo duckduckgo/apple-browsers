@@ -44,7 +44,6 @@ public protocol SparkleCrashReportingFactory {
 
 public protocol AppStoreCrashReportingFactory {
     static func instantiate(internalUserDecider: InternalUserDecider,
-                            featureFlagger: FeatureFlagger,
                             crashReportSender: CrashReportSending,
                             crashSenderPixelEvents: EventMapping<CrashReportSenderEvent>?,
                             fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,

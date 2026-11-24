@@ -40,6 +40,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let chipHeight: CGFloat = 40
         static let chipCornerRadius: CGFloat = 20
         static let chipHorizontalPadding: CGFloat = 16
+        static let simplifiedChipHorizontalPadding: CGFloat = 8
+        static let simplifiedClearButtonHitTarget: CGFloat = 44
         static let chipSpacing: CGFloat = 4
         static let minimumGroupGap: CGFloat = 8
     }
@@ -272,6 +274,16 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
+    var usesSimplifiedPromptBox: Bool = false {
+        didSet {
+            guard oldValue != usesSimplifiedPromptBox else { return }
+            updateAttachButtonImage()
+            updateSelectedToolChipStyle()
+            updateChipVisibility()
+            setNeedsLayout()
+        }
+    }
+
     var isToolsButtonHidden: Bool {
         get { toolsButtonExplicitlyHidden }
         set {
@@ -401,8 +413,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         return imageView
     }()
 
-    private lazy var selectedToolClearButton: UIButton = {
-        let button = UIButton(type: .system)
+    private lazy var selectedToolClearButton: ToolClearButton = {
+        let button = ToolClearButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
         button.tintColor = UIColor(designSystemColor: .textPrimary)
@@ -414,6 +426,9 @@ final class UnifiedToggleInputToolbarView: UIView {
         ])
         return button
     }()
+
+    private var selectedToolChipLeading: NSLayoutConstraint?
+    private var selectedToolChipTrailing: NSLayoutConstraint?
 
     private lazy var selectedToolChipView: UIView = {
         let view = UIView()
@@ -431,10 +446,14 @@ final class UnifiedToggleInputToolbarView: UIView {
 
         view.addSubview(selectedToolMenuButton)
 
+        let leading = stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.chipHorizontalPadding)
+        let trailing = stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.chipHorizontalPadding)
+        selectedToolChipLeading = leading
+        selectedToolChipTrailing = trailing
         NSLayoutConstraint.activate([
             view.heightAnchor.constraint(equalToConstant: Constants.chipHeight),
-            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.chipHorizontalPadding),
-            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.chipHorizontalPadding),
+            leading,
+            trailing,
             stackView.topAnchor.constraint(equalTo: view.topAnchor),
             stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             selectedToolMenuButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -572,6 +591,8 @@ final class UnifiedToggleInputToolbarView: UIView {
         RowFit(showsAttachButton: !imageButton.isHidden,
                showsToolsButton: !toolsButtonExplicitlyHidden,
                showsModeChip: selectedTool != nil,
+               allowsMergedTools: !usesSimplifiedPromptBox,
+               usesSimplifiedToolChip: usesSimplifiedPromptBox,
                showsReasoningButton: !reasoningButton.isHidden,
                modelChipWidth: modelChipExplicitlyHidden ? nil : fullModelChipWidth,
                showsReturnKey: !returnKeyButton.isHidden,
@@ -616,6 +637,8 @@ extension UnifiedToggleInputToolbarView {
         var showsAttachButton = true
         var showsToolsButton = true
         var showsModeChip = false
+        var allowsMergedTools = true
+        var usesSimplifiedToolChip = false
         var showsReasoningButton = true
         /// The pill showing its name, or nil while it is hidden.
         var modelChipWidth: CGFloat?
@@ -623,16 +646,20 @@ extension UnifiedToggleInputToolbarView {
         var submitButtonWidth = Constants.toolButtonSize
 
         func level(forToolbarWidth width: CGFloat) -> UTIToolbarCompactLevel {
-            UTIToolbarCompactLevel.allCases.first { minimumToolbarWidth(at: $0) <= width } ?? .mergedTools
+            let levels = allowsMergedTools ? UTIToolbarCompactLevel.allCases : UTIToolbarCompactLevel.allCases.filter { $0 < .mergedTools }
+            return levels.first { minimumToolbarWidth(at: $0) <= width } ?? levels.last ?? .full
         }
 
         /// The narrowest toolbar that holds the row at `level`.
         func minimumToolbarWidth(at level: UTIToolbarCompactLevel) -> CGFloat {
             let button = Constants.toolButtonSize
-            let mergesTools = level >= .mergedTools && showsModeChip
+            let mergesTools = allowsMergedTools && level >= .mergedTools && showsModeChip
             var leadingWidths: [CGFloat] = showsAttachButton ? [button] : []
             if showsToolsButton && !mergesTools { leadingWidths.append(button) }
-            if showsModeChip { leadingWidths.append(mergesTools ? Self.mergedToolChipWidth : Self.toolChipWidth) }
+            if showsModeChip {
+                leadingWidths.append(mergesTools ? Self.mergedToolChipWidth
+                                                 : usesSimplifiedToolChip ? Self.simplifiedToolChipWidth : Self.toolChipWidth)
+            }
             var pickerWidths: [CGFloat] = showsReasoningButton ? [button] : []
             if let modelChipWidth { pickerWidths.append(level >= .modelIcon ? button : modelChipWidth) }
             let pickers = Self.stackWidth(pickerWidths, spacing: Constants.rightGroupSpacing)
@@ -644,6 +671,8 @@ extension UnifiedToggleInputToolbarView {
         }
 
         static let toolChipWidth = 2 * Constants.chipHorizontalPadding + Constants.selectedToolIconSize
+            + Constants.chipSpacing + Constants.selectedToolClearButtonSize
+        static let simplifiedToolChipWidth = 2 * Constants.simplifiedChipHorizontalPadding + Constants.selectedToolIconSize
             + Constants.chipSpacing + Constants.selectedToolClearButtonSize
         static let mergedToolChipWidth = 2 * Constants.chipHorizontalPadding + Constants.selectedToolIconSize
 
@@ -807,8 +836,28 @@ private extension UnifiedToggleInputToolbarView {
         reasoningButton.tintColor = mode.unifiedToggleInputButtonTintColor
     }
 
+    private func updateAttachButtonImage() {
+        let image = usesSimplifiedPromptBox ? DesignSystemImages.Glyphs.Size24.addCircle : DesignSystemImages.Glyphs.Size24.attach
+        if #available(iOS 26, *), imageButton.configuration != nil {
+            imageButton.configuration?.image = image
+        } else {
+            imageButton.setImage(image, for: .normal)
+        }
+        imageButton.accessibilityLabel = usesSimplifiedPromptBox
+            ? UserText.aiChatToolbarAddButtonAccessibilityLabel
+            : UserText.aiChatToolbarAttachButtonAccessibilityLabel
+    }
+
+    private func updateSelectedToolChipStyle() {
+        _ = selectedToolChipView
+        let padding = usesSimplifiedPromptBox ? Constants.simplifiedChipHorizontalPadding : Constants.chipHorizontalPadding
+        selectedToolChipLeading?.constant = padding
+        selectedToolChipTrailing?.constant = -padding
+        selectedToolClearButton.minimumHitTarget = usesSimplifiedPromptBox ? Constants.simplifiedClearButtonHitTarget : 0
+    }
+
     private func updateChipVisibility() {
-        let mergesTools = compactLevel >= .mergedTools && selectedTool != nil
+        let mergesTools = !usesSimplifiedPromptBox && compactLevel >= .mergedTools && selectedTool != nil
         modelChipButton.isHidden = modelChipExplicitlyHidden
         toolsButton.isHidden = toolsButtonExplicitlyHidden || mergesTools
         selectedToolChipView.isHidden = (selectedTool == nil)
@@ -925,4 +974,15 @@ private extension UnifiedToggleInputToolbarView {
         }
     }
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
+}
+
+private final class ToolClearButton: UIButton {
+
+    var minimumHitTarget: CGFloat = 0
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let dx = min(0, (bounds.width - minimumHitTarget) / 2)
+        let dy = min(0, (bounds.height - minimumHitTarget) / 2)
+        return bounds.insetBy(dx: dx, dy: dy).contains(point)
+    }
 }

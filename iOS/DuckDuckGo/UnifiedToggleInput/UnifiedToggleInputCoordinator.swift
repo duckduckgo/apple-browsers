@@ -356,6 +356,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private let featureFlagger: FeatureFlagger
+    private let simplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding
 
     private let attachmentsChangeSubject = PassthroughSubject<Void, Never>()
     var attachmentsChangePublisher: AnyPublisher<Void, Never> {
@@ -429,6 +430,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.featureFlagger = featureFlagger
+        self.simplifiedPromptBoxFeature = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger)
         self.scheduleInputFocus = scheduleInputFocus
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.featureDiscovery = featureDiscovery
@@ -607,7 +609,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 isPastedTextEnabled: { [weak self] in self?.isPastedTextEnabled ?? false },
                 isEditing: { [weak self] in self?.isEditing ?? false },
                 isVoiceSessionActive: { [weak self] in self?.isVoiceSessionActive ?? false },
-                pastedTextSheetMode: { [weak self] in self?.promptLengthGate.sheetMode(for: $0) ?? .editable(limit: 0) }
+                pastedTextSheetMode: { [weak self] in self?.promptLengthGate.sheetMode(for: $0) ?? .editable(limit: 0) },
+                usesSimplifiedAttachMenu: { [weak self] in self?.simplifiedPromptBoxFeature.isAvailable ?? false },
+                attachMenuTools: { [weak self] in self?.attachMenuTools }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -2265,6 +2269,24 @@ extension UnifiedToggleInputCoordinator {
         recordUserChoiceToStore()
     }
 
+    func handleAttachMenuToolSelection(_ identifier: UTIToolsMenu.Item.Identifier) {
+        let previousTool = toolsController.selectedTool
+        switch identifier {
+        case .webSearch:
+            toolsController.select(.webSearch, for: modelStore)
+        case .imageGeneration:
+            guard previousTool != .imageGeneration else { return }
+            selectImageGeneration(entryPoint: .toolsMenu)
+        case .customizeResponses:
+            return
+        }
+        let currentTool = toolsController.selectedTool
+        guard currentTool != previousTool else { return }
+        fireToolToggleTransitionPixel(previous: previousTool, current: currentTool)
+        refreshToolsPresentation()
+        recordUserChoiceToStore()
+    }
+
     /// Selecting Create Image on a model that can't generate images moves the user to one that can, and says so in the footer.
     private func toggleImageGenerationSelection() {
         let notice = createImageModelSwitcher.toggle(
@@ -2881,25 +2903,34 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func refreshToolsPresentation() {
-        let presentation = toolsController.presentation(
-            isActive: isActive,
-            modelStore: modelStore,
-            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem,
-            createImagePolicy: createImageMenuPolicy
-        )
+        let usesSimplifiedPromptBox = simplifiedPromptBoxFeature.isAvailable
+        let wasSimplifiedPromptBox = viewController.usesSimplifiedPromptBox
+        let presentation = toolsPresentation
         if toolsController.selectedTool != .imageGeneration {
             footerController?.clearModelSwitchNotice()
         }
-        let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
-            self?.toolsMenuFactory.makeMenu(menu) { identifier in
-                self?.handleToolsMenuSelection(identifier)
-            }
-        } ?? nil
-        viewController.applyToolsPresentation(
-            isToolsButtonHidden: presentation.isToolsButtonHidden,
-            selectedTool: presentation.selectedTool,
-            toolsMenu: toolsMenu
-        )
+        viewController.usesSimplifiedPromptBox = usesSimplifiedPromptBox
+        if usesSimplifiedPromptBox {
+            viewController.applyToolsPresentation(
+                isToolsButtonHidden: true,
+                selectedTool: presentation.selectedTool,
+                toolsMenu: nil
+            )
+        } else {
+            let toolsMenu = presentation.toolsMenu.map { [weak self] menu in
+                self?.toolsMenuFactory.makeMenu(menu) { identifier in
+                    self?.handleToolsMenuSelection(identifier)
+                }
+            } ?? nil
+            viewController.applyToolsPresentation(
+                isToolsButtonHidden: presentation.isToolsButtonHidden,
+                selectedTool: presentation.selectedTool,
+                toolsMenu: toolsMenu
+            )
+        }
+        if usesSimplifiedPromptBox || wasSimplifiedPromptBox {
+            attachmentController?.updateAttachButtonPresentation()
+        }
         // Tool selection toggles the model-chip + reasoning-picker visibility. Route through the
         // canonical updaters so we don't clobber the other signals (`hasSubmittedPrompt`, `host`).
         modelSelector.updateModelChipVisibility()
@@ -2913,6 +2944,22 @@ private extension UnifiedToggleInputCoordinator {
     func resetToolsSelection() {
         toolsController.clearSelection()
         refreshToolsPresentation()
+    }
+
+    private var toolsPresentation: UTIToolsController.Presentation {
+        toolsController.presentation(
+            isActive: isActive,
+            modelStore: modelStore,
+            canShowCustomizeResponses: canShowCustomizeResponsesMenuItem && !simplifiedPromptBoxFeature.isAvailable,
+            createImagePolicy: createImageMenuPolicy
+        )
+    }
+
+    var attachMenuTools: UTIAttachMenuTools? {
+        guard simplifiedPromptBoxFeature.isAvailable, let menu = toolsPresentation.toolsMenu else { return nil }
+        return UTIAttachMenuTools(menu: menu) { [weak self] identifier in
+            self?.handleAttachMenuToolSelection(identifier)
+        }
     }
 
     var createImageMenuPolicy: CreateImageMenuPolicy {

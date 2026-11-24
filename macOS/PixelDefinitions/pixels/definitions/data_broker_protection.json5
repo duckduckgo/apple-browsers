@@ -1411,5 +1411,22 @@
         "triggers": ["other"],
         "suffixes": ["daily"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_dbp_macos_entitlement_error": {
+        "description": "Fires when PIR can't check the PIR entitlement, so it keeps running and keeps the data. Sent from the agent's startup and hourly checks, and from the app when the cached entitlements drop PIR.",
+        "owners": ["quanganhdo", "federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "Why the check failed. no_token: no token and none could be restored from the backup, doesn't mean the user signed out. keychain_locked: keychain is locked. keychain_error: any other keychain read or decode error. network: refreshing the expired token failed for a network or server reason. profile_read: the saved PIR profile couldn't be read. unknown: anything else.",
+                "enum": ["no_token", "keychain_locked", "keychain_error", "network", "profile_read", "unknown"]
+            }
+        ]
     }
 }

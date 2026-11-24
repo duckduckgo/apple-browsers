@@ -24,10 +24,12 @@ import Freemium
 import DataBrokerProtectionCore
 
 protocol DataBrokerProtectionAgentStopper {
-    /// Validates if the user is an active freemium user, OR if they have profile data, is authenticated, and has valid entitlement. If any of these conditions are not met, the agent will be stopped.
+    /// Validates that the user has profile data and is either an active freemium user or has a token with the PIR entitlement.
+    /// The agent is stopped when there is no profile, or when the token lacks the PIR entitlement. It keeps running when no token can be read.
     func validateRunPrerequisitesAndStopAgentIfNecessary() async
 
-    /// Monitors the entitlement package. If the entitlement check returns false, and the user is NOT an active freemium user, the agent will be stopped.
+    /// Monitors the entitlement package. If the token lacks the PIR entitlement, and the user is NOT an active freemium user, the agent will be stopped.
+    /// It keeps running when no token can be read.
     /// This function ensures that the agent is stopped if the user's subscription has expired, even if the browser is not active. Regularly checking for entitlement is required since notifications are not posted to agents.
     func monitorEntitlementAndStopAgentIfEntitlementIsInvalidAndUserIsNotFreemium(interval: TimeInterval)
 }
@@ -59,21 +61,14 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
     /// Prerequisites are satisified if either:
     /// 1. The user is an active freemium user
     /// 2. The user has a subscription with valid entitlements
+    /// When no token can be read, the agent isn't stopped.
     public func validateRunPrerequisitesAndStopAgentIfNecessary() async {
 
         do {
             let hasProfile = try dataManager.fetchProfile() != nil
-            let isAuthenticated = await authenticationManager.isUserAuthenticated
-            let didActivateFreemium = freemiumDBPUserStateManager.didActivate
 
             if !hasProfile {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid: no profile saved")
-                stopAgent()
-                return
-            }
-
-            if !isAuthenticated && !didActivateFreemium {
-                Logger.dataBrokerProtection.log("Prerequisites are invalid: Not authenticated and did not activate freemium")
                 stopAgent()
                 return
             }
@@ -83,17 +78,16 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
                 return
             }
 
-            let hasValidEntitlement = try await authenticationManager.hasValidEntitlement()
-            stopAgentBasedOnEntitlementCheckResult(hasValidEntitlement ? .enabled : .disabled)
+            stopAgentBasedOnEntitlementCheckResult(await authenticationManager.entitlementStatus())
 
         } catch {
             Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
-            stopAgentBasedOnEntitlementCheckResult(.error)
+            stopAgentBasedOnEntitlementCheckResult(.error(.profileRead))
         }
     }
 
     public func monitorEntitlementAndStopAgentIfEntitlementIsInvalidAndUserIsNotFreemium(interval: TimeInterval) {
-        entitlementMonitor.start(checkEntitlementFunction: authenticationManager.hasValidEntitlement,
+        entitlementMonitor.start(checkEntitlementFunction: authenticationManager.entitlementStatus,
                                  interval: interval) { result in
             Task {
                 if await satisfiesFreemiumPrerequisites() { return }
@@ -112,7 +106,7 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
         stopAction.stopAgent()
     }
 
-    private func stopAgentBasedOnEntitlementCheckResult(_ result: DataBrokerProtectionEntitlementMonitorResult) {
+    private func stopAgentBasedOnEntitlementCheckResult(_ result: DataBrokerProtectionEntitlementStatus) {
         switch result {
         case .enabled:
             Logger.dataBrokerProtection.log("Valid entitlement")
@@ -121,11 +115,11 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
             Logger.dataBrokerProtection.log("Invalid entitlement")
             pixelHandler.fire(.entitlementCheckInvalid)
             stopAgent()
-        case .error:
-            Logger.dataBrokerProtection.log("Error when checking entitlement")
+        case .error(let reason):
+            Logger.dataBrokerProtection.log("Error when checking entitlement: \(reason.rawValue, privacy: .public)")
             /// We don't want to disable the agent in case of an error while checking for entitlements.
             /// Since this is a destructive action, the only situation that should cause the data to be deleted and the agent to be removed is .success(false)
-            pixelHandler.fire(.entitlementCheckError)
+            pixelHandler.fire(.entitlementCheckError(reason: reason))
         }
     }
 }

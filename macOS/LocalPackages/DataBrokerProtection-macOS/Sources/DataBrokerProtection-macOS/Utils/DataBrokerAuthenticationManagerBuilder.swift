@@ -22,10 +22,12 @@ import Subscription
 
 final public class DataBrokerAuthenticationManagerBuilder {
 
-    public static func buildAuthenticationManager(subscriptionManager: any SubscriptionManager) -> DataBrokerProtectionAuthenticationManager {
+    public static func buildAuthenticationManager(subscriptionManager: any SubscriptionManager,
+                                                  featureFlagger: EntitlementCheckErrorHandlingFeatureFlagging) -> DataBrokerProtectionAuthenticationManager {
         let settings = DataBrokerProtectionSettings(defaults: .dbp)
         let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager,
-                                                                          runTypeProvider: settings)
+                                                                          runTypeProvider: settings,
+                                                                          featureFlagger: featureFlagger)
         return DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
     }
 }

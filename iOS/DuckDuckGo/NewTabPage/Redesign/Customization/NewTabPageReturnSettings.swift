@@ -19,6 +19,7 @@
 
 import Foundation
 import Persistence
+import PrivacyConfig
 
 struct NewTabPageReturnSettings {
 
@@ -26,4 +27,5 @@ struct NewTabPageReturnSettings {
     let lastTabShortcutAdapter: LastTabShortcutAdapter
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
     let keyValueStore: ThrowingKeyValueStoring
+    let featureFlagger: FeatureFlagger
 }

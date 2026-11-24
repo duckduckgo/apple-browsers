@@ -217,7 +217,8 @@ class MainViewController: UIViewController {
                                                            returnSettings: NewTabPageReturnSettings(afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                                                                                     lastTabShortcutAdapter: lastTabShortcutAdapter,
                                                                                                     idleReturnEligibilityManager: idleReturnEligibilityManager,
-                                                                                                    keyValueStore: keyValueStore))
+                                                                                                    keyValueStore: keyValueStore,
+                                                                                                    featureFlagger: featureFlagger))
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?

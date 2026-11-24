@@ -19,6 +19,7 @@
 
 import Combine
 import Core
+import FeatureFlags_iOS
 import Foundation
 import Persistence
 import PixelKit
@@ -67,8 +68,8 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
     @Published var afterInactivityOption: AfterInactivityOption {
         didSet {
-            guard oldValue != afterInactivityOption else { return }
             returnSettings.afterInactivityOptionAdapter.afterInactivityOptionBinding.wrappedValue = afterInactivityOption
+            guard oldValue != afterInactivityOption else { return }
             pixelFiring?.fire(afterInactivityOption == .newTab ? Pixel.Event.ntpAfterIdleSettingChangedToNewTab : .ntpAfterIdleSettingChangedToLastUsedTab,
                               frequency: .dailyAndCount)
         }
@@ -76,8 +77,8 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
     @Published var afterInactivityIdleInterval: AfterInactivityIdleInterval {
         didSet {
-            guard oldValue != afterInactivityIdleInterval else { return }
             try? idleReturnStorage.set(afterInactivityIdleInterval.seconds, for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
+            guard oldValue != afterInactivityIdleInterval else { return }
             pixelFiring?.fire(Pixel.Event.ntpAfterIdleSettingIdleIntervalChanged,
                               frequency: .dailyAndCount,
                               options: .parameters(["idle_interval_seconds": String(afterInactivityIdleInterval.seconds)]))
@@ -85,6 +86,10 @@ final class NewTabPageCustomizationModel: ObservableObject {
     }
 
     var onAllSettingsSelected: (() -> Void)?
+
+    var isIdleReturnSettingsVisible: Bool {
+        returnSettings.featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
 
     var afterInactivityFooterText: String {
         if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .none {

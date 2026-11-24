@@ -43,7 +43,9 @@ struct NewTabPageCustomizationView: View {
             List {
                 sectionsSection
                 keyboardSection
-                afterInactivitySection
+                if model.isIdleReturnSettingsVisible {
+                    afterInactivitySection
+                }
                 themeSection
                 allSettingsSection
             }
@@ -87,9 +89,11 @@ struct NewTabPageCustomizationView: View {
             NewTabPageCustomizationRow(title: UserText.sectionTitleFavorites,
                                        image: DesignSystemImages.Glyphs.Size24.bookmarkFavorite,
                                        control: .toggle($model.isFavoritesSectionVisible))
-            NewTabPageCustomizationRow(title: UserText.settingsReturnToShortcutLabel,
-                                       image: DesignSystemImages.Glyphs.Size16.returnTo,
-                                       control: .toggle($model.isReturnToLastTabEnabled))
+            if model.isIdleReturnSettingsVisible {
+                NewTabPageCustomizationRow(title: UserText.settingsReturnToShortcutLabel,
+                                           image: DesignSystemImages.Glyphs.Size16.returnTo,
+                                           control: .toggle($model.isReturnToLastTabEnabled))
+            }
         }
     }
 

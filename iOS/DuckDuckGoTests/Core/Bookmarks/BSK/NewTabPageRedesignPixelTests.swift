@@ -20,8 +20,10 @@
 import Bookmarks
 import Combine
 import Core
+import FeatureFlags_iOS
 import Foundation
 @_spi(Testing) import Persistence
+import PrivacyConfig
 import Testing
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
@@ -115,6 +117,47 @@ struct NewTabPageRedesignPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Choosing the shown idle interval again stores it", .timeLimit(.minutes(1)))
+    func choosingShownIdleIntervalAgainStoresIt() throws {
+        let keyValueStore = MockKeyValueFileStore()
+        let model = NewTabPageCustomizationModel(persistor: MockNewTabPageCustomizationPersistor(),
+                                                 returnSettings: .makeForTests(idleThresholdSeconds: 60, keyValueStore: keyValueStore),
+                                                 pixelFiring: pixelFiring)
+
+        model.afterInactivityIdleInterval = .oneMinute
+
+        let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
+        #expect(try storage.idleReturnIntervalSeconds == 60)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Choosing the shown after inactivity option again stores it", .timeLimit(.minutes(1)))
+    func choosingShownAfterInactivityOptionAgainStoresIt() throws {
+        let keyValueStore = MockKeyValueFileStore()
+        let model = NewTabPageCustomizationModel(persistor: MockNewTabPageCustomizationPersistor(),
+                                                 returnSettings: .makeForTests(keyValueStore: keyValueStore),
+                                                 pixelFiring: pixelFiring)
+
+        model.afterInactivityOption = .newTab
+
+        let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
+        #expect(try storage.afterInactivityOption == AfterInactivityOption.newTab.rawValue)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Idle return settings follow the idle return flag", .timeLimit(.minutes(1)), arguments: [false, true])
+    func idleReturnSettingsFollowFlag(flagOn: Bool) {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.showNTPAfterIdleReturn] : [])
+        let model = NewTabPageCustomizationModel(persistor: MockNewTabPageCustomizationPersistor(),
+                                                 returnSettings: .makeForTests(featureFlagger: featureFlagger),
+                                                 pixelFiring: pixelFiring)
+
+        #expect(model.isIdleReturnSettingsVisible == flagOn)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("An unrecognised idle threshold shows the default interval", .timeLimit(.minutes(1)))
     func unrecognisedIdleThresholdShowsDefaultInterval() {
         let model = NewTabPageCustomizationModel(persistor: MockNewTabPageCustomizationPersistor(),
@@ -174,14 +217,16 @@ struct NewTabPageRedesignPixelTests {
 extension NewTabPageReturnSettings {
 
     static func makeForTests(idleThresholdSeconds: Int = AfterInactivityIdleInterval.default.seconds,
-                             keyValueStore: MockKeyValueFileStore = MockKeyValueFileStore()) -> NewTabPageReturnSettings {
+                             keyValueStore: MockKeyValueFileStore = MockKeyValueFileStore(),
+                             featureFlagger: FeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.showNTPAfterIdleReturn])) -> NewTabPageReturnSettings {
         let eligibilityManager = MockIdleReturnEligibilityManager()
         eligibilityManager.idleThresholdSecondsResult = idleThresholdSeconds
         return NewTabPageReturnSettings(
             afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .newTab, keyValueStore: keyValueStore),
             lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: keyValueStore),
             idleReturnEligibilityManager: eligibilityManager,
-            keyValueStore: keyValueStore)
+            keyValueStore: keyValueStore,
+            featureFlagger: featureFlagger)
     }
 }
 

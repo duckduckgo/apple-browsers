@@ -51,7 +51,7 @@ enum NewTabPageTheme: String, CaseIterable {
         }
     }
 
-    /// Fill for the search card and modules: tuned to the artwork when there is one, the standard surface on a flat page.
+    /// Fill for the search card and focused input: tuned to the artwork when there is one, the standard surface on a flat page.
     var cardBackgroundColor: UIColor {
         switch self {
         case .blue: return UIColor(singleUseColor: .newTabPageSearchCardBackground)

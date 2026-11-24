@@ -325,6 +325,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                                userDefaults: subscriptionUserDefaults,
                                                                subscriptionEndpointService: subscriptionEndpointService,
                                                                subscriptionEnvironment: subscriptionEnvironment,
+                                                               process: .browser,
                                                                pixelHandler: pixelHandler,
                                                                isInternalUserEnabled: {
             ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser

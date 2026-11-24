@@ -19,31 +19,62 @@
 import Foundation
 import os.log
 import Networking
+import FoundationExtensions
 
 /// Runs the recovery strategies that apply to a recovery trigger, in order, until one succeeds.
 public final class TokenRecoveryCoordinator {
 
     private let invalidTokenStrategies: [TokenRecoveryStrategy]
     private let missingTokenStrategies: [TokenRecoveryStrategy]
+    private let retryInterval: TimeInterval
+    private let now: () -> Date
+    private let lock = NSLock()
+    private var invalidTokenRetryAfter: Date?
 
     /// - Parameters:
     ///   - invalidTokenStrategies: The strategies tried, in order, when refreshing the current token was rejected.
     ///   - missingTokenStrategies: The strategies tried, in order, when no current token is stored.
-    public init(invalidTokenStrategies: [TokenRecoveryStrategy], missingTokenStrategies: [TokenRecoveryStrategy]) {
+    ///   - retryInterval: After a rejected-refresh recovery that neither recovers nor is unrecoverable, how long further
+    ///     rejected-refresh recoveries are deferred.
+    ///   - now: The current date, used to measure `retryInterval`.
+    public init(invalidTokenStrategies: [TokenRecoveryStrategy],
+                missingTokenStrategies: [TokenRecoveryStrategy],
+                retryInterval: TimeInterval = .minutes(5),
+                now: @escaping () -> Date = { Date() }) {
         self.invalidTokenStrategies = invalidTokenStrategies
         self.missingTokenStrategies = missingTokenStrategies
+        self.retryInterval = retryInterval
+        self.now = now
     }
 
     /// Tries each strategy for `context.trigger` in order and stops at the first success.
     /// - Parameter context: The state the recovery starts from.
     /// - Returns: The result of each strategy that ran, and the outcome: `.recovered` from the first strategy that recovers;
     ///   `.sessionChanged` as soon as a strategy reports it, without trying the next ones; `.failed` with the error of the last
-    ///   strategy that failed; `.notApplicable` when no strategy applied.
+    ///   strategy that failed; `.deferred` when no strategy failed and one deferred; `.notApplicable` when no strategy applied.
     public func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryReport {
-        let strategies = context.trigger == .invalidToken ? invalidTokenStrategies : missingTokenStrategies
+        guard context.trigger == .invalidToken else {
+            return await runStrategies(missingTokenStrategies, for: context)
+        }
+        if let retryAfter = currentInvalidTokenRetryAfter(), now() < retryAfter {
+            Logger.subscriptionTokensManagement.log("Deferring the rejected-refresh recovery until \(retryAfter, privacy: .public)")
+            return TokenRecoveryReport(result: .deferred, attempts: [])
+        }
+        let report = await runStrategies(invalidTokenStrategies, for: context)
+        switch report.result {
+        case .failed, .deferred, .notApplicable:
+            setInvalidTokenRetryAfter(report.isUnrecoverable ? nil : now().addingTimeInterval(retryInterval))
+        case .recovered, .sessionChanged:
+            setInvalidTokenRetryAfter(nil)
+        }
+        return report
+    }
+
+    private func runStrategies(_ strategies: [TokenRecoveryStrategy], for context: TokenRecoveryContext) async -> TokenRecoveryReport {
         let trigger = context.trigger.rawValue
         var attempts: [TokenRecoveryReport.Attempt] = []
         var lastFailure: Error?
+        var deferred = false
         for strategy in strategies {
             let name = String(describing: type(of: strategy))
             let result = await strategy.recover(context)
@@ -57,6 +88,9 @@ public final class TokenRecoveryCoordinator {
                 return TokenRecoveryReport(result: .sessionChanged, attempts: attempts)
             case .notApplicable:
                 Logger.subscriptionTokensManagement.log("\(name, privacy: .public) doesn't apply, trigger: \(trigger, privacy: .public)")
+            case .deferred:
+                Logger.subscriptionTokensManagement.log("\(name, privacy: .public) deferred, trigger: \(trigger, privacy: .public)")
+                deferred = true
             case .failed(let error):
                 Logger.subscriptionTokensManagement.error("\(name, privacy: .public) failed, trigger: \(trigger, privacy: .public): \(String(describing: error), privacy: .public)")
                 lastFailure = error
@@ -65,8 +99,23 @@ public final class TokenRecoveryCoordinator {
         if let lastFailure {
             return TokenRecoveryReport(result: .failed(lastFailure), attempts: attempts)
         }
+        if deferred {
+            return TokenRecoveryReport(result: .deferred, attempts: attempts)
+        }
         Logger.subscriptionTokensManagement.log("No token recovery applies, trigger: \(trigger, privacy: .public)")
         return TokenRecoveryReport(result: .notApplicable, attempts: attempts)
+    }
+
+    private func currentInvalidTokenRetryAfter() -> Date? {
+        lock.lock()
+        defer { lock.unlock() }
+        return invalidTokenRetryAfter
+    }
+
+    private func setInvalidTokenRetryAfter(_ date: Date?) {
+        lock.lock()
+        defer { lock.unlock() }
+        invalidTokenRetryAfter = date
     }
 }
 
@@ -97,6 +146,25 @@ public struct TokenRecoveryReport {
     public init(result: TokenRecoveryResult, attempts: [Attempt]) {
         self.result = result
         self.attempts = attempts
+    }
+
+    /// Whether nothing can recover the token container: no strategy applied, or every strategy that failed was rejected for good
+    /// and none deferred. False when the token was recovered, the session changed, or a failure may not repeat.
+    public var isUnrecoverable: Bool {
+        switch result {
+        case .notApplicable:
+            return true
+        case .failed:
+            return attempts.allSatisfy { attempt in
+                switch attempt.result {
+                case .notApplicable: true
+                case .failed(let error): TokenRecoveryFailure(error) == .permanent
+                case .recovered, .deferred, .sessionChanged: false
+                }
+            }
+        case .recovered, .deferred, .sessionChanged:
+            return false
+        }
     }
 
     /// The method of the strategy that recovered the token container, or nil when none did.

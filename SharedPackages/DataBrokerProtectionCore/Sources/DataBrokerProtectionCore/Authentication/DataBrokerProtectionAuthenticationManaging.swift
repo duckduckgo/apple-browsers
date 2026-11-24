@@ -36,10 +36,10 @@ public protocol DataBrokerProtectionAuthenticationManaging {
 public final class DataBrokerProtectionAuthenticationManager: DataBrokerProtectionAuthenticationManaging {
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
 
+    /// The subscription's authentication state, which doesn't depend on a token being stored.
     public var isUserAuthenticated: Bool {
         get async {
-            let token = await accessToken()
-            return token != nil
+            subscriptionManager.isUserAuthenticated
         }
     }
 

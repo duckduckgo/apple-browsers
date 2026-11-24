@@ -23,7 +23,7 @@ import SwiftUI
 import UIKit
 #endif
 
-public struct SnapshotDevice: Equatable {
+public struct SnapshotDevice: Equatable, Sendable {
     public let name: String
     public let size: CGSize
 

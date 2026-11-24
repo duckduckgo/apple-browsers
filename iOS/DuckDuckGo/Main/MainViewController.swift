@@ -9521,6 +9521,10 @@ extension MainViewController {
 
         fireExecutor.prepare(for: request)
         
+        // The page the burn lands on attaches behind the animation. Its visit starts once the animation
+        // is gone and the user can see it, so a tap made while the flames still cover it is not mistaken
+        // for the user acting before the keyboard came up. With no animation, the page is uncovered at once.
+        let newTabPageCover = newTabPagePresentation.beginCovering()
         let instrumentation = DefaultFireAnimationInstrumentation(request: request)
         fireButtonAnimator.animate(instrumentation: instrumentation) {
             instrumentation.burnDidStart(accepted: !self.fireExecutor.burnInProgress)
@@ -9571,6 +9575,8 @@ extension MainViewController {
             if !self.daxDialogsManager.isShowingContextualOnboardingDialog {
                 self.daxDialogsManager.clearedBrowserData()
             }
+        } onOverlayRemoved: { [weak self] in
+            self?.newTabPagePresentation.endCovering(newTabPageCover)
         }
     }
     

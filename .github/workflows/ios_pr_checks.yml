@@ -10,6 +10,7 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/check-swift-concurrency-warnings.py'
       - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
@@ -69,6 +70,7 @@ jobs:
         .xcode-version
         SharedPackages/**
         iOS/**
+        scripts/check-swift-concurrency-warnings.py
         scripts/translation-pr-checks/**
 
   shellcheck:
@@ -228,7 +230,7 @@ jobs:
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          | tee xcodebuild.log \
+          2>&1 | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 
     - name: Compute Compilation Cache hash
@@ -248,6 +250,10 @@ jobs:
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-unit-tests-${{ steps.compilation-cache-hash.outputs.hash }}
+
+    - name: Scan app build for strict concurrency warnings
+      if: ${{ !cancelled() && steps.run-unit-tests.outcome == 'success' }}
+      run: python3 ../scripts/check-swift-concurrency-warnings.py xcodebuild.log --package-roots LocalPackages ../SharedPackages
 
     - name: Process test results
       if: always()

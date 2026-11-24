@@ -10,6 +10,7 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'macOS/**'
+      - 'scripts/check-swift-concurrency-warnings.py'
       - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
@@ -74,6 +75,7 @@ jobs:
         .xcode-version
         SharedPackages/**
         macOS/**
+        scripts/check-swift-concurrency-warnings.py
         scripts/translation-pr-checks/**
 
   shellcheck:
@@ -297,7 +299,7 @@ jobs:
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          | tee ${{ matrix.flavor }}-build-for-testing-xcodebuild.log \
+          2>&1 | tee ${{ matrix.flavor }}-build-for-testing-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify
 
@@ -479,6 +481,10 @@ jobs:
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
+
+    - name: Scan app build for strict concurrency warnings
+      if: ${{ !cancelled() && steps.build-for-testing.outcome == 'success' }}
+      run: python3 ../scripts/check-swift-concurrency-warnings.py ${{ matrix.flavor }}-build-for-testing-xcodebuild.log --package-roots LocalPackages ../SharedPackages
 
     - name: Upload failed build log
       uses: actions/upload-artifact@v6

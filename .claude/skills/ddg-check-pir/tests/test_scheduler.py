@@ -424,6 +424,7 @@ class SchedulerTests(unittest.TestCase):
             def __init__(self):
                 super().__init__([[dict(type='scanStarted', date=later), dict(type='noMatchFound', date=later)]], broker='example.test')
                 self.posted = []
+                self.not_queued = []
             def request(self, method, path, body=None, timeout=None):
                 self.calls.append((method, path, timeout))
                 if method == 'POST':
@@ -432,7 +433,7 @@ class SchedulerTests(unittest.TestCase):
                 if path == '/api/debug/maintenance/refresh':
                     return dict(status='succeeded', result=[dict(url='beenverified.com', version='0.12.0', isRemoved=False, id=7)])
                 if path == '/api/debug/maintenance/scans':
-                    return dict(status='succeeded', result=dict(queued=[dict(brokerURL='example.test', profileQueryId=1)], notQueued=[]))
+                    return dict(status='succeeded', result=dict(queued=[dict(brokerURL='example.test', profileQueryId=1)], notQueued=self.not_queued))
                 return super().request(method, path, timeout)
         with tempfile.TemporaryDirectory() as directory:
             args = pir.parser().parse_args(['scheduler', 'upgrade', '--platform', 'macos', '--broker', 'example.test',
@@ -443,6 +444,13 @@ class SchedulerTests(unittest.TestCase):
                     patch.object(scheduler.time, 'sleep'), patch.object(scheduler, 'listener_on', return_value=False):
                 result = pir.execute(args, runtime_factory=native.create)
             self.assertEqual(result['status'], 'pass', result)
+            partial = UpgradeClient()
+            partial.not_queued = ['gone.test']
+            with patch.object(scheduler, '_identity', return_value=IDENTITY), patch.object(pir, 'Client', return_value=partial), \
+                    patch.object(scheduler.time, 'sleep'), patch.object(scheduler, 'listener_on', return_value=False):
+                skipped = pir.execute(args, runtime_factory=FakeSeedRuntime().create)
+            self.assertEqual(skipped['status'], 'inconclusive', skipped)
+            self.assertIn('not queued: gone.test', skipped['reason'])
             occupied = FakeSeedRuntime()
             with patch.object(scheduler, 'listener_on', return_value=True):
                 refused = pir.execute(args, runtime_factory=occupied.create)

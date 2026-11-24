@@ -9,6 +9,12 @@ from urllib.parse import quote
 import runtime
 
 BROKER_ERRORS = frozenset({"httpError", "actionFailed"})
+# A scan cut off by its job timeout, or by a dropped connection to the broker, says nothing about our code.
+# Network errors are recorded by their system description, so they are matched by it.
+TRANSIENT_ERRORS = frozenset({"Cancelled", "jobTimeout", "The network connection was lost.", "The request timed out.",
+                              "The Internet connection appears to be offline.", "Could not connect to the server.",
+                              "A server with the specified hostname could not be found."})
+FINISHED = frozenset({"pass", "removed", "fail", "transient"})
 
 
 class _DeadlineReached(Exception):
@@ -102,7 +108,7 @@ def receipt_scope(receipt, request, instance):
         if error == "profileAlreadyExists":
             raise RuntimeError("The DEBUG PIR store already has a profile. Use observe or explicitly choose reseed.")
         if error == "authenticatedAccount":
-            raise RuntimeError("Scheduler seeding requires a signed-out DEBUG account for Freemium scans")
+            raise RuntimeError("Scheduler seeding found the DEBUG account still signed in")
         raise RuntimeError("The DEBUG app did not complete scheduler setup; see scheduler-launch.json")
     jobs = _jobs((job.get("brokerURL"), job.get("profileQueryId")) for job in _rows(receipt, "jobs"))
     return Scope(request.platform, request.port, _date(receipt.get("since")), jobs, request.timeout, managed=True)
@@ -190,6 +196,8 @@ def _job_state(job, snapshot, detail, since, managed):
     name = (terminal.get("error") or {}).get("name")
     if name in BROKER_ERRORS:
         return dict(state, status="pass", brokerError=name)
+    if name in TRANSIENT_ERRORS:
+        return dict(state, status="transient", reason=f"scan ended in a transient error: {name}")
     return dict(state, status="fail", reason=f"scan ended in a non-broker error: {name}")
 
 
@@ -251,8 +259,17 @@ def observe(context, client, scope, expected_executable=None):
             if time.monotonic() >= deadline:
                 outcome = dict(status="fail", reason="scheduler observation timed out before completion")
                 break
-            if any(state["status"] == "fail" for state in states):
-                outcome = dict(status="fail", reason="a fresh scheduler scan ended in a non-broker error")
+            if not all(state["status"] in FINISHED for state in states):
+                time.sleep(min(2, max(0, deadline - time.monotonic())))
+                continue
+            failed = [state["brokerURL"] for state in states if state["status"] == "fail"]
+            transient = [state["brokerURL"] for state in states if state["status"] == "transient"]
+            if failed:
+                outcome = dict(status="fail", reason="fresh scheduler scans ended in a non-broker error: " + ", ".join(failed))
+                break
+            if transient:
+                outcome = dict(status="inconclusive",
+                               reason="fresh scheduler scans ended in a transient error; rerun them: " + ", ".join(transient))
                 break
             if all(state["status"] == "removed" for state in states):
                 outcome = dict(status="inconclusive", reason="every expected broker was removed before it was scanned")
@@ -263,7 +280,6 @@ def observe(context, client, scope, expected_executable=None):
                     reason += ", except brokers removed during the run"
                 outcome = dict(status="pass", reason=reason)
                 break
-            time.sleep(min(2, max(0, deadline - time.monotonic())))
     except _DeadlineReached:
         outcome = dict(status="fail", reason="expected scheduler scans did not complete before timeout")
     except (RuntimeError, ValueError) as error:

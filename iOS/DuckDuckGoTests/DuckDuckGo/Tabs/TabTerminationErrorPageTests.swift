@@ -27,14 +27,16 @@ import XCTest
 final class TabTerminationErrorPageTests: XCTestCase {
 
     private var date = Date(timeIntervalSince1970: 1_000_000)
+    private let page = URL(string: "https://example.com/page?id=1")!
 
     func testWhenSettingsAreConfiguredThenValuesAreRead() {
         let settings = makeSettings(
-            json: "{\"terminationCount\": 5, \"timeWindowSeconds\": 30, \"supportedFormFactors\": [\"phone\"]}")
+            json: "{\"terminationCount\": 5, \"timeWindowSeconds\": 30, \"supportedFormFactors\": [\"phone\"], \"matchPage\": false}")
 
         XCTAssertEqual(settings.terminationCount, 5)
         XCTAssertEqual(settings.timeWindow, 30)
         XCTAssertEqual(settings.supportedFormFactors, [.phone])
+        XCTAssertFalse(settings.matchesPage)
     }
 
     func testWhenSettingsAreMissingThenDefaultsAreUsed() {
@@ -43,6 +45,7 @@ final class TabTerminationErrorPageTests: XCTestCase {
         XCTAssertEqual(settings.terminationCount, 3)
         XCTAssertEqual(settings.timeWindow, 60)
         XCTAssertEqual(settings.supportedFormFactors, [.phone, .tablet])
+        XCTAssertTrue(settings.matchesPage)
     }
 
     func testWhenSettingsAreMalformedThenDefaultsAreUsed() {
@@ -62,11 +65,12 @@ final class TabTerminationErrorPageTests: XCTestCase {
 
     func testWhenSettingsHaveWrongTypesThenDefaultsAreUsed() {
         let settings = makeSettings(
-            json: "{\"terminationCount\": true, \"timeWindowSeconds\": \"30\", \"supportedFormFactors\": \"phone\"}")
+            json: "{\"terminationCount\": true, \"timeWindowSeconds\": \"30\", \"supportedFormFactors\": \"phone\", \"matchPage\": 0}")
 
         XCTAssertEqual(settings.terminationCount, 3)
         XCTAssertEqual(settings.timeWindow, 60)
         XCTAssertEqual(settings.supportedFormFactors, [.phone, .tablet])
+        XCTAssertTrue(settings.matchesPage)
     }
 
     func testWhenFormFactorIsSupportedThenErrorPageIsShown() {
@@ -77,7 +81,7 @@ final class TabTerminationErrorPageTests: XCTestCase {
             supportedFormFactors: [.tablet],
             formFactor: .tablet)
 
-        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab", url: page))
     }
 
     func testWhenFormFactorIsNotSupportedThenErrorPageIsNotShown() {
@@ -86,46 +90,95 @@ final class TabTerminationErrorPageTests: XCTestCase {
             supportedFormFactors: [.phone],
             formFactor: .tablet)
 
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
     }
 
     func testWhenThresholdIsReachedWithinWindowThenErrorPageIsShown() {
         let detector = makeDetector()
 
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
         date.addTimeInterval(30)
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
         date.addTimeInterval(30)
-        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab", url: page))
     }
 
     func testWhenTerminationFallsOutsideWindowThenItIsPruned() {
         let detector = makeDetector()
 
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
         date.addTimeInterval(61)
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
     }
 
     func testWhenDifferentTabsTerminateThenHistoriesRemainIndependent() {
         let detector = makeDetector()
 
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "first"))
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "first"))
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "second"))
-        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "first"))
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "second"))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "first", url: page))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "first", url: page))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "second", url: page))
+        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "first", url: page))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "second", url: page))
     }
 
     func testWhenHistoryIsRemovedThenTabStartsFresh() {
         let detector = makeDetector()
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
 
         detector.removeHistory(forTabID: "tab")
 
-        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab"))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
+    }
+
+    func testWhenTabNavigatesToAnotherPageThenCountStartsOver() {
+        let detector = makeDetector(terminationCount: 2)
+        let otherPage = URL(string: "https://example.com/other")!
+
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: otherPage))
+        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab", url: otherPage))
+    }
+
+    func testWhenTabReturnsToEarlierPageThenEarlierTerminationsAreNotCounted() {
+        let detector = makeDetector(terminationCount: 2)
+        let otherPage = URL(string: "https://example.com/other")!
+
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: otherPage))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
+    }
+
+    func testWhenQueryDiffersThenPagesAreDifferent() {
+        let detector = makeDetector(terminationCount: 2)
+        let otherQuery = URL(string: "https://example.com/page?id=2")!
+
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: otherQuery))
+    }
+
+    func testWhenOnlyFragmentDiffersThenPageIsTheSame() {
+        let detector = makeDetector(terminationCount: 2)
+        let fragment = URL(string: "https://example.com/page?id=1#section")!
+
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
+        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab", url: fragment))
+    }
+
+    func testWhenPageMatchingIsOffThenTerminationsOnDifferentPagesAreCountedTogether() {
+        let detector = makeDetector(terminationCount: 2, matchesPage: false)
+        let otherPage = URL(string: "https://example.com/other")!
+
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: page))
+        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab", url: otherPage))
+    }
+
+    func testWhenURLIsMissingThenTerminationsAreCountedTogether() {
+        let detector = makeDetector(terminationCount: 2)
+
+        XCTAssertFalse(detector.shouldShowErrorPage(forTabID: "tab", url: nil))
+        XCTAssertTrue(detector.shouldShowErrorPage(forTabID: "tab", url: nil))
     }
 
     func testPixelNames() {
@@ -161,12 +214,14 @@ final class TabTerminationErrorPageTests: XCTestCase {
     private func makeDetector(terminationCount: Int = 3,
                               timeWindow: TimeInterval = 60,
                               supportedFormFactors: Set<TabTerminationErrorPageSettings.FormFactor> = [.phone, .tablet],
-                              formFactor: TabTerminationErrorPageSettings.FormFactor = .phone) -> TabTerminationErrorPageDetector {
+                              formFactor: TabTerminationErrorPageSettings.FormFactor = .phone,
+                              matchesPage: Bool = true) -> TabTerminationErrorPageDetector {
         return TabTerminationErrorPageDetector(
             settings: MockTabTerminationErrorPageSettings(
                 terminationCount: terminationCount,
                 timeWindow: timeWindow,
-                supportedFormFactors: supportedFormFactors),
+                supportedFormFactors: supportedFormFactors,
+                matchesPage: matchesPage),
             formFactor: formFactor,
             date: { self.date })
     }
@@ -176,6 +231,7 @@ private struct MockTabTerminationErrorPageSettings: TabTerminationErrorPageSetti
     let terminationCount: Int
     let timeWindow: TimeInterval
     let supportedFormFactors: Set<TabTerminationErrorPageSettings.FormFactor>
+    let matchesPage: Bool
 }
 
 private final class MockTabTerminationErrorPagePixelFiring: PixelFiring {

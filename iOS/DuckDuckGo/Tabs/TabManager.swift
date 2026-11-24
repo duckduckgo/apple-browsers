@@ -907,7 +907,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                          reloadCurrent: Bool,
                          recovery: TerminationReloadMonitor.Recovery = .immediate) {
         if current() === controller {
-            if reloadCurrent, tabTerminationErrorPageDetector.shouldShowErrorPage(forTabID: controller.tabModel.uid) {
+            if reloadCurrent, tabTerminationErrorPageDetector.shouldShowErrorPage(forTabID: controller.tabModel.uid, url: controller.url) {
                 controller.showTabTerminationErrorPage()
                 return
             }

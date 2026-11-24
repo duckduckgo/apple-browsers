@@ -1300,6 +1300,7 @@ final class TabManagerTests: XCTestCase {
         manager.invalidateCache(forController: controller, reloadCurrent: true)
 
         XCTAssertEqual(detector.checkedTabIDs, [controller.tabModel.uid])
+        XCTAssertEqual(detector.checkedURLs, [URL(string: "https://example.com")!])
         XCTAssertFalse(controller.error.isHidden)
         XCTAssertEqual(controller.errorHeader.text, UserText.tabTerminationErrorPageTitle)
         XCTAssertTrue(try XCTUnwrap(controller.makeBreakageAdditionalInfo()).isAfterTabTermination)
@@ -1635,14 +1636,16 @@ private final class MockTabTerminationErrorPageDetector: TabTerminationErrorPage
 
     private let shouldShowErrorPage: Bool
     private(set) var checkedTabIDs: [String] = []
+    private(set) var checkedURLs: [URL?] = []
     private(set) var removedTabIDs: [String] = []
 
     init(shouldShowErrorPage: Bool) {
         self.shouldShowErrorPage = shouldShowErrorPage
     }
 
-    func shouldShowErrorPage(forTabID tabID: String) -> Bool {
+    func shouldShowErrorPage(forTabID tabID: String, url: URL?) -> Bool {
         checkedTabIDs.append(tabID)
+        checkedURLs.append(url)
         return shouldShowErrorPage
     }
 

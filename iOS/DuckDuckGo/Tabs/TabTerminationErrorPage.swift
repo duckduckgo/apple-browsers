@@ -80,6 +80,7 @@ protocol TabTerminationErrorPageSettingsProviding {
     var terminationCount: Int { get }
     var timeWindow: TimeInterval { get }
     var supportedFormFactors: Set<TabTerminationErrorPageSettings.FormFactor> { get }
+    var matchesPage: Bool { get }
 }
 
 struct TabTerminationErrorPageSettings: TabTerminationErrorPageSettingsProviding {
@@ -95,6 +96,8 @@ struct TabTerminationErrorPageSettings: TabTerminationErrorPageSettingsProviding
         static let terminationCountKey = "terminationCount"
         static let supportedFormFactorsKey = "supportedFormFactors"
         static let timeWindowSecondsKey = "timeWindowSeconds"
+        static let defaultMatchesPage = true
+        static let matchPageKey = "matchPage"
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -127,6 +130,15 @@ struct TabTerminationErrorPageSettings: TabTerminationErrorPageSettingsProviding
         return Set(values.compactMap(FormFactor.init(rawValue:)))
     }
 
+    /// When true, terminations are counted only while the tab stays on the same page.
+    var matchesPage: Bool {
+        guard let number = value(forKey: Constants.matchPageKey) as? NSNumber,
+              CFGetTypeID(number) == CFBooleanGetTypeID() else {
+            return Constants.defaultMatchesPage
+        }
+        return number.boolValue
+    }
+
     private func number(forKey key: String) -> NSNumber? {
         guard let value = value(forKey: key),
               !(value is Bool) else {
@@ -148,17 +160,24 @@ struct TabTerminationErrorPageSettings: TabTerminationErrorPageSettingsProviding
 
 @MainActor
 protocol TabTerminationErrorPageDetecting {
-    func shouldShowErrorPage(forTabID tabID: String) -> Bool
+    func shouldShowErrorPage(forTabID tabID: String, url: URL?) -> Bool
     func removeHistory(forTabID tabID: String)
 }
 
+/// Counts web content terminations per tab. With `matchesPage` on, it counts only while the tab
+/// stays on the same page: a termination on another page (URL without the fragment) starts a new count.
 @MainActor
 final class TabTerminationErrorPageDetector: TabTerminationErrorPageDetecting {
+
+    private struct TerminationHistory {
+        let page: String?
+        let dates: [Date]
+    }
 
     private let settings: any TabTerminationErrorPageSettingsProviding
     private let formFactor: TabTerminationErrorPageSettings.FormFactor
     private let date: () -> Date
-    private var terminationDatesByTabID: [String: [Date]] = [:]
+    private var historyByTabID: [String: TerminationHistory] = [:]
 
     convenience init(privacyConfigurationManager: PrivacyConfigurationManaging,
                      date: @escaping () -> Date = Date.init) {
@@ -177,22 +196,33 @@ final class TabTerminationErrorPageDetector: TabTerminationErrorPageDetecting {
         self.date = date
     }
 
-    func shouldShowErrorPage(forTabID tabID: String) -> Bool {
+    func shouldShowErrorPage(forTabID tabID: String, url: URL?) -> Bool {
         guard settings.supportedFormFactors.contains(formFactor) else {
-            terminationDatesByTabID[tabID] = nil
+            historyByTabID[tabID] = nil
             return false
         }
 
+        let page = settings.matchesPage ? Self.page(for: url) : nil
         let terminationDate = date()
         let timeWindow = settings.timeWindow
-        var terminationDates = terminationDatesByTabID[tabID, default: []]
+        let history = historyByTabID[tabID]
+        var terminationDates = history?.page == page ? history?.dates ?? [] : []
         terminationDates.removeAll { terminationDate.timeIntervalSince($0) > timeWindow }
         terminationDates.append(terminationDate)
-        terminationDatesByTabID[tabID] = terminationDates
+        historyByTabID[tabID] = TerminationHistory(page: page, dates: terminationDates)
         return terminationDates.count >= settings.terminationCount
     }
 
     func removeHistory(forTabID tabID: String) {
-        terminationDatesByTabID[tabID] = nil
+        historyByTabID[tabID] = nil
+    }
+
+    private static func page(for url: URL?) -> String? {
+        guard let url else { return nil }
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return url.absoluteString
+        }
+        components.fragment = nil
+        return components.string ?? url.absoluteString
     }
 }

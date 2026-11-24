@@ -155,6 +155,10 @@ def bash_fix(command, allow):
         return (f"A chained command, and Claude Code checks each part on its own: {listed} allowed. The prompt asks "
                 "the agent to run one command per call and to read files with the Read, Glob and Grep tools, so usually "
                 "nothing needs to change. If the agent really needs one of those commands, add a rule for it to `allow`.")
+    if bash_allowed(command, allow):
+        return ("An allow rule already matches this command, so Claude Code likely wanted approval for something inside "
+                "it, such as a `$` or backtick in a double-quoted argument (often a `--jq` filter). The prompt asks for "
+                "single quotes around those. Nothing to change unless it keeps happening.")
     return None
 
 

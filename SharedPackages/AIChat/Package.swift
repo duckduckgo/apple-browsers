@@ -85,7 +85,8 @@ let package = Package(
             name: "AIChatTestingUtilities",
             dependencies: [
                 "AIChat"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "AIChatDebugServer",

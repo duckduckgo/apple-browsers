@@ -28,7 +28,9 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
     var delegate: CapturingSpecialErrorPageUserScriptDelegate!
     var userScript: SpecialErrorPageUserScript!
 
-    override func setUpWithError() throws {
+    @MainActor
+    override func setUp() async throws {
+        try await super.setUp()
         delegate = CapturingSpecialErrorPageUserScriptDelegate()
         userScript = SpecialErrorPageUserScript(localeStrings: "", languageCode: "")
         userScript.delegate = delegate
@@ -124,7 +126,11 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
         XCTAssertNotNil(handler)
         XCTAssertNotNil(encodable)
         let data = encodable as? SpecialErrorPageUserScript.InitialSetupResult
+        #if os(iOS)
+        XCTAssertEqual(data?.platform.name, "ios")
+        #else
         XCTAssertEqual(data?.platform.name, "macos")
+        #endif
         XCTAssertEqual(data?.errorData, expectedData)
     }
 
@@ -186,7 +192,8 @@ final class SpecialErrorPageUserScriptTests: XCTestCase {
 
 }
 
-class CapturingSpecialErrorPageUserScriptDelegate: SpecialErrorPageUserScriptDelegate {
+@MainActor
+final class CapturingSpecialErrorPageUserScriptDelegate: SpecialErrorPageUserScriptDelegate {
     var errorData: SpecialErrorData?
     var leaveSiteCalled = false
     var visitSiteCalled = false

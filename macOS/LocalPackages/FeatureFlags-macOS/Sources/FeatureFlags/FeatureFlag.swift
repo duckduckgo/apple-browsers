@@ -42,10 +42,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
-    /// Subscription upsell screen at the end of contextual onboarding
-    /// https://app.asana.com/1/137249556945/task/1210565180535541
-    case onboardingSubscriptionUpsell
-
     /// Simplified Fire dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216512684334175
     case fireDialogSimplified
@@ -82,6 +78,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
+
+    /// Enables web extensions for internal users, independently of `webExtensions`.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220783984054653
+    case webExtensionsInternal
 
     /// Controls Chrome Web Store update discovery when the extension manager is created.
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
@@ -142,8 +142,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173932
     case adBlockingExtensionEnabledByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688032?focus=true
-    case sponsorBlock
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688032
+    case segmentSkip
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
@@ -511,10 +511,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
     case promoQueueCookiePopupsBlockedPromo
 
-    /// Enables the "Update available" promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923084?focus=true
-    case promoQueueUpdateAvailablePromo
-
     /// Enables the VPN toolbar upsell button and dot badge promos in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
     case promoQueueVPNUpsellPromo
@@ -526,14 +522,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the "Sync your autofill data" promo (Passwords & Autofill panel and settings) in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218741?focus=true
     case promoQueueSyncSetupAutofillPromo
-
-    /// Enables the Bookmarks Bar "Sync Bookmarks" button promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598749?focus=true
-    case promoQueueBookmarksBarSyncPromo
-
-    /// Enables the Bookmark Added "Sync Bookmarks Across Devices" button promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
-    case promoQueueBookmarkAddedSyncPromo
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
     case defaultBrowserWinBackPromo
@@ -746,12 +734,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
-    /// Cohorts for the onboarding subscription upsell experiment
-    public enum OnboardingSubscriptionUpsellCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
     private struct Config {
         let defaultValue: FeatureFlagDefaultValue
         let source: FeatureFlagSource
@@ -790,11 +772,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .onboardingSearchOrChat:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingSearchOrChat))
-        case .onboardingSubscriptionUpsell:
-            Config(defaultValue: .disabled,
-                   source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),
-                   cohortType: OnboardingSubscriptionUpsellCohort.self,
-                   category: .subscription)
         case .fireDialogSimplified:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
         case .unknownUsernameCategorization:
@@ -817,6 +794,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensions), category: .webExtensions)
+        case .webExtensionsInternal:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensionsInternal), category: .webExtensions)
         case .webExtensionUpdateDiscovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
         case .webExtensionLightweightReload:
@@ -845,8 +824,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled), category: .adBlocking)
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault), category: .adBlocking)
-        case .sponsorBlock:
-            Config(defaultValue: .disabled, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled), category: .adBlocking)
+        case .segmentSkip:
+            Config(defaultValue: .disabled, source: .remoteReleasable(SegmentSkipPrivacySubfeature.mvpEnabled), category: .adBlocking)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(ForceDarkModeOnWebsitesSubfeature.featureRollout), category: .webExtensions)
         case .syncSeamlessAccountSwitching:
@@ -1061,18 +1040,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .promoQueueCookiePopupsBlockedPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
-        case .promoQueueUpdateAvailablePromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
         case .promoQueueVPNUpsellPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
         case .promoQueueSyncSetupBookmarksPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupBookmarksPromo))
         case .promoQueueSyncSetupAutofillPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupAutofillPromo))
-        case .promoQueueBookmarksBarSyncPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
-        case .promoQueueBookmarkAddedSyncPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
         case .defaultBrowserWinBackPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:

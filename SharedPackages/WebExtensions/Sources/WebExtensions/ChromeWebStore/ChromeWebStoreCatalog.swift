@@ -138,17 +138,21 @@ public extension ChromeWebStoreCatalogProviding {
 public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
 
     private let configurationManager: PrivacyConfigurationManaging
+    private let isExtensionsEnabled: @MainActor () -> Bool
     private let isAppStoreBuild: Bool
     private let unsupportedExtensionIDs: Set<String>
 
+    /// - Parameter isExtensionsEnabled: Whether extension management is on for this user. The catalog is empty while it returns false.
     /// - Parameter isAppStoreBuild: Whether the app is the App Store build, which also leaves out `appStoreHiddenExtensionIds`.
     /// - Parameter unsupportedExtensionIDs: Extensions to leave out whatever the configuration says, such as ones the OS can't run.
     public init(
         configurationManager: PrivacyConfigurationManaging,
+        isExtensionsEnabled: @escaping @MainActor () -> Bool,
         isAppStoreBuild: Bool = false,
         unsupportedExtensionIDs: Set<String> = []
     ) {
         self.configurationManager = configurationManager
+        self.isExtensionsEnabled = isExtensionsEnabled
         self.isAppStoreBuild = isAppStoreBuild
         self.unsupportedExtensionIDs = unsupportedExtensionIDs
     }
@@ -160,7 +164,7 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         // matching C-S-S platformSpecificFeatures. Explicit feature exceptions still apply.
         guard config.isEnabled(featureKey: .chromeWebstorePatching),
               !config.isInExceptionList(domain: ChromeWebStoreURL.host, forFeature: .chromeWebstorePatching),
-              config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) else { return [] }
+              isExtensionsEnabled() else { return [] }
 
         let featureSettings = config.settings(for: .extensionManagement)
         var excluded = Set(featureSettings["hiddenExtensionIds"] as? [String] ?? [])

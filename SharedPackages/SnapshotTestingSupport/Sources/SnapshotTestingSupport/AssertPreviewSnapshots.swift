@@ -19,6 +19,7 @@
 import PreviewSnapshots
 import SwiftUI
 
+@MainActor
 public func assertImageSnapshots<State>(
     _ previews: PreviewSnapshots<State>,
     strategy: SnapshotImageStrategy = .allAppearances,
@@ -47,6 +48,7 @@ public func assertImageSnapshots<State>(
     )
 }
 
+@MainActor
 public func assertImageSnapshots<State>(
     _ previews: PreviewSnapshots<State>,
     strategy: (State) -> SnapshotImageStrategy,
@@ -78,6 +80,7 @@ public func assertImageSnapshots<State>(
 }
 
 #if os(iOS)
+@MainActor
 public func assertImageSnapshots<State>(
     _ previews: PreviewSnapshots<State>,
     strategy: SnapshotImageStrategy = .allAppearances,
@@ -108,6 +111,7 @@ public func assertImageSnapshots<State>(
     )
 }
 
+@MainActor
 public func assertImageSnapshots<State>(
     _ previews: PreviewSnapshots<State>,
     strategy: (State) -> SnapshotImageStrategy,

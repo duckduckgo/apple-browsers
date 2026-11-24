@@ -38,6 +38,9 @@ The quirks every proof meets, so the harness steps that handle them have a spec.
   it. On this Mac, nothing is wiped or skipped: the proof starts from whatever state the Debug app has.
 - **Fresh state.** Duck.ai's own first-use state (accepted terms, chat history) lives in its web storage, which the
   VM wipe clears; on this Mac it doesn't, so a proof must not assume a first or a later visit.
+- **Duck.ai terms.** When Duck.ai asks to accept its terms ("Continue"), in a tab or the sidebar, press Continue
+  before the next step, unless the terms are what you're proving: until then Duck.ai doesn't answer. A wiped
+  container (a VM run) gets them with the first prompt; on this Mac they may not show (Fresh state).
 - **Find across windows.** `find`, `press` and `click` search the whole app: every window, the menu bar, and open
   menus and popovers. With a second window (a Duck.ai floating window, Cmd+N) the same id matches once per window
   and an action is refused as ambiguous; `tab_count()` counts tabs in every window. Pass `nth=` only after reading

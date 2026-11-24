@@ -98,6 +98,8 @@ final class SearchBookmarksBrowserToolTests: XCTestCase {
 
         XCTAssertEqual(defaulted.titles?.count, 10)
         XCTAssertEqual(limited.titles?.count, 50)
+        guard case .success(let value) = limited else { return XCTFail("expected success, got \(limited)") }
+        XCTAssertEqual(tool.resultCount(of: value), 50)
     }
 
     func testWhenArgumentsAreMalformedThenTheyAreInvalid() async {

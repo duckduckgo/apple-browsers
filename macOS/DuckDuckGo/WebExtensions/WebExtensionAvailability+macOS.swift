@@ -57,7 +57,7 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     }
 
     var isExtensionManagementAvailable: Bool {
-        isAvailable && featureFlagger.isFeatureOn(.webExtensions)
+        isAvailable && (featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal))
     }
 
     /// The only place that combines the conditions: macOS 26+, `trackerProtection.appleSurrogateRedirection`, and the

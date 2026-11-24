@@ -7,10 +7,6 @@ appId: com.duckduckgo.mobile.ios
 # Free-tier users get an empty snapshot until a window is already blocked, so there is no way to
 # reach the approaching cards without this. Caller must pass PRESET — one of the labels in
 # AIChatUsageWarningsSection.presets. Starts and ends on the browser, with the omnibar unfocused.
-#
-# The debug row is scrolled to here rather than through shared/open_debug_menu.yaml: it is the last
-# row in Settings, so that flow's `centerElement: true` can never be satisfied and the scroll runs
-# out having walked straight past it.
 - tapOn: "Browsing Menu"
 - tapOn: "Settings"
 - scrollUntilVisible:

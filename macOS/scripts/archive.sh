@@ -328,7 +328,26 @@ notarize() {
 }
 
 staple_notarized_app() {
-	${filter_output} xcrun stapler staple "${app_path}"
+	# The notarization ticket can take a moment to propagate to CloudKit after
+	# notarytool reports "Accepted", so retry stapling with a backoff before giving up.
+	local retry_delays=(15 30 60 120)
+	local max_attempts=$(( ${#retry_delays[@]} + 1 ))
+	local attempt
+
+	for (( attempt = 1; attempt <= max_attempts; attempt++ )); do
+		echo "Stapling notarization ticket (attempt ${attempt}/${max_attempts}) ..."
+		if ${filter_output} xcrun stapler staple "${app_path}"; then
+			return 0
+		fi
+
+		if (( attempt < max_attempts )); then
+			local delay=${retry_delays[attempt - 1]}
+			echo "⚠️ Stapling failed, retrying in ${delay} seconds ..."
+			sleep "${delay}"
+		fi
+	done
+
+	die "Stapling failed after ${max_attempts} attempts"
 }
 
 compress_app_and_dsym() {

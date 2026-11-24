@@ -516,6 +516,7 @@ struct Launching: LaunchingHandling {
                 await dbpService.prepareSecureVaultResourcesAtLaunch()
 #if DEBUG
                 await dbpService.startDebugServerIfRequestedAtLaunch()
+                await dbpService.seedProfileIfRequestedAtLaunch()
 #endif
                 taskContext.finish()
             }

@@ -20,12 +20,44 @@ import BrowserServicesKit
 import Common
 import ConcurrencyExtensions
 import DataBrokerProtectionCoreTestsUtils
+import ImageIO
 import PixelKit
 import WebKit
 import XCTest
 @testable import DataBrokerProtectionCore
 
 final class WebViewHandlerTests: XCTestCase {
+
+#if DEBUG
+    @MainActor
+    func testActionSnapshotContainsTheRenderedPageAndPreservesTheViewport() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let snapshots = DebugActionSnapshots(directory: directory)
+        let bounds = CGRect(x: 0, y: 0, width: 128, height: 96)
+        let webView = WKWebView(frame: bounds)
+        let loaded = expectation(description: "Local page loaded")
+        let delegate = SnapshotPageDelegate(loaded: loaded)
+        webView.navigationDelegate = delegate
+        defer { withExtendedLifetime(delegate) {} }
+        webView.loadHTMLString("<html style='background:lime'><body style='height:3000px'></body></html>", baseURL: nil)
+        await fulfillment(of: [loaded], timeout: 10)
+
+        let name = await snapshots.capture(webView: webView, step: .scan, action: .extract, moment: .before)
+        let url = try directory.appendingPathComponent(XCTUnwrap(name))
+        let source = try XCTUnwrap(CGImageSourceCreateWithURL(url as CFURL, nil))
+        let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        XCTAssertEqual(image.width * 3, image.height * 4)
+        let pixel = try XCTUnwrap(CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                                             space: CGColorSpaceCreateDeviceRGB(),
+                                             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        pixel.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        let rgba = try XCTUnwrap(pixel.data).assumingMemoryBound(to: UInt8.self)
+        XCTAssertGreaterThan(rgba[1], 200)
+        XCTAssertLessThan(rgba[0], 40)
+        XCTAssertLessThan(rgba[2], 40)
+    }
+#endif
 
     @MainActor
     func testWhenWaitingForWebViewLoadAndTaskIsCancelled_thenThrowsCancelled() async throws {
@@ -133,3 +165,17 @@ private final class MockWebViewCommunicationDelegate: CCFCommunicationDelegate {
     func onError(error: Error) {
     }
 }
+
+#if DEBUG
+private final class SnapshotPageDelegate: NSObject, WKNavigationDelegate {
+    let loaded: XCTestExpectation
+
+    init(loaded: XCTestExpectation) {
+        self.loaded = loaded
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        loaded.fulfill()
+    }
+}
+#endif

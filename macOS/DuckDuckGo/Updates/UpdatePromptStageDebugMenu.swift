@@ -51,17 +51,17 @@ final class UpdatePromptStageDebugMenu: NSMenu {
         movePromptClockMenu.buildItems {
             NSMenuItem(title: "First Prompt", action: #selector(movePromptClockToStage), representedObject: UpdatePromptStage.firstPrompt)
                 .targetting(self)
-            NSMenuItem(title: "1 Minute Before First Prompt", action: #selector(movePromptClockToMinuteBeforeStage), representedObject: UpdatePromptStage.firstPrompt)
+            NSMenuItem(title: "10 Seconds Before First Prompt", action: #selector(movePromptClockToTenSecondsBeforeStage), representedObject: UpdatePromptStage.firstPrompt)
                 .targetting(self)
             NSMenuItem.separator()
             NSMenuItem(title: "Second Prompt", action: #selector(movePromptClockToStage), representedObject: UpdatePromptStage.secondPrompt)
                 .targetting(self)
-            NSMenuItem(title: "1 Minute Before Second Prompt", action: #selector(movePromptClockToMinuteBeforeStage), representedObject: UpdatePromptStage.secondPrompt)
+            NSMenuItem(title: "10 Seconds Before Second Prompt", action: #selector(movePromptClockToTenSecondsBeforeStage), representedObject: UpdatePromptStage.secondPrompt)
                 .targetting(self)
             NSMenuItem.separator()
             NSMenuItem(title: "Third Prompt", action: #selector(movePromptClockToStage), representedObject: UpdatePromptStage.thirdPrompt)
                 .targetting(self)
-            NSMenuItem(title: "1 Minute Before Third Prompt", action: #selector(movePromptClockToMinuteBeforeStage), representedObject: UpdatePromptStage.thirdPrompt)
+            NSMenuItem(title: "10 Seconds Before Third Prompt", action: #selector(movePromptClockToTenSecondsBeforeStage), representedObject: UpdatePromptStage.thirdPrompt)
                 .targetting(self)
         }
 
@@ -96,8 +96,8 @@ final class UpdatePromptStageDebugMenu: NSMenu {
         movePromptClock(sender, timeRemaining: 0)
     }
 
-    @objc private func movePromptClockToMinuteBeforeStage(_ sender: NSMenuItem) {
-        movePromptClock(sender, timeRemaining: .minutes(1))
+    @objc private func movePromptClockToTenSecondsBeforeStage(_ sender: NSMenuItem) {
+        movePromptClock(sender, timeRemaining: 10)
     }
 
     private func movePromptClock(_ sender: NSMenuItem, timeRemaining: TimeInterval) {

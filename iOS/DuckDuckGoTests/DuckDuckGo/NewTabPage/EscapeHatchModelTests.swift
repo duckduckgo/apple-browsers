@@ -105,7 +105,7 @@ struct EscapeHatchModelTests {
         let router = SpyRouter()
         let hatch = makeSUT(targetTab: targetTab, router: router)
         let pageModel = NewTabPageViewModel(fireTab: false, pixelFiring: nil)
-        let page = RedesignedNewTabPageViewController(blocks: [], pageModel: pageModel)
+        let page = RedesignedNewTabPageViewController(blocks: [], pageModel: pageModel, returnSettings: .makeForTests())
 
         page.setEscapeHatch(hatch)
         #expect(pageModel.escapeHatch === hatch)

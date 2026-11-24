@@ -368,21 +368,20 @@ final class AutoconsentStatsTests: XCTestCase {
 
     // MARK: - Concurrent Access Tests
 
-    func testConcurrentRecordActions() async {
-        // Given - Starting from 0
-
-        // When - Record multiple actions concurrently
+    func testConcurrentRecordActions() async throws {
+        let stats = try XCTUnwrap(autoconsentStats)
         await withTaskGroup(of: Void.self) { group in
-            for _ in 0..<10 {
+            for _ in 0..<100 {
                 group.addTask {
-                    await self.autoconsentStats.recordAutoconsentAction(clicksMade: 1, timeSpent: 1.0)
+                    await stats.recordAutoconsentAction(clicksMade: 2, timeSpent: 0.5)
                 }
             }
         }
 
-        // Then - All actions should be recorded
-        let storedValue = try? mockKeyValueStore.object(forKey: AutoconsentStats.Constants.totalCookiePopUpsBlockedKey) as? Int64
-        XCTAssertEqual(storedValue, 10, "All concurrent actions should be recorded")
+        let totals = await stats.fetchAutoconsentDailyUsagePack()
+        XCTAssertEqual(totals.totalCookiePopUpsBlocked, 100)
+        XCTAssertEqual(totals.totalClicksMadeBlockingCookiePopUps, 200)
+        XCTAssertEqual(totals.totalTotalTimeSpentBlockingCookiePopUps, 50)
     }
 
     // MARK: - Error Event Tests

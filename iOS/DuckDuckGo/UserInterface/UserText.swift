@@ -2017,6 +2017,8 @@ public struct UserText {
 
     public static let newTabPageCustomizationTitle = NSLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
     public static let newTabPageCustomizationMessages = NSLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")
+    public static let newTabPageCustomizationThemeBlue = NSLocalizedString("new-tab-page.customization.theme-blue", value: "Blue", comment: "Accessibility label of the blue illustrated theme option in the New Tab Page customization sheet")
+    public static let newTabPageCustomizationThemePlain = NSLocalizedString("new-tab-page.customization.theme-plain", value: "Plain", comment: "Accessibility label of the plain theme option, without an illustration, in the New Tab Page customization sheet")
     public static let newTabPageCustomizationAlwaysShowKeyboard = NSLocalizedString("new-tab-page.customization.always-show-keyboard", value: "Always Show Keyboard", comment: "Setting to always show the keyboard when a new tab is opened")
     public static let newTabPageCustomizationAllSettings = NSLocalizedString("new-tab-page.customization.all-settings", value: "All Settings", comment: "Opens the app settings from the New Tab Page customization sheet")
     public static let settingsKeyboard = NSLocalizedString("settings.keyboard", value: "Keyboard", comment: "Settings screen cell for Keyboard")

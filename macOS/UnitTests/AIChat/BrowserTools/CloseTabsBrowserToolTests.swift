@@ -43,6 +43,20 @@ final class CloseTabsBrowserToolTests: XCTestCase {
         XCTAssertNil(collection.indexInAllTabs(where: { $0.uuid == owner }))
     }
 
+    func testWhenTheOwnerTabIsNotAWebPageThenItIsNotClosed() async {
+        for content: Tab.TabContent in [.settings(pane: nil), .url(URL(string: "https://duck.ai/chat")!, credential: nil, source: .ui)] {
+            let owner = Tab(content: content)
+            let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: [owner]), pinnedTabsManagerProvider: nil)
+            let (tool, context) = make(collection: collection, ownerTabID: owner.uuid)
+
+            let result = await tool.execute(arguments: nil, context: context)
+
+            XCTAssertEqual(result, .failure(.notFound), "\(content)")
+            XCTAssertEqual(collection.tabCollection.tabs.count, 1)
+            XCTAssertTrue(deferredWork.isEmpty)
+        }
+    }
+
     func testWhenTabIdsAreGivenThenThoseTabsCloseInOrder() async {
         let collection = collection(urls: ["https://a.example", "https://b.example", "https://c.example"])
         let ids = collection.tabCollection.tabs.map(\.uuid)

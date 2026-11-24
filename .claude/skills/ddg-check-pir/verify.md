@@ -36,16 +36,25 @@ eligible. Check what the evidence shows. Differences between builds show up when
 3. Does the evidence show something the verdict hides?
    - An opt-out marked confirmed should end on the broker's own confirmation page.
    - `matchesFound` should end on a results page, and `noMatchFound` on a results or empty-results page.
-   - A Cloudflare or CAPTCHA challenge, a blank page, or an error page behind a pass or a `noMatchFound` hides a
-     failure. So does an `actionFailed` on a page that loaded normally: the runner passes it as a broker outcome, but it
-     usually means the broker JSON no longer fits the page.
+   - A blank page or an error page behind a pass or a `noMatchFound` hides a failure. So does an `actionFailed` on a
+     page that loaded normally: the runner passes it as a broker outcome, but it usually means the broker JSON no longer
+     fits the page.
+   - A broker that refused the app before the flow reached what the scenario checks hides that the scenario wasn't
+     exercised: a Cloudflare or security challenge page, a CAPTCHA or Turnstile that never resolves, or an HTTP 403 or
+     429 from the broker. That is the broker blocking the run, not a failure of our code.
    - A failure in the native logs that the verdict doesn't account for.
 
 ## Output
 
-Write `verification.md` in the attempt folder. Its first line is `confirmed` when the answers to all three questions
-support the run, and `disputed` when any of them doesn't. Then answer each question in one or two lines, naming the
-evidence file behind each answer.
+Write `verification.md` in the attempt folder. Its first line is one of:
+
+- `confirmed` when the answers to all three questions support the run.
+- `broker blocked` when the broker refused the app before the flow reached what the scenario checks, and nothing in the
+  evidence points at our code. The scenario wasn't exercised, so the run proves nothing either way; rerun it, or use
+  another broker.
+- `disputed` when any answer doesn't support the run for another reason.
+
+Then answer each question in one or two lines, naming the evidence file behind each answer.
 
 List problems outside what the scenario checks under a `## Findings` heading, one bullet each, naming the evidence
 file. A finding is something someone may need to fix or follow up, such as an extract that misses a field the page shows

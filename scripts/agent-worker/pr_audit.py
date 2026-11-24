@@ -39,7 +39,7 @@ def gh(*args):
 
 
 # The artifacts container that auto's evidence-url links point into
-CONTAINER = os.environ.get("ARTIFACTS_CONTAINER", "apple")
+CONTAINER = os.environ.get("DDG_AUTO_EVIDENCE_CONTAINER", "apple")
 
 
 def allowed_links(template, task, repo):

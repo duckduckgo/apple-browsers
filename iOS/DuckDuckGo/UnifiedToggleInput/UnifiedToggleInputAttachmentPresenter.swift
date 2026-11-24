@@ -508,20 +508,22 @@ extension UnifiedToggleInputAttachmentPresenter: PHPickerViewControllerDelegate 
         let callbacks = takeCallbacks(for: picker)
         picker.dismiss(animated: true)
         callbacks.onExpandIfNeeded?()
+        // Read at pick time, so the pixel keeps its params even if the presenter is gone when the image loads.
+        let pixelParameters = imageAttachedPixelParameters(source: "photo_library")
 
         for result in results {
             let provider = result.itemProvider
             guard provider.canLoadObject(ofClass: UIImage.self) else { continue }
             let suggestedName = provider.suggestedName ?? "image"
 
-            provider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
+            provider.loadObject(ofClass: UIImage.self) { object, _ in
                 guard let picked = object as? UIImage else { return }
                 let image = AIChatImageAttachment.resizedForAttachment(picked)
 
                 Task { @MainActor in
                     PixelKit.fire(Pixel.Event.unifiedToggleInputImageAttached,
                                   frequency: .dailyAndCount,
-                                  options: .parameters(self?.imageAttachedPixelParameters(source: "photo_library") ?? [:]))
+                                  options: .parameters(pixelParameters))
                     callbacks.onImagePicked?(image, suggestedName)
                 }
             }

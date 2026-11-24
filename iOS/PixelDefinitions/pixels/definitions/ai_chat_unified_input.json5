@@ -7,7 +7,7 @@
     "m_aichat_unified_input_image_generation_selected": {
         "description": "Fires when the user activates Create Image from the tools menu, or from the attach menu in the simplified prompt box, in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface", "simplified_prompt_box"]
     },
@@ -36,7 +36,7 @@
     "m_aichat_unified_input_web_search_selected": {
         "description": "Fires when the user activates Web Search from the tools menu, or from the attach menu in the simplified prompt box, in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface", "simplified_prompt_box"]
     },
@@ -57,7 +57,7 @@
     "m_aichat_unified_input_customize_responses_selected": {
         "description": "Fires when the user selects Customize Responses from the tools menu in the Unified Toggle Input. Unlike the other tools menu items, this is a one-shot action forwarded to the front-end rather than a toggleable model tool.",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "unified_input_surface", "simplified_prompt_box"]
     },
@@ -155,7 +155,7 @@
     "m_aichat_unified_input_image_attached": {
         "description": "Fires when the user attaches an image (camera, photo library, or paste) in the Unified Toggle Input.",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
@@ -229,7 +229,7 @@
     "m_aichat_unified_input_file_attached": {
         "description": "Fires when the user attaches a file (file picker or paste) in the Unified Toggle Input (post-validation).",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
@@ -477,7 +477,7 @@
     "m_aichat_unified_input_prompt_submitted": {
         "description": "Fires on every Duck.ai submission in the unified toggle input, with the submit-time state of the composer. Divide against m_aichat_unified_input_query_submitted for the Search vs Duck.ai mix.",
         "owners": ["pikorddg", "aataraxiaa", "Bunn"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",

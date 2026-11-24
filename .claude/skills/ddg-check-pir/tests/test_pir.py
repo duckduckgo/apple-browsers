@@ -282,6 +282,26 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "--scenario applies only to run and scheduler"):
             pir.execute(pir.parser().parse_args(["selftest", "--platform", "macos", "--scenario", "x"]))
 
+    def test_a_scenario_attempt_in_a_batch_rewrites_the_batch_report(self):
+        batch = self.directory / "batch"
+        attempt = batch / "evidence" / "macos-run-1"
+        attempt.mkdir(parents=True)
+        (attempt / "result.json").write_text(json.dumps(dict(command="run", platform="macos", status="pass",
+                                                             scenario="Scan finds the profile's record")))
+        def run_main(*extra, evidence=attempt):
+            with patch.object(pir, "execute", return_value=dict(status="pass", evidence=str(evidence))), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                return pir.main(["run", "--platform", "macos", "--config", "config.json",
+                                 "--evidence-dir", str(evidence.parent), *extra])
+        self.assertEqual(run_main(), 0)
+        self.assertFalse((batch / "report.html").exists())
+        loose = self.directory / "loose" / "macos-run-2"
+        loose.mkdir(parents=True)
+        run_main("--scenario", "Scan finds the profile's record", evidence=loose)
+        self.assertFalse((self.directory / "report.html").exists())
+        self.assertEqual(run_main("--scenario", "Scan finds the profile's record"), 0)
+        self.assertIn("Scan finds the profile&#x27;s record", (batch / "report.html").read_text())
+
     def test_native_log_array_preserves_success_report_and_redacts_evidence(self):
         result = self.execute(*self.auth_options())
         self.assertEqual(result["status"], "pass", result.get("evidenceErrors"))

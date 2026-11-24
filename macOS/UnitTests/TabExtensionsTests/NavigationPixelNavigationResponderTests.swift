@@ -38,7 +38,7 @@ final class NavigationPixelNavigationResponderTests: XCTestCase {
     @MainActor
     func testWhenNavigationFailsWithNoNavigationActions_thenItDoesNotCrashAndNoPixelIsFired() {
         let pixelMock = PixelKitMock(expecting: [])
-        let responder = NavigationPixelNavigationResponder(pixelFiring: pixelMock, featureFlagger: MockFeatureFlagger())
+        let responder = NavigationPixelNavigationResponder(pixelFiring: pixelMock)
 
         // A navigation that never received a navigation action (empty `navigationActions`),
         // e.g. a provisional load that failed before `didStart`.

@@ -53,14 +53,20 @@ public final class TrackerDataURLOverrider: TrackerDataURLProviding {
         guard let settings = privacyConfigurationManager.privacyConfig.settings(for: subfeature),
               let jsonData = settings.data(using: .utf8) else { return nil }
         do {
-            if let settingsDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: String],
-               let urlString = cohort == .control ? settingsDict["controlUrl"] : settingsDict["treatmentUrl"] {
+            let settings = try JSONDecoder().decode(ExperimentSettings.self, from: jsonData)
+            if let urlString = cohort == .control ? settings.controlUrl : settings.treatmentUrl {
                 return URL(string: Constants.baseTDSURLString + urlString)
             }
         } catch {
             Logger.config.info("privacyConfiguration: Failed to parse subfeature settings JSON: \(error)")
         }
         return nil
+    }
+
+    /// Settings can carry other keys (e.g. EventHub `metrics`); only the URLs are read here.
+    private struct ExperimentSettings: Decodable {
+        let controlUrl: String?
+        let treatmentUrl: String?
     }
 }
 

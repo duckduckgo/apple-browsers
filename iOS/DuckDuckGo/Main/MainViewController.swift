@@ -9512,9 +9512,8 @@ extension MainViewController {
         endSessionsWithDataClearing(request)
         unifiedToggleInputCoordinator?.clearResubmitHistory()
 
-        // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
-        // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,
-        // in `refreshUIAfterClear`, where the attach still lies ahead.
+        // When a single-tab burn lands on the New Tab Page, it attaches before `didFinishBurningTabs` runs.
+        // Wider manual burns set this marker in that callback.
         if case .tab = request.scope {
             isAttachingNewTabPageAfterFire = true
         }
@@ -9604,12 +9603,6 @@ extension MainViewController {
     }
     
     private func refreshUIAfterClear() {
-        // Set here rather than when the burn starts, because that callback arrives only once the
-        // tabs are gone and this screen has already been rebuilt. Also set before the empty-tabs
-        // branch below: burning every tab shows the switcher first, but the page the user reaches
-        // from there is still a post-burn arrival. Consumed by the next New Tab Page attach.
-        isAttachingNewTabPageAfterFire = true
-
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
             tabSwitcherController?.updateUIForSelectionMode()
@@ -9818,6 +9811,9 @@ extension MainViewController: FireExecutorDelegate {
                 
         switch fireRequest.scope {
         case .all, .fireMode, .normalMode:
+            // Mark the visit after removing tabs and before refreshing the UI. If the refresh shows
+            // an empty tab switcher, keep the marker for the New Tab Page reached from there.
+            isAttachingNewTabPageAfterFire = true
             refreshUIAfterClear()
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()

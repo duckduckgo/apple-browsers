@@ -471,6 +471,8 @@ def parser():
     scheduler.add_argument("--job", dest="scheduler_jobs", nargs=2, action="append", metavar=("BROKER_URL", "QUERY_ID"),
                            help="persisted scan to verify, repeat for each broker and profile query pair")
     scheduler.add_argument("--timeout", dest="scheduler_timeout", type=float, help="observation timeout in seconds (default: 600)")
+    scheduler.add_argument("--broker", dest="scheduler_brokers", action="append", metavar="BROKER_URL",
+                           help="seed or reseed: scan only this eligible broker; repeat for each")
     return cli
 
 
@@ -515,6 +517,8 @@ def rerun_command(args):
                 command += ["--job", broker, query]
         else:
             command += ["--profile-file", str(args.scheduler_profile.expanduser().resolve())]
+            for broker in args.scheduler_brokers or []:
+                command += ["--broker", broker]
         if args.scheduler_port is not None:
             command += ["--port", str(args.scheduler_port)]
         if args.scheduler_timeout is not None:
@@ -576,15 +580,16 @@ def execute(args, runtime_factory=None):
             raise ValueError("--keep applies only to iOS scheduler seed and reseed")
         import scheduler
         if args.scheduler_mode == "observe":
-            if args.scheduler_profile is not None:
-                raise ValueError("scheduler observe does not take a profile file")
+            if args.scheduler_profile is not None or args.scheduler_brokers:
+                raise ValueError("scheduler observe does not take a profile file or brokers")
             scope = scheduler.parse_scope(args)
         elif args.scheduler_mode in ("seed", "reseed"):
             seed = scheduler.parse_seed(args)
         else:
             raise ValueError("Choose scheduler observe, seed or reseed")
     elif any(option is not None for option in (args.scheduler_mode, args.scheduler_profile, args.scheduler_port,
-                                               args.scheduler_since, args.scheduler_jobs, args.scheduler_timeout)):
+                                               args.scheduler_since, args.scheduler_jobs, args.scheduler_timeout,
+                                               args.scheduler_brokers)):
         raise ValueError("scheduler mode and options apply only to the scheduler command")
     if is_selftest and (args.config or args.token_file or args.token_env or args.check_config or args.keep):
         raise ValueError("selftest does not accept scenario, credential, check-config or keep options")
@@ -640,6 +645,8 @@ def execute(args, runtime_factory=None):
     try:
         if seed:
             context.result["schedulerMode"] = seed.mode
+            if seed.brokers:
+                context.result["schedulerBrokers"] = list(seed.brokers)
             context.result["cleanup"] = {"mode": "managed-browser" if seed.platform == "macos" else "managed-simulator"}
             with seed.profile_path.open("rb") as profile_file:
                 profile = profile_file.read(65_537)
@@ -652,7 +659,7 @@ def execute(args, runtime_factory=None):
                 runtime_factory = Runtime
             options = {} if seed.platform == "macos" else dict(device=args.device, keep=args.keep)
             runtime = runtime_factory(seed.platform, evidence, instance, port, **options)
-            launch = runtime.launch_scheduler(seed.mode, profile_json)
+            launch = runtime.launch_scheduler(seed.mode, profile_json, seed.brokers)
             context.result["launch"] = launch
             context.write("launch.json", launch)
             scope = scheduler.receipt_scope(runtime.scheduler_receipt(), seed, instance)

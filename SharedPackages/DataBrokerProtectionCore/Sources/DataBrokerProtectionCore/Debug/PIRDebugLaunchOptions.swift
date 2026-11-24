@@ -45,8 +45,22 @@ public struct PIRDebugLaunchOptions {
         public let mode: Mode
         public let instanceID: String
         public let receiptURL: URL
+        /// Brokers the seed and the scheduled scans it starts are limited to; nil scans every eligible broker.
+        public let brokerURLs: [String]?
+
+        public init(mode: Mode, instanceID: String, receiptURL: URL, brokerURLs: [String]? = nil) {
+            self.mode = mode
+            self.instanceID = instanceID
+            self.receiptURL = receiptURL
+            self.brokerURLs = brokerURLs
+        }
 
         public var resetBeforeSeeding: Bool { mode == .reseed }
+
+        /// Stores the seed's broker subset for the scheduler, or clears an earlier one so every eligible broker runs again.
+        public func applyBrokerSelection(to settings: DataBrokerProtectionSettings) {
+            settings.debugTestBrokerURLs = brokerURLs
+        }
 
         public func validateAccount(rawAuthenticated: Bool, pirAuthenticated: Bool) throws {
             guard !rawAuthenticated, !pirAuthenticated else { throw ParseError.authenticatedAccount }
@@ -68,6 +82,8 @@ public struct PIRDebugLaunchOptions {
                     }
                     return DebugScanJob(brokerURL: query.dataBroker.url, profileQueryId: scan.profileQueryId)
                 }
+                .filter { brokerURLs?.contains($0.brokerURL) ?? true }
+            if let brokerURLs, !Set(brokerURLs).isSubset(of: Set(jobs.map(\.brokerURL))) { throw ParseError.unknownBroker }
             guard !jobs.isEmpty else { throw ParseError.emptyScanPlan }
             return jobs
         }
@@ -111,6 +127,7 @@ public struct PIRDebugLaunchOptions {
         case authenticatedAccount
         case existingProfile
         case emptyScanPlan
+        case unknownBroker
 
         public static var errorDomain: String { "com.duckduckgo.pir.debug-launch-options" }
 
@@ -124,6 +141,7 @@ public struct PIRDebugLaunchOptions {
             case .authenticatedAccount: return 5
             case .existingProfile: return 6
             case .emptyScanPlan: return 7
+            case .unknownBroker: return 8
             }
         }
 
@@ -137,6 +155,7 @@ public struct PIRDebugLaunchOptions {
             case .authenticatedAccount: return "PIR scheduler seeding requires an unauthenticated account."
             case .existingProfile: return "PIR scheduler seed requires an empty profile store; use reseed to replace it."
             case .emptyScanPlan: return "PIR scheduler seeding produced no eligible scan jobs."
+            case .unknownBroker: return "A PIR scheduler seed broker has no eligible scan job."
             }
         }
 
@@ -150,6 +169,7 @@ public struct PIRDebugLaunchOptions {
             case .authenticatedAccount: return "authenticatedAccount"
             case .existingProfile: return "profileAlreadyExists"
             case .emptyScanPlan: return "emptyScanPlan"
+            case .unknownBroker: return "unknownBroker"
             }
         }
     }
@@ -176,7 +196,13 @@ public struct PIRDebugLaunchOptions {
         if let attributes = try? manager.attributesOfItem(atPath: path) {
             guard attributes[.type] as? FileAttributeType == .typeRegular else { throw ParseError.invalidReceipt }
         }
-        return ManagedSeed(mode: mode, instanceID: instanceID, receiptURL: url)
+        var brokerURLs: [String]?
+        if let value = environment["PIR_SCHEDULER_BROKERS"] {
+            guard let urls = try? JSONDecoder().decode([String].self, from: Data(value.utf8)), !urls.isEmpty,
+                  urls.allSatisfy({ !$0.isEmpty }) else { throw ParseError.invalidManagedRequest }
+            brokerURLs = urls
+        }
+        return ManagedSeed(mode: mode, instanceID: instanceID, receiptURL: url, brokerURLs: brokerURLs)
     }
 
     public static func parse(

@@ -373,6 +373,7 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(options["env"]["PIR_SCHEDULER_MODE"], "seed")
             self.assertEqual(options["env"]["PIR_SCHEDULER_INSTANCE_ID"], instance.instance)
             self.assertNotIn("PIR_DEBUG_SERVER", options["env"])
+            self.assertNotIn("PIR_SCHEDULER_BROKERS", options["env"])
             receipt = Path(options["env"]["PIR_SCHEDULER_RECEIPT"])
             receipt.write_text(json.dumps({"status": "ready"}))
             self.assertEqual(instance.scheduler_receipt()["status"], "ready")
@@ -391,6 +392,17 @@ class LifecycleTests(unittest.TestCase):
             launched = instance.launch_scheduler("seed", "{}")
         self.assertTrue(any(argv == [launched["product"]["browserExecutable"]] for argv, _ in self.tools.calls))
         self.tools.processes.pop(701)
+        instance.stop()
+
+    def test_scheduler_launch_passes_seed_brokers_in_the_environment(self):
+        instance = self.make_runtime("macos")
+        instance.evidence.mkdir()
+        instance.build()
+        with patch.object(runtime, "SCHEDULER_LOCK", Path(self.directory.name) / "scheduler.lock"):
+            launched = instance.launch_scheduler("seed", "{}", ("a.com", "b.com"))
+            _, options = next((argv, options) for argv, options in self.tools.calls
+                              if argv == [launched["product"]["browserExecutable"]])
+            self.assertEqual(json.loads(options["env"]["PIR_SCHEDULER_BROKERS"]), ["a.com", "b.com"])
         instance.stop()
 
     def test_ios_scheduler_launch_uses_its_own_simulator_port_and_container_receipt(self):

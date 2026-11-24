@@ -460,11 +460,13 @@ class Runtime:
             raise
         self._capture(self._simulator_pid(output, product), product)
 
-    def launch_scheduler(self, mode, profile_json):
+    def launch_scheduler(self, mode, profile_json, brokers=()):
         if mode not in ("seed", "reseed"):
             raise RuntimeError("Managed scheduler launches require seed or reseed")
         metadata, product = self._verified_build()
         environment = {"PIR_SCHEDULER_MODE": mode, "PIR_SCHEDULER_INSTANCE_ID": self.instance, "PIR_PROFILE_JSON": profile_json}
+        if brokers:
+            environment["PIR_SCHEDULER_BROKERS"] = json.dumps(list(brokers))
         if self.platform == "ios":
             self._reserve_port()
             self._secure_launch_logs()

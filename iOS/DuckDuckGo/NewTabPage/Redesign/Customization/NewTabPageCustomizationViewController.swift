@@ -62,7 +62,7 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
         if let sheet = sheetPresentationController {
             if #available(iOS 16, *) {
                 let fittingDetent = UISheetPresentationController.Detent.custom(identifier: .init("fittingContent")) { [weak self] context in
-                    guard let fittingContentHeight = self?.fittingContentHeight else { return context.maximumDetentValue / 2 }
+                    guard let fittingContentHeight = self?.fittingContentHeight else { return context.maximumDetentValue }
                     return min(fittingContentHeight, context.maximumDetentValue)
                 }
                 sheet.detents = [fittingDetent]
@@ -80,6 +80,7 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
 
     /// Reads the list's laid out height, since a SwiftUI `List` reports no intrinsic height of its own.
     private func updateFittingContentHeight() {
+        // Depends on `List` being backed by a collection view. If that changes, no height is set and the sheet opens full height.
         guard let collectionView = view.firstDescendant(ofType: UICollectionView.self) else { return }
         let contentBounds = CGRect(origin: .zero, size: collectionView.collectionViewLayout.collectionViewContentSize)
         let lastRowBottom = collectionView.collectionViewLayout.layoutAttributesForElements(in: contentBounds)?

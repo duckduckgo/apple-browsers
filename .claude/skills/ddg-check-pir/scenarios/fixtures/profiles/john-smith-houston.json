@@ -1,0 +1,15 @@
+{
+  "names": [
+    {
+      "firstName": "John",
+      "lastName": "Smith"
+    }
+  ],
+  "addresses": [
+    {
+      "city": "Houston",
+      "state": "TX"
+    }
+  ],
+  "birthYear": 1974
+}

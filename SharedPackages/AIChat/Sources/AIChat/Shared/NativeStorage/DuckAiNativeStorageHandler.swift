@@ -47,6 +47,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
     }
 
     private let backing: DuckAiNativeStorageHandling
+    private let hasSeedSource: Bool
     private let reservedEntryUpdatesSubject = PassthroughSubject<DuckAiNativeStorageReservedEntryKeys, Never>()
 
     public init(_ mode: Mode) throws {
@@ -75,6 +76,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
                     settingsStore: settingsStore.throwingKeyedStoring(),
                     dataStore: dataStore
                 )
+                self.hasSeedSource = false
                 Logger.aiChat.debug("DuckAiNativeStorageHandler: disk store initialized at \(path.path)")
             } catch {
                 pixelFiring.fire(.initError(error))
@@ -83,6 +85,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
 
         case .memory(let seedSource):
             self.backing = DuckAiNativeMemoryStorageHandler(seedSource: seedSource)
+            self.hasSeedSource = seedSource != nil
         }
     }
 
@@ -147,6 +150,11 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, Duck
 
     public var reservedEntryUpdatesPublisher: AnyPublisher<DuckAiNativeStorageReservedEntryKeys, Never> {
         reservedEntryUpdatesSubject.eraseToAnyPublisher()
+    }
+
+    /// Writes to the seed source aren't announced here, so read-through keys can change silently.
+    public func announcesEveryChange(to key: DuckAiNativeStorageReservedEntryKeys) -> Bool {
+        !(hasSeedSource && DuckAiNativeStorageConsent.entryKeys.contains(key.rawValue))
     }
 
     private func publishIfReserved(_ key: String) {

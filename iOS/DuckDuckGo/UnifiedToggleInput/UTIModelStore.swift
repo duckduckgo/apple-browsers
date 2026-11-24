@@ -82,7 +82,7 @@ final class UTIModelStore {
         isUpdatedModelPickerEnabled: Bool,
         startsNewChatsOnDefault: Bool = false,
         overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil,
-        userDefaultModel: AIChatUserDefaultModelProviding? = nil
+        userDefaultModelStorage: DuckAiNativeStorageHandling? = nil
     ) {
         self.modelsService = modelsService
         self.subscriptionManager = subscriptionManager
@@ -94,11 +94,11 @@ final class UTIModelStore {
             updateFreeTrialEligibilityFromSubscriptionCache()
         }
         subscribeToAppStoreProductAvailability()
-        observeNewChatDefaults(overLimitDefaults: overLimitNewChatDefaults, userDefaultModel: userDefaultModel)
+        observeNewChatDefaults(overLimitDefaults: overLimitNewChatDefaults, userDefaultModelStorage: userDefaultModelStorage)
     }
 
     private func observeNewChatDefaults(overLimitDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>?,
-                                        userDefaultModel: AIChatUserDefaultModelProviding?) {
+                                        userDefaultModelStorage: DuckAiNativeStorageHandling?) {
         guard let newChatDefaults else { return }
         newChatDefaults.defaultChanges
             .sink { [weak self] in self?.onModelsUpdated?() }
@@ -106,7 +106,7 @@ final class UTIModelStore {
         if let overLimitDefaults {
             newChatDefaults.observeOverLimitDefaults(overLimitDefaults)
         }
-        newChatDefaults.observeUserDefaultModel(userDefaultModel)
+        newChatDefaults.observeUserDefaultModel(in: userDefaultModelStorage)
     }
 
     var persistedModelId: String? {
@@ -208,7 +208,8 @@ final class UTIModelStore {
     }
 
     private var newChatDefaultModel: AIChatModel? {
-        models.first { $0.id == newChatDefaultSelection?.modelId }
+        let modelId = newChatDefaultSelection?.modelId
+        return models.first { $0.id == modelId }
     }
 
     var selectedModelSupportsImageUpload: Bool {

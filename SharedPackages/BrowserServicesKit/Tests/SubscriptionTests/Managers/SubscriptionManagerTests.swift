@@ -555,7 +555,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
     }
 
-    func testMissingPrimary_BackupRestoreFails_ThrowsReportsAndClearsEntitlementsWithoutSigningOut() async throws {
+    func testMissingPrimary_BackupRestoreFailsPermanently_ThrowsReportsAndSignsOutLocally() async throws {
         let signedIn = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
         mockOAuthClient.internalCurrentTokenContainer = signedIn
         mockOAuthClient.getTokensResponse = .success(signedIn)
@@ -583,7 +583,7 @@ class SubscriptionManagerTests: XCTestCase {
         }
         XCTAssertEqual(reportedError as? TokenBackupError, .expired)
         XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.count, 1)
-        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 0)
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 1)
         XCTAssertEqual(mockOAuthClient.logoutCallCount, 0)
         XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
     }
@@ -599,7 +599,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertTrue(mockOAuthClient.getTokensPolicies.isEmpty)
         XCTAssertEqual(mockPixelHandler.handledPixels, [.backupRestoreFailed(.missingToken, .temporary, URLError(.timedOut))])
         XCTAssertFalse(mockSubscriptionEndpointService.getSubscriptionCalled)
-        XCTAssertFalse(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
         XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 0)
     }
 

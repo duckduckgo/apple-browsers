@@ -47,7 +47,7 @@ final class SubscriptionManagerBackupDisabledTests: XCTestCase {
         primaryStorage = MockTokenStorage()
         backupStorage = MockTokenStorage(tokenContainer: storedBackup)
         appStoreRestoreFlow = AppStoreRestoreFlowMock()
-        appStoreRestoreFlow.restoreSubscriptionAfterExpiredRefreshTokenError = NSError(domain: "AppStore", code: 1)
+        appStoreRestoreFlow.restoreSubscriptionAfterExpiredRefreshTokenError = AppStoreRestoreFlowError.missingAccountOrTransactions
         pixelHandler = RecordingPixelHandler()
         refresher = DefaultTokenRefresher(authService: oAuthService, clientID: "c", refreshEventMapping: nil)
 
@@ -71,6 +71,7 @@ final class SubscriptionManagerBackupDisabledTests: XCTestCase {
             subscriptionEndpointService: subscriptionEndpointService,
             subscriptionCachingService: SubscriptionCachingServiceMock(),
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
+            process: .browser,
             pixelHandler: pixelHandler,
             wideEvent: wideEvent,
             isAuthV2WideEventEnabled: { true },
@@ -150,7 +151,7 @@ final class SubscriptionManagerBackupDisabledTests: XCTestCase {
 
         XCTAssertEqual(oAuthService.refreshAccessTokenCallCount, 0)
         XCTAssertEqual(pixelHandler.backupPixels.count, 0)
-        XCTAssertFalse(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
         XCTAssertNil(try primaryStorage.getTokenContainer())
         XCTAssertEqual(try backupStorage.getTokenContainer(), storedBackup)
     }
@@ -174,7 +175,7 @@ final class SubscriptionManagerBackupDisabledTests: XCTestCase {
         XCTAssertEqual(oAuthService.refreshAccessTokenRequestedTokens.suffix(2), ["backupR", "backupR"])
         XCTAssertEqual(try primaryStorage.getTokenContainer(), restoredPrimary)
         XCTAssertEqual(try backupStorage.getTokenContainer(), restoredBackup)
-        XCTAssertTrue(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertTrue(subscriptionManager.isUserAuthenticated)
         XCTAssertEqual(pixelHandler.backupPixels, [.backupRestored(.missingToken)])
     }
 
@@ -191,7 +192,7 @@ final class SubscriptionManagerBackupDisabledTests: XCTestCase {
         XCTAssertEqual(oAuthService.refreshAccessTokenCallCount, 0)
         XCTAssertNil(try primaryStorage.getTokenContainer())
         XCTAssertNil(try backupStorage.getTokenContainer())
-        XCTAssertFalse(subscriptionManager.cachedIsUserAuthenticated)
+        XCTAssertFalse(subscriptionManager.isUserAuthenticated)
         XCTAssertEqual(pixelHandler.backupPixels.count, 0)
     }
 }

@@ -77,19 +77,18 @@ def attempt(folder):
 
 
 def key(a):
-    """A scenario run is one scenario on one broker and platform; scenario titles repeat across brokers."""
-    return (a["scenario"], a["broker"], a["platform"])
+    """A scenario run is one scenario, or one step of it, on one broker and platform; scenario titles repeat across brokers."""
+    return (a["scenario"], a["broker"], a["platform"], a["step"])
 
 
 def attempts(batch):
     found = [a for a in (attempt(folder) for folder in sorted((batch / "evidence").glob("*")) if folder.is_dir()) if a]
     latest = {}
     for a in found:
-        # A step attempt runs only part of a scenario, so it never stands in for the scenario's own run.
-        if a["scenario"] and not a["step"] and (key(a) not in latest or (a["started"] or 0) > (latest[key(a)]["started"] or 0)):
+        if a["scenario"] and (key(a) not in latest or (a["started"] or 0) > (latest[key(a)]["started"] or 0)):
             latest[key(a)] = a
     for a in found:
-        a["retried"] = bool(a["scenario"]) and not a["step"] and latest[key(a)] is not a
+        a["retried"] = bool(a["scenario"]) and latest[key(a)] is not a
     return sorted(found, key=lambda a: (a["platform"], a["scenario"] == "", a["scenario"], a["broker"], a["started"] or 0))
 
 
@@ -264,7 +263,7 @@ def render(batch, rows, baseline=None):
     rows = [r for r in rows if r["scenario"]]
     by_baseline = {}
     for row in baseline or []:
-        if row["scenario"] and not row["retried"] and not row["step"]:
+        if row["scenario"] and not row["retried"]:
             by_baseline[key(row)] = row
     fingerprints = sorted({(r["result"].get("launch") or {}).get("sourceSHA256", "")[:12] for r in rows} - {""})
     starts = [r["started"] for r in rows if r["started"]]
@@ -283,7 +282,7 @@ def render(batch, rows, baseline=None):
         reasons = ([f"expected {r['expected']}, got {r['status']}"] if not as_expected else []) + \
                   ([r["review"]] if r["review"] in ("disputed", "unclear") and not known else []) + \
                   (["worse than the baseline"] if worse else [])
-        counted = bool(r["scenario"]) and not r["retried"] and not r["step"]
+        counted = bool(r["scenario"]) and not r["retried"]
         if counted and reasons:
             attention.append(r)
         if counted and r["review"] == "not reviewed":
@@ -312,16 +311,19 @@ def render(batch, rows, baseline=None):
     platforms = sorted({r["platform"] for r in scenario_runs}) or sorted({r["platform"] for r in rows})
     sections = collections.OrderedDict()
     for r in sorted(scenario_runs, key=lambda r: (r["file"] == "Other scenarios", r["file"], r["started"] or 0)):
-        sections.setdefault(r["file"], collections.OrderedDict()).setdefault((r["title"], r["broker"]), {})[r["platform"]] = r
+        sections.setdefault(r["file"], collections.OrderedDict()).setdefault((r["title"], r["broker"]), {}).setdefault(r["platform"], []).append(r)
     retries = collections.defaultdict(list)
     for r in rows:
         if r["retried"]:
             retries[key(r)].append(r)
     worst = lambda states: "fail" if "fail" in states else ("warn" if "warn" in states else "ok")
 
-    def cell(r):
-        if r is None:
+    def cell(runs):
+        if not runs:
             return f"<td class='cell empty'>{icon('none', 'not run')}</td>"
+        # The scenario's own run stands for it; a scenario run only as steps shows its worst step.
+        own = [r for r in runs if not r["step"]]
+        r = own[-1] if own else max(runs, key=lambda r: ("ok", "warn", "fail").index(r["state"]))
         earlier = retries.get(key(r), [])
         tries = (" <span class=muted>(" + ", ".join(f"<a href='#a{x['number']}' data-go={x['number']}>retry #{x['number']}</a>"
                                                    for x in earlier) + ")</span>") if earlier else ""
@@ -330,7 +332,7 @@ def render(batch, rows, baseline=None):
 
     matrix = []
     for file, scenarios in sections.items():
-        states = [r["state"] for platforms_runs in scenarios.values() for r in platforms_runs.values()]
+        states = [r["state"] for platforms_runs in scenarios.values() for runs in platforms_runs.values() for r in runs]
         matrix.append(f"<tr class=group><th colspan={len(platforms) + 1}><span class=status>{icon(worst(states))}{e(file)}</span></th></tr>")
         for (title, broker), runs in scenarios.items():
             label = e(title) + (f" <span class=muted>· {e(broker)}</span>" if broker and broker != file else "")

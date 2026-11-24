@@ -61,7 +61,7 @@ class ReportTests(unittest.TestCase):
         self.assertIn("1 of 1 scenario runs were blocked by the broker", page)
         self.assertIn("pass · broker blocked", page)
 
-    def test_a_step_attempt_is_listed_but_not_counted_as_the_scenario_run(self):
+    def test_a_failing_step_needs_attention(self):
         batch = self.batch("stack", "pass", review="confirmed")
         step = batch / "evidence" / "macos-scheduler-1"
         step.mkdir()
@@ -70,7 +70,7 @@ class ReportTests(unittest.TestCase):
         report.main([str(batch)])
         page = (batch / "report.html").read_text()
         self.assertIn("step: seed", page)
-        self.assertNotIn("Needs attention", page)
+        self.assertIn("Needs attention: 1 of 2", page)
 
     def test_refresh_keeps_the_baseline_until_the_report_is_written_without_one(self):
         baseline = self.batch("baseline", "pass", review="confirmed")

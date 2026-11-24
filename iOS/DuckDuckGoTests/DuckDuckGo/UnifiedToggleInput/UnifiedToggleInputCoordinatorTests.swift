@@ -1634,6 +1634,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(promptSubmittedModelSource(in: pixelKit), "onboarding")
     }
 
+    func test_newChatDefault_whenOnlyAStorageHandlerIsPassed_overLimitDefaultStillApplies() {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try? storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: """
+        {"notice": {"id": "weeklyReachedDegraded", "window": "weekly", "resetsAt": "2030-01-01T00:00:00Z"}, \
+        "newChatDefault": {"modelId": "gpt-5.6-terra"}}
+        """)
+
+        let coordinator = makeNewChatDefaultCoordinator(duckAiNativeStorageHandler: storage)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+    }
+
     func test_newChatDefault_whenTabHasNoPick_itFollowsADefaultChangeAfterATabSwitch() {
         let coordinator = makeNewChatDefaultCoordinator()
         coordinator.activateForTab("tab-B")
@@ -1672,7 +1684,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     private func makeNewChatDefaultCoordinator(supportedReasoningEffort: [AIChatReasoningEffort] = [],
-                                               pixelKit: PixelKitMock? = nil) -> UnifiedToggleInputCoordinator {
+                                               pixelKit: PixelKitMock? = nil,
+                                               duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> UnifiedToggleInputCoordinator {
         let models = ["gpt-6-luna", "gpt-5.6-terra"].map {
             AIChatModel(id: $0, name: $0, provider: .openAI, supportsImageUpload: false, entityHasAccess: true,
                         supportedReasoningEffort: supportedReasoningEffort)
@@ -1680,6 +1693,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             modelsService: AppOpenModelsService(models: []),
             preferences: mockPreferences,
             subscriptionManager: subscriptionManager,

@@ -122,15 +122,13 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
         guard defaults.bool(forKey: Self.enabledKey) else { return }
         let pixelFiring = pixelFiringProvider()
         lock.lock()
-        let daysSinceFailure: String
+        let daysBucket: StartupFailurePixel.DayBucket?
         do {
             defer { lock.unlock() }
             guard defaults.bool(forKey: Self.enabledKey), !didFailInThisProcess, pixelFiring != nil, let storageURL = storageURLProvider(),
                   var state = try readState(from: storageURL),
                   !state.didReportReturn else { return }
-            daysSinceFailure = Self.wholeDaysSinceFailure(from: state.firstFailureDate, to: dateProvider()).map {
-                $0 >= 7 ? "7+" : String($0)
-            } ?? "unknown"
+            daysBucket = daysSinceFailureBucket(from: state.firstFailureDate)
             state.didReportReturn = true
             // Persist before sending so another launch cannot count the same return twice.
             try writeState(state, to: storageURL)
@@ -138,7 +136,7 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
             return
         }
 
-        pixelFiring?.fire(StartupFailurePixel.returned(daysSinceFailure: daysSinceFailure), frequency: .standard, options: .withRetry)
+        pixelFiring?.fire(StartupFailurePixel.returned(daysBucket: daysBucket), frequency: .standard, options: .withRetry)
     }
 
     /// Reports recovery and closes the episode when startup completes.
@@ -146,14 +144,13 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
         guard defaults.bool(forKey: Self.enabledKey) else { return }
         let pixelFiring = pixelFiringProvider()
         lock.lock()
-        let daysBucket: StartupFailurePixel.RecoveryDayBucket?
+        let daysBucket: StartupFailurePixel.DayBucket?
         do {
             defer { lock.unlock() }
             guard defaults.bool(forKey: Self.enabledKey), !didFailInThisProcess, pixelFiring != nil, let storageURL = storageURLProvider(),
                   let state = try readState(from: storageURL),
                   state.didReportReturn else { return }
-            daysBucket = Self.wholeDaysSinceFailure(from: state.firstFailureDate, to: dateProvider())
-                .flatMap(StartupFailurePixel.RecoveryDayBucket.containing)
+            daysBucket = daysSinceFailureBucket(from: state.firstFailureDate)
             try FileManager.default.removeItem(at: storageURL)
         } catch {
             // Keep the episode open if its file cannot be removed.
@@ -177,15 +174,16 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
         try JSONEncoder().encode(state).write(to: url, options: .atomic)
     }
 
-    private static func wholeDaysSinceFailure(from failureDate: Date, to eventDate: Date) -> Int? {
-        let elapsed = eventDate.timeIntervalSince(failureDate)
-        guard elapsed.isFinite, elapsed >= 0 else { return nil }
-        return Int(exactly: (elapsed / (24 * 60 * 60)).rounded(.down))
+    private func daysSinceFailureBucket(from failureDate: Date) -> StartupFailurePixel.DayBucket? {
+        let elapsed = dateProvider().timeIntervalSince(failureDate)
+        guard elapsed.isFinite, elapsed >= 0,
+              let days = Int(exactly: (elapsed / (24 * 60 * 60)).rounded(.down)) else { return nil }
+        return StartupFailurePixel.DayBucket.containing(days)
     }
 }
 
 enum StartupFailurePixel: PixelKit.Event {
-    enum RecoveryDayBucket: Int, CaseIterable {
+    enum DayBucket: Int, CaseIterable {
         case sameDay = 0
         case oneDay = 1
         case threeDays = 3
@@ -204,8 +202,8 @@ enum StartupFailurePixel: PixelKit.Event {
     }
 
     case failure
-    case returned(daysSinceFailure: String)
-    case recovered(daysBucket: RecoveryDayBucket?)
+    case returned(daysBucket: DayBucket?)
+    case recovered(daysBucket: DayBucket?)
 
     var name: String {
         let base: String
@@ -231,9 +229,7 @@ enum StartupFailurePixel: PixelKit.Event {
         switch self {
         case .failure:
             return nil
-        case .returned(let daysSinceFailure):
-            return ["days_since_first_failure": daysSinceFailure]
-        case .recovered(let daysBucket):
+        case .returned(let daysBucket), .recovered(let daysBucket):
             return daysBucket.map { ["days_count": $0.label] }
         }
     }

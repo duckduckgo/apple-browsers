@@ -146,7 +146,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         nextLaunch.recordSuccessfulStartup()
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
+            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysBucket: .sameDay), frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .sameDay), frequency: .standard)
         ])
     }
@@ -243,10 +243,10 @@ final class StartupFailureMetricsTests: XCTestCase {
 
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "3"), frequency: .standard),
+            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysBucket: .threeDays), frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .fiveDays), frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "1"), frequency: .standard)
+            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysBucket: .oneDay), frequency: .standard)
         ])
     }
 
@@ -264,57 +264,37 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, [ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard)])
     }
 
-    func testReturnAgeUsesWholeElapsedDaysAndCapsAtSevenDays() {
-        let cases: [(TimeInterval, String)] = [
-            (0, "0"),
-            (24 * 60 * 60 - 1, "0"),
-            (24 * 60 * 60, "1"),
-            (7 * 24 * 60 * 60 - 1, "6"),
-            (7 * 24 * 60 * 60, "7+"),
-            (365 * 24 * 60 * 60, "7+")
-        ]
-
-        for (index, testCase) in cases.enumerated() {
-            let file = directory.appendingPathComponent("case-\(index).json")
-            let start = now!
-            makeSubject(storageURL: file).recordFailure()
-            now.addTimeInterval(testCase.0)
-            makeSubject(storageURL: file).recordUserReturnedToApp()
-            XCTAssertEqual(pixels.actualFireCalls.last?.pixel.parameters, ["days_since_first_failure": testCase.1])
-            now = start
-        }
-    }
-
-    func testRecoveryAgeUsesStringBucketsAndCapsAtTwentyOneDays() {
-        let cases: [(days: Int, bucket: String)] = [
-            (0, "0"), (1, "1+"), (2, "1+"), (3, "3+"), (4, "3+"), (5, "5+"), (7, "5+"),
-            (8, "8+"), (12, "8+"), (13, "13+"), (20, "13+"), (21, "21+"), (34, "21+")
+    func testReturnAndRecoveryUseTheSameWholeDayBuckets() {
+        let day: TimeInterval = 24 * 60 * 60
+        let cases: [(elapsed: TimeInterval, bucket: String)] = [
+            (0, "0"), (day - 1, "0"), (day, "1+"), (3 * day - 1, "1+"), (3 * day, "3+"),
+            (5 * day - 1, "3+"), (5 * day, "5+"), (8 * day - 1, "5+"), (8 * day, "8+"),
+            (13 * day - 1, "8+"), (13 * day, "13+"), (21 * day - 1, "13+"), (21 * day, "21+"),
+            (365 * day, "21+")
         ]
 
         for testCase in cases {
             makeSubject().recordFailure()
-            now.addTimeInterval(TimeInterval(testCase.days * 24 * 60 * 60 + 23 * 60 * 60))
+            now.addTimeInterval(testCase.elapsed)
             let recovery = makeSubject()
             recovery.recordUserReturnedToApp()
             recovery.recordSuccessfulStartup()
 
-            XCTAssertEqual(pixels.actualFireCalls.last?.pixel.parameters,
-                           ["days_count": testCase.bucket],
-                           "Recovery after \(testCase.days) whole days")
+            let expectedParameters = ["days_count": testCase.bucket]
+            XCTAssertEqual(pixels.actualFireCalls.suffix(2).map { $0.pixel.parameters },
+                           [expectedParameters, expectedParameters],
+                           "Return and recovery after \(testCase.elapsed) seconds")
         }
     }
 
-    func testClockMovingBackwardsLeavesRecoveryAgeUnknown() {
+    func testClockMovingBackwardsOmitsReturnAndRecoveryAge() {
         makeSubject().recordFailure()
         now.addTimeInterval(-24 * 60 * 60)
         let recovery = makeSubject()
         recovery.recordUserReturnedToApp()
         recovery.recordSuccessfulStartup()
 
-        XCTAssertEqual(pixels.actualFireCalls.dropFirst().map { $0.pixel.parameters }, [
-            ["days_since_first_failure": "unknown"],
-            nil
-        ])
+        XCTAssertEqual(pixels.actualFireCalls.dropFirst().map { $0.pixel.parameters }, [nil, nil])
     }
 
     func testUnreadableStateDoesNotStartADuplicateEpisode() throws {
@@ -366,7 +346,7 @@ final class StartupFailureMetricsTests: XCTestCase {
 
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
+            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysBucket: .sameDay), frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .sameDay), frequency: .standard)
         ])
         XCTAssertFalse(FileManager.default.fileExists(atPath: storageURL.path))
@@ -387,7 +367,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertTrue(pixels.actualFireCalls.allSatisfy { $0.pixel.namePrefix == .none })
         XCTAssertNil(pixels.actualFireCalls.first?.pixel.parameters)
         XCTAssertEqual(pixels.actualFireCalls.dropFirst().compactMap { $0.pixel.parameters }, [
-            ["days_since_first_failure": "0"],
+            ["days_count": "0"],
             ["days_count": "0"]
         ])
         XCTAssertTrue(pixels.actualFireCalls.allSatisfy { $0.frequency == .standard })

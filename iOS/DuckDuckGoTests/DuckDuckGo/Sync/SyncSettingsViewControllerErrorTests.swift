@@ -312,7 +312,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
         let pixel = firedPixels.first { $0.name.contains(Pixel.Event.syncSetupEndedFailed.name) }
         XCTAssertNotNil(pixel, "fires Pairing V2 presenter start failure pixel")
-        XCTAssertEqual(pixel?.parameters[PixelParameters.reason], SyncSetupFailureReason.relayChannelFailure)
+        XCTAssertEqual(pixel?.parameters[PixelParameters.reason], SyncSetupFailureReason.relayChannelFailure.rawValue)
         XCTAssertEqual(pixel?.parameters[PixelParameters.source], source.rawValue)
         XCTAssertEqual(pixel?.parameters["my_role"], myRole)
         XCTAssertEqual(pixel?.parameters["pairing_failure_stage"], "presenter_open_own_channel")

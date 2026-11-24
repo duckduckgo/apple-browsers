@@ -94,7 +94,7 @@ public enum SyncConnectionError: Error, Equatable {
     case invalidCredentials
 }
 
-public enum SyncSetupTimeoutStage: String, Equatable, Sendable {
+public enum SyncSetupTimeoutStage: String, Equatable, CaseIterable, Sendable {
     case waitingForPeerHello = "waiting_for_peer_hello"
     case waitingForPeerStatus = "waiting_for_peer_status"
     case waitingForConfirmation = "waiting_for_confirmation"
@@ -103,36 +103,40 @@ public enum SyncSetupTimeoutStage: String, Equatable, Sendable {
     case loggingIn = "logging_in"
 }
 
-enum SyncSetupFailureReason {
-    static let v1Failure = "v1_failure"
-    static let sessionTimeout = "session_timeout"
-    static let needsUpgrade = "needs_upgrade"
-    static let incompatibleCode = "incompatible_code"
-    static let alreadyUpgraded = "already_upgraded"
-    static let unrecognizedCode = "unrecognized_code"
-    static let accountCreationFailed = "account_creation_failed"
-    static let accountUpgradeFailed = "account_upgrade_failed"
-    static let invalidCredentials = "invalid_credentials"
-    static let protocolError = "protocol_error"
-    static let transportFailure = "transport_failure"
-    static let unexpectedSecondHello = "unexpected_second_hello"
-    static let unexpectedEvent = "unexpected_event"
-    static let pairingSessionNotReady = "pairing_session_not_ready"
-    static let relayChannelFailure = "relay_channel_failure"
-    static let relayChannelUnavailable = "relay_channel_unavailable"
-    static let recoveryCodePreparationFailed = "recovery_code_preparation_failed"
-    static let peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
-    static let unexpectedFailure = "unexpected_failure"
-    static let missingThirdPartyCredential = "missing_3party_credential"
-    static let undecryptableThirdPartyCredential = "undecryptable_3party_credential"
-    static let accountExtendFailed = "account_extend_failed"
-    static let missingThirdPartyKey = "missing_3party_key"
-    static let localStorageFailed = "local_storage_failed"
+enum SyncSetupFailureReason: String, CaseIterable {
+    case v1Failure = "v1_failure"
+    case sessionTimeout = "session_timeout"
+    case needsUpgrade = "needs_upgrade"
+    case incompatibleCode = "incompatible_code"
+    case alreadyUpgraded = "already_upgraded"
+    case unrecognizedCode = "unrecognized_code"
+    case accountCreationFailed = "account_creation_failed"
+    case accountUpgradeFailed = "account_upgrade_failed"
+    case invalidCredentials = "invalid_credentials"
+    case protocolError = "protocol_error"
+    case transportFailure = "transport_failure"
+    case unexpectedSecondHello = "unexpected_second_hello"
+    case unexpectedEvent = "unexpected_event"
+    case pairingSessionNotReady = "pairing_session_not_ready"
+    case relayChannelFailure = "relay_channel_failure"
+    case relayChannelUnavailable = "relay_channel_unavailable"
+    case recoveryCodePreparationFailed = "recovery_code_preparation_failed"
+    case peerRecoveryCodeUnavailable = "peer_recovery_code_unavailable"
+    case unexpectedFailure = "unexpected_failure"
+    case missingThirdPartyCredential = "missing_3party_credential"
+    case undecryptableThirdPartyCredential = "undecryptable_3party_credential"
+    case accountExtendFailed = "account_extend_failed"
+    case missingThirdPartyKey = "missing_3party_key"
+    case localStorageFailed = "local_storage_failed"
 }
 
 public extension SyncConnectionError {
 
     var syncSetupFailureReason: String? {
+        syncSetupFailure?.rawValue
+    }
+
+    internal var syncSetupFailure: SyncSetupFailureReason? {
         switch self {
         // These cases are emitted by the legacy V1 exchange/connect flow and are intentionally bucketed together.
         case .failedToLogIn,
@@ -144,55 +148,55 @@ public extension SyncConnectionError {
                 .failedToTransmitConnectRecoveryKey,
                 .pollingForRecoveryKeyTimedOut,
                 .failedToCreateAccount:
-            return SyncSetupFailureReason.v1Failure
+            return .v1Failure
         case .invalidCredentials:
-            return SyncSetupFailureReason.invalidCredentials
+            return .invalidCredentials
         case .pairingV2SessionTimedOut:
-            return SyncSetupFailureReason.sessionTimeout
+            return .sessionTimeout
         case .updateRequired:
-            return SyncSetupFailureReason.needsUpgrade
+            return .needsUpgrade
         case .unsupportedThirdPartyRecoveryCode:
-            return SyncSetupFailureReason.incompatibleCode
+            return .incompatibleCode
         case .thirdPartyAccountAlreadyUpgraded:
-            return SyncSetupFailureReason.alreadyUpgraded
+            return .alreadyUpgraded
         case .unableToRecognizeCode:
-            return SyncSetupFailureReason.unrecognizedCode
+            return .unrecognizedCode
         case .accountCreationFailed:
-            return SyncSetupFailureReason.accountCreationFailed
+            return .accountCreationFailed
         case .accountUpgradeFailed:
-            return SyncSetupFailureReason.accountUpgradeFailed
+            return .accountUpgradeFailed
         case .transportFailure:
-            return SyncSetupFailureReason.transportFailure
+            return .transportFailure
         case .protocolError:
-            return SyncSetupFailureReason.protocolError
+            return .protocolError
         case .syncCancelledFromOtherDevice:
             return nil
         case .unexpectedSecondHello:
-            return SyncSetupFailureReason.unexpectedSecondHello
+            return .unexpectedSecondHello
         case .unexpectedEvent:
-            return SyncSetupFailureReason.unexpectedEvent
+            return .unexpectedEvent
         case .pairingSessionNotReady:
-            return SyncSetupFailureReason.pairingSessionNotReady
+            return .pairingSessionNotReady
         case .pairingV2OperationFailure(let context):
-            return context.kind == nil ? SyncSetupFailureReason.unexpectedFailure : SyncSetupFailureReason.relayChannelFailure
+            return context.kind == nil ? .unexpectedFailure : .relayChannelFailure
         case .relayChannelUnavailable:
-            return SyncSetupFailureReason.relayChannelUnavailable
+            return .relayChannelUnavailable
         case .recoveryCodePreparationFailed:
-            return SyncSetupFailureReason.recoveryCodePreparationFailed
+            return .recoveryCodePreparationFailed
         case .peerRecoveryCodeUnavailable:
-            return SyncSetupFailureReason.peerRecoveryCodeUnavailable
+            return .peerRecoveryCodeUnavailable
         case .unexpectedFailure:
-            return SyncSetupFailureReason.unexpectedFailure
+            return .unexpectedFailure
         case .missingThirdPartyCredential:
-            return SyncSetupFailureReason.missingThirdPartyCredential
+            return .missingThirdPartyCredential
         case .undecryptableThirdPartyCredential:
-            return SyncSetupFailureReason.undecryptableThirdPartyCredential
+            return .undecryptableThirdPartyCredential
         case .accountExtendFailed:
-            return SyncSetupFailureReason.accountExtendFailed
+            return .accountExtendFailed
         case .missingThirdPartyKey:
-            return SyncSetupFailureReason.missingThirdPartyKey
+            return .missingThirdPartyKey
         case .localStorageFailed:
-            return SyncSetupFailureReason.localStorageFailed
+            return .localStorageFailed
         }
     }
 

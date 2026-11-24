@@ -1,0 +1,215 @@
+{
+    "macos-sync-setup": {
+        "description": "Sent once per Sync setup attempt, when it ends: backing up this device, syncing with another device, or recovering with a recovery code. An attempt starts with an explicit setup action and ends on its success screen, on an error, when the user leaves the flow, or when the host in a pairing stops waiting for the joiner. An attempt still open at the next cold launch is sent as UNKNOWN app_restart, and a new attempt replaces an open one as UNKNOWN duplicated. Gated by the sendSyncSetupWideEvent sync subfeature. Spec: https://app.asana.com/1/137249556945/project/1201493110486074/task/1220704994561462",
+        "owners": ["pballart"],
+        "meta": {
+            "type": "macos-sync-setup",
+            "version": "0.0"
+        },
+        "feature": {
+            "name": "sync-setup",
+            "status": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "setup_mode": {
+                        "type": "string",
+                        "description": "The mode the attempt ended in. recovery when the attempt started as recovery or a recovery code was entered in the pairing screen. Absent until a mode is chosen.",
+                        "enum": ["single_device", "multi_device", "recovery"]
+                    },
+                    "initial_setup_mode": {
+                        "type": "string",
+                        "description": "The first mode of the attempt. recovery only when the attempt started as recovery. Absent until a mode is chosen.",
+                        "enum": ["single_device", "multi_device", "recovery"]
+                    },
+                    "connect_method": {
+                        "type": "string",
+                        "description": "How the code moved between devices, or how the recovery code was entered.",
+                        "enum": ["show_code", "scan_code", "paste_code", "link"]
+                    },
+                    "role": {
+                        "type": "string",
+                        "description": "host: the device whose account both devices end up in. joiner: the device that joins it.",
+                        "enum": ["host", "joiner"]
+                    },
+                    "peer_kind": {
+                        "type": "string",
+                        "description": "The other device: ddg (DuckDuckGo app) or 3party (third-party browser).",
+                        "enum": ["ddg", "3party"]
+                    },
+                    "peer_outcome": {
+                        "type": "string",
+                        "description": "Host only, after sending the recovery code: what it learned about the joiner. unknown when no report arrived.",
+                        "enum": ["success", "failure", "cancelled", "unknown"]
+                    },
+                    "existing_account": {
+                        "type": "boolean",
+                        "description": "Whether the device had a Sync account when the attempt started."
+                    },
+                    "account_switch": {
+                        "type": "boolean",
+                        "description": "Whether the attempt went through the account switch."
+                    },
+                    "flow_version": {
+                        "type": "string",
+                        "description": "For pairing, the protocol the session used, once known. Otherwise the newest version the device supports.",
+                        "enum": ["v1", "v2", "v2.1"]
+                    },
+                    "ui_version": {
+                        "type": "string",
+                        "description": "Which setup screens the user saw. A new value whenever a flag changes which screens appear or their order.",
+                        "enum": ["v1"]
+                    },
+                    "last_step": {
+                        "type": "string",
+                        "description": "The step the attempt was on when it ended.",
+                        "enum": [
+                            "started",
+                            "choice_screen",
+                            "device_auth",
+                            "preparing_code",
+                            "code_screen",
+                            "code_entry",
+                            "code_accepted_by_other_device",
+                            "confirmation_screen",
+                            "waiting_for_confirmation",
+                            "sync_confirmation",
+                            "preparing_sync",
+                            "host_awaiting_joiner",
+                            "account_created",
+                            "sync_this_device_offer",
+                            "error_screen",
+                            "recovery_code_shown",
+                            "success_screen_shown"
+                        ]
+                    },
+                    "steps": {
+                        "type": "string",
+                        "description": "Every step of the attempt in order, comma-separated. The same step twice in a row is recorded once. At most 20 entries: past that, the first 19 steps and truncated.",
+                        "pattern": "^[a-z_]+(,[a-z_]+){0,19}$"
+                    },
+                    "device_auth_shown": {
+                        "type": "boolean",
+                        "description": "Whether the device auth prompt appeared."
+                    },
+                    "sync_this_device_fallback": {
+                        "type": "boolean",
+                        "description": "Whether the sync this device only offer appeared after the user closed pairing."
+                    },
+                    "status_reason": {
+                        "type": "string",
+                        "description": "Why the attempt ended without SUCCESS. CANCELLED and UNKNOWN reasons are shared across platforms. FAILURE reasons are the classic sync_setup_ended_failed reasons from the same mapping, plus already_signed_in and device_auth_error.",
+                        "enum": [
+                            "user_closed",
+                            "user_closed_sync_this_device_fallback",
+                            "device_auth_cancelled",
+                            "device_auth_unavailable",
+                            "code_rejected",
+                            "sync_confirmation_denied",
+                            "account_switch_declined",
+                            "account_switch_blocked",
+                            "peer_left",
+                            "session_timeout",
+                            "already_paired",
+                            "already_upgraded",
+                            "app_restart",
+                            "duplicated",
+                            "transport_failure",
+                            "relay_channel_unavailable",
+                            "unexpected_failure",
+                            "account_creation_failed",
+                            "already_signed_in",
+                            "device_auth_error",
+                            "invalid_credentials",
+                            "account_upgrade_failed",
+                            "account_extend_failed",
+                            "recovery_code_preparation_failed",
+                            "peer_recovery_code_unavailable",
+                            "missing_3party_credential",
+                            "undecryptable_3party_credential",
+                            "missing_3party_key",
+                            "local_storage_failed",
+                            "unexpected_second_hello",
+                            "unexpected_event",
+                            "pairing_session_not_ready",
+                            "protocol_error",
+                            "needs_upgrade",
+                            "v1_failure",
+                            "relay_channel_failure"
+                        ]
+                    },
+                    "timeout_stage": {
+                        "type": "string",
+                        "description": "Where the session timed out. Sent when status_reason is session_timeout.",
+                        "enum": [
+                            "waiting_for_peer_hello",
+                            "waiting_for_confirmation",
+                            "waiting_for_peer_status",
+                            "waiting_for_recovery_code",
+                            "logging_in",
+                            "unknown"
+                        ]
+                    },
+                    "total_latency_ms_bucketed": {
+                        "type": "string",
+                        "description": "Time from the start of the attempt to its end, as the lower bound of its bucket.",
+                        "enum": ["0", "1000", "2000", "3000", "5000", "10000", "30000", "60000", "120000", "180000", "300000", "600000"]
+                    },
+                    "last_step_latency_ms_bucketed": {
+                        "type": "string",
+                        "description": "Time on the last step before the attempt ended, as the lower bound of its bucket.",
+                        "enum": ["0", "1000", "2000", "3000", "5000", "10000", "30000", "60000", "120000", "180000", "300000", "600000"]
+                    },
+                    "preparing_sync_latency_ms_bucketed": {
+                        "type": "string",
+                        "description": "Time on the Preparing sync step, as the lower bound of its bucket. Sent when the attempt reached preparing_sync. On the host it stops when the recovery code is sent, so it never includes host_awaiting_joiner.",
+                        "enum": ["0", "1000", "2000", "3000", "5000", "10000", "30000", "60000", "120000", "180000", "300000", "600000"]
+                    },
+                    "error": {
+                        "type": "object",
+                        "description": "The error that ended the attempt as FAILURE, and its underlying error when there is one.",
+                        "properties": {
+                            "domain": {
+                                "type": "string",
+                                "description": "The top level error domain"
+                            },
+                            "code": {
+                                "type": "integer",
+                                "description": "The top level error code"
+                            },
+                            "underlying_domain": {
+                                "type": "string",
+                                "description": "The underlying error domain"
+                            },
+                            "underlying_code": {
+                                "type": "integer",
+                                "description": "The underlying error code"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "context": {
+            "name": [
+                "unknown",
+                "settings_page",
+                "bookmark_new",
+                "bookmarks",
+                "bookmarks_bar_empty",
+                "bookmarks_bar_non_empty",
+                "bookmark_popup_empty",
+                "bookmark_manager_empty",
+                "passwords",
+                "password_manager_empty_all_items",
+                "password_manager_empty_passwords",
+                "password_manager_empty_credit_cards",
+                "password_manager_empty_identities",
+                "import_start",
+                "import_end",
+                "ai_chat",
+                "next_steps",
+                "more_menu"
+            ]
+        }
+    }
+}

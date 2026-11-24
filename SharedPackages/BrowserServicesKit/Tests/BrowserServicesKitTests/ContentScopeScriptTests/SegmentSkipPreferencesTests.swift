@@ -1,5 +1,5 @@
 //
-//  SponsorBlockPreferencesTests.swift
+//  SegmentSkipPreferencesTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -21,18 +21,18 @@ import Combine
 import XCTest
 @testable import BrowserServicesKit
 
-final class SponsorBlockPreferencesTests: XCTestCase {
+final class SegmentSkipPreferencesTests: XCTestCase {
 
     private var store: InMemoryKeyValueStore!
     private var notificationCenter: NotificationCenter!
-    private var preferences: SponsorBlockPreferences!
+    private var preferences: SegmentSkipPreferences!
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
         super.setUp()
         store = InMemoryKeyValueStore()
         notificationCenter = NotificationCenter()
-        preferences = SponsorBlockPreferences(store: store, notificationCenter: notificationCenter)
+        preferences = SegmentSkipPreferences(store: store, notificationCenter: notificationCenter)
     }
 
     func testDefaultsAreEnabledAndManual() {
@@ -44,7 +44,7 @@ final class SponsorBlockPreferencesTests: XCTestCase {
         preferences.isEnabled = false
         preferences.skipMode = .auto
 
-        let other = SponsorBlockPreferences(store: store, notificationCenter: notificationCenter)
+        let other = SegmentSkipPreferences(store: store, notificationCenter: notificationCenter)
         XCTAssertFalse(other.isEnabled)
         XCTAssertEqual(other.skipMode, .auto)
     }

@@ -323,6 +323,18 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertEqual(sut.currentModelId, "gpt-5.6-terra")
     }
 
+    func testWhenOnlyAStorageHandlerIsPassedThenNewChatsStartOnTheUserDefaultModel() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""gpt-5.6-terra""#)
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let sut = makeNewChatDefaultSUT(duckAiNativeStorageHandler: storage)
+
+        await activateAndWaitForModels(sut)
+
+        XCTAssertEqual(sut.currentModelId, "gpt-5.6-terra")
+    }
+
     func testWhenNewChatsStartOnTheDefaultThenTheTierAppliesBeforeModelsLoadAndTheServerDefaultAfter() async {
         subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
         modelsService.result = .failure(URLError(.notConnectedToInternet))

@@ -38,6 +38,10 @@ def gh(*args):
     return out.stdout
 
 
+# The artifacts container that auto's evidence-url links point into
+CONTAINER = os.environ.get("DDG_AUTO_EVIDENCE_CONTAINER", "apple")
+
+
 def allowed_links(template, task, repo):
     try:
         with open(template, errors="replace") as f:
@@ -47,7 +51,7 @@ def allowed_links(template, task, repo):
     ok = (f"https://app.asana.com/0/0/{task}/f", f"https://app.asana.com/0/0/{task}")
     return lambda url: (url.rstrip(".,") in known or url.startswith(ok)
                         or url.startswith(f"https://github.com/{repo}/")
-                        or url.startswith("https://artifacts.go.duckduckgo.com/view/auto/")
+                        or url.startswith(f"https://artifacts.go.duckduckgo.com/view/{CONTAINER}/")
                         or url.startswith("https://claude.com/"))
 
 

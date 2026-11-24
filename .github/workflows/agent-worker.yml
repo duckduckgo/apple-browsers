@@ -31,7 +31,7 @@ concurrency:
 
 env:
   ARTIFACTS_ACCOUNT: ddgartifactsuse
-  ARTIFACTS_CONTAINER: auto
+  DDG_AUTO_EVIDENCE_CONTAINER: apple
   # Inputs are checked in the agent job's first step before any of these paths are used. Storage is
   # create-only, so each run gets its own prefix
   PLAN_BLOB: ${{ inputs.handoff }}/plan.md
@@ -110,8 +110,8 @@ jobs:
           tenant-id: ${{ vars.ARTIFACTS_TENANT_ID }}
           allow-no-subscriptions: true
 
-      # The plan goes to a file and is never printed. The Azure login is removed before the agent
-      # runs, so the agent never has a storage token
+      # The plan goes to a file and is never printed. The az login is removed before the agent runs, so the
+      # agent reaches storage only through auto's upload-evidence
       - name: Download plan from artifacts.go
         env:
           SHA256: ${{ inputs.sha256 }}
@@ -157,7 +157,8 @@ jobs:
         run: command -v swiftlint > /dev/null || brew install swiftlint > /dev/null
 
       # Unpacked outside the checkout and the agent's writable paths, so it can run auto's scripts but not change
-      # them. Its npm packages are installed here, without install scripts, since the agent has no network
+      # them. auto's setup-deps installs its npm packages here, without install scripts, and marks them prepared,
+      # which auto's evidence upload checks for
       - name: Set up auto plugin
         env:
           HOMEBREW_NO_AUTO_UPDATE: "1"
@@ -168,9 +169,8 @@ jobs:
           auto="$RUNNER_TEMP/auto"
           mkdir -p "$auto" "$RUNNER_TEMP/worktrees"
           unzip -q "$RUNNER_TEMP/auto-claude.zip" -d "$auto"
-          for d in skills/auto/scripts skills/show-me-your-work/scripts; do
-            (cd "$auto/$d" && npm ci --ignore-scripts --omit=dev --no-audit --no-fund > /dev/null)
-          done
+          node "$auto/skills/setup-auto/scripts/setup-deps.ts" --apply > /dev/null 2>&1 ||
+            { echo "::error::auto's setup-deps failed"; exit 1; }
           echo "AUTO_DIR=$auto" >> "$GITHUB_ENV"
           echo "auto $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$auto/.claude-plugin/plugin.json") ready"
 
@@ -208,9 +208,16 @@ jobs:
           command -v gh > /dev/null || brew install gh > /dev/null
           worker/scripts/agent-worker/github_token.sh "$RUNNER_TEMP/gh"
 
+      # For auto's upload-evidence, which writes the agent's evidence to auto's artifact storage as it publishes PRs
+      - name: Azure identity for auto
+        env:
+          CLIENT_ID: ${{ vars.ARTIFACTS_CLIENT_ID }}
+          TENANT_ID: ${{ vars.ARTIFACTS_TENANT_ID }}
+        run: worker/scripts/agent-worker/azure_identity.sh "$RUNNER_TEMP/azure"
+
       # Besides file tools, the agent can run xc (build, test, lint) and read-only git, so it can check its
       # change and fix it as it goes. Building and testing runs code the agent wrote, which is why the worker
-      # runs from the agent-worker branch and holds no Azure login while the agent runs
+      # runs from the agent-worker branch
       - name: Run coding agent
         working-directory: target
         env:
@@ -293,13 +300,19 @@ jobs:
           echo "Evidence (SSO): $url/"
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "- Agent (SSO): [summary.md]($url/summary.md), [changes.patch]($url/changes.patch), [result.json]($url/result.json), [transcript.md]($url/transcript.md)" >> "$GITHUB_STEP_SUMMARY"
-          # auto's evidence (decision log, proofs, screenshots) goes to <uuid>/ in the same container, where auto's
-          # own viewer links point
-          log=$(worker/scripts/agent-worker/auto_evidence.sh "$HOME/.auto/evidence" "$RUNNER_TEMP/auto-evidence") || true
+          # Whatever the agent didn't upload of auto's evidence (decision log, proofs, screenshots), with auto's
+          # own upload, and the final decision log's link for the task
+          log=$(worker/scripts/agent-worker/auto_evidence.sh "$HOME/.auto/evidence") || true
           if [[ -n $log ]]; then
             echo "decision_log_url=$log" >> "$GITHUB_OUTPUT"
             echo "- auto (SSO): [decision log]($log)" >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Stop the Azure token refresher
+        if: always() && env.AZURE_TOKEN_DIR != ''
+        run: |
+          kill "$(cat "$AZURE_TOKEN_DIR/refresher.pid")" 2> /dev/null || true
+          rm -rf "$AZURE_TOKEN_DIR"
 
       - name: Fail if the agent failed
         if: env.rc != '0'

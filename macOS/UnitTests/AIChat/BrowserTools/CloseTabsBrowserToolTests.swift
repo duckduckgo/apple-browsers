@@ -23,15 +23,15 @@ import XCTest
 @MainActor
 final class CloseTabsBrowserToolTests: XCTestCase {
 
-    func testWhenTheChatsOwnTabIsNamedThenItStaysOpenAndTheOthersClose() async {
+    func testWhenTheChatsOwnTabIsNamedThenNothingCloses() async {
         let collection = collection(urls: ["https://a.example", "https://b.example"])
         let ids = collection.tabCollection.tabs.map(\.uuid)
         let (tool, context) = make(collection: collection, ownerTabID: ids[0])
 
-        let result = await tool.execute(arguments: ["tabIds": [.string(ids[0]), .string(ids[1])]], context: context)
+        let result = await tool.execute(arguments: ["tabIds": [.string(ids[1]), .string(ids[0])]], context: context)
 
-        XCTAssertEqual(result, .success(closed([ids[0]: false, ids[1]: true])))
-        XCTAssertEqual(collection.tabCollection.tabs.map(\.uuid), [ids[0]])
+        XCTAssertEqual(result, .failure(.unavailable))
+        XCTAssertEqual(collection.tabCollection.tabs.map(\.uuid), ids)
     }
 
     func testWhenTheOwnerTabIsNotAWebPageThenItIsNotClosed() async {

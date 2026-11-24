@@ -33,7 +33,7 @@ final class CloseTabsBrowserTool: BrowserTool {
             "tabIds": [
                 "type": "array",
                 "items": ["type": "string"],
-                "description": "1 to 50 tab IDs from listOpenTabs. The chat's own tab is never closed."
+                "description": "1 to 50 tab IDs from listOpenTabs. Never the chat's own tab: a call that names it closes nothing."
             ]
         ],
         "required": ["tabIds"]
@@ -58,9 +58,11 @@ final class CloseTabsBrowserTool: BrowserTool {
         guard let tabs = BrowserToolTargetTab.actionableTabs(withIDs: requestedIDs, ownerTabID: context.ownerTabID, in: collection) else {
             return .failure(.notFound)
         }
+        // Closing the chat's own tab would close the chat, so a call that names it closes nothing.
+        guard !tabs.contains(where: { $0.uuid == context.ownerTabID }) else { return .failure(.unavailable) }
 
         return .success(["tabs": .array(tabs.map { tab in
-            ["tabId": .string(tab.uuid), "closed": .bool(tab.uuid != context.ownerTabID && close(tab.uuid, in: collection))]
+            ["tabId": .string(tab.uuid), "closed": .bool(close(tab.uuid, in: collection))]
         })])
     }
 

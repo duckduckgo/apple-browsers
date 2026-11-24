@@ -424,8 +424,8 @@ public extension XCTestCase {
         }
 
         let actualTrees = [actualRoot] + actualOrphans
-        // A fixture can describe just the root, even when the store contains detached bookmarks.
-        XCTAssertGreaterThanOrEqual(actualTrees.count, expectedTrees.count, "missing expected orphan", file: file, line: line)
+        XCTAssertEqual(actualOrphans.map { $0.first?.uuid }, expectedTrees.dropFirst().map { $0.first?.uuid },
+                       "orphan bookmark IDs mismatch", file: file, line: line)
         for (expected, actual) in zip(expectedTrees, actualTrees) {
             XCTAssertEqual(expected.count, actual.count, "node count mismatch", file: file, line: line)
             for (expectedNode, thisNode) in zip(expected, actual) {

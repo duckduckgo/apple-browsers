@@ -1,17 +1,19 @@
 # Gate 2: publish the assisted BeenVerified JSON
 
-Clients that can't run an assisted opt-out must reject the file without losing BeenVerified or any other broker, and
-macOS must keep scanning BeenVerified while the feature is off.
+Publishing 0.12.0 brings BeenVerified back. `main` bundles 0.11.0 with `removedAt` set (2026-07-24), and the remote
+update serves the same, so no build scans BeenVerified today. 0.12.0 has no `removedAt`, so clients that accept it
+start scanning BeenVerified again, and clients that can't run an assisted opt-out must reject it without disturbing any
+other broker.
 
 `beenverified.com` below is the assisted BeenVerified JSON this branch bundles, version 0.12.0, in
 `SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/`. It adds three
-top-level `userAssist` steps to the opt-out, all before its `emailConfirmation` step. `main` bundles 0.11.0, which has
-none. Run these scenarios against the exact file that will be published; if it differs from 0.12.0, rerun them.
+top-level `userAssist` steps to the opt-out, all before its `emailConfirmation` step, and drops `removedAt`. `main`
+bundles 0.11.0, which has neither. Run these scenarios against the exact file that will be published; if it differs from 0.12.0, rerun them.
 
-0.12.0 also changes who scans BeenVerified. Its scan step gains a `generateEmail` action, nested in the condition for
-highly populated states, and 0.11.0's scan has none. The app treats a scan with `generateEmail` as needing a
-subscription (`DataBroker.scanRequiresSubscription`), so on macOS a signed-out Freemium user stops scanning BeenVerified
-once 0.12.0 is stored, while a subscriber keeps scanning it. iOS keeps 0.11.0, so nothing changes there. Scheduler seeds
+0.12.0 also limits who scans it. Its scan step gains a `generateEmail` action, nested in the condition for highly
+populated states. The app treats a scan with `generateEmail` as needing a subscription
+(`DataBroker.scanRequiresSubscription`), so on macOS subscribers scan the returned BeenVerified and signed-out Freemium
+users don't. iOS rejects 0.12.0 and keeps its removed 0.11.0, so nothing changes there. Scheduler seeds
 are always Freemium; the subscriber side is covered by a `run` with a token, which uses the same scan steps but not the
 scheduler's eligibility.
 
@@ -50,7 +52,7 @@ The seed scans one broker to keep the run short; the check is on the brokers the
   - The first `/api` response lists beenverified.com at version 0.12.0 with `isRemoved` false.
   - searchpeoplefree.com gets a fresh `scanStarted` and reaches a terminal event.
 
-## macOS Freemium stops scanning BeenVerified 0.12.0
+## macOS Freemium doesn't scan BeenVerified 0.12.0
 
 Run after the previous scenario; the reseed replaces its test profile.
 
@@ -75,41 +77,39 @@ A Texas profile takes BeenVerified's path for highly populated states, which run
   - The scan reaches the comprehensive form, fills the generated email, and ends in `matchesFound` or `noMatchFound`.
   - No `emailError` or token error.
 
-## main's Freemium scans BeenVerified 0.11.0
+## main doesn't scan the removed BeenVerified 0.11.0
 
-The comparison for the previous three scenarios, on a build from a worktree of `anh/shared/pir/verify-pir-extras`. If the
-remote broker update marks 0.11.0 removed in the PIR environment the app uses, the seed reports `unknownBroker`; check
-`isRemoved` in its `/api` and record the run as inconclusive, naming the environment.
+The baseline for the previous three scenarios, on a build from a worktree of `anh/shared/pir/verify-pir-extras`.
 
 - tags: gate2, scheduler, scan, live, freemium
 - platform: macOS
 - setup: `john-smith-houston`, `empty-store`
-- action: `scheduler seed --broker beenverified.com --broker searchpeoplefree.com` on the `verify-pir-extras` build
+- action: `scheduler seed --broker searchpeoplefree.com` on the `verify-pir-extras` build
 - expect:
-  - Both brokers are planned, and each gets a fresh `scanStarted` and reaches a terminal event.
-
-## macOS upgrades a stored BeenVerified 0.11.0 to the assisted 0.12.0
-
-Most users get the assisted file as an update over a stored 0.11.0. Seed first on a build from a worktree of
-`anh/shared/pir/verify-pir-extras`, which bundles 0.11.0, then switch to a build of this branch.
-
-- tags: gate2, scheduler, scan, live, upgrade
-- platform: macOS
-- setup: `john-smith-houston`, `empty-store`
-- action: `scheduler seed --broker beenverified.com --broker searchpeoplefree.com` on the `verify-pir-extras` build;
-  then, with the DEBUG browser and agent stopped, clear
-  the saved local broker-version check so the next launch upserts the bundled 0.12.0:
-  `defaults delete com.duckduckgo.macos.browser.debug macos.browser.data-broker-protection.LastLocalVersionChecked` and
-  the same key in `com.duckduckgo.macos.DBP.backgroundAgent.debug`; then `scheduler observe` on this branch's build
-  while its scans run, with `--job` for searchpeoplefree.com only, since a Freemium agent no longer schedules
-  BeenVerified 0.12.0
-- expect:
-  - The stored BeenVerified is 0.12.0 after the upgrade, with the same broker ID, records and history as before.
-  - BeenVerified gets no fresh `scanStarted` after the upgrade, and no BeenVerified opt-out starts. The skill doesn't
-    check either; read BeenVerified's history in `/api/brokers/beenverified.com`.
+  - The first `/api` response lists beenverified.com at version 0.11.0 with `isRemoved` true.
   - searchpeoplefree.com gets a fresh `scanStarted` and reaches a terminal event.
 
-## iOS keeps a stored BeenVerified 0.11.0 when the assisted 0.12.0 arrives
+## macOS reactivates a stored, removed BeenVerified 0.11.0 as 0.12.0
+
+Existing users get the assisted file as an update over their stored, removed 0.11.0. Seed first on a build from a
+worktree of `anh/shared/pir/verify-pir-extras`, which bundles 0.11.0, then switch to a build of this branch.
+
+- tags: gate2, scheduler, scan, live, upgrade, freemium
+- platform: macOS
+- setup: `john-smith-houston`, `empty-store`
+- action: `scheduler seed --broker searchpeoplefree.com` on the `verify-pir-extras` build; then, with the DEBUG browser
+  and agent stopped, clear the saved local broker-version check so the next launch upserts the bundled 0.12.0:
+  `defaults delete com.duckduckgo.macos.browser.debug macos.browser.data-broker-protection.LastLocalVersionChecked` and
+  the same key in `com.duckduckgo.macos.DBP.backgroundAgent.debug`; then `scheduler observe` on this branch's build
+  while its scans run, with `--job` for searchpeoplefree.com only
+- expect:
+  - Before the upgrade, `/api` lists beenverified.com 0.11.0 with `isRemoved` true.
+  - After it, `/api` lists beenverified.com 0.12.0 with `isRemoved` false and the same broker ID.
+  - BeenVerified gets no fresh `scanStarted`, because the seeded account is Freemium. The skill doesn't check this;
+    read BeenVerified's history in `/api/brokers/beenverified.com`.
+  - searchpeoplefree.com gets a fresh `scanStarted` and reaches a terminal event.
+
+## iOS keeps a stored, removed BeenVerified 0.11.0 when the assisted 0.12.0 arrives
 
 The same upgrade on one simulator. `--keep` leaves the seeded simulator in place, and `scheduler observe` reads any
 simulator whose debug server is on.
@@ -117,16 +117,14 @@ simulator whose debug server is on.
 - tags: gate2, scheduler, scan, live, upgrade
 - platform: iOS
 - setup: `john-smith-houston`
-- action: `scheduler seed --platform ios --keep --broker beenverified.com --broker searchpeoplefree.com` on a build from
-  a worktree of `anh/shared/pir/verify-pir-extras`,
-  which bundles 0.11.0; set `UDID` to the `simulator.udid` in that seed's launch record and install this branch's iOS
-  build on it; clear the saved local broker-version check so the next launch tries the bundled 0.12.0, with
+- action: `scheduler seed --platform ios --keep --broker searchpeoplefree.com` on a build from a worktree of
+  `anh/shared/pir/verify-pir-extras`, which bundles 0.11.0; set `UDID` to the `simulator.udid` in that seed's launch
+  record and install this branch's iOS build on it; clear the saved local broker-version check so the next launch tries
+  the bundled 0.12.0, with
   `xcrun simctl spawn "$UDID" defaults delete com.duckduckgo.mobile.ios macos.browser.data-broker-protection.LastLocalVersionChecked`;
   launch, turn on **Debug Server** in the PIR debug menu, start a scan, then `scheduler observe --platform ios` with
-  BeenVerified's broker URL and profile query ID from `GET /api`
+  searchpeoplefree.com's broker URL and profile query ID from `GET /api`
 - expect:
-  - The bundled 0.12.0 is skipped as unsupported, and the stored BeenVerified stays 0.11.0 with the same broker ID,
-    records and history.
-  - BeenVerified scans continue and reach terminal events, unless the remote broker update marks 0.11.0 removed in
-    the app's PIR environment; then record the run as inconclusive, naming the environment.
-  - Every other broker keeps working.
+  - The bundled 0.12.0 is skipped as unsupported, and `/api` still lists beenverified.com 0.11.0 with `isRemoved` true
+    and the same broker ID.
+  - searchpeoplefree.com gets a fresh `scanStarted` and reaches a terminal event.

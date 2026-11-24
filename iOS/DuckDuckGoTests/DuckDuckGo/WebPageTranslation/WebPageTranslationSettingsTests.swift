@@ -46,6 +46,24 @@ final class WebPageTranslationSettingsTests: XCTestCase {
         XCTAssertEqual(try makeSUT(settings: #"{"sampleLength": -5}"#).sampleLength, 4096)
     }
 
+    func testReadsBatchCharacterLimitFromTheFeatureSettings() throws {
+        XCTAssertEqual(try makeSUT(settings: #"{"batchCharacterLimit": 1000}"#).batchCharacterLimit, 1000)
+    }
+
+    func testBatchCharacterLimitDefaultsWhenMissingOrInvalid() throws {
+        XCTAssertEqual(try makeSUT(settings: nil).batchCharacterLimit, 2000)
+        XCTAssertEqual(try makeSUT(settings: "{}").batchCharacterLimit, 2000)
+        XCTAssertEqual(try makeSUT(settings: #"{"batchCharacterLimit": "1000"}"#).batchCharacterLimit, 2000)
+        XCTAssertEqual(try makeSUT(settings: #"{"batchCharacterLimit": 0}"#).batchCharacterLimit, 2000)
+        XCTAssertEqual(try makeSUT(settings: #"{"batchCharacterLimit": -1}"#).batchCharacterLimit, 2000)
+    }
+
+    func testOneMalformedSettingKeepsTheOther() throws {
+        let sut = try makeSUT(settings: #"{"sampleLength": 2000, "batchCharacterLimit": "1000"}"#)
+        XCTAssertEqual(sut.sampleLength, 2000)
+        XCTAssertEqual(try makeSUT(settings: #"{"sampleLength": "x", "batchCharacterLimit": 1000}"#).batchCharacterLimit, 1000)
+    }
+
     func testFollowsAConfigUpdateWhileRunning() throws {
         let manager = MockPrivacyConfigurationManager()
         manager.privacyConfig = try Self.config(settings: #"{"sampleLength": 2000}"#)

@@ -39,6 +39,7 @@ final class NewTabPageSessionWideEventData: WideEventData {
         case appOpen = "app_open"
         case newTabOpened = "new_tab_opened"
         /// Separate from `newTabOpened` because the user asked to burn, not for a blank page.
+        /// Automatic clearing is not a burn the user asked for, so its page reports `appOpen`.
         case newTabOpenedAfterFire = "new_tab_opened_after_fire"
     }
 

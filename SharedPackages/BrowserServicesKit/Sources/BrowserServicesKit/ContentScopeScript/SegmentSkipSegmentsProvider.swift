@@ -1,5 +1,5 @@
 //
-//  SponsorBlockSegmentsProvider.swift
+//  SegmentSkipSegmentsProvider.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -25,7 +25,7 @@ import os.log
 ///
 /// Lookups use a SHA-256 hash prefix of the video ID, so the server never sees the exact video.
 /// Results are cached in memory; the app keeps one instance so every tab shares the cache.
-public actor SponsorBlockSegmentsProvider {
+public actor SegmentSkipSegmentsProvider {
 
     // Segments endpoint; the request URL is `<apiBaseURL>/<hash prefix>?categories=…&actionTypes=…`.
     public static let apiBaseURL = URL(string: "https://duckduckgo.com/sponsorblock/v1/segments")!
@@ -83,7 +83,7 @@ public actor SponsorBlockSegmentsProvider {
         case invalidResponse
         case httpStatus(Int)
 
-        public static var errorDomain: String { "com.duckduckgo.sponsorBlock.SegmentsProvider" }
+        public static var errorDomain: String { "com.duckduckgo.segmentSkip.SegmentsProvider" }
 
         public var errorCode: Int {
             switch self {
@@ -129,14 +129,14 @@ public actor SponsorBlockSegmentsProvider {
 
     public func segments(for query: Query) async throws -> [Segment] {
         if let cached = cachedSegments(for: query) {
-            Logger.sponsorBlock.debug("segments served from cache")
+            Logger.segmentSkip.debug("segments served from cache")
             return cached
         }
         if let task = inFlight[query] {
-            Logger.sponsorBlock.debug("segments joined an in-flight request")
+            Logger.segmentSkip.debug("segments joined an in-flight request")
             return try await task.value
         }
-        Logger.sponsorBlock.debug("segments fetched from the API")
+        Logger.segmentSkip.debug("segments fetched from the API")
 
         let load = self.load
         let task = Task { try await Self.fetchSegments(for: query, load: load) }
@@ -179,7 +179,7 @@ public actor SponsorBlockSegmentsProvider {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ProviderError.invalidResponse
         }
-        Logger.sponsorBlock.debug("API responded with HTTP \(httpResponse.statusCode)")
+        Logger.segmentSkip.debug("API responded with HTTP \(httpResponse.statusCode)")
         switch httpResponse.statusCode {
         case 200: return try parseSegments(from: data, videoID: query.videoID)
         case 404: return []
@@ -230,7 +230,7 @@ public actor SponsorBlockSegmentsProvider {
             throw ProviderError.invalidResponse
         }
         let rawSegments = entries.first { $0.videoID == videoID }?.segments ?? []
-        Logger.sponsorBlock.debug("API returned \(entries.count) videos for the hash prefix, \(rawSegments.count) raw segments for the requested one")
+        Logger.segmentSkip.debug("API returned \(entries.count) videos for the hash prefix, \(rawSegments.count) raw segments for the requested one")
         return rawSegments.compactMap { raw -> Segment? in
             guard let times = raw.segment, times.count == 2, times[1] >= times[0],
                   let uuid = raw.UUID, let category = raw.category, let actionType = raw.actionType else {

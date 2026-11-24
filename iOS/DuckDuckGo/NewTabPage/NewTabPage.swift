@@ -94,9 +94,64 @@ protocol NewTabPage: UIViewController,
     func widthChanged()
 }
 
+struct NewTabPageFocusedPose: Equatable {
+    var inputOffset: CGFloat
+    /// How far the greeting travels while it fades. It follows the input only when the input moves up the page.
+    var greetingOffset: CGFloat
+    var modulesOffset: CGFloat
+    var showsModules: Bool
+    var bottomInputHeight: CGFloat
+
+    static let bottomInputModulesTopMargin: CGFloat = 8
+
+    init(inputOffset: CGFloat, greetingOffset: CGFloat? = nil, modulesOffset: CGFloat, showsModules: Bool, bottomInputHeight: CGFloat = 0) {
+        self.inputOffset = inputOffset
+        self.greetingOffset = greetingOffset ?? inputOffset
+        self.modulesOffset = modulesOffset
+        self.showsModules = showsModules
+        self.bottomInputHeight = bottomInputHeight
+    }
+
+    init(restingInputFrame: CGRect,
+         focusedInputFrame: CGRect,
+         cardPosition: UnifiedToggleInputCardPosition,
+         safeAreaTop: CGFloat,
+         bottomInputHeight: CGFloat = 0,
+         showsModules: Bool) {
+        switch cardPosition {
+        case .top:
+            self.init(inputOffset: focusedInputFrame.midY - restingInputFrame.midY,
+                      modulesOffset: focusedInputFrame.maxY - restingInputFrame.maxY,
+                      showsModules: showsModules)
+        case .bottom:
+            let modulesTop = safeAreaTop + Self.bottomInputModulesTopMargin
+            self.init(inputOffset: focusedInputFrame.midY - restingInputFrame.midY,
+                      greetingOffset: 0,
+                      modulesOffset: modulesTop - restingInputFrame.maxY,
+                      showsModules: showsModules,
+                      bottomInputHeight: bottomInputHeight)
+        }
+    }
+
+    var focusedInputRestingTransform: CGAffineTransform {
+        CGAffineTransform(translationX: 0, y: -inputOffset)
+    }
+}
+
 protocol NewTabPageInputTransitionSource: AnyObject {
-    var canAnimateSearchInput: Bool { get }
     var searchInputView: UIView? { get }
+    /// The resting card's frame, without any focused pose transform.
     func searchInputTransitionFrame(in view: UIView) -> CGRect?
+    /// The resting card's frame at the scroll offset editing began from, so a refreshed pose ignores scrolling while focused.
+    func focusedPoseSearchInputFrame(in view: UIView) -> CGRect?
     func setSearchInputEditing(_ isEditing: Bool)
+    var focusedPose: NewTabPageFocusedPose? { get }
+    /// Moves the live blocks to the pose, or back to rest with nil. Call inside an animation to animate.
+    /// Leaving a settled pose first returns the page to its resting scroll position, without animation.
+    func setFocusedPose(_ pose: NewTabPageFocusedPose?)
+    /// Lets the modules scroll beneath the focused input once it has arrived. Call outside any animation.
+    func settleFocusedPose()
+    func focusedModulesContain(_ point: CGPoint, in view: UIView) -> Bool
+    /// Receives a horizontal flick that starts on the focused modules, which sit outside the focused layer's touch area.
+    var onFocusedModeSwitchSwipe: ((TextEntryMode) -> Void)? { get set }
 }

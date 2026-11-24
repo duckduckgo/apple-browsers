@@ -190,10 +190,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                 frameRevision += 1
             })
         func content(showsSearchModules: Bool, topInset: CGFloat) -> AnyView {
-            AnyView(RedesignedFocusedSearchModulesView(favoritesModel: hvc.favoritesModel,
-                                                       messagesModel: nil,
-                                                       showsSearchModules: showsSearchModules,
-                                                       recentChats: recentChats,
+            AnyView(RedesignedFocusedSearchModulesView(recentChats: recentChats,
                                                        escapeHatch: hatch,
                                                        syncPromo: marker,
                                                        contentTopInset: topInset,
@@ -388,9 +385,9 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         host.setContentInsets(UIEdgeInsets(top: 184, left: 0, bottom: 0, right: 0))
         waitForLayout {
             parent.view.layoutIfNeeded()
-            return probeFrame?.height == 1_200 && self.outerContentScrollView(in: parent.view) != nil
+            return probeFrame?.height == 1_200 && self.outerContentScrollView(in: parent.view, holdingContentHeight: 1_200) != nil
         }
-        let scrollView = try XCTUnwrap(outerContentScrollView(in: parent.view))
+        let scrollView = try XCTUnwrap(outerContentScrollView(in: parent.view, holdingContentHeight: 1_200))
         XCTAssertTrue(parent.view.window === window)
         if !usesRedesign { XCTAssertTrue(controller.view.window === window) }
         let initialFrame = try XCTUnwrap(probeFrame)
@@ -406,7 +403,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                     parent.view.layoutIfNeeded()
                     return (probeFrame?.maxY ?? 0) > 0 && (probeFrame?.minY ?? 0) < 0
                 }
-                XCTAssertTrue(outerContentScrollView(in: controller.view) === scrollView)
+                XCTAssertTrue(outerContentScrollView(in: controller.view, holdingContentHeight: 1_200) === scrollView)
                 XCTAssertTrue(controller.isViewLoaded)
                 host.scrollLegacyContentToTop(duration: 0.2)
                 if resetsBeforeClearanceChanges {
@@ -435,7 +432,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             let frame = try XCTUnwrap(probeFrame)
             XCTAssertEqual(frame.minY, initialFrame.minY + topInset - 184, accuracy: 1,
                            "The scrolling content must follow the input clearance exactly once")
-            XCTAssertTrue(outerContentScrollView(in: parent.view) === scrollView)
+            XCTAssertTrue(outerContentScrollView(in: parent.view, holdingContentHeight: 1_200) === scrollView)
             XCTAssertEqual(scrollView.convert(scrollView.bounds, to: window).minY, initialViewport.minY, accuracy: 1)
             XCTAssertEqual(scrollView.adjustedContentInset.top, initialNativeTopInset, accuracy: 1,
                            "Input clearance belongs to the scrolling content, not the native safe area")
@@ -449,9 +446,12 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, file: file, line: line)
     }
 
-    private func outerContentScrollView(in view: UIView) -> UIScrollView? {
-        if let scrollView = view as? UIScrollView, !(scrollView is UICollectionView), !(scrollView is UITableView) { return scrollView }
-        return view.subviews.lazy.compactMap { self.outerContentScrollView(in: $0) }.first
+    private func outerContentScrollView(in view: UIView, holdingContentHeight minimumContentHeight: CGFloat) -> UIScrollView? {
+        if let scrollView = view as? UIScrollView, !(scrollView is UICollectionView), !(scrollView is UITableView),
+           scrollView.contentSize.height >= minimumContentHeight {
+            return scrollView
+        }
+        return view.subviews.lazy.compactMap { self.outerContentScrollView(in: $0, holdingContentHeight: minimumContentHeight) }.first
     }
 
     private func assertTypingListTracksTopClearance(usesScrollableEscapeHatch: Bool) throws {

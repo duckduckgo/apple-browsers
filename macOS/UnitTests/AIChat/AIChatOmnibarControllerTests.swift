@@ -3456,19 +3456,23 @@ extension AIChatOmnibarControllerTests {
     func testWhenUserDefaultIsSet_ThenNewChatStartsOnItAndFollowsChanges() async throws {
         let storage = try makeUserDefaultStorage("luna")
         let controller = makeNewChatDefaultController(userDefaultStorage: storage)
-        var changeCount = 0
-        controller.onSelectedModelChanged = { changeCount += 1 }
         controller.onOmnibarActivated()
         await waitForModels()
 
         XCTAssertEqual(controller.currentModelId, "luna")
         XCTAssertNil(controller.selectedReasoningEffort)
 
-        changeCount = 0
-        try storage.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue)
+        let changed = expectation(description: "selected model changed")
+        controller.onSelectedModelChanged = {
+            XCTAssertTrue(Thread.isMainThread)
+            changed.fulfill()
+        }
+        DispatchQueue.global().async {
+            try? storage.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue)
+        }
 
+        await fulfillment(of: [changed], timeout: 1)
         XCTAssertEqual(controller.currentModelId, "terra")
-        XCTAssertEqual(changeCount, 1)
     }
 
     func testWhenUserDefaultSubmitted_ThenPixelReportsUserDefaultSource() async throws {

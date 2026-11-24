@@ -294,7 +294,7 @@
                         "promotion_data_import_summary",
                         "ai_chat",
                         "ai_chat_history",
-                        "import_passwords_via_sync",
+                        "promotion_passwords_import",
                         "remote_message"
                     ]
                 }

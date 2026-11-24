@@ -52,6 +52,7 @@ struct SyncSetupWideEventDefinitionTests {
         let sent = SyncSetupTimeoutStage.allCases.filter { $0 != .waitingForJoinStatus }.map(\.rawValue)
 
         #expect(Set(sent).subtracting(defined) == [])
+        #expect(defined.contains("unknown"))
     }
 
     @available(iOS 16, macOS 13, *)

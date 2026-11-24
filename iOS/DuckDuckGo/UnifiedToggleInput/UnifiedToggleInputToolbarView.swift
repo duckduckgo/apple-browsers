@@ -40,9 +40,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         static let chipHeight: CGFloat = 40
         static let chipCornerRadius: CGFloat = 20
         static let chipHorizontalPadding: CGFloat = 16
-        /// The simplified prompt box's chip: 8pt padding around today's icon and ✕, 68pt wide in all.
         static let simplifiedChipHorizontalPadding: CGFloat = 8
-        /// The simplified chip's ✕ is the only way to turn a tool off, so it takes taps beyond its 24pt button.
         static let simplifiedClearButtonHitTarget: CGFloat = 44
         static let chipSpacing: CGFloat = 4
         static let minimumGroupGap: CGFloat = 8
@@ -276,8 +274,6 @@ final class UnifiedToggleInputToolbarView: UIView {
         }
     }
 
-    /// The simplified prompt box: the attach button is ⊕, and with no tools button for the chip to
-    /// stand in for, the chip keeps its ✕ at every width so the selected tool can always be turned off.
     var usesSimplifiedPromptBox: Bool = false {
         didSet {
             guard oldValue != usesSimplifiedPromptBox else { return }
@@ -642,7 +638,6 @@ extension UnifiedToggleInputToolbarView {
         var showsToolsButton = true
         var showsModeChip = false
         var allowsMergedTools = true
-        /// The simplified prompt box's narrower chip.
         var usesSimplifiedToolChip = false
         var showsReasoningButton = true
         /// The pill showing its name, or nil while it is hidden.
@@ -981,7 +976,6 @@ private extension UnifiedToggleInputToolbarView {
     @objc private func stopGeneratingTapped() { onStopGeneratingTapped?() }
 }
 
-/// Grows its tap area to `minimumHitTarget` around a smaller glyph; 0 keeps the button's own bounds.
 private final class ToolClearButton: UIButton {
 
     var minimumHitTarget: CGFloat = 0

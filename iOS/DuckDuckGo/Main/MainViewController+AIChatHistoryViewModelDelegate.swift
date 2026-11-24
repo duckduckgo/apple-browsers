@@ -81,14 +81,11 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
-    /// Same routing as the browser menu's Duck.ai Settings: in place on a Duck.ai tab, a new tab elsewhere.
     func viewModelDidRequestDuckAISettings() {
         duckAIInputFocus.forget()
         dismiss(animated: true) { [weak self] in
             guard let self else { return }
             if let tab = self.currentTab, tab.isAITab {
-                // Duck.ai's settings sheet doesn't hide the native input, so an expanded input would sit over it.
-                // Collapse it first, the state the browsing menu opens settings from.
                 if let coordinator = self.unifiedToggleInputCoordinator, coordinator.isAITabExpanded {
                     coordinator.showCollapsed()
                 }

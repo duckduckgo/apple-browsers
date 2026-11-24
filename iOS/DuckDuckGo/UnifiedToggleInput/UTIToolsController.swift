@@ -213,7 +213,6 @@ struct UTIToolsMenu {
     }
 }
 
-/// The tools the attach menu shows below the attachment rows when the prompt box is simplified.
 struct UTIAttachMenuTools {
     let menu: UTIToolsMenu
     let onSelect: (UTIToolsMenu.Item.Identifier) -> Void
@@ -236,9 +235,6 @@ struct UTIToolsMenuFactory {
         return UIMenu(children: children)
     }
 
-    /// The tools as the attach menu's last section, styled like the attachment rows above them: title
-    /// and icon only. The chip in the input carries the selection, so the rows never show a checkmark,
-    /// and Customize Responses has no row here.
     func makeAttachMenuSection(_ menu: UTIToolsMenu, onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void) -> UIMenu {
         let toolActions = menu.items
             .filter { $0.identifier != .customizeResponses }
@@ -292,7 +288,6 @@ struct UTIToolsMenuFactory {
         return UIAction(
             title: UserText.aiChatToolbarWebSearchToolTitle,
             subtitle: showsSubtitle ? UserText.aiChatToolbarWebSearchToolSubtitle : nil,
-            // The attach menu's rows use 16pt glyphs; the tools menu keeps its 24pt ones.
             image: showsSubtitle ? DesignSystemImages.Glyphs.Size24.globe : DesignSystemImages.Glyphs.Size16.globe,
             attributes: attributes,
             state: state

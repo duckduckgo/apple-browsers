@@ -115,6 +115,8 @@ public struct AIChatNativeConfigValues: Codable {
     /// `true` when native accepts the `browserToolsAnswerCompleted` and `browserToolsAnswerRated` metrics.
     /// Older apps don't decode them and log an error, so Duck.ai sends them only when this is set.
     public var supportsBrowserToolsAnswerMetrics = false
+    /// `true` when DuckDuckGo search results may send `askAboutPage` to attach a result's page to the Duck.ai sidebar.
+    public var supportsAskAboutPage = false
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool

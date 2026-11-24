@@ -61,6 +61,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
     case getAIChats
 
+    /// Posted by DuckDuckGo search results with `{ url }` to attach that result's page to the Duck.ai sidebar.
+    case askAboutPage
+
     case voiceSessionStarted
     case voiceSessionEnded
 

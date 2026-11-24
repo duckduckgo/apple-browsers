@@ -180,8 +180,9 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: Page-context extraction was skipped because the page is not attachable (blocklisted media type or special page).
     case aiChatPageContextExtractionPrevented(category: String, trigger: String)
 
-    /// Event Trigger: User picks "Ask about page" in a link's context menu, to ask Duck.ai about the linked page.
-    case aiChatLinkAskAboutPage(linkType: AIChatLinkAskAboutPageType)
+    /// Event Trigger: User picks "Ask about page" for a link, in its context menu or in a DuckDuckGo search result's menu,
+    /// to ask Duck.ai about the linked page.
+    case aiChatLinkAskAboutPage(linkType: AIChatLinkAskAboutPageType, source: AIChatLinkAskAboutPageSource)
 
     /// Event Trigger: A linked page asked about redirected to another origin, so it's read again without the user's session.
     case aiChatLinkAskAboutPageRetryWithoutSession
@@ -1258,8 +1259,8 @@ enum AIChatPixel: PixelKit.Event {
             return params
         case .aiChatPageContextExtractionPrevented(let category, let trigger):
             return ["category": category, "reason": "non_attachable", "trigger": trigger]
-        case .aiChatLinkAskAboutPage(let linkType):
-            return ["link_type": linkType.rawValue]
+        case .aiChatLinkAskAboutPage(let linkType, let source):
+            return ["link_type": linkType.rawValue, "source": source.rawValue]
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
         case .aiChatDuckAIDirectNavigation(let via, let duckAIEnabled, let toggleEnabled):
@@ -1595,6 +1596,14 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
 enum AIChatLinkAskAboutPageType: String, CaseIterable {
     case serp
     case other
+}
+
+/// Where "Ask about page" for a link was picked.
+enum AIChatLinkAskAboutPageSource: String, CaseIterable {
+    /// The link's context menu.
+    case contextMenu = "context_menu"
+    /// A DuckDuckGo search result's own menu, through the `askAboutPage` message.
+    case serpMenu = "serp_menu"
 }
 
 /// The sidebar item the tab-bar Duck.ai menu offers. Resolved once per menu, so the item's title, its

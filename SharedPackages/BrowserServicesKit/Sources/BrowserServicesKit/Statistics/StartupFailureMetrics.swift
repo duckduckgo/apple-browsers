@@ -33,6 +33,7 @@ public protocol StartupFailureInstrumentation {
 public final class StartupFailureMetrics: StartupFailureInstrumentation {
 
     static let enabledKey = "startupFailureMetricsEnabled"
+    private static let recoveryDayBuckets = [0, 1, 3, 5, 8, 13, 21]
 
     private struct State: Codable {
         let firstFailureDate: Date
@@ -128,7 +129,9 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
             guard defaults.bool(forKey: Self.enabledKey), !didFailInThisProcess, pixelFiring != nil, let storageURL = storageURLProvider(),
                   var state = try readState(from: storageURL),
                   !state.didReportReturn else { return }
-            daysSinceFailure = Self.daysSinceFailure(from: state.firstFailureDate, to: dateProvider())
+            daysSinceFailure = Self.wholeDaysSinceFailure(from: state.firstFailureDate, to: dateProvider()).map {
+                $0 >= 7 ? "7+" : String($0)
+            } ?? "unknown"
             state.didReportReturn = true
             // Persist before sending so another launch cannot count the same return twice.
             try writeState(state, to: storageURL)
@@ -144,20 +147,22 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
         guard defaults.bool(forKey: Self.enabledKey) else { return }
         let pixelFiring = pixelFiringProvider()
         lock.lock()
-        let daysSinceFailure: String
+        let daysBucket: Int?
         do {
             defer { lock.unlock() }
             guard defaults.bool(forKey: Self.enabledKey), !didFailInThisProcess, pixelFiring != nil, let storageURL = storageURLProvider(),
                   let state = try readState(from: storageURL),
                   state.didReportReturn else { return }
-            daysSinceFailure = Self.daysSinceFailure(from: state.firstFailureDate, to: dateProvider())
+            daysBucket = Self.wholeDaysSinceFailure(from: state.firstFailureDate, to: dateProvider()).flatMap { days in
+                Self.recoveryDayBuckets.last { $0 <= days }
+            }
             try FileManager.default.removeItem(at: storageURL)
         } catch {
             // Keep the episode open if its file cannot be removed.
             return
         }
 
-        pixelFiring?.fire(StartupFailurePixel.recovered(daysSinceFailure: daysSinceFailure), frequency: .standard, options: .withRetry)
+        pixelFiring?.fire(StartupFailurePixel.recovered(daysCount: daysBucket), frequency: .standard, options: .withRetry)
     }
 
     private func readState(from url: URL) throws -> State? {
@@ -174,18 +179,17 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
         try JSONEncoder().encode(state).write(to: url, options: .atomic)
     }
 
-    private static func daysSinceFailure(from failureDate: Date, to returnDate: Date) -> String {
-        let elapsed = returnDate.timeIntervalSince(failureDate)
-        guard elapsed.isFinite, elapsed >= 0 else { return "unknown" }
-        guard elapsed < 7 * 24 * 60 * 60 else { return "7+" }
-        return String(Int(elapsed / (24 * 60 * 60)))
+    private static func wholeDaysSinceFailure(from failureDate: Date, to eventDate: Date) -> Int? {
+        let elapsed = eventDate.timeIntervalSince(failureDate)
+        guard elapsed.isFinite, elapsed >= 0 else { return nil }
+        return Int(exactly: (elapsed / (24 * 60 * 60)).rounded(.down))
     }
 }
 
 enum StartupFailurePixel: PixelKit.Event {
     case failure
     case returned(daysSinceFailure: String)
-    case recovered(daysSinceFailure: String)
+    case recovered(daysCount: Int?)
 
     var name: String {
         let base: String
@@ -211,8 +215,10 @@ enum StartupFailurePixel: PixelKit.Event {
         switch self {
         case .failure:
             return nil
-        case .returned(let daysSinceFailure), .recovered(let daysSinceFailure):
+        case .returned(let daysSinceFailure):
             return ["days_since_first_failure": daysSinceFailure]
+        case .recovered(let daysCount):
+            return daysCount.map { ["days_count": String($0)] }
         }
     }
 }

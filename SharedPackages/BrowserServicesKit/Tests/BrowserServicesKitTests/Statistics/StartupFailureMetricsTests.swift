@@ -136,7 +136,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysSinceFailure: "0"), frequency: .standard)
+            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysCount: 0), frequency: .standard)
         ])
     }
 
@@ -160,7 +160,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         featureFlagger.featuresStub[TestFeatureFlag.startupFailureMetrics.rawValue] = true
         featureFlagger.triggerUpdate()
         nextLaunch.recordSuccessfulStartup()
-        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.name, StartupFailurePixel.recovered(daysSinceFailure: "0").name)
+        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.name, StartupFailurePixel.recovered(daysCount: 0).name)
         XCTAssertEqual(pixels.actualFireCalls.count, 3)
     }
 
@@ -297,7 +297,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysSinceFailure: "0"), frequency: .standard),
+            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysCount: 0), frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "1"), frequency: .standard)
         ])
@@ -335,7 +335,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "1"), frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysSinceFailure: "3"), frequency: .standard)
+            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysCount: 3), frequency: .standard)
         ])
     }
 
@@ -360,12 +360,36 @@ final class StartupFailureMetricsTests: XCTestCase {
         }
     }
 
-    func testClockMovingBackwardsDoesNotReportAnImmediateReturn() {
+    func testRecoveryAgeUsesBucketLowerBoundsAndCapsAtTwentyOneDays() {
+        let cases: [(days: Int, bucket: Int)] = [
+            (0, 0), (1, 1), (2, 1), (3, 3), (4, 3), (5, 5), (7, 5),
+            (8, 8), (12, 8), (13, 13), (20, 13), (21, 21), (34, 21)
+        ]
+
+        for testCase in cases {
+            makeSubject().recordFailure()
+            now.addTimeInterval(TimeInterval(testCase.days * 24 * 60 * 60 + 23 * 60 * 60))
+            let recovery = makeSubject()
+            recovery.recordReturn()
+            recovery.recordSuccessfulStartup()
+
+            XCTAssertEqual(pixels.actualFireCalls.last?.pixel.parameters,
+                           ["days_count": String(testCase.bucket)],
+                           "Recovery after \(testCase.days) whole days")
+        }
+    }
+
+    func testClockMovingBackwardsLeavesRecoveryAgeUnknown() {
         makeSubject().recordFailure()
         now.addTimeInterval(-24 * 60 * 60)
-        makeSubject().recordReturn()
+        let recovery = makeSubject()
+        recovery.recordReturn()
+        recovery.recordSuccessfulStartup()
 
-        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.parameters, ["days_since_first_failure": "unknown"])
+        XCTAssertEqual(pixels.actualFireCalls.dropFirst().map { $0.pixel.parameters }, [
+            ["days_since_first_failure": "unknown"],
+            nil
+        ])
     }
 
     func testUnreadableStateDoesNotStartADuplicateEpisode() throws {
@@ -414,7 +438,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls.count, 2)
     }
 
-    func testOriginalPixelPayloadsContainOnlyBucketedAgeAndOptIntoRetry() {
+    func testOriginalPixelPayloadsIncludeElapsedDayBucketsAndOptIntoRetry() {
         makeSubject().recordFailure()
         let nextLaunch = makeSubject()
         nextLaunch.recordReturn()
@@ -423,7 +447,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertNil(pixels.actualFireCalls.first?.pixel.parameters)
         XCTAssertEqual(pixels.actualFireCalls.dropFirst().compactMap { $0.pixel.parameters }, [
             ["days_since_first_failure": "0"],
-            ["days_since_first_failure": "0"]
+            ["days_count": "0"]
         ])
         XCTAssertTrue(pixels.actualFireCalls.allSatisfy { $0.frequency == .standard })
         XCTAssertTrue(pixels.actualFireCalls.allSatisfy { $0.includeAppVersionParameter })

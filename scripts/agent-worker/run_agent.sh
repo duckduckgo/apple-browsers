@@ -17,6 +17,9 @@ ln -sf "$here/xc.sh" "$RUNNER_TEMP/bin/xc"
 # File tools in the checkout, xc and read-only git, so it can check its change and fix it as it goes
 allow="Read,Glob,Grep,Edit(./**),Write(./**),Bash(xc:*)"
 for c in log show blame diff status grep ls-files; do allow+=",Bash(git $c:*)"; done
+# auto reads history with git -C on the checkout. The path is exact, since a wildcard would also match options
+# such as -c before the subcommand
+allow+=",Bash(git -C $PWD show:*)"
 deny="WebFetch,WebSearch,Read(/$IDENTITY_DIR/**),Read(~/.azure/**),Read(//proc/**),Read(/$GH_TOKEN_DIR/**),Read(/$AZURE_TOKEN_DIR/**)"
 
 # For auto: subagents, worktrees, a scratch dir, git branches, commits and pushes, gh for its own PRs and their CI,

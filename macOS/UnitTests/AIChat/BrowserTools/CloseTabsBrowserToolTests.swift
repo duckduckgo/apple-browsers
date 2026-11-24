@@ -23,24 +23,15 @@ import XCTest
 @MainActor
 final class CloseTabsBrowserToolTests: XCTestCase {
 
-    private var deferredWork: [@MainActor () -> Void] = []
-
-    override func tearDown() {
-        deferredWork = []
-        super.tearDown()
-    }
-
-    func testWhenNoTabIdsAreGivenThenTheOwnerTabClosesOnlyAfterTheReply() async {
+    func testWhenTheChatsOwnTabIsNamedThenItStaysOpenAndTheOthersClose() async {
         let collection = collection(urls: ["https://a.example", "https://b.example"])
-        let owner = collection.tabCollection.tabs[0].uuid
-        let (tool, context) = make(collection: collection, ownerTabID: owner)
+        let ids = collection.tabCollection.tabs.map(\.uuid)
+        let (tool, context) = make(collection: collection, ownerTabID: ids[0])
 
-        let result = await tool.execute(arguments: ["tabIds": .null], context: context)
+        let result = await tool.execute(arguments: ["tabIds": [.string(ids[0]), .string(ids[1])]], context: context)
 
-        XCTAssertEqual(result, .success(closed([owner: true])))
-        XCTAssertEqual(collection.tabCollection.tabs.count, 2)
-        deferredWork.forEach { $0() }
-        XCTAssertNil(collection.indexInAllTabs(where: { $0.uuid == owner }))
+        XCTAssertEqual(result, .success(closed([ids[0]: false, ids[1]: true])))
+        XCTAssertEqual(collection.tabCollection.tabs.map(\.uuid), [ids[0]])
     }
 
     func testWhenTheOwnerTabIsNotAWebPageThenItIsNotClosed() async {
@@ -49,11 +40,10 @@ final class CloseTabsBrowserToolTests: XCTestCase {
             let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: [owner]), pinnedTabsManagerProvider: nil)
             let (tool, context) = make(collection: collection, ownerTabID: owner.uuid)
 
-            let result = await tool.execute(arguments: nil, context: context)
+            let result = await tool.execute(arguments: ["tabIds": [.string(owner.uuid)]], context: context)
 
             XCTAssertEqual(result, .failure(.notFound), "\(content)")
             XCTAssertEqual(collection.tabCollection.tabs.count, 1)
-            XCTAssertTrue(deferredWork.isEmpty)
         }
     }
 
@@ -66,7 +56,6 @@ final class CloseTabsBrowserToolTests: XCTestCase {
 
         XCTAssertEqual(result, .success(closed([ids[2]: true, ids[1]: true])))
         XCTAssertEqual(collection.tabCollection.tabs.map(\.uuid), [ids[0]])
-        XCTAssertTrue(deferredWork.isEmpty)
     }
 
     func testWhenAnyTabIdIsUnknownThenNothingCloses() async {
@@ -102,17 +91,20 @@ final class CloseTabsBrowserToolTests: XCTestCase {
         XCTAssertEqual(collection.tabCollection.tabs.count, 1)
     }
 
-    func testWhenTabIdsAreMalformedThenArgumentsAreInvalid() async {
+    func testWhenTabIdsAreMissingOrMalformedThenArgumentsAreInvalid() async {
         let collection = collection(urls: ["https://a.example"])
         let (tool, context) = make(collection: collection, ownerTabID: collection.tabCollection.tabs[0].uuid)
         let tooMany = JSONValue.array(Array(repeating: "id", count: CloseTabsBrowserTool.maxTabIDs + 1))
 
+        for arguments: JSONValue? in [nil, [:], ["tabIds": .null]] {
+            let result = await tool.execute(arguments: arguments, context: context)
+            XCTAssertEqual(result, .failure(.invalidArguments), "\(String(describing: arguments))")
+        }
         for tabIDs: JSONValue in [[], "id", [1], [" "], tooMany] {
             let result = await tool.execute(arguments: ["tabIds": tabIDs], context: context)
             XCTAssertEqual(result, .failure(.invalidArguments), "\(tabIDs)")
         }
         XCTAssertEqual(collection.tabCollection.tabs.count, 1)
-        XCTAssertTrue(deferredWork.isEmpty)
     }
 
     func testWhenCalledInAFireWindowThenCallIsUnavailable() async {
@@ -140,8 +132,7 @@ final class CloseTabsBrowserToolTests: XCTestCase {
     }
 
     private func make(collection: TabCollectionViewModel, ownerTabID: String) -> (CloseTabsBrowserTool, BrowserToolCallContext) {
-        let tool = CloseTabsBrowserTool(windowControllersManager: manager(with: [collection]),
-                                        afterReply: { [unowned self] work in deferredWork.append(work) })
+        let tool = CloseTabsBrowserTool(windowControllersManager: manager(with: [collection]))
         let context = BrowserToolCallContext(ownerTabID: ownerTabID,
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
                                              isBurner: false)

@@ -33,27 +33,22 @@ final class CloseTabsBrowserTool: BrowserTool {
             "tabIds": [
                 "type": "array",
                 "items": ["type": "string"],
-                "description": "Optional. 1 to 50 tab IDs from listOpenTabs. Omit to close the current tab."
+                "description": "1 to 50 tab IDs from listOpenTabs. The chat's own tab is never closed."
             ]
-        ]
+        ],
+        "required": ["tabIds"]
     ]
 
     private let windowControllersManager: WindowControllersManagerProtocol
-    private let afterReply: (@escaping @MainActor () -> Void) -> Void
 
-    init(windowControllersManager: WindowControllersManagerProtocol,
-         afterReply: @escaping (@escaping @MainActor () -> Void) -> Void = { work in DispatchQueue.main.asyncAfter(deadline: .now() + 1) { work() } }) {
+    init(windowControllersManager: WindowControllersManagerProtocol) {
         self.windowControllersManager = windowControllersManager
-        self.afterReply = afterReply
     }
 
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
-        let requestedIDs: [TabIdentifier]?
-        switch BrowserToolTargetTab.tabIDs(from: arguments, maxCount: Self.maxTabIDs) {
-        case .absent: requestedIDs = nil
-        case .ids(let ids): requestedIDs = ids
-        case .invalid: return .failure(.invalidArguments)
+        guard case .ids(let requestedIDs) = BrowserToolTargetTab.tabIDs(from: arguments, maxCount: Self.maxTabIDs) else {
+            return .failure(.invalidArguments)
         }
 
         guard let token = context.ownerWindowToken,
@@ -65,26 +60,14 @@ final class CloseTabsBrowserTool: BrowserTool {
         }
 
         return .success(["tabs": .array(tabs.map { tab in
-            ["tabId": .string(tab.uuid), "closed": .bool(close(tab.uuid, in: collection, ownerTabID: context.ownerTabID))]
+            ["tabId": .string(tab.uuid), "closed": .bool(tab.uuid != context.ownerTabID && close(tab.uuid, in: collection))]
         })])
     }
 
-    /// Closing the chat's own tab closes the chat too, so it happens after the reply is sent.
-    private func close(_ tabID: TabIdentifier, in collection: TabCollectionViewModel, ownerTabID: TabIdentifier) -> Bool {
-        guard case .unpinned = collection.indexInAllTabs(where: { $0.uuid == tabID }) else { return false }
-        guard tabID == ownerTabID else {
-            Self.closeTab(withID: tabID, in: collection)
-            return collection.indexInAllTabs(where: { $0.uuid == tabID }) == nil
-        }
-        afterReply { [weak collection] in
-            guard let collection else { return }
-            Self.closeTab(withID: tabID, in: collection)
-        }
-        return true
-    }
-
-    private static func closeTab(withID tabID: TabIdentifier, in collection: TabCollectionViewModel) {
-        guard let index = collection.indexInAllTabs(where: { $0.uuid == tabID }), index.isUnpinnedTab else { return }
+    /// Pinned tabs stay open.
+    private func close(_ tabID: TabIdentifier, in collection: TabCollectionViewModel) -> Bool {
+        guard let index = collection.indexInAllTabs(where: { $0.uuid == tabID }), index.isUnpinnedTab else { return false }
         collection.close(at: index)
+        return collection.indexInAllTabs(where: { $0.uuid == tabID }) == nil
     }
 }

@@ -574,6 +574,7 @@ let package = Package(
                 .product(name: "Persistence", package: "Persistence"),
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),

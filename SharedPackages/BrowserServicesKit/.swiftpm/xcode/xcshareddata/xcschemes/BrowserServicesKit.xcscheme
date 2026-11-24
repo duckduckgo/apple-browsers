@@ -304,6 +304,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AutoconsentStatsTests"
+               BuildableName = "AutoconsentStatsTests"
+               BlueprintName = "AutoconsentStatsTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SuggestionsTests"
                BuildableName = "SuggestionsTests"
                BlueprintName = "SuggestionsTests"

@@ -326,8 +326,14 @@ extension DataBrokerProtectionManager {
         try options.managedSeed?.writeReceipt(since: since, jobs: managedJobs)
     }
 
+    /// Seeding needs the Freemium path, so a signed-in DEBUG account is signed out first.
     private func validateManagedSeedAccount(_ managedSeed: PIRDebugLaunchOptions.ManagedSeed?) async throws {
         guard let managedSeed else { return }
+        let subscriptionManager = Application.appDelegate.subscriptionManager
+        if subscriptionManager.isUserAuthenticated {
+            Logger.dataBrokerProtection.log("PIR debug launch: signing out the DEBUG account before seeding.")
+            await subscriptionManager.signOut(notifyUI: true)
+        }
         let pirAuthenticated = await authenticationManager.isUserAuthenticated
         try managedSeed.validateAccount(rawAuthenticated: Application.appDelegate.subscriptionManager.isUserAuthenticated,
                                         pirAuthenticated: pirAuthenticated)

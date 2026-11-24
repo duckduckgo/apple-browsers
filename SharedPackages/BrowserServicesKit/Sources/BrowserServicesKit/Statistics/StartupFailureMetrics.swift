@@ -141,7 +141,7 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
         pixelFiring?.fire(StartupFailurePixel.returned(daysSinceFailure: daysSinceFailure), frequency: .standard, options: .withRetry)
     }
 
-    /// Reports recovery and closes the episode once the browser is ready for user interaction.
+    /// Reports recovery and closes the episode when startup completes.
     public func recordSuccessfulStartup() {
         guard defaults.bool(forKey: Self.enabledKey) else { return }
         let pixelFiring = pixelFiringProvider()

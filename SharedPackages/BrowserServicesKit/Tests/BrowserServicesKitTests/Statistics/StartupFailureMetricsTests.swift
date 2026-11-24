@@ -114,54 +114,41 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
     }
 
-    func testDisabledTrackingPreservesPendingEpisodeAndDoesNotSuppressRecoveryAfterEnabling() throws {
+    func testDisablingTrackingPreservesEpisodeBeforeAndAfterReturn() throws {
+        let flag = TestFeatureFlag.startupFailureMetrics
         makeSubject().recordFailure()
-        let originalState = try Data(contentsOf: storageURL)
-        let featureFlagger = MockFeatureFlagger(featuresStub: [TestFeatureFlag.startupFailureMetrics.rawValue: false])
+        let pendingState = try Data(contentsOf: storageURL)
+        let featureFlagger = MockFeatureFlagger(featuresStub: [flag.rawValue: false])
         let nextLaunch = makeSubject()
-        nextLaunch.configure(featureFlagger: featureFlagger, feature: TestFeatureFlag.startupFailureMetrics)
+        nextLaunch.configure(featureFlagger: featureFlagger, feature: flag)
 
         nextLaunch.recordFailure()
         nextLaunch.recordUserReturnedToApp()
         nextLaunch.recordSuccessfulStartup()
-
-        XCTAssertEqual(try Data(contentsOf: storageURL), originalState)
+        XCTAssertEqual(try Data(contentsOf: storageURL), pendingState)
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
 
-        featureFlagger.featuresStub[TestFeatureFlag.startupFailureMetrics.rawValue] = true
+        featureFlagger.featuresStub[flag.rawValue] = true
         featureFlagger.triggerUpdate()
         nextLaunch.recordUserReturnedToApp()
-        nextLaunch.recordSuccessfulStartup()
+        let returnedState = try Data(contentsOf: storageURL)
 
+        featureFlagger.featuresStub[flag.rawValue] = false
+        featureFlagger.triggerUpdate()
+        nextLaunch.recordFailure()
+        nextLaunch.recordUserReturnedToApp()
+        nextLaunch.recordSuccessfulStartup()
+        XCTAssertEqual(try Data(contentsOf: storageURL), returnedState)
+        XCTAssertEqual(pixels.actualFireCalls.count, 2)
+
+        featureFlagger.featuresStub[flag.rawValue] = true
+        featureFlagger.triggerUpdate()
+        nextLaunch.recordSuccessfulStartup()
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .sameDay), frequency: .standard)
         ])
-    }
-
-    func testTurningFlagOffDuringSessionPreservesReturnedEpisode() throws {
-        makeSubject().recordFailure()
-        let featureFlagger = MockFeatureFlagger(featuresStub: [TestFeatureFlag.startupFailureMetrics.rawValue: true])
-        let nextLaunch = makeSubject()
-        nextLaunch.configure(featureFlagger: featureFlagger, feature: TestFeatureFlag.startupFailureMetrics)
-        nextLaunch.recordUserReturnedToApp()
-        let returnedState = try Data(contentsOf: storageURL)
-
-        featureFlagger.featuresStub[TestFeatureFlag.startupFailureMetrics.rawValue] = false
-        featureFlagger.triggerUpdate()
-        nextLaunch.recordFailure()
-        nextLaunch.recordUserReturnedToApp()
-        nextLaunch.recordSuccessfulStartup()
-
-        XCTAssertEqual(try Data(contentsOf: storageURL), returnedState)
-        XCTAssertEqual(pixels.actualFireCalls.count, 2)
-
-        featureFlagger.featuresStub[TestFeatureFlag.startupFailureMetrics.rawValue] = true
-        featureFlagger.triggerUpdate()
-        nextLaunch.recordSuccessfulStartup()
-        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.name, StartupFailurePixel.recovered(daysBucket: .sameDay).name)
-        XCTAssertEqual(pixels.actualFireCalls.count, 3)
     }
 
     func testResolvedFlagValueIsUsedBeforeFlaggerIsAvailableOnNextLaunch() {
@@ -220,73 +207,33 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls.count, 2)
     }
 
-    func testFirstFailureIsPersistedAndReportedOnce() {
-        let subject = makeSubject()
-        subject.recordFailure()
-        subject.recordFailure()
-        makeSubject().recordFailure()
-
-        XCTAssertEqual(pixels.actualFireCalls, [
-            ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard)
-        ])
-        XCTAssertTrue(FileManager.default.fileExists(atPath: storageURL.path))
-    }
-
-    func testFailureCannotBeReportedAsReturnInTheSameProcess() {
-        let subject = makeSubject()
-        subject.recordFailure()
-        subject.recordUserReturnedToApp()
-        subject.recordSuccessfulStartup()
-
+    func testEpisodeReportsEachMilestoneOnceAndRearmsOnRecovery() {
+        let failedLaunch = makeSubject()
+        failedLaunch.recordFailure()
+        failedLaunch.recordFailure()
+        failedLaunch.recordUserReturnedToApp()
+        failedLaunch.recordSuccessfulStartup()
         XCTAssertEqual(pixels.actualFireCalls.count, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: storageURL.path))
 
-        makeSubject().recordUserReturnedToApp()
-        XCTAssertEqual(pixels.actualFireCalls.count, 2)
-    }
-
-    func testFirstReturnIsReportedOnlyOnceAcrossLaunches() {
-        makeSubject().recordFailure()
-        now.addTimeInterval(2 * 24 * 60 * 60)
-        let nextLaunch = makeSubject()
-        nextLaunch.recordUserReturnedToApp()
-        nextLaunch.recordUserReturnedToApp()
-        makeSubject().recordUserReturnedToApp()
-
-        XCTAssertEqual(pixels.actualFireCalls, [
-            ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "2"), frequency: .standard)
-        ])
-    }
-
-    func testChangingProblemsDuringRetriesDoesNotResetTheFirstFailureDate() {
-        makeSubject().recordFailure()
         now.addTimeInterval(2 * 24 * 60 * 60)
         makeSubject().recordFailure()
         now.addTimeInterval(24 * 60 * 60)
-        makeSubject().recordUserReturnedToApp()
-
-        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.parameters, ["days_since_first_failure": "3"])
+        let failedRelaunch = makeSubject()
+        failedRelaunch.recordUserReturnedToApp()
+        failedRelaunch.recordUserReturnedToApp()
+        failedRelaunch.recordFailure()
+        failedRelaunch.recordSuccessfulStartup()
+        makeSubject().recordFailure()
         XCTAssertEqual(pixels.actualFireCalls.count, 2)
-    }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: storageURL.path))
 
-    func testReturningWithoutSuccessfulStartupDoesNotRearmFailureReporting() {
-        makeSubject().recordFailure()
-        let retry = makeSubject()
-        retry.recordUserReturnedToApp()
-        retry.recordFailure()
-        retry.recordSuccessfulStartup()
-        makeSubject().recordFailure()
-
-        XCTAssertEqual(pixels.actualFireCalls.count, 2)
-    }
-
-    func testSuccessfulStartupAllowsANewFailureEpisode() {
-        makeSubject().recordFailure()
+        now.addTimeInterval(2 * 24 * 60 * 60)
         let recovery = makeSubject()
         recovery.recordUserReturnedToApp()
         recovery.recordSuccessfulStartup()
         recovery.recordSuccessfulStartup()
-
+        makeSubject().recordSuccessfulStartup()
         XCTAssertFalse(FileManager.default.fileExists(atPath: storageURL.path))
 
         now.addTimeInterval(10 * 24 * 60 * 60)
@@ -296,8 +243,8 @@ final class StartupFailureMetricsTests: XCTestCase {
 
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .sameDay), frequency: .standard),
+            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "3"), frequency: .standard),
+            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .fiveDays), frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "1"), frequency: .standard)
         ])
@@ -315,28 +262,6 @@ final class StartupFailureMetricsTests: XCTestCase {
 
         makeSubject().recordFailure()
         XCTAssertEqual(pixels.actualFireCalls, [ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard)])
-    }
-
-    func testSuccessfulStartupAfterRepeatedFailedReturnsReportsRecoveryOnce() {
-        makeSubject().recordFailure()
-        now.addTimeInterval(24 * 60 * 60)
-        let failedReturn = makeSubject()
-        failedReturn.recordUserReturnedToApp()
-        failedReturn.recordFailure()
-        failedReturn.recordSuccessfulStartup()
-
-        now.addTimeInterval(2 * 24 * 60 * 60)
-        let recovery = makeSubject()
-        recovery.recordUserReturnedToApp()
-        recovery.recordSuccessfulStartup()
-        recovery.recordSuccessfulStartup()
-        makeSubject().recordSuccessfulStartup()
-
-        XCTAssertEqual(pixels.actualFireCalls, [
-            ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "1"), frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .threeDays), frequency: .standard)
-        ])
     }
 
     func testReturnAgeUsesWholeElapsedDaysAndCapsAtSevenDays() {

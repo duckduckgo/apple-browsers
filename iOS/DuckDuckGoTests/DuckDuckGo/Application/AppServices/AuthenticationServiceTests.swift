@@ -20,7 +20,6 @@
 import Foundation
 import UIKit
 import Testing
-import XCTest
 @testable import DuckDuckGo
 
 final class MockPrivacyStore: PrivacyStore {
@@ -143,52 +142,6 @@ final class AuthenticationServiceTests {
         mockAuthenticator.authenticationSucceeds = true
         await authenticationService.authenticate()
         #expect(authenticationService.isUnlocked)
-    }
-
-    @MainActor
-    @available(iOS 16, macOS 13, *)
-    @Test("An action deferred while locked runs after a successful unlock retry", .timeLimit(.minutes(1)))
-    func deferredActionRunsAfterUnlockRetry() async throws {
-        mockAuthenticator.authenticationSucceeds = false
-        let actionRan = XCTestExpectation(description: "Deferred action runs after unlock")
-        var actionCount = 0
-        let onAppReady = authenticationService.makeUnlockAction {
-            actionCount += 1
-            actionRan.fulfill()
-        }
-
-        await authenticationService.authenticate()
-        onAppReady()
-        #expect(!authenticationService.isUnlocked)
-        #expect(actionCount == 0)
-
-        mockAuthenticator.authenticationSucceeds = true
-        let lockScreen = try #require(mockOverlayWindowManager.lastDisplayedViewController as? AuthenticationViewController)
-        authenticationService.authenticationViewController(authenticationViewController: lockScreen, didTapWithSender: lockScreen)
-
-        let result = await XCTWaiter.fulfillment(of: [actionRan], timeout: 2)
-        #expect(result == .completed)
-        #expect(authenticationService.isUnlocked)
-        await authenticationService.authenticate()
-        #expect(actionCount == 1)
-    }
-
-    @MainActor
-    @available(iOS 16, macOS 13, *)
-    @Test("Suspending discards pending actions from the prior foreground session", .timeLimit(.minutes(1)))
-    func suspendingDiscardsPriorUnlockActions() async {
-        var actionCount = 0
-        let staleReadinessCallback = authenticationService.makeUnlockAction { actionCount += 1 }
-        staleReadinessCallback()
-        authenticationService.suspend()
-        staleReadinessCallback()
-
-        await authenticationService.authenticate()
-        #expect(actionCount == 0)
-
-        let onAppReady = authenticationService.makeUnlockAction { actionCount += 1 }
-        onAppReady()
-        #expect(actionCount == 1)
     }
 
     @MainActor

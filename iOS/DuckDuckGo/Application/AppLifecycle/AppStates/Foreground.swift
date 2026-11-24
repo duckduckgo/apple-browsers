@@ -119,7 +119,7 @@ struct Foreground: ForegroundHandling {
 
     /// **Before adding code here, ensure it does not depend on pending tasks:**
     /// - For web-related tasks: Use `interactionManager.onWebViewReadyForInteractions` (it executes after `AutoClear`)
-    /// - For UI-related tasks: Use `interactionManager.onAppReadyForInteractions` (it executes after `AutoClear` and the initial authentication attempt)
+    /// - For UI-related tasks: Use `interactionManager.onAppReadyForInteractions` (it executes after `AutoClear` and authentication)
     ///
     /// This is **the last moment** for setting up anything. If you need something to happen earlier,
     /// add it to `Launching.swift` -> `init()` and `Background.swift` -> `willLeave()` so it runs both on a cold start and when the app wakes up.
@@ -136,10 +136,6 @@ struct Foreground: ForegroundHandling {
 
         configureAppearance()
 
-        let startupFailureInstrumentation = appDependencies.startupFailureInstrumentation
-        let recordRecoveryWhenUnlocked = sceneDependencies.authenticationService.makeUnlockAction {
-            startupFailureInstrumentation.recordSuccessfulStartup()
-        }
         interactionManager.start(
             launchAction: launchAction,
             /// Handle **WebView related logic** here that could be affected by `AutoClear` feature.
@@ -150,14 +146,14 @@ struct Foreground: ForegroundHandling {
                 }
             },
             /// Handle **UI related logic** here that could be affected by Authentication screen or `AutoClear` feature
-            /// App Lock can still be waiting for a retry after the initial authentication attempt.
+            /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
             onAppReadyForInteractions: {
-                recordRecoveryWhenUnlocked()
                 appDependencies.launchTaskManager.start()
 
                 // Mark that the app has successfully launched at least once
                 // This helps distinguish database corruption from fresh installs/restores
                 BoolFileMarker(name: .hasSuccessfullyLaunchedBefore)?.mark()
+                appDependencies.startupFailureInstrumentation.recordSuccessfulStartup()
 
                 // A launch action may replace a restored NTP, so prepare only after that action has settled.
                 appDependencies.mainCoordinator.prepareHomePageMessagesForForegroundIfNeeded()

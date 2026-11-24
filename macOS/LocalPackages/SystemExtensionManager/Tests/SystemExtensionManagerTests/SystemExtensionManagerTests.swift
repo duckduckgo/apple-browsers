@@ -172,6 +172,27 @@ final class SystemExtensionManagerTests: XCTestCase {
         XCTAssertEqual(manager.submittedRequests.count, 1)
     }
 
+    func testActivationPropagatesRequestCanceledFromSystemExtensions() async {
+        let manager = CapturingSystemExtensionRequestManager()
+        let request = SystemExtensionRequest.activationRequest(
+            forExtensionWithIdentifier: "com.duckduckgo.test.extension",
+            manager: manager,
+            waitingForUserApproval: nil,
+            requestTimeout: 1
+        )
+        manager.onSubmit = { [weak request] submittedRequest in
+            request?.request(submittedRequest, didFailWithError: OSSystemExtensionError(.requestCanceled))
+        }
+
+        do {
+            try await request.submit()
+            XCTFail("Expected the activation request to be cancelled")
+        } catch {
+            XCTAssertEqual((error as? OSSystemExtensionError)?.code, .requestCanceled)
+        }
+        XCTAssertNil(request.version)
+    }
+
     func testRequestCancellationResumesAwaitingSubmit() async {
         let manager = CapturingSystemExtensionRequestManager()
         let requestSubmitted = expectation(description: "Request submitted")

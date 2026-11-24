@@ -149,11 +149,38 @@ class SchedulerTests(unittest.TestCase):
                 self.assertEqual(context.result['scheduler']['jobs'][0]['brokerError'], name)
 
     def test_non_broker_error_terminal_fails(self):
-        for name in ('jobTimeout', 'noActionFound', 'parsingErrorObjectFailed', 'captchaServiceError', None):
+        for name in ('noActionFound', 'parsingErrorObjectFailed', 'captchaServiceError', None):
             with self.subTest(name=name):
                 outcome, context = self.run_observer(Client([[event('scanStarted'), event('error', 2, name)]]))
                 self.assertEqual(outcome['status'], 'fail')
                 self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'fail')
+
+    def test_timeout_and_network_terminals_are_transient_and_inconclusive(self):
+        for name in ('Cancelled', 'jobTimeout', 'The network connection was lost.'):
+            with self.subTest(name=name):
+                outcome, context = self.run_observer(Client([[event('scanStarted'), event('error', 2, name)]]))
+                self.assertEqual(outcome['status'], 'inconclusive')
+                self.assertIn(BROKER, outcome['reason'])
+                self.assertEqual(context.result['scheduler']['jobs'][0]['status'], 'transient')
+
+    def test_a_failed_job_does_not_stop_observing_the_others(self):
+        class MixedClient(Client):
+            def request(self, method, path, timeout):
+                value = super().request(method, path, timeout)
+                if path.endswith('other'):
+                    history = [event('scanStarted')] + ([event('noMatchFound', 3)] if self.sample >= 2 else [])
+                    return dict(value, url='other', profileQueries=[dict(profileQueryId=1, scan=dict(history=history))])
+                return value
+        context, clock = Context(), [0.0]
+        scope = scheduler.parse_scope(arguments(scheduler_jobs=[[BROKER, '1'], ['other', '1']], scheduler_timeout=30))
+        with patch.object(scheduler, '_identity', return_value=IDENTITY), \
+                patch.object(scheduler.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(scheduler.time, 'sleep', side_effect=lambda seconds: clock.__setitem__(0, clock[0] + seconds)):
+            outcome = scheduler.observe(context, MixedClient([[event('scanStarted'), event('error', 2, 'noActionFound')]]), scope)
+        self.assertEqual(outcome['status'], 'fail')
+        self.assertIn(BROKER, outcome['reason'])
+        self.assertEqual([job['status'] for job in context.result['scheduler']['jobs']], ['fail', 'pass'])
+        self.assertEqual(context.files['scheduler.json']['polls'], 3)
 
     def test_retry_uses_latest_start_and_records_completed_polls(self):
         histories = [[event('scanStarted'), event('error', 2, 'httpError'), event('scanStarted', 3)],

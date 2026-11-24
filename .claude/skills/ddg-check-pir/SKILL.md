@@ -138,8 +138,8 @@ Choose by what should happen to the DEBUG profile:
   explicit approval for the reset first.
 - `scheduler observe` watches scans triggered separately in the app, on macOS or an iOS simulator.
 
-These make live broker scans. On macOS, close any DEBUG browser and use a signed-out DEBUG account so the agent takes the
-Freemium path. The private browser saves through the real PIR data manager, starts its login item and debug server on
+These make live broker scans. On macOS, close any DEBUG browser. A seed signs the DEBUG account out first, so the agent
+takes the Freemium path and plans scans only; sign in again afterwards if you need the subscription. The private browser saves through the real PIR data manager, starts its login item and debug server on
 port 8474, and the tool reports the cutoff and planned jobs, stops the browser and leaves the profile and registered agent
 in place. macOS seeds run one at a time.
 
@@ -163,9 +163,11 @@ python3 "$P" scheduler observe --platform macos \
 Evidence holds the listener identity, persisted histories and `scheduler.json`, plus `scheduler-launch.json` with the
 native plan for a seed. A pass needs, for every expected job, a fresh `scanStarted` and a terminal `matchesFound`,
 `noMatchFound` or broker `error` (`httpError`, `actionFailed`); broker errors are listed. A broker removed by a broker
-update during the run is reported as `removed` and not awaited; if all are removed the run is inconclusive. Any other
-terminal error fails, and so does a timeout with jobs missing, incomplete or ambiguous. Listener or HTTP setup problems
-are inconclusive. Recurring scheduler ticks and opt-outs are separate checks.
+update during the run is reported as `removed` and not awaited; if all are removed the run is inconclusive. A scan cut
+off by its job timeout (`Cancelled`, `jobTimeout`) or by a dropped connection is reported as `transient`; the run waits
+for every job, then is inconclusive and names those brokers to rerun. Any other terminal error fails, after every job has
+finished, and so does a timeout with jobs missing, incomplete or ambiguous. Listener or HTTP setup problems are
+inconclusive. Recurring scheduler ticks and opt-outs are separate checks.
 
 ## 7. Test the verifier
 

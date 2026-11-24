@@ -477,7 +477,7 @@ final class AIChatOmnibarController {
         if let usageLimitsStore {
             newChatDefaults.observeOverLimitDefaults(usageLimitsStore.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main))
         }
-        newChatDefaults.observeUserDefaultModel(in: userDefaultModelStorage)
+        newChatDefaults.observeUserDefaultModel(in: userDefaultModelStorage, receivingUpdatesOn: DispatchQueue.main)
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;

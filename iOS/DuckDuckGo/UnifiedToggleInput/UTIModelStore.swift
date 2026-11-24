@@ -106,7 +106,14 @@ final class UTIModelStore {
         if let overLimitDefaults {
             newChatDefaults.observeOverLimitDefaults(overLimitDefaults)
         }
-        newChatDefaults.observeUserDefaultModel(in: userDefaultModelStorage)
+        observeUserDefaultModel(in: userDefaultModelStorage)
+    }
+
+    /// Follows the user default in `storage` instead of any earlier one, such as when the tab turns fire.
+    func observeUserDefaultModel(in storage: DuckAiNativeStorageHandling?) {
+        guard let newChatDefaults else { return }
+        newChatDefaults.observeUserDefaultModel(in: storage, receivingUpdatesOn: DispatchQueue.main)
+        onModelsUpdated?()
     }
 
     var persistedModelId: String? {

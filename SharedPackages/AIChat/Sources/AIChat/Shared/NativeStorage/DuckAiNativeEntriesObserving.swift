@@ -22,10 +22,8 @@ import Foundation
 /// Reserved keys only: the entries namespace is web's `localStorage`, so publishing every key would
 /// fire on unrelated writes on every page load. Emits whoever wrote it, native writes included.
 public protocol DuckAiNativeEntriesObserving {
-    /// No initial value: subscribers already read on activation.
+    /// Every change, including to entries read through from another storage. No initial value: subscribers already read on activation.
     var reservedEntryUpdatesPublisher: AnyPublisher<DuckAiNativeStorageReservedEntryKeys, Never> { get }
-    /// `false` when `key` can also change unannounced, such as a key read through from another storage.
-    func announcesEveryChange(to key: DuckAiNativeStorageReservedEntryKeys) -> Bool
 }
 
 public extension DuckAiNativeEntriesObserving {

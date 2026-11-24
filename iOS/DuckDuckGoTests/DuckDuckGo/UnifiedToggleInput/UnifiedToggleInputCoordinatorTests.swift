@@ -1684,14 +1684,35 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_newChatDefault_whenBuiltLikeTheAddressBar_userDefaultModelApplies() async throws {
         try await assertUserDefaultModelApplies { storage, modelsService in
-            self.makeLoadingNewChatDefaultCoordinator(host: .omnibar, duckAiNativeStorageHandler: storage, modelsService: modelsService)
+            self.makeLoadingNewChatDefaultCoordinator(host: .omnibar, userDefaultModelStorage: { _ in storage }, modelsService: modelsService)
         }
     }
 
     func test_newChatDefault_whenBuiltLikeTheContextualSheet_userDefaultModelApplies() async throws {
         try await assertUserDefaultModelApplies { storage, modelsService in
-            self.makeLoadingNewChatDefaultCoordinator(host: .contextualChat, userDefaultModelStorage: storage, modelsService: modelsService)
+            self.makeLoadingNewChatDefaultCoordinator(host: .contextualChat, userDefaultModelStorage: { _ in storage }, modelsService: modelsService)
         }
+    }
+
+    func test_newChatDefault_userDefaultComesFromTheStorageOfTheTabsFireState() async throws {
+        let normalStorage = DuckAiNativeMemoryStorageHandler()
+        try normalStorage.putUserDefaultModel("gpt-5.6-terra")
+        let fireStorage = DuckAiNativeMemoryStorageHandler()
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let coordinator = makeLoadingNewChatDefaultCoordinator(host: .omnibar,
+                                                               isFireTab: true,
+                                                               userDefaultModelStorage: { $0 ? fireStorage : normalStorage },
+                                                               modelsService: modelsService)
+        await fetchModelsAndWait(coordinator)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+
+        coordinator.updateIsFireTab(false)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+
+        coordinator.updateIsFireTab(true)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
     }
 
     func test_newChatDefault_whenTabHasNoPick_itFollowsADefaultChangeAfterATabSwitch() {
@@ -1782,13 +1803,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     private func makeLoadingNewChatDefaultCoordinator(host: UnifiedToggleInputHost,
+                                                      isFireTab: Bool = false,
                                                       duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
                                                       usageLimitsStore: DuckAiUsageLimitsStore? = nil,
-                                                      userDefaultModelStorage: DuckAiNativeStorageHandling? = nil,
+                                                      userDefaultModelStorage: @escaping (Bool) -> DuckAiNativeStorageHandling? = { _ in nil },
                                                       modelsService: AIChatModelsProviding) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(
             host: host,
             isToggleEnabled: host == .omnibar,
+            isFireTab: isFireTab,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             modelsService: modelsService,
             preferences: mockPreferences,

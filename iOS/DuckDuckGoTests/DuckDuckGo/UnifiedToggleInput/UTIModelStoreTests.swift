@@ -741,15 +741,32 @@ final class UTIModelStoreTests: XCTestCase {
 
     func test_newChatDefault_whenFlagOnBeforeModelsLoad_startsOnTheLocalTierDefault() {
         let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true)
+        sut.subscriptionState = .free
 
         XCTAssertEqual(sut.persistedModelId, "gpt-6-luna")
         XCTAssertEqual(sut.newChatModelSource(onboardingModelId: nil), .fallback)
     }
 
+    func test_newChatDefault_whenFlagOnBeforeModelsLoadForPaidUser_startsOnThePaidLocalDefault() {
+        let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true)
+        sut.subscriptionState = SubscriptionState(userTier: .plus, hasActiveSubscription: true)
+
+        XCTAssertEqual(sut.persistedModelId, "gpt-5.6-terra")
+    }
+
     func test_newChatDefault_whenFlagOnBeforeModelsLoad_sendsTheLocalDefaultEffort() {
         let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true)
+        sut.subscriptionState = .free
 
         XCTAssertEqual(sut.submissionReasoningEffort, AIChatReasoningEffort.none)
+    }
+
+    func test_newChatDefault_whenFlagOnBeforeTierIsKnown_sendsNoModelOrEffort() {
+        let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: true)
+
+        XCTAssertNil(sut.persistedModelId)
+        XCTAssertNil(sut.submissionReasoningEffort)
+        XCTAssertNil(sut.newChatModelSource(onboardingModelId: nil))
     }
 
     func test_newChatDefault_whenFlagOffBeforeModelsLoad_sendsNoEffort() {

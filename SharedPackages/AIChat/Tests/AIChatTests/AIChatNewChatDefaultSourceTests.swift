@@ -79,6 +79,14 @@ struct AIChatNewChatDefaultSourceTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Nothing stands in before models load while the tier is unknown", .timeLimit(.minutes(1)))
+    func noLocalDefaultWhileTierIsUnknown() {
+        let source = AIChatNewChatDefaultSource()
+
+        #expect(source.selectionOrLocalDefaultBeforeModelsLoad == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Observed over-limit default applies quietly first, then announces each change", .timeLimit(.minutes(1)))
     func observedOverLimitDefault() {
         let source = makeSource()

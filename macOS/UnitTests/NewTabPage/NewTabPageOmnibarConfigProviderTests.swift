@@ -1391,14 +1391,17 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
     // MARK: - New chat default
 
-    private func makeNewChatDefaultProvider(persistor: AIChatPreferencesPersisting, modelsLoaded: Bool = true) throws -> NewTabPageOmnibarConfigProvider {
+    private func makeNewChatDefaultProvider(persistor: AIChatPreferencesPersisting,
+                                            modelsLoaded: Bool = true,
+                                            userTier: AIChatUserTier? = .free) throws -> NewTabPageOmnibarConfigProvider {
         let flagger = flaggerWithReasoningOn()
         flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
         let models = [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
                       makeModel(id: "terra", supportedReasoningEffort: [.none, .high])]
         let newChatDefaults = AIChatNewChatDefaultSource()
+        newChatDefaults.userTier = userTier
         if modelsLoaded {
-            newChatDefaults.update(models: models, userTier: .free, serverDefault: .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none))
+            newChatDefaults.update(models: models, serverDefault: .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none))
         }
         return NewTabPageOmnibarConfigProvider(
             keyValueStore: try makeStore(),
@@ -1427,6 +1430,20 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         XCTAssertEqual(provider.selectedModelId, "gpt-6-luna")
         XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndPaidUserModelsHaveNotLoaded_ThenPaidLocalDefaultIsSelected() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), modelsLoaded: false, userTier: .plus)
+
+        XCTAssertEqual(provider.selectedModelId, "gpt-5.6-terra")
+        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+    }
+
+    func testWhenNewChatDefaultIsOnAndTierIsNotKnownBeforeModelsLoad_ThenNoModelOrEffortIsSelected() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), modelsLoaded: false, userTier: nil)
+
+        XCTAssertNil(provider.selectedModelId)
+        XCTAssertNil(provider.selectedReasoningEffort)
     }
 
     func testWhenNewChatDefaultIsOnAndModelPicked_ThenGlobalPreferencesAreNotWritten() throws {

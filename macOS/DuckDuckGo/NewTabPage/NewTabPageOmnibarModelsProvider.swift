@@ -81,15 +81,17 @@ final class NewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     }
 
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
+        // Resolved before `/models` so new chats start on the tier's local default while it loads or if it fails.
+        let userTier = await resolveUserTier()
+        newChatDefaults.userTier = userTier
         do {
             let response = try await modelsService.fetchModels()
-            let userTier = await resolveUserTier()
             attachmentLimits = mapAttachmentLimits(response.attachmentLimits?.limits(for: userTier))
             isEligibleForFreeTrial = userTier == .free && subscriptionManager.isUserEligibleForFreeTrial()
             let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
             lastResolvedUserTier = userTier
             lastFetchedModels = models
-            newChatDefaults.update(models: models, userTier: userTier, serverDefault: response.newChatDefault)
+            newChatDefaults.update(models: models, serverDefault: response.newChatDefault)
 
             // Recommended = backend-labelled models, shown first with the label as a subtitle.
             let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: models)

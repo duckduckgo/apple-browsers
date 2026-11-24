@@ -3568,6 +3568,36 @@ extension AIChatOmnibarControllerTests {
         XCTAssertEqual(submittedNewChatModelParameters(), ["model_source": "fallback", "model_id": "gpt-6-luna", "reasoning_effort": "none"])
     }
 
+    func testWhenNewChatDefaultIsOnAndPaidUserModelsFailToLoad_ThenSubmitSendsPaidLocalDefault() async {
+        let controller = makeNewChatDefaultController()
+        setUserTier(.plus)
+        mockModelsService.errorToThrow = NSError(domain: "test", code: -1)
+        controller.onOmnibarActivated()
+        await waitForModels()
+        controller.updateText("hello")
+
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let query = submittedQuery()
+        XCTAssertEqual(query?.modelId, "gpt-5.6-terra")
+        XCTAssertEqual(query?.reasoningEffort, AIChatReasoningEffort.none)
+        XCTAssertEqual(submittedNewChatModelParameters(), ["model_source": "fallback", "model_id": "gpt-5.6-terra", "reasoning_effort": "none"])
+    }
+
+    func testWhenNewChatDefaultIsOnAndTierIsNotKnownYet_ThenSubmitSendsNoModelOrEffort() async {
+        let controller = makeNewChatDefaultController()
+        controller.updateText("hello")
+
+        controller.submit()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let query = submittedQuery()
+        XCTAssertNil(query?.modelId)
+        XCTAssertNil(query?.reasoningEffort)
+        XCTAssertEqual(submittedNewChatModelParameters(), .some(nil))
+    }
+
     func testWhenNewChatDefaultIsOffAndModelsHaveNotLoaded_ThenSubmitSendsNoModelOrEffort() async {
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         mockModelsService.errorToThrow = NSError(domain: "test", code: -1)

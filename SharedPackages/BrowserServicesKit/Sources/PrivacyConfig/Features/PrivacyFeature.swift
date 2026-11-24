@@ -791,6 +791,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canScanUrlBasedSyncSetupBarcodes
     case canInterceptSyncSetupUrls
     case syncSetupBarcodeIsUrlBased
+    case syncPairingUrl
     case newSyncEntryPoints
     case newDeviceSyncPrompt
     case syncAutoRestore

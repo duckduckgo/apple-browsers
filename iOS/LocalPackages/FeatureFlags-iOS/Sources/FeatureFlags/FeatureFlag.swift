@@ -199,6 +199,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220874982186940
+    case syncPairingUrl
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611816519
     case canScanUrlBasedSyncSetupBarcodes
 
@@ -916,6 +919,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.stripeInternationalSubscriptionWithdrawal))
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
+        case .syncPairingUrl:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncSubfeature.syncPairingUrl))
         case .canScanUrlBasedSyncSetupBarcodes:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .autofillPasswordVariantCategorization:

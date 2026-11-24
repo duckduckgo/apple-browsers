@@ -258,8 +258,8 @@ struct DeviceActivityViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Fetch errors can be retried", .timeLimit(.minutes(1)))
-    func failedInitialFetchCanBeRetried() async {
+    @Test("Reopening after a fetch error starts a new visit", .timeLimit(.minutes(1)))
+    func reopeningAfterFailedInitialFetchLoadsActivity() async {
         let store = MemoryReviewStateStore()
         var cursors = [String?]()
         var shouldFail = true
@@ -277,10 +277,10 @@ struct DeviceActivityViewModelTests {
         #expect(!model.reviewState.isInitialized)
         #expect(store.values.isEmpty)
         #expect(cursors == [nil])
-        model.dismissError()
-        #expect(model.error == nil)
-        #expect(!model.hasLoaded)
-        await model.retry()
+        await model.loadIfNeeded()
+        #expect(cursors == [nil])
+        model.cancelAndClear()
+        await model.loadIfNeeded()
         #expect(model.error == nil)
         #expect(model.hasLoaded)
         #expect(model.reviewState == DeviceActivityReviewState(reviewedThrough: nil, isInitialized: true))
@@ -289,8 +289,8 @@ struct DeviceActivityViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Dismissing a pagination error retains activity and its retry cursor", .timeLimit(.minutes(1)))
-    func paginationFailureCanBeDismissedAndRetried() async {
+    @Test("A pagination failure retains activity and stops further loads for the visit", .timeLimit(.minutes(1)))
+    func paginationFailureRetainsActivityAndStopsLoading() async {
         var cursors = [String?]()
         var shouldFail = true
         let newest = entry("new", date: Date(timeIntervalSince1970: 30))
@@ -308,15 +308,13 @@ struct DeviceActivityViewModelTests {
         await model.loadIfNeeded()
         await model.loadOlderIfNeeded(after: "new")
         #expect(model.error != nil)
-        model.dismissError()
-        #expect(model.error == nil)
         #expect(model.entries.map(\.id) == ["new"])
         #expect(model.hasLoaded)
 
-        await model.retry()
-        #expect(cursors == [nil, "older", "older"])
-        #expect(model.entries.map(\.id) == ["new", "old"])
-        #expect(model.error == nil)
+        await model.loadOlderIfNeeded(after: "new")
+        #expect(cursors == [nil, "older"])
+        #expect(model.entries.map(\.id) == ["new"])
+        #expect(model.error != nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -423,8 +421,8 @@ struct DeviceActivityViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("An initial scan stops on rate limiting and retries only the failed cursor", .timeLimit(.minutes(1)))
-    func failedEmptyPageContinuationRetriesSavedCursor() async {
+    @Test("An initial scan stops on rate limiting without seeding review state", .timeLimit(.minutes(1)))
+    func failedEmptyPageContinuationStopsLoading() async {
         var cursors = [String?]()
         var delays = [UInt64]()
         let older = entry("older", date: Date(timeIntervalSince1970: 20))
@@ -444,16 +442,15 @@ struct DeviceActivityViewModelTests {
         #expect(!model.reviewState.isInitialized)
         #expect(cursors == [nil, "cursor-1", "cursor-2", "cursor-3"])
         #expect(delays.count == 3)
-        model.dismissError()
-        await model.retry()
-        #expect(cursors == [nil, "cursor-1", "cursor-2", "cursor-3", "cursor-3"])
-        #expect(model.entries == [older])
-        #expect(model.error == nil)
+        await model.loadIfNeeded()
+        #expect(cursors == [nil, "cursor-1", "cursor-2", "cursor-3"])
+        #expect(model.entries.isEmpty)
+        #expect(model.error != nil)
         #expect(delays.count == 3)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Cancelling a row task during its wait clears loading without an alert and preserves progress", .timeLimit(.minutes(1)))
+    @Test("Cancelling a row task during its wait clears loading without an error and preserves progress", .timeLimit(.minutes(1)))
     func cancellingPaginationWaitResumesAtSavedCursor() async {
         var cursors = [String?]()
         var isWaiting = false

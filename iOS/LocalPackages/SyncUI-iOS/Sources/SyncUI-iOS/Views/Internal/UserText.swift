@@ -64,9 +64,7 @@ public struct UserText {
     static let deviceActivityJustNow = NotLocalizedString("sync.device.activity.just.now", bundle: Bundle.module, value: "Just now", comment: "Activity timestamp for events less than a minute old")
     static let deviceActivitySynced = NotLocalizedString("sync.device.activity.synced", bundle: Bundle.module, value: "Synced", comment: "Activity label for a device that synced")
     static let deviceActivityRemoved = NotLocalizedString("sync.device.activity.removed", bundle: Bundle.module, value: "Removed", comment: "Activity label for a removed device")
-    static let deviceActivityLoadError = NotLocalizedString("sync.device.activity.load.error", bundle: Bundle.module, value: "Could not load activity", comment: "Error shown when device activity could not be loaded")
-    static let deviceActivityLoadErrorMessage = NotLocalizedString("sync.device.activity.load.error.message", bundle: Bundle.module, value: "We’re having trouble connecting. Please try again later.", comment: "Device activity connection error alert message")
-    static let deviceActivityRetry = NotLocalizedString("sync.device.activity.retry", bundle: Bundle.module, value: "Try again", comment: "Button to retry loading device activity")
+    static let deviceActivityLoadError = NotLocalizedString("sync.device.activity.load.error", bundle: Bundle.module, value: "Device activity is temporarily unavailable", comment: "Error shown when device activity could not be loaded")
 
     // Auto-Restore
     static let autoRestoreSettingsRowLabel = NSLocalizedString("auto.restore.settings.row.label", bundle: Bundle.module, value: "Restore on App Reinstall", comment: "Auto-Restore Settings Row - Label")

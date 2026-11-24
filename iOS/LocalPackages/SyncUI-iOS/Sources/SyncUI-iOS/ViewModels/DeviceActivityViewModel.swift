@@ -103,24 +103,14 @@ public final class DeviceActivityViewModel: ObservableObject {
 
     public func loadIfNeeded() async {
         updateAccountIfNeeded()
-        guard !hasLoaded, !isLoading else { return }
+        guard !hasLoaded, !isLoading, error == nil else { return }
         await loadPage()
     }
 
     public func loadOlderIfNeeded(after entryID: String) async {
         updateAccountIfNeeded()
-        guard entries.last?.id == entryID, hasMore, !isLoading else { return }
+        guard entries.last?.id == entryID, hasMore, !isLoading, error == nil else { return }
         await loadPage()
-    }
-
-    public func retry() async {
-        updateAccountIfNeeded()
-        guard !isLoading else { return }
-        await loadPage()
-    }
-
-    public func dismissError() {
-        error = nil
     }
 
     public func isSeen(_ entry: DeviceActivityEntry) -> Bool {

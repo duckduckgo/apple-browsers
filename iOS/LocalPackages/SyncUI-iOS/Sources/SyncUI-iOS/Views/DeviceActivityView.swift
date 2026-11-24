@@ -18,12 +18,12 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
 struct DeviceActivityView: View {
 
-    @Environment(\.dismiss) private var dismiss
     @ObservedObject var model: DeviceActivityViewModel
     private static let relativeDateFormatter = RelativeDateTimeFormatter()
 
@@ -37,29 +37,31 @@ struct DeviceActivityView: View {
 
     var body: some View {
         List {
-            Text(UserText.deviceActivityIntro)
-                .daxBodyRegular()
-                .multilineTextAlignment(.center)
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .frame(maxWidth: .infinity)
-                .listRowBackground(Color(designSystemColor: .background))
-                .listRowSeparator(.hidden)
-
             if model.isLoading && model.entries.isEmpty {
-                ProgressView().frame(maxWidth: .infinity)
-                    .listRowBackground(Color(designSystemColor: .background))
-            } else if model.entries.isEmpty && model.hasLoaded {
+                Section {
+                    ProgressView().frame(maxWidth: .infinity)
+                        .listRowBackground(Color(designSystemColor: .background))
+                } header: {
+                    intro
+                }
+            } else if model.entries.isEmpty && model.hasLoaded && model.error == nil {
                 Section {
                     Text(UserText.deviceActivityEmpty)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+                } header: {
+                    intro
                 }
             } else {
                 ForEach(model.entries) { entry in
                     Section {
                         activityRow(entry)
                             .task { await model.loadOlderIfNeeded(after: entry.id) }
+                    } header: {
+                        if entry.id == model.entries.first?.id {
+                            intro
+                        }
                     }
                 }
 
@@ -68,25 +70,42 @@ struct DeviceActivityView: View {
                         .listRowBackground(Color(designSystemColor: .background))
                 }
             }
+
+            if model.error != nil {
+                Section {
+                    Label {
+                        Text(UserText.deviceActivityLoadError)
+                            .daxBodyRegular()
+                    } icon: {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.infoSolid)
+                    }
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+                } header: {
+                    if model.entries.isEmpty {
+                        intro
+                    }
+                }
+            }
         }
         .navigationTitle(UserText.deviceActivityTitle)
         .navigationBarTitleDisplayMode(.inline)
         .applyListStyle()
-        .alert(isPresented: Binding(get: { model.error != nil }, set: { isPresented in
-            if !isPresented { model.dismissError() }
-        })) {
-            Alert(title: Text(UserText.deviceActivityLoadError),
-                  message: Text(UserText.deviceActivityLoadErrorMessage),
-                  primaryButton: .default(Text(UserText.deviceActivityRetry)) {
-                      Task { await model.retry() }
-                  },
-                  secondaryButton: .cancel(Text(model.entries.isEmpty ? UserText.backButton : UserText.cancelButton)) {
-                      if model.entries.isEmpty { dismiss() }
-                  })
-        }
         .task { await model.loadIfNeeded() }
         .task(id: model.entries.isEmpty) { await model.markAsReviewedAfterDelay() }
         .onDisappear { model.cancelAndClear() }
+    }
+
+    private var intro: some View {
+        Text(UserText.deviceActivityIntro)
+            .daxBodyRegular()
+            .textCase(nil)
+            .multilineTextAlignment(.center)
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .frame(maxWidth: .infinity)
+            .padding(.top, 48)
+            .padding(.bottom, 24)
+            .listRowInsets(EdgeInsets())
     }
 
     static func relativeDateString(for date: Date, relativeTo now: Date) -> String {
@@ -110,7 +129,8 @@ struct DeviceActivityView: View {
     }
 
     private func activityRow(_ entry: DeviceActivityEntry) -> some View {
-        HStack(spacing: 12) {
+        let backgroundColor = model.isSeen(entry) ? Color(designSystemColor: .surfaceTertiary) : Color(designSystemColor: .accentAltPrimary)
+        return HStack(spacing: 12) {
             ZStack(alignment: .bottomTrailing) {
                 SyncDeviceTypeImage(device: .init(id: entry.id,
                                                   name: entry.deviceName,
@@ -119,8 +139,13 @@ struct DeviceActivityView: View {
                                                   isThisDevice: false))
                 if entry.action == .removed {
                     Circle().fill(Color(designSystemColor: .statusRed))
-                        .frame(width: 8, height: 8)
-                        .offset(x: 1, y: 1)
+                        .frame(width: 9, height: 9)
+                        .background(
+                            Circle().fill(backgroundColor)
+                                .padding(-2)
+                                .animation(.easeInOut(duration: 1.0), value: model.isSeen(entry))
+                        )
+                        .offset(x: -2, y: -2)
                 }
             }
 
@@ -139,7 +164,7 @@ struct DeviceActivityView: View {
         }
         .padding(.vertical, 4)
         .listRowBackground(
-            (model.isSeen(entry) ? Color(designSystemColor: .surfaceTertiary) : Color(designSystemColor: .accentAltPrimary))
+            backgroundColor
                 .animation(.easeInOut(duration: 1.0), value: model.isSeen(entry))
         )
         .accessibilityElement(children: .combine)

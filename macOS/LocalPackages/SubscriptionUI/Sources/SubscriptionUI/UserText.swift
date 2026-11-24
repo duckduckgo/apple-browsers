@@ -315,9 +315,11 @@ enum UserText {
         let localized = NSLocalizedString("subscription.dialog.withdraw.features.message",
                                           bundle: Bundle.module,
                                           value: "%@ stop working once you confirm.",
-                                          comment: "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai.")
+                                          comment: "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.")
         return String(format: localized, features)
     }
+
+    static let withdrawDialogFeatureAdvancedDuckAI = NSLocalizedString("subscription.dialog.withdraw.feature.advanced.duckai", bundle: Bundle.module, value: "advanced Duck.ai models", comment: "Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models")
 
     static let withdrawDialogConfirmButton = NSLocalizedString("subscription.dialog.withdraw.confirm.button", bundle: Bundle.module, value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
     static let withdrawDialogKeepButton = NSLocalizedString("subscription.dialog.withdraw.keep.button", bundle: Bundle.module, value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")

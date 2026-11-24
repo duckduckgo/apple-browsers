@@ -330,7 +330,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     /// The model and effort a new chat starts on when nothing was picked; `nil` while new chats start on the last pick.
     private var newChatDefaultSelection: AIChatNewChatSelection? {
-        newChatDefaults?.selection
+        newChatDefaults?.selectionOrLocalDefaultBeforeModelsLoad
     }
 
     private var newChatDefaultModel: AIChatModel? {

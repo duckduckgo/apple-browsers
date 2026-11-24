@@ -81,7 +81,7 @@ final class UTIModelStore {
         subscriptionManager: any SubscriptionManager,
         isUpdatedModelPickerEnabled: Bool,
         startsNewChatsOnDefault: Bool = false,
-        overLimitNewChatDefaults: AnyPublisher<AIChatNewChatDefault, Never>? = nil
+        overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil
     ) {
         self.modelsService = modelsService
         self.subscriptionManager = subscriptionManager
@@ -96,7 +96,7 @@ final class UTIModelStore {
         observeNewChatDefaults(overLimitDefaults: overLimitNewChatDefaults)
     }
 
-    private func observeNewChatDefaults(overLimitDefaults: AnyPublisher<AIChatNewChatDefault, Never>?) {
+    private func observeNewChatDefaults(overLimitDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>?) {
         guard let newChatDefaults else { return }
         newChatDefaults.overLimitDefaultChanges
             .sink { [weak self] in self?.onModelsUpdated?() }
@@ -126,12 +126,12 @@ final class UTIModelStore {
     }
 
     /// Where a new chat's first prompt model came from; `nil` while new chats don't start on the default.
-    func newChatModelSource(openedWithModelId: String?) -> DuckAINewChatModelSource? {
+    func newChatModelSource(onboardingModelId: String?) -> DuckAINewChatModelSource? {
         guard let sentModelId = persistedModelId, let newChatDefault = newChatDefaultSelection else { return nil }
         return DuckAINewChatModelSource.resolve(sentModelId: sentModelId,
                                                 sendsDefaultEffort: sendsNewChatDefaultEffort,
                                                 isPicked: hasLivePick,
-                                                openedWithModelId: openedWithModelId,
+                                                onboardingModelId: onboardingModelId,
                                                 newChatDefault: newChatDefault)
     }
 
@@ -180,9 +180,15 @@ final class UTIModelStore {
     }
 
     var submissionReasoningEffort: AIChatReasoningEffort? {
-        guard let selectedModel else { return nil }
+        guard let selectedModel else { return newChatDefaultReasoningEffortBeforeModelsLoad }
         guard selectedReasoningMode != nil || selectedModel.supportsReasoningPicker else { return nil }
         return selectedModel.resolvedReasoningEffort(from: selectedReasoningMode)
+    }
+
+    /// Before `/models` loads, only the new-chat default's own effort is known to fit the model it names.
+    private var newChatDefaultReasoningEffortBeforeModelsLoad: AIChatReasoningEffort? {
+        guard models.isEmpty, pickStore.reasoningMode == nil else { return nil }
+        return newChatDefaultSelection?.reasoningEffort(onModelId: persistedModelId)
     }
 
     var selectedModel: AIChatModel? {

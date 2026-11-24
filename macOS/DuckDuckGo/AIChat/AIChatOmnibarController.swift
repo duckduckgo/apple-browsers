@@ -675,11 +675,17 @@ final class AIChatOmnibarController {
 
     /// The model and effort a new chat starts on when nothing was picked; `nil` while new chats start on the last pick.
     var newChatDefaultSelection: AIChatNewChatSelection? {
-        newChatDefaults?.selection
+        newChatDefaults?.selectionOrLocalDefaultBeforeModelsLoad
     }
 
     private var newChatDefaultReasoningEffort: AIChatReasoningEffort? {
         newChatDefaultSelection?.reasoningEffort(onModelId: persistedModelId)
+    }
+
+    /// Before `/models` loads, only the new-chat default's own effort is known to fit the model it names.
+    private var newChatDefaultReasoningEffortBeforeModelsLoad: AIChatReasoningEffort? {
+        guard pickedReasoningEffort == nil else { return nil }
+        return newChatDefaultSelection?.reasoningEffort(onModelId: currentModelId)
     }
 
     /// Sent only while new chats start on the default. Every prompt from this input opens a new chat.
@@ -1016,6 +1022,7 @@ final class AIChatOmnibarController {
     /// longer accessible — submitting it would fail on the server.
     var effectiveReasoningEffort: AIChatReasoningEffort? {
         guard isReasoningEffortEnabled, !isImageGenerationMode else { return nil }
+        guard !models.isEmpty else { return newChatDefaultReasoningEffortBeforeModelsLoad }
         guard let effort = selectedReasoningEffort,
               selectedModelReasoningEfforts.contains(effort),
               isReasoningEffortAccessible(effort) else { return nil }

@@ -50,6 +50,24 @@ extension AIChatNewChatDefault {
     }
 }
 
+/// The default the usage-limits snapshot sends while the user is over their limit.
+public struct AIChatOverLimitNewChatDefault: Equatable, Sendable {
+    public let newChatDefault: AIChatNewChatDefault
+    public let resetsAt: Date
+
+    public static let notOverLimit = AIChatOverLimitNewChatDefault(.unavailable, resetsAt: .distantPast)
+
+    public init(_ newChatDefault: AIChatNewChatDefault, resetsAt: Date) {
+        self.newChatDefault = newChatDefault
+        self.resetsAt = resetsAt
+    }
+
+    /// Lapses when the limit resets, so new chats go back to the regular default without a new snapshot.
+    public func newChatDefault(at date: Date) -> AIChatNewChatDefault {
+        date < resetsAt ? newChatDefault : .unavailable
+    }
+}
+
 /// The model and effort a new chat starts on. A `nil` effort leaves it to the model's own default.
 public struct AIChatNewChatSelection: Equatable, Sendable {
     /// Whether the selection is the server's default or a fallback because the server had no usable one.

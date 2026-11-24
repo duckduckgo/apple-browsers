@@ -19,39 +19,35 @@
 import Combine
 import Foundation
 
-/// The model and effort new chats start on, resolved from its inputs and cached until one of them changes.
+/// The model and effort new chats start on, resolved from its inputs on each read.
 public final class AIChatNewChatDefaultSource {
 
     /// `nil` until `models` holds a model the user can use.
-    public private(set) var selection: AIChatNewChatSelection?
+    public var selection: AIChatNewChatSelection? {
+        let candidates = [AIChatNewChatDefaultResolver.Candidate(overLimitDefault.newChatDefault(at: now()), origin: .server),
+                          AIChatNewChatDefaultResolver.Candidate(serverDefault, origin: .server)]
+        return AIChatNewChatDefaultResolver.resolve(candidates, models: models, userTier: userTier)
+    }
 
     /// Emits after web writes a different over-limit default, so open inputs can refresh.
     public var overLimitDefaultChanges: AnyPublisher<Void, Never> {
         overLimitDefaultChangesSubject.eraseToAnyPublisher()
     }
 
-    public var models: [AIChatModel] = [] {
-        didSet { resolveSelection() }
-    }
-
-    public var userTier: AIChatUserTier = .free {
-        didSet { resolveSelection() }
-    }
-
+    public var models: [AIChatModel] = []
+    public var userTier: AIChatUserTier = .free
     /// The default `/models` sends.
-    public var serverDefault: AIChatNewChatDefault = .unavailable {
-        didSet { resolveSelection() }
-    }
+    public var serverDefault: AIChatNewChatDefault = .unavailable
+    /// Wins over `serverDefault` until the limit resets.
+    public var overLimitDefault: AIChatOverLimitNewChatDefault = .notOverLimit
 
-    /// The default the usage-limits snapshot sends while the user is over their limit; it wins over `serverDefault`.
-    public var overLimitDefault: AIChatNewChatDefault = .unavailable {
-        didSet { resolveSelection() }
-    }
-
+    private let now: () -> Date
     private let overLimitDefaultChangesSubject = PassthroughSubject<Void, Never>()
     private var overLimitDefaultsCancellable: AnyCancellable?
 
-    public init() {}
+    public init(now: @escaping () -> Date = Date.init) {
+        self.now = now
+    }
 
     /// Takes everything a `/models` response decides at once.
     public func update(models: [AIChatModel], userTier: AIChatUserTier, serverDefault: AIChatNewChatDefault) {
@@ -66,7 +62,7 @@ public final class AIChatNewChatDefaultSource {
     }
 
     /// Follows `defaults` instead of any earlier one. Its first value applies quietly, as the state the input opens with.
-    public func observeOverLimitDefaults(_ defaults: AnyPublisher<AIChatNewChatDefault, Never>) {
+    public func observeOverLimitDefaults(_ defaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>) {
         var isFirstValue = true
         overLimitDefaultsCancellable = defaults.sink { [weak self] newDefault in
             self?.applyOverLimitDefault(newDefault, announcesChange: !isFirstValue)
@@ -74,17 +70,11 @@ public final class AIChatNewChatDefaultSource {
         }
     }
 
-    private func applyOverLimitDefault(_ newDefault: AIChatNewChatDefault, announcesChange: Bool) {
+    private func applyOverLimitDefault(_ newDefault: AIChatOverLimitNewChatDefault, announcesChange: Bool) {
         guard newDefault != overLimitDefault else { return }
         overLimitDefault = newDefault
         if announcesChange {
             overLimitDefaultChangesSubject.send()
         }
-    }
-
-    private func resolveSelection() {
-        let candidates = [AIChatNewChatDefaultResolver.Candidate(overLimitDefault, origin: .server),
-                          AIChatNewChatDefaultResolver.Candidate(serverDefault, origin: .server)]
-        selection = AIChatNewChatDefaultResolver.resolve(candidates, models: models, userTier: userTier)
     }
 }

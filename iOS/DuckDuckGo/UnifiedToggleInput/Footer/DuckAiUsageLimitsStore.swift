@@ -81,12 +81,12 @@ struct DuckAiUsageLimitsStore {
     }
 
     /// Not gated on the warnings flag: it only decides which model a new chat starts on.
-    var overLimitNewChatDefault: AIChatNewChatDefault {
-        makeLimitsProvider()?.currentSnapshot().overLimitNewChatDefault ?? .unavailable
+    var overLimitNewChatDefault: AIChatOverLimitNewChatDefault {
+        makeLimitsProvider()?.currentSnapshot().overLimitNewChatDefault ?? .notOverLimit
     }
 
     /// The current over-limit default, then each different one web writes. Reads nothing until subscribed.
-    func overLimitNewChatDefaultPublisher<S: Scheduler>(receivingUpdatesOn scheduler: S) -> AnyPublisher<AIChatNewChatDefault, Never> {
+    func overLimitNewChatDefaultPublisher<S: Scheduler>(receivingUpdatesOn scheduler: S) -> AnyPublisher<AIChatOverLimitNewChatDefault, Never> {
         Deferred {
             (usageLimitsEntryUpdates ?? Empty().eraseToAnyPublisher())
                 .receive(on: scheduler)

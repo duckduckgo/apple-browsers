@@ -54,7 +54,7 @@ final class IPadOmnibarModelPickerController {
         upsellPresenter: DuckAISubscriptionUpselling? = nil,
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         startsNewChatsOnDefault: Bool = false,
-        overLimitNewChatDefaults: AnyPublisher<AIChatNewChatDefault, Never>? = nil
+        overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.startsNewChatsOnDefault = startsNewChatsOnDefault

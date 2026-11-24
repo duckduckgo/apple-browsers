@@ -726,7 +726,7 @@ extension DefaultOmniBarViewController {
 extension DefaultOmniBarViewController {
 
     /// Over the usage limit, new chats start on the default web sends in the usage-limits snapshot.
-    private var overLimitNewChatDefaults: AnyPublisher<AIChatNewChatDefault, Never>? {
+    private var overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? {
         dependencies.duckAiNativeStorageHandler.map {
             DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: dependencies.featureFlagger)
                 .overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
@@ -1074,7 +1074,7 @@ extension DefaultOmniBarViewController {
     /// An address-bar prompt always starts a new chat. Image generation picks its own model, so it reports no source.
     private var iPadNewChatModelSourceForSubmitPixel: DuckAINewChatModelSource? {
         guard toolPickerController?.selectedTool != .imageGeneration else { return nil }
-        return modelPickerController?.modelStore.newChatModelSource(openedWithModelId: nil)
+        return modelPickerController?.modelStore.newChatModelSource(onboardingModelId: nil)
     }
 
     private var iPadReasoningModeForSubmitPixel: AIChatReasoningMode? {

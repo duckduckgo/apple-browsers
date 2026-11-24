@@ -72,13 +72,13 @@ final class DuckAiUsageLimitsStore {
     }
 
     /// Not gated on the warnings flag: it only decides which model a new chat starts on.
-    var overLimitNewChatDefault: AIChatNewChatDefault {
-        guard let storageHandler else { return .unavailable }
+    var overLimitNewChatDefault: AIChatOverLimitNewChatDefault {
+        guard let storageHandler else { return .notOverLimit }
         return DuckAiUsageSnapshotProvider(storage: storageHandler).currentSnapshot().overLimitNewChatDefault
     }
 
     /// The current over-limit default, then each different one web writes.
-    func overLimitNewChatDefaultPublisher<S: Scheduler>(receivingUpdatesOn scheduler: S) -> AnyPublisher<AIChatNewChatDefault, Never> {
+    func overLimitNewChatDefaultPublisher<S: Scheduler>(receivingUpdatesOn scheduler: S) -> AnyPublisher<AIChatOverLimitNewChatDefault, Never> {
         (usageLimitsEntryUpdates ?? Empty().eraseToAnyPublisher())
             .receive(on: scheduler)
             .map { self.overLimitNewChatDefault }

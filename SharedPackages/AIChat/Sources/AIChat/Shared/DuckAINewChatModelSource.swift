@@ -19,13 +19,11 @@
 import Foundation
 
 /// Where the model of a new chat's first prompt came from. Raw values match the `model_source` pixel parameter.
-public enum DuckAINewChatModelSource: String, Sendable {
+public enum DuckAINewChatModelSource: String, CaseIterable, Sendable {
     case `default`
-    case userDefault = "user_default"
     case picked
     case onboarding
     case fallback
-    case userDefaultUnavailable = "user_default_unavailable"
 
     public static let pixelParameterKey = "model_source"
 
@@ -34,9 +32,9 @@ public enum DuckAINewChatModelSource: String, Sendable {
     public static func resolve(sentModelId: String,
                                sendsDefaultEffort: Bool,
                                isPicked: Bool,
-                               openedWithModelId: String? = nil,
+                               onboardingModelId: String? = nil,
                                newChatDefault: AIChatNewChatSelection?) -> DuckAINewChatModelSource? {
-        if sentModelId == openedWithModelId { return .onboarding }
+        if sentModelId == onboardingModelId { return .onboarding }
         if let newChatDefault, newChatDefault.modelId == sentModelId, sendsDefaultEffort {
             switch newChatDefault.origin {
             case .server: return .default

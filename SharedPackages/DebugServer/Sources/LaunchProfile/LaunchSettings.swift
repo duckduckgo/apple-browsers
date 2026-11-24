@@ -125,7 +125,7 @@ public struct LaunchSettings {
 private extension LaunchProfileValue {
 
     var jsonText: String {
-        guard let data = try? JSONEncoder().encode(self) else { return "\(self)" }
-        return String(decoding: data, as: UTF8.self)
+        guard let data = try? JSONEncoder().encode(self), let text = String(bytes: data, encoding: .utf8) else { return "\(self)" }
+        return text
     }
 }

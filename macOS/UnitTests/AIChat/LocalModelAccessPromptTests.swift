@@ -23,6 +23,7 @@ import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import Testing
+import WebKit
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -47,6 +48,21 @@ final class LocalModelAccessPromptTests {
 
         #expect(answer == .declined)
         #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A page in a hidden window gets No Thanks, and no offer is counted", .timeLimit(.minutes(1)))
+    func hiddenWindowCountsNoOffer() async {
+        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = NSWindow(contentRect: webView.frame, styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = webView
+
+        let answer = await makePrompt().ask(from: webView, modelName: "Apple Intelligence")
+
+        #expect(answer == .declined)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+        #expect(webView.window === window && !window.isVisible)
     }
 
     @available(iOS 16, macOS 13, *)

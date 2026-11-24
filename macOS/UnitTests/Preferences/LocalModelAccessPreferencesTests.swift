@@ -41,7 +41,7 @@ final class LocalModelAccessPreferencesTests {
                                                        storage: storage,
                                                        engine: engine,
                                                        notificationCenter: NotificationCenter(),
-                                                       instrumentation: LocalModelPixelInstrumentation(pixelFiring: nil))
+                                                       instrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
 
     private func makePreferences() -> AIChatPreferences {
         AIChatPreferences(storage: storage,
@@ -53,12 +53,16 @@ final class LocalModelAccessPreferencesTests {
                               guard let self else { return false }
                               confirmations += 1
                               return confirms
-                          },
-                          localModelInstrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
+                          })
     }
 
     private func selectedInSettings(_ model: AIChatPageSummariesModel) -> ExpectedFireCall {
         ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: .selected(model, source: .settings)), frequency: .standard)
+    }
+
+    /// The service also sends its daily state, which these tests don't look at.
+    private var selectedPixels: [ExpectedFireCall] {
+        pixelFiring.actualFireCalls.filter { $0.pixel.name == "aichat_local_model_selected_macos" }
     }
 
     @available(iOS 16, macOS 13, *)
@@ -152,7 +156,7 @@ final class LocalModelAccessPreferencesTests {
         await preferences.turnOnLocalModel()
         preferences.turnOffLocalModel()
 
-        #expect(pixelFiring.actualFireCalls == [selectedInSettings(.appleIntelligence), selectedInSettings(.duckAI)])
+        #expect(selectedPixels == [selectedInSettings(.appleIntelligence), selectedInSettings(.duckAI)])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -164,7 +168,7 @@ final class LocalModelAccessPreferencesTests {
         await preferences.turnOnLocalModel()
         preferences.turnOffLocalModel()
 
-        #expect(pixelFiring.actualFireCalls.isEmpty)
+        #expect(selectedPixels.isEmpty)
     }
 
     private func waitUntil(_ condition: () -> Bool) async {

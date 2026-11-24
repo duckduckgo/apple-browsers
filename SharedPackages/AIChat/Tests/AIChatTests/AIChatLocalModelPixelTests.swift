@@ -61,14 +61,6 @@ struct AIChatLocalModelPixelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Turn On in the prompt picks Apple Intelligence and anything else closes the offer", .timeLimit(.minutes(1)))
-    func promoAnswered() {
-        #expect(AIChatLocalModelPixel.promoAnswered(.allowed) == .selected(.appleIntelligence, source: .duckAIPromo))
-        #expect(AIChatLocalModelPixel.promoAnswered(.declined) == .promoClosed)
-        #expect(AIChatLocalModelPixel.promoAnswered(.installing) == nil)
-    }
-
-    @available(iOS 16, macOS 13, *)
     @Test("Selecting a model sends the engine and where it was chosen", .timeLimit(.minutes(1)))
     func selected() {
         let turnedOn = AIChatLocalModelPixel.selected(.appleIntelligence, source: .duckAIPromo)

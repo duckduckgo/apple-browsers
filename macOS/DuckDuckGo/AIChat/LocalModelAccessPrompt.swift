@@ -79,7 +79,8 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
             let top = webView.isFlipped ? webView.bounds.minY : webView.bounds.maxY - 1
             popover.show(positionedBelow: NSRect(x: webView.bounds.midX, y: top, width: 1, height: 1), in: webView)
         }
-        return true
+        // AppKit skips the pop-up for a hidden window, and a pop-up that never shows never closes to answer the page.
+        return popover.isShown
     }
 
     private func duckAIButton(in window: NSWindow?) -> NSView? {
@@ -111,8 +112,8 @@ extension LocalModelAccessPrompt: NSPopoverDelegate {
     /// Every way the pop-up closes ends here, so Escape or a click outside answers `declined`.
     func popoverDidClose(_ notification: Notification) {
         let result = answer ?? .declined
-        if let pixel = AIChatLocalModelPixel.promoAnswered(result) {
-            instrumentation.fire(pixel)
+        if result == .declined {
+            instrumentation.fire(.promoClosed)
         }
         finish(result)
     }

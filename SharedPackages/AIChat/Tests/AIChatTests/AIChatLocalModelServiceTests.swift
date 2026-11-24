@@ -333,6 +333,43 @@ final class AIChatLocalModelServiceTests {
         #expect(pixels.fired.filter { $0.name == "aichat_local_model_run_started" } == [.runStarted(engine: .appleIntelligence, task: .summarize)])
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Turn On in the prompt saves the choice and sends selected once", .timeLimit(.minutes(1)))
+    func promptTurnOnSendsSelected() async throws {
+        _ = try await service.requestAccess { .allowed }
+        service.select(.appleIntelligence, source: .settings)
+
+        #expect(storage.pageSummariesModel == .appleIntelligence)
+        #expect(selectedPixels == [.selected(.appleIntelligence, source: .duckAIPromo)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("No Thanks in the prompt sends no selected", .timeLimit(.minutes(1)))
+    func promptNoThanksSendsNoSelected() async throws {
+        _ = try await service.requestAccess { .declined }
+
+        #expect(selectedPixels.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Selecting the model that's already chosen saves nothing and sends nothing", .timeLimit(.minutes(1)))
+    func selectingTheSameModelSendsNothing() {
+        var writes = 0
+        let cancellable = storage.pageSummariesModelPublisher.dropFirst().sink { _ in writes += 1 }
+
+        service.select(.duckAI, source: .settings)
+        service.select(.appleIntelligence, source: .settings)
+        service.select(.appleIntelligence, source: .settings)
+
+        #expect(writes == 1)
+        #expect(selectedPixels == [.selected(.appleIntelligence, source: .settings)])
+        cancellable.cancel()
+    }
+
+    private var selectedPixels: [AIChatLocalModelPixel] {
+        pixels.fired.filter { $0.name == "aichat_local_model_selected" }
+    }
+
     private func waitUntil(_ condition: () -> Bool) async {
         for _ in 0..<500 {
             if condition() { return }

@@ -976,12 +976,18 @@ extension DataBrokerProtectionIOSManager {
         server.immediateScanStarter = { [weak self] brokerURLs in
             guard let self else { throw CancellationError() }
             let resources = try self.vaultResources()
-            resources.jobDependencies.dataBrokerProtectionSettings.debugTestBrokerURLs = brokerURLs
-            let jobs = try PIRDebugLaunchOptions.scanJobs(database: resources.database,
-                                                          isAuthenticatedUser: await self.refreshFreeScanState(),
-                                                          brokerURLs: brokerURLs, includesMaintenance: true)
+            let settings = resources.jobDependencies.dataBrokerProtectionSettings
+            let isAuthenticated = await self.refreshFreeScanState()
+            // Free scans skip maintenance scans when they run, so they aren't planned either.
+            let jobs = try PIRDebugLaunchOptions.scanJobs(database: resources.database, isAuthenticatedUser: isAuthenticated,
+                                                          brokerURLs: brokerURLs, includesMaintenance: isAuthenticated)
             try PIRDebugLaunchOptions.makeScansDue(jobs, database: resources.database)
-            await self.startImmediateScanOperations()
+            let previousBrokerURLs = settings.debugTestBrokerURLs
+            settings.debugTestBrokerURLs = brokerURLs
+            resources.queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: isAuthenticated,
+                                                                           jobDependencies: resources.jobDependencies, errorHandler: nil) {
+                settings.debugTestBrokerURLs = previousBrokerURLs
+            }
             return DebugImmediateScans(queued: jobs, requested: brokerURLs)
         }
     }

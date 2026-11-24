@@ -19,9 +19,15 @@
 
 import Foundation
 import os.log
-import WebPageTranslation
 
-protocol PageTranslating: Sendable {
+/// The page side of a translation: its text out, the translations back in.
+@MainActor
+public protocol PageTranslationBridging: AnyObject {
+    func extract() async throws -> (units: [PageTranslationUnit], documentID: UUID)
+    func apply(_ updates: [PageTranslationUpdate], from source: String, to target: String, in documentID: UUID) async throws -> Int
+}
+
+public protocol PageTranslating: Sendable {
     func translate(_ units: [PageTranslationUnit], pairID: String) async throws -> [PageTranslationUpdate]
 }
 
@@ -30,19 +36,19 @@ extension PageTranslator: PageTranslating {}
 /// Translates one tab's page: extracts its text, translates it and writes it back.
 /// The bridge stops a translation when the page changes, by failing its requests with `CancellationError`.
 @MainActor
-final class PageTranslationSession {
+public final class PageTranslationSession {
 
     private let bridge: PageTranslationBridging
     private let translator: PageTranslating
-    private(set) var isTranslating = false
+    public private(set) var isTranslating = false
 
-    init(bridge: PageTranslationBridging, translator: PageTranslating) {
+    public init(bridge: PageTranslationBridging, translator: PageTranslating) {
         self.bridge = bridge
         self.translator = translator
     }
 
     /// Ignored while a translation is running.
-    func start(_ offer: TranslationOffer) {
+    public func start(_ offer: TranslationOffer) {
         guard !isTranslating else { return }
         isTranslating = true
         Task {

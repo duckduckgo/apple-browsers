@@ -24,13 +24,6 @@ import UserScript
 import WebKit
 import WebPageTranslation
 
-/// The page side of a translation: its text out, the translations back in.
-@MainActor
-protocol PageTranslationBridging: AnyObject {
-    func extract() async throws -> (units: [PageTranslationUnit], documentID: UUID)
-    func apply(_ updates: [PageTranslationUpdate], from source: String, to target: String, in documentID: UUID) async throws -> Int
-}
-
 /// Talks to C-S-S's `pageTranslation` bundle in the isolated world, injecting it once per document.
 /// The bundle answers each push with a separate notification that echoes the push's `requestId`, so a
 /// late reply to a request that timed out or was cancelled is ignored. One request is in flight at a time.

@@ -17,12 +17,13 @@
 //  limitations under the License.
 //
 
-import WebPageTranslation
-import XCTest
-@testable import DuckDuckGo
+import Foundation
+import Testing
+@testable import WebPageTranslation
 
 @MainActor
-final class PageTranslationSessionTests: XCTestCase {
+@Suite
+struct PageTranslationSessionTests {
 
     private final class FakeBridge: PageTranslationBridging {
         var units: [PageTranslationUnit] = []
@@ -63,14 +64,11 @@ final class PageTranslationSessionTests: XCTestCase {
         }
     }
 
+    private struct ExtractFailure: Error {}
+
     private let bridge = FakeBridge()
     private let translator = FakeTranslator()
     private let offer = TranslationOffer(source: "fr", target: "en", pairID: "fr-en-base")
-
-    override func setUp() {
-        super.setUp()
-        executionTimeAllowance = 60
-    }
 
     private func makeSession() -> PageTranslationSession {
         PageTranslationSession(bridge: bridge, translator: translator)
@@ -82,25 +80,29 @@ final class PageTranslationSessionTests: XCTestCase {
         }
     }
 
-    func testStartExtractsTranslatesAndApplies() async {
+    @available(iOS 16, macOS 13, *)
+    @Test("start extracts, translates and applies to the extracted document", .timeLimit(.minutes(1)))
+    func startExtractsTranslatesAndApplies() async {
         bridge.units = [PageTranslationUnit(id: 1, text: "Bonjour", html: false, vp: 1),
-                      PageTranslationUnit(id: 2, text: "Merci", html: false, vp: 0)]
+                        PageTranslationUnit(id: 2, text: "Merci", html: false, vp: 0)]
         let session = makeSession()
 
         session.start(offer)
-        XCTAssertTrue(session.isTranslating)
+        #expect(session.isTranslating)
         await waitUntilDone(session)
 
-        XCTAssertEqual(translator.calls.map(\.pairID), ["fr-en-base"])
-        XCTAssertEqual(bridge.applied.count, 1)
-        XCTAssertEqual(bridge.applied.first?.updates, [PageTranslationUpdate(id: 1, text: "Bonjour (en)"),
-                                                     PageTranslationUpdate(id: 2, text: "Merci (en)")])
-        XCTAssertEqual(bridge.applied.first?.source, "fr")
-        XCTAssertEqual(bridge.applied.first?.target, "en")
-        XCTAssertEqual(bridge.applied.first?.documentID, bridge.documentID)
+        #expect(translator.calls.map(\.pairID) == ["fr-en-base"])
+        #expect(bridge.applied.count == 1)
+        #expect(bridge.applied.first?.updates == [PageTranslationUpdate(id: 1, text: "Bonjour (en)"),
+                                                 PageTranslationUpdate(id: 2, text: "Merci (en)")])
+        #expect(bridge.applied.first?.source == "fr")
+        #expect(bridge.applied.first?.target == "en")
+        #expect(bridge.applied.first?.documentID == bridge.documentID)
     }
 
-    func testStartWhileTranslatingIsIgnored() async {
+    @available(iOS 16, macOS 13, *)
+    @Test("start while translating is ignored", .timeLimit(.minutes(1)))
+    func startWhileTranslatingIsIgnored() async {
         bridge.units = [PageTranslationUnit(id: 1, text: "Bonjour", html: false, vp: 1)]
         translator.suspends = true
         let session = makeSession()
@@ -113,19 +115,21 @@ final class PageTranslationSessionTests: XCTestCase {
         translator.resume()
         await waitUntilDone(session)
 
-        XCTAssertEqual(translator.calls.count, 1)
-        XCTAssertEqual(bridge.applied.count, 1)
+        #expect(translator.calls.count == 1)
+        #expect(bridge.applied.count == 1)
     }
 
-    func testErrorsEndQuietly() async {
-        bridge.extractError = PageTranslationBridge.Error.timeout
+    @available(iOS 16, macOS 13, *)
+    @Test("errors end the translation quietly", .timeLimit(.minutes(1)))
+    func errorsEndQuietly() async {
+        bridge.extractError = ExtractFailure()
         let session = makeSession()
 
         session.start(offer)
         await waitUntilDone(session)
 
-        XCTAssertFalse(session.isTranslating)
-        XCTAssertTrue(translator.calls.isEmpty)
-        XCTAssertTrue(bridge.applied.isEmpty)
+        #expect(!session.isTranslating)
+        #expect(translator.calls.isEmpty)
+        #expect(bridge.applied.isEmpty)
     }
 }

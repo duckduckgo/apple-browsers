@@ -35,6 +35,7 @@ import PrivacyConfig
 import SitePermissions
 import WebExtensions
 import PixelKit
+import WebPageTranslation
 
 protocol TabManaging {
     @MainActor var browserToolsService: AIChatBrowserToolsService { get }

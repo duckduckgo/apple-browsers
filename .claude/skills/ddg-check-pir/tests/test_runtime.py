@@ -379,6 +379,20 @@ class LifecycleTests(unittest.TestCase):
             self.assertTrue(instance.stop()["stopped"])
             self.assertFalse(self.tools.processes)
 
+    def test_macos_scheduler_ignores_a_running_ios_simulator_app_with_the_same_executable_name(self):
+        instance = self.make_runtime("macos")
+        instance.evidence.mkdir()
+        build = instance.build()
+        simulator_app = Path(self.directory.name) / "SimulatorApp" / "DuckDuckGo.app"
+        FakeTools.write_bundle(simulator_app, {"CFBundleIdentifier": runtime.BUNDLES["ios"],
+                                          "CFBundleExecutable": Path(build["product"]["browserExecutable"]).name}, False)
+        self.tools.processes[701] = str(simulator_app / Path(build["product"]["browserExecutable"]).name)
+        with patch.object(runtime, "SCHEDULER_LOCK", Path(self.directory.name) / "scheduler.lock"):
+            launched = instance.launch_scheduler("seed", "{}")
+        self.assertTrue(any(argv == [launched["product"]["browserExecutable"]] for argv, _ in self.tools.calls))
+        self.tools.processes.pop(701)
+        instance.stop()
+
     def test_ios_scheduler_launch_uses_its_own_simulator_port_and_container_receipt(self):
         instance = self.make_runtime("ios", device="ipad")
         instance.evidence.mkdir()

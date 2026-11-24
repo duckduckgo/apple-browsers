@@ -60,9 +60,12 @@ struct PromoServiceFactory {
 
     @MainActor
     static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
-        var promos: [Promo] = [
+        // Position is priority, so the optional `browserUpdated` promo is listed in place rather than inserted by index.
+        let orderedPromos: [Promo?] = [
+            declaredAge(dependencies: dependencies),
             sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),
             updateAvailable(dependencies: dependencies),
+            browserUpdated(dependencies: dependencies),
             remoteMessageNewTabPage(model: dependencies.activeRemoteMessageModel),
             freemiumDBP,
             remoteMessageTabBar(model: dependencies.activeRemoteMessageModel),
@@ -91,10 +94,7 @@ struct PromoServiceFactory {
             bookmarksEmptyStateImportSync(dependencies: dependencies),
             autofillEmptyStateImportSync(dependencies: dependencies)
         ]
-
-        if let browserUpdatedPromo = browserUpdated(dependencies: dependencies) {
-            promos.insert(browserUpdatedPromo, at: 2)
-        }
+        var promos = orderedPromos.compactMap { $0 }
 
         if includeTestPromos {
             promos.append(contentsOf: testPromos)

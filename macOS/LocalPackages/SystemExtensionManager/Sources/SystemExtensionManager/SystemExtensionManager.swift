@@ -647,7 +647,7 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
         if case OSSystemExtensionError.requestCanceled = error {
-            Logger.systemExtensionManager.info("System extension request cancelled (requestCanceled): \(request.identifier, privacy: .public)")
+            Logger.systemExtensionManager.info("System extension wasn't replaced because the version didn't change (requestCanceled): \(request.identifier, privacy: .public)")
         } else {
             Self.logRequestFailure(error: error, request: request)
         }

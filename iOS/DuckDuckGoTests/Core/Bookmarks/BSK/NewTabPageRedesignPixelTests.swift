@@ -18,6 +18,7 @@
 //
 
 import Bookmarks
+import Combine
 import Foundation
 import Testing
 @testable import DuckDuckGo
@@ -109,9 +110,67 @@ struct NewTabPageRedesignPixelTests {
     }
 }
 
+@Suite("New Tab Page theme")
+@MainActor
+struct NewTabPageThemeTests {
+
+    private func makeStore(storedTheme: String? = nil) throws -> NewTabPageCustomizationStore {
+        let suiteName = "NewTabPageThemeTests-\(UUID().uuidString)"
+        let userDefaults = try #require(UserDefaults(suiteName: suiteName))
+        userDefaults.removePersistentDomain(forName: suiteName)
+        if let storedTheme {
+            userDefaults.set(storedTheme, forKey: "com_duckduckgo_ios_newTabPage_theme")
+        }
+        return NewTabPageCustomizationStore(keyValueStore: userDefaults)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Blue is used when no theme or an unknown theme is stored", .timeLimit(.minutes(1)), arguments: [nil, "removed-theme"])
+    func fallsBackToDefaultTheme(storedTheme: String?) throws {
+        #expect(try makeStore(storedTheme: storedTheme).theme == .blue)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The publisher emits the current theme, then every change", .timeLimit(.minutes(1)))
+    func publisherEmitsCurrentThemeThenChanges() throws {
+        var store = try makeStore()
+        var received: [NewTabPageTheme] = []
+        let cancellable = store.themePublisher.sink { received.append($0) }
+
+        store.theme = .plain
+        store.theme = .blue
+
+        #expect(received == [.blue, .plain, .blue])
+        cancellable.cancel()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The model starts from the stored theme and writes changes through", .timeLimit(.minutes(1)))
+    func modelWritesChangesThrough() {
+        let persistor = ReferenceNewTabPageCustomizationPersistor(theme: .plain)
+        let model = NewTabPageCustomizationModel(persistor: persistor, pixelFiring: nil)
+        #expect(model.theme == .plain)
+
+        model.theme = .blue
+
+        #expect(persistor.theme == .blue)
+    }
+}
+
+private final class ReferenceNewTabPageCustomizationPersistor: NewTabPageCustomizationPersisting {
+    var isFavoritesSectionVisible = true
+    var isMessagesSectionVisible = true
+    var theme: NewTabPageTheme
+
+    init(theme: NewTabPageTheme) {
+        self.theme = theme
+    }
+}
+
 private struct MockNewTabPageCustomizationPersistor: NewTabPageCustomizationPersisting {
     var isFavoritesSectionVisible = true
     var isMessagesSectionVisible = true
+    var theme = NewTabPageTheme.default
 }
 
 private final class MockAddFavoriteBookmarks: MenuBookmarksInteracting {

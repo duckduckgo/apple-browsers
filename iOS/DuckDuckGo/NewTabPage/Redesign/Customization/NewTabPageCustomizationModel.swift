@@ -39,6 +39,13 @@ final class NewTabPageCustomizationModel: ObservableObject {
         }
     }
 
+    @Published var theme: NewTabPageTheme {
+        didSet {
+            guard oldValue != theme else { return }
+            persistor.theme = theme
+        }
+    }
+
     @Published var isKeyboardShownOnNewTab: Bool {
         didSet {
             guard oldValue != isKeyboardShownOnNewTab else { return }
@@ -63,6 +70,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
         isFavoritesSectionVisible = persistor.isFavoritesSectionVisible
         isMessagesSectionVisible = persistor.isMessagesSectionVisible
+        theme = persistor.theme
         isKeyboardShownOnNewTab = keyboardSettings.onNewTab
     }
 

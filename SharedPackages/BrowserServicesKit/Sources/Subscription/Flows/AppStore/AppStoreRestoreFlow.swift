@@ -60,6 +60,14 @@ public enum AppStoreRestoreFlowError: DDGError {
 @available(iOS 15.0, *)
 public protocol AppStoreRestoreFlow {
     @discardableResult func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError>
+
+    /// Syncs the user's transactions with the App Store, then restores the account from the most recent one.
+    ///
+    /// Call this only when the user asks to restore a purchase: syncing can ask them to sign in to their Apple Account.
+    /// If the sync fails or the user dismisses the sign-in, the restore uses the transactions already on the device.
+    /// - Returns: The JWS representation of the restored transaction, or the reason the restore failed.
+    @discardableResult func syncAndRestoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError>
+
     func restoreSubscriptionAfterExpiredRefreshToken() async throws
 }
 
@@ -104,6 +112,19 @@ public final class DefaultAppStoreRestoreFlow: AppStoreRestoreFlow {
             Logger.subscriptionAppStoreRestoreFlow.error("Error activating past transaction: \(error, privacy: .public)")
             return .failure(.pastTransactionAuthenticationError)
         }
+    }
+
+    @discardableResult
+    public func syncAndRestoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError> {
+        Logger.subscriptionAppStoreRestoreFlow.log("Syncing with the App Store before restoring")
+
+        do {
+            try await storePurchaseManager.syncAppleIDAccount()
+        } catch {
+            Logger.subscriptionAppStoreRestoreFlow.error("App Store sync failed, restoring from local transactions: \(error, privacy: .public)")
+        }
+
+        return await restoreAccountFromPastPurchase()
     }
 
     public func restoreSubscriptionAfterExpiredRefreshToken() async throws {

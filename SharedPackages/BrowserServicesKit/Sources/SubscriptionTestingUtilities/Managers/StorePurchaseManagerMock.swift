@@ -35,6 +35,9 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public var subscriptionTierOptionsIncludeProTierCalled: Bool?
 
     public var syncAppleIDAccountResultError: Error?
+    public var syncAppleIDAccountCalled: Bool = false
+    /// Runs when `syncAppleIDAccount()` is called, before it throws `syncAppleIDAccountResultError`.
+    public var onSyncAppleIDAccount: (() -> Void)?
 
     public var mostRecentTransactionResult: String?
     public var hasActiveSubscriptionResult: Bool = false
@@ -51,6 +54,8 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public init() { }
 
     public func syncAppleIDAccount() async throws {
+        syncAppleIDAccountCalled = true
+        onSyncAppleIDAccount?()
         if let syncAppleIDAccountResultError {
             throw syncAppleIDAccountResultError
         }

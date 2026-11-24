@@ -894,7 +894,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func restoreAccountFromAppStorePurchase() async throws {
         setTransactionStatus(.restoring)
-        let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
+        let result = await appStoreRestoreFlow.syncAndRestoreAccountFromPastPurchase()
 
         switch result {
         case .success:

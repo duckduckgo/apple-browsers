@@ -898,3 +898,39 @@ private struct MockMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
         shouldOffer
     }
 }
+
+// MARK: - Most recent transaction selection
+
+extension StorePurchaseManagerTests {
+
+    private struct PurchaseRecord: Equatable {
+        let id: String
+        let purchaseDate: Date
+    }
+
+    func testMostRecentReturnsNilWhenThereAreNoTransactions() {
+        let result = DefaultStorePurchaseManager.mostRecent(in: [PurchaseRecord](), purchaseDate: \.purchaseDate)
+
+        XCTAssertNil(result)
+    }
+
+    func testMostRecentReturnsLatestPurchaseWhenOlderTransactionComesFirst() {
+        let expiredMonthly = PurchaseRecord(id: "expired", purchaseDate: Date(timeIntervalSince1970: 1_000))
+        let renewal = PurchaseRecord(id: "renewal", purchaseDate: Date(timeIntervalSince1970: 3_000))
+        let previousRenewal = PurchaseRecord(id: "previous", purchaseDate: Date(timeIntervalSince1970: 2_000))
+
+        let result = DefaultStorePurchaseManager.mostRecent(in: [expiredMonthly, renewal, previousRenewal], purchaseDate: \.purchaseDate)
+
+        XCTAssertEqual(result, renewal)
+    }
+
+    func testMostRecentReturnsFirstItemWhenPurchaseDatesAreEqual() {
+        let date = Date(timeIntervalSince1970: 1_000)
+        let first = PurchaseRecord(id: "first", purchaseDate: date)
+        let second = PurchaseRecord(id: "second", purchaseDate: date)
+
+        let result = DefaultStorePurchaseManager.mostRecent(in: [first, second], purchaseDate: \.purchaseDate)
+
+        XCTAssertEqual(result, first)
+    }
+}

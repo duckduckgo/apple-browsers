@@ -469,9 +469,19 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
         for await result in Transaction.all {
             transactions.append(result)
         }
-        let lastTransaction = transactions.first
+        let lastTransaction = Self.mostRecent(in: transactions, purchaseDate: { $0.unsafePayloadValue.purchaseDate })
         Logger.subscriptionStorePurchaseManager.log("Most recent transaction fetched: \(lastTransaction?.debugDescription ?? "?") (tot: \(transactions.count) transactions)")
-        return transactions.first?.jwsRepresentation
+        return lastTransaction?.jwsRepresentation
+    }
+
+    /// Returns the item with the latest purchase date.
+    ///
+    /// - Parameters:
+    ///   - items: The items to search, in any order.
+    ///   - purchaseDate: Returns the purchase date of an item.
+    /// - Returns: The item with the latest purchase date, the first of them if several share it, or `nil` if `items` is empty.
+    static func mostRecent<Item>(in items: [Item], purchaseDate: (Item) -> Date) -> Item? {
+        items.max { purchaseDate($0) < purchaseDate($1) }
     }
 
     @MainActor

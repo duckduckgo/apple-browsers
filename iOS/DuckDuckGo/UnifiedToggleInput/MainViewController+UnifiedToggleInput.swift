@@ -201,7 +201,9 @@ extension MainViewController {
             updateIPadChatListButtonPlacement()
             return
         }
-        viewCoordinator.setAITabBottomChromeHidden(hidesInputBar)
+        if viewCoordinator.setAITabBottomChromeHidden(hidesInputBar) {
+            currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
+        }
     }
 
     /// Paints the header + status strip the voice colour while the voice chrome is active. Idempotent.

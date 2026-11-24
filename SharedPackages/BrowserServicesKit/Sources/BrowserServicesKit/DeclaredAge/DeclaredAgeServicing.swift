@@ -44,6 +44,10 @@ public extension DeclaredAgeServicing {
     }
 }
 
+enum DeclaredAgeServiceError: Error {
+    case unavailable
+}
+
 @MainActor
 public final class DefaultDeclaredAgeService: DeclaredAgeServicing {
 
@@ -53,7 +57,7 @@ public final class DefaultDeclaredAgeService: DeclaredAgeServicing {
 
     public func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws {
         guard #available(iOS 26.2, macOS 26.2, *) else {
-            return
+            throw DeclaredAgeServiceError.unavailable
         }
 
         // Legal requires keeping only the request date, so the response is dropped.

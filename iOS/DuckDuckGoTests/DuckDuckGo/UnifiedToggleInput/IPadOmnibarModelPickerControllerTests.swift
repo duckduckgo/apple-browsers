@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import Combine
 import SubscriptionTestingUtilities
 import XCTest
@@ -325,7 +326,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
 
     func testWhenOnlyAStorageHandlerIsPassedThenNewChatsStartOnTheUserDefaultModel() async throws {
         let storage = DuckAiNativeMemoryStorageHandler()
-        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: #""gpt-5.6-terra""#)
+        try storage.putUserDefaultModel("gpt-5.6-terra")
         modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultModels,
                                                              newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
         let sut = makeNewChatDefaultSUT(duckAiNativeStorageHandler: storage)

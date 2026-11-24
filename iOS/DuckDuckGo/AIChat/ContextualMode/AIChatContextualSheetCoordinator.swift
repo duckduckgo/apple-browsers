@@ -1164,7 +1164,7 @@ private extension AIChatContextualSheetCoordinator {
             attachMoreTabsFeature: attachMoreTabsFeature,
             start: start,
             usageLimitsStore: duckAiUsageLimitsStore,
-            userDefaultModel: duckAiUserDefaultModel,
+            userDefaultModelStorage: chatStorage,
             floatingUIManager: floatingUIManager,
             tabAttachmentSource: tabAttachmentSource,
             duckAIWideEventInstrumentation: DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -1448,11 +1448,6 @@ private extension AIChatContextualSheetCoordinator {
         return storageHandler.map {
             DuckAiLastUsedModelProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
         }
-    }
-
-    /// Fire storage reads the setting through from normal storage, so fire tabs start on it too.
-    var duckAiUserDefaultModel: AIChatUserDefaultModelProviding? {
-        chatStorage.map { DuckAiUserDefaultModelStore(storage: $0) }
     }
 
     /// Fire tabs run an isolated Duck.ai session with no usage worth warning about, so the feature

@@ -88,17 +88,16 @@ struct DuckAINewChatModelSourceTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Falling back from an unusable user default reports user_default_unavailable", .timeLimit(.minutes(1)),
-          arguments: [AIChatNewChatSelection.Origin.server, .fallback])
-    func unusableUserDefault(origin: AIChatNewChatSelection.Origin) {
-        let fellBack = AIChatNewChatSelection(modelId: "luna", reasoningEffort: nil, origin: origin, isUserDefaultUnavailable: true)
+    @Test("Falling back from an unusable user default reports user_default_unavailable", .timeLimit(.minutes(1)))
+    func unusableUserDefault() {
+        let fellBack = AIChatNewChatSelection(modelId: "luna", reasoningEffort: nil, origin: .userDefaultUnavailable)
         #expect(resolve("luna", newChatDefault: fellBack) == .userDefaultUnavailable)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Picking another model with an unusable user default reports picked", .timeLimit(.minutes(1)))
     func pickedOverUnusableUserDefault() {
-        let fellBack = AIChatNewChatSelection(modelId: "luna", reasoningEffort: nil, origin: .server, isUserDefaultUnavailable: true)
+        let fellBack = AIChatNewChatSelection(modelId: "luna", reasoningEffort: nil, origin: .userDefaultUnavailable)
         #expect(resolve("claude", isPicked: true, newChatDefault: fellBack) == .picked)
     }
 

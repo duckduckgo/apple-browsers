@@ -20,6 +20,7 @@ import Combine
 import Foundation
 import Testing
 @testable import AIChat
+import AIChatTestingUtilities
 
 @Suite("User default model: native storage entry")
 struct DuckAiUserDefaultModelStoreTests {
@@ -47,13 +48,13 @@ struct DuckAiUserDefaultModelStoreTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Each read sees the latest stored value", .timeLimit(.minutes(1)))
+    @Test("Each read sees the latest stored value, even once cached", .timeLimit(.minutes(1)))
     func readsLiveValue() throws {
         let storage = try DuckAiNativeStorageHandler(.memory())
         let store = DuckAiUserDefaultModelStore(storage: storage)
         #expect(store.modelId == nil)
 
-        try storage.putEntry(key: Self.entryKey, value: #""claude-haiku-5-5""#)
+        try storage.putUserDefaultModel("claude-haiku-5-5")
         #expect(store.modelId == "claude-haiku-5-5")
 
         try storage.deleteEntry(key: Self.entryKey)
@@ -65,9 +66,10 @@ struct DuckAiUserDefaultModelStoreTests {
     func announcesSettingChanges() throws {
         let storage = try DuckAiNativeStorageHandler(.memory())
         var changeCount = 0
-        let cancellable = DuckAiUserDefaultModelStore(storage: storage).changes.sink { changeCount += 1 }
+        let store = DuckAiUserDefaultModelStore(storage: storage)
+        let cancellable = store.changes.sink { changeCount += 1 }
 
-        try storage.putEntry(key: Self.entryKey, value: #""claude-haiku-5-5""#)
+        try storage.putUserDefaultModel("claude-haiku-5-5")
         try storage.putEntry(key: "unrelated", value: "1")
         try storage.deleteEntry(key: Self.entryKey)
 
@@ -79,9 +81,22 @@ struct DuckAiUserDefaultModelStoreTests {
     @Test("Fire mode reads the user default through from normal storage", .timeLimit(.minutes(1)))
     func fireModeReadsThrough() throws {
         let normal = try DuckAiNativeStorageHandler(.memory())
-        try normal.putEntry(key: Self.entryKey, value: #""gpt-6-luna""#)
+        try normal.putUserDefaultModel("gpt-6-luna")
         let fire = try DuckAiNativeStorageHandler(.memory(seedSource: normal))
 
         #expect(DuckAiUserDefaultModelStore(storage: fire).modelId == "gpt-6-luna")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Fire mode sees a setting changed in normal storage", .timeLimit(.minutes(1)))
+    func fireModeIsNeverStale() throws {
+        let normal = try DuckAiNativeStorageHandler(.memory())
+        try normal.putUserDefaultModel("gpt-6-luna")
+        let store = DuckAiUserDefaultModelStore(storage: try DuckAiNativeStorageHandler(.memory(seedSource: normal)))
+        #expect(store.modelId == "gpt-6-luna")
+
+        try normal.putUserDefaultModel("claude-haiku-5-5")
+
+        #expect(store.modelId == "claude-haiku-5-5")
     }
 }

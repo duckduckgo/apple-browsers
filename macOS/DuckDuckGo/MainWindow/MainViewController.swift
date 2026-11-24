@@ -353,7 +353,7 @@ final class MainViewController: NSViewController {
             isBurner: tabCollectionViewModel.isBurner,
             preferences: NSApp.delegateTyped.aiChatPreferencesPersistor,
             usageLimitsStore: DuckAiUsageLimitsStore(storageHandler: duckAiNativeStorageHandler),
-            userDefaultModel: duckAiNativeStorageHandler.map { DuckAiUserDefaultModelStore(storage: $0) }
+            userDefaultModelStorage: duckAiNativeStorageHandler
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(

@@ -24,10 +24,7 @@ public final class AIChatNewChatDefaultSource {
 
     /// `nil` until `models` holds a model the user can use.
     public var selection: AIChatNewChatSelection? {
-        let userDefaultModelId = userDefaultModel?.modelId
-        let selection = AIChatNewChatDefaultResolver.resolve(candidates(userDefaultModelId: userDefaultModelId), models: models, userTier: userTier)
-        guard userDefaultModelId != nil, selection?.origin != .user else { return selection }
-        return selection?.markingUserDefaultUnavailable()
+        AIChatNewChatDefaultResolver.resolve(candidates(), models: models, userTier: userTier)
     }
 
     /// Emits after web writes a different over-limit or user default, so open inputs can refresh.
@@ -90,27 +87,22 @@ public final class AIChatNewChatDefaultSource {
         }
     }
 
+    /// Follows the user default `storage` holds; fire storage reads it through from normal storage.
+    public func observeUserDefaultModel(in storage: DuckAiNativeStorageHandling?) {
+        observeUserDefaultModel(storage.map(DuckAiUserDefaultModelStore.init(storage:)))
+    }
+
     /// The user default, then the over-limit default, then the `/models` default.
-    private func candidates(userDefaultModelId: String?) -> [AIChatNewChatDefaultResolver.Candidate] {
+    private func candidates() -> [AIChatNewChatDefaultResolver.Candidate] {
         let overLimitDefault = overLimitDefault.newChatDefault(at: now())
-        return [Self.userDefaultCandidate(userDefaultModelId, allowedBy: overLimitDefault),
-                AIChatNewChatDefaultResolver.Candidate(overLimitDefault, origin: .server),
-                AIChatNewChatDefaultResolver.Candidate(serverDefault, origin: .server)].compactMap { $0 }
-    }
-
-    /// Over the limit, the over-limit default is the only model native knows is allowed, so the user default must match it.
-    private static func userDefaultCandidate(_ modelId: String?,
-                                             allowedBy overLimitDefault: AIChatNewChatDefault) -> AIChatNewChatDefaultResolver.Candidate? {
-        guard let modelId, overLimitDefault.allows(modelId) else { return nil }
-        return AIChatNewChatDefaultResolver.Candidate(.model(id: modelId, reasoningEffort: nil), origin: .user)
-    }
-}
-
-private extension AIChatNewChatDefault {
-
-    /// Whether an over-limit default leaves `modelId` usable; no over-limit default allows every model.
-    func allows(_ modelId: String) -> Bool {
-        guard case let .model(id, _) = self else { return true }
-        return id == modelId
+        let serverCandidates = [AIChatNewChatDefaultResolver.Candidate(overLimitDefault, origin: .server),
+                                AIChatNewChatDefaultResolver.Candidate(serverDefault, origin: .server)]
+        guard let userDefaultModelId = userDefaultModel?.modelId else { return serverCandidates }
+        var userDefault = AIChatNewChatDefault.model(id: userDefaultModelId, reasoningEffort: nil)
+        // Over the limit only the over-limit model is known to be allowed, so a different user default is passed over.
+        if case let .model(overLimitModelId, _) = overLimitDefault, overLimitModelId != userDefaultModelId {
+            userDefault = .unavailable
+        }
+        return [AIChatNewChatDefaultResolver.Candidate(userDefault, origin: .user)] + serverCandidates
     }
 }

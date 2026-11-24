@@ -38,18 +38,14 @@ public enum DuckAINewChatModelSource: String, CaseIterable, Sendable {
                                newChatDefault: AIChatNewChatSelection?) -> DuckAINewChatModelSource? {
         if sentModelId == onboardingModelId { return .onboarding }
         if let newChatDefault, newChatDefault.modelId == sentModelId, sendsDefaultEffort {
-            return source(sendingDefault: newChatDefault)
+            switch newChatDefault.origin {
+            case .user: return .userDefault
+            case .userDefaultUnavailable: return .userDefaultUnavailable
+            case .server: return .default
+            case .fallback: return .fallback
+            }
         }
         if isPicked { return .picked }
         return newChatDefault == nil ? nil : .fallback
-    }
-
-    private static func source(sendingDefault newChatDefault: AIChatNewChatSelection) -> DuckAINewChatModelSource {
-        if newChatDefault.isUserDefaultUnavailable { return .userDefaultUnavailable }
-        switch newChatDefault.origin {
-        case .user: return .userDefault
-        case .server: return .default
-        case .fallback: return .fallback
-        }
     }
 }

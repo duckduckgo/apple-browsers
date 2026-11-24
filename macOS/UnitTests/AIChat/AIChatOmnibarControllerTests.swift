@@ -3415,7 +3415,7 @@ extension AIChatOmnibarControllerTests {
             subscriptionManager: mockSubscriptionManager,
             subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
             usageLimitsStore: usageLimitsStore,
-            userDefaultModel: userDefaultStorage.map { DuckAiUserDefaultModelStore(storage: $0) }
+            userDefaultModelStorage: userDefaultStorage
         )
     }
 
@@ -3431,7 +3431,7 @@ extension AIChatOmnibarControllerTests {
 
     private func makeUserDefaultStorage(_ modelId: String) throws -> DuckAiNativeStorageHandler {
         let storage = try DuckAiNativeStorageHandler(.memory())
-        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: "\"\(modelId)\"")
+        try storage.putUserDefaultModel(modelId)
         return storage
     }
 
@@ -3650,15 +3650,6 @@ extension AIChatOmnibarControllerTests {
         XCTAssertEqual(controller.persistedModelId, "luna")
     }
 
-    func testWhenNewChatDefaultIsOnAndPromptBarIsBuiltWithAUserDefaultModel_ThenItIsSelected() async throws {
-        let controller = makeNewChatDefaultController(surface: .promptBar, userDefaultStorage: try makeUserDefaultStorage("luna"))
-
-        controller.onOmnibarActivated()
-        await waitForModels()
-
-        XCTAssertEqual(controller.persistedModelId, "luna")
-    }
-
     func testWhenNewChatDefaultIsOnAndPaidUserModelsFailToLoad_ThenSubmitSendsPaidLocalDefault() async {
         let controller = makeNewChatDefaultController()
         setUserTier(.plus)
@@ -3780,5 +3771,13 @@ private final class RecordingInputOutcomePixelFiring: DuckAiInputOutcomePixelFir
 
     func fire(_ event: DuckAiInputOutcomeEvent) {
         events.append(event)
+    }
+}
+
+extension DuckAiNativeStorageHandling {
+
+    /// Writes the "Default AI Model" setting the way web does, as a JSON-encoded model id.
+    func putUserDefaultModel(_ modelId: String) throws {
+        try putEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue, value: "\"\(modelId)\"")
     }
 }

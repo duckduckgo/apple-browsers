@@ -980,6 +980,7 @@ extension DataBrokerProtectionIOSManager {
             let jobs = try PIRDebugLaunchOptions.scanJobs(database: resources.database,
                                                           isAuthenticatedUser: await self.refreshFreeScanState(),
                                                           brokerURLs: brokerURLs, includesMaintenance: true)
+            try PIRDebugLaunchOptions.makeScansDue(jobs, database: resources.database)
             await self.startImmediateScanOperations()
             return DebugImmediateScans(queued: jobs, requested: brokerURLs)
         }

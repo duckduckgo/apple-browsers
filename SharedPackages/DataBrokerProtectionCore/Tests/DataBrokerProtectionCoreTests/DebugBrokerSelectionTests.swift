@@ -112,5 +112,18 @@ struct DebugBrokerSelectionTests {
         database.dataBrokersToReturn = [broker(id: 3, url: "c.com", removed: true)]
         #expect(throws: PIRDebugLaunchOptions.ParseError.unknownBroker(["c.com": "removed"])) { try unknown.scanJobs(database: database) }
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func immediateScansAreMadeDueBeforeTheyRun() throws {
+        let database = MockDatabase()
+        database.dataBrokersToReturn = [broker(id: 2, url: "b.com")]
+        let before = Date()
+        try PIRDebugLaunchOptions.makeScansDue([.init(brokerURL: "b.com", profileQueryId: 5)], database: database)
+        #expect(database.wasUpdatedPreferredRunDateForScanCalled)
+        #expect(database.lastProfileQueryIdOnScanUpdatePreferredRunDate == 5)
+        let due = try #require(database.lastPreferredRunDateOnScan)
+        #expect(due >= before && due <= Date())
+    }
 }
 #endif

@@ -198,6 +198,16 @@ public struct PIRDebugLaunchOptions {
             .filter { brokerURLs?.contains($0.brokerURL) ?? true }
     }
 
+    /// Makes these scans due now, so an immediate run doesn't skip them for a later preferred run date.
+    public static func makeScansDue(_ jobs: [DebugScanJob], database: DataBrokerProtectionRepository) throws {
+        let brokers = try database.fetchAllDataBrokers()
+        let now = Date()
+        for job in jobs {
+            guard let brokerId = brokers.first(where: { $0.url == job.brokerURL })?.id else { continue }
+            try database.updatePreferredRunDate(now, brokerId: brokerId, profileQueryId: job.profileQueryId)
+        }
+    }
+
     public static func hasManagedRequest(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
         ["PIR_SCHEDULER_MODE", "PIR_SCHEDULER_INSTANCE_ID", "PIR_SCHEDULER_RECEIPT"].contains { environment[$0] != nil }
     }

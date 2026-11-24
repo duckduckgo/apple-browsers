@@ -440,9 +440,15 @@ class SchedulerTests(unittest.TestCase):
             native = FakeSeedRuntime()
             client = UpgradeClient()
             with patch.object(scheduler, '_identity', return_value=IDENTITY), patch.object(pir, 'Client', return_value=client), \
-                    patch.object(scheduler.time, 'sleep'):
+                    patch.object(scheduler.time, 'sleep'), patch.object(scheduler, 'listener_on', return_value=False):
                 result = pir.execute(args, runtime_factory=native.create)
             self.assertEqual(result['status'], 'pass', result)
+            occupied = FakeSeedRuntime()
+            with patch.object(scheduler, 'listener_on', return_value=True):
+                refused = pir.execute(args, runtime_factory=occupied.create)
+            self.assertEqual(refused['status'], 'inconclusive')
+            self.assertIn('launchctl bootout', refused['reason'])
+            self.assertFalse(getattr(occupied, 'launched_existing', False))
             self.assertTrue(native.launched_existing)
             self.assertEqual(client.posted, [('/api/debug/broker-json/refresh', dict(resetDelivery=False)),
                                              ('/api/debug/scans/immediate', dict(brokers=['example.test']))])

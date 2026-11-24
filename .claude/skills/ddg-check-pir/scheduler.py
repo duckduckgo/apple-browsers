@@ -141,6 +141,13 @@ def _maintenance(client, path, body, deadline):
     raise RuntimeError(f"{path} did not finish before the timeout")
 
 
+def listener_on(port):
+    """Whether anything already listens on this loopback port."""
+    result = subprocess.run(["/usr/sbin/lsof", "-nP", "-a", f"-iTCP@127.0.0.1:{port}", "-sTCP:LISTEN", "-t"],
+                            capture_output=True, text=True, timeout=5)
+    return bool(result.stdout.split())
+
+
 def upgrade(context, client, request, expected_executable):
     """Refreshes broker JSON on a store an earlier build seeded, then scans the requested brokers now and observes them."""
     deadline = time.monotonic() + request.timeout

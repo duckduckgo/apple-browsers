@@ -44,11 +44,14 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
         // The flag doubles as a kill switch, so Apple's API isn't touched until the first time it's on.
         featureFlagger.updatesPublisher
             .prepend(())
-            .filter { _ in featureFlagger.isFeatureOn(.declaredAgeRange) }
+            .filter { _ in
+                featureFlagger.isFeatureOn(.declaredAgeRange)
+            }
             .first()
             .sink { [requester, isReinstall, isRequestNeededSubject] in
                 Task { @MainActor in
-                    isRequestNeededSubject.send(await requester.isRequestNeeded(isReinstall: isReinstall))
+                    let isNeeded = await requester.isRequestNeeded(isReinstall: isReinstall)
+                    isRequestNeededSubject.send(isNeeded)
                 }
             }
             .store(in: &cancellables)
@@ -61,7 +64,9 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
         isRequestNeededSubject
             .combineLatest(featureFlagger.updatesPublisher.prepend(()))
-            .map { [weak self] _ in self?.isEligible ?? false }
+            .map { [weak self] _ in
+                self?.isEligible ?? false
+            }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }

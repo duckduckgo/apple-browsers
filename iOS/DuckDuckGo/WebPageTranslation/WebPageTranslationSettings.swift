@@ -25,27 +25,19 @@ import PrivacyConfig
 struct WebPageTranslationSettings {
 
     private enum Constants {
+        static let sampleLengthKey = "sampleLength"
         static let defaultSampleLength = 4096
     }
 
-    /// The settings JSON; every field is optional so a missing one falls back on its own.
-    private struct RemoteSettings: Decodable {
-        let sampleLength: Int?
-    }
-
-    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let configManager: PrivacyConfigurationManaging
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging) {
-        self.privacyConfigurationManager = privacyConfigurationManager
+        self.configManager = privacyConfigurationManager
     }
 
     /// How many characters of the page's text language detection reads (default 4096).
     var sampleLength: Int {
-        let settings = privacyConfigurationManager.privacyConfig.settings(for: .pageTranslation)
-        guard JSONSerialization.isValidJSONObject(settings),
-              let data = try? JSONSerialization.data(withJSONObject: settings),
-              let decoded = try? JSONDecoder().decode(RemoteSettings.self, from: data),
-              let value = decoded.sampleLength,
+        guard let value = configManager.privacyConfig.settings(for: .pageTranslation)[Constants.sampleLengthKey] as? Int,
               value > 0 else {
             return Constants.defaultSampleLength
         }
@@ -55,6 +47,6 @@ struct WebPageTranslationSettings {
     /// False on sites in the feature's exceptions, the only per-site rule the C-S-S script follows:
     /// it runs without a config entry and on sites with protections off.
     func isEnabled(forDomain domain: String?) -> Bool {
-        !privacyConfigurationManager.privacyConfig.isInExceptionList(domain: domain, forFeature: .pageTranslation)
+        !configManager.privacyConfig.isInExceptionList(domain: domain, forFeature: .pageTranslation)
     }
 }

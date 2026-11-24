@@ -563,7 +563,7 @@ extension FeatureFlagSource: FeatureFlagDescribing {
     }
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? { nil }
-    public static let allCases: [FeatureFlagSource]  = []
+    public static var allCases: [FeatureFlagSource] { [] }
     public var supportsLocalOverriding: Bool { false }
     public var rawValue: String { "rawValue" }
     public var source: FeatureFlagSource { self }
@@ -623,7 +623,7 @@ private struct DefaultValueTestFlags: FeatureFlagDescribing {
     var supportsLocalOverriding: Bool
     var source: FeatureFlagSource
     var cohortType: (any FeatureFlagCohortDescribing.Type)?
-    static var allCases: [DefaultValueTestFlags] = []
+    static var allCases: [DefaultValueTestFlags] { [] }
 
     init(rawValue: String = "", defaultValue: FeatureFlagDefaultValue = .disabled, supportsLocalOverriding: Bool = true, source: FeatureFlagSource = .disabled, cohortType: (any FeatureFlagCohortDescribing.Type)? = nil) {
         self.rawValue = rawValue

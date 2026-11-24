@@ -131,23 +131,20 @@ class FireButtonAnimator {
                                        object: nil)
     }
         
+    /// - Parameter onOverlayRemoved: Called as soon as nothing the animation drew covers the window any more.
+    ///   Unlike `completion`, it does not wait for `onAnimationStart` to finish, and it is called at once when
+    ///   no animation plays, so the screen underneath can be treated as visible again.
     func animate(instrumentation: FireAnimationInstrumentation? = nil,
                  onAnimationStart: @escaping () async -> Void,
                  onTransitionCompleted: @escaping () async -> Void,
-                 completion: @escaping () async -> Void) {
+                 completion: @escaping () async -> Void,
+                 onOverlayRemoved: (() -> Void)? = nil) {
         removePreBurnSnapshot()
 
-        guard let window = UIApplication.shared.firstKeyWindow,
+        guard let composition = preLoadedComposition,
+              let window = UIApplication.shared.firstKeyWindow,
               let snapshot = window.snapshotView(afterScreenUpdates: false) else {
-            Task { @MainActor in
-                await onAnimationStart()
-                await onTransitionCompleted()
-                await completion()
-            }
-            return
-        }
-        
-        guard let composition = preLoadedComposition else {
+            onOverlayRemoved?()
             Task { @MainActor in
                 await onAnimationStart()
                 await onTransitionCompleted()
@@ -178,6 +175,7 @@ class FireButtonAnimator {
         
         animationView.play(fromProgress: 0, toProgress: 1) { [weak animationView] finished in
             animationView?.removeFromSuperview()
+            onOverlayRemoved?()
             Task { @MainActor in
                 if finished {
                     instrumentation?.animationDidFinish(animation: currentAnimation)

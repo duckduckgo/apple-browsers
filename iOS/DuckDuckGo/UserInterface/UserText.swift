@@ -1082,6 +1082,13 @@ public struct UserText {
         return "Your trial ends in \(daysUntilTrialEnds) \(unit)"
     }
     public static let subscriptionExpirationReminderNotificationBody = NotLocalizedString("subscription.expiration-reminder.notification.body", value: "Try all your new premium protections before your trial ends!", comment: "Body for the Privacy Pro free-trial expiration reminder notification. Used for en_US locale only.")
+    public static let subscriptionNotificationsDeniedDialogTitle = NotLocalizedString("subscription.notifications-denied-dialog.title", value: "Get Notified About Your Trial?", comment: "Title of the dialog asking users who turned off notifications to enable them for the free-trial reminder. Used for en_US locale only.")
+    public static func subscriptionNotificationsDeniedDialogMessage(daysBeforeTrialEnds: Int) -> String {
+        let unit = daysBeforeTrialEnds == 1 ? "day" : "days"
+        return "If you turn on notifications in Settings, we'll send you a notification \(daysBeforeTrialEnds) \(unit) before your free trial ends."
+    }
+    public static let subscriptionNotificationsDeniedDialogNotNow = NotLocalizedString("subscription.notifications-denied-dialog.not-now", value: "Not Now", comment: "Button that dismisses the free-trial reminder notifications dialog. Used for en_US locale only.")
+    public static let subscriptionNotificationsDeniedDialogOpenSettings = NotLocalizedString("subscription.notifications-denied-dialog.open-settings", value: "Open Settings", comment: "Button that opens the app's notification settings from the free-trial reminder notifications dialog. Used for en_US locale only.")
 
     // MARK: Settings Screen
 
@@ -2497,6 +2504,9 @@ public struct UserText {
     public static let aiChatReasoningModeExtendedSubtitle = NSLocalizedString("aichat.reasoning.extended.subtitle", value: "For analytical tasks", comment: "Subtitle for the extended reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Add Image", comment: "Top-level attachment menu option to add an image to an AI chat message")
     public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
+    public static let aiChatAttachmentOptionAddImages = NSLocalizedString("aichat.attachment.option.add.images", value: "Add Images", comment: "Attachment menu option to add one or more images to a Duck.ai message")
+    public static let aiChatAttachmentOptionAddFiles = NSLocalizedString("aichat.attachment.option.add.files", value: "Add Files", comment: "Attachment menu option to add one or more files to a Duck.ai message")
+    public static let aiChatToolbarAddButtonAccessibilityLabel = NSLocalizedString("aichat.toolbar.add.button.accessibility.label", value: "Add", comment: "Accessibility label for the circled-plus button that opens the attach and tools menu in the Duck.ai native input toolbar")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutDocument = NSLocalizedString("aichat.attachment.option.ask.about.document", value: "Ask About Document", comment: "Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat")
@@ -2808,7 +2818,7 @@ public struct UserText {
 
     public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Reply...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
-    public static let aiChatImageGenerationPlaceholder = NotLocalizedString("input.field.placeholder.duckai.imageGeneration", value: "Create images privately", comment: "Placeholder text for the duck.ai input field when the image generation tool is selected")
+    public static let aiChatImageGenerationPlaceholder = NSLocalizedString("input.field.placeholder.duckai.imageGeneration", value: "Create images privately", comment: "Placeholder text for the duck.ai input field when the image generation tool is selected")
 
     // MARK: - AI Chat Welcome Message
     public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon.")

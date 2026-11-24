@@ -125,13 +125,14 @@ final class VPNService: NSObject {
     }
 
     private func stopAndRemoveVPNIfNotAuthenticated() async {
-        // Only remove the VPN if the user is not authenticated, and it's installed:
-        guard !subscriptionManager.isUserAuthenticated, await tunnelController.isInstalled else {
-            return
-        }
-
-        await tunnelController.stop()
-        await tunnelController.removeVPN(reason: .didBecomeActiveCheck)
+        let tunnelController = tunnelController
+        let remover = VPNSignedOutRemover(subscriptionManager: subscriptionManager,
+                                          isVPNInstalled: { await tunnelController.isInstalled },
+                                          stopAndRemoveVPN: {
+            await tunnelController.stop()
+            await tunnelController.removeVPN(reason: .didBecomeActiveCheck)
+        })
+        await remover.removeVPNIfSignedOut()
     }
 
     // MARK: - Suspend

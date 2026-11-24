@@ -5731,7 +5731,7 @@ class MainViewController: UIViewController {
             usageContext: usageContextProvider.currentContext,
             addressBarPosition: appSettings.iPhoneAddressBarPosition,
             resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat),
-            simplifiedPromptBox: unifiedToggleInputCoordinator?.isSimplifiedPromptBoxEnabled ?? false
+            simplifiedPromptBox: SimplifiedPromptBoxFeature(featureFlagger: featureFlagger).isAvailable
         )
         featureDiscovery.markDuckAIPromptSubmitted()
     }

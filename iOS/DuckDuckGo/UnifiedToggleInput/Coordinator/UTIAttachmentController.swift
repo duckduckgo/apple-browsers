@@ -72,9 +72,7 @@ final class UTIAttachmentController {
         var isEditing: () -> Bool = { false }
         var isVoiceSessionActive: () -> Bool = { false }
         var pastedTextSheetMode: (AIChatPastedText) -> PastedTextSheetMode = { _ in .editable(limit: 0) }
-        /// The simplified prompt box folds the tools into the attach menu and drops its recent tabs shortcuts.
         var usesSimplifiedAttachMenu: () -> Bool = { false }
-        /// The tools the simplified attach menu shows, or nil while none are available.
         var attachMenuTools: () -> UTIAttachMenuTools? = { nil }
     }
 
@@ -551,7 +549,6 @@ final class UTIAttachmentController {
         let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment || supportsTabAttachment
         let canAttachMore = hasAvailableAttachmentAction && !view.isGenerating()
         let showsUnavailableAttachmentButton = environment.hasSelectedModel() && environment.keepsUnavailableAttachmentButtonVisible()
-        // A model that takes no attachments can still offer a tool, which keeps the button usable.
         let hasEnabledTool = simplifiedAttachMenuTools?.menu.hasEnabledItem ?? false
         let canUseTool = hasEnabledTool && !view.isGenerating()
         view.setImageButtonHidden(!supportsAttachments && !hasEnabledTool && !showsUnavailableAttachmentButton)

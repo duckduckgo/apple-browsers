@@ -73,6 +73,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     private let instrumentation: AIChatHistoryInstrumentation
     private let source: AIChatHistorySource
     private let featureFlagger: FeatureFlagger
+    private let simplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding
     private let isFireMode: Bool
     private var cancellables: Set<AnyCancellable> = []
 
@@ -81,11 +82,8 @@ final class AIChatHistoryViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiChatHistoryMultiselect)
     }
 
-    /// The simplified Duck.ai prompt box puts a Duck.ai Settings button next to the overflow menu. iPad keeps today's header.
     var showsDuckAISettingsButton: Bool {
-        isRedesignEnabled
-            && UIDevice.current.userInterfaceIdiom == .phone
-            && featureFlagger.isFeatureOn(.unifiedToggleInputSimplifiedPromptBox)
+        isRedesignEnabled && simplifiedPromptBoxFeature.isAvailable
     }
 
     weak var delegate: AIChatHistoryViewModelDelegate?
@@ -104,6 +102,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     ) {
         self.reader = reader
         self.featureFlagger = featureFlagger
+        self.simplifiedPromptBoxFeature = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger)
         self.fireExecutor = fireExecutor
         self.downloader = downloader
         self.modelDisplays = modelDisplays
@@ -440,7 +439,6 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
     /// Dismiss the sheet and open the Duck.ai chat protection page.
     func viewModelDidRequestChatProtection()
 
-    /// Dismiss the sheet and open Duck.ai Settings.
     func viewModelDidRequestDuckAISettings()
 
     /// A chat export finished writing to disk. Present the "Download complete" toast for

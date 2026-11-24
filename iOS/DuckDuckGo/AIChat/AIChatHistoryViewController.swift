@@ -262,7 +262,6 @@ final class AIChatHistoryViewController: UIViewController {
             }
             items.append(makeSearchBarButtonItem())
             if #available(iOS 26, *) {
-                // Fixed spaces keep each button in its own glass circle.
                 items = Array(items.map { [$0, .fixedSpace()] }.joined().dropLast())
             }
             navigationItem.rightBarButtonItems = items

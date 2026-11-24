@@ -98,8 +98,10 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertEqual(clientTools.protocolVersion, 1)
         XCTAssertEqual(clientTools.capabilities.map(\.name), ["listOpenTabs"])
         XCTAssertEqual(clientTools.capabilities.map(\.version), [1])
+        XCTAssertTrue(config.supportsBrowserToolsAnswerMetrics)
         var remainingConfig = config
         remainingConfig.clientTools = nil
+        remainingConfig.supportsBrowserToolsAnswerMetrics = false
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         XCTAssertEqual(try encoder.encode(remainingConfig), try encoder.encode(baseConfig))
@@ -117,11 +119,13 @@ final class AIChatUserScriptTests: XCTestCase {
 
         let fireConfig = try await nativeConfig(from: webView)
         XCTAssertNil(fireConfig.clientTools)
+        XCTAssertFalse(fireConfig.supportsBrowserToolsAnswerMetrics)
 
         mockHandler.isFireWindowProvider = { false }
         webView.documentURL = URL(string: "https://example.com")
         let unrelatedPageConfig = try await nativeConfig(from: webView)
         XCTAssertNil(unrelatedPageConfig.clientTools)
+        XCTAssertFalse(unrelatedPageConfig.supportsBrowserToolsAnswerMetrics)
 
         webView.documentURL = nil
         let missingURLConfig = try await nativeConfig(from: webView)
@@ -353,13 +357,13 @@ final class AIChatUserScriptTests: XCTestCase {
         let tool = try XCTUnwrap(service.catalog.tool(named: "listOpenTabs"))
         service.permissions.setState(.allow, forToolNamed: tool.name)
         let control = await service.clientToolPermissions.authorize(callID: "control", tool: tool, prompter: userScript)
-        guard case .granted(let confirmControl) = control else {
+        guard case .granted(_, let confirmControl) = control else {
             return XCTFail("Stored permission should authorize script source")
         }
         let controlResult = await confirmControl { .success(.null) }
         XCTAssertNotNil(controlResult)
         let authorization = await service.clientToolPermissions.authorize(callID: "cancelled", tool: tool, prompter: userScript)
-        guard case .granted(let confirmExecution) = authorization else {
+        guard case .granted(_, let confirmExecution) = authorization else {
             return XCTFail("Stored permission should authorize script source")
         }
         let additionalSource = ClientToolCancellationSpy()

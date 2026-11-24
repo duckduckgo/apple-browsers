@@ -112,6 +112,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// `true` when native has taken Customize Responses out of its input, so Duck.ai shows it as a row in
     /// Duck.ai Settings. `nil` omits the key, which keeps today's behaviour.
     public var supportsCustomizeResponsesInSettings: Bool?
+    /// `true` when native accepts the `browserToolsAnswerCompleted` and `browserToolsAnswerRated` metrics.
+    /// Older apps don't decode them and log an error, so Duck.ai sends them only when this is set.
+    public var supportsBrowserToolsAnswerMetrics = false
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool

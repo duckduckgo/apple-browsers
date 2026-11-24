@@ -1929,7 +1929,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
 
     private func fireHeaderPlusMenuPixel(_ item: AIChatHeaderPlusMenuPixel.Item) {
-        let simplifiedPromptBox = unifiedToggleInputCoordinator?.isSimplifiedPromptBoxEnabled ?? false
+        let simplifiedPromptBox = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger).isAvailable
         pixelFiring?.fire(AIChatHeaderPlusMenuPixel.itemSelected(item, simplifiedPromptBox: simplifiedPromptBox),
                           frequency: .dailyAndCount)
     }

@@ -181,7 +181,6 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         return UIMenu(children: actions)
     }
 
-    /// The tools sit below a divider, after the attachment rows.
     private static func makeToolsSection(_ tools: UTIAttachMenuTools?,
                                          onItemSelected: @escaping (UnifiedToggleInputAttachMenuItem) -> Void) -> [UIMenuElement] {
         guard let tools, !tools.menu.items.isEmpty else { return [] }
@@ -193,7 +192,6 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         }]
     }
 
-    /// Recent tabs lead the menu as shortcuts (unless the simplified menu drops them); Add Tabs follows the attachment rows.
     private func addTabActions(to actions: inout [UIMenuElement],
                                presenterProvider: @escaping () -> UIViewController?,
                                attachableTabs: [MultiTabAttachmentCandidate],

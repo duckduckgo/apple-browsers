@@ -124,6 +124,13 @@ extension ContextMenuManager {
         .shareMenu: handleShareItem
     ]
 
+    private static let menuItemsHiddenWhileLocked: Set<WKMenuItemIdentifier> = [
+        .goBack, .goForward, .reload,
+        .openLink, .openLinkInNewWindow, .openImageInNewWindow, .openFrameInNewWindow, .openMediaInNewWindow,
+        .downloadLinkedFile, .downloadImage, .downloadMedia,
+        .searchWeb, .shareMenu
+    ]
+
     private var mainViewController: MainViewController? {
         (webView?.window?.windowController as? MainWindowController)?.mainViewController
     }
@@ -336,6 +343,14 @@ extension ContextMenuManager: WebViewContextMenuDelegate {
 private extension ContextMenuManager {
 
     func refreshMenuItems(menu: NSMenu) {
+        // While onboarding locks the window, the page menu only offers items that stay on the page.
+        if mainViewController?.allowsUserInteraction == false {
+            menu.items
+                .filter { $0.identifier.flatMap(WKMenuItemIdentifier.init).map(Self.menuItemsHiddenWhileLocked.contains) == true }
+                .forEach(menu.removeItem)
+            return
+        }
+
         for (index, item) in menu.items.enumerated().reversed() {
             guard let identifier = item.identifier.flatMap(WKMenuItemIdentifier.init) else { continue }
             Self.menuItemHandlers[identifier]?(self)(item, index, menu)

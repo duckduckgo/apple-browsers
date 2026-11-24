@@ -304,7 +304,6 @@ extension IPadChatListSidebar: AIChatHistoryViewModelDelegate {
         host?.currentTab?.submitOpenChatProtectionAction()
     }
 
-    /// The header's Duck.ai Settings button is iPhone-only; the sidebar's menu routes here the same way.
     func viewModelDidRequestDuckAISettings() {
         host?.currentTab?.submitOpenSettingsAction()
     }

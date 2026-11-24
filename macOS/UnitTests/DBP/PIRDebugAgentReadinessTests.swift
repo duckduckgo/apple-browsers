@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-#if DEBUG
+#if DEBUG && PIR_DEBUG_TOOLING
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

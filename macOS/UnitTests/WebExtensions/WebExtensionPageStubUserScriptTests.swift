@@ -56,17 +56,19 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
 
     func testThatScriptListensForCompatibilityReportsIdleRequestsPrivacySettingsAndPermissions() {
         XCTAssertEqual(script.messageNames, [WebExtensionAPICompatibilityScript.messageHandlerName,
+                                             WebExtensionAPIStubScript.downloadMessageHandlerName,
                                              WebExtensionAPIStubScript.idleMessageHandlerName,
+                                             WebExtensionAPIStubScript.clipboardReadMessageHandlerName,
                                              WebExtensionAPIStubScript.privacyMessageHandlerName,
                                              WebExtensionAPIStubScript.permissionsMessageHandlerName])
     }
 
-    func testThatScriptIsCreatedForInternalUsers() {
-        XCTAssertNotNil(WebExtensionPageStubUserScript.make(isInternalUser: true, managerProvider: { nil }))
+    func testThatScriptIsCreatedWhenExtensionManagementIsAvailable() {
+        XCTAssertNotNil(WebExtensionPageStubUserScript.make(isExtensionManagementAvailable: true, managerProvider: { nil }))
     }
 
-    func testThatScriptIsNotCreatedForOtherUsers() {
-        XCTAssertNil(WebExtensionPageStubUserScript.make(isInternalUser: false, managerProvider: { nil }))
+    func testThatScriptIsNotCreatedWhenExtensionManagementIsUnavailable() {
+        XCTAssertNil(WebExtensionPageStubUserScript.make(isExtensionManagementAvailable: false, managerProvider: { nil }))
     }
 
     func testGestureScriptRunsAtDocumentStartInAllFramesInTheIsolatedWorld() {

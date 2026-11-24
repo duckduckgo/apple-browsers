@@ -1364,7 +1364,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                              scheduler: SubscriptionExpirationReminderSchedulerMock? = nil,
                              appStorePurchaseFlow: AppStorePurchaseFlowMock? = nil,
                              isExpirationReminderFeatureEnabled: @escaping () -> Bool = { true },
-                             attributionProvider: SubscriptionExperimentAttributionProviding = SubscriptionExperimentAttributionProviderStub()) -> DefaultSubscriptionPagesUseSubscriptionFeature {
+                             attributionProvider: SubscriptionExperimentAttributionProviding = SubscriptionExperimentAttributionProviderStub(),
+                             deniedDialog: NotificationsDeniedDialogSpy = NotificationsDeniedDialogSpy()) -> DefaultSubscriptionPagesUseSubscriptionFeature {
         let purchaseFlow = appStorePurchaseFlow ?? mockAppStorePurchaseFlow!
         let executer = DefaultSubscriptionFlowsExecuter(
             subscriptionManager: mockSubscriptionManager,
@@ -1372,7 +1373,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler()
         )
-        return DefaultSubscriptionPagesUseSubscriptionFeature(
+        let feature = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: "",
@@ -1390,6 +1391,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             isExpirationReminderFeatureEnabled: isExpirationReminderFeatureEnabled,
             subscriptionExperimentAttributionProvider: attributionProvider
         )
+        feature.onShowNotificationsDeniedDialog = { await deniedDialog.show(daysBeforeCancel: $0) }
+        return feature
     }
 
     func testGetUserSettings_WhenAuthorized_ReturnsGranted() async throws {
@@ -1735,9 +1738,125 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(preference.daysBeforeCancel, 7)
     }
 
+    func testGetUserSettings_WhenFeatureEnabled_IncludesNotificationsDeniedDialog() async throws {
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter())
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertEqual(result.notificationsDeniedDialog, true)
+    }
+
+    func testGetUserSettings_WhenFeatureDisabled_OmitsNotificationsDeniedDialog() async throws {
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), isExpirationReminderFeatureEnabled: { false })
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertNil(result.notificationsDeniedDialog)
+    }
+
+    func testGetUserSettings_WhenNoScreenHandlesDialog_OmitsNotificationsDeniedDialog() async throws {
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter())
+        sut.onShowNotificationsDeniedDialog = nil
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertNil(result.notificationsDeniedDialog)
+    }
+
+    func testShowNotificationsDeniedDialog_WhenDaysNotPositive_ReturnsNotNowWithoutPresenting() async throws {
+        let spy = NotificationsDeniedDialogSpy()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), deniedDialog: spy)
+
+        let response = await sut.showNotificationsDeniedDialog(params: ["daysBeforeCancel": 0], original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse)
+
+        XCTAssertEqual(result.action, .notNow)
+        XCTAssertTrue(spy.presentedDays.isEmpty)
+    }
+
+    func testShowNotificationsDeniedDialog_WhenFeatureDisabled_ReturnsNotNowWithoutPresenting() async throws {
+        let spy = NotificationsDeniedDialogSpy()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(),
+                              isExpirationReminderFeatureEnabled: { false },
+                              deniedDialog: spy)
+
+        let response = await sut.showNotificationsDeniedDialog(params: ["daysBeforeCancel": 2], original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse)
+
+        XCTAssertEqual(result.action, .notNow)
+        XCTAssertTrue(spy.presentedDays.isEmpty)
+    }
+
+    func testShowNotificationsDeniedDialog_WhenParamsInvalid_ReturnsNotNowWithoutPresenting() async throws {
+        let spy = NotificationsDeniedDialogSpy()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), deniedDialog: spy)
+
+        let response = await sut.showNotificationsDeniedDialog(params: [:], original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse)
+
+        XCTAssertEqual(result.action, .notNow)
+        XCTAssertTrue(spy.presentedDays.isEmpty)
+    }
+
+    func testShowNotificationsDeniedDialog_WhenNoScreenHandlesDialog_ReturnsNotNow() async throws {
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter())
+        sut.onShowNotificationsDeniedDialog = nil
+
+        let response = await sut.showNotificationsDeniedDialog(params: ["daysBeforeCancel": 2], original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse)
+
+        XCTAssertEqual(result.action, .notNow)
+    }
+
+    func testShowNotificationsDeniedDialog_PassesDaysBeforeCancelToDialog() async throws {
+        let spy = NotificationsDeniedDialogSpy()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), deniedDialog: spy)
+
+        _ = await sut.showNotificationsDeniedDialog(params: ["daysBeforeCancel": 3], original: WKScriptMessage.mock())
+
+        XCTAssertEqual(spy.presentedDays, [3])
+    }
+
+    func testUserSettingsResponse_encodesNotificationsDeniedDialog() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse(notificationsPermission: .denied,
+                                                                                          notificationsDeniedDialog: true)
+        let data = try JSONEncoder().encode(response)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(json.count, 2)
+        XCTAssertEqual(json["notificationsPermission"] as? String, "denied")
+        XCTAssertEqual(json["notificationsDeniedDialog"] as? Bool, true)
+    }
+
+    func testNotificationsDeniedDialogResponse_encodesOpenSettings() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse(action: .openSettings)
+        XCTAssertEqual(try jsonString(response), "{\"action\":\"openSettings\"}")
+    }
+
+    func testNotificationsDeniedDialogResponse_encodesNotNow() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse(action: .notNow)
+        XCTAssertEqual(try jsonString(response), "{\"action\":\"notNow\"}")
+    }
+
+    func testNotificationsPermissionChangedEvent_encodesGranted() throws {
+        let event = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionChangedEvent(notificationsPermission: .granted)
+        XCTAssertEqual(try jsonString(event), "{\"notificationsPermission\":\"granted\"}")
+    }
+
     private func jsonString<T: Encodable>(_ value: T) throws -> String {
         let data = try JSONEncoder().encode(value)
         return try XCTUnwrap(String(data: data, encoding: .utf8))
+    }
+}
+
+final class NotificationsDeniedDialogSpy {
+    private(set) var presentedDays: [Int] = []
+
+    func show(daysBeforeCancel: Int) async -> NotificationsDeniedDialogAction {
+        presentedDays.append(daysBeforeCancel)
+        return .notNow
     }
 }
 

@@ -33,7 +33,7 @@ final class UpdateAvailablePromoDelegateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.promoQueueUpdateAvailablePromo.rawValue: true])
+        featureFlagger = MockFeatureFlagger()
         updateController = MockUpdateAvailabilityController()
         windowControllersManager = WindowControllersManagerMock()
         sut = UpdateAvailablePromoDelegate(updateController: updateController,
@@ -49,21 +49,13 @@ final class UpdateAvailablePromoDelegateTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenFeatureFlagOffThenNotEligible() {
-        featureFlagger.featuresStub = [FeatureFlag.promoQueueUpdateAvailablePromo.rawValue: false]
-        updateController.hasPendingUpdate = true
-        updateController.mustShowUpdateIndicators = true
-
-        XCTAssertFalse(sut.isEligible)
-    }
-
     func testWhenNoPendingUpdateThenNotEligible() {
         updateController.hasPendingUpdate = false
 
         XCTAssertFalse(sut.isEligible)
     }
 
-    func testWhenFeatureFlagOnAndPendingUpdateIndicatorsDueThenEligible() {
+    func testWhenPendingUpdateIndicatorsDueThenEligible() {
         updateController.hasPendingUpdate = true
         updateController.mustShowUpdateIndicators = true
 

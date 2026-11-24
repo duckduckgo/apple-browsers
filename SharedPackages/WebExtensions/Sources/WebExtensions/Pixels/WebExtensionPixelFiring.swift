@@ -147,9 +147,13 @@ public enum WebExtensionPixelEvent {
     case enabled(extension: WebExtensionPixelExtension)
     case disabled(extension: WebExtensionPixelExtension)
     case remotelyDisabled(extension: WebExtensionPixelExtension)
+    /// Extension management stopped being launched and an enforcement pass turned off `count` Chrome Web Store extensions.
+    case killSwitchDisabled(count: Int)
     case retained14Days(extension: WebExtensionPixelExtension)
     case churned14Days(extension: WebExtensionPixelExtension)
     case installedCount(installed: Int, enabled: Int)
+    /// The first time an extension tries to reach an app on the Mac in a build that refuses it, such as the App Store build.
+    case nativeMessagingBlocked(extension: WebExtensionPixelExtension)
 }
 
 /// How many tabs have been silent since the extension last answered anything.

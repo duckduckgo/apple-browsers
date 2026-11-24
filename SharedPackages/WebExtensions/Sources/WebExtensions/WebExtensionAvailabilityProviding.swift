@@ -30,4 +30,7 @@ public protocol WebExtensionAvailabilityProviding {
 
     /// Whether the user can manage web extensions
     var isExtensionManagementAvailable: Bool { get }
+
+    /// Whether the embedded web extension serves surrogates instead of content-scope-scripts.
+    var isAppleSurrogateRedirectionEnabled: Bool { get }
 }

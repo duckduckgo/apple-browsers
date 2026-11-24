@@ -108,6 +108,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         var viewTitle: String = UserText.subscriptionTitle
         var shouldGoBackToSettings: Bool = false
         var shouldPresentOnboarding: Bool = false
+        var notificationsDeniedDialogDays: Int?
     }
     
     // Read only View State - Should only be modified from the VM
@@ -116,6 +117,11 @@ final class SubscriptionFlowViewModel: ObservableObject {
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
     }
+
+    // MARK: - Notifications Denied Dialog
+
+    private var notificationsDeniedDialogContinuation: CheckedContinuation<NotificationsDeniedDialogAction, Never>?
+    private var didBecomeActiveCancellable: AnyCancellable?
 
     // MARK: - Post-checkout onboarding
 
@@ -240,6 +246,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
 
     private let webViewSettings: AsyncHeadlessWebViewSettings
+    private let pixelFiring: PixelFiring?
 
     init(initialURL: URL,
          flowType: SubscriptionFlowType,
@@ -256,7 +263,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
          onboardingKeyValueStore: ThrowingKeyValueStoring?,
          meetsPIRLocaleRequirement: @escaping () -> Bool,
          onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
-         onRequestDuckAIChat: ((String?) -> Bool)? = nil) {
+         onRequestDuckAIChat: ((String?) -> Bool)? = nil,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
@@ -271,6 +279,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
         self.onRequestDuckAIChatHandler = onRequestDuckAIChat
         self.onFlowEvent = onFlowEvent
+        self.pixelFiring = pixelFiring
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -490,6 +499,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
         canGoBackCancellable?.cancel()
         urlCancellable?.cancel()
         cancellables.removeAll()
+        notificationsDeniedDialogContinuation?.resume(returning: .notNow)
+        notificationsDeniedDialogContinuation = nil
     }
 
     @MainActor
@@ -532,6 +543,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
     func onAppear() {
         self.state.selectedFeature = .none
         self.state.shouldGoBackToSettings = false
+        subFeature.onShowNotificationsDeniedDialog = { [weak self] daysBeforeTrialCancel in
+            await self?.showNotificationsDeniedDialog(daysBeforeTrialCancel: daysBeforeTrialCancel) ?? .notNow
+        }
     }
     
     func onFirstAppear() async {
@@ -612,4 +626,65 @@ final class SubscriptionFlowViewModel: ObservableObject {
         state.transactionError = nil
     }
     
+}
+
+// MARK: - Notifications Denied Dialog
+
+@MainActor
+extension SubscriptionFlowViewModel {
+
+    func notificationsDeniedDialogDidSelect(_ action: NotificationsDeniedDialogAction) {
+        switch action {
+        case .notNow: pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogNotNowClick)
+        case .openSettings: pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogOpenSettingsClick)
+        }
+        resolveNotificationsDeniedDialog(with: action)
+
+        if action == .openSettings {
+            openNotificationSettings()
+        }
+    }
+
+    func notificationsDeniedDialogFailedToPresent() {
+        pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogPresentationFailure, frequency: .dailyAndCount)
+        resolveNotificationsDeniedDialog(with: .notNow)
+    }
+
+    func onDisappear() {
+        subFeature.onShowNotificationsDeniedDialog = nil
+        resolveNotificationsDeniedDialog(with: .notNow)
+    }
+
+    private func resolveNotificationsDeniedDialog(with action: NotificationsDeniedDialogAction) {
+        state.notificationsDeniedDialogDays = nil
+        notificationsDeniedDialogContinuation?.resume(returning: action)
+        notificationsDeniedDialogContinuation = nil
+    }
+
+    private func showNotificationsDeniedDialog(daysBeforeTrialCancel: Int) async -> NotificationsDeniedDialogAction {
+        notificationsDeniedDialogContinuation?.resume(returning: .notNow)
+        return await withCheckedContinuation { continuation in
+            notificationsDeniedDialogContinuation = continuation
+            state.notificationsDeniedDialogDays = daysBeforeTrialCancel
+        }
+    }
+
+    private func openNotificationSettings() {
+        didBecomeActiveCancellable = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                Task { await self?.handleReturnFromNotificationSettings() }
+            }
+        Task { [weak self] in
+            if !(await UIApplication.shared.openAppNotificationSettings()) {
+                self?.didBecomeActiveCancellable = nil
+            }
+        }
+    }
+
+    private func handleReturnFromNotificationSettings() async {
+        guard didBecomeActiveCancellable != nil else { return }
+        didBecomeActiveCancellable = nil
+        guard let permission = await subFeature.pushNotificationsPermissionChanged(into: webViewModel.navigationCoordinator.webView) else { return }
+        pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogSettingsReturn(notificationsPermission: permission.rawValue))
+    }
 }

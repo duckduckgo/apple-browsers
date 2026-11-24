@@ -50,9 +50,7 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
         // See SecurityScopedFileURLController.swift
         NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
 
-        let buildType = StandardApplicationBuildType()
-        let dockCustomization = DockCustomizer(applicationBuildType: buildType)
-        let delegate = AppDelegate(dockCustomization: dockCustomization)
+        let delegate = AppDelegate()
         self.delegate = delegate
         Application.appDelegate = delegate
 
@@ -64,7 +62,8 @@ final class Application: NSApplication, WarnBeforeQuitManagerDelegate {
             historyCoordinator: delegate.historyCoordinator,
             recentlyClosedCoordinator: delegate.recentlyClosedCoordinator,
             faviconManager: delegate.faviconManager,
-            dockCustomizer: dockCustomization,
+            dockCustomizer: delegate.dockCustomization,
+            addToDockVideoPresenter: delegate.addToDockVideoPresenter,
             defaultBrowserPreferences: delegate.defaultBrowserPreferences,
             aiChatMenuConfig: delegate.aiChatMenuConfiguration,
             aiChatSuggestionsReader: delegate.aiChatSuggestionsReader,

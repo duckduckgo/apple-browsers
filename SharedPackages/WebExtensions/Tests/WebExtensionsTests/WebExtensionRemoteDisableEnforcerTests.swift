@@ -32,6 +32,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
     private var manager: MockWebExtensionManaging!
     private var configurationManager: MockPrivacyConfigurationManager!
     private var appDisabledIDs: Set<String> = []
+    private var isExtensionsEnabled = true
     private let appDisabledIDsDidChange = PassthroughSubject<Void, Never>()
 
     override func setUp() async throws {
@@ -44,6 +45,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         manager = nil
         configurationManager = nil
         appDisabledIDs = []
+        isExtensionsEnabled = true
         try await super.tearDown()
     }
 
@@ -140,15 +142,22 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
         XCTAssertEqual(manager.disabledIdentifiers, [])
     }
 
-    func testWhenExtensionManagementIsNotLaunched_ThenNothingIsDisabled() async throws {
+    func testWhenExtensionsAreEnabledButNotLaunchedInConfiguration_ThenListedExtensionsAreDisabled() async throws {
         configurationManager.privacyConfig = try makeConfiguration(disabledIDs: [listedStoreID], launchedState: "disabled")
         install(storeExtension("listed", storeID: listedStoreID))
 
         let enforcer = makeEnforcer()
         await enforcer.scheduleEnforcement().value
 
-        XCTAssertEqual(manager.disabledIdentifiers, [])
-        XCTAssertEqual(enforcer.remotelyDisabledExtensionIDs, [])
+        XCTAssertEqual(manager.disabledIdentifiers, ["listed"])
+        XCTAssertEqual(enforcer.remotelyDisabledExtensionIDs, [listedStoreID.lowercased()])
+    }
+
+    func testWhenExtensionsAreNotEnabledAndNotLaunchedInConfiguration_ThenTheListIsIgnored() throws {
+        configurationManager.privacyConfig = try makeConfiguration(disabledIDs: [listedStoreID], launchedState: "disabled")
+        isExtensionsEnabled = false
+
+        XCTAssertEqual(makeEnforcer().remotelyDisabledExtensionIDs, [])
     }
 
     func testWhenDisablingFails_ThenOtherListedExtensionsAreStillDisabled() async throws {
@@ -188,6 +197,102 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
 
         await fulfillment(of: [disabled], timeout: 5)
         XCTAssertEqual(manager.disabledIdentifiers, ["other"])
+    }
+
+    // MARK: - Extensions Not Enabled
+
+    func testWhenExtensionsAreNotEnabled_ThenEveryEnabledStoreExtensionIsDisabled() async throws {
+        configurationManager.privacyConfig = try makeConfiguration(disabledIDs: [])
+        isExtensionsEnabled = false
+        install(storeExtension("store", storeID: listedStoreID),
+                storeExtension("other", storeID: otherStoreID),
+                storeExtension("alreadyDisabled", storeID: otherStoreID, isDisabled: true),
+                InstalledWebExtension(uniqueIdentifier: "sideloaded", filename: "extension.zip", name: nil, version: nil))
+
+        let enforcer = makeEnforcer()
+        await enforcer.scheduleEnforcement().value
+
+        XCTAssertEqual(manager.disabledIdentifiers, ["store", "other"])
+        XCTAssertEqual(manager.installedExtension(identifier: "sideloaded")?.isDisabled, false)
+    }
+
+    func testWhenExtensionsAreNotEnabled_ThenOneKillSwitchPixelFiresWithTheSweptCount() async {
+        let pixels = RemoteDisablePixelRecorder()
+        isExtensionsEnabled = false
+        install(storeExtension("listed", storeID: listedStoreID),
+                storeExtension("other", storeID: otherStoreID),
+                storeExtension("third", storeID: String(repeating: "c", count: 32)),
+                storeExtension("alreadyDisabled", storeID: otherStoreID, isDisabled: true))
+
+        let enforcer = makeEnforcer(pixelFiring: pixels)
+        await enforcer.scheduleEnforcement().value
+
+        XCTAssertEqual(manager.disabledIdentifiers, ["listed", "other", "third"])
+        XCTAssertEqual(pixels.remotelyDisabled, ["other"])
+        XCTAssertEqual(pixels.killSwitchDisabled, [2])
+    }
+
+    func testWhenSweepDisablesNothing_ThenNoKillSwitchPixelFires() async {
+        let pixels = RemoteDisablePixelRecorder()
+        isExtensionsEnabled = false
+        install(storeExtension("alreadyDisabled", storeID: otherStoreID, isDisabled: true))
+
+        let enforcer = makeEnforcer(pixelFiring: pixels)
+        await enforcer.scheduleEnforcement().value
+
+        XCTAssertEqual(pixels.killSwitchDisabled, [])
+    }
+
+    func testWhenSweepFailsToDisable_ThenNoKillSwitchPixelFires() async {
+        let pixels = RemoteDisablePixelRecorder()
+        manager.disableExtensionError = NSError(domain: "test", code: 1)
+        isExtensionsEnabled = false
+        install(storeExtension("other", storeID: otherStoreID))
+
+        let enforcer = makeEnforcer(pixelFiring: pixels)
+        await enforcer.scheduleEnforcement().value
+
+        XCTAssertEqual(pixels.killSwitchDisabled, [])
+    }
+
+    func testWhenExtensionsAreEnabled_ThenNoKillSwitchPixelFires() async {
+        let pixels = RemoteDisablePixelRecorder()
+        install(storeExtension("listed", storeID: listedStoreID))
+
+        let enforcer = makeEnforcer(pixelFiring: pixels)
+        await enforcer.scheduleEnforcement().value
+
+        XCTAssertEqual(pixels.remotelyDisabled, ["other"])
+        XCTAssertEqual(pixels.killSwitchDisabled, [])
+    }
+
+    func testWhenExtensionsStopBeingEnabled_ThenStoreExtensionIsDisabled() async {
+        install(storeExtension("other", storeID: otherStoreID))
+        let enforcer = makeEnforcer()
+        enforcer.start()
+        await enforcer.enforcementTask?.value
+        XCTAssertEqual(manager.disabledIdentifiers, [])
+        let disabled = expectation(description: "Extension disabled")
+        manager.disableExtensionHandler = { _ in disabled.fulfill() }
+
+        isExtensionsEnabled = false
+        appDisabledIDsDidChange.send()
+
+        await fulfillment(of: [disabled], timeout: 5)
+        XCTAssertEqual(manager.disabledIdentifiers, ["other"])
+    }
+
+    func testWhenExtensionsAreEnabledAgain_ThenStoreExtensionStaysDisabled() async {
+        isExtensionsEnabled = false
+        install(storeExtension("other", storeID: otherStoreID))
+        let enforcer = makeEnforcer()
+        await enforcer.scheduleEnforcement().value
+
+        isExtensionsEnabled = true
+        await enforcer.scheduleEnforcement().value
+
+        XCTAssertEqual(manager.installedExtension(identifier: "other")?.isDisabled, true)
+        XCTAssertEqual(manager.enabledIdentifiers, [])
     }
 
     // MARK: - One-way
@@ -262,6 +367,7 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
                                           configurationManager: configurationManager,
                                           disabledExtensionIDs: { [unowned self] in appDisabledIDs },
                                           disabledExtensionIDsDidChange: appDisabledIDsDidChange.eraseToAnyPublisher(),
+                                          isExtensionsEnabled: { [unowned self] in isExtensionsEnabled },
                                           pixelFiring: pixelFiring)
     }
 
@@ -300,10 +406,16 @@ final class WebExtensionRemoteDisableEnforcerTests: XCTestCase {
 @available(macOS 15.4, iOS 18.4, *)
 private final class RemoteDisablePixelRecorder: WebExtensionPixelFiring {
     private(set) var remotelyDisabled: [String] = []
+    private(set) var killSwitchDisabled: [Int] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
-        if case .remotelyDisabled(let pixelExtension) = event {
+        switch event {
+        case .remotelyDisabled(let pixelExtension):
             remotelyDisabled.append(pixelExtension.parameterValue)
+        case .killSwitchDisabled(let count):
+            killSwitchDisabled.append(count)
+        default:
+            break
         }
     }
 }

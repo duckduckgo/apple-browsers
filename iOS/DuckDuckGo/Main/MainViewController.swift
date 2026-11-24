@@ -181,7 +181,6 @@ class MainViewController: UIViewController {
     var isAddressBarHandOffInProgress = false
     var isPerformingOnboardingInputHandoff = false
     var isPresentingNewTabInputDirectly = false
-    var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesState: (expanded: Bool, visible: Bool))?
 
     private let daxGreetingActivity: DaxGreetingActivityStore?
     lazy var daxGreetingService = DaxGreetingServiceFactory.makeService(
@@ -1516,8 +1515,11 @@ class MainViewController: UIViewController {
     private var remoteMessageSurfaceRoot: UIViewController? {
         if let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession {
             // The focused NTP stays mounted even while Duck.ai or suggestions cover it.
-            guard coordinator.inputMode == .search,
-                  coordinator.contentViewController.isShowingFavoritesContent else { return nil }
+            guard coordinator.inputMode == .search else { return nil }
+            if coordinator.contentViewController.usesRedesignedNewTabPageLayout {
+                return coordinator.contentViewController.isShowingRedesignedSearchModules ? newTabPageViewController : nil
+            }
+            guard coordinator.contentViewController.isShowingFavoritesContent else { return nil }
             return coordinator.contentViewController
         }
         guard !isModeToggleInAIChatMode else { return nil }
@@ -2982,7 +2984,6 @@ class MainViewController: UIViewController {
         newTabPagePresentation.cancel()
         isAfterIdlePresentationPending = false
         let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
-        restingNewTabPageSnapshot = nil
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
@@ -3465,8 +3466,13 @@ class MainViewController: UIViewController {
     }
 
     func loadUrl(_ url: URL, fromExternalLink: Bool = false) {
+        let chatListRequest = nativeChatListRequest(for: url)
+        if chatListRequest.requestsChatList {
+            openIPadChatListSidebarOnNextInstall()
+        }
         prepareTabForRequest {
-            self.currentTab?.load(url: url)
+            self.currentTab?.isOpenedForChatList = chatListRequest.requestsChatList
+            self.currentTab?.load(url: chatListRequest.url)
             if fromExternalLink {
                 self.currentTab?.inferredOpenerContext = .external
             }
@@ -3512,10 +3518,15 @@ class MainViewController: UIViewController {
     @discardableResult
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
         captureForSwipeBack(tabManager.currentTabsModel.currentTab)
-        let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
+        let chatListRequest = url.map(nativeChatListRequest(for:))
+        if chatListRequest?.requestsChatList == true {
+            openIPadChatListSidebarOnNextInstall()
+        }
+        let tab = tabManager.add(url: chatListRequest?.url ?? url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
         tab.isDuckAIDeepLinkSurfaceRequested = url?.isDuckAIChatProtectionOpen == true
+        tab.isOpenedForChatList = chatListRequest?.requestsChatList == true
 
         // Mark tab as external launch if opened from external URL or shortcut
         if fromExternalLink {
@@ -3976,6 +3987,7 @@ class MainViewController: UIViewController {
             }
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
+            self.refreshFocusedNewTabPagePose()
         } completion: { [weak self] _ in
             guard let self else {
                 assertionFailure()
@@ -3986,6 +3998,7 @@ class MainViewController: UIViewController {
                 isKeyboardShowing: isKeyboardShowing,
                 isShowingToolbar: isShowingToolbar,
                 targetSize: size)
+            self.refreshFocusedNewTabPagePose()
         }
 
         hideNotificationBarIfBrokenSitePromptShown()
@@ -5662,9 +5675,9 @@ class MainViewController: UIViewController {
     }
 
     private func updateAIChatSelectedModel(for request: AIChatOpeningRequest) {
-        if request.shouldPresent, let modelID = request.modelID {
-            unifiedToggleInputCoordinator?.updateSelectedModel(modelID)
-        }
+        guard request.shouldPresent, let modelID = request.modelID else { return }
+        // The model picked in onboarding applies to the onboarding chat only, so new chats don't start on it.
+        unifiedToggleInputCoordinator?.updateSelectedModel(modelID, persistsSelection: request.source != .onboarding)
     }
 
     /// Tags the tab about to load Duck.ai with its door, any address-bar hand-over and the native prompt flow.
@@ -5729,7 +5742,8 @@ class MainViewController: UIViewController {
             isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
             usageContext: usageContextProvider.currentContext,
             addressBarPosition: appSettings.iPhoneAddressBarPosition,
-            resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat)
+            resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat),
+            simplifiedPromptBox: SimplifiedPromptBoxFeature(featureFlagger: featureFlagger).isAvailable
         )
         featureDiscovery.markDuckAIPromptSubmitted()
     }
@@ -6098,6 +6112,8 @@ extension MainViewController: BrowserChromeDelegate {
         if currentTab?.isLoading == true { return false }
         // Keep bars shown on the error page: the webView is hidden, so scroll can't self-heal a stuck-hidden bar.
         if currentTab?.isError == true { return false }
+        // Keep bars shown under a contextual onboarding dialog. The classic UI keeps hiding the bars on scroll.
+        if isFloatingUIEnabled, currentTab?.daxContextualOnboardingController != nil { return false }
         return !shouldPinChrome && !daxDialogsManager.shouldShowFireButtonPulse
     }
 
@@ -9505,15 +9521,18 @@ extension MainViewController {
         endSessionsWithDataClearing(request)
         unifiedToggleInputCoordinator?.clearResubmitHistory()
 
-        // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
-        // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,
-        // in `refreshUIAfterClear`, where the attach still lies ahead.
+        // When a single-tab burn lands on the New Tab Page, it attaches before `didFinishBurningTabs` runs.
+        // Wider manual burns set this marker in that callback.
         if case .tab = request.scope {
             isAttachingNewTabPageAfterFire = true
         }
 
         fireExecutor.prepare(for: request)
         
+        // The page the burn lands on attaches behind the animation. Its visit starts once the animation
+        // is gone and the user can see it, so a tap made while the flames still cover it is not mistaken
+        // for the user acting before the keyboard came up. With no animation, the page is uncovered at once.
+        let newTabPageCover = newTabPagePresentation.beginCovering()
         let instrumentation = DefaultFireAnimationInstrumentation(request: request)
         fireButtonAnimator.animate(instrumentation: instrumentation) {
             instrumentation.burnDidStart(accepted: !self.fireExecutor.burnInProgress)
@@ -9564,6 +9583,8 @@ extension MainViewController {
             if !self.daxDialogsManager.isShowingContextualOnboardingDialog {
                 self.daxDialogsManager.clearedBrowserData()
             }
+        } onOverlayRemoved: { [weak self] in
+            self?.newTabPagePresentation.endCovering(newTabPageCover)
         }
     }
     
@@ -9591,12 +9612,6 @@ extension MainViewController {
     }
     
     private func refreshUIAfterClear() {
-        // Set here rather than when the burn starts, because that callback arrives only once the
-        // tabs are gone and this screen has already been rebuilt. Also set before the empty-tabs
-        // branch below: burning every tab shows the switcher first, but the page the user reaches
-        // from there is still a post-burn arrival. Consumed by the next New Tab Page attach.
-        isAttachingNewTabPageAfterFire = true
-
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
             tabSwitcherController?.updateUIForSelectionMode()
@@ -9805,6 +9820,9 @@ extension MainViewController: FireExecutorDelegate {
                 
         switch fireRequest.scope {
         case .all, .fireMode, .normalMode:
+            // Mark the visit after removing tabs and before refreshing the UI. If the refresh shows
+            // an empty tab switcher, keep the marker for the New Tab Page reached from there.
+            isAttachingNewTabPageAfterFire = true
             refreshUIAfterClear()
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()
@@ -9887,8 +9905,6 @@ extension MainViewController {
         // Unrelated trait changes must preserve that hierarchy.
         if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle
             || traitCollection.accessibilityContrast != previousTraitCollection?.accessibilityContrast {
-            // A raster captured before editing cannot follow a later appearance change.
-            restingNewTabPageSnapshot = nil
             refreshSettledFloatingGlassAppearance()
         }
         updateFindInPage()

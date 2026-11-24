@@ -53,11 +53,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     private lazy var startupMonitor = VPNStartupMonitor()
     private var cancellables = Set<AnyCancellable>()
 
-    /// Carries user-facing messages for controller-side (pre-session) start failures.
-    ///
-    /// The status view surfaces connection errors through the tunnel session, but failures that abort
-    /// before the session is created (e.g. a missing auth token) never reach that observer. This subject
-    /// gives those pre-session failures a channel to the UI; `nil` means "no error to show".
+    /// Publishes pre-session failures and disconnect reasons observed during startup.
     private let controllerErrorSubject = CurrentValueSubject<String?, Never>(nil)
     var controllerErrorPublisher: AnyPublisher<String?, Never> {
         controllerErrorSubject.eraseToAnyPublisher()
@@ -229,7 +225,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
 
             pixelFiring?.fire(Pixel.Event.networkProtectionControllerStartSuccess, options: .withRetry)
         } catch {
-            if let message = userFacingControllerErrorMessage(for: error) {
+            if let message = Self.userFacingControllerErrorMessage(for: error) {
                 controllerErrorSubject.send(message)
             }
 
@@ -247,12 +243,8 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         }
     }
 
-    /// Maps a start failure to the user-facing message the status view should show, reusing the existing
-    /// `VPNConnectionError` copy. Returns `nil` for failures the user should not see a banner for:
-    /// `configSystemPermissionsDenied` (the user deliberately declined the system prompt) and
-    /// `startVPNFailed` (which happens after the tunnel session exists, so the session-based error
-    /// observer already surfaces it).
-    private func userFacingControllerErrorMessage(for error: Error) -> String? {
+    /// Returns the controller's banner message. A nil result leaves presentation to the session observer.
+    static func userFacingControllerErrorMessage(for error: Error) -> String? {
         guard let startError = error as? StartError else {
             return nil
         }
@@ -263,7 +255,18 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
             connectionError = .authenticationFailed
         case .loadFromPreferencesFailed, .saveToPreferencesFailed, .simulateControllerFailureError:
             connectionError = .connectionFailed
-        case .configSystemPermissionsDenied, .startVPNFailed:
+        case .startVPNFailed(let error):
+            guard let startupError = error as? VPNStartupMonitor.StartupError,
+                  case .startTunnelDisconnectedSilently(let cause?) = startupError,
+                  let connectionError = VPNConnectionError(nsError: cause as NSError),
+                  let reason = startupError.disconnectReason else { return nil }
+            switch connectionError {
+            case .connectionFailed, .unknown:
+                return "\(connectionError.localizedMessage) (\(reason.domain): \(reason.code))"
+            case .authenticationFailed, .subscriptionExpired:
+                return nil
+            }
+        case .configSystemPermissionsDenied:
             return nil
         }
 

@@ -37,7 +37,8 @@ let package = Package(
         ),
         .target(
             name: "BWManagementShared",
-            dependencies: []
+            dependencies: [],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "BWManagement",
@@ -56,7 +57,8 @@ let package = Package(
             name: "BWManagementTests",
             dependencies: [
                 "BWManagement"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "BWManagementSharedTests",
@@ -64,14 +66,16 @@ let package = Package(
                 "BWManagementShared",
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions")
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "BWIntegrationTests",
             dependencies: [
                 "BWIntegration",
                 .product(name: "OpenSSL", package: "OpenSSL-XCFramework")
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         )
     ]
 )

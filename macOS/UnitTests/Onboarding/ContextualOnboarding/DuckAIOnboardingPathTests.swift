@@ -18,19 +18,20 @@
 
 import Foundation
 @_spi(Testing) import Persistence
+import SubscriptionTestingUtilities
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 struct DuckAIOnboardingPathTests {
 
-    let experiment = SpyOnboardingSubscriptionUpsellEnrolling()
+    let subscriptionManager = SubscriptionManagerMock.notUpsellEligible()
     let progress = ContextualOnboardingProgress(storage: MockContextualDialogStateStoring(),
                                                 settings: InMemoryThrowingKeyValueStore().throwingKeyedStoring())
     let sut: DuckAIOnboardingPath
 
     init() {
-        sut = DuckAIOnboardingPath(progress: progress, subscriptionUpsellExperiment: experiment)
+        sut = DuckAIOnboardingPath(progress: progress, subscriptionManager: subscriptionManager)
     }
 
     private func duckAITab() async throws -> Tab {
@@ -67,13 +68,12 @@ struct DuckAIOnboardingPathTests {
         }
 
         #expect(sut.dialog(for: tab) == .next(.highFive))
-        #expect(experiment.enrollCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Once High Five was seen, the ending decides", .timeLimit(.minutes(1)))
     func endingDecidesAfterHighFive() async {
-        experiment.cohortStub = .treatment
+        subscriptionManager.hasAppStoreProductsAvailable = true
         progress.markSeen(.thatsDuckAI)
         progress.markSeen(.highFive)
         let newTab = await Tab(content: .newtab)
@@ -82,9 +82,19 @@ struct DuckAIOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Only Fire is usable until Fire is used", .timeLimit(.minutes(1)))
+    func uiLockedExceptFireUntilFire() {
+        #expect(sut.uiLock == .locked(except: [.fire]))
+
+        progress.fireButtonUsedOnce = true
+
+        #expect(sut.uiLock == .unlocked)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Got it is handled by the ending; That's Duck.ai! has nothing after it", .timeLimit(.minutes(1)))
     func gotIt() {
-        experiment.cohortStub = .treatment
+        subscriptionManager.hasAppStoreProductsAvailable = true
 
         #expect(sut.gotItPressed(lastDialog: .thatsDuckAI) == ContextualOnboardingDecision.none)
         #expect(sut.gotItPressed(lastDialog: .highFive) == .next(.subscriptionUpsell))

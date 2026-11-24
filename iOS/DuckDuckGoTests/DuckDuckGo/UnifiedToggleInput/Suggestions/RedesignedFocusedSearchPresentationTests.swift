@@ -28,6 +28,8 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         .init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
     private let dismissal = CurrentValueSubject<UnifiedSuggestionsViewModel.DismissBehavior, Never>(.none)
     private let fireTab = CurrentValueSubject<Bool, Never>(false)
+    private let favoritesSectionVisibility = CurrentValueSubject<Bool, Never>(true)
+    private let escapeHatchVisibility = CurrentValueSubject<Bool, Never>(false)
 
     func testWhenTypingAndClearingThenModulesHideAndReturn() {
         let presentation = makePresentation()
@@ -38,28 +40,70 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.showsSearchModules)
     }
 
-    func testWhenLastFavoriteIsRemovedThenEmptyModulesYieldToLogo() {
+    func testWhenLastFavoriteIsRemovedThenEmptyFavoritesRowKeepsModulesVisible() {
+        let presentation = makePresentation()
+        XCTAssertTrue(presentation.showsSearchModules)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+
+        XCTAssertTrue(presentation.showsSearchModules)
+    }
+
+    func testWhenFavoritesSectionIsHiddenWithoutMessagesOrEscapeHatchThenModulesHideAndHostShowsLogo() {
         let presentation = makePresentation()
         let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
-        host.setUsesRedesignedNewTabPageLayout(true)
+        host.setRedesignedFocusedSurface(.newTabPage)
         XCTAssertTrue(presentation.showsSearchModules)
-        XCTAssertFalse(host.isShowingLogo)
 
+        favoritesSectionVisibility.send(false)
         inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
 
         XCTAssertFalse(presentation.showsSearchModules)
         XCTAssertTrue(host.isShowingLogo)
     }
 
-    func testWhenMessagesRemainAfterRemovingLastFavoriteThenModulesStayVisible() {
+    func testWhenFocusedOverWebPageWithoutFavoritesThenHostShowsLogoInsteadOfEmptyModules() {
+        let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+
+        host.setRedesignedFocusedSurface(.webPage)
+
+        XCTAssertFalse(host.isShowingRedesignedSearchModules)
+        XCTAssertTrue(host.isShowingLogo)
+    }
+
+    func testWhenFocusedOverWebPageWithSavedFavoritesThenHostShowsModules() {
+        let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
+
+        host.setRedesignedFocusedSurface(.webPage)
+
+        XCTAssertTrue(host.isShowingRedesignedSearchModules)
+        XCTAssertFalse(host.isShowingLogo)
+    }
+
+    func testWhenMessagesRemainWithFavoritesSectionHiddenThenModulesStayVisible() {
         let presentation = makePresentation()
         let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
-        host.setUsesRedesignedNewTabPageLayout(true)
+        host.setRedesignedFocusedSurface(.newTabPage)
 
+        favoritesSectionVisibility.send(false)
         inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: true, hasRecents: false, resultsPending: false))
 
         XCTAssertTrue(presentation.showsSearchModules)
         XCTAssertFalse(host.isShowingLogo)
+    }
+
+    func testWhenEscapeHatchShowsWithFavoritesSectionHiddenThenModulesStayVisibleUntilTyping() {
+        let presentation = makePresentation()
+        favoritesSectionVisibility.send(false)
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        XCTAssertFalse(presentation.showsSearchModules)
+
+        escapeHatchVisibility.send(true)
+        XCTAssertTrue(presentation.showsSearchModules)
+
+        inputs.send(.init(mode: .search, isTyping: true, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        XCTAssertFalse(presentation.showsSearchModules)
     }
 
     func testWhenSwitchingToDuckAIOrFireThenModulesHide() {
@@ -87,7 +131,7 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         for usesScrollableEscapeHatch in [false, true] {
             let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher(), usesScrollableEscapeHatch: usesScrollableEscapeHatch)
             let parent = UIViewController()
-            host.setUsesRedesignedNewTabPageLayout(true)
+            host.setRedesignedFocusedSurface(.newTabPage)
             host.start(in: parent.view, parentViewController: parent, textPublisher: Just(""))
             defer { host.tearDown() }
             host.onContentChanged = {
@@ -110,7 +154,9 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         var presentation: RedesignedFocusedSearchPresentation? = RedesignedFocusedSearchPresentation(
             inputsPublisher: inputs.handleEvents(receiveCancel: { cancellations += 1 }).eraseToAnyPublisher(),
             dismissPublisher: dismissal.eraseToAnyPublisher(),
-            fireTabPublisher: fireTab.eraseToAnyPublisher())
+            fireTabPublisher: fireTab.eraseToAnyPublisher(),
+            favoritesSectionVisibilityPublisher: favoritesSectionVisibility.eraseToAnyPublisher(),
+            escapeHatchVisibilityPublisher: escapeHatchVisibility.eraseToAnyPublisher())
         weak let weakPresentation = presentation
         XCTAssertNotNil(weakPresentation)
         presentation = nil
@@ -129,19 +175,19 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertEqual(host?.isShowingLogo, true)
 
         for _ in 0..<3 {
-            host?.setUsesRedesignedNewTabPageLayout(true)
+            host?.setRedesignedFocusedSurface(.newTabPage)
             XCTAssertEqual(host?.isShowingLogo, true)
             XCTAssertEqual(activeSubscriptions, 2)
-            host?.setUsesRedesignedNewTabPageLayout(true)
+            host?.setRedesignedFocusedSurface(.newTabPage)
             XCTAssertEqual(activeSubscriptions, 2)
 
-            host?.setUsesRedesignedNewTabPageLayout(false)
+            host?.setRedesignedFocusedSurface(nil)
             XCTAssertEqual(host?.isShowingLogo, true)
             XCTAssertEqual(activeSubscriptions, 1)
-            host?.setUsesRedesignedNewTabPageLayout(false)
+            host?.setRedesignedFocusedSurface(nil)
             XCTAssertEqual(activeSubscriptions, 1)
         }
-        host?.setUsesRedesignedNewTabPageLayout(true)
+        host?.setRedesignedFocusedSurface(.newTabPage)
         XCTAssertEqual(activeSubscriptions, 2)
         host?.tearDown()
         XCTAssertEqual(activeSubscriptions, 1)
@@ -158,12 +204,15 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
             favoritesProvider: { nil },
             onSelectRow: { _ in },
             onDeleteRow: { _ in },
-            onTapAheadRow: { _ in }), usesScrollableEscapeHatch: usesScrollableEscapeHatch)
+            onTapAheadRow: { _ in },
+            favoritesSectionVisibilityPublisher: favoritesSectionVisibility.eraseToAnyPublisher()), usesScrollableEscapeHatch: usesScrollableEscapeHatch)
     }
 
     private func makePresentation() -> RedesignedFocusedSearchPresentation {
         RedesignedFocusedSearchPresentation(inputsPublisher: inputs.eraseToAnyPublisher(),
                                             dismissPublisher: dismissal.eraseToAnyPublisher(),
-                                            fireTabPublisher: fireTab.eraseToAnyPublisher())
+                                            fireTabPublisher: fireTab.eraseToAnyPublisher(),
+                                            favoritesSectionVisibilityPublisher: favoritesSectionVisibility.eraseToAnyPublisher(),
+                                            escapeHatchVisibilityPublisher: escapeHatchVisibility.eraseToAnyPublisher())
     }
 }

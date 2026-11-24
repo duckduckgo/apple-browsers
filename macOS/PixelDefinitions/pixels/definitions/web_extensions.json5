@@ -669,6 +669,13 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
     },
+    "web_extension_kill_switch_disabled_macos": {
+        "description": "Fires once per enforcement pass that turns off installed, enabled Chrome Web Store extensions because the webExtensions feature flag (extensionManagement isLaunchedExtensions) is off. Matches win_extensions_kill_switch_disabled. The extensions stay off when the flag turns back on. Sideloaded and bundled extensions are not affected.",
+        "owners": ["ayoy"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension_count", "channel"]
+    },
     "web_extension_installed_count_macos": {
         "description": "Fires once a day, on the first tab switch or page navigation, while the Chrome Web Store catalog is available, with how many Chrome Web Store extensions are installed and how many of those are enabled. Bundled extensions are not counted. Every device that can install from the store reports, zero included, so it is the denominator for adoption.",
         "owners": ["ayoy"],
@@ -679,6 +686,37 @@
     "web_extension_toolbar_clicked_macos": {
         "description": "Fires when the user clicks an extension's toolbar button and the click performs its action, such as opening its popup. A click that closes the open popup, or on a disabled action, doesn't fire it.",
         "owners": ["ayoy"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_native_messaging_blocked_macos": {
+        "description": "App Store build only. Fires the first time an extension tries to connect to an app on the Mac and the app refuses, because the sandbox doesn't allow native messaging. Fires once per extension, and again only after the extension is uninstalled and reinstalled.",
+        "owners": ["andremartingo"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]
+    },
+    "web_extension_native_messaging_alert_shown_macos": {
+        "description": "App Store build only. Fires when the alert explaining that an extension can't connect to other apps on the Mac is shown: when the extension asks for the native messaging permission at runtime, or when the user clicks the toolbar button of an extension that requires native messaging and has already hit the limit.",
+        "owners": ["andremartingo"],
+        "triggers": ["impression", "user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "web_extension",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "enum": ["permission_request", "toolbar_click"],
+                "description": "What showed the alert: the extension's runtime request for the native messaging permission (permission_request), or a click on its toolbar button (toolbar_click)."
+            }
+        ]
+    },
+    "web_extension_native_messaging_alert_learn_more_clicked_macos": {
+        "description": "App Store build only. Fires when the user clicks Learn More in the alert explaining that an extension can't connect to other apps on the Mac, which opens the help page.",
+        "owners": ["andremartingo"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "web_extension", "channel"]

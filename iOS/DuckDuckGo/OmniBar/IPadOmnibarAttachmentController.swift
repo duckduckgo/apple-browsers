@@ -200,7 +200,7 @@ final class IPadOmnibarAttachmentController {
     }
 
     func reportMenuShown() {
-        pixelFiring?.fire(UnifiedToggleInputAttachMenuPixel.shown(surface: .addressBar), frequency: .dailyAndCount)
+        pixelFiring?.fire(UnifiedToggleInputAttachMenuPixel.shown(surface: .addressBar, simplifiedPromptBox: false), frequency: .dailyAndCount)
     }
 
     private func firePastedTextPixel(_ action: UnifiedToggleInputPastedTextPixel.Action) {
@@ -228,7 +228,8 @@ final class IPadOmnibarAttachmentController {
         return presenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in self?.presenterProvider?() },
             onItemSelected: { [weak self] in
-                self?.pixelFiring?.fire(UnifiedToggleInputAttachMenuPixel.itemSelected($0, surface: .addressBar), frequency: .dailyAndCount)
+                self?.pixelFiring?.fire(UnifiedToggleInputAttachMenuPixel.itemSelected($0, surface: .addressBar,
+                                                                                         simplifiedPromptBox: false), frequency: .dailyAndCount)
             },
             photoSelectionLimit: attachmentPolicy.canAttachImages ? attachmentPolicy.remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
@@ -322,7 +323,11 @@ final class IPadOmnibarAttachmentController {
             return
         }
 
-        PixelKit.fire(Pixel.Event.unifiedToggleInputFileAttached, frequency: .dailyAndCount, options: .parameters(["surface": UnifiedToggleInputPixelSurface.addressBar.rawValue, "source": "file_picker"]))
+        PixelKit.fire(Pixel.Event.unifiedToggleInputFileAttached, frequency: .dailyAndCount, options: .parameters([
+            "surface": UnifiedToggleInputPixelSurface.addressBar.rawValue,
+            "source": "file_picker",
+            UnifiedToggleInputCoordinatorPixelHelper.simplifiedPromptBoxKey: UnifiedToggleInputCoordinatorPixelHelper.simplifiedPromptBoxValue(false)
+        ]))
         addAttachment(.file(fileAttachment), to: draft)
     }
 

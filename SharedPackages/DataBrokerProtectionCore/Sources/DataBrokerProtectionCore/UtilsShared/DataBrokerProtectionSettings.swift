@@ -65,7 +65,7 @@ public final class DataBrokerProtectionSettings {
     }
 
     /// DEBUG-only allowlist that narrows scheduled scans, opt-outs and email confirmations to these broker URLs.
-    var debugTestBrokerURLs: [String]? {
+    public var debugTestBrokerURLs: [String]? {
         get {
 #if DEBUG
             defaults.stringArray(forKey: "dbp.debug.testBrokerURLs")

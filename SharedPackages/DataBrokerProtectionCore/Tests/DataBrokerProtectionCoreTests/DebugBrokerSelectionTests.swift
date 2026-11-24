@@ -30,9 +30,9 @@ struct DebugBrokerSelectionTests {
         return try #require(UserDefaults(suiteName: suite))
     }
 
-    private func broker(id: Int64, url: String) -> DataBroker {
+    private func broker(id: Int64, url: String, removed: Bool = false) -> DataBroker {
         DataBroker(id: id, name: url, url: url, steps: [Step(type: .scan, actions: []), Step(type: .optOut, actions: [])],
-                   version: "1.0", schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
+                   version: "1.0", schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: removed ? Date() : nil)
     }
 
     private func scan(brokerId: Int64) -> ScanJobData {
@@ -108,7 +108,9 @@ struct DebugBrokerSelectionTests {
         let subset = PIRDebugLaunchOptions.ManagedSeed(mode: .seed, instanceID: "id", receiptURL: receipt, brokerURLs: ["b.com"])
         #expect(try subset.scanJobs(database: database).map(\.brokerURL) == ["b.com"])
         let unknown = PIRDebugLaunchOptions.ManagedSeed(mode: .seed, instanceID: "id", receiptURL: receipt, brokerURLs: ["b.com", "c.com"])
-        #expect(throws: PIRDebugLaunchOptions.ParseError.unknownBroker) { try unknown.scanJobs(database: database) }
+        #expect(throws: PIRDebugLaunchOptions.ParseError.unknownBroker(["c.com": "notStored"])) { try unknown.scanJobs(database: database) }
+        database.dataBrokersToReturn = [broker(id: 3, url: "c.com", removed: true)]
+        #expect(throws: PIRDebugLaunchOptions.ParseError.unknownBroker(["c.com": "removed"])) { try unknown.scanJobs(database: database) }
     }
 }
 #endif

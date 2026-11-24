@@ -72,20 +72,25 @@ public struct PIRDebugLaunchOptions {
 
         /// Uses the same active broker, profile query, and Freemium scan selection as the manual scan scheduler.
         public func scanJobs(database: DataBrokerProtectionRepository) throws -> [DebugScanJob] {
-            let queries = try database.fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: false)
-                .filter { !$0.profileQuery.deprecated }
-            let jobs = BrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: queries, jobType: .manualScan, priorityDate: nil)
-                .compactMap { job -> DebugScanJob? in
-                    guard let scan = job as? ScanJobData, scan.scanType() != .maintenance, scan.profileQueryId > 0,
-                          let query = queries.first(where: { $0.dataBroker.id == scan.brokerId && $0.profileQuery.id == scan.profileQueryId }) else {
-                        return nil
-                    }
-                    return DebugScanJob(brokerURL: query.dataBroker.url, profileQueryId: scan.profileQueryId)
-                }
-                .filter { brokerURLs?.contains($0.brokerURL) ?? true }
-            if let brokerURLs, !Set(brokerURLs).isSubset(of: Set(jobs.map(\.brokerURL))) { throw ParseError.unknownBroker }
+            let jobs = try PIRDebugLaunchOptions.scanJobs(database: database, isAuthenticatedUser: false,
+                                                          brokerURLs: brokerURLs, includesMaintenance: false)
+            if let brokerURLs {
+                let planned = Set(jobs.map(\.brokerURL))
+                let missing = brokerURLs.filter { !planned.contains($0) }
+                if !missing.isEmpty { throw ParseError.unknownBroker(try Self.reasons(for: missing, database: database)) }
+            }
             guard !jobs.isEmpty else { throw ParseError.emptyScanPlan }
             return jobs
+        }
+
+        /// Why each requested broker has no Freemium scan: `notStored`, `removed`, `requiresSubscription` or `noScanJob`.
+        private static func reasons(for brokerURLs: [String], database: DataBrokerProtectionRepository) throws -> [String: String] {
+            let stored = try database.fetchAllDataBrokers()
+            return Dictionary(uniqueKeysWithValues: brokerURLs.map { url in
+                guard let broker = stored.first(where: { $0.url == url }) else { return (url, "notStored") }
+                if broker.isRemoved { return (url, "removed") }
+                return (url, broker.scanRequiresSubscription ? "requiresSubscription" : "noScanJob")
+            })
         }
 
         private struct Receipt: Encodable {
@@ -95,6 +100,7 @@ public struct PIRDebugLaunchOptions {
             let since: Date
             let jobs: [DebugScanJob]
             let errorCode: String?
+            let missingBrokers: [String: String]?
         }
 
         public func writeReceipt(since: Date, jobs: [DebugScanJob] = [], error: Error? = nil) throws {
@@ -106,8 +112,10 @@ public struct PIRDebugLaunchOptions {
             } else {
                 code = nil
             }
+            var missingBrokers: [String: String]?
+            if case .unknownBroker(let reasons) = error as? ParseError { missingBrokers = reasons }
             let receipt = Receipt(instanceID: instanceID, mode: mode, status: error == nil ? "ready" : "error",
-                                  since: since, jobs: jobs, errorCode: code)
+                                  since: since, jobs: jobs, errorCode: code, missingBrokers: missingBrokers)
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             try encoder.encode(receipt).write(to: receiptURL, options: .atomic)
@@ -127,7 +135,7 @@ public struct PIRDebugLaunchOptions {
         case authenticatedAccount
         case existingProfile
         case emptyScanPlan
-        case unknownBroker
+        case unknownBroker([String: String])
 
         public static var errorDomain: String { "com.duckduckgo.pir.debug-launch-options" }
 
@@ -172,6 +180,22 @@ public struct PIRDebugLaunchOptions {
             case .unknownBroker: return "unknownBroker"
             }
         }
+    }
+
+    /// The scans a manual scan run would start for this account, limited to `brokerURLs` when given.
+    public static func scanJobs(database: DataBrokerProtectionRepository, isAuthenticatedUser: Bool,
+                                brokerURLs: [String]?, includesMaintenance: Bool) throws -> [DebugScanJob] {
+        let queries = try database.fetchEligibleBrokerProfileQueryData(isAuthenticatedUser: isAuthenticatedUser)
+            .filter { !$0.profileQuery.deprecated }
+        return BrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: queries, jobType: .manualScan, priorityDate: nil)
+            .compactMap { job -> DebugScanJob? in
+                guard let scan = job as? ScanJobData, includesMaintenance || scan.scanType() != .maintenance, scan.profileQueryId > 0,
+                      let query = queries.first(where: { $0.dataBroker.id == scan.brokerId && $0.profileQuery.id == scan.profileQueryId }) else {
+                    return nil
+                }
+                return DebugScanJob(brokerURL: query.dataBroker.url, profileQueryId: scan.profileQueryId)
+            }
+            .filter { brokerURLs?.contains($0.brokerURL) ?? true }
     }
 
     public static func hasManagedRequest(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {

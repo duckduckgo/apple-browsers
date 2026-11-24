@@ -797,6 +797,20 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                                                                                     signedOut: false)
                     return recoveredTokenContainer
                 } catch SubscriptionManagerError.tokenRecoveryDeferred {
+                    // Another request's recovery stored a valid token while this one waited: use it
+                    if case .present(let stored) = localTokenSnapshot(),
+                       stored.refreshToken != tokenBeforeAttempt.tokenContainer?.refreshToken,
+                       !stored.decodedRefreshToken.isExpired() {
+                        Logger.subscriptionTokensManagement.log("Refresh was rejected but a recovery already replaced the stored token, using it")
+                        authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded,
+                                                                                        method: nil,
+                                                                                        backupOutcome: .notAttempted,
+                                                                                        error: nil,
+                                                                                        signedOut: false)
+                        updateCachedUserEntitlements(stored.decodedAccessToken.subscriptionEntitlements)
+                        updateCachedIsUserAuthenticated(true)
+                        return stored
+                    }
                     // A recovery succeeded moments ago and its token was rejected again: keep the session and fail this request
                     // instead of recovering in a loop
                     Logger.subscriptionTokensManagement.error("Refresh rejected again right after a recovery, keeping the token and deferring the recovery")
@@ -903,8 +917,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     ///   - report: Set to what the recovery did. Left unchanged when no coordinator is set.
     /// - Returns: The recovered token container.
     /// - Throws: `SubscriptionManagerError.tokenRecoveryNotAttempted` when no coordinator is set or no recovery applies,
-    ///   `SubscriptionManagerError.tokenRecoveryDeferred` for an `.invalidToken` recovery within `invalidTokenRecoveryInterval` of the
-    ///   last successful one, without running it,
+    ///   `SubscriptionManagerError.tokenRecoveryDeferred` for an `.invalidToken` recovery within `invalidTokenRecoveryInterval` after the
+    ///   last successful one, without running it. A device clock set back since that recovery doesn't defer it,
     ///   `TokenBackupError.sessionChanged` when the session changed during the recovery,
     ///   `SubscriptionManagerError.noTokenAvailable` when the recovery left no usable token,
     ///   `SubscriptionManagerError.tokenRecoveryKeptRejectedToken` when the recovery left `deadPrimary`'s refresh token stored,
@@ -918,7 +932,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
 
         if trigger == .invalidToken, let lastRecovery = lastSuccessfulInvalidTokenRecovery(),
-           now().timeIntervalSince(lastRecovery) < invalidTokenRecoveryInterval {
+           (0..<invalidTokenRecoveryInterval).contains(now().timeIntervalSince(lastRecovery)) {
             Logger.subscriptionTokensManagement.log("Deferring the token recovery, the last one succeeded at \(lastRecovery, privacy: .public)")
             throw SubscriptionManagerError.tokenRecoveryDeferred
         }

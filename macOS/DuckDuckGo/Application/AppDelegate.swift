@@ -734,8 +734,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // perform a dummy read to ensure that KVS is accessible
             _ = try keyValueStore.object(forKey: AppearancePreferencesUserDefaultsPersistor.Key.newTabPageIsProtectionsReportVisible.rawValue)
         } catch {
-            startupFailureInstrumentation.recordFailure()
             PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
+            startupFailureInstrumentation.recordFailure()
             Thread.sleep(forTimeInterval: 1)
             fatalError("Could not prepare key value store: \(error.localizedDescription)")
         }
@@ -748,7 +748,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             database.db.loadStore { _, error in
                 guard let error = error else { return }
-                startupFailureInstrumentation.recordFailure()
 
                 switch error {
                 case CoreDataDatabase.Error.containerLocationCouldNotBePrepared(let underlyingError):
@@ -757,6 +756,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     PixelKit.fire(DebugEvent(GeneralPixel.dbInitializationError(error: error)))
                 }
 
+                startupFailureInstrumentation.recordFailure()
                 // Give Pixel a chance to be sent, but not too long
                 Thread.sleep(forTimeInterval: 1)
                 fatalError("Could not load DB: \(error.localizedDescription)")
@@ -768,16 +768,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                                 dbFileURL: BookmarkDatabase.defaultDBFileURL)
                 bookmarkDatabase.preFormFactorSpecificFavoritesFolderOrder = favoritesOrder
             } catch {
-                startupFailureInstrumentation.recordFailure()
                 PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
+                startupFailureInstrumentation.recordFailure()
                 Thread.sleep(forTimeInterval: 1)
                 fatalError("Could not create Bookmarks database stack: \(error.localizedDescription)")
             }
 
             bookmarkDatabase.db.loadStore { context, error in
                 guard let context = context else {
-                    startupFailureInstrumentation.recordFailure()
                     PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
+                    startupFailureInstrumentation.recordFailure()
                     Thread.sleep(forTimeInterval: 1)
                     fatalError("Could not create Bookmarks database stack: \(error?.localizedDescription ?? "err")")
                 }

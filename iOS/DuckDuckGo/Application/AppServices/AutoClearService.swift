@@ -60,6 +60,15 @@ final class AutoClearService: AutoClearServiceProtocol {
         }
     }
 
+    // MARK: - Launch
+
+    /// Covers the launch clear the way `suspend()` covers a warm return's, so nothing can be tapped until
+    /// `waitForDataCleared()` removes it. A tap on the overlay still removes it early.
+    func coverLaunchClear() {
+        guard autoClear.isClearingEnabled else { return }
+        overlayWindowManager.displayBlankSnapshotWindow(for: .autoClearing)
+    }
+
     // MARK: - Resume
 
     func resume() {

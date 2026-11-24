@@ -78,10 +78,19 @@ protocol IdleReturnLaunchDelegate: AnyObject {
 struct IdleReturnForegroundScreen {
     weak var presented: UIViewController?
     let wasOnNewTabPage: Bool
+    /// The `idleReturnLaunchWaitProtection` kill switch. Off, nothing counts as the user acting and the screen
+    /// open when launch handling runs is the one closed, as before.
+    let isProtectionEnabled: Bool
 
     func userActed(presented current: UIViewController?, isOnNewTabPage: Bool) -> Bool {
+        guard isProtectionEnabled else { return false }
         if let current, current !== presented { return true }
         return wasOnNewTabPage && !isOnNewTabPage
+    }
+
+    /// The screen an idle return may close.
+    func screenLeftOpen(current: UIViewController?) -> UIViewController? {
+        isProtectionEnabled ? presented : current
     }
 }
 

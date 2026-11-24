@@ -109,7 +109,7 @@ final class MainCoordinator {
     let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
 
     private var hasPresentedOnboarding = false
-    private var idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: nil, wasOnNewTabPage: false)
+    private var idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: nil, wasOnNewTabPage: false, isProtectionEnabled: false)
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -714,9 +714,15 @@ final class MainCoordinator {
 
     // MARK: App Lifecycle handling
 
-    func onForeground(isFirstForeground: Bool) {
+    /// Records what is on screen as the foreground begins, before the user can act during the launch wait.
+    func captureIdleReturnForegroundScreen() -> IdleReturnForegroundScreen {
         idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: controller.presentedViewController,
-                                                                wasOnNewTabPage: tabManager.currentTabsModel.currentTab?.link == nil)
+                                                                wasOnNewTabPage: tabManager.currentTabsModel.currentTab?.link == nil,
+                                                                isProtectionEnabled: featureFlagger.isFeatureOn(.idleReturnLaunchWaitProtection))
+        return idleReturnForegroundScreen
+    }
+
+    func onForeground(isFirstForeground: Bool) {
         daxGreetingActivity.recordForegroundOpen()
         daxDialogs.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
@@ -996,7 +1002,8 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: controller.presentedViewController) { [weak self] in
+            let screenLeftOpen = idleReturnForegroundScreen.screenLeftOpen(current: controller.presentedViewController)
+            controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: screenLeftOpen) { [weak self] in
                 guard let self else { return }
                 if !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
                     startUntreatedReturnSession(timeAwayMs: timeAwayMs)

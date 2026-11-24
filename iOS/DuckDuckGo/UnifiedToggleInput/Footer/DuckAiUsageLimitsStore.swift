@@ -98,11 +98,7 @@ struct DuckAiUsageLimitsStore {
     }
 
     private var usageLimitsEntryUpdates: AnyPublisher<Void, Never>? {
-        guard let observing = storageHandler as? DuckAiNativeEntriesObserving else { return nil }
-        return observing.reservedEntryUpdatesPublisher
-            .filter { $0 == .usageLimits }
-            .map { _ in () }
-            .eraseToAnyPublisher()
+        (storageHandler as? DuckAiNativeEntriesObserving)?.updates(of: .usageLimits)
     }
 
     /// There is no API for the hand-off: web reads this entry on its next hydration and turns it into

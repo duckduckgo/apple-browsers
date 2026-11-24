@@ -36,4 +36,4 @@ A local broker is named by its JSON file instead. `fakebroker.com` is the PIR fa
 | --- | --- | --- |
 | `fresh-simulator` | A simulator ddg-check-pir creates for one iOS attempt and deletes afterwards. | Every iOS scenario. |
 | `fake-broker-john-doe` | The PIR fake broker running locally (web on port 3000, API on 3001) with one record seeded: `curl -X POST http://localhost:3001/api/profiles -H 'Content-Type: application/json' -d '{"firstName":"John","lastName":"Doe","middleName":"Michael","age":41,"city":"Springfield","state":"IL"}'` | The gate 3 scenarios. Its opt-out removes the record, so seed it again before each run. |
-| `signed-out-empty-store` | The macOS DEBUG account signed out, with no saved PIR profile. | `scheduler seed` on macOS. |
+| `empty-store` | No saved PIR profile in the macOS DEBUG store. The seed signs the DEBUG account out itself; use `reseed`, with approval, to replace an existing profile. | `scheduler seed` on macOS. |

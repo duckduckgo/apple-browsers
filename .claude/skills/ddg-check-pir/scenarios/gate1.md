@@ -1,7 +1,12 @@
 # Gate 1: merge with the flag off
 
 The user-assist stack must not change anything for existing users. Run each scenario on this branch and on a `main`
-build, and compare the two.
+build, and compare the two. The `main` build comes from a worktree of `anh/shared/pir/verify-pir-extras`, which is
+`main` plus ddg-check-pir and its `--broker` option.
+
+Scheduler scenarios scan five brokers whose scans finished cleanly on this machine: searchpeoplefree.com,
+freepeopledirectory.com and floridaparcels.com (matches), and spydialer.com and cyberbackgroundchecks.com (no match).
+A full broker list takes over 30 minutes per seed and mostly adds broker noise.
 
 This branch differs from `main` in two inputs besides the code:
 
@@ -16,11 +21,11 @@ This branch differs from `main` in two inputs besides the code:
 
 - tags: gate1, scheduler, scan, live
 - platform: iOS, macOS
-- setup: `john-smith-houston`, `fresh-simulator` on iOS, `signed-out-empty-store` on macOS
-- action: `scheduler seed`, once on this branch and once on a `main` build
+- setup: `john-smith-houston`, `fresh-simulator` on iOS, `empty-store` on macOS
+- action: `scheduler seed` with `--broker searchpeoplefree.com --broker freepeopledirectory.com --broker floridaparcels.com --broker spydialer.com --broker cyberbackgroundchecks.com`, once on this branch and once on the `main` build
 - expect:
-  - Every planned job gets a fresh `scanStarted` and reaches a terminal event.
-  - The planned brokers and their outcomes match the `main` run, apart from BeenVerified.
+  - Exactly those five brokers are planned, and each gets a fresh `scanStarted` and reaches a terminal event.
+  - Each broker's outcome matches the `main` run. A `transient` outcome on either build is a rerun, not a difference.
 
 ## A regular opt-out with email confirmation completes
 

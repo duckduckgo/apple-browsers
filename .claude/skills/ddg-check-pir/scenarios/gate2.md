@@ -20,33 +20,44 @@ none. Run these scenarios against the exact file that will be published; if it d
 
 ## An iOS fresh install loads every broker except BeenVerified
 
+The seed scans one broker to keep the run short; the check is on the brokers the app loaded, which the first
+`pir-http-*.json` with path `/api` lists with their versions and `isRemoved`.
+
 - tags: gate2, scheduler, scan, live
 - platform: iOS
 - setup: `john-smith-houston`, `fresh-simulator`
-- action: `scheduler seed`
+- action: `scheduler seed --broker searchpeoplefree.com`
 - expect:
-  - BeenVerified isn't planned.
-  - Every other bundled broker is planned, gets a fresh `scanStarted` and reaches a terminal event.
+  - `/api` lists no BeenVerified 0.12.0. It lists no BeenVerified at all, or only a version that a remote broker update
+    stored.
+  - Every other bundled broker is listed.
+  - searchpeoplefree.com gets a fresh `scanStarted` and reaches a terminal event.
 
 ## macOS keeps scanning BeenVerified with the feature off
 
+A remote broker update that marks BeenVerified removed, as staging does today, stops the app from scanning it before
+the feature matters. The seed then reports that `beenverified.com` has no eligible scan; record that as inconclusive and
+name the environment.
+
 - tags: gate2, scheduler, scan, live
 - platform: macOS
-- setup: `john-smith-houston`, `signed-out-empty-store`
-- action: `scheduler seed`
+- setup: `john-smith-houston`, `empty-store`
+- action: `scheduler seed --broker beenverified.com --broker searchpeoplefree.com`
 - expect:
-  - BeenVerified is planned, gets a fresh `scanStarted` and reaches a terminal event.
-  - Every other planned broker behaves as in the gate 1 scheduler scenario.
+  - Both brokers are planned, and each gets a fresh `scanStarted` and reaches a terminal event.
+  - No BeenVerified opt-out starts. The skill doesn't check this; read the debug server's `/api/events` for BeenVerified
+    `optOutStarted` events.
 
 ## macOS upgrades a stored BeenVerified 0.11.0 to the assisted 0.12.0
 
 Most users get the assisted file as an update over a stored 0.11.0. Seed first on a build from a worktree of
-`anh/shared/pir/verify-pir-scenarios`, which bundles 0.11.0, then switch to a build of this branch.
+`anh/shared/pir/verify-pir-extras`, which bundles 0.11.0, then switch to a build of this branch.
 
 - tags: gate2, scheduler, scan, live, upgrade
 - platform: macOS
-- setup: `john-smith-houston`, `signed-out-empty-store`
-- action: `scheduler seed` on the `verify-pir-scenarios` build; then, with the DEBUG browser and agent stopped, clear
+- setup: `john-smith-houston`, `empty-store`
+- action: `scheduler seed --broker beenverified.com --broker searchpeoplefree.com` on the `verify-pir-extras` build;
+  then, with the DEBUG browser and agent stopped, clear
   the saved local broker-version check so the next launch upserts the bundled 0.12.0:
   `defaults delete com.duckduckgo.macos.browser.debug macos.browser.data-broker-protection.LastLocalVersionChecked` and
   the same key in `com.duckduckgo.macos.DBP.backgroundAgent.debug`; then `scheduler observe` on this branch's build
@@ -65,7 +76,8 @@ simulator whose debug server is on.
 - tags: gate2, scheduler, scan, live, upgrade
 - platform: iOS
 - setup: `john-smith-houston`
-- action: `scheduler seed --platform ios --keep` on a build from a worktree of `anh/shared/pir/verify-pir-scenarios`,
+- action: `scheduler seed --platform ios --keep --broker beenverified.com --broker searchpeoplefree.com` on a build from
+  a worktree of `anh/shared/pir/verify-pir-extras`,
   which bundles 0.11.0; set `UDID` to the `simulator.udid` in that seed's launch record and install this branch's iOS
   build on it; clear the saved local broker-version check so the next launch tries the bundled 0.12.0, with
   `xcrun simctl spawn "$UDID" defaults delete com.duckduckgo.mobile.ios macos.browser.data-broker-protection.LastLocalVersionChecked`;

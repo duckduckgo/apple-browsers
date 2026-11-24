@@ -35,17 +35,20 @@ public final class EmailConfirmationJobProvider: EmailConfirmationJobProviding {
         let confirmations = try jobDependencies.database.fetchOptOutEmailConfirmationsWithLink()
         Logger.dataBrokerProtection.log("✉️ [EmailConfirmationJobProvider] Fetched \(confirmations.count, privacy: .public) email confirmations")
 
-        let allowedBrokerIDs: Set<Int64>?
+        let belowRetryLimit = confirmations.filter { $0.emailConfirmationAttemptCount < 3 }
+#if DEBUG
+        let validConfirmations: [OptOutEmailConfirmationJobData]
         if jobDependencies.dataBrokerProtectionSettings.debugTestBrokerURLs != nil {
-            allowedBrokerIDs = Set(try jobDependencies.database.fetchAllDataBrokers().filter {
+            let allowedBrokerIDs = Set(try jobDependencies.database.fetchAllDataBrokers().filter {
                 jobDependencies.dataBrokerProtectionSettings.allowsBrokerForDebugTesting($0.url)
             }.compactMap(\.id))
+            validConfirmations = belowRetryLimit.filter { allowedBrokerIDs.contains($0.brokerId) }
         } else {
-            allowedBrokerIDs = nil
+            validConfirmations = belowRetryLimit
         }
-        let validConfirmations = confirmations.filter {
-            $0.emailConfirmationAttemptCount < 3 && (allowedBrokerIDs?.contains($0.brokerId) ?? true)
-        }
+#else
+        let validConfirmations = belowRetryLimit
+#endif
         Logger.dataBrokerProtection.log("✉️ [EmailConfirmationJobProvider] \(validConfirmations.count, privacy: .public) confirmations are below max retry limit")
 
         let sorted = validConfirmations.sorted { lhs, rhs in

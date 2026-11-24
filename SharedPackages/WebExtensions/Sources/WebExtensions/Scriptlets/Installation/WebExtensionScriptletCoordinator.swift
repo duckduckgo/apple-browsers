@@ -27,7 +27,8 @@ import os.log
 /// When a web extension type is enabled, the coordinator:
 ///
 /// 1. Starts the ``ScriptletProviding`` provider to fetch/cache scriptlets.
-/// 2. Installs any already-cached scriptlets into the extension directory immediately.
+/// 2. Installs any already-cached scriptlets into the extension directory, or, before the first load
+///    of installed extensions, holds them until ``initialLoadDidFinish()``.
 /// 3. Subscribes to the provider's availability publisher so future updates
 ///    are installed automatically and the extension is reloaded.
 ///

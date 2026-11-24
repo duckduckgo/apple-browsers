@@ -13,6 +13,10 @@ set -uo pipefail
 root=$1
 upload=$AUTO_DIR/skills/show-me-your-work/scripts/upload-evidence.ts
 uuid_re='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+# auto releases before DDG_AUTO_EVIDENCE_CONTAINER support always upload to auto, so link there for those
+container=auto
+grep -q DDG_AUTO_EVIDENCE_CONTAINER "$AUTO_DIR/skills/show-me-your-work/scripts/lib/evidence.ts" 2> /dev/null &&
+  container=$DDG_AUTO_EVIDENCE_CONTAINER
 
 [[ -d $root ]] || { echo "no auto evidence" >&2; exit 0; }
 latest="" latest_mtime=0 uploaded=0 failed=0
@@ -26,7 +30,7 @@ for dir in "$root"/*/; do
   if [[ $name =~ ^decisions-[0-9a-f]{64}\.tsv$ && -f $log ]]; then
     mtime=$(stat -c %Y "$log" 2> /dev/null || stat -f %m "$log")
     if (( mtime >= latest_mtime )); then
-      latest="https://artifacts.go.duckduckgo.com/view/$DDG_AUTO_EVIDENCE_CONTAINER/$uuid/$name" latest_mtime=$mtime
+      latest="https://artifacts.go.duckduckgo.com/view/$container/$uuid/$name" latest_mtime=$mtime
     fi
   fi
 done

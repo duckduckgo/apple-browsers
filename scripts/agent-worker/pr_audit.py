@@ -38,8 +38,9 @@ def gh(*args):
     return out.stdout
 
 
-# The artifacts container that auto's evidence-url links point into
-CONTAINER = os.environ.get("DDG_AUTO_EVIDENCE_CONTAINER", "apple")
+# The artifacts containers that auto's evidence-url links can point into. auto releases before
+# DDG_AUTO_EVIDENCE_CONTAINER support always use auto, so both are allowed until the worker no longer runs one
+CONTAINERS = (os.environ.get("DDG_AUTO_EVIDENCE_CONTAINER", "apple"), "auto")
 
 
 def allowed_links(template, task, repo):
@@ -51,7 +52,7 @@ def allowed_links(template, task, repo):
     ok = (f"https://app.asana.com/0/0/{task}/f", f"https://app.asana.com/0/0/{task}")
     return lambda url: (url.rstrip(".,") in known or url.startswith(ok)
                         or url.startswith(f"https://github.com/{repo}/")
-                        or url.startswith(f"https://artifacts.go.duckduckgo.com/view/{CONTAINER}/")
+                        or url.startswith(tuple(f"https://artifacts.go.duckduckgo.com/view/{c}/" for c in CONTAINERS))
                         or url.startswith("https://claude.com/"))
 
 

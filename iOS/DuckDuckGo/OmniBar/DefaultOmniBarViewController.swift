@@ -725,20 +725,12 @@ extension DefaultOmniBarViewController {
 
 extension DefaultOmniBarViewController {
 
-    /// Over the usage limit, new chats start on the default web sends in the usage-limits snapshot.
-    private var overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? {
-        dependencies.duckAiNativeStorageHandler.map {
-            DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: dependencies.featureFlagger)
-                .overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
-        }
-    }
-
     private func setUpModelPickerIfNeeded() {
         guard dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled else { return }
 
         let controller = IPadOmnibarModelPickerController(
             startsNewChatsOnDefault: dependencies.featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel),
-            overLimitNewChatDefaults: overLimitNewChatDefaults
+            duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler
         )
         modelPickerController = controller
 

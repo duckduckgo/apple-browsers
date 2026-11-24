@@ -3389,7 +3389,8 @@ private class MockAIChatPreferencesPersisting: AIChatPreferencesPersisting {
 
 extension AIChatOmnibarControllerTests {
 
-    private func makeNewChatDefaultController() -> AIChatOmnibarController {
+    private func makeNewChatDefaultController(surface: DuckAIPromptSurface = .addressBar,
+                                              usageLimitsStore: DuckAiUsageLimitsStore? = nil) -> AIChatOmnibarController {
         featureFlagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
         featureFlagger.featuresStub[FeatureFlag.aiChatOmnibarReasoningEffort.rawValue] = true
         mockModelsService.modelsToReturn = [
@@ -3397,19 +3398,33 @@ extension AIChatOmnibarControllerTests {
             makeRemoteModel(id: "terra", supportedReasoningEffort: [.none, .high])
         ]
         mockModelsService.newChatDefaultToReturn = .model(id: "terra", reasoningEffort: AIChatReasoningEffort.none)
+        let isPromptBar = surface == .promptBar
         return AIChatOmnibarController(
             aiChatTabOpener: mockTabOpener,
-            surface: .addressBar,
-            draftSource: TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
-            origin: WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
+            surface: surface,
+            draftSource: isPromptBar
+                ? StaticPromptDraftSource(store: EphemeralPromptDraftStore())
+                : TabPromptDraftSource(tabCollectionViewModel: tabCollectionViewModel),
+            origin: isPromptBar ? nil : WindowPromptOrigin(tabCollectionViewModel: tabCollectionViewModel),
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
             searchPreferencesPersistor: searchPreferencesPersistor,
             preferences: mockPreferences,
             modelsService: mockModelsService,
             subscriptionManager: mockSubscriptionManager,
-            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter
+            subscriptionUpsellPresenter: mockSubscriptionUpsellPresenter,
+            usageLimitsStore: usageLimitsStore
         )
+    }
+
+    /// Built the way `MainViewController` and `PromptBarContentFactory` build it, over a storage holding an over-limit snapshot.
+    private func makeOverLimitUsageLimitsStore() throws -> DuckAiUsageLimitsStore {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: """
+        {"notice": {"id": "weeklyReachedDegraded", "window": "weekly", "resetsAt": "2030-01-01T00:00:00Z"}, \
+        "newChatDefault": {"modelId": "luna"}}
+        """)
+        return DuckAiUsageLimitsStore(storageHandler: storage, featureFlagger: featureFlagger)
     }
 
     private func submittedQuery() -> AIChatNativePrompt.Query? {
@@ -3566,6 +3581,24 @@ extension AIChatOmnibarControllerTests {
         XCTAssertEqual(query?.modelId, "gpt-6-luna")
         XCTAssertEqual(query?.reasoningEffort, AIChatReasoningEffort.none)
         XCTAssertEqual(submittedNewChatModelParameters(), ["model_source": "fallback", "model_id": "gpt-6-luna", "reasoning_effort": "none"])
+    }
+
+    func testWhenNewChatDefaultIsOnAndAddressBarIsBuiltWithAUsageLimitsStore_ThenOverLimitDefaultIsSelected() async throws {
+        let controller = makeNewChatDefaultController(usageLimitsStore: try makeOverLimitUsageLimitsStore())
+
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        XCTAssertEqual(controller.persistedModelId, "luna")
+    }
+
+    func testWhenNewChatDefaultIsOnAndPromptBarIsBuiltWithAUsageLimitsStore_ThenOverLimitDefaultIsSelected() async throws {
+        let controller = makeNewChatDefaultController(surface: .promptBar, usageLimitsStore: try makeOverLimitUsageLimitsStore())
+
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        XCTAssertEqual(controller.persistedModelId, "luna")
     }
 
     func testWhenNewChatDefaultIsOnAndPaidUserModelsFailToLoad_ThenSubmitSendsPaidLocalDefault() async {

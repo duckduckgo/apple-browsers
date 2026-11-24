@@ -18,7 +18,10 @@
 //
 
 import Combine
+import Core
+import FeatureFlags_iOS
 import Foundation
+import Persistence
 import PixelKit
 
 final class NewTabPageCustomizationModel: ObservableObject {
@@ -39,6 +42,13 @@ final class NewTabPageCustomizationModel: ObservableObject {
         }
     }
 
+    @Published var theme: NewTabPageTheme {
+        didSet {
+            guard oldValue != theme else { return }
+            persistor.theme = theme
+        }
+    }
+
     @Published var isKeyboardShownOnNewTab: Bool {
         didSet {
             guard oldValue != isKeyboardShownOnNewTab else { return }
@@ -47,23 +57,73 @@ final class NewTabPageCustomizationModel: ObservableObject {
         }
     }
 
+    @Published var isReturnToLastTabEnabled: Bool {
+        didSet {
+            guard oldValue != isReturnToLastTabEnabled else { return }
+            returnSettings.lastTabShortcutAdapter.setEnabled(isReturnToLastTabEnabled)
+            pixelFiring?.fire(isReturnToLastTabEnabled ? Pixel.Event.ntpAfterIdleLastTabShortcutSettingEnabled : .ntpAfterIdleLastTabShortcutSettingDisabled,
+                              frequency: .dailyAndCount)
+        }
+    }
+
+    @Published var afterInactivityOption: AfterInactivityOption {
+        didSet {
+            returnSettings.afterInactivityOptionAdapter.afterInactivityOptionBinding.wrappedValue = afterInactivityOption
+            guard oldValue != afterInactivityOption else { return }
+            pixelFiring?.fire(afterInactivityOption == .newTab ? Pixel.Event.ntpAfterIdleSettingChangedToNewTab : .ntpAfterIdleSettingChangedToLastUsedTab,
+                              frequency: .dailyAndCount)
+        }
+    }
+
+    @Published var afterInactivityIdleInterval: AfterInactivityIdleInterval {
+        didSet {
+            try? idleReturnStorage.set(afterInactivityIdleInterval.seconds, for: \AfterInactivitySettingKeys.idleReturnIntervalSeconds)
+            guard oldValue != afterInactivityIdleInterval else { return }
+            pixelFiring?.fire(Pixel.Event.ntpAfterIdleSettingIdleIntervalChanged,
+                              frequency: .dailyAndCount,
+                              options: .parameters(["idle_interval_seconds": String(afterInactivityIdleInterval.seconds)]))
+        }
+    }
+
     var onAllSettingsSelected: (() -> Void)?
+
+    var isIdleReturnSettingsVisible: Bool {
+        returnSettings.featureFlagger.isFeatureOn(.showNTPAfterIdleReturn)
+    }
+
+    var afterInactivityFooterText: String {
+        if afterInactivityOption == .lastUsedTab || afterInactivityIdleInterval == .none {
+            return UserText.settingsAfterInactivityFooterNone
+        }
+        return String(format: UserText.settingsAfterInactivityFooterFormat, afterInactivityIdleInterval.description)
+    }
 
     private let pixelFiring: (any PixelKitFiring)?
 
     private var persistor: NewTabPageCustomizationPersisting
     private var keyboardSettings: KeyboardSettings
+    private let returnSettings: NewTabPageReturnSettings
+
+    private var idleReturnStorage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> {
+        returnSettings.keyValueStore.throwingKeyedStoring()
+    }
 
     init(persistor: NewTabPageCustomizationPersisting = NewTabPageCustomizationStore(),
          keyboardSettings: KeyboardSettings = KeyboardSettings(),
+         returnSettings: NewTabPageReturnSettings,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.pixelFiring = pixelFiring
         self.persistor = persistor
         self.keyboardSettings = keyboardSettings
+        self.returnSettings = returnSettings
 
         isFavoritesSectionVisible = persistor.isFavoritesSectionVisible
         isMessagesSectionVisible = persistor.isMessagesSectionVisible
+        theme = persistor.theme
         isKeyboardShownOnNewTab = keyboardSettings.onNewTab
+        isReturnToLastTabEnabled = returnSettings.lastTabShortcutAdapter.isEnabled
+        afterInactivityOption = returnSettings.afterInactivityOptionAdapter.afterInactivityOption
+        afterInactivityIdleInterval = AfterInactivityIdleInterval(rawValue: returnSettings.idleReturnEligibilityManager.idleThresholdSeconds()) ?? .default
     }
 
     func reportOpening() {

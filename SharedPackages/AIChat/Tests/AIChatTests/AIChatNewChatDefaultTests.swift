@@ -87,7 +87,7 @@ struct AIChatNewChatDefaultResolverTests {
     private func resolve(_ newChatDefault: AIChatNewChatDefault,
                          overLimit: AIChatNewChatDefault = .unavailable,
                          models: [AIChatModel]? = nil,
-                         tier: AIChatUserTier = .free) -> AIChatNewChatSelection? {
+                         tier: AIChatUserTier? = .free) -> AIChatNewChatSelection? {
         AIChatNewChatDefaultResolver.resolve([.init(overLimit, origin: .server), .init(newChatDefault, origin: .server)],
                                              models: models ?? self.models,
                                              userTier: tier)
@@ -129,6 +129,14 @@ struct AIChatNewChatDefaultResolverTests {
         let models = [Self.model("gpt-6-luna", efforts: [])]
         let selection = resolve(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none), models: models)
         #expect(selection == AIChatNewChatSelection(modelId: "gpt-6-luna", reasoningEffort: nil, origin: .server))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Unknown tier skips the local mapping for the first accessible model", .timeLimit(.minutes(1)))
+    func unknownTierSkipsLocalMapping() {
+        let models = [Self.model("llama"), Self.model("gpt-6-luna"), Self.model("gpt-5.6-terra")]
+        let selection = resolve(.unavailable, models: models, tier: nil)
+        #expect(selection == AIChatNewChatSelection(modelId: "llama", reasoningEffort: nil, origin: .fallback))
     }
 
     @available(iOS 16, macOS 13, *)

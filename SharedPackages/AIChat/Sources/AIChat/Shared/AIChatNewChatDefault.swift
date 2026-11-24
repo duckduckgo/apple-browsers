@@ -105,11 +105,11 @@ public enum AIChatNewChatDefaultResolver {
         }
     }
 
-    /// The first candidate the user can use wins, then the local tier default, then the first accessible model.
+    /// The first candidate the user can use wins, then the local tier default (when the tier is known), then the first accessible model.
     /// A candidate that deliberately has no default skips straight to the first accessible model.
     public static func resolve(_ candidates: [Candidate],
                                models: [AIChatModel],
-                               userTier: AIChatUserTier) -> AIChatNewChatSelection? {
+                               userTier: AIChatUserTier?) -> AIChatNewChatSelection? {
         for candidate in candidates {
             switch candidate.newChatDefault {
             case .unavailable:
@@ -122,7 +122,7 @@ public enum AIChatNewChatDefaultResolver {
                 }
             }
         }
-        return localDefaultSelection(for: userTier, in: models) ?? firstAccessibleSelection(in: models)
+        return userTier.flatMap { localDefaultSelection(for: $0, in: models) } ?? firstAccessibleSelection(in: models)
     }
 
     /// What a new chat starts on before `/models` has loaded, from the local tier defaults.

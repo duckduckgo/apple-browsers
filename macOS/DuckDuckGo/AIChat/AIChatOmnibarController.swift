@@ -586,15 +586,17 @@ final class AIChatOmnibarController {
         modelsFetchTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let response = try await modelsService.fetchModels()
-                guard !Task.isCancelled else { return }
+                // Resolved before `/models` so new chats start on the tier's local default while it loads or if it fails.
                 let userTier = try await self.resolveUserTier()
+                guard !Task.isCancelled else { return }
+                self.newChatDefaults?.userTier = userTier
+                let response = try await modelsService.fetchModels()
                 guard !Task.isCancelled else { return }
                 self.hasActiveSubscription = userTier != .free
                 self.userTier = userTier
                 self.attachmentLimits = response.attachmentLimits?.limits(for: userTier)
                 let models = response.models.map { AIChatModel(remoteModel: $0, userTier: userTier) }
-                self.newChatDefaults?.update(models: models, userTier: userTier, serverDefault: response.newChatDefault)
+                self.newChatDefaults?.update(models: models, serverDefault: response.newChatDefault)
                 self.models = models
                 self.clearStaleModelSelectionIfNeeded()
                 self.clearStaleReasoningEffortIfNeeded()

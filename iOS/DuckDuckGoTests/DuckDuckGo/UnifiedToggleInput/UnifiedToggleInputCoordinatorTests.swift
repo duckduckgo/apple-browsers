@@ -1688,6 +1688,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewChatDefaultModel]),
             scheduleInputFocus: { _ in })
+        coordinator.modelStore.subscriptionState = .free
         coordinator.modelStore.models = models
         coordinator.activateForTab("tab-A")
         return coordinator

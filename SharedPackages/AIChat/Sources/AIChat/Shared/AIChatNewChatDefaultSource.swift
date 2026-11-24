@@ -35,7 +35,8 @@ public final class AIChatNewChatDefaultSource {
     }
 
     public var models: [AIChatModel] = []
-    public var userTier: AIChatUserTier = .free
+    /// `nil` until the subscription lookup answers; no local tier default stands in until then.
+    public var userTier: AIChatUserTier?
     /// The default `/models` sends.
     public var serverDefault: AIChatNewChatDefault = .unavailable
     /// Wins over `serverDefault` until the limit resets.
@@ -50,15 +51,15 @@ public final class AIChatNewChatDefaultSource {
     }
 
     /// Takes everything a `/models` response decides at once.
-    public func update(models: [AIChatModel], userTier: AIChatUserTier, serverDefault: AIChatNewChatDefault) {
+    public func update(models: [AIChatModel], serverDefault: AIChatNewChatDefault) {
         self.models = models
-        self.userTier = userTier
         self.serverDefault = serverDefault
     }
 
-    /// Before `/models` loads, the local tier default stands in for the selection.
+    /// Before `/models` loads, the local tier default stands in for the selection, once the tier is known.
     public var selectionOrLocalDefaultBeforeModelsLoad: AIChatNewChatSelection? {
-        models.isEmpty ? AIChatNewChatDefaultResolver.resolveBeforeModelsLoad(userTier: userTier) : selection
+        guard models.isEmpty else { return selection }
+        return userTier.map(AIChatNewChatDefaultResolver.resolveBeforeModelsLoad(userTier:))
     }
 
     /// Follows `defaults` instead of any earlier one. Its first value applies quietly, as the state the input opens with.

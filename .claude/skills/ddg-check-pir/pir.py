@@ -771,7 +771,22 @@ def main(argv=None):
         print(f"Invalid inputs: {type(error).__name__}: {error}", file=sys.stderr)
         return 2
     print(f"PIR {result['status']}" + (f"\n{result['evidence']}/report.md" if "evidence" in result else ""))
+    refresh_batch_report(args, result)
     return {"pass": 0, "valid": 0, "fail": 1, "inconclusive": 2}[result["status"]]
+
+
+def refresh_batch_report(args, result):
+    """A scenario attempt inside a batch's evidence/ folder rewrites that batch's report, so it can be reloaded."""
+    if not args.scenario or "evidence" not in result:
+        return
+    evidence = Path(result["evidence"]).parent
+    if evidence.name != "evidence":
+        return
+    try:
+        import report
+        print(f"PIR batch report: {report.refresh(evidence.parent)}")
+    except Exception as error:  # The attempt's verdict stands even when the report can't be written.
+        print(f"PIR batch report not refreshed: {type(error).__name__}: {error}", file=sys.stderr)
 
 
 if __name__ == "__main__":

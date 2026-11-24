@@ -59,13 +59,16 @@ These steps need judgment and aren't in the mapping:
 
 ## Batch report
 
-After the runs and their reviews, write the batch's HTML report next to its evidence:
+Each `run` or `scheduler` attempt with `--scenario` and `--evidence-dir ~/pir-runs/<batch>/evidence` rewrites
+`~/pir-runs/<batch>/report.html` when it finishes, so the page can be reloaded during the batch. After the reviews, write
+it once more so it picks them up:
 
 ```sh
 python3 .claude/skills/ddg-check-pir/report.py ~/pir-runs/<batch>
 ```
 
 Compare against an earlier batch only when the user names one: add `--baseline <that batch's folder>`. Don't pick a
-baseline on your own. Rows are matched by scenario, broker and platform, and a run counts as needing attention when it
+baseline on your own. The batch remembers it, so later refreshes keep the comparison until `report.py` runs without
+`--baseline`. Rows are matched by scenario, broker and platform, and a run counts as needing attention when it
 is worse than the baseline's run, not merely different. The report links snapshots that show real people's data, so
 keep it local.

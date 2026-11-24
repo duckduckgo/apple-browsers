@@ -494,7 +494,8 @@ class Runtime:
         for executable in self._running_executables():
             if executable.name == browser.name:
                 bundle = next((parent for parent in executable.parents if parent.suffix == ".app"), None)
-                if bundle and _info(bundle).get("CFBundleIdentifier") == BROWSER_BUNDLE:
+                # An iOS simulator app has the same executable name but a flat bundle.
+                if bundle and (bundle / "Contents/Info.plist").is_file() and _info(bundle).get("CFBundleIdentifier") == BROWSER_BUNDLE:
                     raise RuntimeError("A DEBUG browser is already running; close it before seeding")
         environment["PIR_SCHEDULER_RECEIPT"] = str(self._receipt)
         self._secure_launch_logs()

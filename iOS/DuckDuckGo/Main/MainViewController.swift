@@ -213,7 +213,11 @@ class MainViewController: UIViewController {
                                                            daxGreetingProvider: daxGreetingService,
                                                            daxGreetingChanges: (daxGreetingActivity?.changes ?? Empty().eraseToAnyPublisher())
                                                                .merge(with: daxGreetingService.debugChanges)
-                                                               .eraseToAnyPublisher())
+                                                               .eraseToAnyPublisher(),
+                                                           returnSettings: NewTabPageReturnSettings(afterInactivityOptionAdapter: afterInactivityOptionAdapter,
+                                                                                                    lastTabShortcutAdapter: lastTabShortcutAdapter,
+                                                                                                    idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                                                                                    keyValueStore: keyValueStore))
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?

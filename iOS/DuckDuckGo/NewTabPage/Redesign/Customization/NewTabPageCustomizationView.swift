@@ -43,6 +43,7 @@ struct NewTabPageCustomizationView: View {
             List {
                 sectionsSection
                 keyboardSection
+                afterInactivitySection
                 themeSection
                 allSettingsSection
             }
@@ -86,6 +87,23 @@ struct NewTabPageCustomizationView: View {
             NewTabPageCustomizationRow(title: UserText.sectionTitleFavorites,
                                        image: DesignSystemImages.Glyphs.Size24.bookmarkFavorite,
                                        control: .toggle($model.isFavoritesSectionVisible))
+            NewTabPageCustomizationRow(title: UserText.settingsReturnToShortcutLabel,
+                                       image: DesignSystemImages.Glyphs.Size16.returnTo,
+                                       control: .toggle($model.isReturnToLastTabEnabled))
+        }
+    }
+
+    private var afterInactivitySection: some View {
+        Section(footer: Text(model.afterInactivityFooterText)) {
+            SettingsPickerCellView(label: UserText.settingsAfterInactivityLabel,
+                                   options: AfterInactivityOption.allCases,
+                                   selectedOption: $model.afterInactivityOption)
+
+            if model.afterInactivityOption == .newTab {
+                SettingsPickerCellView(label: UserText.settingsAfterInactivityIntervalLabel,
+                                       options: AfterInactivityIdleInterval.allCases,
+                                       selectedOption: $model.afterInactivityIdleInterval)
+            }
         }
     }
 
@@ -195,6 +213,7 @@ private struct NewTabPageCustomizationRow: View {
             if let image {
                 Image(uiImage: image)
                     .foregroundColor(Color(designSystemColor: .icons))
+                    .frame(width: 24)
                     .alignmentGuide(.firstTextBaseline, computeValue: iconBaseline)
                     .accessibilityHidden(true)
             }
@@ -209,8 +228,4 @@ private struct NewTabPageCustomizationRow: View {
         // Center each glyph on the first line's capital letters as text size changes.
         dimensions[VerticalAlignment.center] + UIFont.daxBodyRegular().capHeight / 2
     }
-}
-
-#Preview {
-    NewTabPageCustomizationView(model: NewTabPageCustomizationModel(), onClose: {})
 }

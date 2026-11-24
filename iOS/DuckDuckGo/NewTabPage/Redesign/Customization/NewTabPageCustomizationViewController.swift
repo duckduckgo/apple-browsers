@@ -26,7 +26,7 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
 
     private let model: NewTabPageCustomizationModel
 
-    init(model: NewTabPageCustomizationModel = NewTabPageCustomizationModel()) {
+    init(model: NewTabPageCustomizationModel) {
         self.model = model
 
         var onClose: (() -> Void)?

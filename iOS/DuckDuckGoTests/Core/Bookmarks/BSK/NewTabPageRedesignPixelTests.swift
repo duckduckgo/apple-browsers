@@ -19,7 +19,9 @@
 
 import Bookmarks
 import Combine
+import Core
 import Foundation
+@_spi(Testing) import Persistence
 import Testing
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
@@ -34,7 +36,7 @@ struct NewTabPageRedesignPixelTests {
     @Test("Favorites toggle reports the new value", .timeLimit(.minutes(1)), arguments: [false, true])
     func favoritesToggleReportsNewValue(enabled: Bool) {
         let persistor = MockNewTabPageCustomizationPersistor(isFavoritesSectionVisible: !enabled)
-        let model = NewTabPageCustomizationModel(persistor: persistor, pixelFiring: pixelFiring)
+        let model = NewTabPageCustomizationModel(persistor: persistor, returnSettings: NewTabPageReturnSettings.makeForTests(), pixelFiring: pixelFiring)
 
         model.isFavoritesSectionVisible = enabled
 
@@ -53,6 +55,7 @@ struct NewTabPageRedesignPixelTests {
         keyboardSettings.onNewTab = true
         let model = NewTabPageCustomizationModel(persistor: MockNewTabPageCustomizationPersistor(),
                                                  keyboardSettings: keyboardSettings,
+                                                 returnSettings: NewTabPageReturnSettings.makeForTests(),
                                                  pixelFiring: pixelFiring)
 
         model.isKeyboardShownOnNewTab = false
@@ -61,6 +64,64 @@ struct NewTabPageRedesignPixelTests {
             ExpectedFireCall(pixel: NewTabPageCustomizationPixel.keyboardToggled(enabled: false), frequency: .dailyAndCount)
         ])
         #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["enabled": "false"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Return to last tab toggle persists and reports the new value", .timeLimit(.minutes(1)), arguments: [false, true])
+    func returnToLastTabToggleStoresAndReportsNewValue(enabled: Bool) throws {
+        let keyValueStore = MockKeyValueFileStore()
+        let returnSettings = NewTabPageReturnSettings.makeForTests(keyValueStore: keyValueStore)
+        returnSettings.lastTabShortcutAdapter.setEnabled(!enabled)
+        let model = NewTabPageCustomizationModel(persistor: MockNewTabPageCustomizationPersistor(),
+                                                 returnSettings: returnSettings,
+                                                 pixelFiring: pixelFiring)
+
+        model.isReturnToLastTabEnabled = enabled
+
+        let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
+        #expect(try storage.lastTabShortcutEnabled == enabled)
+        let expectedPixel: Pixel.Event = enabled ? .ntpAfterIdleLastTabShortcutSettingEnabled : .ntpAfterIdleLastTabShortcutSettingDisabled
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == [expectedPixel.name])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("After inactivity option persists and reports the new value", .timeLimit(.minutes(1)))
+    func afterInactivityOptionStoresAndReportsNewValue() throws {
+        let keyValueStore = MockKeyValueFileStore()
+        let model = NewTabPageCustomizationModel(persistor: MockNewTabPageCustomizationPersistor(),
+                                                 returnSettings: .makeForTests(keyValueStore: keyValueStore),
+                                                 pixelFiring: pixelFiring)
+
+        model.afterInactivityOption = .lastUsedTab
+
+        let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
+        #expect(try storage.afterInactivityOption == AfterInactivityOption.lastUsedTab.rawValue)
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == [Pixel.Event.ntpAfterIdleSettingChangedToLastUsedTab.name])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Idle interval persists and reports the new value", .timeLimit(.minutes(1)))
+    func idleIntervalStoresAndReportsNewValue() throws {
+        let keyValueStore = MockKeyValueFileStore()
+        let model = NewTabPageCustomizationModel(persistor: MockNewTabPageCustomizationPersistor(),
+                                                 returnSettings: .makeForTests(keyValueStore: keyValueStore),
+                                                 pixelFiring: pixelFiring)
+
+        model.afterInactivityIdleInterval = .fiveMinutes
+
+        let storage: any ThrowingKeyedStoring<AfterInactivitySettingKeys> = keyValueStore.throwingKeyedStoring()
+        #expect(try storage.idleReturnIntervalSeconds == 300)
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == [Pixel.Event.ntpAfterIdleSettingIdleIntervalChanged.name])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An unrecognised idle threshold shows the default interval", .timeLimit(.minutes(1)))
+    func unrecognisedIdleThresholdShowsDefaultInterval() {
+        let model = NewTabPageCustomizationModel(persistor: MockNewTabPageCustomizationPersistor(),
+                                                 returnSettings: .makeForTests(idleThresholdSeconds: 123),
+                                                 pixelFiring: pixelFiring)
+
+        #expect(model.afterInactivityIdleInterval == .default)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -110,6 +171,20 @@ struct NewTabPageRedesignPixelTests {
     }
 }
 
+extension NewTabPageReturnSettings {
+
+    static func makeForTests(idleThresholdSeconds: Int = AfterInactivityIdleInterval.default.seconds,
+                             keyValueStore: MockKeyValueFileStore = MockKeyValueFileStore()) -> NewTabPageReturnSettings {
+        let eligibilityManager = MockIdleReturnEligibilityManager()
+        eligibilityManager.idleThresholdSecondsResult = idleThresholdSeconds
+        return NewTabPageReturnSettings(
+            afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .newTab, keyValueStore: keyValueStore),
+            lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: keyValueStore),
+            idleReturnEligibilityManager: eligibilityManager,
+            keyValueStore: keyValueStore)
+    }
+}
+
 @Suite("New Tab Page theme")
 @MainActor
 struct NewTabPageThemeTests {
@@ -148,7 +223,7 @@ struct NewTabPageThemeTests {
     @Test("The model starts from the stored theme and writes changes through", .timeLimit(.minutes(1)))
     func modelWritesChangesThrough() {
         let persistor = ReferenceNewTabPageCustomizationPersistor(theme: .plain)
-        let model = NewTabPageCustomizationModel(persistor: persistor, pixelFiring: nil)
+        let model = NewTabPageCustomizationModel(persistor: persistor, returnSettings: NewTabPageReturnSettings.makeForTests(), pixelFiring: nil)
         #expect(model.theme == .plain)
 
         model.theme = .blue

@@ -42,8 +42,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
-    /// POC: local-only toggle for the onboarding step that adds popular sites to favorites
-    case onboardingTopSitesPicker
+    /// Onboarding step that adds popular sites to favorites, as an A/B experiment for users with fewer than 5 favorites
+    /// https://app.asana.com/1/137249556945/task/1219830175419009
+    case onboardingFavoritesStepExperiment
 
     /// Subscription upsell screen at the end of contextual onboarding
     /// https://app.asana.com/1/137249556945/task/1210565180535541
@@ -749,6 +750,12 @@ extension FeatureFlag: FeatureFlagDescribing {
         case treatment
     }
 
+    /// Cohorts for the onboarding favorites step experiment: only treatment sees the step
+    public enum OnboardingFavoritesStepCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     /// Cohorts for the onboarding subscription upsell experiment
     public enum OnboardingSubscriptionUpsellCohort: String, FeatureFlagCohortDescribing {
         case control
@@ -793,8 +800,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .onboardingSearchOrChat:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingSearchOrChat))
-        case .onboardingTopSitesPicker:
-            Config(source: .disabled)
+        case .onboardingFavoritesStepExperiment:
+            Config(
+                defaultValue: .disabled,
+                source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingFavoritesStepExperiment),
+                cohortType: OnboardingFavoritesStepCohort.self
+            )
         case .onboardingSubscriptionUpsell:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),

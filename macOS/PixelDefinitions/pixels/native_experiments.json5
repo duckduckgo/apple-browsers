@@ -61,6 +61,10 @@
                 }
             }
         },
+        "onboardingFavoritesStepExperiment": {
+            "cohorts": ["control", "treatment"],
+            "metrics": {}
+        },
         "onboardingNonBlockingV2": {
             "cohorts": ["control", "treatment"],
             "metrics": {

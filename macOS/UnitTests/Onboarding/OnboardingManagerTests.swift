@@ -868,7 +868,7 @@ class OnboardingManagerTests: XCTestCase {
     // MARK: - Top sites picker
 
     @MainActor
-    func testTopSitesPickerAnswer_WhenFewerThanFiveFavorites_ShowsStepWithExistingFavorites() {
+    func testTopSitesPickerAnswer_WhenFewerThanFiveFavoritesAndTreatment_ShowsStepWithExistingFavorites() {
         let manager = makeTopSitesPickerManager(favoriteURLs: ["https://www.youtube.com/", "https://mail.google.com/"])
 
         let answer = manager.topSitesPickerAnswer()
@@ -922,7 +922,11 @@ private extension OnboardingManagerTests {
 
     @MainActor
     func makeTopSitesPickerManager(favoriteURLs: [String]) -> OnboardingActionsManager {
-        let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.onboardingTopSitesPicker.rawValue: true])
+        let featureFlagger = MockFeatureFlagger(
+            featuresStub: [FeatureFlag.onboardingFavoritesStepExperiment.rawValue: true],
+            resolveCohortStub: FeatureFlag.OnboardingFavoritesStepCohort.treatment,
+            isAlreadyAssigned: false
+        )
         let favorites = favoriteURLs.map { Bookmark(id: UUID().uuidString, url: $0, title: $0, isFavorite: true) }
         let bookmarkManager = MockBookmarkManager(list: BookmarkList(entities: favorites, favorites: favorites))
         return OnboardingActionsManager(

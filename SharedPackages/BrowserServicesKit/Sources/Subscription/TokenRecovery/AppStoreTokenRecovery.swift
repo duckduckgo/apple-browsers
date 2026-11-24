@@ -21,6 +21,8 @@ import Foundation
 /// Recovers the current token container by restoring the subscription from the last App Store purchase.
 public actor AppStoreTokenRecovery: TokenRecoveryStrategy {
 
+    public nonisolated let method: TokenRecoveryMethod = .appStore
+
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
     private let restoreFlow: any AppStoreRestoreFlow
     private var restoreTask: Task<Void, Error>?

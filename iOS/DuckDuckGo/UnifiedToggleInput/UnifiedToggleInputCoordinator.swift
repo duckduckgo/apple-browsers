@@ -514,7 +514,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 isToggleVisible: self.isToggleVisible,
                 pageType: self.resolvedPromptPageType,
                 duckAIEntrySource: self.duckAIEntrySourceProvider?(),
-                addressBarPosition: self.addressBarPositionProvider?()
+                addressBarPosition: self.addressBarPositionProvider?(),
+                usesSimplifiedPromptBox: self.simplifiedPromptBoxFeature.isAvailable
             )
         })
         wideEventReporter = UTIWideEventReporter(

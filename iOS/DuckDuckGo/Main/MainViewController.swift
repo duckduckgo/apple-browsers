@@ -5733,7 +5733,8 @@ class MainViewController: UIViewController {
             isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
             usageContext: usageContextProvider.currentContext,
             addressBarPosition: appSettings.iPhoneAddressBarPosition,
-            resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat)
+            resubmitOfSearch: unifiedToggleInputCoordinator?.resubmitDelay(of: prompt, mode: .aiChat),
+            simplifiedPromptBox: SimplifiedPromptBoxFeature(featureFlagger: featureFlagger).isAvailable
         )
         featureDiscovery.markDuckAIPromptSubmitted()
     }

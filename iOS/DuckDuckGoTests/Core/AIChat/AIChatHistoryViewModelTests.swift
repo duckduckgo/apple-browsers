@@ -144,14 +144,17 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.didRequestChatProtection)
     }
 
-    func testOpenDuckAISettings_notifiesDelegate() {
-        let sut = makeSUT(chats: [])
+    func testOpenDuckAISettings_notifiesDelegateAndRecordsWhereItWasOpened() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [], instrumentation: instrumentation)
         let delegate = MockDelegate()
         sut.delegate = delegate
 
-        sut.openDuckAISettings()
+        sut.openDuckAISettings(source: .headerButton)
+        sut.openDuckAISettings(source: .overflowMenu)
 
         XCTAssertTrue(delegate.didRequestDuckAISettings)
+        XCTAssertEqual(instrumentation.duckAISettingsSources, [.headerButton, .overflowMenu])
     }
 
     func testShowsDuckAISettingsButton_followsSimplifiedPromptBoxFlag() {
@@ -898,6 +901,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var chatProtectionTappedCount = 0
         private(set) var editModeEnteredCount = 0
         private(set) var newChatTappedCount = 0
+        private(set) var duckAISettingsSources: [AIChatHistorySettingsSource] = []
         private(set) var loadFailedErrors: [Error] = []
         private(set) var pinToggleFailedErrors: [Error] = []
         private(set) var downloadFailedErrors: [Error] = []
@@ -918,6 +922,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func chatProtectionTapped() { chatProtectionTappedCount += 1 }
         func editModeEntered() { editModeEnteredCount += 1 }
         func newChatTapped() { newChatTappedCount += 1 }
+        func duckAISettingsTapped(source: AIChatHistorySettingsSource) { duckAISettingsSources.append(source) }
         func loadFailed(error: Error) { loadFailedErrors.append(error) }
         func pinToggleFailed(error: Error) { pinToggleFailedErrors.append(error) }
         func downloadFailed(error: Error) { downloadFailedErrors.append(error) }

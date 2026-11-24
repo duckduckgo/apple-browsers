@@ -1878,16 +1878,19 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     /// Opens the chat in a new tab, so the current one stays reachable.
     func aiChatTabChatHeaderDidTapNewChat() {
+        fireHeaderPlusMenuPixel(.newChat)
         guard let tab = currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
         openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {
+        fireHeaderPlusMenuPixel(.newVoiceChat)
         startDuckAIVoiceMode(from: .duckAI, entrySource: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewImage() {
+        fireHeaderPlusMenuPixel(.newImage)
         PixelKit.fire(Pixel.Event.aiChatNewImageTapped, frequency: .dailyAndCount)
         fireAIChatEntryPointPixel(source: .duckAINewChat, opensNewTab: false, hasPrompt: false, chatState: .new)
         reportDuckAISessionCurrentTab()
@@ -1913,12 +1916,14 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewTab() {
+        fireHeaderPlusMenuPixel(.newTab)
         recordUserOpenedTab()
         newTab(reuseExisting: false, allowingKeyboard: true)
     }
 
     /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.
     func aiChatTabChatHeaderDidTapNewSearch() {
+        fireHeaderPlusMenuPixel(.newSearch)
         recordUserOpenedTab()
         recordDuckAISessionPendingExit(.searchStarted)
         newTabTransitions.open {
@@ -1928,6 +1933,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewFireTab() {
+        fireHeaderPlusMenuPixel(.newFireTab)
         recordUserOpenedTab()
         recordDuckAISessionPendingExit(.fireTabOpened)
         newTabTransitions.open {
@@ -1936,6 +1942,12 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         }
     }
 
+
+    private func fireHeaderPlusMenuPixel(_ item: AIChatHeaderPlusMenuPixel.Item) {
+        let simplifiedPromptBox = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger).isAvailable
+        pixelFiring?.fire(AIChatHeaderPlusMenuPixel.itemSelected(item, simplifiedPromptBox: simplifiedPromptBox),
+                          frequency: .dailyAndCount)
+    }
 
     func aiChatTabChatHeaderPlusMenuWillOpen() {
         duckAIInputFocus.setAside()

@@ -237,7 +237,8 @@ final class AIChatHistoryViewModel: ObservableObject {
         delegate?.viewModelDidRequestChatProtection()
     }
 
-    func openDuckAISettings() {
+    func openDuckAISettings(source: AIChatHistorySettingsSource) {
+        instrumentation.duckAISettingsTapped(source: source)
         delegate?.viewModelDidRequestDuckAISettings()
     }
 

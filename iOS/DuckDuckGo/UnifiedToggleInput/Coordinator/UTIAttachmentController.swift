@@ -126,6 +126,9 @@ final class UTIAttachmentController {
         presenter.pixelSurfaceProvider = { [weak self] in
             self?.environment.pixelSurface() ?? .addressBar
         }
+        presenter.simplifiedPromptBoxProvider = { [weak self] in
+            self?.environment.usesSimplifiedAttachMenu() ?? false
+        }
         presenter.onExpandIfNeeded = { [weak self] in
             self?.callbacks.onExpandIfNeeded()
         }

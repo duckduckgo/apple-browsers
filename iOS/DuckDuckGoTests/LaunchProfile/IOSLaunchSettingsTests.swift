@@ -190,7 +190,8 @@ final class IOSLaunchSettingsTests {
     @Test(.timeLimit(.minutes(1)))
     func duckAISettingsAreReadBackByAIChatSettings() throws {
         let outcome = try apply(#"""
-        {"duckAI": {"enabled": true, "addressBar": false, "searchInput": true, "tabSwitcher": false, "defaultOmnibarMode": "duckAI"}}
+        {"duckAI": {"enabled": true, "addressBar": false, "searchInput": true, "tabSwitcher": false, "defaultOmnibarMode": "duckAI",
+                   "pageSummariesModel": "appleIntelligence"}}
         """#)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: PrivacyConfigurationManagerMock(),
@@ -204,6 +205,7 @@ final class IOSLaunchSettingsTests {
         #expect(aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
         #expect(!aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled)
         #expect(aiChatSettings.defaultOmnibarMode == .duckAI)
+        #expect(aiChatSettings.pageSummariesModel == .appleIntelligence)
     }
 
     @available(iOS 16, macOS 13, *)

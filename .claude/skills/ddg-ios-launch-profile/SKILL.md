@@ -49,6 +49,7 @@ Keys marked * need `"internalUser": true` in the same profile (flags and experim
 | `duckAI.enabled` | Bool | Saved | Duck.ai on or off everywhere |
 | `duckAI.addressBar`, `.searchInput`, `.browsingMenu`, `.voiceSearch`, `.tabSwitcher` | Bool | Saved | Duck.ai entry points; `searchInput` is the search and Duck.ai toggle in the address bar |
 | `duckAI.defaultOmnibarMode` | `search`, `duckAI`, `lastUsed` | Saved | Mode the address bar starts in (needs the `aiChatOmnibarDefaultPosition` flag) |
+| `duckAI.pageSummariesModel` | `duckAI`, `appleIntelligence` | Saved | Model that summarizes pages |
 | `debug.onboarding.userType` | `notSet`, `newUser`, `returningUser` | Saved | Onboarding treats the install as new or returning |
 | `debug.onboarding.flowType` | `default`, `duckAI` | Saved | Forces an onboarding flow |
 | `debug.duckAI.customURL` | http(s) URL | Saved | Loads Duck.ai from this URL |

@@ -336,8 +336,7 @@ extension AIChatSettings: AIChatPageSummariesModelStoring {
             (keyValueStore.object(forKey: .pageSummariesModelKey) as? String).flatMap(AIChatPageSummariesModel.init(rawValue:)) ?? .duckAI
         }
         set {
-            keyValueStore.set(newValue.rawValue, forKey: .pageSummariesModelKey)
-            triggerSettingsChangedNotification()
+            userSettings.setPageSummariesModel(newValue)
         }
     }
 
@@ -383,6 +382,11 @@ struct AIChatUserSettingsStore {
         pixelFiring()?.fire(Pixel.Event.aiChatSettingsDefaultTogglePositionChanged,
                             frequency: .dailyAndCount,
                             options: .parameters(["value": mode.rawValue]))
+    }
+
+    func setPageSummariesModel(_ model: AIChatPageSummariesModel) {
+        keyValueStore.set(model.rawValue, forKey: .pageSummariesModelKey)
+        notificationCenter.post(name: .aiChatSettingsChanged, object: nil)
     }
 }
 

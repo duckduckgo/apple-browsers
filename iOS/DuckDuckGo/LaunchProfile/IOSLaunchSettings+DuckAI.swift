@@ -39,7 +39,7 @@ extension IOSLaunchSettings {
             LaunchSetting(toggle.key, summary: toggle.summary) { (isOn: Bool) in
                 store.set(toggle.toggle, isOn: isOn)
             }
-        } + [defaultOmnibarMode(store)]
+        } + [defaultOmnibarMode(store), pageSummariesModel(store)]
     }
 
     static func defaultOmnibarMode(_ store: AIChatUserSettingsStore) -> LaunchSetting {
@@ -47,6 +47,13 @@ extension IOSLaunchSettings {
                 summary: "Mode the address bar starts in. Read only while the aiChatOmnibarDefaultPosition flag is on.",
                 options: DefaultOmnibarMode.allCases,
                 name: \.rawValue) { store.setDefaultOmnibarMode($0) }
+    }
+
+    static func pageSummariesModel(_ store: AIChatUserSettingsStore) -> LaunchSetting {
+        .choice("duckAI.pageSummariesModel",
+                summary: "Model that summarizes pages.",
+                options: AIChatPageSummariesModel.allCases,
+                name: { String(describing: $0) }) { store.setPageSummariesModel($0) }
     }
 }
 

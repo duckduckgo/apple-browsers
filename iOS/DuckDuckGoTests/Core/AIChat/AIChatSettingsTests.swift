@@ -735,12 +735,14 @@ final class AIChatUserSettingsStoreTests: XCTestCase {
         settings.enableAIChatAddressBarUserSettings(enable: false)
         settings.enableAutomaticContextAttachment(enable: true)
         settings.setDefaultOmnibarMode(.duckAI)
+        settings.pageSummariesModel = .appleIntelligence
 
         let reloaded = makeSettings(keyValueStore: keyValueStore)
         XCTAssertTrue(reloaded.isAIChatEnabled)
         XCTAssertFalse(reloaded.isAIChatAddressBarUserSettingsEnabled)
         XCTAssertTrue(reloaded.isAutomaticContextAttachmentEnabled)
         XCTAssertEqual(reloaded.defaultOmnibarMode, .duckAI)
+        XCTAssertEqual(reloaded.pageSummariesModel, .appleIntelligence)
     }
 
     private func makeSettings(keyValueStore: KeyValueStoring) -> AIChatSettings {

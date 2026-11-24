@@ -72,6 +72,7 @@ final class MainCoordinator {
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let promoCoordinationService: PromoCoordinationService
+    private let declaredAgePrompt: DeclaredAgePrompt
     let promptExposureReporter: PromptExposureReporting
     private let homePageConfiguration: HomePageConfiguration
     private let launchSourceManager: LaunchSourceManaging
@@ -164,6 +165,11 @@ final class MainCoordinator {
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.promoCoordinationService = promoCoordinationService
+        self.declaredAgePrompt = DeclaredAgePrompt(
+            requester: DeclaredAgeRequester(service: DefaultDeclaredAgeService(), storage: keyValueStore.throwingKeyedStoring()),
+            featureFlagger: featureFlagger,
+            onboardingStatusProvider: daxDialogs
+        )
         self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
         self.eventHub = eventHub
@@ -697,6 +703,12 @@ final class MainCoordinator {
 
     func presentDataBrokerProtectionDashboard(freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         controller.presentDataBrokerProtectionDashboard(freeScanEntryPoint: freeScanEntryPoint)
+    }
+
+    func presentDeclaredAgePromptIfNeeded() {
+        Task {
+            await declaredAgePrompt.presentIfNeeded(in: controller)
+        }
     }
 
     func presentModalPromptIfNeeded() {

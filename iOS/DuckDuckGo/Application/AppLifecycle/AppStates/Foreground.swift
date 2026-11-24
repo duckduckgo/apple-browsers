@@ -155,6 +155,8 @@ struct Foreground: ForegroundHandling {
                 // A launch action may replace a restored NTP, so prepare only after that action has settled.
                 appDependencies.mainCoordinator.prepareHomePageMessagesForForegroundIfNeeded()
 
+                appDependencies.mainCoordinator.presentDeclaredAgePromptIfNeeded()
+
                 // Present any eligible modal prompt
                 appDependencies.mainCoordinator.presentModalPromptIfNeeded()
             }

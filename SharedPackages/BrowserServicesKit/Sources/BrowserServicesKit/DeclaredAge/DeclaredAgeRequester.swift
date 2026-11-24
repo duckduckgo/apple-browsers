@@ -46,7 +46,7 @@ public final class DeclaredAgeRequester {
         self.now = now
     }
 
-    public func isRequestNeeded(isReinstall: Bool) async -> Bool {
+    public func isRequestNeeded(isReinstall: Bool = false) async -> Bool {
         guard isRequestDue(isReinstall: isReinstall) else {
             return false
         }
@@ -54,7 +54,7 @@ public final class DeclaredAgeRequester {
         return (try? await service.isRequestRequired()) ?? false
     }
 
-    public func requestDeclaredAge(isReinstall: Bool, in anchor: DeclaredAgeAnchor) async -> Bool {
+    public func requestDeclaredAge(isReinstall: Bool = false, in anchor: DeclaredAgeAnchor) async -> Bool {
         guard await request(in: anchor) else {
             // No marker is stored, so the next launch retries.
             return false
@@ -65,7 +65,7 @@ public final class DeclaredAgeRequester {
     }
 
     /// `isReinstall` stays true on every launch after a reinstall, so it only counts until a request succeeds.
-    public func isRequestDue(isReinstall: Bool) -> Bool {
+    public func isRequestDue(isReinstall: Bool = false) -> Bool {
         if isReinstall && (try? storage.reinstallWasHandled) != true {
             return true
         }

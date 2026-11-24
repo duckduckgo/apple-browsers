@@ -32,7 +32,6 @@ enum AIChatHistorySource: String {
 /// Where on the chat history screen the user opened Duck.ai Settings. Sent as the `source` parameter.
 enum AIChatHistorySettingsSource: String {
     case headerButton = "header_button"
-    case overflowMenu = "overflow_menu"
 }
 
 /// Chat history pixels added after `Pixel.Event` closed to new cases.

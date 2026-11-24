@@ -662,6 +662,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219175598274067
     case syncImprovedPairingFlow
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220815578039512
+    case sendSyncSetupWideEvent
+
     /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
     case searchTokenExperimentV4
@@ -1208,6 +1211,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList))
         case .syncImprovedPairingFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow))
+        case .sendSyncSetupWideEvent:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncSubfeature.sendSyncSetupWideEvent))
         case .nativeAIPromptEditing:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .pageSignals:

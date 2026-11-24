@@ -683,7 +683,7 @@ public enum FeatureFlag: String {
     case aiChatLimitExtensionPromo
 
     /// New Duck.ai chats start on the default model and effort instead of the last one picked.
-    /// https://app.asana.com/1/137249556945/task/1220520342210072
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220871979577378
     case aiChatNewChatDefaultModel
 
     /// Single-tab burn removes the memory cache in the background instead of waiting on every web view.

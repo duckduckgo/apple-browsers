@@ -107,6 +107,23 @@
                 "key": "has_pasted_text",
                 "type": "boolean",
                 "description": "Whether the prompt included pasted text (pasted-text chips) when submitted"
+            },
+            {
+                "key": "model_source",
+                "description": "Where the model of a new chat's first prompt came from: the server default, a pick before sending, or a fallback when the server sent no usable default. onboarding is reserved for parity with iOS. Sent only while new chats start on the default model, and only when a model is sent.",
+                "type": "string",
+                "enum": ["default", "picked", "onboarding", "fallback"]
+            },
+            {
+                "key": "model_id",
+                "description": "Id of the model sent with the prompt. Sent while new chats start on the default model, whenever a model is sent; image generation sends it without model_source.",
+                "type": "string"
+            },
+            {
+                "key": "reasoning_effort",
+                "description": "Reasoning effort sent with the prompt, as its wire value. Absent when no effort is sent (e.g. image generation, or the model has no reasoning picker). Sent while new chats start on the default model.",
+                "type": "string",
+                "enum": ["none", "minimal", "low", "medium", "high"]
             }
         ]
     },

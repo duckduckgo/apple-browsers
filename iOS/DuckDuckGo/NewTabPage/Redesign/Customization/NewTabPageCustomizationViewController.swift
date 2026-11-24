@@ -88,8 +88,9 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
             .map(\.frame.maxY)
             .max()
         guard let lastRowBottom else { return }
-        let listTop = collectionView.convert(CGPoint.zero, to: view).y
-        let height = ceil(listTop + lastRowBottom + Metrics.bottomPadding)
+        // The bounds origin is the scroll offset, so converting it yields the list's frame top, unaffected by scrolling.
+        let listTop = collectionView.convert(collectionView.bounds.origin, to: view).y
+        let height = ceil(listTop + collectionView.adjustedContentInset.top + lastRowBottom + Metrics.bottomPadding)
         guard abs(height - (fittingContentHeight ?? 0)) > 0.5 else { return }
         fittingContentHeight = height
         if #available(iOS 16, *) {

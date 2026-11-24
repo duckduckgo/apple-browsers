@@ -29,7 +29,11 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public init() {}
 
-    public static var environment: SubscriptionEnvironment?
+    private static let storedEnvironment = Locked<SubscriptionEnvironment?>(wrappedValue: nil)
+    public static var environment: SubscriptionEnvironment? {
+        get { storedEnvironment.wrappedValue }
+        set { storedEnvironment.wrappedValue = newValue }
+    }
     public static func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment? {
         return environment
     }

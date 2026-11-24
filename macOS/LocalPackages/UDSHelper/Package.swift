@@ -21,6 +21,8 @@ let package = Package(
             name: "UDSHelper"),
         .testTarget(
             name: "UDSHelperTests",
-            dependencies: ["UDSHelper"]),
+            dependencies: ["UDSHelper"],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
     ]
 )

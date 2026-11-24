@@ -142,8 +142,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173932
     case adBlockingExtensionEnabledByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688032?focus=true
-    case sponsorBlock
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688032
+    case segmentSkip
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
@@ -386,9 +386,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
-    case crashCollectionLimitCallStackTreeDepth
-
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
 
@@ -401,6 +398,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// Hands a PDF tab to Duck.ai as page context — the document's bytes instead of page markdown.
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1217621296618559
     case aiChatPdfPageContext
+
+    /// "Ask about page" in the context menu of links on DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case aiChatAskAboutSerpPage
+
+    /// "Ask about page" in the context menu of links on any page other than DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case aiChatAskAboutLinkedPage
 
     /// Attaches page context to the sidebar by default, replacing the auto-send setting. A manual
     /// remove lasts across navigation until the user attaches again or reopens the sidebar.
@@ -828,8 +833,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled), category: .adBlocking)
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault), category: .adBlocking)
-        case .sponsorBlock:
-            Config(defaultValue: .disabled, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled), category: .adBlocking)
+        case .segmentSkip:
+            Config(defaultValue: .disabled, source: .remoteReleasable(SegmentSkipPrivacySubfeature.mvpEnabled), category: .adBlocking)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(ForceDarkModeOnWebsitesSubfeature.featureRollout), category: .webExtensions)
         case .syncSeamlessAccountSwitching:
@@ -972,8 +977,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.popupMutationObserver), category: .popupBlocking)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
-        case .crashCollectionLimitCallStackTreeDepth:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .supportsSyncChatsDeletion:
@@ -982,6 +985,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts), category: .duckAI)
         case .aiChatPdfPageContext:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
+        case .aiChatAskAboutSerpPage:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.askAboutSerpPage), category: .duckAI)
+        case .aiChatAskAboutLinkedPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.askAboutLinkedPage), category: .duckAI)
         case .aiChatPageContextAutoAttach:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pageContextAutoAttach), category: .duckAI)
         case .aiChatOmnibarImageGeneration:

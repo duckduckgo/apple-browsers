@@ -48,7 +48,7 @@ protocol DependencyProvider {
     var isSitePermissionsEnabled: Bool { get }
     var isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch: Bool { get }
     var findInPageImplementation: FindInPageImplementation { get }
-    var sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider { get }
+    var segmentSkipSegmentsProvider: SegmentSkipSegmentsProvider { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var storageCache: StorageCache { get }
@@ -93,7 +93,7 @@ final class AppDependencyProvider: DependencyProvider {
     let isDuckAIAndInputLiquidGlassFeatureEnabledForCurrentLaunch: Bool
     let findInPageImplementation: FindInPageImplementation
     /// One instance for the app, so every tab and Duck Player share the segments cache.
-    let sponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider()
+    let segmentSkipSegmentsProvider = SegmentSkipSegmentsProvider()
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 

@@ -180,7 +180,8 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         settings["publisherUri"] = publisherURL
         let configuration = MockPrivacyConfiguration()
         configuration.subfeatureSettings = String(data: try JSONEncoder().encode(settings), encoding: .utf8)
-        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: configuration))
+        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: configuration),
+                                            isExtensionsEnabled: { true })
         return try XCTUnwrap(catalog.listing(of: .bitwarden))
     }
 

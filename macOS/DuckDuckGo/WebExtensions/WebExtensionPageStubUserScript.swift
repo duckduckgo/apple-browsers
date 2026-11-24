@@ -43,11 +43,11 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
         self.managerProvider = managerProvider
     }
 
-    /// Third-party extensions can only be installed by internal users, so nobody else needs the
-    /// script.
-    static func make(isInternalUser: Bool,
+    /// Third-party extensions can only be installed when extension management is available, so
+    /// nobody else needs the script.
+    static func make(isExtensionManagementAvailable: Bool,
                      managerProvider: @escaping @MainActor () -> WebExtensionManager?) -> WebExtensionPageStubUserScript? {
-        isInternalUser ? WebExtensionPageStubUserScript(managerProvider: managerProvider) : nil
+        isExtensionManagementAvailable ? WebExtensionPageStubUserScript(managerProvider: managerProvider) : nil
     }
 
     /// The same scripts, in the same order, as `WebExtensionLoader` installs on the controller.

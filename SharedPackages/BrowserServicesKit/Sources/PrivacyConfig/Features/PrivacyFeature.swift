@@ -71,7 +71,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
-    case sponsorBlock
+    case segmentSkip
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -825,7 +825,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionOnboardingPaidSubsOct2026
     case subscriptionOnboardingFreeTrialsNov2026
     case subscriptionOnboardingPaidSubsNov2026
-    case onboardingSubscriptionUpsellExperiment
 
     /// Gates the server-rendered first paywall.
     case performanceOptimizedPaywalls
@@ -855,8 +854,8 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case nativeUI // Use Duckplayer's native UI
 }
 
-public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .sponsorBlock }
+public enum SegmentSkipPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .segmentSkip }
     case mvpEnabled
 }
 
@@ -1053,9 +1052,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
     /// Kill switch for the Cookie Pop-ups Blocked promo.
     case cookiePopupsBlockedPromo
 
-    /// Kill switch for the "Update available" promo.
-    case updateAvailablePromo
-
     /// Kill switch for the VPN toolbar upsell button and dot badge promos.
     case vpnUpsellPromo
 
@@ -1064,12 +1060,6 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the "Sync your autofill data" promo.
     case syncSetupAutofillPromo
-
-    /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
-    case bookmarksBarSyncPromo
-
-    /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
-    case bookmarkAddedSyncPromo
 
     /// Kill switch for the default browser win-back modal.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
@@ -1128,6 +1118,9 @@ public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extensionManagement }
 
     case isLaunchedExtensions
+    /// Enables web extensions for internal users on macOS, independently of `isLaunchedExtensions`.
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1220747893847476
+    case isLaunchedExtensionsInternal
 }
 
 public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature {

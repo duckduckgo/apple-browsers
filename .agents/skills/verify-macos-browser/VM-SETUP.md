@@ -51,7 +51,7 @@ ssh-keygen -t ed25519 -f ~/.ssh/verify_vm_ed25519 -N "" -C verify-vm
 Add to `~/.ssh/config`:
 
 ```
-Host verify-vm
+Host vm-1
   HostName 192.168.64.2
   User virtualmachine
   IdentityFile ~/.ssh/verify_vm_ed25519
@@ -61,14 +61,14 @@ Host verify-vm
 Copy the key (asks for the VM password once). Copy-paste into the VM window doesn't work, so do it from your Mac:
 
 ```bash
-ssh-copy-id -i ~/.ssh/verify_vm_ed25519.pub verify-vm
+ssh-copy-id -i ~/.ssh/verify_vm_ed25519.pub vm-1
 ```
 
-Check: `ssh verify-vm true` returns without a prompt. Then turn off password login (asks for the VM password for
+Check: `ssh vm-1 true` returns without a prompt. Then turn off password login (asks for the VM password for
 sudo):
 
 ```bash
-ssh -t verify-vm 'printf "PasswordAuthentication no\nKbdInteractiveAuthentication no\n" | sudo tee /etc/ssh/sshd_config.d/100-verify.conf'
+ssh -t vm-1 'printf "PasswordAuthentication no\nKbdInteractiveAuthentication no\n" | sudo tee /etc/ssh/sshd_config.d/100-verify.conf'
 ```
 
 **Claude Code:** its sandbox blocks TCP to the local network (`No route to host`), so ssh to the VM runs outside the
@@ -101,8 +101,9 @@ Re-signing ad hoc doesn't work: without a team ID the app gets no app group cont
 
 ## 5. If a keychain dialog appears
 
-If the agent reports the app waiting on a keychain dialog in the VM, open the VM window and click **Always Allow**.
-The agent can't answer it. Left unanswered, the app shows no window; cancelled, it quits.
+If a run stops with `NOT READY: no window after 60 s; <app> is in front: answer its prompt`, a dialog waits in the
+VM: open the VM window and answer it. For a keychain dialog, click **Always Allow**. The agent can't answer it. Left
+unanswered, the app shows no window; cancelled, it quits.
 
 ## 6. Save `vm-default`
 
@@ -126,31 +127,36 @@ Host vm-2
 
 Keep `vm-1` and `vm-2` once they work. A new copy of `vm-default` may get yet another UDID to register.
 
+`--target vm-1` and `--target vm-2` use these `Host` names. `--target vm` takes the first free VM in `VERIFY_VMS`
+(default `vm-1 vm-2`). Keep both on the same macOS version: with `--target vm`, `--base` can run the base and the
+change on different VMs, and different versions make the pair INCONCLUSIVE. `--target vm-N` pins one.
+
 ## 7. Check the VM
 
 From your Mac, each line must pass:
 
 ```bash
-ssh verify-vm true                                         # no prompt
-ssh verify-vm 'pmset -g | grep displaysleep'               # 0
-ssh verify-vm 'sysadminctl -screenLock status'             # off
-ssh verify-vm 'defaults read /Library/Preferences/com.apple.loginwindow autoLoginUser'   # your VM user
+ssh vm-1 true                                    # no prompt
+ssh vm-1 'pmset -g | grep displaysleep'          # 0
+ssh vm-1 'sysadminctl -screenLock status'        # off
+ssh vm-1 'defaults read /Library/Preferences/com.apple.loginwindow autoLoginUser'   # your VM user
 ```
 
-Accessibility and Screen Recording: `ssh verify-vm '~/verify/ax grants'` must print
-`accessibility=true screen-recording=true`.
+Accessibility and Screen Recording: `ssh vm-1 '~/verify/ax grants'` must print
+`accessibility=true screen-recording=true`. `~/verify/ax` is there after the first run or selftest copied it.
 
 Or run all of it, and a launch and two proofs: `bin/verify-macos-browser selftest --target vm-1` names the first step
-that fails and points back into this file.
+that fails and points back into this file. Run it for `vm-2` too.
 
 ## Gotchas
 
-- **Onboarding blocks new tabs.** After each launch, press Debug → Skip Onboarding
-  (`ax press MainMenu.skipOnboarding`) unless onboarding is what you're testing.
-- **`ax` matches across processes and windows.** Target elements by `id` (`NewTabButton`), not by visible text:
-  "New Tab" also matches a tab's title.
+- **Onboarding.** After each launch in a VM, `build` presses Debug → Skip Onboarding (`--keep-onboarding` to test
+  it). It stops with `ONBOARDING NOT SKIPPED` when the app isn't frontmost or the VM's screen is locked.
+- **`ax` matches across windows.** A target that matches several elements is refused (`AMBIGUOUS`). Target elements
+  by `id` (`NewTabButton`), not by visible text: "New Tab" also matches a tab's title.
 - **Logs:** `log stream` / `log show` work over ssh. Pixel checks (`vhelp.py`) run on your Mac, on logs copied back.
-- **A window can be frontmost without keyboard focus** (seen after a VM boot). Click into the field before typing.
+- **A window can be frontmost without keyboard focus** (seen after a VM boot). Typing is then refused
+  (`NOT FOCUSED`): click into the field first.
 
 ## Not verified yet
 

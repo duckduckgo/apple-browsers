@@ -62,7 +62,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     }
 
     enum FeatureVisibilityRows: Int, CaseIterable {
-        case toggleSelectedEnvironment
+        case selectedEnvironment
         case updateSubscriptionOverride
         case debugInfo
     }
@@ -203,6 +203,7 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
         cell.textLabel?.font = .daxBodyRegular()
         cell.textLabel?.textColor = .label
+        cell.textLabel?.numberOfLines = 1
         cell.detailTextLabel?.text = nil
         cell.accessoryType = .none
         cell.accessoryView = nil
@@ -831,13 +832,12 @@ final class NetworkProtectionDebugViewController: UITableViewController {
 
     private func configure(_ cell: UITableViewCell, forVisibilityRow row: Int) {
         switch FeatureVisibilityRows(rawValue: row) {
-        case .toggleSelectedEnvironment:
+        case .selectedEnvironment:
             let settings = AppDependencyProvider.shared.vpnSettings
-            if settings.selectedEnvironment == .production {
-                cell.textLabel?.text = "Selected Environment: PRODUCTION"
-            } else {
-                cell.textLabel?.text = "Selected Environment: STAGING"
-            }
+            let environment = settings.selectedEnvironment == .production ? "PRODUCTION" : "STAGING"
+            cell.textLabel?.text = "Environment: \(environment), set in Debug > Subscription > Environment"
+            cell.textLabel?.numberOfLines = 0
+            cell.selectionStyle = .none
         case .updateSubscriptionOverride:
             let defaults = UserDefaults.networkProtectionGroupDefaults
             if let subscriptionOverrideEnabled = defaults.subscriptionOverrideEnabled {
@@ -871,24 +871,10 @@ shouldShowVPNShortcut: \(await vpnVisibility.shouldShowVPNShortcut() ? "YES" : "
         self.tableView.reloadData()
     }
     
-    private func showSubscriptionEnvAlert() {
-            let alertController = UIAlertController(title: "Use Subscription Environment", message: nil, preferredStyle: .alert)
-
-            alertController.message = "Go to Debug > Subscription > Environment to change the environment."
-        
-            // Add a "Cancel" action
-        let cancelAction = UIAlertAction(title: "OK", style: .default, handler: nil)
-            alertController.addAction(cancelAction)
-
-            // Present the alert
-            present(alertController, animated: true, completion: nil)
-            
-    }
-
     private func didSelectFeatureVisibility(at indexPath: IndexPath) {
         switch FeatureVisibilityRows(rawValue: indexPath.row) {
-        case .toggleSelectedEnvironment:
-            showSubscriptionEnvAlert()
+        case .selectedEnvironment:
+            break
         case .updateSubscriptionOverride:
             let defaults = UserDefaults.networkProtectionGroupDefaults
             if let subscriptionOverrideEnabled = defaults.subscriptionOverrideEnabled {

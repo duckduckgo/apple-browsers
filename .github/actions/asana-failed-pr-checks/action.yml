@@ -11,10 +11,10 @@ inputs:
     description: "Action to perform: choose between 'create-task' and 'close-task'"
     required: true
   commit-author:
-    description: "Last commit author's GitHub handle"
+    description: "Last commit author's GitHub handle. Looked up from the checked-out commit when not provided."
     required: false
   pr-reviewers:
-    description: "Comma-separated list of PR reviewers' GitHub handles"
+    description: "Comma-separated list of PR reviewers' GitHub handles. Looked up from the checked-out commit when not provided."
     required: false
   github-token:
     description: "GitHub token"
@@ -22,12 +22,29 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - id: get-asana-user-id
+    - id: fetch-commit-info
+      if: inputs.action == 'create-task' && inputs.commit-author == '' && inputs.pr-reviewers == ''
+      uses: ./.github/actions/fetch-commit-info
+      with:
+        github-token: ${{ inputs.github-token }}
+    - id: resolve-commit-info
       if: inputs.action == 'create-task'
+      shell: bash
+      env:
+        COMMIT_AUTHOR: ${{ inputs.commit-author || steps.fetch-commit-info.outputs.commit_author }}
+        PR_REVIEWERS: ${{ inputs.pr-reviewers || steps.fetch-commit-info.outputs.pr_reviewers }}
+      run: |
+        echo "commit-author=${COMMIT_AUTHOR}" >> "$GITHUB_OUTPUT"
+        echo "pr-reviewers=${PR_REVIEWERS}" >> "$GITHUB_OUTPUT"
+    # Assignee lookup is best effort: the report step falls back to PR reviewers
+    # or an unassigned task, so a lookup failure must never hide the CI failure.
+    - id: get-asana-user-id
+      if: inputs.action == 'create-task' && steps.resolve-commit-info.outputs.commit-author != ''
+      continue-on-error: true
       uses: duckduckgo/native-github-asana-sync@v2.5.1
       with:
         action: 'get-asana-user-id'
-        github-username: ${{ inputs.commit-author }}
+        github-username: ${{ steps.resolve-commit-info.outputs.commit-author }}
         github-pat: ${{ inputs.github-token }}
     - id: report-failed-pr-checks
       env:
@@ -35,7 +52,7 @@ runs:
         GITHUB_REF_NAME: ${{ github.ref_name }}
         GITHUB_RUN_ID: ${{ github.run_id }}
         GH_TOKEN: ${{ inputs.github-token }}
-        GITHUB_PR_REVIEWERS: ${{ inputs.pr-reviewers }}
+        GITHUB_PR_REVIEWERS: ${{ steps.resolve-commit-info.outputs.pr-reviewers }}
         ASANA_SECTION_ID: ${{ inputs.asana-section-id }}
         ASANA_ACCESS_TOKEN: ${{ inputs.asana-access-token }}
         ASANA_ASSIGNEE: ${{ steps.get-asana-user-id.outputs.asanaUserId }}

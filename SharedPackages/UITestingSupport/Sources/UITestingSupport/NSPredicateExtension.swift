@@ -424,7 +424,14 @@ public extension NSPredicate {
 
 public extension NSPredicate {
 
-    private static let customDescriptionKey = UnsafeRawPointer(bitPattern: "customDescriptionKey".hashValue)!
+    private final class DescriptionKey: Sendable {}
+    // Objective-C uses the address as the key. Retain the token for the lifetime of the process.
+    private static let descriptionKey = DescriptionKey()
+
+    private static var customDescriptionKey: UnsafeRawPointer {
+        UnsafeRawPointer(Unmanaged.passUnretained(descriptionKey).toOpaque())
+    }
+
     private var customDescription: String? {
         get {
             objc_getAssociatedObject(self, Self.customDescriptionKey) as? String

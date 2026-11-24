@@ -1,5 +1,5 @@
 //
-//  Logger+SponsorBlock.swift
+//  UserInteractionLock.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,9 +16,24 @@
 //  limitations under the License.
 //
 
-import Foundation
-import os.log
+/// Which browser controls onboarding leaves usable.
+enum UserInteractionLock: Equatable {
+    case unlocked
+    case locked(except: Set<UnlockedControl> = [])
 
-public extension Logger {
-    static let sponsorBlock = Logger(subsystem: "Sponsor Block", category: "")
+    var isLocked: Bool {
+        self != .unlocked
+    }
+
+    func allows(_ control: UnlockedControl) -> Bool {
+        switch self {
+        case .unlocked: return true
+        case .locked(let except): return except.contains(control)
+        }
+    }
+}
+
+/// Controls that can stay usable while the UI is locked.
+enum UnlockedControl {
+    case fire
 }

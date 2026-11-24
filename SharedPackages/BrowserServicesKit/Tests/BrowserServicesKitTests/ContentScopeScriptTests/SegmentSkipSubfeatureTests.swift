@@ -1,5 +1,5 @@
 //
-//  SponsorBlockSubfeatureTests.swift
+//  SegmentSkipSubfeatureTests.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -23,26 +23,26 @@ import XCTest
 @testable import BrowserServicesKit
 @testable import UserScript
 
-final class SponsorBlockSubfeatureTests: XCTestCase {
+final class SegmentSkipSubfeatureTests: XCTestCase {
 
-    private typealias Subfeature = SponsorBlockSubfeature
+    private typealias Subfeature = SegmentSkipSubfeature
 
-    private var preferences: SponsorBlockPreferences!
+    private var preferences: SegmentSkipPreferences!
     private var isFeatureFlagOn = true
 
     override func setUp() {
         super.setUp()
-        preferences = SponsorBlockPreferences(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter())
+        preferences = SegmentSkipPreferences(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter())
     }
 
-    private func makeSubfeature(provider: SponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider(load: { _ in
+    private func makeSubfeature(provider: SegmentSkipSegmentsProvider = SegmentSkipSegmentsProvider(load: { _ in
         XCTFail("Unexpected lookup")
         throw URLError(.badURL)
     })) -> Subfeature {
         Subfeature(segmentsProvider: provider, preferences: preferences, isFeatureFlagOn: { self.isFeatureFlagOn })
     }
 
-    private func getSegments(_ subfeature: Subfeature, params: Any) async throws -> [SponsorBlockSegmentsProvider.Segment] {
+    private func getSegments(_ subfeature: Subfeature, params: Any) async throws -> [SegmentSkipSegmentsProvider.Segment] {
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getSegments"))
         let response = try await handler(params, WKScriptMessage.mock(name: "getSegments", body: [:]))
         return try XCTUnwrap(response as? Subfeature.GetSegmentsResponse).segments
@@ -55,7 +55,7 @@ final class SponsorBlockSubfeatureTests: XCTestCase {
     }
 
     func testFeatureNameMatchesContentScopeScriptsFeature() {
-        XCTAssertEqual(makeSubfeature().featureName, "sponsorBlock")
+        XCTAssertEqual(makeSubfeature().featureName, "segmentSkip")
     }
 
     func testMessageOriginPolicyAllowsOnlyYouTubeAndDuckPlayerEmbed() {
@@ -82,7 +82,7 @@ final class SponsorBlockSubfeatureTests: XCTestCase {
 
     @MainActor
     func testGetSegmentsResolvesToEmptyWhenLookupFails() async throws {
-        let provider = SponsorBlockSegmentsProvider(load: { _ in throw URLError(.notConnectedToInternet) })
+        let provider = SegmentSkipSegmentsProvider(load: { _ in throw URLError(.notConnectedToInternet) })
         let segments = try await getSegments(makeSubfeature(provider: provider), params: ["videoID": "dQw4w9WgXcQ"])
         XCTAssertEqual(segments, [])
     }
@@ -103,7 +103,7 @@ final class SponsorBlockSubfeatureTests: XCTestCase {
 
     @MainActor
     func testGetSegmentsIgnoresCategoriesSentByThePage() async throws {
-        let provider = SponsorBlockSegmentsProvider(load: { request in
+        let provider = SegmentSkipSegmentsProvider(load: { request in
             let url = request.url!.absoluteString
             XCTAssertTrue(url.contains("%22sponsor%22"), url)
             XCTAssertFalse(url.contains("selfpromo"), url)
@@ -170,7 +170,7 @@ final class SponsorBlockSubfeatureTests: XCTestCase {
     func testGetSegmentsDoesNotSubscribeToPreferenceUpdates() async throws {
         let webView = PushCapturingWebView()
         let broker = UserScriptMessageBroker(context: "test")
-        let provider = SponsorBlockSegmentsProvider(load: { _ in throw URLError(.notConnectedToInternet) })
+        let provider = SegmentSkipSegmentsProvider(load: { _ in throw URLError(.notConnectedToInternet) })
         let subfeature = makeSubfeature(provider: provider)
         subfeature.with(broker: broker)
         defer { withExtendedLifetime((subfeature, broker, webView)) {} }

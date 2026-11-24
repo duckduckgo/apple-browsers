@@ -56,27 +56,11 @@ final class ChallengeOffscreenPanel: NSPanel {
 }
 
 @MainActor
-final class ChallengeSnapshotRequest {
-    private var continuation: CheckedContinuation<CGImage?, Never>?
-
-    init(continuation: CheckedContinuation<CGImage?, Never>) {
-        self.continuation = continuation
-    }
-
-    func finish(with image: CGImage?) {
-        guard let continuation else { return }
-        self.continuation = nil
-        continuation.resume(returning: image)
-    }
-}
-
-@MainActor
 final class WebViewChallengePage: ChallengePage {
     private enum Constants {
         static let clickSettleDelayNanoseconds: UInt64 = 200_000_000
         static let mouseDownDurationNanoseconds: UInt64 = 80_000_000
         static let mouseUpSettleDelayNanoseconds: UInt64 = 100_000_000
-        static let snapshotTimeout: TimeInterval = 2
     }
 
     private weak var webView: WKWebView?
@@ -89,7 +73,7 @@ final class WebViewChallengePage: ChallengePage {
     func locateLabel(matching text: String) async -> ChallengeLabel? {
         guard let webView else { return nil }
         let snapshotRect = webView.bounds
-        guard let image = await snapshot(of: webView, rect: snapshotRect) else { return nil }
+        guard let image = await webView.pirViewportSnapshot(in: snapshotRect) else { return nil }
         return await ChallengeVision.findLabel(matching: text, in: image, viewSize: snapshotRect.size)
     }
 
@@ -112,22 +96,6 @@ final class WebViewChallengePage: ChallengePage {
         guard webView.window === window else { return }
         window.sendEvent(upEvent)
         try? await Task.sleep(nanoseconds: Constants.mouseUpSettleDelayNanoseconds)
-    }
-
-    private func snapshot(of webView: WKWebView, rect: CGRect) async -> CGImage? {
-        await withCheckedContinuation { continuation in
-            let request = ChallengeSnapshotRequest(continuation: continuation)
-            let configuration = WKSnapshotConfiguration()
-            configuration.rect = rect
-            webView.takeSnapshot(with: configuration) { image, _ in
-                Task { @MainActor in
-                    request.finish(with: image?.cgImage(forProposedRect: nil, context: nil, hints: nil))
-                }
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + Constants.snapshotTimeout) {
-                request.finish(with: nil)
-            }
-        }
     }
 
     private func windowPoint(fromCSS point: CGPoint, in webView: WKWebView) -> NSPoint {

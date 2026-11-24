@@ -64,6 +64,8 @@ final class UnifiedSuggestionsHost {
 
     var isShowingRedesignedSearchModules: Bool { showsRedesignedSearchModules }
 
+    var onSearchModulesVisibilityChange: ((Bool) -> Void)?
+
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         guard escapeHatch !== model else { return }
         escapeHatch = model
@@ -147,6 +149,7 @@ final class UnifiedSuggestionsHost {
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
             usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
+            embedsRedesignedModules: redesignedFocusedSurface == .webPage,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)
@@ -240,7 +243,7 @@ final class UnifiedSuggestionsHost {
         let enabled = surface != nil
         stopModeChangeAnimator()
         viewModel.cancelLogoModeChange()
-        viewModel.usesRedesignedNewTabPageLayout = enabled
+        viewModel.isOverRedesignedNewTabPage = surface?.swapsLogoOnModeChange == true
         viewModel.setEmbeddedEscapeHatchGeometry(nil)
         redesignedPresentationCancellable = nil
         if enabled {
@@ -248,7 +251,12 @@ final class UnifiedSuggestionsHost {
             let presentation = RedesignedFocusedSearchPresentation(
                 inputsPublisher: config.inputsPublisher,
                 dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
-                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher())
+                fireTabPublisher: viewModel.$isFireTab.eraseToAnyPublisher(),
+                // Only the New Tab Page draws the empty Add Favorite row; a web page embeds saved favorites alone.
+                favoritesSectionVisibilityPublisher: surface == .newTabPage
+                    ? config.favoritesSectionVisibilityPublisher
+                    : Just(false).eraseToAnyPublisher(),
+                escapeHatchVisibilityPublisher: viewModel.$escapeHatchPlacement.map { $0 != .hidden }.removeDuplicates().eraseToAnyPublisher())
             redesignedSearchPresentation = presentation
             redesignedPresentationCancellable = presentation.$showsSearchModules
                 .sink { [weak self] showsSearchModules in
@@ -256,6 +264,7 @@ final class UnifiedSuggestionsHost {
                     guard let self else { return }
                     self.showsRedesignedSearchModules = showsSearchModules
                     self.rebuildRootView()
+                    self.onSearchModulesVisibilityChange?(showsSearchModules)
                     self.onContentChanged?()
                 }
         } else {
@@ -280,7 +289,7 @@ final class UnifiedSuggestionsHost {
         stopModeChangeAnimator()
         viewModel.prepareLogoModeChange(to: mode)
         pendingModeChangeResizeStarted = onResizeStarted
-        if !viewModel.usesRedesignedNewTabPageLayout,
+        if !viewModel.isOverRedesignedNewTabPage,
            viewModel.logoModeChange?.source != nil, viewModel.logoModeChange?.isFadingOut == false {
             var layers = contentLayers
             if let contentLayer = favoritesPresentation.viewController?.viewIfLoaded?.layer { layers.append(contentLayer) }
@@ -303,7 +312,7 @@ final class UnifiedSuggestionsHost {
         }
         viewModel.performLogoModeChange(to: mode) {
             // Only a visible legacy logo can hold the resize for a fade.
-            guard !viewModel.usesRedesignedNewTabPageLayout, viewModel.logoModeChange?.source != nil else {
+            guard !viewModel.isOverRedesignedNewTabPage, viewModel.logoModeChange?.source != nil else {
                 applyChanges()
                 return
             }
@@ -640,6 +649,7 @@ final class UnifiedSuggestionsHost {
             usesScrollableEscapeHatch: usesScrollableEscapeHatch,
             usesRedesignedNewTabPageLayout: redesignedFocusedSurface != nil,
             showsRedesignedSearchModules: showsRedesignedSearchModules,
+            embedsRedesignedModules: redesignedFocusedSurface == .webPage,
             mode: focusedMode,
             escapeHatch: escapeHatch,
             syncPromo: syncPromo)
@@ -647,7 +657,7 @@ final class UnifiedSuggestionsHost {
     }
 }
 
-/// The redesigned modules use the favorites controller's models without mounting that controller.
+/// Over a web page the modules use the favorites controller's models without mounting that controller.
 /// Report visibility from their actual host, so hierarchy and modal checks still apply.
 private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView>, RemoteMessagePresenting {
 
@@ -697,7 +707,7 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
     }
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {
-        rootView.usesRedesignedNewTabPageLayout &&
+        rootView.embedsRedesignedModules &&
         rootView.showsRedesignedSearchModules &&
         !rootView.viewModel.isFireTab &&
         !rootView.viewModel.isFadingOut &&

@@ -20,6 +20,22 @@
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
+    "m_mac_netp_system_extension_activation_success": {
+        "description": "Fired when VPN startup continues after system extension activation completes or reports that the extension was already active.",
+        "owners": ["diegoreymendez", "samsymons"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "alreadyActive",
+                "type": "boolean",
+                "description": "True when the VPN treats a cancelled activation request as already active. False when the activation request completes successfully."
+            }
+        ]
+    },
     "m_mac_netp_ev_enable_attempt": {
         "description": "Fired at the start of a VPN connection attempt",
         "owners": ["diegoreymendez", "samsymons"],

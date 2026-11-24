@@ -21,7 +21,6 @@ import Bookmarks
 import Combine
 import Foundation
 import Testing
-import UIKit
 @testable import DuckDuckGo
 @_spi(Testing) import PixelKit
 
@@ -125,10 +124,6 @@ struct NewTabPageThemeTests {
         return NewTabPageCustomizationStore(keyValueStore: userDefaults)
     }
 
-    private func resolved(_ color: UIColor, _ style: UIUserInterfaceStyle) -> UIColor {
-        color.resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
-    }
-
     @available(iOS 16, macOS 13, *)
     @Test("Blue is used when no theme or an unknown theme is stored", .timeLimit(.minutes(1)), arguments: [nil, "removed-theme"])
     func fallsBackToDefaultTheme(storedTheme: String?) throws {
@@ -159,17 +154,6 @@ struct NewTabPageThemeTests {
         model.theme = .blue
 
         #expect(persistor.theme == .blue)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A tint keeps the standard surface in the appearances it does not cover", .timeLimit(.minutes(1)))
-    func tintKeepsStandardSurfaceWhereItHasNone() {
-        let darkOnly = NewTabPageThemeTint.darkOnly(.red).color(over: .white)
-        let none = NewTabPageThemeTint.none.color(over: .white)
-
-        #expect(resolved(darkOnly, .light) == resolved(.white, .light))
-        #expect(resolved(darkOnly, .dark) == resolved(.red, .dark))
-        #expect(resolved(none, .dark) == resolved(.white, .dark))
     }
 }
 

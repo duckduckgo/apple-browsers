@@ -51,40 +51,11 @@ enum NewTabPageTheme: String, CaseIterable {
         }
     }
 
-    /// Tint of the search card and modules, tuned to this theme's artwork.
-    var cardTint: NewTabPageThemeTint {
-        switch self {
-        case .blue: return .both(UIColor(singleUseColor: .newTabPageSearchCardBackground))
-        case .plain: return .none
-        }
-    }
-
-    /// Fill for the search card and modules: the theme's tint where it has one, the standard surface elsewhere.
+    /// Fill for the search card and modules: tuned to the artwork when there is one, the standard surface on a flat page.
     var cardBackgroundColor: UIColor {
-        cardTint.color(over: UIColor(designSystemColor: .surface))
-    }
-}
-
-/// A theme's surface tint. An appearance without a tint keeps the standard surface.
-struct NewTabPageThemeTint {
-
-    let light: UIColor?
-    let dark: UIColor?
-
-    static let none = NewTabPageThemeTint(light: nil, dark: nil)
-
-    static func both(_ color: UIColor) -> NewTabPageThemeTint {
-        NewTabPageThemeTint(light: color, dark: color)
-    }
-
-    static func darkOnly(_ color: UIColor) -> NewTabPageThemeTint {
-        NewTabPageThemeTint(light: nil, dark: color)
-    }
-
-    func color(over standardColor: UIColor) -> UIColor {
-        UIColor { traits in
-            let tint = traits.userInterfaceStyle == .dark ? dark : light
-            return (tint ?? standardColor).resolvedColor(with: traits)
+        switch self {
+        case .blue: return UIColor(singleUseColor: .newTabPageSearchCardBackground)
+        case .plain: return UIColor(designSystemColor: .surface)
         }
     }
 }

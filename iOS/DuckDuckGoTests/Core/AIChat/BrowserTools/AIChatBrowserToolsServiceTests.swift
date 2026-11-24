@@ -471,4 +471,47 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         XCTAssertTrue(fixture.presenter.isPresentingPermission)
     }
 
+    func testSwitchToTabWaitsForApprovalAfterReloadingStoredAsk() async throws {
+        let fixture = BrowserToolsBridgeFixture(
+            enabledFlags: [.aiChatBrowserTools, .aiChatBrowserToolSwitchToTab],
+            capabilities: [.switchToTab]
+        )
+        defer { fixture.cleanUp() }
+        fixture.service.permissions.setState(.ask, forToolNamed: "switchToTab")
+
+        let service = AIChatBrowserToolsService(
+            featureFlagger: fixture.flags,
+            historyManager: MockHistoryManager(),
+            sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring())
+        )
+        let target = Tab(uid: "target", link: Link(title: "Target", url: URL(string: "https://example.com")!), fireTab: false)
+        var selections: [String] = []
+        let source = MultiTabAttachmentSource(currentTabID: fixture.owner.uid, mode: .normal,
+                                              tabsProvider: { [fixture.owner, target] })
+        let scope = BrowserToolScope(owner: fixture.owner, source: source, selectedTabID: { fixture.owner.uid }, selectTab: {
+            selections.append($0.uid)
+            return true
+        })
+        fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: { scope })
+        fixture.presenter.autoAnswer = nil
+        let shown = expectation(description: "Switch to Tab permission prompt shown")
+        fixture.presenter.onPresent = { shown.fulfill() }
+        let switchRequest = try request(name: "switchToTab", input: ["tabId": "target"])
+
+        let invocation = Task { await service.invoke(switchRequest, from: fixture.script) }
+        defer { invocation.cancel() }
+        await fulfillment(of: [shown], timeout: 1)
+
+        let prompt = try XCTUnwrap(fixture.presenter.prompts.first)
+        XCTAssertEqual(prompt.toolName, "switchToTab")
+        XCTAssertNotNil(AIChatToolPermissionView.Prompt(prompt))
+        XCTAssertTrue(selections.isEmpty)
+
+        fixture.presenter.select(.allowOnce)
+        let result = await invocation.value
+
+        XCTAssertEqual(result, .success(callId: "call", value: ["tabId": "target"]))
+        XCTAssertEqual(selections, [target.uid])
+    }
+
 }

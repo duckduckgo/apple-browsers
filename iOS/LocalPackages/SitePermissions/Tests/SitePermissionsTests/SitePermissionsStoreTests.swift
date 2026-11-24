@@ -51,6 +51,39 @@ final class SitePermissionsStoreTests: XCTestCase {
         XCTAssertEqual(freshStore.decision(for: .camera, at: site), .allow)
     }
 
+    func testWhenLegacyBrowserToolDecisionsExistThenTheyRemainReadable() {
+        let keyValueStore = MockKeyValueStore()
+        keyValueStore.set(["listOpenTabs": "allow", "switchToTab": "deny"], forKey: "ai-chat_browser-tool-permissions")
+        let store = makeStore(keyValueStore: keyValueStore)
+
+        XCTAssertEqual(store.browserToolDecisions, ["listOpenTabs": .allow, "switchToTab": .deny])
+        XCTAssertEqual(store.browserToolDecision(for: "listOpenTabs"), .allow)
+        XCTAssertEqual(store.browserToolDecision(for: "switchToTab"), .deny)
+        XCTAssertTrue(store.storedSites.isEmpty)
+    }
+
+    func testWhenBrowserToolDecisionsAreResetThenSitePermissionsRemainUnchanged() throws {
+        let keyValueStore = MockKeyValueStore()
+        let store = makeStore(keyValueStore: keyValueStore)
+        let site = try makeSite("https://example.com")
+        store.setPersistentDecision(.allow, for: .camera, at: site)
+        store.setGlobalDefault(.deny, for: .microphone)
+        store.setBrowserToolDecision(.allow, for: "listOpenTabs")
+        store.setBrowserToolDecision(.deny, for: "switchToTab")
+        XCTAssertEqual(store.storedSites, [site])
+        XCTAssertEqual(store.browserToolDecisions, ["listOpenTabs": .allow, "switchToTab": .deny])
+
+        store.setBrowserToolDecision(nil, for: "switchToTab")
+        XCTAssertEqual(store.browserToolDecisions, ["listOpenTabs": .allow])
+
+        store.resetBrowserToolDecisions()
+
+        let freshStore = makeStore(keyValueStore: keyValueStore)
+        XCTAssertTrue(freshStore.browserToolDecisions.isEmpty)
+        XCTAssertEqual(freshStore.decision(for: .camera, at: site), .allow)
+        XCTAssertEqual(freshStore.globalDefault(for: .microphone), .deny)
+    }
+
     func testWhenSitePermissionsAreClearedThenGlobalDefaultsRemainUnchanged() throws {
         let keyValueStore = MockKeyValueStore()
         let store = makeStore(keyValueStore: keyValueStore)

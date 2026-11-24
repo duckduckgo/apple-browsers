@@ -3650,6 +3650,15 @@ extension AIChatOmnibarControllerTests {
         XCTAssertEqual(controller.persistedModelId, "luna")
     }
 
+    func testWhenNewChatDefaultIsOnAndPromptBarIsBuiltWithAUserDefaultModel_ThenItIsSelected() async throws {
+        let controller = makeNewChatDefaultController(surface: .promptBar, userDefaultStorage: try makeUserDefaultStorage("luna"))
+
+        controller.onOmnibarActivated()
+        await waitForModels()
+
+        XCTAssertEqual(controller.persistedModelId, "luna")
+    }
+
     func testWhenNewChatDefaultIsOnAndPaidUserModelsFailToLoad_ThenSubmitSendsPaidLocalDefault() async {
         let controller = makeNewChatDefaultController()
         setUserTier(.plus)

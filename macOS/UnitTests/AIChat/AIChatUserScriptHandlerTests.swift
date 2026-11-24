@@ -2909,7 +2909,6 @@ struct AIChatUserScriptAskAboutPageTests {
     private let attacher = AskAboutPageAttacherSpy()
     private let messageHandler = MockAIChatMessageHandler()
     private let handler: AIChatUserScriptHandler
-    /// The web views the provider was asked about; it answers with `attacher` unless `isSenderSelected` is false.
     private let senders = SenderLog()
 
     private static let serp = "https://duckduckgo.com/?q=example"

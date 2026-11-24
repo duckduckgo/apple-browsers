@@ -1598,11 +1598,8 @@ enum AIChatLinkAskAboutPageType: String, CaseIterable {
     case other
 }
 
-/// Where "Ask about page" for a link was picked.
 enum AIChatLinkAskAboutPageSource: String, CaseIterable {
-    /// The link's context menu.
     case contextMenu = "context_menu"
-    /// A DuckDuckGo search result's own menu, through the `askAboutPage` message.
     case serpMenu = "serp_menu"
 }
 

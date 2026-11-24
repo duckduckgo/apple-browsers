@@ -178,7 +178,6 @@ protocol AIChatUserScriptHandling: AnyObject {
     /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
     @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 
-    /// Posted by DuckDuckGo search results with `{ url }` to attach that result's page to the Duck.ai sidebar.
     @MainActor func askAboutPage(params: Any, message: UserScriptMessage) async -> Encodable?
 
     // Bonus offer
@@ -406,7 +405,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return aiChatMenuConfiguration.shouldDisplayAskAboutLinkMenuItem(onSERP: true)
     }
 
-    /// The attacher of the window whose selected tab is `webView`, so the page is attached for the tab that asked.
     @MainActor
     static func selectedTabLinkContextAttacher(for webView: WKWebView) -> AIChatLinkContextAttaching? {
         guard let mainViewController = (webView.window?.windowController as? MainWindowController)?.mainViewController,

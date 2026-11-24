@@ -637,7 +637,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var didFinishLaunching = false
-    private var startupRecoveryCancellable: AnyCancellable?
 
     var updateController: UpdateController?
     private var updateNotificationPromoBridge: UpdateNotificationPromoBridge?
@@ -744,7 +743,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDatabase = BookmarkDatabase()
 
         if AppVersion.runType.requiresEnvironment {
-            let commonDatabase = Database(startupFailureInstrumentation: startupFailureInstrumentation)
+            let commonDatabase = Database(onStartupFailure: startupFailureInstrumentation.recordFailure)
             database = commonDatabase
 
             database.db.loadStore { _, error in
@@ -1662,12 +1661,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard AppVersion.runType.requiresEnvironment else { return }
-        startupRecoveryCancellable = windowControllersManager.didChangeKeyWindowController.sink { [weak self] _ in
-            self?.recordStartupRecoveryIfNeeded()
-        }
         defer {
             didFinishLaunching = true
-            recordStartupRecoveryIfNeeded()
+            startupFailureInstrumentation.recordSuccessfulStartup()
         }
 
         let profilerToken = startupProfiler.measureSequence(initialStep: .appDidFinishLaunchingBeforeRestoration)
@@ -1920,16 +1916,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @MainActor
-    private func recordStartupRecoveryIfNeeded() {
-        guard didFinishLaunching, NSApp.isActive,
-              WindowsManager.windows.contains(where: { $0 is MainWindow && $0.isVisible }) else { return }
-        startupFailureInstrumentation.recordSuccessfulStartup()
-    }
-
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
-        recordStartupRecoveryIfNeeded()
 
         // Touch coordinator so Next Steps delegate is registered before promo service starts (1s fallback).
         _ = newTabPageCoordinator

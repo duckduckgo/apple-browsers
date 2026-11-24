@@ -23,7 +23,7 @@
         ]
     },
     "startup_failure_recovered_macos": {
-        "description": "Launch completes and an active, visible browser window is available after a recorded startup failure. Sent once, closing the episode and allowing a subsequent failure to start a new one.",
+        "description": "The app finishes startup after a recorded startup failure. Sent once, closing the episode and allowing a subsequent failure to start a new one.",
         "owners": ["diegoreymendez"],
         "triggers": ["startup"],
         "parameters": [

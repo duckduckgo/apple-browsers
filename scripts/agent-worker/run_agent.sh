@@ -13,6 +13,16 @@ here=$(cd "$(dirname "$0")" && pwd)
 ev=$RUNNER_TEMP/evidence A=$AUTO_DIR W=$RUNNER_TEMP/worktrees X=$RUNNER_TEMP/scratch
 mkdir -p "$ev" "$RUNNER_TEMP/bin" "$W" "$X" "$HOME/.auto"
 ln -sf "$here/xc.sh" "$RUNNER_TEMP/bin/xc"
+# Claude models only, since the worker has no Codex: arena and interrogate default to one Codex seat each, and the
+# other reviewer settings already pick Claude under Claude Code
+cat > "$HOME/.auto/config.json" << 'EOF'
+{
+  "models": {
+    "arena": { "runners": ["claude:fable@high", "claude:opus@high"] },
+    "interrogate": { "reviewers": ["claude:fable@high", "claude:opus@high"] }
+  }
+}
+EOF
 
 # File tools in the checkout, xc and read-only git, so it can check its change and fix it as it goes
 allow="Read,Glob,Grep,Edit(./**),Write(./**),Bash(xc:*)"
@@ -46,6 +56,7 @@ allow+=",Bash(.claude/skills/verify-ios/bin/verify-ios:*)"
 # closing, workflows, secrets or other admin, and no auto script that needs Codex or dub, signs in interactively, or
 # changes setup
 deny+=",Edit(./.claude/**),Write(./.claude/**),Edit(./.git/**),Write(./.git/**)"
+deny+=",Edit(~/.auto/config.json),Write(~/.auto/config.json)"
 deny+=",Bash(claude:*),Bash(codex:*),Bash(git config:*),Bash(git remote:*)"
 for c in "pr merge" "pr close" "pr review" "pr comment" auth secret variable workflow release repo gist issue \
   ssh-key gpg-key extension codespace cache ruleset org; do

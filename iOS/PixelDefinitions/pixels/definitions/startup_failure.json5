@@ -56,9 +56,9 @@
             "appVersion",
             {
                 "key": "days_count",
-                "type": "integer",
-                "description": "Lower bound of the bucket for whole days from the first startup failure to recovery. 21 covers 21 days or more. Omitted if elapsed time cannot be calculated.",
-                "enum": [0, 1, 3, 5, 8, 13, 21]
+                "type": "string",
+                "description": "Bucket for whole days from the first startup failure to recovery. Each bucket starts at the listed day and ends before the next bucket. 21+ covers 21 days or more. Omitted if elapsed time cannot be calculated.",
+                "enum": ["0", "1+", "3+", "5+", "8+", "13+", "21+"]
             },
             {
                 "key": "originalPixelTimestamp",

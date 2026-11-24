@@ -136,7 +136,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysCount: 0), frequency: .standard)
+            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .sameDay), frequency: .standard)
         ])
     }
 
@@ -160,7 +160,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         featureFlagger.featuresStub[TestFeatureFlag.startupFailureMetrics.rawValue] = true
         featureFlagger.triggerUpdate()
         nextLaunch.recordSuccessfulStartup()
-        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.name, StartupFailurePixel.recovered(daysCount: 0).name)
+        XCTAssertEqual(pixels.actualFireCalls.last?.pixel.name, StartupFailurePixel.recovered(daysBucket: .sameDay).name)
         XCTAssertEqual(pixels.actualFireCalls.count, 3)
     }
 
@@ -297,7 +297,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysCount: 0), frequency: .standard),
+            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .sameDay), frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "1"), frequency: .standard)
         ])
@@ -335,7 +335,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "1"), frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysCount: 3), frequency: .standard)
+            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .threeDays), frequency: .standard)
         ])
     }
 
@@ -360,10 +360,10 @@ final class StartupFailureMetricsTests: XCTestCase {
         }
     }
 
-    func testRecoveryAgeUsesBucketLowerBoundsAndCapsAtTwentyOneDays() {
-        let cases: [(days: Int, bucket: Int)] = [
-            (0, 0), (1, 1), (2, 1), (3, 3), (4, 3), (5, 5), (7, 5),
-            (8, 8), (12, 8), (13, 13), (20, 13), (21, 21), (34, 21)
+    func testRecoveryAgeUsesStringBucketsAndCapsAtTwentyOneDays() {
+        let cases: [(days: Int, bucket: String)] = [
+            (0, "0"), (1, "1+"), (2, "1+"), (3, "3+"), (4, "3+"), (5, "5+"), (7, "5+"),
+            (8, "8+"), (12, "8+"), (13, "13+"), (20, "13+"), (21, "21+"), (34, "21+")
         ]
 
         for testCase in cases {
@@ -374,7 +374,7 @@ final class StartupFailureMetricsTests: XCTestCase {
             recovery.recordSuccessfulStartup()
 
             XCTAssertEqual(pixels.actualFireCalls.last?.pixel.parameters,
-                           ["days_count": String(testCase.bucket)],
+                           ["days_count": testCase.bucket],
                            "Recovery after \(testCase.days) whole days")
         }
     }
@@ -442,7 +442,7 @@ final class StartupFailureMetricsTests: XCTestCase {
         XCTAssertEqual(pixels.actualFireCalls, [
             ExpectedFireCall(pixel: StartupFailurePixel.failure, frequency: .standard),
             ExpectedFireCall(pixel: StartupFailurePixel.returned(daysSinceFailure: "0"), frequency: .standard),
-            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysCount: 0), frequency: .standard)
+            ExpectedFireCall(pixel: StartupFailurePixel.recovered(daysBucket: .sameDay), frequency: .standard)
         ])
         XCTAssertFalse(FileManager.default.fileExists(atPath: storageURL.path))
     }

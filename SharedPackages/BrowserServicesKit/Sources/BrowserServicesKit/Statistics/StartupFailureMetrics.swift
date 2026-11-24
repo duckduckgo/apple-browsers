@@ -33,7 +33,6 @@ public protocol StartupFailureInstrumentation {
 public final class StartupFailureMetrics: StartupFailureInstrumentation {
 
     static let enabledKey = "startupFailureMetricsEnabled"
-    private static let recoveryDayBuckets = [0, 1, 3, 5, 8, 13, 21]
 
     private struct State: Codable {
         let firstFailureDate: Date
@@ -147,22 +146,21 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
         guard defaults.bool(forKey: Self.enabledKey) else { return }
         let pixelFiring = pixelFiringProvider()
         lock.lock()
-        let daysBucket: Int?
+        let daysBucket: StartupFailurePixel.RecoveryDayBucket?
         do {
             defer { lock.unlock() }
             guard defaults.bool(forKey: Self.enabledKey), !didFailInThisProcess, pixelFiring != nil, let storageURL = storageURLProvider(),
                   let state = try readState(from: storageURL),
                   state.didReportReturn else { return }
-            daysBucket = Self.wholeDaysSinceFailure(from: state.firstFailureDate, to: dateProvider()).flatMap { days in
-                Self.recoveryDayBuckets.last { $0 <= days }
-            }
+            daysBucket = Self.wholeDaysSinceFailure(from: state.firstFailureDate, to: dateProvider())
+                .flatMap(StartupFailurePixel.RecoveryDayBucket.containing)
             try FileManager.default.removeItem(at: storageURL)
         } catch {
             // Keep the episode open if its file cannot be removed.
             return
         }
 
-        pixelFiring?.fire(StartupFailurePixel.recovered(daysCount: daysBucket), frequency: .standard, options: .withRetry)
+        pixelFiring?.fire(StartupFailurePixel.recovered(daysBucket: daysBucket), frequency: .standard, options: .withRetry)
     }
 
     private func readState(from url: URL) throws -> State? {
@@ -187,9 +185,27 @@ public final class StartupFailureMetrics: StartupFailureInstrumentation {
 }
 
 enum StartupFailurePixel: PixelKit.Event {
+    enum RecoveryDayBucket: Int, CaseIterable {
+        case sameDay = 0
+        case oneDay = 1
+        case threeDays = 3
+        case fiveDays = 5
+        case eightDays = 8
+        case thirteenDays = 13
+        case twentyOneDays = 21
+
+        static func containing(_ days: Int) -> Self? {
+            allCases.last { $0.rawValue <= days }
+        }
+
+        var label: String {
+            self == .sameDay ? "0" : "\(rawValue)+"
+        }
+    }
+
     case failure
     case returned(daysSinceFailure: String)
-    case recovered(daysCount: Int?)
+    case recovered(daysBucket: RecoveryDayBucket?)
 
     var name: String {
         let base: String
@@ -217,8 +233,8 @@ enum StartupFailurePixel: PixelKit.Event {
             return nil
         case .returned(let daysSinceFailure):
             return ["days_since_first_failure": daysSinceFailure]
-        case .recovered(let daysCount):
-            return daysCount.map { ["days_count": String($0)] }
+        case .recovered(let daysBucket):
+            return daysBucket.map { ["days_count": $0.label] }
         }
     }
 }

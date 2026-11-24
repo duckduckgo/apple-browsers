@@ -630,6 +630,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                 let jobs = try PIRDebugLaunchOptions.scanJobs(database: jobDependencies.database,
                                                               isAuthenticatedUser: self.currentRunIsFreeScan != true,
                                                               brokerURLs: brokerURLs, includesMaintenance: true)
+                try PIRDebugLaunchOptions.makeScansDue(jobs, database: jobDependencies.database)
                 self.startImmediateOperations(showWebView: false)
                 return DebugImmediateScans(queued: jobs, requested: brokerURLs)
             }

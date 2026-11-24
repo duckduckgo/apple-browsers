@@ -630,6 +630,10 @@ def execute(args, runtime_factory=None):
                 from runtime import Runtime
                 runtime_factory = Runtime
             options = {} if upgrade.platform == "macos" else dict(device=args.device, keep=True)
+            if upgrade.platform == "macos" and scheduler.listener_on(port):
+                raise SetupFailed(f"A PIR agent from an earlier launch is listening on port {port}. A seed leaves its agent "
+                                  f"registered; stop it with `launchctl bootout gui/{os.getuid()}/"
+                                  "com.duckduckgo.macos.DBP.backgroundAgent.debug` and rerun the upgrade.")
             runtime = runtime_factory(upgrade.platform, evidence, instance, port, **options)
             launch = runtime.launch_existing(upgrade.simulator)
             context.result["launch"] = launch

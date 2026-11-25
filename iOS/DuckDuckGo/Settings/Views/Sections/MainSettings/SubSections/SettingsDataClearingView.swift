@@ -123,7 +123,7 @@ struct SettingsDataClearingView: View {
             SettingsCellView(label: viewModel.aiChatsToggleTitle,
                              accessory: .toggle(isOn: settingsViewModel.autoClearAIChatHistoryBinding))
         } footer: {
-            Text(UserText.settingsClearAIChatHistoryFooter)
+            Text(viewModel.aiChatsToggleFooter)
         }
     }
 }

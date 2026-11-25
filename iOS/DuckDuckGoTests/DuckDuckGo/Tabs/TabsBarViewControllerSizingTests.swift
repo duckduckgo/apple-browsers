@@ -483,6 +483,7 @@ private final class TabsBarSelectionDelegate: NSObject, TabsBarDelegate {
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController) {}
     func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {}
+    func tabsBarDidRequestOpenDataClearingSettings(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) { completion() }
 }
 

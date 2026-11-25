@@ -3020,6 +3020,9 @@ class MainViewController: UIViewController {
                     if wasContextualFireOnboardingDialogVisible {
                         contextualOnboardingPixelReporter.measureFireButtonOnboardingDismissButtonTapped()
                     }
+                },
+                onOpenSettings: { [weak self] in
+                    self?.segueToSettingsDataClearing()
                 }
             )
         }
@@ -9315,6 +9318,12 @@ extension MainViewController: TabSwitcherDelegate {
         fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: true, hasPrompt: false)
         loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
             $0.duckAIEntrySource = .tabSwitcher
+        }
+    }
+
+    func tabSwitcherDidRequestDataClearingSettings(_ tabSwitcher: TabSwitcherViewController) {
+        tabSwitcher.dismiss(animated: true) {
+            self.segueToSettingsDataClearing()
         }
     }
 

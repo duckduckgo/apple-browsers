@@ -22,6 +22,7 @@ import Core
 import Persistence
 import FeatureFlags_iOS
 import PrivacyConfig
+import PixelKit
 
 @MainActor
 final class ScopedFireConfirmationViewModel: ObservableObject {
@@ -74,6 +75,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     let headerTitle: String
     let showAnimation: Bool
     let buttons: [FireConfirmationButton]
+    /// Opens Data Clearing settings from the Fire Button's sheet; `nil` hides the settings button.
+    let onOpenSettings: (() -> Void)?
 
     // MARK: - Private Variables
 
@@ -91,11 +94,21 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         pixelFiring: PixelFiring? = PixelKit.shared,
          browsingMode: BrowsingMode,
          onConfirm: @escaping (FireRequest) -> Void,
-         onCancel: @escaping () -> Void) {
+         onCancel: @escaping () -> Void,
+         onOpenSettings: (() -> Void)? = nil) {
         self.fireContext = fireContext
         self.onCancel = onCancel
+        if case .default = fireContext, featureFlagger.isFeatureOn(.fireSheetSettingsButton), let onOpenSettings {
+            self.onOpenSettings = {
+                pixelFiring?.fire(DataClearingPixels.confirmationSettingsTapped(source: source.rawValue), frequency: .dailyAndCount)
+                onOpenSettings()
+            }
+        } else {
+            self.onOpenSettings = nil
+        }
 
         let isRefinementsEnabled = dataClearingCapability.isFireButtonRefinementsEnabled
         let isSingleChatConfirmation = Self.isSingleChatConfirmation(fireContext: fireContext,

@@ -22,6 +22,8 @@ import SwiftUI
 import Core
 import AIChat
 import PixelKit
+import PrivacyConfig
+import FeatureFlags_iOS
 
 @MainActor
 protocol DataClearingSettingsViewModelDelegate: AnyObject {
@@ -43,6 +45,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     private let aiChatSettings: AIChatSettingsProvider
     private let animator: FireButtonAnimator
     private let fireproofing: Fireproofing
+    private let featureFlagger: FeatureFlagger
     
     // MARK: - Delegate
     
@@ -67,7 +70,15 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     var aiChatsToggleTitle: String {
-        UserText.settingsDeleteDuckAIChats
+        featureFlagger.isFeatureOn(.fireSheetSettingsButton)
+            ? UserText.settingsDeleteAllIncludesDuckAIChats
+            : UserText.settingsDeleteDuckAIChats
+    }
+
+    var aiChatsToggleFooter: String {
+        featureFlagger.isFeatureOn(.fireSheetSettingsButton)
+            ? UserText.settingsDeleteAllIncludesDuckAIChatsFooter
+            : UserText.settingsClearAIChatHistoryFooter
     }
     
     var fireproofedSitesTitle: String {
@@ -114,7 +125,9 @@ final class DataClearingSettingsViewModel: ObservableObject {
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          aiChatSettings: AIChatSettingsProvider,
          fireproofing: Fireproofing,
+         featureFlagger: FeatureFlagger,
          delegate: DataClearingSettingsViewModelDelegate) {
+        self.featureFlagger = featureFlagger
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
         self.animator = FireButtonAnimator(appSettings: appSettings)

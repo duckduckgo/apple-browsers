@@ -56,6 +56,11 @@ struct ScopedFireConfirmationView: View {
             .modifier(ScrollBounceBehaviorModifier())
             closeButton
                 .padding(16)
+            if let onOpenSettings = viewModel.onOpenSettings {
+                settingsButton(action: onOpenSettings)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
         .background(Color(designSystemColor: .backgroundTertiary))
     }
@@ -75,6 +80,15 @@ struct ScopedFireConfirmationView: View {
         .accessibilityIdentifier("Fire.Confirmation.Button.Close")
     }
     
+    private func settingsButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.settings)
+        }
+        .buttonStyle(CloseButtonStyle())
+        .accessibilityLabel(UserText.scopedFireConfirmationSettingsButton)
+        .accessibilityIdentifier("Fire.Confirmation.Button.Settings")
+    }
+
     private var headerSection: some View {
         VStack(spacing: SheetMetrics.contentSpacing) {
             if viewModel.showAnimation {

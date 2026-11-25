@@ -97,6 +97,23 @@
         ]
     },
 
+    "fire_confirmation-settings-tapped": {
+        "description": "Fires when the user taps the settings button on the Fire Button's confirmation sheet, which opens Data Clearing settings.",
+        "owners": ["bkunat"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "Where the Fire Button that opened the sheet is",
+                "type": "string",
+                "enum": ["browsing", "tabSwitcher"]
+            }
+        ]
+    },
+
     "m_fire_user_action_before_completion": {
         "description": "Fired when user performs an action before the clearing operation completes",
         "owners": ["hanyutang-sandra"],

@@ -46,6 +46,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBarDidRequestToggleAIChatContextualSheet(_ controller: TabsBarViewController)
     func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController)
     func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController)
+    func tabsBarDidRequestOpenDataClearingSettings(_ controller: TabsBarViewController)
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void)
 
 }
@@ -390,7 +391,11 @@ class TabsBarViewController: UIViewController {
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self, fireRequest: fireRequest)
                 },
-                onCancel: { }
+                onCancel: { },
+                onOpenSettings: { [weak self] in
+                    guard let self else { return }
+                    self.delegate?.tabsBarDidRequestOpenDataClearingSettings(self)
+                }
             )
         }
 
@@ -1294,6 +1299,10 @@ extension MainViewController: TabsBarDelegate {
 
     func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {
         segueToSettingsAIChat()
+    }
+
+    func tabsBarDidRequestOpenDataClearingSettings(_ controller: TabsBarViewController) {
+        segueToSettingsDataClearing()
     }
 
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) {

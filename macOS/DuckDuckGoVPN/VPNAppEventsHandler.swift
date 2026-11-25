@@ -28,14 +28,12 @@ final class VPNAppEventsHandler {
 
     private let appState: VPNAppState
     private let tunnelController: NetworkProtectionTunnelController
-    private let settings: VPNSettings
 
     init(tunnelController: NetworkProtectionTunnelController,
-         appState: VPNAppState,
-         settings: VPNSettings) {
+         appState: VPNAppState) {
+
         self.appState = appState
         self.tunnelController = tunnelController
-        self.settings = settings
     }
 
     func appDidFinishLaunching() {
@@ -55,14 +53,6 @@ final class VPNAppEventsHandler {
         let buildType = StandardApplicationBuildType()
         if versionStore.lastAgentVersionRun != currentVersion || buildType.isDebugBuild || buildType.isReviewBuild {
             restartTunnel()
-        }
-    }
-
-    @MainActor
-    func handleTunnelAtLaunch(launchedAtLogin: Bool) async {
-        guard launchedAtLogin else { return }
-        if await !tunnelController.isConnected && settings.connectOnLogin {
-            await tunnelController.start()
         }
     }
 

@@ -316,7 +316,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private lazy var vpnAppEventsHandler = {
-        VPNAppEventsHandler(tunnelController: tunnelController, appState: vpnAppState, settings: tunnelSettings)
+        VPNAppEventsHandler(tunnelController: tunnelController, appState: vpnAppState)
     }()
 
     @MainActor
@@ -526,7 +526,15 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
             setUpSubscriptionMonitoring()
 
-            await vpnAppEventsHandler.handleTunnelAtLaunch(launchedAtLogin: launchedOnStartup)
+            if launchedOnStartup {
+                Task {
+                    let isConnected = await tunnelController.isConnected
+
+                    if !isConnected && tunnelSettings.connectOnLogin {
+                        await tunnelController.start()
+                    }
+                }
+            }
         }
     }
 

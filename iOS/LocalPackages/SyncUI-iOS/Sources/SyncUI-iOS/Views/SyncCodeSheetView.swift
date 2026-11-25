@@ -68,8 +68,12 @@ struct SyncCodeSheetView: View {
 
     private var instructions: some View {
         VStack(spacing: 16) {
+            Text(UserText.simplifiedSyncCodeSheetHeading)
+                .daxTitle2()
+                .multilineTextAlignment(.center)
+
             VStack(spacing: 4) {
-                SyncOpenAppInstruction(format: UserText.simplifiedSyncCodeSheetOpenInstruction)
+                SyncOpenAppInstruction(format: UserText.simplifiedSyncCodeSheetOpenInstruction, appName: UserText.simplifiedSyncCodeSheetAppName)
 
                 if model.isSyncPairingUrlEnabled {
                     SyncPairingURLInstruction(format: UserText.pairingURLShowCodeInstruction)

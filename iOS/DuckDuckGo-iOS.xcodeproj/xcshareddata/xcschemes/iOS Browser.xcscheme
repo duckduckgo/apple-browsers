@@ -213,6 +213,16 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "WebPageTranslationTests"
+               BuildableName = "WebPageTranslationTests"
+               BlueprintName = "WebPageTranslationTests"
+               ReferencedContainer = "container:LocalPackages/WebPageTranslation">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "FoundationExtensionsTests"
                BuildableName = "FoundationExtensionsTests"
                BlueprintName = "FoundationExtensionsTests"

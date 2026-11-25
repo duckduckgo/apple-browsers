@@ -213,7 +213,12 @@ class MainViewController: UIViewController {
                                                            daxGreetingProvider: daxGreetingService,
                                                            daxGreetingChanges: (daxGreetingActivity?.changes ?? Empty().eraseToAnyPublisher())
                                                                .merge(with: daxGreetingService.debugChanges)
-                                                               .eraseToAnyPublisher())
+                                                               .eraseToAnyPublisher(),
+                                                           returnSettings: NewTabPageReturnSettings(afterInactivityOptionAdapter: afterInactivityOptionAdapter,
+                                                                                                    lastTabShortcutAdapter: lastTabShortcutAdapter,
+                                                                                                    idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                                                                                    keyValueStore: keyValueStore,
+                                                                                                    featureFlagger: featureFlagger))
 
     var tabsBarController: TabsBarViewController?
     var suggestionTrayController: SuggestionTrayViewController?
@@ -9512,15 +9517,18 @@ extension MainViewController {
         endSessionsWithDataClearing(request)
         unifiedToggleInputCoordinator?.clearResubmitHistory()
 
-        // A single tab burn rebuilds the UI from inside the burn itself, so the New Tab Page has
-        // already attached by the time `didFinishBurningTabs` runs. Wider scopes are marked later,
-        // in `refreshUIAfterClear`, where the attach still lies ahead.
+        // When a single-tab burn lands on the New Tab Page, it attaches before `didFinishBurningTabs` runs.
+        // Wider manual burns set this marker in that callback.
         if case .tab = request.scope {
             isAttachingNewTabPageAfterFire = true
         }
 
         fireExecutor.prepare(for: request)
         
+        // The page the burn lands on attaches behind the animation. Its visit starts once the animation
+        // is gone and the user can see it, so a tap made while the flames still cover it is not mistaken
+        // for the user acting before the keyboard came up. With no animation, the page is uncovered at once.
+        let newTabPageCover = newTabPagePresentation.beginCovering()
         let instrumentation = DefaultFireAnimationInstrumentation(request: request)
         fireButtonAnimator.animate(instrumentation: instrumentation) {
             instrumentation.burnDidStart(accepted: !self.fireExecutor.burnInProgress)
@@ -9571,6 +9579,8 @@ extension MainViewController {
             if !self.daxDialogsManager.isShowingContextualOnboardingDialog {
                 self.daxDialogsManager.clearedBrowserData()
             }
+        } onOverlayRemoved: { [weak self] in
+            self?.newTabPagePresentation.endCovering(newTabPageCover)
         }
     }
     
@@ -9598,12 +9608,6 @@ extension MainViewController {
     }
     
     private func refreshUIAfterClear() {
-        // Set here rather than when the burn starts, because that callback arrives only once the
-        // tabs are gone and this screen has already been rebuilt. Also set before the empty-tabs
-        // branch below: burning every tab shows the switcher first, but the page the user reaches
-        // from there is still a post-burn arrival. Consumed by the next New Tab Page attach.
-        isAttachingNewTabPageAfterFire = true
-
         if tabManager.currentTabsModel.tabs.isEmpty && tabManager.currentTabsModel.allowsEmpty {
             showTabSwitcher()
             tabSwitcherController?.updateUIForSelectionMode()
@@ -9812,6 +9816,9 @@ extension MainViewController: FireExecutorDelegate {
                 
         switch fireRequest.scope {
         case .all, .fireMode, .normalMode:
+            // Mark the visit after removing tabs and before refreshing the UI. If the refresh shows
+            // an empty tab switcher, keep the marker for the New Tab Page reached from there.
+            isAttachingNewTabPageAfterFire = true
             refreshUIAfterClear()
         case .tab:
             // For single tab, the UI was already updated in closeTab() → updateCurrentTab()

@@ -26,7 +26,7 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
 
     private let model: NewTabPageCustomizationModel
 
-    init(model: NewTabPageCustomizationModel = NewTabPageCustomizationModel()) {
+    init(model: NewTabPageCustomizationModel) {
         self.model = model
 
         var onClose: (() -> Void)?
@@ -50,12 +50,63 @@ final class NewTabPageCustomizationViewController: UIHostingController<NewTabPag
         fatalError("init(coder:) has not been implemented")
     }
 
+    private enum Metrics {
+        static let bottomPadding: CGFloat = 16
+    }
+
+    private var fittingContentHeight: CGFloat?
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         if let sheet = sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
+            if #available(iOS 16, *) {
+                let fittingDetent = UISheetPresentationController.Detent.custom(identifier: .init("fittingContent")) { [weak self] context in
+                    guard let fittingContentHeight = self?.fittingContentHeight else { return context.maximumDetentValue }
+                    return min(fittingContentHeight, context.maximumDetentValue)
+                }
+                sheet.detents = [fittingDetent]
+            } else {
+                sheet.detents = [.medium(), .large()]
+            }
             sheet.prefersGrabberVisible = true
         }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateFittingContentHeight()
+    }
+
+    /// Reads the list's laid out height, since a SwiftUI `List` reports no intrinsic height of its own.
+    private func updateFittingContentHeight() {
+        // Depends on `List` being backed by a collection view. If that changes, no height is set and the sheet opens full height.
+        guard let collectionView = view.firstDescendant(ofType: UICollectionView.self) else { return }
+        let contentBounds = CGRect(origin: .zero, size: collectionView.collectionViewLayout.collectionViewContentSize)
+        let lastRowBottom = collectionView.collectionViewLayout.layoutAttributesForElements(in: contentBounds)?
+            .filter { $0.representedElementCategory == .cell }
+            .map(\.frame.maxY)
+            .max()
+        guard let lastRowBottom else { return }
+        // The bounds origin is the scroll offset, so converting it yields the list's frame top, unaffected by scrolling.
+        let listTop = collectionView.convert(collectionView.bounds.origin, to: view).y
+        let height = ceil(listTop + collectionView.adjustedContentInset.top + lastRowBottom + Metrics.bottomPadding)
+        guard abs(height - (fittingContentHeight ?? 0)) > 0.5 else { return }
+        fittingContentHeight = height
+        if #available(iOS 16, *) {
+            sheetPresentationController?.invalidateDetents()
+        }
+    }
+}
+
+private extension UIView {
+
+    func firstDescendant<T: UIView>(ofType type: T.Type) -> T? {
+        for subview in subviews {
+            if let match = subview as? T ?? subview.firstDescendant(ofType: type) {
+                return match
+            }
+        }
+        return nil
     }
 }

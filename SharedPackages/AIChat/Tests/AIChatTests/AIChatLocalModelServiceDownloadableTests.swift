@@ -33,6 +33,7 @@ final class AIChatLocalModelServiceDownloadableTests {
     private let flagUpdates = PassthroughSubject<Void, Never>()
     private let overrideUpdates = PassthroughSubject<Void, Never>()
     private let page = StatePage()
+    private let pixels = PixelRecorder()
     private var isFlagOn = true
     private var engineOverride: AIChatLocalModelEngineKind?
 
@@ -44,13 +45,29 @@ final class AIChatLocalModelServiceDownloadableTests {
                                               downloadableModel: AIChatDownloadableLocalModel(engine: llama, installer: installer),
                                               engineOverride: { [unowned self] in self.engineOverride },
                                               engineOverrideUpdates: overrideUpdates.eraseToAnyPublisher(),
-                                              notificationCenter: NotificationCenter())
+                                              notificationCenter: NotificationCenter(),
+                                              instrumentation: pixels)
         service.register(page)
         return service
     }()
 
     private func request(_ requestId: String = "r1") -> AIChatLocalRunRequest {
         AIChatLocalRunRequest(requestId: requestId, task: .summarize, instruction: "Summarize", content: "Page text")
+    }
+
+    // MARK: - Pixels
+
+    /// The pixels only know the cloud and Apple Intelligence, so the downloaded model's state and
+    /// runs would be counted as the cloud's.
+    @available(iOS 16, macOS 13, *)
+    @Test("The downloaded model sends no state or run pixels", .timeLimit(.minutes(1)))
+    func downloadedModelSendsNoPixels() throws {
+        installer.state = .installed(URL(fileURLWithPath: "/m.gguf"))
+
+        _ = try service.startRun(request(), for: page)
+
+        #expect(service.activeEngineKind == .llama)
+        #expect(pixels.fired.isEmpty)
     }
 
     // MARK: - Which engine
@@ -363,5 +380,13 @@ private final class StatePage: AIChatLocalModelPushing {
 
     func pushLocalRunChunk(_ chunk: AIChatLocalRunChunk) {
         chunks.append(chunk)
+    }
+}
+
+private final class PixelRecorder: AIChatLocalModelInstrumentation {
+    private(set) var fired: [AIChatLocalModelPixel] = []
+
+    func fire(_ pixel: AIChatLocalModelPixel) {
+        fired.append(pixel)
     }
 }

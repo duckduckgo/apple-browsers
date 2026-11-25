@@ -26,7 +26,7 @@ import os.log
 
 public final class DuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeChatsRecordObserving {
 
-    /// Sentinel error stored in `setupResult` until the background setup task overwrites it.
+    /// Indicates that a database operation attempted to run before setup finished.
     /// Under normal init flow this is never observed — `init` enqueues the setup task on the
     /// serial `setupQueue` before returning, so any later `sync` is FIFO-ordered behind it.
     private struct SetupNotCompletedError: Error {}
@@ -34,21 +34,18 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeC
     private let filesDirectoryURL: URL
     private let encryptionKey: SymmetricKey
     private let setupQueue = DispatchQueue(label: "com.duckduckgo.duckai.nativedatastore.setup", qos: .userInitiated)
-    private var setupResult: Result<DatabaseQueue, Error> = .failure(SetupNotCompletedError())
-
-    // Non-blocking probe of background setup state. Read by `setupSucceeded` from
-    // any thread; written exactly once when the deferred work finishes.
-    private let setupStateLock = NSLock()
-    private var _setupSucceeded: Bool?
+    private let setupResult = Locked<Result<DatabaseQueue, Error>?>(wrappedValue: nil)
 
     /// Non-blocking probe of background DB setup state.
     /// - Returns: `nil` while setup is in flight, `true` if it completed successfully,
     ///   `false` if it failed. Safe to call from any thread; never blocks on the
     ///   setup queue and so is safe to evaluate on the main thread during launch.
     public var setupSucceeded: Bool? {
-        setupStateLock.lock()
-        defer { setupStateLock.unlock() }
-        return _setupSucceeded
+        switch setupResult.wrappedValue {
+        case nil: return nil
+        case .success: return true
+        case .failure: return false
+        }
     }
 
     /// Creates an encrypted data store backed by SQLCipher.
@@ -74,7 +71,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeC
         databaseURL: URL,
         filesDirectoryURL: URL,
         key: Data,
-        setupCompletion: ((Result<Void, Error>) -> Void)? = nil
+        setupCompletion: (@Sendable (Result<Void, Error>) -> Void)? = nil
     ) throws {
         self.filesDirectoryURL = filesDirectoryURL
         self.encryptionKey = SymmetricKey(data: key)
@@ -89,7 +86,7 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeC
             throw DuckAiNativeDataStoreError.directoryCreationFailed(error)
         }
 
-        setupQueue.async { [filesDirectoryURL] in
+        setupQueue.async { [setupResult] in
             let result: Result<DatabaseQueue, Error> = Result {
                 do {
                     let queue = try Self.openDatabase(at: databaseURL, key: key, filesDirectoryURL: filesDirectoryURL)
@@ -101,19 +98,8 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeC
                     throw DuckAiNativeDataStoreError.databaseError(error)
                 }
             }
-            self.setupResult = result
-            switch result {
-            case .success:
-                self.setupStateLock.lock()
-                self._setupSucceeded = true
-                self.setupStateLock.unlock()
-                setupCompletion?(.success(()))
-            case .failure(let error):
-                self.setupStateLock.lock()
-                self._setupSucceeded = false
-                self.setupStateLock.unlock()
-                setupCompletion?(.failure(error))
-            }
+            setupResult.wrappedValue = result
+            setupCompletion?(result.map { _ in () })
         }
     }
 
@@ -121,7 +107,8 @@ public final class DuckAiNativeDataStore: DuckAiNativeDataStoring, DuckAiNativeC
     /// `DatabaseQueue` or rethrows the wrapped setup error.
     private func dbQueue() throws -> DatabaseQueue {
         try setupQueue.sync {
-            try self.setupResult.get()
+            guard let result = setupResult.wrappedValue else { throw SetupNotCompletedError() }
+            return try result.get()
         }
     }
 

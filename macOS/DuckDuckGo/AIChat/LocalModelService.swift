@@ -32,7 +32,8 @@ extension AIChatLocalModelService {
                      engine: AIChatLocalModelEngine = AppleFoundationModelEngine(),
                      downloadableModel: AIChatDownloadableLocalModel? = nil,
                      engineOverride: LocalModelEngineOverridePersistor = LocalModelEngineOverridePersistor(),
-                     notificationCenter: NotificationCenter = .default) {
+                     notificationCenter: NotificationCenter = .default,
+                     instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
         self.init(isFeatureFlagOn: { featureFlagger.isFeatureOn(.aiChatLocalModels) },
                   featureFlagUpdates: featureFlagger.updatesPublisher,
                   storage: storage,
@@ -40,7 +41,8 @@ extension AIChatLocalModelService {
                   downloadableModel: downloadableModel,
                   engineOverride: { engineOverride.current.engineKind },
                   engineOverrideUpdates: engineOverride.updates,
-                  notificationCenter: notificationCenter)
+                  notificationCenter: notificationCenter,
+                  instrumentation: instrumentation)
     }
 }
 

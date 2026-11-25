@@ -113,6 +113,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
     private let engineOverride: () -> AIChatLocalModelEngineKind?
     private let engineOverrideUpdates: AnyPublisher<Void, Never>
     private let runQueue: AIChatLocalRunQueue
+    private let instrumentation: AIChatLocalModelInstrumentation?
     /// In the order they registered, so the newest script for a page is the last one.
     private var pushers: [WeakPusher] = []
     private var lastPushed: PushedState?
@@ -135,7 +136,8 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
                 engineOverride: @escaping () -> AIChatLocalModelEngineKind? = { nil },
                 engineOverrideUpdates: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher(),
                 runQueue: AIChatLocalRunQueue? = nil,
-                notificationCenter: NotificationCenter = .default) {
+                notificationCenter: NotificationCenter = .default,
+                instrumentation: AIChatLocalModelInstrumentation? = nil) {
         self.isFeatureFlagOn = isFeatureFlagOn
         self.featureFlagUpdates = featureFlagUpdates
         self.storage = storage
@@ -145,6 +147,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         self.engineOverrideUpdates = engineOverrideUpdates
         let routingEngine = RoutingEngine()
         self.runQueue = runQueue ?? AIChatLocalRunQueue(engine: routingEngine)
+        self.instrumentation = instrumentation
         self.availability = Self.uncheckedAvailability
         self.downloadableModelAvailability = Self.uncheckedAvailability
         self.lastPushed = pushedState
@@ -161,15 +164,15 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
 
         Publishers.Merge(featureFlagUpdates, engineOverrideUpdates)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.refreshAvailability() }
+            .sink { [weak self] in self?.refreshAvailabilityAndReportState() }
             .store(in: &cancellables)
 
         // Apple Intelligence is turned on and off in System Settings, so check again whenever the user comes back.
         notificationCenter.publisher(for: Self.didBecomeActiveNotification)
-            .sink { [weak self] _ in self?.refreshAvailability() }
+            .sink { [weak self] _ in self?.refreshAvailabilityAndReportState() }
             .store(in: &cancellables)
 
-        refreshAvailability()
+        refreshAvailabilityAndReportState()
     }
 
     /// Stands in while the flag is off, so launch doesn't touch Foundation Models or llama.cpp for everyone else.
@@ -301,6 +304,14 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         setPageSummariesModel(.duckAI)
     }
 
+    /// The user's own choice. Sends `selected` only when the choice changes, so the prompt and
+    /// Settings count a change once even when both happen.
+    public func select(_ model: AIChatPageSummariesModel, source: AIChatLocalModelPixel.SelectionSource) {
+        guard storage.pageSummariesModel != model else { return }
+        setPageSummariesModel(model)
+        instrumentation?.fire(.selected(model, source: source))
+    }
+
     /// Starts or retries the downloadable model's download.
     public func installDownloadableModel() {
         downloadableModel?.installer.install()
@@ -358,6 +369,10 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         runQueue.enqueue(request, ownerID: pageID) { [weak self] chunk in
             self?.pushRunChunk(chunk, toPage: pageID)
         }
+        // The pixels only know the cloud and Apple Intelligence, so a downloaded model's run would count as a cloud one.
+        if activeEngineKind == .appleIntelligence {
+            instrumentation?.fire(.runStarted(engine: storage.pageSummariesModel, task: request.task))
+        }
         return AIChatLocalRunStartReply(model: model)
     }
 
@@ -390,7 +405,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
             if state == .ready { return .allowed }
             let result = await ask(.connect(model))
             if result == .allowed {
-                optIn()
+                select(.appleIntelligence, source: .duckAIPromo)
             }
             return result
         case .llama:
@@ -405,6 +420,21 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
             downloadableModel.installer.install()
             return .installing
         }
+    }
+
+    // MARK: - Pixels
+
+    /// The state pixel is daily, so sending it at launch, on every return to the app and on flag
+    /// updates counts each person once a day, including one whose flag turns on mid-session.
+    private func refreshAvailabilityAndReportState() {
+        refreshAvailability()
+        reportState()
+    }
+
+    /// Not while the downloaded model is the engine: `selected` would say cloud for someone using it.
+    private func reportState() {
+        guard let state = currentState, activeEngineKind == .appleIntelligence else { return }
+        instrumentation?.fire(.state(selected: storage.pageSummariesModel, state: state, availability: availability))
     }
 
     // MARK: - Pushes

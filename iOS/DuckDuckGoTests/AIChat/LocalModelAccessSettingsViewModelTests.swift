@@ -20,6 +20,7 @@
 import AIChat
 import Combine
 import Foundation
+@_spi(Testing) import PixelKit
 import Testing
 @testable import DuckDuckGo
 
@@ -32,15 +33,26 @@ final class LocalModelAccessSettingsViewModelTests {
     private let flagUpdates = PassthroughSubject<Void, Never>()
     private let notificationCenter = NotificationCenter()
     private var isFlagOn = true
+    private let pixelFiring = PixelKitMock()
 
     private lazy var service = AIChatLocalModelService(isFeatureFlagOn: { [unowned self] in self.isFlagOn },
                                                        featureFlagUpdates: flagUpdates.eraseToAnyPublisher(),
                                                        storage: storage,
                                                        engine: engine,
-                                                       notificationCenter: notificationCenter)
+                                                       notificationCenter: notificationCenter,
+                                                       instrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
 
     private func makeViewModel() -> LocalModelAccessSettingsViewModel {
         LocalModelAccessSettingsViewModel(service: service)
+    }
+
+    private func selectedInSettings(_ model: AIChatPageSummariesModel) -> ExpectedFireCall {
+        ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: .selected(model, source: .settings)), frequency: .standard)
+    }
+
+    /// The service also sends its daily state, which these tests don't look at.
+    private var selectedPixels: [ExpectedFireCall] {
+        pixelFiring.actualFireCalls.filter { $0.pixel.name == "aichat_local_model_selected" }
     }
 
     @available(iOS 16, macOS 13, *)
@@ -131,13 +143,69 @@ final class LocalModelAccessSettingsViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The prompt answers No Thanks when there's no window to show it in", .timeLimit(.minutes(1)))
+    @Test("The prompt answers No Thanks when there's no window to show it in, and counts no offer", .timeLimit(.minutes(1)))
     func promptWithoutWindowDeclines() async {
-        let prompt = LocalModelAccessPrompt()
+        let prompt = LocalModelAccessPrompt(instrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
 
         let answer = await prompt.ask(in: nil, modelName: "Apple Intelligence")
 
         #expect(answer == .declined)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    // MARK: - Pixels
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turning it on and off in Settings sends selected with the settings source", .timeLimit(.minutes(1)))
+    func settingsSendsSelected() {
+        let viewModel = makeViewModel()
+
+        viewModel.isOnBinding.wrappedValue = true
+        viewModel.confirmTurnOn()
+        viewModel.isOnBinding.wrappedValue = false
+
+        #expect(selectedPixels == [selectedInSettings(.appleIntelligence), selectedInSettings(.duckAI)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Cancel in the confirmation sends nothing", .timeLimit(.minutes(1)))
+    func cancelSendsNothing() {
+        let viewModel = makeViewModel()
+
+        viewModel.isOnBinding.wrappedValue = true
+        viewModel.cancelTurnOn()
+
+        #expect(selectedPixels.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each local-model pixel goes out under AIChat's name, parameters and frequency", .timeLimit(.minutes(1)))
+    func instrumentationUsesTheSharedDefinition() {
+        let instrumentation = LocalModelPixelInstrumentation(pixelFiring: pixelFiring)
+        let pixels: [AIChatLocalModelPixel] = [
+            .state(selected: .appleIntelligence, state: .ready, availability: .available),
+            .promoShown,
+            .promoClosed,
+            .selected(.appleIntelligence, source: .duckAIPromo),
+            .runStarted(engine: .appleIntelligence, task: .summarize)
+        ]
+
+        pixels.forEach(instrumentation.fire)
+
+        #expect(pixelFiring.actualFireCalls == [
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[0]), frequency: .daily),
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[1]), frequency: .dailyAndCount),
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[2]), frequency: .dailyAndCount),
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[3]), frequency: .standard),
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[4]), frequency: .daily)
+        ])
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == [
+            "aichat_local_model_state",
+            "aichat_local_model_promo_shown",
+            "aichat_local_model_promo_closed",
+            "aichat_local_model_selected",
+            "aichat_local_model_run_started"
+        ])
     }
 }
 

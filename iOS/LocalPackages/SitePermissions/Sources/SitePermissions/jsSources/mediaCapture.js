@@ -54,15 +54,17 @@
     // Swift checks that the request still belongs to the committed top-level page.
     const ancestorOrigins = globalThis.location.ancestorOrigins;
     const topOrigin = isTopLevel ? origin : ancestorOrigins?.[ancestorOrigins.length - 1] ?? "null";
-    const isSameOriginAsTopLevel = (() => {
-        if (isTopLevel) {
-            return true;
+    // Compare with every ancestor, not only the top-level page: a frame can share the top-level
+    // origin and still sit inside a cross-origin frame (a.example → b.example → a.example).
+    // Whenever any ancestor is cross-origin, rely on WebKit's Permissions API for the whole
+    // chain's delegation. Top-level pages have no ancestors.
+    const hasCrossOriginAncestor = (() => {
+        for (let index = 0; index < (ancestorOrigins?.length ?? 0); index += 1) {
+            if (ancestorOrigins[index] !== origin) {
+                return true;
+            }
         }
-        try {
-            return globalThis.top.location.origin === origin;
-        } catch (_) {
-            return false;
-        }
+        return false;
     })();
     // WebKit owns each document's effective sandbox restrictions, including after navigation.
     // An allow-same-origin sandbox may request media; opaque origins are marked ineligible.
@@ -77,7 +79,7 @@
     // applies on the next navigation. Parse the local rules before page scripts can replace
     // the methods they use; only the inherited policy check waits for the first request.
     const embeddingFrame = (() => {
-        if (hasPolicyIntrospection || !isSameOriginAsTopLevel || isTopLevel) {
+        if (hasPolicyIntrospection || hasCrossOriginAncestor || isTopLevel) {
             return null;
         }
         try {
@@ -100,7 +102,7 @@
         }
     })();
     const localPolicyAllows = (feature) => {
-        if (!isSameOriginAsTopLevel) {
+        if (hasCrossOriginAncestor) {
             return false;
         }
         if (isTopLevel) {
@@ -233,11 +235,10 @@
             return apply(nativeGetUserMedia, this, [capturedConstraints]);
         }
 
-        const isCrossOrigin = !isSameOriginAsTopLevel;
         // Send ineligible requests too: Swift returns them to WebKit when site permissions is off.
         const isEligibleContext = this === mediaDevices && hasNonOpaqueOrigin && (isDuckAIHost || (isSecureContext &&
             !isSyntheticDocument &&
-            (isCrossOrigin || ((!video || policyAllows("camera")) &&
+            (hasCrossOriginAncestor || ((!video || policyAllows("camera")) &&
                 (!audio || policyAllows("microphone"))))));
 
         nextRequestID += 1;
@@ -245,7 +246,7 @@
         const post = isEligible => postMessage({ capability, requestID, isEligible, topOrigin, video, audio });
         let bridgePromise;
         try {
-            bridgePromise = !isEligibleContext || !isCrossOrigin || isDuckAIHost
+            bridgePromise = !isEligibleContext || !hasCrossOriginAncestor || isDuckAIHost
                 ? post(isEligibleContext)
                 : callThen(delegationAllows(video && audio ? ["camera", "microphone"] : [video ? "camera" : "microphone"]),
                     post);

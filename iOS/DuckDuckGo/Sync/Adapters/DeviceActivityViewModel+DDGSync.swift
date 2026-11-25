@@ -26,7 +26,7 @@ extension DeviceActivityViewModel {
     static func make(syncService: DDGSyncing) -> DeviceActivityViewModel {
         DeviceActivityViewModel(
             // Resolve the account on demand so account changes invalidate pending loads and review timers.
-            accountIdentifier: { syncService.account?.userId },
+            accountIdentifier: { try syncService.auditLogAccountIdentifier() },
             makePageFetcher: {
                 let reader = try syncService.makeAuditLogReader()
                 return {
@@ -54,7 +54,7 @@ extension DeviceActivityViewModel {
                     }
                 } catch {
                     Logger.sync.error("Failed to load Device Activity review state: \(String(reflecting: error), privacy: .private)")
-                    return nil
+                    throw error
                 }
             },
             saveReviewState: { accountID, reviewState in

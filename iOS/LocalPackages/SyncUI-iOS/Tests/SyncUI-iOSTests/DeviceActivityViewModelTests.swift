@@ -25,6 +25,100 @@ import Testing
 struct DeviceActivityViewModelTests {
 
     @available(iOS 16, macOS 13, *)
+    @Test("An unreadable review state is neither seeded nor saved until the next visit", .timeLimit(.minutes(1)))
+    func reviewStateReadFailurePreservesStoredWatermark() async {
+        let baseline = Date(timeIntervalSince1970: 100)
+        var storedState = DeviceActivityReviewState(reviewedThrough: baseline, isInitialized: true)
+        var fails = true
+        var writes = 0
+        let newest = entry("newest", date: Date(timeIntervalSince1970: 101))
+        let model = DeviceActivityViewModel(accountIdentifier: { "account-a" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [newest], hasMore: false) }
+        }, loadReviewState: { _ in
+            if fails { throw TestFailure.fetch }
+            return storedState
+        }, saveReviewState: { _, state in
+            writes += 1
+            storedState = state
+        }, sleep: { _ in })
+
+        await model.loadIfNeeded()
+        fails = false
+        await model.markAsReviewedAfterDelay()
+        #expect(model.entries == [newest])
+        #expect(!model.isSeen(newest))
+        #expect(!model.isNewActivity(newest))
+        #expect(!model.reviewState.isInitialized)
+        #expect(writes == 0)
+        #expect(storedState.reviewedThrough == baseline)
+
+        model.cancelAndClear()
+        await model.loadIfNeeded()
+        #expect(!model.isSeen(newest))
+        #expect(model.isNewActivity(newest))
+        await model.markAsReviewedAfterDelay()
+        #expect(writes == 1)
+        #expect(!model.isNewActivity(newest))
+        #expect(storedState.reviewedThrough == newest.date)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An account read failure shows an error without clearing loaded history", .timeLimit(.minutes(1)), arguments: [false, true])
+    func accountReadFailurePreservesVisit(hasLoadedHistory: Bool) async {
+        var fails = false
+        var fetches = 0
+        let newest = entry("newest", date: Date())
+        let model = DeviceActivityViewModel(accountIdentifier: {
+            if fails { throw TestFailure.fetch }
+            return "account-a"
+        }, makePageFetcher: {
+            {
+                fetches += 1
+                return DeviceActivityPage(entries: [newest], hasMore: true)
+            }
+        })
+        if hasLoadedHistory { await model.loadIfNeeded() }
+        fails = true
+        if hasLoadedHistory {
+            await model.loadOlderIfNeeded(after: newest.id)
+        } else {
+            await model.loadIfNeeded()
+        }
+        #expect(model.error != nil)
+        #expect(model.entries == (hasLoadedHistory ? [newest] : []))
+        #expect(fetches == (hasLoadedHistory ? 1 : 0))
+        #expect(!model.isLoading)
+
+        fails = false
+        model.cancelAndClear()
+        await model.loadIfNeeded()
+        #expect(model.error == nil)
+        #expect(model.entries == [newest])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Non-last rows do not read the account or fetch pages", .timeLimit(.minutes(1)))
+    func nonLastRowsSkipAccountRead() async {
+        var accountReads = 0
+        let newest = entry("newest", date: Date(timeIntervalSince1970: 30))
+        let oldest = entry("oldest", date: Date(timeIntervalSince1970: 20))
+        let model = DeviceActivityViewModel(accountIdentifier: {
+            accountReads += 1
+            return "account-a"
+        }, makePageFetcher: {
+            { DeviceActivityPage(entries: [newest, oldest], hasMore: true) }
+        })
+        await model.loadIfNeeded()
+        let readsAfterLoading = accountReads
+
+        await model.loadOlderIfNeeded(after: newest.id)
+
+        #expect(accountReads == readsAfterLoading)
+        #expect(model.entries == [newest, oldest])
+        #expect(!model.isLoading)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Initial fetch seeds all existing activity at the newest timestamp", .timeLimit(.minutes(1)))
     func initialFetchSeedsBaseline() async {
         let store = MemoryReviewStateStore()
@@ -98,7 +192,7 @@ struct DeviceActivityViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Leaving early cancels review and reopening requires a new three-second visit", .timeLimit(.minutes(1)))
+    @Test("Leaving cancels review and requires a new three-second interval", .timeLimit(.minutes(1)))
     func leavingScreenCancelsReview() async throws {
         let store = MemoryReviewStateStore()
         let sleeper = ControlledSleeper()
@@ -450,10 +544,10 @@ struct DeviceActivityViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Cancelling a row task during its wait clears loading without an error and preserves progress", .timeLimit(.minutes(1)))
-    func cancellingPaginationWaitResumesAtSavedCursor() async {
+    @Test("Scrolling away and back does not cancel or stall pagination", .timeLimit(.minutes(1)))
+    func paginationSurvivesOverlappingRowCancellation() async {
         var cursors = [String?]()
-        var isWaiting = false
+        let sleeper = ControlledSleeper()
         let newest = entry("newest", date: Date(timeIntervalSince1970: 30))
         let older = entry("older", date: Date(timeIntervalSince1970: 20))
         let model = DeviceActivityViewModel(accountIdentifier: { "account-a" }, fetchPage: { cursor in
@@ -463,24 +557,56 @@ struct DeviceActivityViewModelTests {
             case "gap": return TestPage(entries: [], before: "older")
             default: return TestPage(entries: [older], before: nil)
             }
-        }, sleep: { _ in
-            isWaiting = true
-            try await Task.sleep(nanoseconds: 60_000_000_000)
-        })
+        }, sleep: sleeper.sleep)
         await model.loadIfNeeded()
         let rowTask = Task { await model.loadOlderIfNeeded(after: newest.id) }
-        while !isWaiting { await Task.yield() }
-        #expect(model.isLoading)
+        await sleeper.waitForRequests(1)
         rowTask.cancel()
+        // The replacement row appears before the previous operation has unwound.
+        await model.loadOlderIfNeeded(after: newest.id)
+        #expect(cursors == [nil, "gap"])
+        sleeper.resumeNext()
         await rowTask.value
 
         #expect(!model.isLoading)
         #expect(model.error == nil)
-        #expect(model.entries == [newest])
-        #expect(cursors == [nil, "gap"])
-        await model.loadOlderIfNeeded(after: newest.id)
         #expect(cursors == [nil, "gap", "older"])
         #expect(model.entries == [newest, older])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Leaving or switching accounts cancels the screen-owned page request", .timeLimit(.minutes(1)), arguments: [false, true])
+    func leavingOrSwitchingAccountCancelsPagination(switchesAccount: Bool) async {
+        var accountID = "account-a"
+        var cursors = [String?]()
+        var wasCancelled = false
+        let sleeper = ControlledSleeper()
+        let newest = entry("newest", date: Date(timeIntervalSince1970: 30))
+        let model = DeviceActivityViewModel(accountIdentifier: { accountID }, fetchPage: { cursor in
+            cursors.append(cursor)
+            return cursor == nil ? TestPage(entries: [newest], before: "gap") : TestPage(entries: [], before: "older")
+        }, sleep: {
+            defer { wasCancelled = Task.isCancelled }
+            try await sleeper.sleep($0)
+        })
+        await model.loadIfNeeded()
+        let rowTask = Task { await model.loadOlderIfNeeded(after: newest.id) }
+        await sleeper.waitForRequests(1)
+
+        if switchesAccount {
+            accountID = "account-b"
+        } else {
+            model.cancelAndClear()
+        }
+        await model.loadIfNeeded()
+        sleeper.resumeNext()
+        await rowTask.value
+
+        #expect(wasCancelled)
+        #expect(cursors == [nil, "gap", nil])
+        #expect(model.entries == [newest])
+        #expect(!model.isLoading)
+        #expect(model.error == nil)
     }
 
     @available(iOS 16, macOS 13, *)

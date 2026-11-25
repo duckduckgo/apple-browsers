@@ -89,6 +89,39 @@ final class DeviceActivityViewModelSyncTests: XCTestCase {
         XCTAssertEqual(sync.auditLogPageReadCount, 2)
     }
 
+    @MainActor
+    func testFactoryPropagatesAccountReadFailureBeforeCreatingReader() async {
+        let sync = MockDDGSyncing(authState: .active, account: makeAccount("account-a"), isSyncInProgress: false)
+        sync.auditLogAccountIdentifierError = SyncError.failedToReadSecureStore(status: -25308)
+        let model = DeviceActivityViewModel.make(syncService: sync)
+
+        await model.loadIfNeeded()
+
+        XCTAssertNotNil(model.error)
+        XCTAssertTrue(sync.auditLogReaderAccounts.isEmpty)
+    }
+
+    @MainActor
+    func testFactoryDoesNotOverwriteReviewStateAfterReadFailure() async throws {
+        let sync = MockDDGSyncing(authState: .active, account: makeAccount("account-a"), isSyncInProgress: false)
+        let previousDate = Date(timeIntervalSince1970: 100)
+        try sync.setAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: previousDate, isInitialized: true), for: "account-a")
+        sync.auditLogReviewStateError = NSError(domain: "DeviceActivityReviewState", code: 1)
+        sync.auditLogPageStub = SyncAuditLogPage(events: [
+            SyncAuditLogEvent(id: "new-login", kind: .synced, occurredAt: Date(timeIntervalSince1970: 150),
+                             device: RegisteredDevice(id: "joining-device", name: "iPhone", type: "phone"))
+        ], hasMore: false)
+        let model = DeviceActivityViewModel.make(syncService: sync)
+
+        await model.loadIfNeeded()
+        await model.markAsReviewedAfterDelay()
+
+        let entry = try XCTUnwrap(model.entries.first)
+        XCTAssertFalse(model.isSeen(entry))
+        sync.auditLogReviewStateError = nil
+        XCTAssertEqual(try sync.auditLogReviewState(for: "account-a")?.reviewedThrough, previousDate)
+    }
+
     private func makeAccount(_ userID: String) -> SyncAccount {
         SyncAccount(deviceId: "this-device", deviceName: "iPhone", deviceType: "phone", userId: userID,
                     primaryKey: Data(repeating: 1, count: 32), secretKey: Data(repeating: 2, count: 32), token: "token", state: .active)

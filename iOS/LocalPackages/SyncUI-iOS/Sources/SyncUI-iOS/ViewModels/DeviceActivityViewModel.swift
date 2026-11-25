@@ -78,10 +78,12 @@ public final class DeviceActivityViewModel: ObservableObject {
     @Published public private(set) var hasLoaded = false
     @Published public private(set) var reviewState = DeviceActivityReviewState(reviewedThrough: nil, isInitialized: false)
 
-    private let accountIdentifier: () -> String?
+    private let accountIdentifier: () throws -> String?
     private let makePageFetcher: () throws -> PageFetcher
     private var fetchPage: PageFetcher?
-    private let loadReviewState: (String) -> DeviceActivityReviewState?
+    private var paginationTask: Task<Void, Never>?
+    private let loadReviewState: (String) throws -> DeviceActivityReviewState?
+    private var isReviewStateAvailable = false
     private let saveReviewState: (String, DeviceActivityReviewState) -> Void
     private let sleep: (UInt64) async throws -> Void
     private var accountID: String?
@@ -89,9 +91,9 @@ public final class DeviceActivityViewModel: ObservableObject {
     // A new visit or account change invalidates work that is suspended at an await.
     private var generation = 0
 
-    public init(accountIdentifier: @escaping () -> String?,
+    public init(accountIdentifier: @escaping () throws -> String?,
                 makePageFetcher: @escaping () throws -> PageFetcher,
-                loadReviewState: @escaping (String) -> DeviceActivityReviewState? = { _ in nil },
+                loadReviewState: @escaping (String) throws -> DeviceActivityReviewState? = { _ in nil },
                 saveReviewState: @escaping (String, DeviceActivityReviewState) -> Void = { _, _ in },
                 sleep: @escaping (UInt64) async throws -> Void = { try await Task.sleep(nanoseconds: $0) }) {
         self.accountIdentifier = accountIdentifier
@@ -102,15 +104,36 @@ public final class DeviceActivityViewModel: ObservableObject {
     }
 
     public func loadIfNeeded() async {
-        updateAccountIfNeeded()
-        guard !hasLoaded, !isLoading, error == nil else { return }
-        await loadPage()
+        do {
+            try updateAccountIfNeeded()
+            guard !hasLoaded, !isLoading, error == nil else { return }
+            await loadPage()
+        } catch {
+            self.error = error
+        }
     }
 
     public func loadOlderIfNeeded(after entryID: String) async {
-        updateAccountIfNeeded()
-        guard entries.last?.id == entryID, hasMore, !isLoading, error == nil else { return }
-        await loadPage()
+        guard entries.last?.id == entryID else { return }
+        do {
+            try updateAccountIfNeeded()
+            // An account change may have cleared the row that triggered this request.
+            guard entries.last?.id == entryID, hasMore, !isLoading, paginationTask == nil, error == nil else { return }
+            let requestGeneration = generation
+            // A row scrolling out of view must not cancel the screen's page request.
+            let task = Task {
+                guard requestGeneration == generation, !Task.isCancelled else { return }
+                await loadPage()
+            }
+            paginationTask = task
+            await task.value
+        } catch {
+            self.error = error
+        }
+    }
+
+    func isNewActivity(_ entry: DeviceActivityEntry) -> Bool {
+        isReviewStateAvailable && !isSeen(entry)
     }
 
     public func isSeen(_ entry: DeviceActivityEntry) -> Bool {
@@ -122,7 +145,7 @@ public final class DeviceActivityViewModel: ObservableObject {
     /// Reviews all activity through the newest timestamp after the screen stays open for the delay.
     /// This includes older rows that have not been loaded or scrolled into view.
     public func markAsReviewedAfterDelay() async {
-        guard hasLoaded, let newestEntry = entries.first, !isSeen(newestEntry), let accountID else { return }
+        guard isReviewStateAvailable, hasLoaded, let newestEntry = entries.first, !isSeen(newestEntry), let accountID else { return }
         let requestGeneration = generation
         do {
             try await sleep(Self.reviewDelayNanoseconds)
@@ -130,8 +153,11 @@ public final class DeviceActivityViewModel: ObservableObject {
             return
         }
         guard !Task.isCancelled else { return }
-        updateAccountIfNeeded()
-        guard requestGeneration == generation, accountIdentifier() == accountID else { return }
+        do {
+            try checkRequestIsCurrent(requestGeneration)
+        } catch {
+            return
+        }
         if let reviewedThrough = reviewState.reviewedThrough, newestEntry.date <= reviewedThrough { return }
         reviewState = DeviceActivityReviewState(reviewedThrough: newestEntry.date, isInitialized: true)
         saveReviewState(accountID, reviewState)
@@ -139,6 +165,8 @@ public final class DeviceActivityViewModel: ObservableObject {
 
     /// Discards this visit's entries and reader while retaining the persisted review state.
     public func cancelAndClear() {
+        paginationTask?.cancel()
+        paginationTask = nil
         generation += 1
         entries = []
         fetchPage = nil
@@ -148,11 +176,14 @@ public final class DeviceActivityViewModel: ObservableObject {
         error = nil
         accountID = nil
         reviewState = DeviceActivityReviewState(reviewedThrough: nil, isInitialized: false)
+        isReviewStateAvailable = false
     }
 
-    private func updateAccountIfNeeded() {
-        let currentID = accountIdentifier()
+    private func updateAccountIfNeeded() throws {
+        let currentID = try accountIdentifier()
         guard currentID != accountID else { return }
+        paginationTask?.cancel()
+        paginationTask = nil
         generation += 1
         accountID = currentID
         isLoading = false
@@ -161,7 +192,13 @@ public final class DeviceActivityViewModel: ObservableObject {
         hasMore = true
         hasLoaded = false
         error = nil
-        reviewState = currentID.flatMap(loadReviewState) ?? DeviceActivityReviewState(reviewedThrough: nil, isInitialized: false)
+        do {
+            reviewState = try currentID.flatMap(loadReviewState) ?? DeviceActivityReviewState(reviewedThrough: nil, isInitialized: false)
+            isReviewStateAvailable = currentID != nil
+        } catch {
+            reviewState = DeviceActivityReviewState(reviewedThrough: nil, isInitialized: false)
+            isReviewStateAvailable = false
+        }
     }
 
     private func loadPage() async {
@@ -170,7 +207,10 @@ public final class DeviceActivityViewModel: ObservableObject {
         error = nil
         let requestGeneration = generation
         defer {
-            if requestGeneration == generation { isLoading = false }
+            if requestGeneration == generation {
+                isLoading = false
+                paginationTask = nil
+            }
         }
         var receivedEntries = [DeviceActivityEntry]()
 
@@ -186,7 +226,7 @@ public final class DeviceActivityViewModel: ObservableObject {
                 try Task.checkCancellation()
                 try checkRequestIsCurrent(requestGeneration)
                 let page = try await pageFetcher()
-                // Consume a completed page even if its row task was cancelled, keeping the reader and visible rows in step.
+                // Consume a completed page even if cancellation was requested, keeping the reader and visible rows in step.
                 try checkRequestIsCurrent(requestGeneration)
                 receivedEntries.append(contentsOf: page.entries)
                 hasMore = page.hasMore
@@ -203,22 +243,23 @@ public final class DeviceActivityViewModel: ObservableObject {
             return
         } catch {
             guard !Task.isCancelled else { return }
-            updateAccountIfNeeded()
+            // A failed identity read must preserve the current visit while the load error is displayed.
+            try? updateAccountIfNeeded()
             guard requestGeneration == generation else { return }
             self.error = error
         }
     }
 
     private func checkRequestIsCurrent(_ requestGeneration: Int) throws {
-        updateAccountIfNeeded()
+        try updateAccountIfNeeded()
         guard requestGeneration == generation else { throw CancellationError() }
     }
 
     // Establish the initial baseline only after finding entries or reaching the start of history.
     private func seedReviewStateIfNeeded(from receivedEntries: [DeviceActivityEntry]) {
-        guard !reviewState.isInitialized else { return }
+        guard isReviewStateAvailable, !reviewState.isInitialized else { return }
         reviewState = DeviceActivityReviewState(reviewedThrough: receivedEntries.map(\.date).max(), isInitialized: true)
-        guard let accountID, accountIdentifier() == accountID else { return }
+        guard let accountID else { return }
         saveReviewState(accountID, reviewState)
     }
 }

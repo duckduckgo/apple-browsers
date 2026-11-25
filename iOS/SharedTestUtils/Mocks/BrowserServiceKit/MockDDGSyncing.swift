@@ -180,6 +180,13 @@ final class MockDDGSyncing: DDGSyncing {
     private(set) var auditLogReaderAccounts: [String?] = []
     private(set) var auditLogPageReadCount = 0
 
+    var auditLogAccountIdentifierError: Error?
+
+    func auditLogAccountIdentifier() throws -> String? {
+        if let auditLogAccountIdentifierError { throw auditLogAccountIdentifierError }
+        return account?.userId
+    }
+
     @MainActor
     func makeAuditLogReader() throws -> any SyncAuditLogReading {
         auditLogReaderAccounts.append(account?.userId)
@@ -190,9 +197,11 @@ final class MockDDGSyncing: DDGSyncing {
     }
 
     private var auditLogReviewStates = [String: SyncAuditLogReviewState]()
+    var auditLogReviewStateError: Error?
 
     func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState? {
-        auditLogReviewStates[accountID]
+        if let auditLogReviewStateError { throw auditLogReviewStateError }
+        return auditLogReviewStates[accountID]
     }
 
     func setAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws {

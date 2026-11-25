@@ -129,7 +129,8 @@ struct DeviceActivityView: View {
     }
 
     private func activityRow(_ entry: DeviceActivityEntry) -> some View {
-        let backgroundColor = model.isSeen(entry) ? Color(designSystemColor: .surfaceTertiary) : Color(designSystemColor: .accentAltPrimary)
+        let isNewActivity = model.isNewActivity(entry)
+        let backgroundColor = isNewActivity ? Color(designSystemColor: .accentAltPrimary) : Color(designSystemColor: .surfaceTertiary)
         return HStack(spacing: 12) {
             ZStack(alignment: .bottomTrailing) {
                 SyncDeviceTypeImage(device: .init(id: entry.id,
@@ -143,7 +144,7 @@ struct DeviceActivityView: View {
                         .background(
                             Circle().fill(backgroundColor)
                                 .padding(-2)
-                                .animation(.easeInOut(duration: 1.0), value: model.isSeen(entry))
+                                .animation(.easeInOut(duration: 1.0), value: isNewActivity)
                         )
                         .offset(x: -2, y: -2)
                 }
@@ -165,7 +166,7 @@ struct DeviceActivityView: View {
         .padding(.vertical, 4)
         .listRowBackground(
             backgroundColor
-                .animation(.easeInOut(duration: 1.0), value: model.isSeen(entry))
+                .animation(.easeInOut(duration: 1.0), value: isNewActivity)
         )
         .accessibilityElement(children: .combine)
     }

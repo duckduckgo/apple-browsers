@@ -874,6 +874,7 @@ class TabViewController: UIViewController {
 
     var pageTranslationOfferProvider: PageTranslationOfferProvider?
     private lazy var translationBannerPresenter = TranslationBannerPresenter(appSettings: appSettings)
+    private var pageTranslationBridge: PageTranslationBridge?
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -3024,6 +3025,7 @@ extension TabViewController: WKNavigationDelegate {
             browserToolsService?.ownerDidNavigate(tabID: tabModel.uid, url: webView.url)
             firstPaintCover.didCommit(navigation)
             signpostSearchCommit(url: webView.url)
+            pageTranslationBridge?.documentDidChange()
         }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
@@ -3161,7 +3163,45 @@ extension TabViewController: WKNavigationDelegate {
         if floatingUIManager.isFloatingUIEnabled, let chromeDelegate {
             translationBannerPresenter.chromeInsets = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
         }
-        translationBannerPresenter.present(offer, in: self, nextTo: addressBar)
+        translationBannerPresenter.present(offer, in: self, nextTo: addressBar) { [weak self] in
+            self?.translatePage()
+        }
+    }
+
+    /// One bridge per tab: rebuilt scripts (a config refresh, protections toggled) keep the page and its bundle, whose
+    /// replies now reach the new scripts' broker, so the same bridge re-registers there and a request in flight carries on.
+    private func installPageTranslationBridge(in userScripts: UserScripts) {
+        let bridge = pageTranslationBridge ?? PageTranslationBridge(inject: { [weak self] in
+            guard let self, let webView, let userScripts = self.userScripts else { return }
+            _ = try await webView.evaluateJavaScript(try userScripts.pageTranslationSource(), in: nil, contentWorld: .defaultClient)
+        })
+        bridge.webView = webView
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: bridge)
+        pageTranslationBridge = bridge
+    }
+
+    // TODO: - Translate the extracted units (next task); for now, check extraction from the isolated world works.
+    private func translatePage() {
+        guard let bridge = pageTranslationBridge else { return }
+        Task {
+            do {
+                let units = try await bridge.extract()
+                
+                // TODO: - Replace debug logs below by actual translation.
+                Logger.webPageTranslation.info("Page translation: extracted \(units.count, privacy: .public) units")
+                // Page text stays private: Xcode's console shows it, Console.app redacts it.
+                let sample = units.filter(\.isVisible) + units.filter { !$0.isVisible }.prefix(50)
+                for unit in sample {
+                    Logger.webPageTranslation.debug("""
+                        Page translation unit \(unit.id, privacy: .public) \
+                        html: \(unit.html, privacy: .public) visible: \(unit.isVisible, privacy: .public) \
+                        text: \(String(unit.text.prefix(120)), privacy: .private)
+                        """)
+                }
+            } catch {
+                Logger.webPageTranslation.error("Page translation failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.
@@ -5482,6 +5522,8 @@ extension TabViewController: UserContentControllerDelegate {
 
         siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: siteLoadingPerformanceSubfeature!)
+
+        installPageTranslationBridge(in: userScripts)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         

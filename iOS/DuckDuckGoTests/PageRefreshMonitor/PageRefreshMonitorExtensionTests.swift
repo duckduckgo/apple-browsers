@@ -26,41 +26,28 @@ import PixelKit
 
 final class PageRefreshMonitorExtensionTests: XCTestCase {
 
-    var captureMetric: String?
-
-    override func setUpWithError() throws {
-        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(), eventTracker: ExperimentEventTracker(), fire: { _, _, _ in })
-        SiteBreakageExperimentMetrics.configureSiteBreakageExperimentMetrics { _, metric, _, _ in
-            self.captureMetric = metric
+    private func capturedMetric(after refreshes: Int) -> String? {
+        var captured: String?
+        PageRefreshMonitor.onDidDetectRefreshPattern(refreshes) { _, metric, _, _ in
+            captured = metric
         }
-    }
-
-    override func tearDownWithError() throws {
-        captureMetric = nil
+        return captured
     }
 
     func test_OnDidDetectRefreshPattern_WithValue1_FireExperimentFuncNotCalled() throws {
-        PageRefreshMonitor.onDidDetectRefreshPattern(1)
-
-        XCTAssertNil(captureMetric)
+        XCTAssertNil(capturedMetric(after: 1))
     }
 
     func test_OnDidDetectRefreshPattern_WithValue2_ExpectedFireExperimentFuncCalled() throws {
-        PageRefreshMonitor.onDidDetectRefreshPattern(2)
-
-        XCTAssertEqual(captureMetric, "2XRefresh")
+        XCTAssertEqual(capturedMetric(after: 2), "2XRefresh")
     }
 
     func test_OnDidDetectRefreshPattern_WithValue3_ExpectedFireExperimentFuncCalled() throws {
-        PageRefreshMonitor.onDidDetectRefreshPattern(3)
-
-        XCTAssertEqual(captureMetric, "3XRefresh")
+        XCTAssertEqual(capturedMetric(after: 3), "3XRefresh")
     }
 
     func test_OnDidDetectRefreshPattern_WithValue4_FireExperimentFuncNotCalled() throws {
-        PageRefreshMonitor.onDidDetectRefreshPattern(4)
-
-        XCTAssertNil(captureMetric)
+        XCTAssertNil(capturedMetric(after: 4))
     }
 
 }

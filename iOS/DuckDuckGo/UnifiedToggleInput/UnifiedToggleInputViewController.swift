@@ -334,6 +334,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.selectedReasoningMode = newValue }
     }
 
+    var usesSimplifiedPromptBox: Bool {
+        get { inputBarView.usesSimplifiedPromptBox }
+        set { inputBarView.usesSimplifiedPromptBox = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { inputBarView.isToolsButtonHidden }
         set { inputBarView.isToolsButtonHidden = newValue }
@@ -528,6 +533,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func refreshFireMode(fireMode: Bool) {
         inputBarView.refreshFireMode(fireMode: fireMode)
+    }
+
+    func setUsesNewTabPageCardBackground(_ usesNewTabPageCardBackground: Bool) {
+        inputBarView.usesNewTabPageCardBackground = usesNewTabPageCardBackground
     }
 
     // MARK: - Page-Context Chip

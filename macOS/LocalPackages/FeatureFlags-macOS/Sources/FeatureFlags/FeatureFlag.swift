@@ -386,9 +386,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
-    case crashCollectionLimitCallStackTreeDepth
-
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
 
@@ -401,6 +398,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// Hands a PDF tab to Duck.ai as page context — the document's bytes instead of page markdown.
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1217621296618559
     case aiChatPdfPageContext
+
+    /// "Ask about page" in the context menu of links on DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case aiChatAskAboutSerpPage
+
+    /// "Ask about page" in the context menu of links on any page other than DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case aiChatAskAboutLinkedPage
 
     /// Attaches page context to the sidebar by default, replacing the auto-send setting. A manual
     /// remove lasts across navigation until the user attaches again or reopens the sidebar.
@@ -612,6 +617,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219191518131269
     case syncImprovedPairingFlow
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220822581493341
+    case sendSyncSetupWideEvent
+
     /// Kill switch for the privacy disclosure shown while a file or image attachment is staged in
     /// a Duck.ai input.
     case aiChatAttachmentPrivacyDisclosure
@@ -702,6 +710,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// Declared Age Range: age signal request
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220879781552636
+    case declaredAgeRange
 
     /// Shows the Add to Dock instructions video in the App Store build from calls to action that only offer Add to Dock: the menu items, the New Tab Page card, and Default Browser and Dock prompts that only offer Add to Dock.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220563610417806
@@ -962,8 +974,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.popupMutationObserver), category: .popupBlocking)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
-        case .crashCollectionLimitCallStackTreeDepth:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .supportsSyncChatsDeletion:
@@ -972,6 +982,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts), category: .duckAI)
         case .aiChatPdfPageContext:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
+        case .aiChatAskAboutSerpPage:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.askAboutSerpPage), category: .duckAI)
+        case .aiChatAskAboutLinkedPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.askAboutLinkedPage), category: .duckAI)
         case .aiChatPageContextAutoAttach:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pageContextAutoAttach), category: .duckAI)
         case .aiChatOmnibarImageGeneration:
@@ -1099,6 +1113,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
         case .syncImprovedPairingFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
+        case .sendSyncSetupWideEvent:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncSubfeature.sendSyncSetupWideEvent), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
@@ -1145,6 +1161,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
+        case .declaredAgeRange:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.declaredAgeRange))
         case .appStoreAddToDockOnlyCTA:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreAddToDockOnlyCTA))
         case .appStoreBothDefaultBrowserAndDockCTA:

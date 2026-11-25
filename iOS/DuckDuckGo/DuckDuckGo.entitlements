@@ -6,6 +6,8 @@
 	<true/>
 	<key>com.apple.developer.browser.app-installation</key>
 	<true/>
+	<key>com.apple.developer.declared-age-range</key>
+	<true/>
 	<key>com.apple.developer.networking.networkextension</key>
 	<array>
 		<string>packet-tunnel-provider</string>

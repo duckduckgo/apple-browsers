@@ -237,7 +237,7 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
         let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(Self.logoInputs(mode: mode))
         let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
                                               listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
-        sut.usesRedesignedNewTabPageLayout = usesRedesign
+        sut.isOverRedesignedNewTabPage = usesRedesign
         sut.setEscapeHatchPlacement(usesScrollableHatch ? .embedded : .pinned)
         sut.chromeInsetTop = 100
         sut.contentTopInset = 100

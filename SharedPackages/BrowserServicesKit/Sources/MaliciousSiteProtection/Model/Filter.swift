@@ -18,7 +18,7 @@
 
 import Foundation
 
-public struct Filter: Codable, Hashable {
+public struct Filter: Codable, Hashable, Sendable {
     public var hash: String
     public var regex: String
 

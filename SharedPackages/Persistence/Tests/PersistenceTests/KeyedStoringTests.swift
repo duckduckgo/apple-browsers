@@ -1417,9 +1417,11 @@ final class KeyedStoringTests {
         storage.refreshInterval = 30.0
 
         // When - read from multiple threads concurrently
+        let suiteName = self.suiteName
         await withTaskGroup(of: Double?.self) { group in
             for _ in 0..<100 {
                 group.addTask {
+                    let storage: any KeyedStoring<AppSettingsKeys> = UserDefaults(suiteName: suiteName)!.keyedStoring()
                     return storage.refreshInterval
                 }
             }
@@ -1437,9 +1439,11 @@ final class KeyedStoringTests {
         let storage: any KeyedStoring<AppSettingsKeys> = defaults.keyedStoring()
 
         // When - write different keys from multiple threads
+        let suiteName = self.suiteName
         await withTaskGroup(of: Void.self) { group in
             for i in 0..<50 {
                 group.addTask {
+                    let storage: any KeyedStoring<AppSettingsKeys> = UserDefaults(suiteName: suiteName)!.keyedStoring()
                     if i % 2 == 0 {
                         storage.isFirstLaunch = true
                     } else {
@@ -1452,7 +1456,8 @@ final class KeyedStoringTests {
         }
 
         // Then - both properties should have some value set
-        #expect(storage.isFirstLaunch != nil || storage.refreshInterval != nil)
+        #expect(storage.isFirstLaunch == true)
+        #expect(storage.refreshInterval != nil)
     }
 
     @available(iOS 16, macOS 13, *)

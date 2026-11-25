@@ -161,7 +161,7 @@ struct FaviconsHelper {
 
     static func createFakeFavicon(forDomain domain: String,
                                   size: CGFloat = 192,
-                                  backgroundColor: UIColor = UIColor(baseColor: .gray70),
+                                  backgroundColor: UIColor = UIColor(singleUseColor: .fallbackFaviconBackground),
                                   bold: Bool = true,
                                   preferredFakeFaviconLetters: String? = nil,
                                   letterCount: Int = 2) -> UIImage? {

@@ -21,11 +21,12 @@ import DesignResourcesKit
 import SwiftUI
 
 struct RedesignedFocusedSearchModulesView: View {
-    let favoritesModel: FavoritesViewModel?
-    let messagesModel: NewTabPageMessagesModel?
-    var showsSearchModules = true
+    /// Set when no live page sits behind the editor (a loaded web page), so this view draws the modules itself.
+    var embeddedModules: EmbeddedModules?
     var recentChats: SuggestionsListViewModel?
     var escapeHatch: EscapeHatchModel?
+    /// Whether the escape hatch shows here. It stays laid out while hidden, so a mode switch never animates it in.
+    var showsEscapeHatch = true
     var syncPromo: AnyView?
     var isAddressBarAtBottom = false
     var contentTopInset: CGFloat = 0
@@ -36,38 +37,44 @@ struct RedesignedFocusedSearchModulesView: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 0) {
-                    RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(height: showsSearchModules ? nil : 0)
-                        .opacity(showsSearchModules ? 1 : 0)
-                        .allowsHitTesting(showsSearchModules)
-                        .accessibilityHidden(!showsSearchModules)
+                    if let embeddedModules {
+                        RedesignedNewTabPageModulesView(favoritesModel: embeddedModules.favoritesModel)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(height: embeddedModules.isVisible ? nil : 0)
+                            .opacity(embeddedModules.isVisible ? 1 : 0)
+                            .allowsHitTesting(embeddedModules.isVisible)
+                            .accessibilityHidden(!embeddedModules.isVisible)
+                    }
                     if let escapeHatch {
                         RedesignedEscapeHatchView(model: escapeHatch)
                             .modifier(EmbeddedEscapeHatchGeometryReader())
                             .frame(maxWidth: .infinity)
                             .padding(.top, hatchTopPadding)
                             .padding(.horizontal, 16)
+                            .opacity(showsEscapeHatch ? 1 : 0)
+                            .allowsHitTesting(showsEscapeHatch)
+                            .accessibilityHidden(!showsEscapeHatch)
                     }
                     if let recentChats {
                         VStack(spacing: FocusedChromeView.Metrics.bottomInset) {
                             if let syncPromo {
                                 syncPromo
                             }
-                            LegacyRecentChatsView(viewModel: recentChats, isAddressBarAtBottom: isAddressBarAtBottom)
+                            LegacyRecentChatsView(viewModel: recentChats, isAddressBarAtBottom: isAddressBarAtBottom, usesCardSurface: true)
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, FocusedChromeView.Metrics.bottomInset)
                     }
-                    if let messagesModel {
+                    if let embeddedModules, let messagesModel = embeddedModules.messagesModel {
                         RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
-                            .frame(height: showsSearchModules ? nil : 0)
-                            .opacity(showsSearchModules ? 1 : 0)
-                            .allowsHitTesting(showsSearchModules)
-                            .accessibilityHidden(!showsSearchModules)
+                            .frame(height: embeddedModules.isVisible ? nil : 0)
+                            .opacity(embeddedModules.isVisible ? 1 : 0)
+                            .allowsHitTesting(embeddedModules.isVisible)
+                            .accessibilityHidden(!embeddedModules.isVisible)
                     }
                 }
-                .animation(nil, value: showsSearchModules)
+                .animation(nil, value: embeddedModules?.isVisible)
+                .animation(nil, value: showsEscapeHatch)
                 .animation(nil, value: recentChats != nil)
                 .modifier(FocusedContentGeometryGroup(isEnabled: usesScrollableEscapeHatch))
                 .modifier(FocusedContentTopInset(topInset: contentTopInset,
@@ -85,7 +92,17 @@ struct RedesignedFocusedSearchModulesView: View {
     }
 
     private var hatchTopPadding: CGFloat {
-        guard !showsSearchModules else { return 0 }
-        return RedesignedNewTabPageModulesView.topPadding
+        guard embeddedModules?.isVisible == true else { return RedesignedNewTabPageModulesView.topPadding }
+        return 0
+    }
+}
+
+extension RedesignedFocusedSearchModulesView {
+
+    /// The favorites and messages drawn inside the focused layer.
+    struct EmbeddedModules {
+        let favoritesModel: FavoritesViewModel?
+        let messagesModel: NewTabPageMessagesModel?
+        let isVisible: Bool
     }
 }

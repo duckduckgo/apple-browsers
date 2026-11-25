@@ -26,7 +26,6 @@ import PixelKit
 import PixelExperimentKit
 import PrivacyConfig
 import os.log
-import FeatureFlags_iOS
 
 public class StatisticsLoader {
 
@@ -49,13 +48,9 @@ public class StatisticsLoader {
     init(statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          returnUserMeasurement: ReturnUserMeasurement = KeychainReturnUserMeasurement(),
          usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
-         fireAppRetentionExperimentPixels: @escaping () -> Void = {
-            PixelKit.fireAppRetentionExperimentPixels()
-            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "app_use")
-         },
+         fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
          fireSearchExperimentPixels: @escaping () -> Void = {
             PixelKit.fireSearchExperimentPixels()
-            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
             StatisticsLoader.fireOnboardingByDownloadReasonSearchExperimentPixels()
          },
          fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels,
@@ -71,18 +66,6 @@ public class StatisticsLoader {
         self.fireOSDistributionPixel = fireOSDistributionPixel
         self.pixelFiring = pixelFiring
         self.isPad = isPad
-    }
-
-    /// Fires the d1-4 conversion-window metric scoped to the search-token experiment only.
-    static func fireSearchTokenExperimentPixels(metric: String) {
-        for threshold in [1, 4, 6, 11, 21, 30] {
-            PixelKit.fireExperimentPixelIfThresholdReached(
-                for: iOSBrowserConfigSubfeature.searchTokenExperimentV4.rawValue,
-                metric: metric,
-                conversionWindowDays: 1...4,
-                threshold: threshold
-            )
-        }
     }
 
     // Per-download-reason d5-7 search retention for the onboarding VPN download-reason experiment.

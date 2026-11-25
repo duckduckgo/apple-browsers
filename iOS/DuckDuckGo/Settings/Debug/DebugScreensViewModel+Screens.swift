@@ -113,9 +113,6 @@ extension DebugScreensViewModel {
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()
             }),
-            .view(title: "Search Token", { _ in
-                SearchTokenDebugView()
-            }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
             }),

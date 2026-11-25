@@ -53,7 +53,7 @@ public final class PageTranslationSession {
     private weak var progress: PageTranslationProgress?
     private var task: Task<Void, Never>?
 
-    public var isTranslating: Bool { task != nil }
+    var isTranslating: Bool { task != nil }
 
     /// - Parameter batchCharacterLimit: read when each translation starts, so a config update applies to the next one.
     public init(bridge: PageTranslationBridging,

@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 import Persistence
 
 enum DeclaredAgeStorageKeys: String, StorageKeyDescribing {
@@ -48,10 +49,18 @@ public final class DeclaredAgeRequester {
 
     public func isRequestNeeded(isReinstall: Bool = false) async -> Bool {
         guard isRequestDue(isReinstall: isReinstall) else {
+            Logger.declaredAge.info("Request is not due (isReinstall: \(isReinstall))")
             return false
         }
 
-        return (try? await service.isRequestRequired()) ?? false
+        do {
+            let isRequired = try await service.isRequestRequired()
+            Logger.declaredAge.info("Request is required: \(isRequired)")
+            return isRequired
+        } catch {
+            Logger.declaredAge.error("Failed to check whether a request is required: \(String(describing: error), privacy: .public)")
+            return false
+        }
     }
 
     public func requestDeclaredAge(isReinstall: Bool = false, in anchor: DeclaredAgeAnchor) async -> Bool {
@@ -77,7 +86,14 @@ public final class DeclaredAgeRequester {
 private extension DeclaredAgeRequester {
 
     func request(in anchor: DeclaredAgeAnchor) async -> Bool {
-        (try? await service.requestDeclaredAge(in: anchor)) ?? false
+        do {
+            let didRequest = try await service.requestDeclaredAge(in: anchor)
+            Logger.declaredAge.info("Request finished (supported by the OS: \(didRequest))")
+            return didRequest
+        } catch {
+            Logger.declaredAge.error("Request failed: \(String(describing: error), privacy: .public)")
+            return false
+        }
     }
 
     func markRequested(isReinstall: Bool) {

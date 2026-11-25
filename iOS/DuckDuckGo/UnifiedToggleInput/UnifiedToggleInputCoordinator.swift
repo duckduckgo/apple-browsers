@@ -729,6 +729,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToAttachmentUsageChanges()
         subscribeToSubscriptionChanges()
         subscribeToAppLifecycle()
+        // The remote config can turn the hints on or off while a blank chat is open.
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshNewChatState() }
+            .store(in: &cancellables)
         wideEventReporter.subscribe(
             aiChatStatus: $aiChatStatus.eraseToAnyPublisher(),
             stopGeneratingTapped: viewController.handler.stopGeneratingButtonTappedPublisher

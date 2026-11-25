@@ -26,30 +26,36 @@ final class SubscriptionManagerRecoveryLoopGuardTests: XCTestCase {
 
     private var subscriptionManager: DefaultSubscriptionManager!
     private var oAuthClient: MockOAuthClient!
+    private var subscriptionCachingService: SubscriptionCachingServiceMock!
     private var pixelHandler: RecordingSubscriptionPixelHandler!
     private var recovery: StoringTokenRecovery!
+    private var clockSkewMonitor: ClockSkewMonitor!
     private var currentDate = Date()
+    private var currentUptime: TimeInterval = 1000
 
     private let rejectedRefresh = OAuthClientError.invalidTokenRequest(.reused)
 
     override func setUp() {
         super.setUp()
         currentDate = Date()
+        currentUptime = 1000
         oAuthClient = MockOAuthClient()
+        subscriptionCachingService = SubscriptionCachingServiceMock()
         pixelHandler = RecordingSubscriptionPixelHandler()
+        clockSkewMonitor = ClockSkewMonitor(now: { [unowned self] in self.currentDate })
         let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         subscriptionManager = DefaultSubscriptionManager(
             storePurchaseManager: StorePurchaseManagerMock(),
             oAuthClient: oAuthClient,
             userDefaults: userDefaults,
             subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-            subscriptionCachingService: SubscriptionCachingServiceMock(),
+            subscriptionCachingService: subscriptionCachingService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
             pixelHandler: pixelHandler,
             initForPurchase: false,
-            clockSkewMonitor: ClockSkewMonitor(now: { [unowned self] in self.currentDate }),
+            clockSkewMonitor: clockSkewMonitor,
             invalidTokenRecoveryInterval: .minutes(1),
-            now: { [unowned self] in self.currentDate }
+            uptime: { [unowned self] in self.currentUptime }
         )
         recovery = StoringTokenRecovery(oAuthClient: oAuthClient)
         subscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [recovery],
@@ -59,8 +65,10 @@ final class SubscriptionManagerRecoveryLoopGuardTests: XCTestCase {
     override func tearDown() {
         subscriptionManager = nil
         oAuthClient = nil
+        subscriptionCachingService = nil
         pixelHandler = nil
         recovery = nil
+        clockSkewMonitor = nil
         super.tearDown()
     }
 
@@ -74,7 +82,7 @@ final class SubscriptionManagerRecoveryLoopGuardTests: XCTestCase {
         XCTAssertEqual(recovered.refreshToken, "recoveredR1")
 
         // The server rejects the recovered token too, a few seconds later
-        currentDate = currentDate.addingTimeInterval(5)
+        currentUptime += 5
         do {
             _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("Expected the request to fail")
@@ -95,14 +103,14 @@ final class SubscriptionManagerRecoveryLoopGuardTests: XCTestCase {
 
         _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
         for _ in 0..<20 {
-            currentDate = currentDate.addingTimeInterval(1)
+            currentUptime += 1
             _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
         }
         XCTAssertEqual(recovery.calls, 1)
         XCTAssertEqual(pixelHandler.deferredPixelCount, 20)
 
         // Once the interval has passed, the next rejection recovers again
-        currentDate = currentDate.addingTimeInterval(.minutes(1))
+        currentUptime += .minutes(1)
         let recoveredAgain = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
         XCTAssertEqual(recovery.calls, 2)
@@ -127,7 +135,7 @@ final class SubscriptionManagerRecoveryLoopGuardTests: XCTestCase {
         // A new session whose refresh is rejected moments later runs the recovery instead of deferring it
         oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "newA", refreshToken: "newR")
         recovery.storesNewToken = true
-        currentDate = currentDate.addingTimeInterval(5)
+        currentUptime += 5
         let recovered = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
         XCTAssertEqual(recovery.calls, 2)
@@ -142,7 +150,7 @@ final class SubscriptionManagerRecoveryLoopGuardTests: XCTestCase {
 
         await subscriptionManager.signOut(notifyUI: false, userInitiated: true)
         oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "otherA", refreshToken: "otherR")
-        currentDate = currentDate.addingTimeInterval(5)
+        currentUptime += 5
         let recovered = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
         XCTAssertEqual(recovery.calls, 2)
@@ -157,25 +165,36 @@ final class SubscriptionManagerRecoveryLoopGuardTests: XCTestCase {
 
         oAuthClient.internalCurrentTokenContainer = nil
         oAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
-        currentDate = currentDate.addingTimeInterval(5)
+        currentUptime += 5
         let restored = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
         XCTAssertEqual(recovery.calls, 2)
         XCTAssertEqual(restored.refreshToken, "recoveredR2")
     }
 
-    func testDeviceClockSetBackAfterARecovery_DoesNotDeferTheNextRecovery() async throws {
+    func testDeviceClockChangesAfterARecovery_DoNotChangeTheDeferral() async throws {
         oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "deadA", refreshToken: "deadR")
         oAuthClient.getTokensResponse = .failure(rejectedRefresh)
         _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
-        // The device clock is corrected backwards by two hours, then the recovered token is rejected
+        // The device clock is set back two hours: the next rejection within the minute is still deferred
         currentDate = currentDate.addingTimeInterval(-TimeInterval.hours(2))
-        let recoveredAgain = try await subscriptionManager.getTokenContainer(policy: .localValid)
+        currentUptime += 5
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+        XCTAssertEqual(recovery.calls, 1)
+        XCTAssertEqual(pixelHandler.deferredPixelCount, 1)
 
+        // The device clock is set forward a day: a rejection is still deferred until a minute of uptime has passed
+        currentDate = currentDate.addingTimeInterval(.days(1))
+        currentUptime += 5
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+        XCTAssertEqual(recovery.calls, 1)
+        XCTAssertEqual(pixelHandler.deferredPixelCount, 2)
+
+        currentUptime += .minutes(1)
+        let recoveredAgain = try await subscriptionManager.getTokenContainer(policy: .localValid)
         XCTAssertEqual(recovery.calls, 2)
         XCTAssertEqual(recoveredAgain.refreshToken, "recoveredR2")
-        XCTAssertEqual(pixelHandler.deferredPixelCount, 0)
     }
 
     func testConcurrentRequestRejectedWhileAnotherRecoveryStoresAToken_ReturnsTheStoredTokenInsteadOfDeferring() async throws {
@@ -183,16 +202,14 @@ final class SubscriptionManagerRecoveryLoopGuardTests: XCTestCase {
         oAuthClient.getTokensResponse = .failure(rejectedRefresh)
         _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
-        // A second request starts from the dead token. After its "stored token replaced" check, another request's recovery stores
-        // a fresh token.
+        // A second request starts from the dead token. Its refresh is rejected, and another request's recovery stores a fresh token
+        // while it snapshots the failed request's state.
         oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "deadA", refreshToken: "deadR")
         let concurrentlyRecovered = OAuthTokensFactory.makeTokenContainer(accessToken: "concurrentA", refreshToken: "concurrentR")
-        pixelHandler.onHandle = { [unowned self] pixel in
-            if case .invalidRefreshToken = pixel {
-                self.oAuthClient.internalCurrentTokenContainer = concurrentlyRecovered
-            }
+        subscriptionCachingService.onGet = { [unowned self] in
+            self.oAuthClient.internalCurrentTokenContainer = concurrentlyRecovered
         }
-        currentDate = currentDate.addingTimeInterval(5)
+        currentUptime += 5
         let result = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
         XCTAssertEqual(result, concurrentlyRecovered)
@@ -203,62 +220,65 @@ final class SubscriptionManagerRecoveryLoopGuardTests: XCTestCase {
 
     // MARK: - Clock skew
 
-    func testRecoveredTokenIssuedHoursBeforeTheDeviceTime_ReportsTheDeviceClockAhead() async throws {
+    func testRecoveryWhoseServerResponsesShowTheClockAhead_ReportsTheSkewOnTheRecoveredPixel() async throws {
         oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "deadA", refreshToken: "deadR")
         oAuthClient.getTokensResponse = .failure(rejectedRefresh)
-        recovery.issuedAt = { [unowned self] in self.currentDate.addingTimeInterval(-TimeInterval.hours(2)) }
+        recovery.onRecover = { [unowned self] in
+            // The auth service sees the server's time in the recovery's responses
+            self.clockSkewMonitor.measure(serverDate: self.currentDate.addingTimeInterval(-TimeInterval.hours(2)))
+        }
 
         _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
 
-        XCTAssertEqual(subscriptionManager.clockSkewMonitor.current, .ahead1HourTo1Day)
         XCTAssertEqual(pixelHandler.recoveredPixelSkews, [.ahead1HourTo1Day])
     }
 
-    func testDeferredRecovery_ReportsTheSkewMeasuredFromTheRecoveredToken() async throws {
+    func testDeferredRecovery_ReportsTheLastMeasuredSkew() async throws {
         oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "deadA", refreshToken: "deadR")
         oAuthClient.getTokensResponse = .failure(rejectedRefresh)
-        recovery.issuedAt = { [unowned self] in self.currentDate.addingTimeInterval(-TimeInterval.days(2)) }
+        recovery.onRecover = { [unowned self] in
+            self.clockSkewMonitor.measure(serverDate: self.currentDate.addingTimeInterval(-TimeInterval.days(2)))
+        }
 
         _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
-        currentDate = currentDate.addingTimeInterval(5)
+        currentUptime += 5
         _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
 
         XCTAssertTrue(pixelHandler.handledPixels.contains(.invalidRefreshTokenRecoveryDeferred(.aheadOver1Day)))
     }
 
-    func testRefreshReturnsANewToken_MeasuresTheSkewFromIt() async throws {
-        oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "oldA", refreshToken: "oldR")
-        let refreshed = OAuthTokensFactory.makeTokenContainer(accessToken: "newA",
-                                                              refreshToken: "newR",
-                                                              accessTokenIssuedAt: currentDate.addingTimeInterval(.days(2)))
-        oAuthClient.getTokensResponse = .success(refreshed)
+    func testTokensFailingVerificationOnAClockFarAhead_ReportTheSkewOnTheGetTokensErrorPixel() async throws {
+        oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "storedA", refreshToken: "storedR")
+        // The refresh response arrives, so its Date header is measured, but the tokens fail verification on the device clock
+        oAuthClient.onGetTokens = { [unowned self] in
+            self.clockSkewMonitor.measure(serverDate: self.currentDate.addingTimeInterval(-TimeInterval.days(3)))
+        }
+        oAuthClient.getTokensResponse = .failure(NSError(domain: "JWTKit.JWTError", code: 0))
 
-        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
 
-        XCTAssertEqual(subscriptionManager.clockSkewMonitor.current, .behindOver1Day)
+        XCTAssertEqual(pixelHandler.getTokensErrorSkews, [.aheadOver1Day])
     }
 
-    func testStoredTokenReturnedUnchanged_DoesNotMeasureTheSkew() async throws {
-        let stored = OAuthTokensFactory.makeTokenContainer(accessToken: "oldA",
-                                                           refreshToken: "oldR",
-                                                           accessTokenIssuedAt: currentDate.addingTimeInterval(-TimeInterval.hours(3)))
-        oAuthClient.internalCurrentTokenContainer = stored
-        oAuthClient.getTokensResponse = .success(stored)
+    func testGetTokensErrorBeforeAnyServerResponse_ReportsNoSkew() async throws {
+        oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "storedA", refreshToken: "storedR")
+        oAuthClient.getTokensResponse = .failure(URLError(.notConnectedToInternet))
 
-        _ = try await subscriptionManager.getTokenContainer(policy: .localValid)
+        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
 
-        XCTAssertNil(subscriptionManager.clockSkewMonitor.current)
+        XCTAssertEqual(pixelHandler.getTokensErrorSkews, [nil])
     }
 }
 
-/// A recovery strategy that stores a new token container on each call, issued at `issuedAt`.
+/// A recovery strategy that stores a new token container on each call.
 private final class StoringTokenRecovery: TokenRecoveryStrategy {
     let method: TokenRecoveryMethod = .appStore
     private let oAuthClient: MockOAuthClient
     private(set) var calls = 0
     /// When false, the strategy reports success without storing anything.
     var storesNewToken = true
-    var issuedAt: () -> Date = { Date() }
+    /// Called at the start of each recovery.
+    var onRecover: (() -> Void)?
 
     init(oAuthClient: MockOAuthClient) {
         self.oAuthClient = oAuthClient
@@ -266,10 +286,10 @@ private final class StoringTokenRecovery: TokenRecoveryStrategy {
 
     func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {
         calls += 1
+        onRecover?()
         if storesNewToken {
             oAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(accessToken: "recoveredA\(calls)",
-                                                                                              refreshToken: "recoveredR\(calls)",
-                                                                                              accessTokenIssuedAt: issuedAt())
+                                                                                              refreshToken: "recoveredR\(calls)")
         }
         return .recovered
     }
@@ -277,8 +297,6 @@ private final class StoringTokenRecovery: TokenRecoveryStrategy {
 
 private final class RecordingSubscriptionPixelHandler: SubscriptionPixelHandling {
     private(set) var handledPixels: [SubscriptionPixelType] = []
-    /// Called with each handled pixel, after it is recorded.
-    var onHandle: ((SubscriptionPixelType) -> Void)?
 
     var deferredPixelCount: Int {
         handledPixels.filter {
@@ -294,6 +312,13 @@ private final class RecordingSubscriptionPixelHandler: SubscriptionPixelHandling
         }
     }
 
+    var getTokensErrorSkews: [ClockSkew?] {
+        handledPixels.compactMap {
+            if case .getTokensError(_, _, let skew) = $0 { return skew }
+            return nil
+        }
+    }
+
     var automaticSignOutErrors: [Error] {
         handledPixels.compactMap {
             if case .automaticSignOut(_, let error) = $0 { return error }
@@ -303,7 +328,6 @@ private final class RecordingSubscriptionPixelHandler: SubscriptionPixelHandling
 
     func handle(pixel: SubscriptionPixelType) {
         handledPixels.append(pixel)
-        onHandle?(pixel)
     }
 
     func handle(pixel: KeychainManager.Pixel) {}

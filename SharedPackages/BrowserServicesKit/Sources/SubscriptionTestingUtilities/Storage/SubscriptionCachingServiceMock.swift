@@ -24,6 +24,8 @@ public final class SubscriptionCachingServiceMock: SubscriptionCachingService {
     public var cachedSubscription: DuckDuckGoSubscription?
     public var setCalled: Bool = false
     public var resetCalled: Bool = false
+    /// Called at the start of every `get` call, before `cachedSubscription` is returned.
+    public var onGet: (() -> Void)?
 
     public var isPresent: Bool { cachedSubscription != nil }
     public var cachedSubscriptionStatus: DuckDuckGoSubscription.Status? { cachedSubscription?.status }
@@ -33,6 +35,7 @@ public final class SubscriptionCachingServiceMock: SubscriptionCachingService {
     }
 
     public func get() async -> DuckDuckGoSubscription? {
+        onGet?()
         return cachedSubscription
     }
 

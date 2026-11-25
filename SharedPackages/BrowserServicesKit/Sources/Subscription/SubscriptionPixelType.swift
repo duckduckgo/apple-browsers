@@ -23,11 +23,12 @@ public enum SubscriptionPixelType: Equatable {
     case invalidRefreshToken
     case subscriptionIsActive
     case osDistributionActiveSubscription
-    case getTokensError(AuthTokensCachePolicy, Error)
+    /// Getting the token container with the policy failed with the error, with the last measured clock skew, or nil when none was measured.
+    case getTokensError(AuthTokensCachePolicy, Error, ClockSkew?)
     case automaticSignOut(SubscriptionAutomaticSignOutPixelData, Error)
     case invalidRefreshTokenSignedOut
-    /// The invalid current token was recovered, by the method of the strategy that recovered it, with the clock skew measured from the
-    /// recovered token.
+    /// The invalid current token was recovered, by the method of the strategy that recovered it, with the last measured clock skew, or nil
+    /// when none was measured.
     case invalidRefreshTokenRecovered(TokenRecoveryMethod?, ClockSkew?)
     /// The refresh was rejected again right after a successful recovery, so the recovery was deferred and the token kept, with the last
     /// measured clock skew, or nil when none was measured.

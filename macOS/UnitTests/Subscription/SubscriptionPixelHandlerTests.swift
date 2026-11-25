@@ -115,10 +115,10 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
     func testGetTokensErrorPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
         let error = OAuthClientError.invalidTokenRequest(.reused)
-        handler.handle(pixel: .getTokensError(.localValid, error))
+        handler.handle(pixel: .getTokensError(.localValid, error, .aheadOver1Day))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionAuthV2GetTokensError(.localValid, subscriptionSource, error).name,
+            baseName: SubscriptionPixel.subscriptionAuthV2GetTokensError(.localValid, subscriptionSource, error, .aheadOver1Day).name,
             expectedParameters: [
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0",
@@ -127,7 +127,8 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
                 PixelKit.Parameters.underlyingErrorDomain: OAuthRequest.TokenStatus.errorDomain,
                 PixelKit.Parameters.errorDomain: OAuthClientError.errorDomain,
                 "source": subscriptionSource.description,
-                "policycache": AuthTokensCachePolicy.localValid.description
+                "policycache": AuthTokensCachePolicy.localValid.description,
+                "clock_skew": "ahead_over_1d"
             ]
         )
     }

@@ -1531,7 +1531,7 @@ class SubscriptionManagerTests: XCTestCase {
 
     private func assertGetTokensErrorPixel(policy: AuthTokensCachePolicy) {
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(where: { pixel in
-            guard case .getTokensError(let capturedPolicy, _) = pixel else { return false }
+            guard case .getTokensError(let capturedPolicy, _, _) = pixel else { return false }
             return capturedPolicy == policy
         }))
     }

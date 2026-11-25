@@ -18,7 +18,6 @@
 
 import XCTest
 import FoundationExtensions
-@testable import Subscription
 @_spi(Testing) @testable import Networking
 
 final class ClockSkewTests: XCTestCase {
@@ -44,12 +43,11 @@ final class ClockSkewTests: XCTestCase {
         XCTAssertNil(ClockSkewMonitor().current)
     }
 
-    func testMonitor_MeasuresDeviceTimeAgainstTheTokenIssueTime() {
+    func testMonitor_MeasuresDeviceTimeAgainstTheServerDate() {
         let now = Date()
         let monitor = ClockSkewMonitor(now: { now })
-        let token = OAuthTokensFactory.makeTokenContainer(accessTokenIssuedAt: now.addingTimeInterval(.minutes(30)))
 
-        let skew = monitor.measure(freshlyIssued: token)
+        let skew = monitor.measure(serverDate: now.addingTimeInterval(.minutes(30)))
 
         XCTAssertEqual(skew, .behind5MinutesTo1Hour)
         XCTAssertEqual(monitor.current, .behind5MinutesTo1Hour)
@@ -58,9 +56,36 @@ final class ClockSkewTests: XCTestCase {
     func testMonitor_KeepsTheLatestMeasurement() {
         let now = Date()
         let monitor = ClockSkewMonitor(now: { now })
-        monitor.measure(freshlyIssued: OAuthTokensFactory.makeTokenContainer(accessTokenIssuedAt: now.addingTimeInterval(-TimeInterval.days(3))))
-        monitor.measure(freshlyIssued: OAuthTokensFactory.makeTokenContainer(accessTokenIssuedAt: now))
+        monitor.measure(serverDate: now.addingTimeInterval(-TimeInterval.days(3)))
+        monitor.measure(serverDate: now)
 
         XCTAssertEqual(monitor.current, .within5Minutes)
+    }
+
+    func testMonitor_ReadsTheHTTPDateHeader() throws {
+        let now = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-11-24T12:00:00Z"))
+        let monitor = ClockSkewMonitor(now: { now })
+
+        let skew = monitor.measure(makeResponse(dateHeader: "Sun, 22 Nov 2026 12:00:00 GMT"))
+
+        XCTAssertEqual(skew, .aheadOver1Day)
+        XCTAssertEqual(monitor.current, .aheadOver1Day)
+    }
+
+    func testMonitor_ResponseWithoutAValidDateHeader_KeepsThePreviousMeasurement() {
+        let now = Date()
+        let monitor = ClockSkewMonitor(now: { now })
+        monitor.measure(serverDate: now.addingTimeInterval(.hours(2)))
+
+        XCTAssertNil(monitor.measure(makeResponse(dateHeader: nil)))
+        XCTAssertNil(monitor.measure(makeResponse(dateHeader: "yesterday")))
+        XCTAssertEqual(monitor.current, .behind1HourTo1Day)
+    }
+
+    private func makeResponse(dateHeader: String?) -> HTTPURLResponse {
+        HTTPURLResponse(url: URL(string: "https://example.com")!,
+                        statusCode: 200,
+                        httpVersion: nil,
+                        headerFields: dateHeader.map { ["Date": $0] })!
     }
 }

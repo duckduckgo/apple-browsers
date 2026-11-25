@@ -100,7 +100,7 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionAutomaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
     case subscriptionInvalidRefreshTokenSignedOut
     case subscriptionInvalidRefreshTokenRecovered(TokenRecoveryMethod?, ClockSkew?)
-    case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
+    case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error, ClockSkew?)
     // Pending Transaction
     case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
     case subscriptionPendingTransactionApproved(SubscriptionPixelHandler.Source)
@@ -316,9 +316,10 @@ enum SubscriptionPixel: PixelKit.Event {
             var parameters = [SubscriptionPixelsDefaults.clockSkewKey: clockSkew?.rawValue ?? "unknown"]
             parameters[SubscriptionPixelsDefaults.recoveryMethodKey] = method?.rawValue
             return parameters
-        case .subscriptionAuthV2GetTokensError(let policy, let source, _):
+        case .subscriptionAuthV2GetTokensError(let policy, let source, _, let clockSkew):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
-                    SubscriptionPixelsDefaults.sourceKey: source.description]
+                    SubscriptionPixelsDefaults.sourceKey: source.description,
+                    SubscriptionPixelsDefaults.clockSkewKey: clockSkew?.rawValue ?? "unknown"]
         case .subscriptionAutomaticSignOut(let data, let source, _):
             var parameters = data.parameters
             parameters[SubscriptionPixelsDefaults.sourceKey] = source.description

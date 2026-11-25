@@ -18,7 +18,6 @@
 
 import Foundation
 import os.log
-import Networking
 import FoundationExtensions
 
 /// How far the device clock is from the auth server's clock, in buckets.
@@ -60,8 +59,19 @@ public enum ClockSkew: String, Codable, CaseIterable {
     }
 }
 
-/// Measures the device clock against the auth server's, from tokens the server has just issued.
+/// Measures the device clock against the auth server's, from the `Date` header of the server's responses.
 public final class ClockSkewMonitor {
+
+    /// The monitor the auth service and the subscription manager share by default, one per process.
+    public static let shared = ClockSkewMonitor()
+
+    private static let httpDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "GMT")
+        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
+        return formatter
+    }()
 
     private let now: () -> Date
     private let lock = NSLock()
@@ -72,25 +82,36 @@ public final class ClockSkewMonitor {
         self.now = now
     }
 
-    /// The last measured skew, or nil when no token has been measured since launch.
+    /// The last measured skew, or nil when no server response has been measured since launch.
     public var current: ClockSkew? {
         lock.lock()
         defer { lock.unlock() }
         return lastMeasurement
     }
 
-    /// Measures the skew from a token container the auth server issued moments ago.
-    /// Only pass a container received just now: an older one makes the device clock look ahead.
-    /// - Parameter tokenContainer: The token container just received from the server.
+    /// Measures the skew from the `Date` header of a response the server has just sent.
+    /// - Parameter httpResponse: The response just received from the server.
+    /// - Returns: The measured skew, or nil when the response has no valid `Date` header.
+    @discardableResult
+    public func measure(_ httpResponse: HTTPURLResponse) -> ClockSkew? {
+        guard let header = httpResponse.value(forHTTPHeaderField: "Date"),
+              let serverDate = Self.httpDateFormatter.date(from: header) else {
+            return nil
+        }
+        return measure(serverDate: serverDate)
+    }
+
+    /// Measures the skew from the server's time when it sent a response.
+    /// - Parameter serverDate: The server's time when it sent the response just received.
     /// - Returns: The measured skew.
     @discardableResult
-    public func measure(freshlyIssued tokenContainer: TokenContainer) -> ClockSkew {
-        let skew = ClockSkew(offset: now().timeIntervalSince(tokenContainer.decodedAccessToken.issuedAt))
+    public func measure(serverDate: Date) -> ClockSkew {
+        let skew = ClockSkew(offset: now().timeIntervalSince(serverDate))
         lock.lock()
         lastMeasurement = skew
         lock.unlock()
         if skew.isSkewed {
-            Logger.subscriptionTokensManagement.log("The device clock is skewed from the auth server's: \(skew.rawValue, privacy: .public)")
+            Logger.OAuth.log("The device clock is skewed from the auth server's: \(skew.rawValue, privacy: .public)")
         }
         return skew
     }

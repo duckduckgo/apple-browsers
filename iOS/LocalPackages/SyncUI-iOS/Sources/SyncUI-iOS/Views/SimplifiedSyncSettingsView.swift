@@ -348,10 +348,10 @@ extension SimplifiedSyncSettingsView {
     @ViewBuilder
     var syncEnabledSections: some View {
         syncedDevicesSection
+        deviceActivitySection
         getDesktopBrowserSection(source: .activated)
         bookmarksSection
         recoverySection
-        deviceActivitySection
         deleteSection
     }
 

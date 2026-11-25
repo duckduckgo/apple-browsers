@@ -69,7 +69,7 @@ public struct UserText {
 
     // Sync notification settings
     static let syncNotificationsTitle = NotLocalizedString("sync.notifications.title", bundle: Bundle.module, value: "Notify on New Connections", comment: "Sync notification permission card title")
-    static let syncNotificationsSettingLabel = NotLocalizedString("sync.notifications.setting.label", bundle: Bundle.module, value: "Notify on New Connections (recommended)", comment: "Sync notification setting label")
+    static let syncNotificationsSettingLabel = NotLocalizedString("sync.notifications.setting.label", bundle: Bundle.module, value: "Notify on New Connections", comment: "Sync notification setting label")
     static let syncNotificationsDescription = NotLocalizedString("sync.notifications.description", bundle: Bundle.module, value: "Get notified whenever a new device is added to Sync & Backup.", comment: "Explains Sync notifications")
     static let syncNotificationsEnable = NotLocalizedString("sync.notifications.enable", bundle: Bundle.module, value: "Enable Notifications", comment: "Button requesting notification permission")
     static let syncNotificationsDismiss = NotLocalizedString("sync.notifications.dismiss", bundle: Bundle.module, value: "Dismiss notification suggestion", comment: "Accessibility label for dismissing the permission card")

@@ -151,17 +151,20 @@ struct DeviceActivityView: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 0) {
+                    Text("\(entry.action == .synced ? UserText.deviceActivitySynced : UserText.deviceActivityRemoved) - ")
+                        .fixedSize(horizontal: true, vertical: false)
+                    Text(entry.deviceName)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .textPrimary))
                 Text(Self.relativeDateString(for: entry.date, relativeTo: Date()))
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(entry.deviceName)
                     .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
             }
-            Spacer(minLength: 8)
-            Text(entry.action == .synced ? UserText.deviceActivitySynced : UserText.deviceActivityRemoved)
-                .daxFootnoteRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 4)
         .listRowBackground(

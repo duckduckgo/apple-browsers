@@ -240,7 +240,6 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
 
 class CapturingScheduler: Scheduling {
     var notifyDataChangedCalled = false
-    var cancelSyncAndSuspendSyncQueueCallCount = 0
 
     func notifyDataChanged() {
         notifyDataChangedCalled = true
@@ -253,7 +252,6 @@ class CapturingScheduler: Scheduling {
     }
 
     func cancelSyncAndSuspendSyncQueue() {
-        cancelSyncAndSuspendSyncQueueCallCount += 1
     }
 
     func resumeSyncQueue() {

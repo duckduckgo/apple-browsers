@@ -48,7 +48,6 @@ final class SyncService {
          keyValueStore: ThrowingKeyValueStoring,
          faviconStoring: FaviconStoring,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         isAppLaunchedInBackground: Bool,
          application: UIApplication = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          autoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager) {
@@ -143,14 +142,10 @@ final class SyncService {
             }
 
         sync.initializeIfNeeded()
-        Self.suspendSyncIfLaunchedInBackground(isAppLaunchedInBackground, scheduler: sync.scheduler)
-    }
-
-    /// Sync holds no background task during a background launch, so a sync suspended mid-write to the App Group
-    /// can get the app killed (0xdead10cc). `resume()` restarts the queue on the first foreground.
-    static func suspendSyncIfLaunchedInBackground(_ isAppLaunchedInBackground: Bool, scheduler: Scheduling) {
-        guard isAppLaunchedInBackground else { return }
-        scheduler.cancelSyncAndSuspendSyncQueue()
+        // Sync holds no background task during a background launch, so a sync suspended mid-write to the App Group
+        // can get the app killed (0xdead10cc). `applicationState` reads `.background` here on every launch, before
+        // a scene connects, so suspend unconditionally: `resume()` restarts the queue when the app becomes active.
+        sync.scheduler.cancelSyncAndSuspendSyncQueue()
     }
 
     // MARK: - Resume

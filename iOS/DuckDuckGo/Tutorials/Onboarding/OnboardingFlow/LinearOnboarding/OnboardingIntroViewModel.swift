@@ -95,7 +95,8 @@ final class OnboardingIntroViewModel: ObservableObject {
     @Published var isSkipped = false
 
     var onCompletingOnboardingIntro: (() -> Void)?
-    var onOpenAIChatFromOnboarding: ((String?, Bool) -> Void)?
+    /// Opens the onboarding Duck.ai chat with the prompt, the auto-send flag and the model picked on the AI model step (if any).
+    var onOpenAIChatFromOnboarding: ((String?, Bool, String?) -> Void)?
     var onSearchFromOnboarding: ((String) -> Void)?
     /// Invoked when the flow reaches an `OnboardingIntroStep.interlude(_)` step. The host is expected to dismiss the onboarding UI, run its own experience, and call `resumeOnboardingFromInterlude()` once finished.
     var onOnboardingInterlude: ((OnboardingIntroStep.Interlude) -> Void)?
@@ -401,7 +402,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         // Record that the user took the AI route at the Search/Duck.ai junction, so the end-of-journey step
         // shows the standard completion instead of the "Try Duck.ai" nudge (they already tried AI).
         onboardingSearchExperienceProvider.storeDidStartAIChatDuringOnboarding(true)
-        onOpenAIChatFromOnboarding?(prompt, autoSend)
+        // The model picked on the AI model step applies to this onboarding chat only.
+        onOpenAIChatFromOnboarding?(prompt, autoSend, personalizationManager.selectedAIChatModelID)
     }
 
     func searchFromOnboarding(query: String) {
@@ -721,6 +723,7 @@ private extension OnboardingIntroViewModel {
     func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
         if step == .duckAIQuerySelection {
             onboardingResumeStepStore.resumeDuckAIQueryPrompt = nil
+            onboardingResumeStepStore.resumeDuckAIQueryModelID = nil
         }
         onboardingResumeStepStore.resumeStep = step.resumeStep
     }

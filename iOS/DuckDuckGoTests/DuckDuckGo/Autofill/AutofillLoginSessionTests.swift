@@ -45,11 +45,12 @@ final class AutofillLoginSessionTests: XCTestCase {
     }
 
     func testWhenSessionExpiredThenAutofillSessionIsInvalid() {
-        autofillSession.startSession()
+        let sessionTimeout: TimeInterval = 0.05
+        let session = AutofillLoginSession(sessionTimeout: sessionTimeout)
+        session.startSession()
 
-        let sessionExpired = expectation(description: "testWhenSessionExpiredThenAutofillSessionIsInvalid")
-        _ = XCTWaiter.wait(for: [sessionExpired], timeout: 2.2)
-        XCTAssertFalse(autofillSession.isSessionValid)
+        Thread.sleep(forTimeInterval: sessionTimeout * 2)
+        XCTAssertFalse(session.isSessionValid)
     }
 
     func testWhenSessionIsValidAndAccountIsSetThenAccountIsReturned() {

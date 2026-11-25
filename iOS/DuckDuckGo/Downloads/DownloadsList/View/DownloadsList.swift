@@ -68,7 +68,7 @@ struct DownloadsList: View {
                 .frame(height: 32)
             Text(UserText.emptyDownloads)
                 .font(Font(uiFont: Const.Font.emptyState))
-                .foregroundColor(.emptyState)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
             Spacer()
         }
         .frame(maxWidth: .infinity)
@@ -211,7 +211,6 @@ private enum Const {
 
 private extension Color {
     static let barButton = Color(designSystemColor: .icons)
-    static let emptyState = Color(baseColor: .gray60)
     static let deleteAll = Color(designSystemColor: .buttonsDeleteGhostText)
     static let background = Color(designSystemColor: .background)
     static let rowBackground = Color(designSystemColor: .surface)

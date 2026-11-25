@@ -33,7 +33,10 @@ let package = Package(
         ),
     ],
     targets: [
-        .target(name: "UITestingSupport"),
+        .target(
+            name: "UITestingSupport",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
     ],
     swiftLanguageVersions: [.v5]
 )

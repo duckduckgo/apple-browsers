@@ -82,22 +82,16 @@ private struct PanelBottomBorder: View {
 struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
     private let onboardingPixelReporter: OnboardingPixelReporting
-    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     private let fireCoordinator: FireCoordinator
 
     init(onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
-         subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
          fireCoordinator: FireCoordinator) {
         self.onboardingPixelReporter = onboardingPixelReporter
-        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.fireCoordinator = fireCoordinator
     }
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
         onboardingPixelReporter.measureDialogShown(dialogType: type)
-        if case .subscriptionUpsell = type {
-            subscriptionUpsellMetrics.report(.upsellShown)
-        }
         return AnyView(
             ContextualDialogView(
                 type: type,
@@ -112,7 +106,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         )
     }
 
-    fileprivate func makeBubbleView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
+    func makeBubbleView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
         switch type {
         case .tryASearch:
             return AnyView(tryASearchDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onSuggestionPressed: onSuggestionPressed))
@@ -128,10 +122,13 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             onboardingPixelReporter.measureLastDialogShown()
             return AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .subscriptionUpsell:
-            return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, metrics: subscriptionUpsellMetrics, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+            return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .thatsDuckAI:
-            // To do: replace with the That's Duck.ai! dialog. Placeholder: the Fire dialog.
-            return AnyView(tryFireButtonDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
+            // Opens Fire without dismissing the dialog or the Fire highlight: cancelling Fire leaves both in place.
+            return AnyView(OnboardingRebranding.OnboardingThatsDuckAIDialog { [onboardingPixelReporter, fireCoordinator] in
+                onboardingPixelReporter.measureFireButtonTryIt()
+                fireCoordinator.fireButtonAction()
+            })
         }
     }
 
@@ -247,24 +244,23 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     static func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate,
-                                         metrics: OnboardingSubscriptionUpsellMetricsReporting,
+                                         pixelReporter: OnboardingDialogsReporting,
                                          onDismiss: @escaping () -> Void,
                                          onManualDismiss: @escaping () -> Void,
                                          onGotItPressed: @escaping () -> Void) -> OnboardingRebranding.OnboardingSubscriptionUpsellDialog {
         OnboardingRebranding.OnboardingSubscriptionUpsellDialog(
             acceptAction: {
-                metrics.report(.tryForFreeClick)
+                pixelReporter.measureSubscriptionUpsellAccepted()
                 onGotItPressed()
                 onDismiss()
                 delegate.navigateToSubscriptionUpsellPurchasePage()
             },
             declineAction: {
-                metrics.report(.noThanksClick)
+                pixelReporter.measureSubscriptionUpsellDeclined()
                 onGotItPressed()
                 onDismiss()
             },
             onManualDismiss: {
-                metrics.report(.upsellDismissed)
                 onGotItPressed()
                 onManualDismiss()
             }

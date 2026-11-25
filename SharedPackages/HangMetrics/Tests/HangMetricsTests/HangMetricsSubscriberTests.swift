@@ -38,8 +38,14 @@ final class HangMetricsSubscriberTests: XCTestCase {
                                 pixelFiring: PixelKitMock) -> HangMetricsSubscriber {
         HangMetricsSubscriber(store: store,
                               currentAppVersion: version,
-                              dateProvider: { self.now },
+                              dateProvider: { [now] in now },
                               pixelFiring: pixelFiring)
+    }
+
+    private func process(_ subscriber: HangMetricsSubscriber, reports: [HangMetricsReport]) {
+        let processed = expectation(description: "Reports processed")
+        subscriber.process(reports: reports) { processed.fulfill() }
+        wait(for: [processed], timeout: 1)
     }
 
     private func report(buckets: [HangHistogramBucket], endOffset: TimeInterval = -60) -> HangMetricsReport {
@@ -53,7 +59,7 @@ final class HangMetricsSubscriberTests: XCTestCase {
         let pixelKit = PixelKitMock()
         let subscriber = makeSubscriber(store: MockKeyValueStore(), pixelFiring: pixelKit)
 
-        subscriber.process(reports: [report(buckets: [HangHistogramBucket(startMs: 123.4, endMs: 456.6, count: 17)])])
+        process(subscriber, reports: [report(buckets: [HangHistogramBucket(startMs: 123.4, endMs: 456.6, count: 17)])])
 
         XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
         let call = pixelKit.actualFireCalls.first
@@ -75,7 +81,7 @@ final class HangMetricsSubscriberTests: XCTestCase {
         let pixelKit = PixelKitMock()
         let subscriber = makeSubscriber(store: MockKeyValueStore(), pixelFiring: pixelKit)
 
-        subscriber.process(reports: [report(buckets: [
+        process(subscriber, reports: [report(buckets: [
             HangHistogramBucket(startMs: 0, endMs: 100, count: 40),
             HangHistogramBucket(startMs: 100, endMs: 500, count: 9)
         ])])
@@ -85,19 +91,36 @@ final class HangMetricsSubscriberTests: XCTestCase {
                        ["40", "9"])
     }
 
+    func testQueuedDuplicateReportsFireOnce() {
+        let pixelKit = PixelKitMock()
+        let subscriber = makeSubscriber(store: MockKeyValueStore(), pixelFiring: pixelKit)
+        let reports = [report(buckets: [HangHistogramBucket(startMs: 1, endMs: 2, count: 3)])]
+        let processed = expectation(description: "Both batches processed")
+        processed.expectedFulfillmentCount = 2
+
+        withExtendedLifetime(subscriber) {
+            for _ in 0..<2 {
+                subscriber.process(reports: reports) { processed.fulfill() }
+            }
+            wait(for: [processed], timeout: 1)
+        }
+
+        XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
+    }
+
     func testPersistsMarkerAndSuppressesDuplicateDelivery() {
         let store = MockKeyValueStore()
         let pixelKit = PixelKitMock()
         let subscriber = makeSubscriber(store: store, pixelFiring: pixelKit)
 
         let r = report(buckets: [HangHistogramBucket(startMs: 1, endMs: 2, count: 3)])
-        subscriber.process(reports: [r])
+        process(subscriber, reports: [r])
         XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
 
         // A fresh subscriber sharing the same store must not re-fire the same report.
         let pixelKit2 = PixelKitMock()
         let subscriber2 = makeSubscriber(store: store, pixelFiring: pixelKit2)
-        subscriber2.process(reports: [r])
+        process(subscriber2, reports: [r])
         XCTAssertTrue(pixelKit2.actualFireCalls.isEmpty)
     }
 }

@@ -29,6 +29,30 @@ enum AIChatHistorySource: String {
     case tabSwitcher = "tab_switcher"
 }
 
+/// Where on the chat history screen the user opened Duck.ai Settings. Sent as the `source` parameter.
+enum AIChatHistorySettingsSource: String {
+    case headerButton = "header_button"
+}
+
+/// Chat history pixels added after `Pixel.Event` closed to new cases.
+enum AIChatHistoryPixel: PixelKit.Event {
+    case duckAISettingsTapped(source: AIChatHistorySettingsSource)
+
+    var name: String {
+        switch self {
+        case .duckAISettingsTapped: "aichat_history_duckai_settings_tapped"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .duckAISettingsTapped(let source): [PixelParameters.source: source.rawValue]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
 protocol AIChatHistoryInstrumentation {
     func screenShown(source: AIChatHistorySource)
     func chatOpened()
@@ -46,6 +70,7 @@ protocol AIChatHistoryInstrumentation {
     func chatProtectionTapped()
     func editModeEntered()
     func newChatTapped()
+    func duckAISettingsTapped(source: AIChatHistorySettingsSource)
     func loadFailed(error: Error)
     func pinToggleFailed(error: Error)
     func downloadFailed(error: Error)
@@ -123,6 +148,10 @@ final class DefaultAIChatHistoryInstrumentation: AIChatHistoryInstrumentation {
 
     func newChatTapped() {
         fire(.aiChatHistoryNewChatTapped)
+    }
+
+    func duckAISettingsTapped(source: AIChatHistorySettingsSource) {
+        pixelFiring?.fire(AIChatHistoryPixel.duckAISettingsTapped(source: source), frequency: .dailyAndCount)
     }
 
     func loadFailed(error: Error) {

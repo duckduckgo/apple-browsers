@@ -68,6 +68,32 @@ final class LocalUITestWebsite {
                 "Content-Length": String(body.count),
             ]) { try $0.write(body) }
         }
+        for download in Download.all {
+            server[download.path] = { request in
+                state.receivedRequest(for: download.path)
+                let filename = request.queryParams.first { $0.0 == "name" }?.1 ?? download.filename
+                let body = download.body
+                var headers = [
+                    "Cache-Control": "no-store",
+                    "Content-Type": download.contentType,
+                    "Content-Length": String(body.count),
+                ]
+                if download.isAttachment {
+                    headers["Content-Disposition"] = "attachment; filename=\"\(filename)\""
+                }
+                return .raw(200, "OK", headers) { writer in
+                    var offset = 0
+                    while offset < body.count {
+                        let end = min(offset + download.chunkSize, body.count)
+                        try writer.write(body.subdata(in: offset..<end))
+                        offset = end
+                        if download.chunkDelay > 0 {
+                            Thread.sleep(forTimeInterval: download.chunkDelay)
+                        }
+                    }
+                }
+            }
+        }
         server.listenAddressIPv4 = "127.0.0.1"
         try server.start(0, forceIPv4: true, priority: .userInitiated)
         do {
@@ -105,6 +131,21 @@ final class LocalUITestWebsite {
 
     func updateBrowsingPage() {
         state.updateBrowsingPage()
+    }
+
+    @discardableResult
+    func startDownload(_ download: Download,
+                       in app: XCUIApplication,
+                       file: StaticString = #filePath,
+                       line: UInt = #line) -> String {
+        let name = download.uniqueFilename()
+        let request = state.expectRequest(for: download.path)
+        app.enterSearchText("http://\(hostAndPort)\(download.path)?name=\(name)\r", file: file, line: line)
+        XCTAssertTrue(XCTWaiter.wait(for: [request], timeout: UITestTimeouts.navigation) == .completed,
+                      "Browser did not request the download \(download.path).",
+                      file: file,
+                      line: line)
+        return name
     }
 
     private final class PageState {

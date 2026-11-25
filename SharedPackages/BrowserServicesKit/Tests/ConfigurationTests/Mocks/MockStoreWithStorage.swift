@@ -22,9 +22,11 @@ import Foundation
 
 final class MockStoreWithStorage: ConfigurationStoring {
 
-    var etagStorage: KeyValueStoring
+    private let directory: URL
+    private let etagStorage: KeyValueStoring
 
-    init(etagStorage: KeyValueStoring) {
+    init(directory: URL, etagStorage: KeyValueStoring) {
+        self.directory = directory
         self.etagStorage = etagStorage
     }
 
@@ -77,14 +79,6 @@ final class MockStoreWithStorage: ConfigurationStoring {
     }
 
     func fileUrl(for configuration: Configuration) -> URL {
-        return FileManager.default.temporaryDirectory.appending(configuration.rawValue)
+        directory.appendingPathComponent(configuration.rawValue)
     }
-
-    static func clearTempConfigs() {
-        let tempStore = MockStoreWithStorage(etagStorage: MockKeyValueStore())
-        for conf in Configuration.allCases {
-            try? FileManager.default.removeItem(at: tempStore.fileUrl(for: conf))
-        }
-    }
-
 }

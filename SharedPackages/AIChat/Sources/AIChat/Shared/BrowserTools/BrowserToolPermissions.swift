@@ -71,10 +71,15 @@ public struct BrowserToolPermissionStorageKeys: StoringKeys {
 public final class BrowserToolPermissionStore: BrowserToolPermissionStoring {
 
     private let storage: any KeyedStoring<BrowserToolPermissionStorageKeys>
+    private let shouldApplyDecisionsToAutoTools: @MainActor () -> Bool
 
-    public init(storage: any KeyedStoring<BrowserToolPermissionStorageKeys>) {
+    public init(storage: any KeyedStoring<BrowserToolPermissionStorageKeys>,
+                shouldApplyDecisionsToAutoTools: @escaping @MainActor () -> Bool = { false }) {
         self.storage = storage
+        self.shouldApplyDecisionsToAutoTools = shouldApplyDecisionsToAutoTools
     }
+
+    public var appliesDecisionsToAutoTools: Bool { shouldApplyDecisionsToAutoTools() }
 
     public func state(forToolNamed name: String) -> BrowserToolPermissionState? {
         Self.parse(decisions[name])

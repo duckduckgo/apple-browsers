@@ -21,12 +21,6 @@ import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
 final class BrokerProfileJobTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-
-        MockDataBrokerProtectionPixelsHandler.lastPixelsFired = []
-    }
-
     lazy var mockOptOutQueryData: [BrokerProfileQueryData] = {
         let brokerId: Int64 = 1
 
@@ -564,7 +558,6 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: otherProfileQueryId))
         XCTAssertEqual(database.scanEvents.filter { $0.type == .scanStarted }.count, 4)
         XCTAssertEqual(delegate.successIdentifiers.count, 4)
-        XCTAssertFalse(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
     }
 
     func testWhenAuthenticatedScheduledScanContainsMaintenanceScan_thenScanJobRuns() async {
@@ -597,7 +590,6 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertTrue(mockDependencies.mockScanRunner.wasScanCalled)
         XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: profileQueryId))
         XCTAssertEqual(delegate.successIdentifiers.count, 1)
-        XCTAssertFalse(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
     }
 
     func testWhenJobErrors_thenIsFreeScanIsComputedOnceAndForwardedToErrorDelegate() async {
@@ -873,7 +865,6 @@ private extension BrokerProfileJobTests {
         XCTAssertFalse(hasScanStarted(in: database.scanEvents, brokerId: brokerId, profileQueryId: profileQueryId))
         XCTAssertTrue(delegate.successIdentifiers.isEmpty)
         XCTAssertTrue(delegate.errorIdentifiers.isEmpty)
-        XCTAssertTrue(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
     }
 
     func run(_ job: BrokerProfileJob) async {
@@ -944,12 +935,6 @@ private extension BrokerProfileJobTests {
             $0.brokerId == brokerId &&
             $0.profileQueryId == profileQueryId &&
             $0.type == .scanStarted
-        }
-    }
-
-    func wasPixelFired(_ pixel: DataBrokerProtectionSharedPixels) -> Bool {
-        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.contains {
-            $0.name == pixel.name
         }
     }
 

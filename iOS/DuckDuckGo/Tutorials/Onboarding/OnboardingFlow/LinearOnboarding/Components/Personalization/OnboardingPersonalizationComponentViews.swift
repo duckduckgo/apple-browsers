@@ -250,7 +250,7 @@ extension OnboardingAIProvider {
         switch self {
         case .openai: "ChatGPT"
         case .anthropic: "Claude"
-        case .mistral: "Mistral"
+        case .tinfoil: "Gemma"
         }
     }
 
@@ -260,8 +260,8 @@ extension OnboardingAIProvider {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.aiModelOpenAI)
         case .anthropic:
             Image(uiImage: DesignSystemImages.Glyphs.Size24.aiModelClaude)
-        case .mistral:
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.aiModelMistral)
+        case .tinfoil:
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.aiModelOSS)
         }
     }
 }

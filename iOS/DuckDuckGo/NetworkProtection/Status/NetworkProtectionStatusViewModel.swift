@@ -465,11 +465,11 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    /// Surfaces controller-side (pre-session) start failures in the same banner as session errors.
+    /// Surfaces controller-side start failures in the same banner as session errors.
     ///
-    /// These failures abort before a tunnel session exists, so `errorObserver` (which reads errors
-    /// through the session) never sees them. The controller maps them to the existing VPN error copy;
-    /// here we store the message and recompute the banner, or clear it when the controller reports `nil`.
+    /// Failures that abort before a tunnel session exists are only reported by the controller.
+    /// Store its latest message and recompute the banner, or clear the stored errors when the
+    /// controller reports `nil` at the start of a new attempt.
     private func setUpControllerErrorPublisher() {
         controllerErrorPublisher
             .receive(on: DispatchQueue.main)
@@ -491,7 +491,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    /// Recomputes the single banner error from the two independent sources. Controller (pre-session)
+    /// Recomputes the single banner error from the two independent sources. Controller
     /// start failures take precedence: only when there is no controller error do we fall back to the
     /// session error, so a session update resolving to no error can't clear a live start failure.
     private func refreshErrorBanner() {

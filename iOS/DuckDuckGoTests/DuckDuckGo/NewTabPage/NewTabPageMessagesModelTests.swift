@@ -66,7 +66,7 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         // Drain UIKit's temporary references before checking controller ownership.
         autoreleasepool {
-            let page = RedesignedNewTabPageViewController(blocks: [], pageModel: pageModel, messagesModel: messages)
+            let page = RedesignedNewTabPageViewController(blocks: [], pageModel: pageModel, messagesModel: messages, returnSettings: .makeForTests())
             weakPage = page
             page.setEscapeHatch(nil)
             XCTAssertEqual(configuration.subscriptionCount, 0)

@@ -719,7 +719,9 @@ class MainViewCoordinator {
             case .omnibar:
                 self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
             case .inlineInput:
-                self?.unifiedToggleInputContainer.alpha = 0
+                UIView.animateOnOwnTiming(duration: NewTabPageInputPresentation.inlineInputCardSwapDuration, options: .curveEaseOut) {
+                    self?.unifiedToggleInputContainer.alpha = 0
+                }
                 if self?.isFloatingUIEnabled == true {
                     self?.focusedStateBackground.alpha = 0
                 }
@@ -938,8 +940,9 @@ class MainViewCoordinator {
     /// Hides the bottom `navigationBarContainer` (the flanked UTI on AI tabs) and re-anchors the
     /// content container to the safe area, giving voice mode the full height between the AI
     /// header and the home indicator. Idempotent.
-    func setAITabBottomChromeHidden(_ hidden: Bool) {
-        guard navigationBarContainer.isHidden != hidden else { return }
+    @discardableResult
+    func setAITabBottomChromeHidden(_ hidden: Bool) -> Bool {
+        guard navigationBarContainer.isHidden != hidden else { return false }
         setNavigationBarContainerHidden(hidden, updatesAlpha: false)
         applyAITabCollapsedTopSeparatorVisibility()
         if hidden {
@@ -949,6 +952,7 @@ class MainViewCoordinator {
         } else {
             setContentContainerBottomAnchorMode(requesting: .toolbar)
         }
+        return true
     }
 
     func showAIChatTabChatHeader() {

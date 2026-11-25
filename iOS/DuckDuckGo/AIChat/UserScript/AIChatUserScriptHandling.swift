@@ -253,6 +253,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let syncHandler: AIChatSyncHandling
     private let bonusHandler: AIChatBonusHandling
     private let featureFlagger: FeatureFlagger
+    private let simplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
@@ -347,6 +348,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: keyValueStore)
         self.promptHandler = promptHandler
         self.devicePlatform = devicePlatform
+        self.simplifiedPromptBoxFeature = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger, devicePlatform: devicePlatform)
         self.aichatContextualModeFeature = aichatContextualModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
@@ -625,6 +627,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         )
         config.supportsResponseStateReporting = true
         config.supportsiPadNativeChatList = isIPadNativeChatListOn
+        if simplifiedPromptBoxFeature.isAvailable {
+            config.supportsCustomizeResponsesInSettings = true
+        }
         return config
     }
 

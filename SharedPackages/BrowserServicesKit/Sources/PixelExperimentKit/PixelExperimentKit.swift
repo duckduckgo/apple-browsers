@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import PixelKit
 import PrivacyConfig
 import Foundation
@@ -50,16 +51,20 @@ extension PixelKit {
         static let aiChatNewChatMetricValue = "duck_ai_new_chat"
     }
 
-    // Static property to hold shared dependencies
     struct ExperimentConfig {
-        static var featureFlagger: FeatureFlagger?
-        static var eventTracker: ExperimentEventTracking = ExperimentEventTracker()
-        static var fireFunction: (PixelKit.Event, PixelKit.Frequency, Bool) -> Void = { event, frequency, includeAppVersion in
-            fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersion)
-        }
+        let featureFlagger: FeatureFlagger?
+        let eventTracker: ExperimentEventTracking
+        let fireFunction: (PixelKit.Event, PixelKit.Frequency, Bool) -> Void
     }
 
-    // Setup method to initialize dependencies
+    private static let configuration = Locked(wrappedValue: ExperimentConfig(
+        featureFlagger: nil,
+        eventTracker: ExperimentEventTracker(),
+        fireFunction: { fire($0, frequency: $1, includeAppVersionParameter: $2) }
+    ))
+
+    static var experimentConfig: ExperimentConfig { configuration.wrappedValue }
+
     public static func configureExperimentKit(
         featureFlagger: FeatureFlagger,
         eventTracker: ExperimentEventTracking = ExperimentEventTracker(),
@@ -67,9 +72,7 @@ extension PixelKit {
             fire(event, frequency: frequency, includeAppVersionParameter: includeAppVersion)
         }
     ) {
-        ExperimentConfig.featureFlagger = featureFlagger
-        ExperimentConfig.eventTracker = eventTracker
-        ExperimentConfig.fireFunction = fire
+        configuration.wrappedValue = ExperimentConfig(featureFlagger: featureFlagger, eventTracker: eventTracker, fireFunction: fire)
     }
 
     /// Fires a pixel indicating the user's enrollment in an experiment.
@@ -79,7 +82,7 @@ extension PixelKit {
     public static func fireExperimentEnrollmentPixel(subfeatureID: SubfeatureID, experiment: ExperimentData) {
         let eventName = "\(Constants.enrollmentEventPrefix)_\(subfeatureID)_\(experiment.cohortID)"
         let event = ExperimentEvent(name: eventName, parameters: [Constants.enrollmentDateKey: experiment.enrollmentDate.toYYYYMMDDInET()])
-        ExperimentConfig.fireFunction(event, .uniqueByNameAndParameters, false)
+        experimentConfig.fireFunction(event, .uniqueByNameAndParameters, false)
     }
 
     /// Fires a pixel for a specific action in an experiment, based on conversion window and value.
@@ -98,7 +101,8 @@ extension PixelKit {
                                            conversionWindowDays: ConversionWindow,
                                            value: String) {
         // Check is active experiment for user
-        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+        let config = experimentConfig
+        guard let featureFlagger = config.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")
             return
         }
@@ -109,7 +113,7 @@ extension PixelKit {
 
         // Define event
         let event = event(for: subfeatureID, experimentData: experimentData, conversionWindowDays: conversionWindowDays, metric: metric, value: value)
-        ExperimentConfig.fireFunction(event, .uniqueByNameAndParameters, false)
+        config.fireFunction(event, .uniqueByNameAndParameters, false)
     }
 
     /// Fires a pixel for a specific action in an experiment, based on conversion window and value thresholds.
@@ -128,7 +132,8 @@ extension PixelKit {
                                                              conversionWindowDays: ConversionWindow,
                                                              threshold: NumberOfCalls) {
         // Check is active experiment for user
-        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+        let config = experimentConfig
+        guard let featureFlagger = config.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")
             return
         }
@@ -138,7 +143,8 @@ extension PixelKit {
                                                experimentData: experimentData,
                                                metric: metric,
                                                conversionWindowDays: conversionWindowDays,
-                                               numberOfCalls: threshold)
+                                               numberOfCalls: threshold,
+                                               config: config)
     }
 
     /// Fires search-related experiment pixels for all active experiments.
@@ -156,7 +162,8 @@ extension PixelKit {
             21: [5...7, 8...14],
             30: [5...7, 8...14]
         ]
-        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+        let config = experimentConfig
+        guard let featureFlagger = config.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")
             return
         }
@@ -165,7 +172,8 @@ extension PixelKit {
                 experiment.key,
                 experimentData: experiment.value,
                 metric: Constants.searchMetricValue,
-                valueConversionDictionary: valueConversionDictionary
+                valueConversionDictionary: valueConversionDictionary,
+                config: config
             )
         }
     }
@@ -180,7 +188,8 @@ extension PixelKit {
         let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
             1: [1...1, 2...2, 3...3, 4...4, 5...5, 6...6, 7...7, 5...7, 8...14]
         ]
-        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+        let config = experimentConfig
+        guard let featureFlagger = config.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")
             return
         }
@@ -189,7 +198,8 @@ extension PixelKit {
                 for: experiment.key,
                 experimentData: experiment.value,
                 metric: Constants.appUseMetricValue,
-                valueConversionDictionary: valueConversionDictionary
+                valueConversionDictionary: valueConversionDictionary,
+                config: config
             )
         }
     }
@@ -204,7 +214,8 @@ extension PixelKit {
         let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
             1: [0...0, 1...1, 5...7, 8...14]
         ]
-        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+        let config = experimentConfig
+        guard let featureFlagger = config.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")
             return
         }
@@ -213,7 +224,8 @@ extension PixelKit {
                 for: experiment.key,
                 experimentData: experiment.value,
                 metric: Constants.aiChatMetricValue,
-                valueConversionDictionary: valueConversionDictionary
+                valueConversionDictionary: valueConversionDictionary,
+                config: config
             )
         }
     }
@@ -228,7 +240,8 @@ extension PixelKit {
         let valueConversionDictionary: [NumberOfActions: [ConversionWindow]] = [
             1: [0...0, 1...1, 5...7, 8...14]
         ]
-        guard let featureFlagger = ExperimentConfig.featureFlagger else {
+        let config = experimentConfig
+        guard let featureFlagger = config.featureFlagger else {
             assertionFailure("PixelKit is not configured for experiments")
             return
         }
@@ -237,7 +250,8 @@ extension PixelKit {
                 for: experiment.key,
                 experimentData: experiment.value,
                 metric: Constants.aiChatNewChatMetricValue,
-                valueConversionDictionary: valueConversionDictionary
+                valueConversionDictionary: valueConversionDictionary,
+                config: config
             )
         }
     }
@@ -246,7 +260,8 @@ extension PixelKit {
         for experiment: SubfeatureID,
         experimentData: ExperimentData,
         metric: String,
-        valueConversionDictionary: [NumberOfActions: [ConversionWindow]]
+        valueConversionDictionary: [NumberOfActions: [ConversionWindow]],
+        config: ExperimentConfig
     ) {
         valueConversionDictionary.forEach { value, ranges in
             ranges.forEach { range in
@@ -255,7 +270,8 @@ extension PixelKit {
                     experimentData: experimentData,
                     metric: metric,
                     conversionWindowDays: range,
-                    numberOfCalls: value
+                    numberOfCalls: value,
+                    config: config
                 )
             }
         }
@@ -265,7 +281,8 @@ extension PixelKit {
                                                                experimentData: ExperimentData,
                                                                metric: String,
                                                                conversionWindowDays: ConversionWindow,
-                                                               numberOfCalls: Int) {
+                                                               numberOfCalls: Int,
+                                                               config: ExperimentConfig) {
         // Set parameters, event name, store key
         let event = event(for: subfeatureID, experimentData: experimentData, conversionWindowDays: conversionWindowDays, metric: metric, value: String(numberOfCalls))
         let parameters = parameters(metric: metric, conversionWindowDays: conversionWindowDays, value: String(numberOfCalls), experimentData: experimentData)
@@ -275,7 +292,7 @@ extension PixelKit {
         let isInWindow = isUserInConversionWindow(conversionWindowDays, enrollmentDate: experimentData.enrollmentDate)
 
         // Increment or remove based on conversion window status
-        let shouldSendPixel = ExperimentConfig.eventTracker.incrementAndCheckThreshold(
+        let shouldSendPixel = config.eventTracker.incrementAndCheckThreshold(
             forKey: eventStoreKey,
             threshold: numberOfCalls,
             isInWindow: isInWindow
@@ -283,7 +300,7 @@ extension PixelKit {
 
         // Send the pixel only if conditions are met
         if shouldSendPixel {
-            ExperimentConfig.fireFunction(event, .uniqueByNameAndParameters, false)
+            config.fireFunction(event, .uniqueByNameAndParameters, false)
         }
     }
 

@@ -221,7 +221,7 @@ extension PermissionType {
         case .autoplayPolicy:
             return "autoplay-policy"
         case .browserTool:
-            // Not fired: browser tool choices don't go through website permission prompts or settings.
+            // Not fired: browser tool choices fire BrowserToolsPixel.permissionChanged instead.
             return "browser-tool"
         }
     }

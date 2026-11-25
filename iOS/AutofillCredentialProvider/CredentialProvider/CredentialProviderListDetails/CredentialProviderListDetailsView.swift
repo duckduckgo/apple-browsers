@@ -129,8 +129,6 @@ struct CredentialProviderListDetailsView: View {
 
 private struct Header: View {
 
-    @Environment(\.colorScheme) private var colorScheme
-
     private struct Constants {
         static let imageSize: CGFloat = 32
         static let horizontalStackSpacing: CGFloat = 12
@@ -153,13 +151,13 @@ private struct Header: View {
             VStack(alignment: .leading, spacing: Constants.verticalStackSpacing) {
                 Text(viewModel.title)
                     .font(.callout)
-                    .foregroundColor(colorScheme == .light ? Color(baseColor: .gray90) : .white)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
                     .truncationMode(.middle)
                     .lineLimit(1)
 
                 Text(viewModel.subtitle)
                     .font(.footnote)
-                    .foregroundColor(colorScheme == .light ? Color(baseColor: .gray50) : Color(baseColor: .gray20))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
             }
 
             Spacer()
@@ -202,7 +200,7 @@ private struct CopyableCell: View {
                             Text(subtitle)
                                 .label4Style(design: isMonospaced ? .monospaced : .default,
                                              foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: Color(baseColor: .gray30))
+                                             foregroundColorDark: Color(designSystemColor: .textSecondary))
                                 .truncationMode(truncationMode)
                                 .frame(maxHeight: .greatestFiniteMagnitude)
                                 .textSelection(.enabled)
@@ -210,7 +208,7 @@ private struct CopyableCell: View {
                             Text(subtitle)
                                 .label4Style(design: isMonospaced ? .monospaced : .default,
                                              foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: Color(baseColor: .gray30))
+                                             foregroundColorDark: Color(designSystemColor: .textSecondary))
                                 .truncationMode(truncationMode)
                         }
                     }
@@ -331,9 +329,9 @@ private struct ForegroundColor {
 
     var color: Color {
         if isSelected {
-            return Color(baseColor: .gray90)
+            return Color(designSystemColor: .textPrimary)
         } else {
-            return Color(baseColor: .gray50)
+            return Color(designSystemColor: .textSecondary)
         }
     }
 }

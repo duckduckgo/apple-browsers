@@ -52,7 +52,8 @@ let package = Package(
             dependencies: [
                 "SyncUI-macOS",
                 .product(name: "SnapshotTestingSupport", package: "SnapshotTestingSupport"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

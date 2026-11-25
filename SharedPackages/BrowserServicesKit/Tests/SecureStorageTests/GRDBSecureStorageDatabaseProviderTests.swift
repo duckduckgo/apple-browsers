@@ -75,7 +75,7 @@ private struct TestGRDBModel: PersistableRecord, FetchableRecord, Equatable {
         container[Columns.username] = username
     }
 
-    static var databaseTableName: String = "test_grdb_model"
+    static let databaseTableName: String = "test_grdb_model"
 
 }
 

@@ -607,6 +607,16 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
             let server = DataBrokerProtectionDebugHTTPServer(provider: self,
                                                              logReader: DataBrokerProtectionOSLogReader(),
                                                              runManager: DebugModeRunManager(runner: debugModeRunner))
+            #if DEBUG
+            let subscriptionManager = (authenticationManager as? DataBrokerProtectionAuthenticationManager)?.debugSubscriptionManager
+            let settings = debugSettings
+            server.prerequisiteReader = {
+                guard let subscriptionManager else {
+                    return DebugPrerequisiteResult(status: .unavailable, backend: "subscription", environment: "unknown")
+                }
+                return await DebugPrerequisiteResult.subscription(subscriptionManager, settings: settings)
+            }
+            #endif
             try server.start()
             debugServer = server
             return true

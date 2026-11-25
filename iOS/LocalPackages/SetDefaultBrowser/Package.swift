@@ -32,7 +32,8 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SetDefaultBrowserCore"
+            name: "SetDefaultBrowserCore",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "SetDefaultBrowserUI",
@@ -42,20 +43,23 @@ let package = Package(
                 .product(name: "MetricBuilder", package: "MetricBuilder"),
                 .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
                 .product(name: "UIComponents", package: "UIComponents"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "SetDefaultBrowserTestSupport",
             dependencies: [
                 "SetDefaultBrowserCore"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SetDefaultBrowserTests",
             dependencies: [
                 "SetDefaultBrowserCore",
                 "SetDefaultBrowserTestSupport",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

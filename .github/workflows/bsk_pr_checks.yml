@@ -8,9 +8,13 @@ on:
   push:
     branches: [ main ]
     paths:
+      - 'SharedPackages/AttributedMetric/**'
+      - 'SharedPackages/AutomationServer/**'
       - 'SharedPackages/BrowserServicesKit/**'
       - 'SharedPackages/Common/**'
       - 'SharedPackages/DDGError/**'
+      - 'SharedPackages/DebugServer/**'
+      - 'SharedPackages/HangMetrics/**'
       - 'SharedPackages/ICSParser/**'
       - 'SharedPackages/LocalModels/**'
       - 'SharedPackages/Infrastructure/SystemFrameworksExtensions/**'
@@ -19,6 +23,11 @@ on:
       - 'SharedPackages/Networking/**'
       - 'SharedPackages/Persistence/**'
       - 'SharedPackages/PixelKit/**'
+      - 'SharedPackages/ScreenTimeDataCleaner/**'
+      - 'SharedPackages/SERPInstallOrigin/**'
+      - 'SharedPackages/SnapshotTestingSupport/**'
+      - 'SharedPackages/UITestingSupport/**'
+      - 'SharedPackages/URLPredictor/**'
       - 'SharedPackages/WideEvent/**'
       - '.github/shared-package-checks.json'
       - 'scripts/run-shared-package-checks.sh'
@@ -47,9 +56,13 @@ jobs:
         .github/workflows/should_run_pr_checks.yml
         .github/actions/**
         .xcode-version
+        SharedPackages/AttributedMetric/**
+        SharedPackages/AutomationServer/**
         SharedPackages/BrowserServicesKit/**
         SharedPackages/Common/**
         SharedPackages/DDGError/**
+        SharedPackages/DebugServer/**
+        SharedPackages/HangMetrics/**
         SharedPackages/ICSParser/**
         SharedPackages/LocalModels/**
         SharedPackages/Infrastructure/SystemFrameworksExtensions/**
@@ -58,6 +71,11 @@ jobs:
         SharedPackages/Networking/**
         SharedPackages/Persistence/**
         SharedPackages/PixelKit/**
+        SharedPackages/ScreenTimeDataCleaner/**
+        SharedPackages/SERPInstallOrigin/**
+        SharedPackages/SnapshotTestingSupport/**
+        SharedPackages/UITestingSupport/**
+        SharedPackages/URLPredictor/**
         SharedPackages/WideEvent/**
 
   unit-tests:
@@ -73,10 +91,6 @@ jobs:
       env:
         RUNS_ON: image:osx-27-edge,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
-
-      outputs:
-        commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
-        pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
       steps:
 
@@ -133,9 +147,12 @@ jobs:
             -test-iterations 3 \
             -retry-tests-on-failure \
             CODE_SIGNING_ALLOWED=NO \
-            | tee build-log.txt \
+            2>&1 | tee build-log.txt \
             | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
             | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+
+      - name: Check strict concurrency in BrowserServicesKit targets
+        run: python3 ../../scripts/check-swift-concurrency-warnings.py build-log.txt --package .
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
@@ -211,13 +228,6 @@ jobs:
           path: SharedPackages/BrowserServicesKit/DerivedData/Logs/Test/*.xcresult
           retention-days: 7
           if-no-files-found: ignore
-
-      - name: Fetch latest commit author and PR reviewers
-        if: failure() && github.ref_name == 'main' && github.run_attempt == 1
-        id: fetch_commit_author
-        uses: ./.github/actions/fetch-commit-info
-        with:
-          github-token: ${{ github.token }}
 
   unit-tests-ios:
 
@@ -326,8 +336,11 @@ jobs:
             -test-iterations 3 \
             -retry-tests-on-failure \
             CODE_SIGNING_ALLOWED=NO \
-            | tee -a ios-build-log.txt \
+            2>&1 | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
+
+      - name: Check strict concurrency in BrowserServicesKit targets
+        run: python3 ../../scripts/check-swift-concurrency-warnings.py ios-build-log.txt --package .
 
       - name: Run shared package tests (iOS)
         if: (success() || failure()) && steps.select-simulator.outcome == 'success'
@@ -371,11 +384,19 @@ jobs:
           path: |
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
             SharedPackages/BrowserServicesKit/bsk-ios-unittests-crash-details.json
+            SharedPackages/AttributedMetric/ios-unittests.xml
+            SharedPackages/AutomationServer/ios-unittests.xml
             SharedPackages/DDGError/ios-unittests.xml
+            SharedPackages/DebugServer/ios-unittests.xml
+            SharedPackages/HangMetrics/ios-unittests.xml
+            SharedPackages/Persistence/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
             SharedPackages/LocalModels/ios-unittests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-unittests.xml
+            SharedPackages/SERPInstallOrigin/ios-unittests.xml
+            SharedPackages/SnapshotTestingSupport/ios-unittests.xml
+            SharedPackages/URLPredictor/ios-unittests.xml
           retention-days: 7
 
       - name: Publish Unit Tests Report
@@ -385,11 +406,19 @@ jobs:
           check_name: BSK Test Report (iOS)
           report_paths: |
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
+            SharedPackages/AttributedMetric/ios-unittests.xml
+            SharedPackages/AutomationServer/ios-unittests.xml
             SharedPackages/DDGError/ios-unittests.xml
+            SharedPackages/DebugServer/ios-unittests.xml
+            SharedPackages/HangMetrics/ios-unittests.xml
+            SharedPackages/Persistence/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
             SharedPackages/LocalModels/ios-unittests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-unittests.xml
+            SharedPackages/SERPInstallOrigin/ios-unittests.xml
+            SharedPackages/SnapshotTestingSupport/ios-unittests.xml
+            SharedPackages/URLPredictor/ios-unittests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
           job_summary: 'false'
@@ -413,12 +442,22 @@ jobs:
           name: ios-build-log.txt
           path: |
             SharedPackages/BrowserServicesKit/ios-build-log.txt
+            SharedPackages/AttributedMetric/ios-build-log.txt
+            SharedPackages/AutomationServer/ios-build-log.txt
             SharedPackages/DDGError/ios-build-log.txt
+            SharedPackages/DebugServer/ios-build-log.txt
+            SharedPackages/HangMetrics/ios-build-log.txt
+            SharedPackages/Persistence/ios-build-log.txt
             SharedPackages/ICSParser/ios-build-log.txt
             SharedPackages/LocalModels/ios-build-log.txt
             SharedPackages/Infrastructure/DesignResourcesKit/ios-build-log.txt
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-build-log.txt
             SharedPackages/Infrastructure/DesignResourcesKitIcons/ios-build-log.txt
+            SharedPackages/ScreenTimeDataCleaner/ios-build-log.txt
+            SharedPackages/SERPInstallOrigin/ios-build-log.txt
+            SharedPackages/SnapshotTestingSupport/ios-build-log.txt
+            SharedPackages/UITestingSupport/ios-build-log.txt
+            SharedPackages/URLPredictor/ios-build-log.txt
 
       - name: Upload xcresult bundle
         uses: actions/upload-artifact@v6
@@ -427,11 +466,19 @@ jobs:
           name: bsk-ios-xcresult
           path: |
             SharedPackages/BrowserServicesKit/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/AttributedMetric/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/AutomationServer/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/DebugServer/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/HangMetrics/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/Persistence/DerivedData/Logs/Test/*.xcresult
             SharedPackages/ICSParser/DerivedData/Logs/Test/*.xcresult
             SharedPackages/LocalModels/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/DesignResourcesKit/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/SystemFrameworksExtensions/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/SERPInstallOrigin/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/SnapshotTestingSupport/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/URLPredictor/DerivedData/Logs/Test/*.xcresult
           retention-days: 7
           if-no-files-found: ignore
 
@@ -493,6 +540,26 @@ jobs:
       # One call per package: the action reads a single report, and this keeps a separate
       # job-summary table per package. test-outcome only gates crash injection, which is a no-op
       # when a package has no xcresult crashes, so passing the whole step's outcome is safe.
+      - name: Process test results (AttributedMetric)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/AttributedMetric
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: AttributedMetric (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+      - name: Process test results (AutomationServer)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/AutomationServer
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: AutomationServer (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
       - name: Process test results (Common)
         if: always()
         uses: ./.github/actions/process-test-results
@@ -511,6 +578,26 @@ jobs:
           junit-path: package-tests.xml
           log-path: build-log.txt
           title: DDGError (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+      - name: Process test results (DebugServer)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/DebugServer
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: DebugServer (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+      - name: Process test results (HangMetrics)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/HangMetrics
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: HangMetrics (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
       - name: Process test results (ICSParser)
@@ -583,6 +670,36 @@ jobs:
           title: PixelKit (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
+      - name: Process test results (SERPInstallOrigin)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/SERPInstallOrigin
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: SERPInstallOrigin (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+      - name: Process test results (SnapshotTestingSupport)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/SnapshotTestingSupport
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: SnapshotTestingSupport (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+      - name: Process test results (URLPredictor)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/URLPredictor
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: URLPredictor (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
       - name: Process test results (WideEvent)
         if: always()
         uses: ./.github/actions/process-test-results
@@ -599,8 +716,12 @@ jobs:
         with:
           name: shared-packages-macos-unittests.xml
           path: |
+            SharedPackages/AttributedMetric/package-tests.xml
+            SharedPackages/AutomationServer/package-tests.xml
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
+            SharedPackages/DebugServer/package-tests.xml
+            SharedPackages/HangMetrics/package-tests.xml
             SharedPackages/ICSParser/package-tests.xml
             SharedPackages/LocalModels/package-tests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/package-tests.xml
@@ -608,9 +729,16 @@ jobs:
             SharedPackages/Networking/package-tests.xml
             SharedPackages/Persistence/package-tests.xml
             SharedPackages/PixelKit/package-tests.xml
+            SharedPackages/SERPInstallOrigin/package-tests.xml
+            SharedPackages/SnapshotTestingSupport/package-tests.xml
+            SharedPackages/URLPredictor/package-tests.xml
             SharedPackages/WideEvent/package-tests.xml
+            SharedPackages/AttributedMetric/package-tests-crash-details.json
+            SharedPackages/AutomationServer/package-tests-crash-details.json
             SharedPackages/Common/package-tests-crash-details.json
             SharedPackages/DDGError/package-tests-crash-details.json
+            SharedPackages/DebugServer/package-tests-crash-details.json
+            SharedPackages/HangMetrics/package-tests-crash-details.json
             SharedPackages/ICSParser/package-tests-crash-details.json
             SharedPackages/LocalModels/package-tests-crash-details.json
             SharedPackages/Infrastructure/DesignResourcesKit/package-tests-crash-details.json
@@ -618,6 +746,9 @@ jobs:
             SharedPackages/Networking/package-tests-crash-details.json
             SharedPackages/Persistence/package-tests-crash-details.json
             SharedPackages/PixelKit/package-tests-crash-details.json
+            SharedPackages/SERPInstallOrigin/package-tests-crash-details.json
+            SharedPackages/SnapshotTestingSupport/package-tests-crash-details.json
+            SharedPackages/URLPredictor/package-tests-crash-details.json
             SharedPackages/WideEvent/package-tests-crash-details.json
           retention-days: 7
 
@@ -627,8 +758,12 @@ jobs:
         with:
           check_name: Shared Packages Test Report (macOS)
           report_paths: |
+            SharedPackages/AttributedMetric/package-tests.xml
+            SharedPackages/AutomationServer/package-tests.xml
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
+            SharedPackages/DebugServer/package-tests.xml
+            SharedPackages/HangMetrics/package-tests.xml
             SharedPackages/ICSParser/package-tests.xml
             SharedPackages/LocalModels/package-tests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/package-tests.xml
@@ -636,6 +771,9 @@ jobs:
             SharedPackages/Networking/package-tests.xml
             SharedPackages/Persistence/package-tests.xml
             SharedPackages/PixelKit/package-tests.xml
+            SharedPackages/SERPInstallOrigin/package-tests.xml
+            SharedPackages/SnapshotTestingSupport/package-tests.xml
+            SharedPackages/URLPredictor/package-tests.xml
             SharedPackages/WideEvent/package-tests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
@@ -664,8 +802,12 @@ jobs:
         with:
           name: shared-packages-build-logs
           path: |
+            SharedPackages/AttributedMetric/build-log.txt
+            SharedPackages/AutomationServer/build-log.txt
             SharedPackages/Common/build-log.txt
             SharedPackages/DDGError/build-log.txt
+            SharedPackages/DebugServer/build-log.txt
+            SharedPackages/HangMetrics/build-log.txt
             SharedPackages/ICSParser/build-log.txt
             SharedPackages/LocalModels/build-log.txt
             SharedPackages/Infrastructure/DesignResourcesKit/build-log.txt
@@ -674,6 +816,11 @@ jobs:
             SharedPackages/Networking/build-log.txt
             SharedPackages/Persistence/build-log.txt
             SharedPackages/PixelKit/build-log.txt
+            SharedPackages/ScreenTimeDataCleaner/build-log.txt
+            SharedPackages/SERPInstallOrigin/build-log.txt
+            SharedPackages/SnapshotTestingSupport/build-log.txt
+            SharedPackages/UITestingSupport/build-log.txt
+            SharedPackages/URLPredictor/build-log.txt
             SharedPackages/WideEvent/build-log.txt
           retention-days: 7
           if-no-files-found: ignore
@@ -684,8 +831,12 @@ jobs:
         with:
           name: shared-packages-macos-xcresult
           path: |
+            SharedPackages/AttributedMetric/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/AutomationServer/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Common/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/DebugServer/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/HangMetrics/DerivedData/Logs/Test/*.xcresult
             SharedPackages/ICSParser/DerivedData/Logs/Test/*.xcresult
             SharedPackages/LocalModels/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/DesignResourcesKit/DerivedData/Logs/Test/*.xcresult
@@ -693,6 +844,9 @@ jobs:
             SharedPackages/Networking/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Persistence/DerivedData/Logs/Test/*.xcresult
             SharedPackages/PixelKit/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/SERPInstallOrigin/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/SnapshotTestingSupport/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/URLPredictor/DerivedData/Logs/Test/*.xcresult
             SharedPackages/WideEvent/DerivedData/Logs/Test/*.xcresult
           retention-days: 7
           if-no-files-found: ignore
@@ -714,8 +868,6 @@ jobs:
           action: create-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
-          commit-author: ${{ needs.unit-tests.outputs.commit_author }}
-          pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.APPLE_GH_RO_PAT }}
 
   close-asana-task:

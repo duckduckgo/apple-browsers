@@ -523,15 +523,14 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         let result = await fixture.invoke()
         XCTAssertEqual(result, fixture.success)
         XCTAssertEqual(fixture.listings, 1)
-        XCTAssertEqual(fixture.presenter.prompts.count, 1)
-        XCTAssertEqual(fixture.presenter.messages, ["Duck.ai wants to see your open tabs."])
+        XCTAssertEqual(fixture.presenter.prompts.map(\.toolName), ["listOpenTabs"])
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
         XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
     }
 
     func testCleanupCancelsGrantedListingAndDoesNotReviveOldSource() async throws {
         let fixture = makeFixture()
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
             return XCTFail("Expected native authorization")
         }
         fixture.script.cleanUpForReplacement()
@@ -566,9 +565,9 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         let tool = BrowserToolsBridgeAskTool()
         let authorization = await fixture.service.clientToolPermissions.authorize(callID: "call", tool: tool, prompter: fixture.script)
         switch authorization {
-        case .refused(let error):
+        case .refused(let error, _, _):
             XCTAssertEqual(error, .cancelled)
-        case .granted(let performExecution):
+        case .granted(_, let performExecution):
             XCTFail("A tool requiring a native prompt must be cancelled")
             _ = await performExecution {
                 await tool.execute(arguments: [:], context: BrowserToolCallContext(ownerTabID: fixture.owner.uid, isBurner: false))
@@ -581,7 +580,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
 
     func testOwnerRemovalCancelsGrantedListingWithoutPersistingPermission() async throws {
         let fixture = makeFixture()
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
             return XCTFail("Expected native authorization")
         }
         fixture.service.detachSources(ownerTabID: fixture.owner.uid)
@@ -615,7 +614,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         for processLoss in [false, true] {
             let fixture = makeFixture()
             let contextual = fixture.makeScript()
-            guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+            guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
                 return XCTFail("Expected native authorization")
             }
             if processLoss {
@@ -658,7 +657,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
 
     func testFireCancelsGrantedBeforeExecutionAndFailureAllowsFreshRequest() async throws {
         let fixture = makeFixture()
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
             return XCTFail("Expected native authorization")
         }
         let token = fixture.service.beginClearing(.chats(ids: ["chat"]))

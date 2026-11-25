@@ -17,19 +17,19 @@
 //
 
 import XCTest
-@_spi(Testing) import Persistence
+import Persistence
 @testable import AutoconsentStats
 import Common
 
 final class AutoconsentStatsTests: XCTestCase {
 
-    var mockKeyValueStore: MockKeyValueFileStore!
+    private var mockKeyValueStore: StatsStore!
     var autoconsentStats: AutoconsentStats!
-    var mockEventMapping: MockAutoconsentStatsEventMapping?
+    private let recorded = AutoconsentStatsEvents()
 
     override func setUp() async throws {
         try await super.setUp()
-        mockKeyValueStore = try MockKeyValueFileStore()
+        mockKeyValueStore = StatsStore()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore
         )
@@ -38,7 +38,6 @@ final class AutoconsentStatsTests: XCTestCase {
     override func tearDown() async throws {
         mockKeyValueStore = nil
         autoconsentStats = nil
-        mockEventMapping = nil
         try await super.tearDown()
     }
 
@@ -261,7 +260,7 @@ final class AutoconsentStatsTests: XCTestCase {
         try? mockKeyValueStore.set(TimeInterval(200.0), forKey: AutoconsentStats.Constants.totalTimeSpentBlockingCookiePopUpsKey)
 
         // When
-        await autoconsentStats.clearAutoconsentStats()
+        _ = await autoconsentStats.clearAutoconsentStats()
 
         // Then - All values should be removed
         let blockedCount = try? mockKeyValueStore.object(forKey: AutoconsentStats.Constants.totalCookiePopUpsBlockedKey)
@@ -277,7 +276,7 @@ final class AutoconsentStatsTests: XCTestCase {
         // Given - No data in store
 
         // When/Then - Should not crash
-        await autoconsentStats.clearAutoconsentStats()
+        _ = await autoconsentStats.clearAutoconsentStats()
     }
 
     func testClearAutoconsentStatsHandlesError() async {
@@ -286,13 +285,13 @@ final class AutoconsentStatsTests: XCTestCase {
         try? mockKeyValueStore.set(Int64(50), forKey: AutoconsentStats.Constants.totalCookiePopUpsBlockedKey)
 
         // When/Then - Should not crash despite error
-        await autoconsentStats.clearAutoconsentStats()
+        _ = await autoconsentStats.clearAutoconsentStats()
     }
 
     func testClearAutoconsentStatsAllowsDataToBeRerecorded() async {
         // Given - Store has data, then clear it
         await autoconsentStats.recordAutoconsentAction(clicksMade: 10, timeSpent: 20.0)
-        await autoconsentStats.clearAutoconsentStats()
+        _ = await autoconsentStats.clearAutoconsentStats()
 
         // When - Record new data after clearing
         await autoconsentStats.recordAutoconsentAction(clicksMade: 5, timeSpent: 10.0)
@@ -311,7 +310,7 @@ final class AutoconsentStatsTests: XCTestCase {
         try? mockKeyValueStore.set(TimeInterval(200.0), forKey: AutoconsentStats.Constants.totalTimeSpentBlockingCookiePopUpsKey)
 
         // When - Clear the stats
-        await autoconsentStats.clearAutoconsentStats()
+        _ = await autoconsentStats.clearAutoconsentStats()
 
         // Then - All fetches should return zero
         let usagePack = await autoconsentStats.fetchAutoconsentDailyUsagePack()
@@ -368,31 +367,29 @@ final class AutoconsentStatsTests: XCTestCase {
 
     // MARK: - Concurrent Access Tests
 
-    func testConcurrentRecordActions() async {
-        // Given - Starting from 0
-
-        // When - Record multiple actions concurrently
+    func testConcurrentRecordActions() async throws {
+        let stats = try XCTUnwrap(autoconsentStats)
         await withTaskGroup(of: Void.self) { group in
-            for _ in 0..<10 {
+            for _ in 0..<100 {
                 group.addTask {
-                    await self.autoconsentStats.recordAutoconsentAction(clicksMade: 1, timeSpent: 1.0)
+                    await stats.recordAutoconsentAction(clicksMade: 2, timeSpent: 0.5)
                 }
             }
         }
 
-        // Then - All actions should be recorded
-        let storedValue = try? mockKeyValueStore.object(forKey: AutoconsentStats.Constants.totalCookiePopUpsBlockedKey) as? Int64
-        XCTAssertEqual(storedValue, 10, "All concurrent actions should be recorded")
+        let totals = await stats.fetchAutoconsentDailyUsagePack()
+        XCTAssertEqual(totals.totalCookiePopUpsBlocked, 100)
+        XCTAssertEqual(totals.totalClicksMadeBlockingCookiePopUps, 200)
+        XCTAssertEqual(totals.totalTotalTimeSpentBlockingCookiePopUps, 50)
     }
 
     // MARK: - Error Event Tests
 
     func testRecordAutoconsentActionFiresErrorEventOnFailure() async {
         // Given - Event mapping configured
-        mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            errorEvents: mockEventMapping
+            errorEvents: recorded.makeMapping()
         )
 
         // Set up store to throw error
@@ -402,8 +399,8 @@ final class AutoconsentStatsTests: XCTestCase {
         await autoconsentStats.recordAutoconsentAction(clicksMade: 5, timeSpent: 10.0)
 
         // Then - Error event should be fired
-        XCTAssertEqual(mockEventMapping!.events.count, 1)
-        if case .failedToRecordAutoconsentAction(let error) = mockEventMapping!.events.first {
+        XCTAssertEqual(recorded.events.count, 1)
+        if case .failedToRecordAutoconsentAction(let error) = recorded.events.first {
             XCTAssertEqual((error as NSError).domain, "test")
             XCTAssertEqual((error as NSError).code, 1)
         } else {
@@ -413,10 +410,9 @@ final class AutoconsentStatsTests: XCTestCase {
 
     func testFetchTotalCookiePopUpsBlockedFiresErrorEventOnFailure() async {
         // Given - Event mapping configured
-        mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            errorEvents: mockEventMapping
+            errorEvents: recorded.makeMapping()
         )
 
         // Set up store to throw error
@@ -427,8 +423,8 @@ final class AutoconsentStatsTests: XCTestCase {
 
         // Then - Should return 0 and fire error event
         XCTAssertEqual(result, 0)
-        XCTAssertEqual(mockEventMapping!.events.count, 1)
-        if case .failedToFetchTotalCookiePopUpsBlocked(let error) = mockEventMapping!.events.first {
+        XCTAssertEqual(recorded.events.count, 1)
+        if case .failedToFetchTotalCookiePopUpsBlocked(let error) = recorded.events.first {
             XCTAssertEqual((error as NSError).domain, "test")
             XCTAssertEqual((error as NSError).code, 2)
         } else {
@@ -438,10 +434,9 @@ final class AutoconsentStatsTests: XCTestCase {
 
     func testFetchAutoconsentDailyUsagePackFiresErrorEventsOnFetchFailure() async {
         // Given - Event mapping configured
-        mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            errorEvents: mockEventMapping
+            errorEvents: recorded.makeMapping()
         )
 
         // Set up store to throw error on read
@@ -456,10 +451,10 @@ final class AutoconsentStatsTests: XCTestCase {
         XCTAssertEqual(result.totalTotalTimeSpentBlockingCookiePopUps, 0.0)
 
         // Should have fired 3 error events (one for each private fetch)
-        XCTAssertEqual(mockEventMapping!.events.count, 3)
+        XCTAssertEqual(recorded.events.count, 3)
 
         // Verify the specific error events
-        let eventTypes = mockEventMapping!.events.map { event -> String in
+        let eventTypes = recorded.events.map { event -> String in
             switch event {
             case .failedToFetchTotalCookiePopUpsBlocked:
                 return "popups"
@@ -479,10 +474,9 @@ final class AutoconsentStatsTests: XCTestCase {
 
     func testClearAutoconsentStatsFiresErrorEventOnFailure() async {
         // Given - Event mapping configured
-        mockEventMapping = MockAutoconsentStatsEventMapping()
         autoconsentStats = AutoconsentStats(
             keyValueStore: mockKeyValueStore,
-            errorEvents: mockEventMapping
+            errorEvents: recorded.makeMapping()
         )
 
         // Add some data first
@@ -492,11 +486,11 @@ final class AutoconsentStatsTests: XCTestCase {
         mockKeyValueStore.throwOnRemove = NSError(domain: "test", code: 4)
 
         // When - Clear that will fail
-        await autoconsentStats.clearAutoconsentStats()
+        _ = await autoconsentStats.clearAutoconsentStats()
 
         // Then - Error event should be fired
-        XCTAssertEqual(mockEventMapping!.events.count, 1)
-        if case .failedToClearAutoconsentStats(let error) = mockEventMapping!.events.first {
+        XCTAssertEqual(recorded.events.count, 1)
+        if case .failedToClearAutoconsentStats(let error) = recorded.events.first {
             XCTAssertEqual((error as NSError).domain, "test")
             XCTAssertEqual((error as NSError).code, 4)
         } else {
@@ -554,5 +548,52 @@ final class AutoconsentStatsTests: XCTestCase {
 
         // Test errorUserInfo
         XCTAssertNotNil(wrappedError.errorUserInfo[NSUnderlyingErrorKey])
+    }
+}
+
+// This fixture shares only immutable scalar values between the test and the stats actor.
+private final class StatsStore: ThrowingKeyValueStoring, @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [String: any Sendable] = [:]
+    private var readError: Error?
+    private var writeError: Error?
+    private var removeError: Error?
+
+    var throwOnRead: Error? {
+        get { lock.withLock { readError } }
+        set { lock.withLock { readError = newValue } }
+    }
+
+    var throwOnSet: Error? {
+        get { lock.withLock { writeError } }
+        set { lock.withLock { writeError = newValue } }
+    }
+
+    var throwOnRemove: Error? {
+        get { lock.withLock { removeError } }
+        set { lock.withLock { removeError = newValue } }
+    }
+
+    func object(forKey key: String) throws -> Any? {
+        if let throwOnRead { throw throwOnRead }
+        return lock.withLock { storage[key] as Any? }
+    }
+
+    func set(_ value: Any?, forKey key: String) throws {
+        if let throwOnSet { throw throwOnSet }
+        let scalar: (any Sendable)?
+        switch value {
+        case let value as Int64: scalar = value
+        case let value as Double: scalar = value
+        case let value as String: scalar = value
+        case nil: scalar = nil
+        default: throw CocoaError(.coderInvalidValue)
+        }
+        lock.withLock { storage[key] = scalar }
+    }
+
+    func removeObject(forKey key: String) throws {
+        if let throwOnRemove { throw throwOnRemove }
+        lock.withLock { storage[key] = nil }
     }
 }

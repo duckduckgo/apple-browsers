@@ -48,7 +48,8 @@ let package = Package(
             name: "VPNTestUtils",
             dependencies: [
                 "VPN",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
 
         .testTarget(

@@ -22,8 +22,17 @@ internal final class WatchdogTracker {
 
     private let lock = NSLock()
     private var heartbeatTimestamp: DispatchTime = .now()
+    private var tickTimestamp: DispatchTime = .now()
     private var hangStartTimestamp: DispatchTime?
     private var timeoutFireTimestamp: DispatchTime?
+
+    /// Returns the seconds elapsed since the previous tick
+    func signalTick() -> TimeInterval {
+        lock.withLock {
+            defer { tickTimestamp = .now() }
+            return tickTimestamp.secondsElapsedSinceNow
+        }
+    }
 
     func signalHeartbeat() {
         lock.withLock {

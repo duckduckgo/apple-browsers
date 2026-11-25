@@ -160,7 +160,7 @@ final class DuckPlayerNativeUIPresenter {
 
     // Content Scripts dependencies
     private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
-    private let sponsorBlockPreferences: SponsorBlockPreferences
+    private let segmentSkipPreferences: SegmentSkipPreferences
 
     // Pixel Handler
     let pixelHandler: DuckPlayerPixelFiring.Type
@@ -176,7 +176,7 @@ final class DuckPlayerNativeUIPresenter {
          state: DuckPlayerState = DuckPlayerState(),
          notificationCenter: NotificationCenter = .default,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         sponsorBlockPreferences: SponsorBlockPreferences,
+         segmentSkipPreferences: SegmentSkipPreferences,
          pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          floatingUIManager: FloatingUIManaging = FloatingUIManager(
             isFloatingUIFeatureEnabled: false
@@ -187,7 +187,7 @@ final class DuckPlayerNativeUIPresenter {
         self.notificationCenter = notificationCenter
         self.pixelHandler = pixelHandler
         self.userScriptsDependencies = userScriptsDependencies
-        self.sponsorBlockPreferences = sponsorBlockPreferences
+        self.segmentSkipPreferences = segmentSkipPreferences
         self.floatingUIManager = floatingUIManager
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
@@ -853,7 +853,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         let webView = DuckPlayerWebView(viewModel: viewModel,
                                         scriptSourceProviderDependencies: userScriptsDependencies,
-                                        sponsorBlockPreferences: sponsorBlockPreferences)
+                                        segmentSkipPreferences: segmentSkipPreferences)
         let duckPlayerView = DuckPlayerView(viewModel: viewModel, webView: webView)
 
         let hostingController = UIHostingController(rootView: duckPlayerView)

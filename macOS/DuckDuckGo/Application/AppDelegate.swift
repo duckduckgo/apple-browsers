@@ -151,9 +151,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let contentScopePreferences: ContentScopePreferences
-    private(set) lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+    private(set) lazy var segmentSkipPreferences = SegmentSkipPreferences(store: keyValueStore)
     /// One instance for the app, so every tab shares the segments cache.
-    let sponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider()
+    let segmentSkipSegmentsProvider = SegmentSkipSegmentsProvider()
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
@@ -1295,11 +1295,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             trackerMessageProvider: TrackerMessageProvider(
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
             ),
-            subscriptionUpsellExperiment: OnboardingSubscriptionUpsellExperiment(
-                featureFlagger: featureFlagger,
-                subscriptionManager: subscriptionManager
-            ),
-            settings: keyValueStore.throwingKeyedStoring()
+            subscriptionManager: subscriptionManager,
+            settings: keyValueStore.throwingKeyedStoring(),
+            uiLocker: windowControllersManager
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -1417,7 +1415,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
         crashReporting = CrashReportingFactory.makeCrashReporting(internalUserDecider: internalUserDecider,
-                                                                  featureFlagger: featureFlagger,
                                                                   keyValueStore: UserDefaults.standard)
 
         let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
@@ -1958,6 +1955,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
+        OtherDistributionInstalledPixelReporter().fireDailyPixel()
     }
 
     private func fireDailyFireWindowConfigurationPixels() {
@@ -2303,6 +2301,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        // No new windows while onboarding locks the UI.
+        guard !windowControllersManager.userInteractionLock.isLocked else { return nil }
         return ApplicationDockMenu(internalUserDecider: internalUserDecider, isFireWindowDefault: visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled)
     }
 
@@ -2395,7 +2395,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             themeManager: themeManager,
             darkReaderExcludedDomainsProvider: darkReaderSettings,
             scriptletConfiguration: makeScriptletConfiguration(),
-            eventHub: eventHubIntegration.eventHub
+            eventHub: eventHubIntegration.eventHub,
+            isAppleSurrogateRedirectionEnabled: { [webExtensionAvailability] in webExtensionAvailability.isAppleSurrogateRedirectionEnabled }
         )
         self.webExtensionManager = webExtensionManager
         webExtensionAutofillTakeover.manager = webExtensionManager

@@ -36,15 +36,11 @@ final class CrashCollectionService {
     private lazy var crashReportUploaderOnboarding = CrashCollectionOnboarding(appSettings: appSettings)
 
     init(appSettings: AppSettings = AppUserDefaults(),
-         application: UIApplication = UIApplication.shared,
-         featureFlagger: FeatureFlagger) {
+         application: UIApplication = UIApplication.shared) {
         self.appSettings = appSettings
         self.application = application
 
-        let isCallStackLimitingEnabled = featureFlagger.isFeatureOn(.crashCollectionLimitCallStackTreeDepth)
-        let callStackDepthLimit: Int? = isCallStackLimitingEnabled ? 250 : nil
-
-        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit) { [weak self] pixelParameters, payloads, sendReport in
+        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: 250) { [weak self] pixelParameters, payloads, sendReport in
             pixelParameters.forEach { params in
 
                 // Calculate appIdentifier for what crashed - nil for main bundle, otherwise the app identifier is the bundle identifier minus the main bundle identifier.

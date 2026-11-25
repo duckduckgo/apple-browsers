@@ -26,12 +26,15 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
 
     private let featureFlagger: FeatureFlagger
     private let webExtensionManagerProvider: () -> WebExtensionManaging?
+    private let isSurrogateRedirectionOSSupported: Bool
 
     init(
         featureFlagger: FeatureFlagger,
+        isSurrogateRedirectionOSSupported: Bool = { if #available(macOS 26, *) { true } else { false } }(),
         webExtensionManagerProvider: @escaping () -> WebExtensionManaging?
     ) {
         self.featureFlagger = featureFlagger
+        self.isSurrogateRedirectionOSSupported = isSurrogateRedirectionOSSupported
         self.webExtensionManagerProvider = webExtensionManagerProvider
     }
 
@@ -54,6 +57,15 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     }
 
     var isExtensionManagementAvailable: Bool {
-        isAvailable && featureFlagger.isFeatureOn(.webExtensions)
+        isAvailable && (featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal))
+    }
+
+    /// The only place that combines the conditions: macOS 26+, `trackerProtection.appleSurrogateRedirection`, and the
+    /// embedded extension being loaded. Requiring it loaded (not just flagged on) means C-S-S keeps injecting surrogates
+    /// if the extension fails to load or is removed.
+    var isAppleSurrogateRedirectionEnabled: Bool {
+        isSurrogateRedirectionOSSupported
+            && featureFlagger.isFeatureOn(.appleSurrogateRedirection)
+            && isAutoconsentExtensionAvailable
     }
 }

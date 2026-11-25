@@ -104,10 +104,10 @@ struct ClassifierTests {
         ("https://www.duckduckgo.com", .navigate(url: URL(string: "https://www.duckduckgo.com/")!), #line),
         ("127.0.0.1", .navigate(url: URL(string: "http://127.0.0.1/")!), #line),
         ("http://127.0.0.1", .navigate(url: URL(string: "http://127.0.0.1/")!), #line),
-        ("stuff.stor", .navigate(url: URL(string: "http://stuff.stor/")!), #line),
+        ("stuff.stor", expectedDecisionForBareIntranetHost("stuff.stor"), #line),
         ("https://stuff.stor", .navigate(url: URL(string: "https://stuff.stor/")!), #line),
         ("stuff.store", .navigate(url: URL(string: "http://stuff.store/")!), #line),
-        ("windows.applicationmodel.store.dll", .navigate(url: URL(string: "http://windows.applicationmodel.store.dll/")!), #line),
+        ("windows.applicationmodel.store.dll", expectedDecisionForBareIntranetHost("windows.applicationmodel.store.dll"), #line),
         ("1.2.7", .search(query: "1.2.7"), #line),
         ("http://1.2.7", .navigate(url: URL(string: "http://1.2.0.7/")!), #line),
         ("1.2", .search(query: "1.2"), #line),
@@ -126,6 +126,14 @@ struct ClassifierTests {
     func makeURL_from_addressBarString_windowsTests(string: String, expectation: Classifier.Decision, line: Int) throws {
         let decision = try Classifier.classify(input: string)
         #expect(decision == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
+    }
+
+    private static func expectedDecisionForBareIntranetHost(_ host: String) -> Classifier.Decision {
+#if os(macOS)
+        return .navigate(url: URL(string: "http://\(host)/")!)
+#else
+        return .search(query: host)
+#endif
     }
 
     // swiftlint:disable:next identifier_name

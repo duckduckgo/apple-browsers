@@ -367,6 +367,7 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     @MainActor func selectLauncherPromoCta() {}
     @MainActor func dismissLauncherPromo() {}
     @MainActor func launcherPromoIgnored() {}
+    @MainActor func chatSubmitted() {}
     var launcherPromoPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     var isAttachTabsEnabled: Bool = false
     var isAttachTabsEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }

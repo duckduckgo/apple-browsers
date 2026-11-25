@@ -79,6 +79,11 @@ struct TabInputState: Equatable {
         selectedTool = nil
     }
 
+    mutating func startNewChat(on pick: UTIModelSelection) {
+        selectedModelID = pick.modelID
+        selectedReasoningMode = pick.reasoningMode
+    }
+
     /// Compact, privacy-aware description for debug logs. Reports text length and
     /// attachment count rather than the values themselves so user prompts and image
     /// data don't end up in `os_log` output.

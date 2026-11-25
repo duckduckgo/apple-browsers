@@ -131,7 +131,7 @@ final class CredentialsDatabaseCleanerTests: XCTestCase {
         databaseCleaner.isSyncActive = { true }
 
         databaseCleaner.removeSyncableCredentialsMetadataPendingDeletion()
-        waitForExpectations(timeout: 1)
+        wait(for: [expectation], timeout: 1)
         XCTAssertEqual(MockEventMapper.errors.count, 1)
         let error = try XCTUnwrap(MockEventMapper.errors.first)
         XCTAssertTrue(error is CredentialsCleanupCancelledError)

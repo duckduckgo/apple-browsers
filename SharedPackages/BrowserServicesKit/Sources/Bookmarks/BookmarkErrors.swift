@@ -29,7 +29,7 @@ public enum BookmarksModelError: Error, Equatable {
         case bookmark
     }
 
-    public enum ModelType: String {
+    public enum ModelType: String, Sendable {
         case favorites
         case bookmarks
         case menu

@@ -23,7 +23,7 @@ public enum MessageTrigger: String, Codable, Sendable {
 }
 
 /// Controls which messages are returned based on their `displayConditions.trigger` value.
-public enum TriggerFilter: Equatable {
+public enum TriggerFilter: Equatable, Sendable {
     /// Matches every message regardless of trigger (used by prefetch and cleanup paths).
     case any
     /// Matches only messages that have no trigger (i.e. `displayConditions` is nil or its `trigger` is nil).

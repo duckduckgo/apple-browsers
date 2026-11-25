@@ -358,7 +358,7 @@ public struct LoginImporterError: DataImportError {
         self._type = type
     }
 
-    public struct OperationType: RawRepresentable, Equatable {
+    public struct OperationType: RawRepresentable, Equatable, Sendable {
         public let rawValue: Int
 
         static let malformedCSV = OperationType(rawValue: -2)

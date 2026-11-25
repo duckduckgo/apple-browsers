@@ -18,7 +18,7 @@
 
 import Foundation
 
-public enum AccountKeychainAccessType: String {
+public enum AccountKeychainAccessType: String, Sendable {
     case getAuthToken
     case storeAuthToken
     case getAccessToken

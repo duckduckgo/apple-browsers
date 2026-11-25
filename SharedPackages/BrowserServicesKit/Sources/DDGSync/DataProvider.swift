@@ -24,7 +24,7 @@ import Foundation
 /**
  * Defines sync feature, i.e. type of synced data.
  */
-public struct Feature: Hashable {
+public struct Feature: Hashable, Sendable {
     public var name: String
 
     public init(name: String) {
@@ -35,7 +35,7 @@ public struct Feature: Hashable {
 /**
  * Defines sync feature's setup state.
  */
-public enum FeatureSetupState: String {
+public enum FeatureSetupState: String, Sendable {
     /// This value denotes a state where a feature requires "initial sync" to be performed,
     /// i.e. fetching remote data and merging it with local, with data deduplication as needed.
     case needsRemoteDataFetch

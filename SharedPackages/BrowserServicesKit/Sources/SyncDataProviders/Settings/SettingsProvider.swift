@@ -44,7 +44,7 @@ public struct SettingsSyncMetadataSaveError: Error {
 
 public final class SettingsProvider: DataProvider, SettingSyncHandlingDelegate {
 
-    public struct Setting: Hashable {
+    public struct Setting: Hashable, Sendable {
         public let key: String
 
         public init(key: String) {

@@ -94,7 +94,7 @@ public enum SyncConnectionError: Error, Equatable {
     case invalidCredentials
 }
 
-public enum SyncSetupTimeoutStage: String, Equatable {
+public enum SyncSetupTimeoutStage: String, Equatable, Sendable {
     case waitingForPeerHello = "waiting_for_peer_hello"
     case waitingForPeerStatus = "waiting_for_peer_status"
     case waitingForConfirmation = "waiting_for_confirmation"

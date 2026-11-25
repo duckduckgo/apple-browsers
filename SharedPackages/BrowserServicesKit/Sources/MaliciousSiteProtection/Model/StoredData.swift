@@ -27,7 +27,7 @@ protocol MaliciousSiteDataKey: Hashable, Sendable {
 }
 
 public extension DataManager {
-    enum StoredDataType: Hashable, CaseIterable {
+    enum StoredDataType: Hashable, CaseIterable, Sendable {
         case hashPrefixSet(HashPrefixes)
         case filterSet(FilterSet)
 

@@ -83,7 +83,7 @@ class AdClickAttributionCounterTests: XCTestCase {
         // Add another interval to trigger sync
         counter.onAttributionActive(currentTime: Date() + 2*interval + 1)
 
-        waitForExpectations(timeout: 1, handler: nil)
+        wait(for: [expectation], timeout: 1)
     }
 
     func testWhenTimeIntervalHasPassedAndCounterIsZeroThenCurrentTimeIsReset() {

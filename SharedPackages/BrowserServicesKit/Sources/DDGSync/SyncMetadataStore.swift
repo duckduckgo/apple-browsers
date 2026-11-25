@@ -45,86 +45,53 @@ public final class LocalSyncMetadataStore: SyncMetadataStore {
     }
 
     public func isFeatureRegistered(named name: String) -> Bool {
-        var isRegistered = false
-        context.performAndWait {
-            if SyncFeatureUtils.fetchFeature(with: name, in: context) != nil {
-                isRegistered = true
-            }
+        context.performAndWait { [context] in
+            SyncFeatureUtils.fetchFeature(with: name, in: context) != nil
         }
-        return isRegistered
     }
 
     public func registerFeature(named name: String, setupState: FeatureSetupState) throws {
-        var saveError: Error?
-
-        context.performAndWait {
+        try context.performAndWait { [context] in
             if SyncFeatureUtils.fetchFeature(with: name, in: context) != nil {
                 return
             }
 
             SyncFeatureEntity.makeFeature(with: name, state: setupState, in: context)
-            do {
-                try context.save()
-            } catch {
-                saveError = error
-            }
-        }
-
-        if let saveError {
-            throw saveError
+            try context.save()
         }
     }
 
     public func deregisterFeature(named name: String) throws {
-        var saveError: Error?
-
-        context.performAndWait {
+        try context.performAndWait { [context] in
             guard let feature = SyncFeatureUtils.fetchFeature(with: name, in: context) else {
                 return
             }
 
             context.delete(feature)
-            do {
-                try context.save()
-            } catch {
-                saveError = error
-            }
-        }
-
-        if let saveError {
-            throw saveError
+            try context.save()
         }
     }
 
     public func timestamp(forFeatureNamed name: String) -> String? {
-        var lastModified: String?
-        context.performAndWait {
-            let feature = SyncFeatureUtils.fetchFeature(with: name, in: context)
-            lastModified = feature?.lastModified
+        context.performAndWait { [context] in
+            SyncFeatureUtils.fetchFeature(with: name, in: context)?.lastModified
         }
-        return lastModified
     }
 
     public func localTimestamp(forFeatureNamed name: String) -> Date? {
-        var lastSyncLocalTimestamp: Date?
-        context.performAndWait {
-            let feature = SyncFeatureUtils.fetchFeature(with: name, in: context)
-            lastSyncLocalTimestamp = feature?.lastSyncLocalTimestamp
+        context.performAndWait { [context] in
+            SyncFeatureUtils.fetchFeature(with: name, in: context)?.lastSyncLocalTimestamp
         }
-        return lastSyncLocalTimestamp
     }
 
     public func state(forFeatureNamed name: String) -> FeatureSetupState {
-        var state: FeatureSetupState?
-        context.performAndWait {
-            let feature = SyncFeatureUtils.fetchFeature(with: name, in: context)
-            state = feature?.featureState
+        context.performAndWait { [context] in
+            SyncFeatureUtils.fetchFeature(with: name, in: context)?.featureState ?? .readyToSync
         }
-        return state ?? .readyToSync
     }
 
     public func updateLocalTimestamp(_ localTimestamp: Date?, forFeatureNamed name: String) {
-        context.performAndWait {
+        context.performAndWait { [context] in
             let feature = SyncFeatureUtils.fetchFeature(with: name, in: context)
             feature?.lastSyncLocalTimestamp = localTimestamp
             try? context.save()
@@ -132,7 +99,7 @@ public final class LocalSyncMetadataStore: SyncMetadataStore {
     }
 
     public func update(_ serverTimestamp: String?, _ localTimestamp: Date?, _ state: FeatureSetupState, forFeatureNamed name: String) {
-        context.performAndWait {
+        context.performAndWait { [context] in
             let feature = SyncFeatureUtils.fetchFeature(with: name, in: context)
             feature?.lastModified = serverTimestamp
             feature?.lastSyncLocalTimestamp = localTimestamp

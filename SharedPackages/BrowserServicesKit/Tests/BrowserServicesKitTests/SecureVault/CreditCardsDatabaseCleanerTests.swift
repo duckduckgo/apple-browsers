@@ -93,7 +93,7 @@ final class CreditCardsDatabaseCleanerTests: XCTestCase {
         databaseCleaner.isSyncActive = { true }
 
         databaseCleaner.removeSyncableCreditCardsMetadataPendingDeletion()
-        waitForExpectations(timeout: 1)
+        wait(for: [expectation], timeout: 1)
         XCTAssertEqual(MockCreditCardsEventMapper.errors.count, 1)
         let error = try XCTUnwrap(MockCreditCardsEventMapper.errors.first)
         XCTAssertTrue(error is CreditCardsCleanupCancelledError)

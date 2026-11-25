@@ -20,10 +20,11 @@ import CoreImage
 import Foundation
 import FeatureFlags_macOS
 import OSLog
+import PixelKit
 import PrivacyConfig
 import WebKit
 
-/// Rasterizes favicon data that CoreImage can't decode (in practice SVG) to PNG using WebKit.
+/// Rasterizes favicon data that CoreImage can't decode (SVG and PDF) to PNG using WebKit.
 ///
 /// `NSImage(data:)` renders SVG with CoreSVG, which overflows the stack (an uncatchable crash) on some
 /// filtered SVGs. WebKit renders SVG with its own engine, treats it as an inert image (no scripts, no
@@ -71,14 +72,15 @@ final class FaviconRasterizer {
     /// When off, `storableImage` and the import helpers keep the legacy decoding, `NSImage(data:)`.
     var isEnabled: Bool { featureFlagger.isFeatureOn(.faviconWebKitSVGRendering) }
 
-    /// Whether PDF favicons are kept on the `NSImage(data:)` path (the temporary `faviconPDFSupport` failsafe flag).
-    var isPDFSupportEnabled: Bool { featureFlagger.isFeatureOn(.faviconPDFSupport) }
+    nonisolated(unsafe) private let pixelFiring: PixelFiring?
 
     nonisolated init(featureFlagger: FeatureFlagger,
+                     pixelFiring: PixelFiring? = PixelKit.shared,
                      hardTimeout: TimeInterval = FaviconRasterizer.defaultHardTimeout,
                      idleLifetime: TimeInterval = FaviconRasterizer.defaultIdleLifetime,
                      scriptTimeout: TimeInterval = FaviconRasterizer.timeout) {
         self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
         self.hardTimeout = hardTimeout
         self.idleLifetime = idleLifetime
         self.scriptTimeout = scriptTimeout
@@ -86,6 +88,9 @@ final class FaviconRasterizer {
 
     /// Whether a web view (and its web content process) is currently alive.
     var hasWebView: Bool { webView != nil }
+
+    /// The current web view, for tests.
+    var currentWebView: WKWebView? { webView }
 
     private var webView: WKWebView?
     private var activeCalls = 0
@@ -108,11 +113,30 @@ final class FaviconRasterizer {
                 try await render(data, in: webView)
             }
         } catch {
-            if Self.isWebViewFailure(error) {
-                discardWebView(webView)
-            }
+            handle(failure: error, of: webView)
             throw error
         }
+    }
+
+    /// Logs a failed rendering and discards the web view when the web view itself failed. When its web content
+    /// process terminated, a pixel is fired too.
+    func handle(failure error: Error, of failedWebView: WKWebView) {
+        guard !(error is CancellationError) else { return }
+
+        guard Self.isWebViewFailure(error) else {
+            Logger.favicons.debug("FaviconRasterizer: the data could not be rendered as an image")
+            return
+        }
+        Logger.favicons.error("FaviconRasterizer: the web view failed (\(error.localizedDescription)), discarding it")
+        if Self.isProcessTermination(error) {
+            pixelFiring?.fire(FaviconPixel.svgRenderingProcessTerminated(error: error), frequency: .dailyAndCount)
+        }
+        discardWebView(failedWebView)
+    }
+
+    private static func isProcessTermination(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == WKError.errorDomain && nsError.code == WKError.webContentProcessTerminated.rawValue
     }
 
     /// Data that isn't an image leaves the web view healthy; a timeout, or anything unexpected, doesn't.
@@ -145,6 +169,7 @@ final class FaviconRasterizer {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         let newWebView = WKWebView(frame: .zero, configuration: configuration)
+        Logger.favicons.debug("FaviconRasterizer: created a web view")
         webView = newWebView
         return newWebView
     }
@@ -155,14 +180,16 @@ final class FaviconRasterizer {
         let idleLifetime = self.idleLifetime
         releaseTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(idleLifetime * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            self?.webView = nil
+            guard !Task.isCancelled, let self else { return }
+            Logger.favicons.debug("FaviconRasterizer: releasing the idle web view")
+            webView = nil
         }
     }
 
     private func render(_ data: Data, in webView: WKWebView) async throws -> Data {
         let arguments: [String: Any] = [
             "base64": data.base64EncodedString(),
+            "mimeType": data.isPDFData ? "application/pdf" : "image/svg+xml",
             "minSize": Self.minPixelSize,
             "maxSize": Self.maxPixelSize,
             "timeoutMs": Int(scriptTimeout * 1000),
@@ -242,7 +269,7 @@ final class FaviconRasterizer {
         image.onerror = () => resolve('undecodable');
     });
     const timeout = new Promise((resolve) => setTimeout(() => resolve('timeout'), timeoutMs));
-    image.src = 'data:image/svg+xml;base64,' + base64;
+    image.src = 'data:' + mimeType + ';base64,' + base64;
     const outcome = await Promise.race([loaded, timeout]);
     if (outcome !== 'loaded') {
         return { error: outcome };
@@ -270,9 +297,8 @@ extension Data {
 
     /// Returns whether the data is a PDF: it starts with the `%PDF-` magic.
     ///
-    /// Only the very start counts, like the magic of other image formats. Data that merely contains `%PDF-`
-    /// further in (for example an SVG with it in a comment) is not a PDF: `NSImage(data:)` would still treat
-    /// it as the SVG it is, and render it with CoreSVG.
+    /// Only the very start counts, like the magic of other image formats. It selects the MIME type WebKit
+    /// loads the data with: PDF needs `application/pdf`, anything else is loaded as SVG.
     var isPDFData: Bool {
         starts(with: Data("%PDF-".utf8))
     }
@@ -292,7 +318,7 @@ extension FaviconRasterizer {
     /// Returns an image to store for the given favicon data.
     ///
     /// With the `faviconWebKitSVGRendering` flag on, raster data is decoded as is, on the calling executor (not
-    /// the main thread), and data CoreImage can't decode (SVG) is rendered by WebKit, because `NSImage(data:)`
+    /// the main thread), and data CoreImage can't decode (SVG, PDF) is rendered by WebKit, because `NSImage(data:)`
     /// would keep a lazy SVG that CoreSVG renders later, while archiving, and CoreSVG can crash. With the flag
     /// off, the legacy `NSImage(data:)` is used. Returns nil if the data can't be decoded.
     nonisolated func storableImage(from data: Data) async -> NSImage? {
@@ -300,22 +326,8 @@ extension FaviconRasterizer {
         return await renderedImage(from: data)
     }
 
-    /// Whether the data must be rendered by WebKit: CoreImage can't decode it (SVG) and it isn't a PDF.
-    ///
-    /// PDF is recognized by its header (`Data.isPDFData`) and decoded with `NSImage(data:)`: it doesn't go through
-    /// CoreSVG, and WebKit can't render it as an image. Raster data is decoded as is.
-    nonisolated func shouldRender(_ data: Data) async -> Bool {
-        if CIImage(data: data) != nil {
-            return false
-        }
-        if data.isPDFData {
-            return !(await isPDFSupportEnabled)
-        }
-        return true
-    }
-
     private nonisolated func renderedImage(from data: Data) async -> NSImage? {
-        guard await shouldRender(data) else {
+        if CIImage(data: data) != nil {
             return NSImage(data: data)
         }
         guard let png = try? await rasterize(data) else { return nil }

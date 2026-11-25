@@ -546,10 +546,9 @@ final class FaviconManager: FaviconManagement {
         case transparentSVG
     }
 
-    /// With a `rasterizer`, data CoreImage can't decode (SVG) is rendered to a PNG by WebKit first, because
-    /// `NSImage(data:)` keeps a lazy vector image that CoreSVG renders later and can crash on. PDF data stays on
-    /// the `NSImage(data:)` path (see `FaviconRasterizer.shouldRender`). Without a rasterizer, the legacy decoding
-    /// is used.
+    /// With a `rasterizer`, data CoreImage can't decode (SVG, PDF) is rendered to a PNG by WebKit first, because
+    /// `NSImage(data:)` keeps a lazy vector image that CoreSVG renders later and can crash on. Without a
+    /// rasterizer, the legacy decoding is used.
     private static func decodeFavicon(from data: Data,
                                       link: FaviconUserScript.FaviconLink,
                                       rasterizer: FaviconRasterizer?) async throws -> FetchedFavicon {
@@ -560,7 +559,7 @@ final class FaviconManager: FaviconManagement {
 
         var imageData = data
         var isRasterizedVector = false
-        if let rasterizer, await rasterizer.shouldRender(data) {
+        if let rasterizer, CIImage(data: data) == nil {
             imageData = try await rasterizer.rasterize(data)
             isRasterizedVector = true
         }

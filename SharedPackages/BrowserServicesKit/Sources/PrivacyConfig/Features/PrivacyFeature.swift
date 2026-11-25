@@ -155,11 +155,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Favicon storing improvements: store only the favicons the browser displays, dropping and downscaling larger ones.
     case faviconStoringImprovements
 
-    /// Temporary: render SVG favicons with WebKit instead of CoreSVG (off reverts to the legacy decoding).
+    /// Temporary: render SVG and PDF favicons with WebKit instead of CoreSVG (off reverts to the legacy decoding).
     case faviconWebKitSVGRendering
-
-    /// Temporary failsafe: keep decoding PDF favicons with `NSImage(data:)` when favicons are rendered with WebKit.
-    case faviconPDFSupport
 
     /// Hide manual update option and always use automatic updates
     case automaticUpdatesOnly

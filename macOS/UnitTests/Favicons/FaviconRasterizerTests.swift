@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+@_spi(Testing) import PixelKit
 import CoreImage
 import FeatureFlags_macOS
 import PrivacyConfig
@@ -40,11 +41,9 @@ final class FaviconRasterizerTests: XCTestCase {
         super.tearDown()
     }
 
-    private static func makeRasterizer(enabled: Bool, pdfSupport: Bool = true) -> FaviconRasterizer {
-        var flags = [FeatureFlag]()
-        if enabled { flags.append(.faviconWebKitSVGRendering) }
-        if pdfSupport { flags.append(.faviconPDFSupport) }
-        return FaviconRasterizer(featureFlagger: MockFeatureFlagger.enabling(flags))
+    private static func makeRasterizer(enabled: Bool, pixelFiring: PixelFiring? = nil) -> FaviconRasterizer {
+        let featureFlagger = MockFeatureFlagger.enabling(enabled ? [.faviconWebKitSVGRendering] : [])
+        return FaviconRasterizer(featureFlagger: featureFlagger, pixelFiring: pixelFiring)
     }
 
     /// A one-page PDF (`%PDF-1.x` header), which CoreImage can't decode but `NSImage(data:)` can.
@@ -213,12 +212,10 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertFalse(Data().isPDFData)
     }
 
-    /// A `%PDF-` that isn't at the start must not send an SVG to `NSImage(data:)`, which would render it with CoreSVG.
-    func testSVGWithPDFMagicInsideIsRenderedByWebKit() async throws {
+    /// The data is loaded as SVG unless it starts with the PDF magic.
+    func testSVGWithPDFMagicInsideIsRenderedAsSVG() async throws {
         let svg = Data(("<!-- %PDF-1.4 -->" + Self.recursiveFilterSVG).utf8)
         XCTAssertFalse(svg.isPDFData)
-        let rendersWithWebKit = await rasterizer.shouldRender(svg)
-        XCTAssertTrue(rendersWithWebKit)
 
         let stored = await rasterizer.storableImage(from: svg)
 
@@ -227,39 +224,23 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertTrue(image.hasVisiblePixels())
     }
 
-    func testPDFIsDecodedWithNSImageWithoutWebKit() async throws {
+    func testPDFIsRenderedByWebKitToABitmap() async throws {
         let pdf = Self.pdfData()
         XCTAssertNil(CIImage(data: pdf), "The fixture must be data CoreImage can't decode")
 
-        let stored = await rasterizer.storableImage(from: pdf)
+        let png = try await rasterizer.rasterize(pdf)
+
+        let image = try decode(png)
+        XCTAssertEqual(image.size, NSSize(width: 64, height: 64))
+        XCTAssertTrue(image.hasVisiblePixels())
+    }
+
+    func testStoredPDFFaviconIsABitmap() async throws {
+        let stored = await rasterizer.storableImage(from: Self.pdfData())
 
         let image = try XCTUnwrap(stored)
-        XCTAssertTrue(image.representations.contains { $0 is NSPDFImageRep })
-        XCTAssertFalse(rasterizer.hasWebView)
-    }
-
-    func testPDFGoesToWebKitAndIsRejectedWhenThePDFFlagIsOff() async {
-        let withoutPDF = Self.makeRasterizer(enabled: true, pdfSupport: false)
-
-        let stored = await withoutPDF.storableImage(from: Self.pdfData())
-
-        XCTAssertNil(stored)
-    }
-
-    func testShouldRenderOnlyDataThatIsNeitherRasterNorPDF() async throws {
-        let svg = Data(Self.svg(width: 16, height: 16).utf8)
-        let raster = try await rasterizer.rasterize(svg)
-
-        let rendersSVG = await rasterizer.shouldRender(svg)
-        let rendersRaster = await rasterizer.shouldRender(raster)
-        let rendersPDF = await rasterizer.shouldRender(Self.pdfData())
-        let withoutPDF = Self.makeRasterizer(enabled: true, pdfSupport: false)
-        let rendersPDFWithoutFlag = await withoutPDF.shouldRender(Self.pdfData())
-
-        XCTAssertTrue(rendersSVG)
-        XCTAssertFalse(rendersRaster)
-        XCTAssertFalse(rendersPDF)
-        XCTAssertTrue(rendersPDFWithoutFlag)
+        XCTAssertTrue(image.representations.allSatisfy { $0 is NSBitmapImageRep })
+        XCTAssertTrue(rasterizer.hasWebView)
     }
 
     func testImportedPDFFaviconIsKept() async throws {
@@ -268,7 +249,48 @@ final class FaviconRasterizerTests: XCTestCase {
         let faviconsByDocument = await rasterizer.favicons(fromImported: imported)
 
         let url = try XCTUnwrap(URL(string: "https://example.com"))
-        XCTAssertNotNil(faviconsByDocument[url]?.first?.image)
+        let image = try XCTUnwrap(faviconsByDocument[url]?.first?.image)
+        XCTAssertTrue(image.representations.allSatisfy { $0 is NSBitmapImageRep })
+    }
+
+    // MARK: - Process termination
+
+    func testProcessTerminationFiresAPixelAndDiscardsTheWebView() async throws {
+        let pixelKit = PixelKitMock()
+        let rasterizer = Self.makeRasterizer(enabled: true, pixelFiring: pixelKit)
+        _ = try await rasterizer.rasterize(Data(Self.svg(width: 16, height: 16).utf8))
+        let webView = try XCTUnwrap(rasterizer.currentWebView)
+        let terminated = WKError(.webContentProcessTerminated)
+
+        rasterizer.handle(failure: terminated, of: webView)
+
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), ["favicon-svg-rendering_process-terminated_macos"])
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.frequency, .dailyAndCount)
+        XCTAssertFalse(rasterizer.hasWebView)
+    }
+
+    func testOtherFailuresDoNotFireTheProcessTerminationPixel() async throws {
+        let pixelKit = PixelKitMock()
+        let rasterizer = Self.makeRasterizer(enabled: true, pixelFiring: pixelKit)
+        _ = try await rasterizer.rasterize(Data(Self.svg(width: 16, height: 16).utf8))
+        let webView = try XCTUnwrap(rasterizer.currentWebView)
+
+        rasterizer.handle(failure: FaviconRasterizer.RasterizationError.timedOut, of: webView)
+
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
+        XCTAssertFalse(rasterizer.hasWebView)
+    }
+
+    func testDecodeFailureDoesNotDiscardTheWebViewOrFireAPixel() async throws {
+        let pixelKit = PixelKitMock()
+        let rasterizer = Self.makeRasterizer(enabled: true, pixelFiring: pixelKit)
+        _ = try await rasterizer.rasterize(Data(Self.svg(width: 16, height: 16).utf8))
+        let webView = try XCTUnwrap(rasterizer.currentWebView)
+
+        rasterizer.handle(failure: FaviconRasterizer.RasterizationError.undecodable, of: webView)
+
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
+        XCTAssertTrue(rasterizer.hasWebView)
     }
 
     // MARK: - Failures

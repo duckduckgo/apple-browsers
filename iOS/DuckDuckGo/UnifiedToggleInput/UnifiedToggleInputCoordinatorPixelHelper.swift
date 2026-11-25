@@ -302,6 +302,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         addressBarPosition: AddressBarPosition? = nil,
         resubmitOfSearch: CrossModeResubmitDetector.DelayBucket? = nil,
         simplifiedPromptBox: Bool,
+        modelSource: DuckAINewChatModelSource? = nil,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
@@ -327,6 +328,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         parameters[Self.addressBarPositionKey] = addressBarPosition?.rawValue
         parameters[Self.resubmitOfSearchKey] = resubmitOfSearch?.rawValue
         parameters[Self.simplifiedPromptBoxKey] = simplifiedPromptBoxValue(simplifiedPromptBox)
+        parameters[DuckAINewChatModelSource.pixelParameterKey] = modelSource?.rawValue
 
         firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
     }

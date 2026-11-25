@@ -209,8 +209,8 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User changes toggle to search
     case aiChatAddressBarToggleChangedSearch
 
-    /// Event Trigger: User submits prompt from duck.ai panel
-    case aiChatAddressBarAIChatSubmitPrompt
+    /// Event Trigger: User submits prompt from duck.ai panel. `newChatModel` is set only while new chats start on the default.
+    case aiChatAddressBarAIChatSubmitPrompt(newChatModel: DuckAINewChatModelPixelParameters?)
 
     /// Event Trigger: User submits URL from duck.ai panel
     case aiChatAddressBarAIChatSubmitURL
@@ -1067,7 +1067,6 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatAddressBarActivatedToggleOff,
                 .aiChatAddressBarToggleChangedAIChat,
                 .aiChatAddressBarToggleChangedSearch,
-                .aiChatAddressBarAIChatSubmitPrompt,
                 .aiChatAddressBarAIChatSubmitURL,
                 .aiChatSuggestionAIChatSubmittedMouse,
                 .aiChatSuggestionAIChatSubmittedKeyboard,
@@ -1166,6 +1165,8 @@ enum AIChatPixel: PixelKit.Event {
                 params["first_prompt_new_install"] = "true"
             }
             return params
+        case .aiChatAddressBarAIChatSubmitPrompt(let newChatModel):
+            return newChatModel?.parameters
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType, "origin": origin]
         case .aiChatAddressBarCreateImageModelSwitched(let fromModelId, let toModelId, let fromModelPrivacyPreserving):

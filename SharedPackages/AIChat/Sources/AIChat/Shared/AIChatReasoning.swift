@@ -99,6 +99,13 @@ public extension AIChatModel {
 
         return accessibleReasoningModeMappings.first { $0.mode == resolvedMode }?.effort
     }
+
+    /// The picker mode that sends `effort`, if this model offers it.
+    func reasoningMode(for effort: AIChatReasoningEffort?) -> AIChatReasoningMode? {
+        guard let effort,
+              let mode = AIChatReasoningMode.mappings.first(where: { $0.supportedEfforts.contains(effort) })?.mode else { return nil }
+        return availableReasoningModes.contains(mode) ? mode : nil
+    }
 }
 
 private extension AIChatModel {

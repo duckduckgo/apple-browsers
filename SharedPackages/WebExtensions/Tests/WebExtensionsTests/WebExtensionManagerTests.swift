@@ -2794,13 +2794,15 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     func testLaunchLoadsAllContextsBeforeWaitingForAdBlockScriptletDownload() async throws {
+        // The retired search-token extension no longer ships a bundle.
+        let shippedDescriptors = EmbeddedWebExtensionRegistry.all.filter { $0.type != .searchToken }
         for upgradeCPM in [false, true] {
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CPMLaunchScriptlets-\(UUID().uuidString)")
             createdTestExtensionDirs.append(directory)
             let storage = WebExtensionStorageProvider(extensionsDirectory: directory)
             installedExtensionStoringMock.installedExtensions = []
             var identifiers: [DuckDuckGoWebExtensionType: String] = [:]
-            for descriptor in EmbeddedWebExtensionRegistry.all {
+            for descriptor in shippedDescriptors {
                 let bundledURL = try XCTUnwrap(descriptor.bundledURL)
                 let metadata = try await WebExtensionMetadata.fromZip(at: bundledURL)
                 let identifier = UUID().uuidString
@@ -2835,12 +2837,12 @@ final class WebExtensionManagerTests: XCTestCase {
                                                 cacheRootDirectory: directory.appendingPathComponent("cache")))
             let coordinator = WebExtensionLifecycleCoordinator(manager: manager,
                                                                initialLoadGateEnabledProvider: { false },
-                                                               enabledTypesProvider: { Set(EmbeddedWebExtensionRegistry.all.map(\.type)) })
+                                                               enabledTypesProvider: { Set(shippedDescriptors.map(\.type)) })
             let launch = coordinator.loadAndSync()
             await fulfillment(of: [downloadStarted], timeout: 5)
 
             // A stalled scriptlet request must not hold back CPM or any other installed context.
-            XCTAssertEqual(manager.loadedEmbeddedExtensionTypes, Set(EmbeddedWebExtensionRegistry.all.map(\.type)))
+            XCTAssertEqual(manager.loadedEmbeddedExtensionTypes, Set(shippedDescriptors.map(\.type)))
             for (type, identifier) in identifiers where type != .embedded {
                 XCTAssertNotNil(manager.context(for: identifier), "\(type) must load before its scriptlets are fetched")
             }

@@ -24,17 +24,19 @@ struct RedesignedNewTabPageMessagesView: View {
     @ObservedObject var messagesModel: NewTabPageMessagesModel
 
     var body: some View {
-        if !messagesModel.homeMessageViewModels.isEmpty {
-            VStack(spacing: Metrics.messageSpacing) {
+        VStack(spacing: Metrics.messageSpacing) {
+            OneClickRepurchaseBanner()
+                .frame(maxWidth: .infinity)
+            if !messagesModel.homeMessageViewModels.isEmpty {
                 ForEach(messagesModel.homeMessageViewModels, id: \.viewIdentity) { messageModel in
                     HomeMessageView(viewModel: messageModel, usesMaterialBackground: true)
                         .frame(maxWidth: .infinity)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
-            .padding(.horizontal, Metrics.horizontalPadding)
-            .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, Metrics.horizontalPadding)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 

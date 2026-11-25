@@ -18,10 +18,14 @@
 //
 
 import Combine
+import os.log
 import DuckUI
 import RemoteMessaging
+import StoreKit
+import Subscription
 import SwiftUI
 import UIComponents
+@_spi(Testing) import WideEvent
 
 struct NewTabPageView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -488,5 +492,143 @@ private final class PreviewImageLoader: RemoteMessagingImageLoading {
     func cachedImage(for url: URL) -> RemoteMessagingImage? { nil }
     func loadImage(from url: URL) async throws -> RemoteMessagingImage {
         throw RemoteMessagingImageLoadingError.invalidImageData
+    }
+}
+
+// MARK: - HACK: one-click repurchase of the last Apple subscription
+
+
+@MainActor
+final class OneClickRepurchaseModel: ObservableObject {
+    @Published var productID: String?
+    @Published var isPurchasing = false
+    @Published var status: String?
+    @Published var debugLines: [String] = []
+
+    private func debugLog(_ line: String) {
+        Logger.subscription.log("[OneClickRepurchase] \(line, privacy: .public)")
+        debugLines.append(line)
+    }
+
+    func refresh() async {
+        debugLines = []
+        let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+
+        // Nothing signed in on this device
+        let isUserAuthenticated = subscriptionManager.isUserAuthenticated
+        debugLog("Check 1 - signed in on device: \(isUserAuthenticated)")
+        guard !isUserAuthenticated else { productID = nil; return }
+
+        // No active Apple subscription right now
+        for await result in StoreKit.Transaction.currentEntitlements {
+            if case .verified(let transaction) = result, transaction.productType == .autoRenewable, transaction.revocationDate == nil {
+                debugLog("Check 2 - active Apple subscription found: \(transaction.productID)")
+                productID = nil
+                return
+            }
+        }
+        debugLog("Check 2 - no active Apple subscription")
+
+        // At least one past Apple transaction, take the most recent valid one
+        var latest: StoreKit.Transaction?
+        for await result in StoreKit.Transaction.all {
+            guard case .verified(let transaction) = result,
+                  transaction.productType == .autoRenewable,
+                  transaction.revocationDate == nil else { continue }
+            if latest == nil || transaction.purchaseDate > latest!.purchaseDate {
+                latest = transaction
+            }
+        }
+        debugLog("Check 3 - most recent past Apple transaction: \(latest?.productID ?? "none")")
+        productID = latest?.productID
+    }
+
+    func repurchase() async {
+        guard let productID, !isPurchasing else { return }
+        isPurchasing = true
+        status = nil
+        defer { isPurchasing = false }
+
+        let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
+        let storePurchaseManager = subscriptionManager.storePurchaseManager()
+        let flow = DefaultAppStorePurchaseFlow(
+            subscriptionManager: subscriptionManager,
+            storePurchaseManager: storePurchaseManager,
+            appStoreRestoreFlow: DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                            storePurchaseManager: storePurchaseManager),
+            wideEvent: WideEventMock())
+
+        switch await flow.purchaseSubscription(with: productID) {
+        case .success(let purchase):
+            switch await flow.completeSubscriptionPurchase(with: purchase.transactionJWS,
+                                                           isFreeTrial: purchase.isFreeTrial,
+                                                           experimentAttribution: nil) {
+            case .success:
+                status = "Subscribed!"
+                await refresh()
+            case .failure(let error):
+                status = "Confirm failed: \(error)"
+            }
+        case .failure(let error):
+            status = "Purchase failed: \(error)"
+        }
+    }
+}
+
+struct OneClickRepurchaseBanner: View {
+    @StateObject private var model = OneClickRepurchaseModel()
+
+    var body: some View {
+        VStack(spacing: 8) {
+            if let productID = model.productID {
+                Button {
+                    Task { await model.repurchase() }
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Unpause Subscription")
+                                .font(.headline)
+                            Spacer()
+                            if model.isPurchasing {
+                                SwiftUI.ProgressView()
+                            }
+                        }
+                        Text(productID)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        if let status = model.status {
+                            Text(status)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.accentColor.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.accentColor, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .disabled(model.isPurchasing)
+            } else if let status = model.status {
+                Text(status).font(.caption)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("OneClickRepurchase debug").font(.caption.bold())
+                if model.debugLines.isEmpty {
+                    Text("Checking...").font(.caption2.monospaced())
+                }
+                ForEach(Array(model.debugLines.enumerated()), id: \.offset) { _, line in
+                    Text(line).font(.caption2.monospaced())
+                }
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.gray.opacity(0.15))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray, lineWidth: 1))
+        }
+        .task { await model.refresh() }
     }
 }

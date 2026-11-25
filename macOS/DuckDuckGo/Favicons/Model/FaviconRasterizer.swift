@@ -17,8 +17,8 @@
 //
 
 import CoreImage
-import Foundation
 import FeatureFlags_macOS
+import Foundation
 import OSLog
 import PixelKit
 import PrivacyConfig

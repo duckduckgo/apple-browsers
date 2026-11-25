@@ -16,17 +16,17 @@
 //  limitations under the License.
 //
 
+import AppKit
 import FeatureFlags_macOS
 import Foundation
+import GRDB
 import History
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-@_spi(Testing) import PixelKit
 import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
-import AppKit
-import GRDB
 @testable import BrowserServicesKit
 
 class ChromiumDataImporterTests {

@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
 import FeatureFlags_macOS
+import Foundation
 import History
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-@_spi(Testing) import PixelKit
 import SharedTestUtilities
 import XCTest
 

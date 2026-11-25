@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-@_spi(Testing) import PixelKit
 import CoreImage
 import FeatureFlags_macOS
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import WebKit

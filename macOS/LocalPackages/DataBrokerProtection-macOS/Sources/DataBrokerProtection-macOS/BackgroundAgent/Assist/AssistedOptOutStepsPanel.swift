@@ -74,6 +74,7 @@ struct AssistedOptOutStepsPanel: View {
                 steps
             }
             Spacer(minLength: 0)
+            feedbackNote
             footer
         }
         .padding(16)
@@ -139,6 +140,19 @@ struct AssistedOptOutStepsPanel: View {
             }
         }
         .padding(.horizontal, 12)
+    }
+
+    private var feedbackNote: some View {
+        var note = AttributedString(AssistedOptOutText.experimentalNote + " ")
+        var link = AttributedString(AssistedOptOutText.sendFeedback)
+        link.link = DataBrokerProtectionNotificationCommand.showFeedbackForm.url
+        note.append(link)
+        return Text(note)
+            .font(.system(size: 13))
+            .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+            .tint(Color(designSystemColor: .textLink, palette: palette))
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 12)
     }
 
     private var footer: some View {

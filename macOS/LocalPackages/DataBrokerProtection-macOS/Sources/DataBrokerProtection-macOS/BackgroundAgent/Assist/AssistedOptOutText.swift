@@ -39,6 +39,14 @@ enum AssistedOptOutText {
                                                  value: "Closing stops this removal",
                                                  comment: "Explains that closing an unfinished removal window cancels it.")
 
+    static let experimentalNote = NSLocalizedString("pir.assisted.experimental-note", bundle: .module,
+                                                 value: "Getting help with removals is new. Your feedback will help us improve it.",
+                                                 comment: "Footer note in the assisted removal window saying the feature is new, followed by a Send Feedback link.")
+
+    static let sendFeedback = NSLocalizedString("pir.assisted.send-feedback", bundle: .module,
+                                                 value: "Send Feedback",
+                                                 comment: "Inline link after the assisted removal footer note. Opens the feedback form in the browser.")
+
     static func removingFrom(_ brokerName: String) -> String {
         let format = NSLocalizedString("pir.assisted.removing-from", bundle: .module,
                                       value: "Removing you from %@",

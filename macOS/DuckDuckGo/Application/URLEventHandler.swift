@@ -174,6 +174,10 @@ final class URLEventHandler {
             DispatchQueue.main.async {
                 Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection(context))
             }
+        case DataBrokerProtectionNotificationCommand.showFeedbackForm.url:
+            DispatchQueue.main.async {
+                Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: .pir, reportType: .general)
+            }
         default:
             return
         }

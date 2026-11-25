@@ -432,6 +432,30 @@
           }
         }
       }
+    },
+    "pir.assisted.experimental-note": {
+      "comment": "Footer note in the assisted removal window saying the feature is new, followed by a Send Feedback link.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getting help with removals is new. Your feedback will help us improve it."
+          }
+        }
+      }
+    },
+    "pir.assisted.send-feedback": {
+      "comment": "Inline link after the assisted removal footer note. Opens the feedback form in the browser.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Feedback"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

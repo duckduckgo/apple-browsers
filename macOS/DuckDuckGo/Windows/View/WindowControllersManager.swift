@@ -507,8 +507,8 @@ extension WindowControllersManager {
     }
 
     /// Shows the Subscription feedback modal
-    func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
-        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source, featureFlagger: featureFlagger)
+    func showShareFeedbackModal(source: UnifiedFeedbackSource = .default, reportType: UnifiedFeedbackReportType = .prompt) {
+        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source, reportType: reportType, featureFlagger: featureFlagger)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()
 
         guard let feedbackFormWindow = feedbackFormWindowController.window else {

@@ -35,6 +35,7 @@ public protocol DataBrokerProtectionUserNotificationService {
 
 public enum DataBrokerProtectionNotificationCommand {
     case showDashboard(freeScanEntryPoint: String?)
+    case showFeedbackForm
 
     /// Query-item name used to carry the freemium entry point across the launch-URL IPC.
     public static let freeScanEntryPointQueryItem = "entry_point"
@@ -42,6 +43,7 @@ public enum DataBrokerProtectionNotificationCommand {
     /// Bare URL used to identify the show-dashboard command at the receiver
     /// (query items are stripped before matching, then read separately to extract the entry point).
     public static let showDashboardPath = "databrokerprotection://show_dashboard"
+    public static let showFeedbackFormPath = "databrokerprotection://show_feedback_form"
 
     public var url: URL {
         switch self {
@@ -53,6 +55,8 @@ public enum DataBrokerProtectionNotificationCommand {
             }
             components.queryItems = [URLQueryItem(name: Self.freeScanEntryPointQueryItem, value: freeScanEntryPoint)]
             return components.url ?? bareURL
+        case .showFeedbackForm:
+            return URL(string: Self.showFeedbackFormPath)!
         }
     }
 }

@@ -47,6 +47,7 @@ final class UnifiedFeedbackFormViewController: NSViewController {
 
     init(feedbackSender: UnifiedFeedbackSender = DefaultFeedbackSender(),
          source: UnifiedFeedbackSource = .default,
+         reportType: UnifiedFeedbackReportType = .prompt,
          featureFlagger: FeatureFlagger) {
         self.feedbackSender = feedbackSender
         self.viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: Application.appDelegate.subscriptionManager,
@@ -55,6 +56,10 @@ final class UnifiedFeedbackFormViewController: NSViewController {
                                                       feedbackSender: feedbackSender,
                                                       featureFlagger: featureFlagger,
                                                       source: source)
+
+        if reportType != .prompt {
+            self.viewModel.selectedReportType = reportType.rawValue
+        }
 
         super.init(nibName: nil, bundle: nil)
         self.viewModel.delegate = self

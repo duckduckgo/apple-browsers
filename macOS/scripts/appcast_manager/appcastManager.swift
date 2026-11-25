@@ -876,7 +876,7 @@ func runGenerateAppcast(with versionNumber: String, channel: String? = nil, roll
 
     print("✅ generate_appcast command executed successfully.")
 
-    guard restoreSignaturesOfExistingArchives(originalAppcastURL: backupFileURL, appcastURL: appcastFilePath),
+    guard fixSignatures(originalAppcastURL: backupFileURL, appcastURL: appcastFilePath, keyFile: keyFile),
           verifyAllEnclosuresAreSigned(in: appcastFilePath) else {
         exit(1)
     }
@@ -938,58 +938,115 @@ func moveFiles(from sourceDir: URL, to destinationDir: URL) {
     return String(data: data, encoding: .utf8) ?? ""
 }
 
-// MARK: - Preserving signatures of existing archives
+// MARK: - Fixing signatures after a signing key rotation
 
-/// `generate_appcast` signs again every archive and delta that it keeps in the feed, using the current private key.
-/// After a signing key rotation, archives built with the previous public key lose their signature,
-/// and their deltas get a signature that their apps reject.
-/// Existing archives don't change, so their original signatures stay valid: copy them back from the original appcast.
+/// `generate_appcast` signs every archive and delta that it keeps in the feed with the current private key,
+/// paired with the public key found in the app the archive or delta comes from. After a signing key rotation:
+/// - archives built with the previous public key lose their signature,
+/// - deltas from apps built with the previous public key get a signature that no public key accepts.
+///
+/// To fix that:
+/// - existing archives and deltas don't change, so their original signatures stay valid: copy them back,
+/// - replace the signature of each new delta with one from `sign_update`, using the same (current) private key.
+///   `sign_update` derives the public key from the private key, so the signature is valid for the current key.
+///   Apps with the previous key accept it through Sparkle's Apple code signing fallback.
+///
 /// Ed25519 signatures are deterministic, so without a key rotation this changes nothing.
-func restoreSignaturesOfExistingArchives(originalAppcastURL: URL, appcastURL: URL) -> Bool {
+func fixSignatures(originalAppcastURL: URL, appcastURL: URL, keyFile: String?) -> Bool {
     guard let originalDoc = try? XMLDocument(contentsOf: originalAppcastURL, options: appcastReadOptions),
           let doc = try? XMLDocument(contentsOf: appcastURL, options: appcastReadOptions) else {
         print("❌ Failed to parse appcast XML.")
         return false
     }
 
-    var originalEnclosures: [String: (length: String?, signature: String)] = [:]
-    for enclosure in enclosures(in: originalDoc) {
+    let originalEnclosures = signedEnclosuresByURL(in: originalDoc)
+
+    var changes: [String] = []
+    for enclosure in enclosures(in: doc) {
+        guard let url = enclosure.attribute(forName: "url")?.stringValue else {
+            continue
+        }
+        let signature: String?
+        do {
+            signature = try correctSignature(of: enclosure, url: url, originalEnclosures: originalEnclosures, keyFile: keyFile)
+        } catch {
+            print("❌ \(error)")
+            return false
+        }
+        guard let signature, signature != enclosure.edSignature else {
+            continue
+        }
+        enclosure.edSignature = signature
+        changes.append(url)
+    }
+
+    guard !changes.isEmpty else {
+        return true
+    }
+    return writeAppcast(doc, to: appcastURL, fixedURLs: changes)
+}
+
+typealias SignedEnclosure = (length: String?, signature: String)
+
+func signedEnclosuresByURL(in doc: XMLDocument) -> [String: SignedEnclosure] {
+    var result: [String: SignedEnclosure] = [:]
+    for enclosure in enclosures(in: doc) {
         guard let url = enclosure.attribute(forName: "url")?.stringValue, let signature = enclosure.edSignature else {
             continue
         }
-        originalEnclosures[url] = (enclosure.attribute(forName: "length")?.stringValue, signature)
+        result[url] = (enclosure.attribute(forName: "length")?.stringValue, signature)
     }
+    return result
+}
 
-    var restoredURLs: [String] = []
-    for enclosure in enclosures(in: doc) {
-        guard let url = enclosure.attribute(forName: "url")?.stringValue,
-              let original = originalEnclosures[url],
-              original.length == enclosure.attribute(forName: "length")?.stringValue,
-              original.signature != enclosure.edSignature else {
-            continue
-        }
-        enclosure.edSignature = original.signature
-        restoredURLs.append(url)
+/// Returns `nil` when the signature from generate_appcast should stay (a new full archive).
+func correctSignature(of enclosure: XMLElement, url: String, originalEnclosures: [String: SignedEnclosure], keyFile: String?) throws -> String? {
+    if let original = originalEnclosures[url], original.length == enclosure.attribute(forName: "length")?.stringValue {
+        return original.signature
     }
-
-    guard !restoredURLs.isEmpty else {
-        return true
+    guard enclosure.attribute(forLocalName: "deltaFrom", uri: sparkleNamespace) != nil else {
+        return nil
     }
+    let deltaURL = specificDir.appendingPathComponent(URL(fileURLWithPath: url).lastPathComponent)
+    return try signUpdate(at: deltaURL, keyFile: keyFile)
+}
 
+struct SigningError: Error, CustomStringConvertible {
+    let description: String
+}
+
+/// Returns the EdDSA signature of the file, using the key file if given, or the key in the Keychain otherwise.
+func signUpdate(at fileURL: URL, keyFile: String?) throws -> String {
+    guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        throw SigningError(description: "Can't sign \(fileURL.path): the file doesn't exist.")
+    }
+    let output = if let keyFile {
+        shell("sign_update", "--ed-key-file", keyFile, fileURL.path)
+    } else {
+        shell("sign_update", fileURL.path)
+    }
+    // Output format: sparkle:edSignature="<signature>" length="<length>"
+    guard let match = output.firstMatch(of: #/sparkle:edSignature="([^"]+)"/#) else {
+        throw SigningError(description: "Failed to sign \(fileURL.path) with sign_update.")
+    }
+    return String(match.1)
+}
+
+func writeAppcast(_ doc: XMLDocument, to appcastURL: URL, fixedURLs: [String]) -> Bool {
     // A signed appcast would need signing again after the change, which this tool doesn't support
     if let content = readAppcastContent(from: appcastURL), content.contains("sparkle-signatures:") {
-        print("❌ Signatures of existing archives need restoring, but the appcast is signed.")
+        print("❌ Signatures of archives need fixing, but the appcast is signed.")
         return false
     }
 
     do {
         try doc.xmlData(options: appcastWriteOptions).write(to: appcastURL)
     } catch {
-        print("❌ Failed to write the appcast with restored signatures: \(error)")
+        print("❌ Failed to write the appcast with fixed signatures: \(error)")
         return false
     }
-    for url in restoredURLs {
-        print("♻️  Restored original signature for \(url)")
+    for url in fixedURLs {
+        print("♻️  Fixed signature for \(url)")
     }
     return true
 }

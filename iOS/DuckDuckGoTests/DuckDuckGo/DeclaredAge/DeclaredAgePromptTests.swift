@@ -29,68 +29,140 @@ final class DeclaredAgePromptTests: XCTestCase {
 
     private var storage: (any ThrowingKeyedStoring<DeclaredAgeSettings>)!
     private var service: DeclaredAgeServiceMock!
+    private var featureFlagger: MockFeatureFlagger!
     private let viewController = UIViewController()
 
     override func setUp() async throws {
         try await super.setUp()
         storage = InMemoryKeyValueStore().throwingKeyedStoring()
         service = DeclaredAgeServiceMock()
+        featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.declaredAgeRange])
     }
 
-    func testWhenRequestIsDueThenItRequestsTheDeclaredAge() async {
-        await makePrompt().presentIfNeeded(in: viewController)
+    func testWhenRequestIsNeededThenItRequestsTheDeclaredAge() async {
+        let prompt = await launchAndWaitForRequest()
 
         XCTAssertEqual(service.requestCount, 1)
+        XCTAssertFalse(prompt.presentIfNeeded())
     }
 
     func testWhenFlagIsOffThenAppleIsNotAsked() async {
-        await makePrompt(isFlagOn: false).presentIfNeeded(in: viewController)
+        featureFlagger.enabledFeatureFlags = []
+        let prompt = makePrompt()
+
+        await mainQueueDrains()
 
         XCTAssertEqual(service.isRequestRequiredCount, 0)
+        XCTAssertFalse(prompt.presentIfNeeded())
+    }
+
+    func testWhenFlagTurnsOnThenItRequestsTheDeclaredAge() async {
+        featureFlagger.enabledFeatureFlags = []
+        let prompt = makePrompt()
+        let requested = expectRequest()
+
+        featureFlagger.enabledFeatureFlags = [.declaredAgeRange]
+        featureFlagger.triggerUpdate()
+        await fulfillment(of: [requested], timeout: 1)
+
+        XCTAssertEqual(service.requestCount, 1)
+        XCTAssertFalse(prompt.presentIfNeeded())
+    }
+
+    func testWhenThereIsNoAnchorThenTheRequestWaitsForOne() async {
+        let prompt = await launchAndWaitForAppleCheck(anchor: nil)
+        XCTAssertFalse(prompt.presentIfNeeded())
+        let requested = expectRequest()
+
+        prompt.anchorProvider = { self.viewController }
+
+        XCTAssertTrue(prompt.presentIfNeeded())
+        await fulfillment(of: [requested], timeout: 1)
+        XCTAssertEqual(service.requestCount, 1)
+    }
+
+    func testWhenFlagTurnsOffAfterTheCheckThenItDoesNotRequest() async {
+        let prompt = await launchAndWaitForAppleCheck(anchor: nil)
+
+        featureFlagger.enabledFeatureFlags = []
+        prompt.anchorProvider = { self.viewController }
+
+        XCTAssertFalse(prompt.presentIfNeeded())
         XCTAssertEqual(service.requestCount, 0)
     }
 
     func testWhenRequestIsNotRequiredThenItDoesNotRequest() async {
         service.isRequired = false
 
-        await makePrompt().presentIfNeeded(in: viewController)
+        let prompt = await launchAndWaitForAppleCheck(anchor: viewController)
 
-        XCTAssertEqual(service.isRequestRequiredCount, 1)
+        XCTAssertFalse(prompt.presentIfNeeded())
         XCTAssertEqual(service.requestCount, 0)
     }
 
     func testWhenRequestFailsThenItIsNotAttemptedAgainDuringTheSameLaunch() async {
         service.requestError = CancellationError()
-        let prompt = makePrompt()
 
-        await prompt.presentIfNeeded(in: viewController)
-        await prompt.presentIfNeeded(in: viewController)
+        let prompt = await launchAndWaitForRequest()
 
+        XCTAssertFalse(prompt.presentIfNeeded())
         XCTAssertEqual(service.requestCount, 1)
     }
 
     func testWhenRequestFailsThenTheNextLaunchRetries() async {
         service.requestError = CancellationError()
 
-        await makePrompt().presentIfNeeded(in: viewController)
-        await makePrompt().presentIfNeeded(in: viewController)
+        _ = await launchAndWaitForRequest()
+        _ = await launchAndWaitForRequest()
 
         XCTAssertEqual(service.requestCount, 2)
     }
 
     func testWhenUserAlreadyAnsweredThenTheNextLaunchDoesNotAskApple() async {
-        await makePrompt().presentIfNeeded(in: viewController)
-        await makePrompt().presentIfNeeded(in: viewController)
+        _ = await launchAndWaitForRequest()
+
+        let nextLaunchPrompt = makePrompt()
+        await mainQueueDrains()
 
         XCTAssertEqual(service.isRequestRequiredCount, 1)
-        XCTAssertEqual(service.requestCount, 1)
+        XCTAssertFalse(nextLaunchPrompt.presentIfNeeded())
     }
 
     // MARK: - Helpers
 
-    private func makePrompt(isFlagOn: Bool = true) -> DeclaredAgePrompt {
-        DeclaredAgePrompt(requester: DeclaredAgeRequester(service: service, storage: storage),
-                          featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.declaredAgeRange] : []))
+    private func makePrompt(anchor: UIViewController? = UIViewController()) -> DeclaredAgePrompt {
+        let prompt = DeclaredAgePrompt(requester: DeclaredAgeRequester(service: service, storage: storage), featureFlagger: featureFlagger)
+        prompt.anchorProvider = { anchor }
+        return prompt
+    }
+
+    private func expectRequest() -> XCTestExpectation {
+        let requested = expectation(description: "declared age requested")
+        service.onRequest = { requested.fulfill() }
+        return requested
+    }
+
+    private func launchAndWaitForRequest() async -> DeclaredAgePrompt {
+        let requested = expectRequest()
+        let prompt = makePrompt()
+        await fulfillment(of: [requested], timeout: 1)
+        return prompt
+    }
+
+    private func launchAndWaitForAppleCheck(anchor: UIViewController?) async -> DeclaredAgePrompt {
+        let appleWasAsked = expectation(description: "Apple was asked")
+        service.onIsRequestRequired = { appleWasAsked.fulfill() }
+        let prompt = makePrompt(anchor: anchor)
+        await fulfillment(of: [appleWasAsked], timeout: 1)
+        return prompt
+    }
+
+    /// The flag subscription hops to the main queue, so anything it was going to start has started once this returns.
+    private func mainQueueDrains() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        await Task.yield()
     }
 }
 
@@ -98,16 +170,20 @@ final class DeclaredAgePromptTests: XCTestCase {
 private final class DeclaredAgeServiceMock: DeclaredAgeServicing {
     var isRequired = true
     var requestError: Error?
+    var onIsRequestRequired: (() -> Void)?
+    var onRequest: (() -> Void)?
     private(set) var isRequestRequiredCount = 0
     private(set) var requestCount = 0
 
     func isRequestRequired() async throws -> Bool {
         isRequestRequiredCount += 1
+        onIsRequestRequired?()
         return isRequired
     }
 
     func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws -> Bool {
         requestCount += 1
+        onRequest?()
         if let requestError {
             throw requestError
         }

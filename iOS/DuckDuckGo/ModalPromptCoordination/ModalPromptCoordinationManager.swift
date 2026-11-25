@@ -23,6 +23,9 @@ import UIKit
 protocol ModalPromptCoordinationManaging {
     var didPresentModalPromptThisSession: Bool { get }
 
+    /// Whether a modal prompt is on its way or on screen.
+    var isModalPromptPending: Bool { get }
+
     /// Runs `handler` once, after the modal prompt now pending has left the screen or failed to
     /// appear. Returns `false`, keeping nothing, when no prompt is pending.
     func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool
@@ -275,6 +278,10 @@ final class ModalPromptCoordinationManager: ModalPromptCoordinationManaging {
         lease.release()
         provider.didReleaseDeferredSlot()
         Logger.modalPrompt.debug("[Modal Prompt Coordination] - Released the unredeemed slot held by \(type(of: provider)).")
+    }
+
+    var isModalPromptPending: Bool {
+        !hasModalPromptLeftScreen
     }
 
     func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool = { true }, _ handler: @escaping @MainActor () -> Void) -> Bool {

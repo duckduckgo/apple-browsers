@@ -111,6 +111,7 @@ final class MainCoordinator {
     let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
 
     private var hasPresentedOnboarding = false
+    private var isReadyForLaunchPrompts = false
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -377,6 +378,9 @@ final class MainCoordinator {
             tabManager.applyTrackerAnimationSuppressionBasedOnLaunchSource()
         }
 
+        declaredAgePrompt.anchorProvider = { [weak self] in
+            self?.declaredAgeAnchor()
+        }
     }
 
     func start(drawsIdleReturnNewTabPage: Bool) {
@@ -704,10 +708,22 @@ final class MainCoordinator {
         controller.presentDataBrokerProtectionDashboard(freeScanEntryPoint: freeScanEntryPoint)
     }
 
-    func presentDeclaredAgePromptIfNeeded() {
-        Task {
-            await declaredAgePrompt.presentIfNeeded(in: controller.topPresentedViewController)
+    func presentLaunchPromptsIfNeeded() {
+        isReadyForLaunchPrompts = true
+
+        // The age request takes the whole foreground, so a modal prompt never shares the screen with it.
+        if declaredAgePrompt.presentIfNeeded() {
+            return
         }
+
+        presentModalPromptIfNeeded()
+    }
+
+    private func declaredAgeAnchor() -> UIViewController? {
+        // A pending modal prompt goes first: its close handler retries.
+        guard isReadyForLaunchPrompts, !promoCoordinationService.isModalPromptPending else { return nil }
+
+        return controller.topPresentedViewController
     }
 
     func presentModalPromptIfNeeded() {
@@ -720,6 +736,8 @@ final class MainCoordinator {
         promoCoordinationService.runOnceModalPromptCloses(while: { true }) { [weak self] in
             self?.controller.recordPendingNewTabPagePresentationIfVisible()
             if shouldWait() { handler() }
+
+            self?.declaredAgePrompt.presentIfNeeded()
         }
     }
 
@@ -755,6 +773,7 @@ final class MainCoordinator {
     }
 
     func onBackground() {
+        isReadyForLaunchPrompts = false
         homePageConfiguration.handleAppBackgrounded()
         promoCoordinationService.handleAppBackgrounded()
         resetAppStartTime()

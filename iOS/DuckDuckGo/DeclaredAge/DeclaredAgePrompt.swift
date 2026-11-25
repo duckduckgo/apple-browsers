@@ -18,46 +18,80 @@
 //
 
 import UIKit
+import Combine
 import BrowserServicesKit
 import PrivacyConfig
 import FeatureFlags_iOS
 
-/// Presents Apple's Declared Age Range sheet once the app is ready for interactions.
+/// Presents Apple's Declared Age Range sheet as soon as a request is known to be needed.
 @MainActor
 final class DeclaredAgePrompt {
 
     private let requester: DeclaredAgeRequester
     private let featureFlagger: FeatureFlagger
-    private var wasAttempted = false
+    private var isRequestNeeded = false
+    private var isPresenting = false
+    private var cancellables = Set<AnyCancellable>()
+
+    /// Returns nil while the request has to wait.
+    var anchorProvider: (() -> UIViewController?)?
 
     init(requester: DeclaredAgeRequester, featureFlagger: FeatureFlagger) {
         self.requester = requester
         self.featureFlagger = featureFlagger
+
+        startListeningToFeatureFlagger()
     }
 
-    func presentIfNeeded(in viewController: UIViewController) async {
-        guard isDue else {
-            return
+    /// Returns whether the request is on screen, or was just started.
+    @discardableResult
+    func presentIfNeeded() -> Bool {
+        guard !isPresenting else {
+            return true
+        }
+
+        guard isRequestNeeded, featureFlagger.isFeatureOn(.declaredAgeRange), let anchor = anchorProvider?() else {
+            return false
         }
 
         // Success or failure, the next attempt waits for the next launch.
-        wasAttempted = true
+        isRequestNeeded = false
+        isPresenting = true
 
-        // A reinstall wipes the stored date, so it needs no separate signal on iOS.
-        guard await requester.isRequestNeeded() else {
-            return
+        Task {
+            _ = await requester.requestDeclaredAge(in: anchor)
+            isPresenting = false
         }
 
-        _ = await requester.requestDeclaredAge(in: viewController)
+        return true
     }
 }
 
 private extension DeclaredAgePrompt {
 
-    /// The flag doubles as a kill switch, so Apple's API isn't touched while it's off.
-    var isDue: Bool {
-        !wasAttempted
-            && featureFlagger.isFeatureOn(.declaredAgeRange)
-            && requester.isRequestDue()
+    func startListeningToFeatureFlagger() {
+        let featureFlagsDidChange = featureFlagger.updatesPublisher
+        let internalUserDidChange = featureFlagger.internalUserDecider.isInternalUserPublisher.map { _ in }
+
+        // The flag doubles as a kill switch, so Apple's API isn't touched until the first time it's on.
+        Publishers.Merge(featureFlagsDidChange, internalUserDidChange)
+            .prepend(())
+            .receive(on: DispatchQueue.main)
+            .first { [featureFlagger] in
+                featureFlagger.isFeatureOn(.declaredAgeRange)
+            }
+            .sink { [weak self] in
+                Task {
+                    await self?.refreshIsRequestNeeded()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func refreshIsRequestNeeded() async {
+        // A reinstall wipes the stored date, so it needs no separate signal on iOS.
+        isRequestNeeded = await requester.isRequestNeeded()
+
+        presentIfNeeded()
     }
 }

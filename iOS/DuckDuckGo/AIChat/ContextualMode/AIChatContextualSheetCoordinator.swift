@@ -809,7 +809,9 @@ final class AIChatContextualSheetCoordinator {
     private func park(_ sheetViewController: AIChatContextualSheetViewController,
                       leavingSidebarOf sidebarHost: AIChatContextualSidebarHosting,
                       animated: Bool) {
-        cancelBrowserToolsPermission()
+        if browserToolsPermissionPresenter?.preservesPermissionOnSurfaceChange != true {
+            cancelBrowserToolsPermission()
+        }
         // Something the chat presented, like the Fire confirmation, would be left behind by the move.
         if let presented = sheetViewController.presentedViewController,
            browserToolsPermissionPresenter?.owns(presented) != true {
@@ -1427,8 +1429,8 @@ private extension AIChatContextualSheetCoordinator {
         return webVC
     }
 
-    private func makeBrowserToolsPermissionPresenter(for webVC: AIChatContextualWebViewController) -> AIChatNativePermissionPresenter {
-        AIChatNativePermissionPresenter { [weak self, weak webVC] in
+    private func makeBrowserToolsPermissionPresenter(for webVC: AIChatContextualWebViewController) -> AIChatToolPermissionPresenter {
+        AIChatToolPermissionPresenter { [weak self, weak webVC] in
             guard let self, let webVC, self.browserToolsWebViewController === webVC,
                   self.isSheetPresented, !self.hasParkedSurface, !self.isAwayWithTab,
                   let sheet = self.sheetViewController else { return nil }
@@ -1438,7 +1440,7 @@ private extension AIChatContextualSheetCoordinator {
             } else if sheet.presentingViewController == nil {
                 return nil
             }
-            return sheet
+            return .init(sheet, isChanging: sheet.$isChangingSurface.eraseToAnyPublisher())
         }
     }
 

@@ -28,7 +28,6 @@ final class MockAIChatNativePermissionPresenter: AIChatNativePermissionPresentin
     var holdDismissal = false
     var onPresent: (() -> Void)?
     private(set) var prompts: [ClientToolPermissionPrompt] = []
-    private(set) var messages: [String] = []
     private(set) var withdrawals: [String] = []
     private var active: (ClientToolPermissionPrompt, @MainActor (ClientToolPermissionDecision) -> Void)?
     private var completions: [@MainActor () -> Void] = []
@@ -38,11 +37,10 @@ final class MockAIChatNativePermissionPresenter: AIChatNativePermissionPresentin
 
     func owns(_ viewController: UIViewController) -> Bool { false }
 
-    func present(_ prompt: ClientToolPermissionPrompt, message: String, decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool {
+    func present(_ prompt: ClientToolPermissionPrompt, decision: @escaping @MainActor (ClientToolPermissionDecision) -> Void) -> Bool {
         guard isAvailable, active == nil else { return false }
         active = (prompt, decision)
         prompts.append(prompt)
-        messages.append(message)
         onPresent?()
         if let autoAnswer { select(autoAnswer) }
         return true

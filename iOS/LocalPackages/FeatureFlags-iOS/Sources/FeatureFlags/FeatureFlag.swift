@@ -372,6 +372,10 @@ public enum FeatureFlag: String {
     case aiChatBrowserTools
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    /// Gates `requestAccess`: one prompt for the browser tools a Duck.ai chat expects to use.
+    case aiChatBrowserToolRequestAccess
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
     case aiChatBrowserToolListOpenTabs
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
@@ -1031,6 +1035,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
+        case .aiChatBrowserToolRequestAccess:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.requestAccess))
         case .aiChatBrowserTools:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled))
         case .aiChatBrowserToolListOpenTabs:

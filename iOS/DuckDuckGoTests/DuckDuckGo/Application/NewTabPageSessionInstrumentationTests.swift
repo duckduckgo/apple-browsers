@@ -1054,4 +1054,117 @@ struct NewTabPageSessionInstrumentationTests {
         notifications.post(name: UIApplication.willResignActiveNotification, object: nil)
         #expect(!coordinator.hasPresentedPage)
     }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("The burn animation defers the visit, shown report, and keyboard request", .timeLimit(.minutes(1)))
+    func coveredPageStartsVisitWhenUncovered() {
+        let (instrumentation, wideEvent, clock) = makeSUT()
+        let notifications = NotificationCenter()
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: notifications, isVisible: { true })
+        let page = NSObject()
+        var shown = false
+        var focusRequests = 0
+
+        let cover = coordinator.beginCovering()
+        coordinator.schedule(for: page, visit: {
+            instrumentation.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
+        }, shown: { shown = true }, focus: {
+            focusRequests += 1
+            instrumentation.keyboardRaisedOnArrival()
+        })
+
+        // A tap while the flames still hide the page has no visit to land in.
+        instrumentation.tapInputBar()
+        notifications.post(name: UIApplication.willResignActiveNotification, object: nil)
+        #expect(wideEvent.started.isEmpty)
+        #expect(!shown)
+        #expect(focusRequests == 0)
+        #expect(!coordinator.hasPresentedPage)
+
+        clock.advance(by: 1.2)
+        coordinator.endCovering(cover)
+        #expect(wideEvent.started.count == 1)
+        #expect(shown)
+        #expect(focusRequests == 1)
+
+        clock.advance(by: 2)
+        instrumentation.visitBackgrounded()
+        let visit = lastCompletion(wideEvent)?.0
+        #expect(visit?.launchKeyboardMode == .up)
+        #expect(visit?.actionCount == 0)
+        #expect(visit?.sessionInterval.durationMilliseconds == 2_000)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Leaving during the burn animation starts no visit for the page the user never saw", .timeLimit(.minutes(1)))
+    func backgroundingWhileCoveredStartsNoVisit() {
+        let (instrumentation, wideEvent, _) = makeSUT()
+        var visible = true
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { visible })
+        let page = NSObject()
+
+        let cover = coordinator.beginCovering()
+        coordinator.schedule(for: page, visit: {
+            instrumentation.visitStarted(trigger: .newTabOpenedAfterFire, launchKeyboardMode: .down, toggleEnabled: true)
+        })
+        visible = false
+        coordinator.backgrounded()
+        coordinator.endCovering(cover)
+        visible = true
+        coordinator.recordIfVisible()
+
+        #expect(wideEvent.started.isEmpty)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Leaving the app releases a cover whose animation never reports its end", .timeLimit(.minutes(1)))
+    func backgroundingReleasesUnendedCover() {
+        let (instrumentation, wideEvent, _) = makeSUT()
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { true })
+        let page = NSObject()
+
+        let lostCover = coordinator.beginCovering()
+        coordinator.backgrounded()
+
+        // The next arrival is not held by an overlay that is long gone.
+        coordinator.schedule(for: page, visit: {
+            instrumentation.visitStarted(trigger: .appOpen, launchKeyboardMode: .down, toggleEnabled: true)
+        })
+        #expect(wideEvent.started.count == 1)
+
+        // A late end for the released cover cannot uncover a newer burn early.
+        let newerCover = coordinator.beginCovering()
+        let newerPage = NSObject()
+        var newerVisits = 0
+        coordinator.schedule(for: newerPage, visit: { newerVisits += 1 })
+        coordinator.endCovering(lostCover)
+        #expect(newerVisits == 0)
+
+        coordinator.endCovering(newerCover)
+        #expect(newerVisits == 1)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Overlapping burn animations keep the page covered until the last one ends", .timeLimit(.minutes(1)))
+    func overlappingCoversHoldUntilLastEnds() {
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: NotificationCenter(), isVisible: { true })
+        let page = NSObject()
+        var visits = 0
+
+        let first = coordinator.beginCovering()
+        let second = coordinator.beginCovering()
+        coordinator.schedule(for: page, visit: { visits += 1 })
+
+        // Ending the same cover twice must not uncover a page the other one still covers.
+        coordinator.endCovering(first)
+        coordinator.endCovering(first)
+        #expect(visits == 0)
+
+        coordinator.endCovering(second)
+        #expect(visits == 1)
+    }
 }

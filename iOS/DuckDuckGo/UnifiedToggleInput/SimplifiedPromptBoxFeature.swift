@@ -1,7 +1,8 @@
 //
-//  SubscriptionUserScriptFeatureFlagAdapter.swift
+//  SimplifiedPromptBoxFeature.swift
+//  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,25 +17,25 @@
 //  limitations under the License.
 //
 
+import Common
+import FeatureFlags_iOS
 import PrivacyConfig
-import FeatureFlags_macOS
-import Subscription
 
-/// Adapter that provides feature flags to SubscriptionUserScript
-/// This follows the adapter pattern to avoid direct BSK dependencies in the Subscription module
-struct SubscriptionUserScriptFeatureFlagAdapter: SubscriptionUserScriptFeatureFlagProviding {
+protocol SimplifiedPromptBoxFeatureProviding {
+    var isAvailable: Bool { get }
+}
+
+struct SimplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding {
 
     private let featureFlagger: FeatureFlagger
+    private let devicePlatform: DevicePlatformProviding.Type
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.featureFlagger = featureFlagger
+        self.devicePlatform = devicePlatform
     }
 
-    var usePaidDuckAi: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat)
-    }
-
-    var useProTier: Bool {
-        featureFlagger.isFeatureOn(.allowProTierPurchase)
+    var isAvailable: Bool {
+        devicePlatform.isIphone && featureFlagger.isFeatureOn(.unifiedToggleInputSimplifiedPromptBox)
     }
 }

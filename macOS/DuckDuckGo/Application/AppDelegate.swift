@@ -418,7 +418,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitor
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
-        featureFlagger: featureFlagger,
         buttonDelegate: vpnUpsellToolbarButtonPromoDelegate
     )
     let themeManager: ThemeManager
@@ -1042,7 +1041,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
             ),
             internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger,
             pinningManager: pinningManager
         )
         tabsPreferences = TabsPreferences(
@@ -1415,7 +1413,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
         crashReporting = CrashReportingFactory.makeCrashReporting(internalUserDecider: internalUserDecider,
-                                                                  featureFlagger: featureFlagger,
                                                                   keyValueStore: UserDefaults.standard)
 
         let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)

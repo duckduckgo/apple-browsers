@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-protocol IncrementallyUpdatableDataSet: Codable, Equatable {
+protocol IncrementallyUpdatableDataSet: Codable, Equatable, Sendable {
     /// Set Element Type (Hash Prefix or Filter)
-    associatedtype Element: Codable, Hashable
+    associatedtype Element: Codable, Hashable, Sendable
     /// API Request type used to fetch updates for the data set
     associatedtype APIRequest: APIClient.ChangeSetRequest where APIRequest.Response == APIClient.ChangeSetResponse<Element>
 

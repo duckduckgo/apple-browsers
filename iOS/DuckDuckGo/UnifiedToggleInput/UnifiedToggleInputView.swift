@@ -355,6 +355,11 @@ final class UnifiedToggleInputView: UIView {
         set { toolsToolbar.selectedReasoningMode = newValue }
     }
 
+    var usesSimplifiedPromptBox: Bool {
+        get { toolsToolbar.usesSimplifiedPromptBox }
+        set { toolsToolbar.usesSimplifiedPromptBox = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { toolsToolbar.isToolsButtonHidden }
         set { toolsToolbar.isToolsButtonHidden = newValue }
@@ -526,6 +531,7 @@ final class UnifiedToggleInputView: UIView {
                 let row = existingRow ?? makeFooterRow(with: item.message)
                 row.accessibilityIdentifier = "AIChat.Footer.Card.\(item.id)"
                 row.isBelowAnotherCard = index > 0
+                row.usesGlassSurface = usesFooterGlassSurface
                 if !previousMessages.contains(item) {
                     existingRow?.configure(with: item.message, animateIcon: true)
                 }
@@ -696,6 +702,7 @@ final class UnifiedToggleInputView: UIView {
     private let handler: UnifiedToggleInputHandler
     private let textEntryView: SwitchBarTextEntryView
     private var cancellables = Set<AnyCancellable>()
+    private let newTabPageCustomizationStore = NewTabPageCustomizationStore()
 
     // MARK: - UI
 
@@ -881,8 +888,27 @@ final class UnifiedToggleInputView: UIView {
         cardPosition == .bottom ? Constants.collapsedCardHeight / 2 : Constants.cardCornerRadiusCollapsed
     }
 
+    var usesNewTabPageCardBackground = false {
+        didSet {
+            guard oldValue != usesNewTabPageCardBackground else { return }
+            applyFireModeAppearance(isFireTab: handler.isFireTab)
+            footerCard.arrangedSubviews.compactMap { $0 as? UTIFooterCardView }.forEach { $0.usesGlassSurface = usesFooterGlassSurface }
+        }
+    }
+
+    /// Over the redesigned New Tab Page, the glass card casts no shadow around the footer, so the footer takes the same glass.
+    private var usesFooterGlassSurface: Bool {
+        usesNewTabPageCardBackground && hasFloatingInputGlass
+    }
+
     private func cardBackgroundColor(isFireTab: Bool) -> UIColor {
-        UIColor(singleUseColor: isFireTab ? .fireModeCardBackground : .unifiedToggleInputCardBackground)
+        if isFireTab {
+            return UIColor(singleUseColor: .fireModeCardBackground)
+        }
+        guard usesNewTabPageCardBackground else {
+            return UIColor(singleUseColor: .unifiedToggleInputCardBackground)
+        }
+        return newTabPageCustomizationStore.theme.cardBackgroundColor
     }
 
     // MARK: - Constraints
@@ -2280,6 +2306,15 @@ private extension UnifiedToggleInputView {
     }
 
     func setupSubscriptions() {
+        newTabPageCustomizationStore.themePublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, usesNewTabPageCardBackground else { return }
+                applyFireModeAppearance(isFireTab: handler.isFireTab)
+            }
+            .store(in: &cancellables)
+
         handler.textSubmissionPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in

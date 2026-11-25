@@ -228,7 +228,6 @@ final class WindowsManagerPopupTests: XCTestCase {
             pinnedTabsManagerProvider: provider,
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false),
             internalUserDecider: MockInternalUserDecider(),
-            featureFlagger: flags,
             pinningManager: MockPinningManager())
         let (controller, model) = makeWindowController(tabs: tabs, windowControllersManager: manager)
         return (controller, model, manager, flags)

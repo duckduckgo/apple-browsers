@@ -82,7 +82,7 @@ class FavoritesViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
-    private let isFocussedState: Bool
+    var isFocussedState: Bool
     private let favoriteDataSource: NewTabPageFavoriteDataSource
     private let faviconsCache: FavoritesFaviconCaching
     private let pixelFiring: (any PixelKitFiring)?

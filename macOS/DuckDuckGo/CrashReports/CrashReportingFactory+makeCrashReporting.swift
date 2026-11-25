@@ -36,7 +36,6 @@ extension CrashReportingFactory {
     }
 
     static func makeCrashReporting(internalUserDecider: InternalUserDecider,
-                                   featureFlagger: FeatureFlagger,
                                    keyValueStore: any ThrowingKeyValueStoring,
                                    buildType: any ApplicationBuildType = StandardApplicationBuildType()) -> any CrashReporting {
         if buildType.isAppStoreBuild {
@@ -51,7 +50,6 @@ extension CrashReportingFactory {
 
             return appStoreFactory.instantiate(
                 internalUserDecider: internalUserDecider,
-                featureFlagger: featureFlagger,
                 crashReportSender: sender,
                 crashSenderPixelEvents: CrashReportSender.pixelEvents,
                 fireCrashPixel: { parameters in

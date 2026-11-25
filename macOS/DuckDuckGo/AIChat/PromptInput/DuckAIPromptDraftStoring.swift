@@ -40,12 +40,16 @@ protocol DuckAIPromptDraftStoring: AnyObject {
     var aiChatPanelAttachments: [AIChatPanelAttachment] { get }
     var panelAttachmentsPublisher: AnyPublisher<[AIChatPanelAttachment], Never> { get }
 
+    /// Kept in memory only; survives dismissal and navigation, and is cleared only when a prompt is sent.
+    var aiChatModelPick: DuckAIModelPick { get }
+
     func updateText(_ newText: String, markInteraction: Bool)
     func updateSelection(_ range: NSRange)
     func setAIChatToolMode(_ mode: AIChatToolMode?)
     func setAIChatAttachments(_ attachments: [AIChatImageAttachment])
     func setAIChatTabAttachments(_ attachments: [AIChatTabAttachment])
     func setAIChatFileAttachments(_ attachments: [AIChatFileAttachment])
+    func setAIChatModelPick(_ pick: DuckAIModelPick)
 }
 
 extension AddressBarSharedTextState: DuckAIPromptDraftStoring {

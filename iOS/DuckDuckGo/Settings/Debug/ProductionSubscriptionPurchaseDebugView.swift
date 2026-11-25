@@ -285,7 +285,7 @@ class ProductionSubscriptionPurchaseViewModel: ObservableObject {
         
         // Direct purchase bypassing AppStorePurchaseFlow
         let manager = AppDependencyProvider.shared.subscriptionManager
-        let result = await manager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID, includeProTier: true)
+        let result = await manager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
 
         switch result {
         case .success:

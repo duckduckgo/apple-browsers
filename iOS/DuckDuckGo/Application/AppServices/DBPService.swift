@@ -23,6 +23,7 @@ import Core
 import Common
 import FoundationExtensions
 import BrowserServicesKit
+import DDGError
 import PixelKit
 import Networking
 import Subscription
@@ -126,8 +127,6 @@ final class DBPService: NSObject {
                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
-                        isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
-                        isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
                         source: .pir)
                     let view = UnifiedFeedbackRootView(viewModel: viewModel)
                     return view
@@ -177,6 +176,55 @@ final class DBPService: NSObject {
         let contentBlocking = DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
         if await dbpIOSManager.startDebugServer(contentBlocking: contentBlocking) {
             Logger.dataBrokerProtection.log("PIR debug server started from launch option on port \(dbpIOSManager.debugServerPort ?? 0, privacy: .public)")
+        }
+    }
+
+    private enum ManagedSeedError: DDGError {
+        case pirUnavailable
+        case debugServerUnavailable
+
+        static var errorDomain: String { "com.duckduckgo.pir.managed-seed" }
+
+        var errorCode: Int {
+            switch self {
+            case .pirUnavailable: return 0
+            case .debugServerUnavailable: return 1
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .pirUnavailable: return "PIR is unavailable for the scheduler seed."
+            case .debugServerUnavailable: return "The PIR debug server did not start for the scheduler seed."
+            }
+        }
+    }
+
+    func seedProfileIfRequestedAtLaunch() async {
+        guard PIRDebugLaunchOptions.hasManagedRequest() else { return }
+        // Receipts use whole seconds, so the exclusive fresh profile scope includes this second in Python.
+        let since = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
+        do {
+            guard let options = try PIRDebugLaunchOptions.parse(), let managedSeed = options.managedSeed,
+                  let profile = options.profileSetup?.profile else { return }
+            do {
+                guard let dbpIOSManager else { throw ManagedSeedError.pirUnavailable }
+                let contentBlocking = DBPIOSContentBlocking(contentBlockingManager: ContentBlocking.shared.contentBlockingManager)
+                guard await dbpIOSManager.startDebugServer(contentBlocking: contentBlocking) else {
+                    throw ManagedSeedError.debugServerUnavailable
+                }
+                let rawAuthenticated = AppDependencyProvider.shared.subscriptionManager.isUserAuthenticated
+                let jobs = try await dbpIOSManager.seedProfileForDebugLaunch(profile, managedSeed: managedSeed,
+                                                                             rawAuthenticated: rawAuthenticated)
+                try managedSeed.writeReceipt(since: since, jobs: jobs)
+                Logger.dataBrokerProtection.log("PIR scheduler \(managedSeed.mode.rawValue, privacy: .public) ready with \(jobs.count, privacy: .public) scan jobs")
+            } catch {
+                try? managedSeed.writeReceipt(since: since, error: error)
+                Logger.dataBrokerProtection.error("PIR scheduler seeding failed: \(String(describing: error), privacy: .public)")
+            }
+        } catch {
+            try? PIRDebugLaunchOptions.managedSeed()?.writeReceipt(since: since, error: error)
+            Logger.dataBrokerProtection.error("PIR scheduler launch options rejected: \(String(describing: error), privacy: .public)")
         }
     }
 #endif

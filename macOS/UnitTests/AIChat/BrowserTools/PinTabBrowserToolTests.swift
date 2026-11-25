@@ -70,7 +70,7 @@ final class PinTabBrowserToolTests: XCTestCase {
         XCTAssertEqual(collection.pinnedTabsCollection?.tabs.count, 0)
     }
 
-    func testWhenATabCannotBePinnedThenOnlyThatTabReportsNotPinned() async {
+    func testWhenTheOwnerTabIsNotAWebPageThenNothingIsPinned() async {
         let collection = collection([
             Tab(content: .url(URL(fileURLWithPath: "/tmp/notes.txt"), credential: nil, source: .ui)),
             Tab(content: .url(URL(string: "https://a.example")!, credential: nil, source: .ui))
@@ -80,9 +80,8 @@ final class PinTabBrowserToolTests: XCTestCase {
 
         let result = await tool.execute(arguments: ["tabIds": [.string(ids[0]), .string(ids[1])]], context: context)
 
-        XCTAssertEqual(result, .success(["tabs": [["tabId": .string(ids[0]), "pinned": false],
-                                                  ["tabId": .string(ids[1]), "pinned": true]]]))
-        XCTAssertEqual(collection.pinnedTabsCollection?.tabs.map(\.uuid), [ids[1]])
+        XCTAssertEqual(result, .failure(.notFound))
+        XCTAssertEqual(collection.pinnedTabsCollection?.tabs.count, 0)
     }
 
     func testWhenATabIsNotListedThenNothingIsPinned() async {

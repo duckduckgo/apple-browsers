@@ -203,13 +203,6 @@
             }
         ]
     },
-    "m_subscription_tier-options_unexpected-pro-tier": {
-        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out",
-        "owners": ["SabrinaTardio"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
 
     // Plan Change Click Pixels
     "m_subscription_settings_view-all-plans_click": {
@@ -1270,6 +1263,43 @@
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_notifications-denied-dialog_not-now_click": {
+        "description": "Fired when the user taps 'Not Now' in the native dialog asking them to turn on notifications in Settings for the free-trial reminder. The subscription page shows the dialog when notifications are off and the user picks a reminder.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_notifications-denied-dialog_open-settings_click": {
+        "description": "Fired when the user taps 'Open Settings' in the native dialog asking them to turn on notifications for the free-trial reminder, which opens the app's notification settings.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_notifications-denied-dialog_settings_return": {
+        "description": "Fired the first time the app becomes active again after the user tapped 'Open Settings' in the notifications dialog, with the notification permission at that moment. Comparing it with open-settings_click shows how many users never came back.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "notifications_permission",
+                "type": "string",
+                "description": "Notification permission when the user comes back from Settings, as reported to the subscription page by getUserSettings",
+                "enum": ["granted", "denied", "notDetermined"]
+            }
+        ]
+    },
+    "subscription_notifications-denied-dialog_presentation_failure": {
+        "description": "Fired when the subscription page asks for the native dialog to turn on notifications in Settings, but the app cannot present it because no screen is available, the screen is not in a window, or a transition is in progress. The subscription page receives 'notNow' instead.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
     },
     "m_privacy-pro_app-settings_partner-benefits_click": {
         "description": "Fires when the user taps 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared verbatim with Android and Windows, and predates the label being renamed to 'Subscriber Offers'.",

@@ -29,7 +29,7 @@ class UserScriptMessagingTests: XCTestCase {
     /// that the client is expecting a response. This test ensures that
     /// a 'result' keys exists on the response, as per [MessageResponse](https://duckduckgo.github.io/content-scope-scripts/classes/Messaging_Schema.MessageResponse.html)
     func testDelegateRespondsWithResult() async {
-        let (testee, action, original) = setupWith(message: [
+        let (testee, action, original) = await setupWith(message: [
             "context": "any_context",
             "featureName": "fooBarFeature",
             "method": "responseExample",
@@ -71,7 +71,7 @@ class UserScriptMessagingTests: XCTestCase {
     /// Note: the incoming message has no `id` field. This is what makes it a 'notification'
     func testDelegateHandlesNotification() async {
 
-        let (testee, action, original) = setupWith(message: [
+        let (testee, action, original) = await setupWith(message: [
             "context": "any_context",
             "featureName": "fooBarFeature",
             "method": "notifyExample",
@@ -99,7 +99,7 @@ class UserScriptMessagingTests: XCTestCase {
     /// it can use the error-response to close the loop between request/response.
     func testDelegateRespondsWithErrorResponse() async {
 
-        let (testee, action, original) = setupWith(message: [
+        let (testee, action, original) = await setupWith(message: [
             "context": "any_context",
             "featureName": "fooBarFeature",
             "method": "errorExample",
@@ -134,7 +134,7 @@ class UserScriptMessagingTests: XCTestCase {
 
     /// Ensure that an error is thrown if the feature was not registered
     func testThrowsOnMissingFeature() async {
-        let (testee, action, original) = setupWith(message: [
+        let (testee, action, original) = await setupWith(message: [
             "context": "any_context",
             "featureName": "this_feature_doesnt_exist",
             "method": "an_unknown_method_name_but_no_id",
@@ -153,7 +153,7 @@ class UserScriptMessagingTests: XCTestCase {
     /// Ensure that an error is thrown if a feature was found, but it wasn't able to select a handler for the
     /// particular incoming 'method'
     func testThrowsOnMissingMethod() async {
-        let (testee, action, original) = setupWith(message: [
+        let (testee, action, original) = await setupWith(message: [
             "context": "any_context",
             "featureName": "fooBarFeature",
             "method": "an_unknown_method_name_but_no_id",
@@ -173,7 +173,7 @@ class UserScriptMessagingTests: XCTestCase {
     /// on the webkit implementation (because the webkit MessageHandler must of been correct), this test is
     /// more about compliance with the shared/documented types
     func testThrowsOnMissingContext() async {
-        let (testee, action, original) = setupWith(message: [
+        let (testee, action, original) = await setupWith(message: [
             "featureName": "fooBarFeature",
             "method": "an_unknown_method_name_but_no_id",
             "params": [
@@ -189,6 +189,7 @@ class UserScriptMessagingTests: XCTestCase {
     }
 }
 
+@MainActor
 class MessageFramePolicyTests: XCTestCase {
 
     func testAnyAllowsEveryFrame() {
@@ -277,7 +278,8 @@ class HostnameMatchingRuleTests: XCTestCase {
 ///
 /// - Parameter message: The incoming message
 ///
-func setupWith(message: [String: Any]) -> (UserScriptMessageBroker, UserScriptMessageBroker.Action, WKScriptMessage) {
+@MainActor
+func setupWith(message: sending [String: Any]) -> sending (UserScriptMessageBroker, UserScriptMessageBroker.Action, WKScriptMessage) {
     // create the instance of ContentScopeMessaging
     let testee = UserScriptMessageBroker(context: message["context"] as? String ?? "default")
 

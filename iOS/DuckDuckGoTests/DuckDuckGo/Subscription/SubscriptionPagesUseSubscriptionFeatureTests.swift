@@ -144,40 +144,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         }
     }
 
-    func testGetFeatureConfig_WhenPaidAIChatEnabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
-
-        // Then
-        guard let featureValue = result as? GetFeatureConfigurationResponse else {
-            XCTFail("Expected GetFeatureValue type")
-            return
-        }
-        
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.usePaidDuckAi)
-    }
-    
-    func testGetFeatureConfig_WhenPaidAIChatDisabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
-
-        // Then
-        guard let featureValue = result as? GetFeatureConfigurationResponse else {
-            XCTFail("Expected GetFeatureValue type")
-            return
-        }
-
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertFalse(featureValue.usePaidDuckAi)
-    }
-    
     func testGetFeatureConfig_WhenStripeSupported_ReturnsCorrectConfig() async throws {
         // Given
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
@@ -212,9 +178,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
 
-    func testGetFeatureConfig_WhenBothFeaturesEnabled_ReturnsCorrectConfig() async throws {
+    func testGetFeatureConfig_WhenStripeEnabled_ReturnsCorrectConfig() async throws {
         // Given
-        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true
 
         // When
@@ -227,35 +192,14 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         }
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertTrue(featureValue.usePaidDuckAi)
         XCTAssertTrue(featureValue.useAlternateStripePaymentFlow)
         XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
     }
 
-    func testGetFeatureConfig_WhenBothFeaturesDisabled_ReturnsCorrectConfig() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
-        mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = false
-
-        // When
-        let result = try await sut.getFeatureConfig(params: "", original: WKScriptMessage.mock())
-
-        // Then
-        guard let featureValue = result as? GetFeatureConfigurationResponse else {
-            XCTFail("Expected GetFeatureConfigurationResponse type")
-            return
-        }
-
-        XCTAssertTrue(featureValue.useUnifiedFeedback)
-        XCTAssertFalse(featureValue.usePaidDuckAi)
-        XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
-    }
-
     // MARK: - GetSubscriptionTierOptions Tests
 
-    func testGetSubscriptionTierOptions_WhenProTierEnabled_PassesTrueToIncludeProTier() async throws {
+    func testGetSubscriptionTierOptions_ReturnsTierOptions() async throws {
         // Given
-        mockSubscriptionFeatureAvailability.isProTierPurchaseEnabled = true
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
         
         let expectedTierOptions = SubscriptionTierOptions(
@@ -279,8 +223,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(mockSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier when Pro tier is enabled")
-        
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
             return
@@ -292,46 +234,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertFalse(tierOptions.products[0].options.isEmpty, "Should have purchase options when purchase is allowed")
     }
 
-    func testGetSubscriptionTierOptions_WhenProTierDisabled_PassesFalseToIncludeProTier() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isProTierPurchaseEnabled = false
-        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-        
-        let tierOptionsWithPurchase = SubscriptionTierOptions(
-            platform: .ios,
-            products: [
-                SubscriptionTier(
-                    tier: .plus,
-                    features: [TierFeature(product: .networkProtection, name: .plus)],
-                    options: [
-                        SubscriptionOption(id: "1",
-                                           cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
-                                           offer: nil)
-                    ]
-                )
-            ]
-        )
-        
-        mockSubscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
-
-        // When
-        let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
-
-        // Then
-        XCTAssertEqual(mockSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, false, "Should pass false to includeProTier when Pro tier is disabled")
-        
-        guard let tierOptions = result as? SubscriptionTierOptions else {
-            XCTFail("Expected SubscriptionTierOptions type")
-            return
-        }
-
-        XCTAssertEqual(tierOptions.platform, .ios)
-        XCTAssertFalse(tierOptions.products[0].options.isEmpty, "Should still have purchase options when purchase is allowed")
-    }
-
     func testGetSubscriptionTierOptions_WhenPurchaseNotAllowed_StripsPurchaseOptions() async throws {
         // Given
-        mockSubscriptionFeatureAvailability.isProTierPurchaseEnabled = true
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = false
         
         let tierOptionsWithPurchase = SubscriptionTierOptions(
@@ -355,8 +259,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let result = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertEqual(mockSubscriptionManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should still pass Pro tier flag correctly")
-        
         guard let tierOptions = result as? SubscriptionTierOptions else {
             XCTFail("Expected SubscriptionTierOptions type")
             return
@@ -439,53 +341,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertTrue(mockTierEventReporter.failureCalled, "Should fire failure pixel")
         XCTAssertNotNil(mockTierEventReporter.failureError, "Should include error in failure pixel")
         XCTAssertFalse(mockTierEventReporter.successCalled, "Should not fire success pixel on failure")
-    }
-
-    func testGetSubscriptionTierOptions_WithProTierPresent_FiresUnexpectedProTierPixel() async throws {
-        // Given
-        let tierOptionsWithProTier = SubscriptionTierOptions(
-            platform: .ios,
-            products: [
-                SubscriptionTier(
-                    tier: .plus,
-                    features: [TierFeature(product: .networkProtection, name: .plus)],
-                    options: []
-                ),
-                SubscriptionTier(
-                    tier: .pro,
-                    features: [TierFeature(product: .networkProtection, name: .pro)],
-                    options: []
-                )
-            ]
-        )
-        mockSubscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithProTier)
-
-        // When
-        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
-
-        // Then
-        XCTAssertTrue(mockTierEventReporter.unexpectedProTierCalled, "Should fire unexpected pro tier pixel")
-    }
-
-    func testGetSubscriptionTierOptions_WithoutProTier_DoesNotFireUnexpectedProTierPixel() async throws {
-        // Given
-        let tierOptionsWithoutProTier = SubscriptionTierOptions(
-            platform: .ios,
-            products: [
-                SubscriptionTier(
-                    tier: .plus,
-                    features: [TierFeature(product: .networkProtection, name: .plus)],
-                    options: []
-                )
-            ]
-        )
-        mockSubscriptionManager.subscriptionTierOptionsResult = .success(tierOptionsWithoutProTier)
-
-        // When
-        _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
-
-        // Then
-        XCTAssertFalse(mockTierEventReporter.unexpectedProTierCalled, "Should not fire unexpected pro tier pixel")
     }
 
     @MainActor
@@ -1396,7 +1251,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                              scheduler: SubscriptionExpirationReminderSchedulerMock? = nil,
                              appStorePurchaseFlow: AppStorePurchaseFlowMock? = nil,
                              isExpirationReminderFeatureEnabled: @escaping () -> Bool = { true },
-                             attributionProvider: SubscriptionExperimentAttributionProviding = SubscriptionExperimentAttributionProviderStub()) -> DefaultSubscriptionPagesUseSubscriptionFeature {
+                             attributionProvider: SubscriptionExperimentAttributionProviding = SubscriptionExperimentAttributionProviderStub(),
+                             deniedDialog: NotificationsDeniedDialogSpy = NotificationsDeniedDialogSpy()) -> DefaultSubscriptionPagesUseSubscriptionFeature {
         let purchaseFlow = appStorePurchaseFlow ?? mockAppStorePurchaseFlow!
         let executer = DefaultSubscriptionFlowsExecuter(
             subscriptionManager: mockSubscriptionManager,
@@ -1404,7 +1260,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             wideEvent: mockWideEvent,
             pendingTransactionHandler: MockPendingTransactionHandler()
         )
-        return DefaultSubscriptionPagesUseSubscriptionFeature(
+        let feature = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: "",
@@ -1422,6 +1278,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             isExpirationReminderFeatureEnabled: isExpirationReminderFeatureEnabled,
             subscriptionExperimentAttributionProvider: attributionProvider
         )
+        feature.onShowNotificationsDeniedDialog = { await deniedDialog.show(daysBeforeCancel: $0) }
+        return feature
     }
 
     func testGetUserSettings_WhenAuthorized_ReturnsGranted() async throws {
@@ -1724,9 +1582,125 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(preference.daysBeforeCancel, 7)
     }
 
+    func testGetUserSettings_WhenFeatureEnabled_IncludesNotificationsDeniedDialog() async throws {
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter())
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertEqual(result.notificationsDeniedDialog, true)
+    }
+
+    func testGetUserSettings_WhenFeatureDisabled_OmitsNotificationsDeniedDialog() async throws {
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), isExpirationReminderFeatureEnabled: { false })
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertNil(result.notificationsDeniedDialog)
+    }
+
+    func testGetUserSettings_WhenNoScreenHandlesDialog_OmitsNotificationsDeniedDialog() async throws {
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter())
+        sut.onShowNotificationsDeniedDialog = nil
+
+        let response = await sut.getUserSettings(params: "", original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse)
+
+        XCTAssertNil(result.notificationsDeniedDialog)
+    }
+
+    func testShowNotificationsDeniedDialog_WhenDaysNotPositive_ReturnsNotNowWithoutPresenting() async throws {
+        let spy = NotificationsDeniedDialogSpy()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), deniedDialog: spy)
+
+        let response = await sut.showNotificationsDeniedDialog(params: ["daysBeforeCancel": 0], original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse)
+
+        XCTAssertEqual(result.action, .notNow)
+        XCTAssertTrue(spy.presentedDays.isEmpty)
+    }
+
+    func testShowNotificationsDeniedDialog_WhenFeatureDisabled_ReturnsNotNowWithoutPresenting() async throws {
+        let spy = NotificationsDeniedDialogSpy()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(),
+                              isExpirationReminderFeatureEnabled: { false },
+                              deniedDialog: spy)
+
+        let response = await sut.showNotificationsDeniedDialog(params: ["daysBeforeCancel": 2], original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse)
+
+        XCTAssertEqual(result.action, .notNow)
+        XCTAssertTrue(spy.presentedDays.isEmpty)
+    }
+
+    func testShowNotificationsDeniedDialog_WhenParamsInvalid_ReturnsNotNowWithoutPresenting() async throws {
+        let spy = NotificationsDeniedDialogSpy()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), deniedDialog: spy)
+
+        let response = await sut.showNotificationsDeniedDialog(params: [:], original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse)
+
+        XCTAssertEqual(result.action, .notNow)
+        XCTAssertTrue(spy.presentedDays.isEmpty)
+    }
+
+    func testShowNotificationsDeniedDialog_WhenNoScreenHandlesDialog_ReturnsNotNow() async throws {
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter())
+        sut.onShowNotificationsDeniedDialog = nil
+
+        let response = await sut.showNotificationsDeniedDialog(params: ["daysBeforeCancel": 2], original: WKScriptMessage.mock())
+        let result = try XCTUnwrap(response as? DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse)
+
+        XCTAssertEqual(result.action, .notNow)
+    }
+
+    func testShowNotificationsDeniedDialog_PassesDaysBeforeCancelToDialog() async throws {
+        let spy = NotificationsDeniedDialogSpy()
+        let sut = makeFeature(notificationCenter: MockUNUserNotificationCenter(), deniedDialog: spy)
+
+        _ = await sut.showNotificationsDeniedDialog(params: ["daysBeforeCancel": 3], original: WKScriptMessage.mock())
+
+        XCTAssertEqual(spy.presentedDays, [3])
+    }
+
+    func testUserSettingsResponse_encodesNotificationsDeniedDialog() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.UserSettingsResponse(notificationsPermission: .denied,
+                                                                                          notificationsDeniedDialog: true)
+        let data = try JSONEncoder().encode(response)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(json.count, 2)
+        XCTAssertEqual(json["notificationsPermission"] as? String, "denied")
+        XCTAssertEqual(json["notificationsDeniedDialog"] as? Bool, true)
+    }
+
+    func testNotificationsDeniedDialogResponse_encodesOpenSettings() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse(action: .openSettings)
+        XCTAssertEqual(try jsonString(response), "{\"action\":\"openSettings\"}")
+    }
+
+    func testNotificationsDeniedDialogResponse_encodesNotNow() throws {
+        let response = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsDeniedDialogResponse(action: .notNow)
+        XCTAssertEqual(try jsonString(response), "{\"action\":\"notNow\"}")
+    }
+
+    func testNotificationsPermissionChangedEvent_encodesGranted() throws {
+        let event = DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionChangedEvent(notificationsPermission: .granted)
+        XCTAssertEqual(try jsonString(event), "{\"notificationsPermission\":\"granted\"}")
+    }
+
     private func jsonString<T: Encodable>(_ value: T) throws -> String {
         let data = try JSONEncoder().encode(value)
         return try XCTUnwrap(String(data: data, encoding: .utf8))
+    }
+}
+
+final class NotificationsDeniedDialogSpy {
+    private(set) var presentedDays: [Int] = []
+
+    func show(daysBeforeCancel: Int) async -> NotificationsDeniedDialogAction {
+        presentedDays.append(daysBeforeCancel)
+        return .notNow
     }
 }
 
@@ -1764,7 +1738,6 @@ final class MockSubscriptionTierEventReporter: SubscriptionTierEventReporting {
     var successCalled = false
     var failureCalled = false
     var failureError: Error?
-    var unexpectedProTierCalled = false
 
     func reportTierOptionsRequested() {
         requestedCalled = true
@@ -1777,9 +1750,5 @@ final class MockSubscriptionTierEventReporter: SubscriptionTierEventReporting {
     func reportTierOptionsFailure(error: Error) {
         failureCalled = true
         failureError = error
-    }
-
-    func reportTierOptionsUnexpectedProTier() {
-        unexpectedProTierCalled = true
     }
 }

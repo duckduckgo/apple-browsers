@@ -265,9 +265,8 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         }
         result += PreferencePaneIdentifier.allCases.compactMap { pane in
             // Subscriber Offers opens a web page rather than a settings pane, so there is no pane to
-            // suggest navigating to. Skip Duck AI and Extensions too when unavailable.
+            // suggest navigating to. Skip Extensions too when unavailable.
             if pane == .partnershipsHub
-                || (pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat))
                 || (pane == .extensions && !webExtensionAvailability.isExtensionManagementAvailable) {
                 return nil
             }

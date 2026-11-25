@@ -35,7 +35,6 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
     var userEvents: [PreferencesSubscriptionSettingsModel.UserEvent] = []
     var subscriptionStateSubject: PassthroughSubject<PreferencesSidebarSubscriptionState, Never>!
     var cancellables: Set<AnyCancellable> = []
-    var isProTierPurchaseEnabled: Bool = false
     var capturedCancelPendingDowngradeProductId: String?
 
     override func setUp() {
@@ -47,7 +46,6 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
         mockBlackFridayCampaignProvider = MockBlackFridayCampaignProvider()
         userEvents = []
         subscriptionStateSubject = PassthroughSubject<PreferencesSidebarSubscriptionState, Never>()
-        isProTierPurchaseEnabled = false
 
         sut = makeSUT()
     }
@@ -70,7 +68,6 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             keyValueStore: mockKeyValueStore,
             winBackOfferVisibilityManager: mockWinBackOfferManager,
             blackFridayCampaignProvider: mockBlackFridayCampaignProvider,
-            isProTierPurchaseEnabled: { [weak self] in self?.isProTierPurchaseEnabled ?? false },
             cancelPendingDowngradeHandler: cancelPendingDowngradeHandler
         )
     }
@@ -330,7 +327,6 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
     func testTierBadgeToDisplay_WhenProTier_AlwaysReturnsPro() {
         // Given - Pro tier with feature flag OFF
-        isProTierPurchaseEnabled = false
         sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .pro))
 
         // Wait for async subscription update
@@ -346,9 +342,8 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
         XCTAssertEqual(sut.tierBadgeToDisplay, .pro)
     }
 
-    func testTierBadgeToDisplay_WhenPlusTierAndFeatureFlagEnabled_ReturnsPlus() {
+    func testTierBadgeToDisplay_WhenPlusTier_ReturnsPlus() {
         // Given - Plus tier with feature flag ON
-        isProTierPurchaseEnabled = true
         sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
 
         // Wait for async subscription update
@@ -364,29 +359,10 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
         XCTAssertEqual(sut.tierBadgeToDisplay, .plus)
     }
 
-    func testTierBadgeToDisplay_WhenPlusTierAndFeatureFlagDisabled_ReturnsNil() {
-        // Given - Plus tier with feature flag OFF
-        isProTierPurchaseEnabled = false
-        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
-
-        // Wait for async subscription update
-        let expectation = expectation(description: "Subscription status updated")
-        sut.$subscriptionStatus
-            .dropFirst()
-            .sink { _ in expectation.fulfill() }
-            .store(in: &cancellables)
-
-        wait(for: [expectation], timeout: 1.0)
-
-        // Then
-        XCTAssertNil(sut.tierBadgeToDisplay)
-    }
-
     // MARK: - Should Show View All Plans Tests
 
-    func testShouldShowViewAllPlans_WhenActiveSubscriptionAndFeatureFlagEnabled_ReturnsTrue() {
+    func testShouldShowViewAllPlans_WhenActiveSubscription_ReturnsTrue() {
         // Given - Active subscription with feature flag ON
-        isProTierPurchaseEnabled = true
         sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
 
         // Wait for async subscription update
@@ -404,7 +380,6 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
     func testShouldShowViewAllPlans_WhenActiveProTierSubscription_ReturnsTrue() {
         // Given - Active Pro tier subscription with feature flag OFF
-        isProTierPurchaseEnabled = false
         sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .pro))
 
         // Wait for async subscription update
@@ -422,26 +397,7 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
     func testShouldShowViewAllPlans_WhenExpiredSubscription_ReturnsFalse() {
         // Given - Expired subscription
-        isProTierPurchaseEnabled = true
         sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .expired, tier: .plus))
-
-        // Wait for async subscription update
-        let expectation = expectation(description: "Subscription status updated")
-        sut.$subscriptionStatus
-            .dropFirst()
-            .sink { _ in expectation.fulfill() }
-            .store(in: &cancellables)
-
-        wait(for: [expectation], timeout: 1.0)
-
-        // Then
-        XCTAssertFalse(sut.shouldShowViewAllPlans)
-    }
-
-    func testShouldShowViewAllPlans_WhenPlusTierAndFeatureFlagDisabled_ReturnsFalse() {
-        // Given - Plus tier with feature flag OFF
-        isProTierPurchaseEnabled = false
-        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
 
         // Wait for async subscription update
         let expectation = expectation(description: "Subscription status updated")
@@ -628,7 +584,6 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
     func testShouldShowUpgrade_WhenInactiveSubscription_ReturnsFalse() {
         // Given - Expired subscription with feature flag ON and upgrades available
-        isProTierPurchaseEnabled = true
         let availableChanges = DuckDuckGoSubscription.AvailableChanges(
             upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
             downgrade: []
@@ -652,35 +607,8 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
         XCTAssertFalse(sut.shouldShowUpgrade)
     }
 
-    func testShouldShowUpgrade_WhenFeatureFlagDisabled_ReturnsFalse() {
-        // Given - Active subscription with feature flag OFF and upgrades available
-        isProTierPurchaseEnabled = false
-        let availableChanges = DuckDuckGoSubscription.AvailableChanges(
-            upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
-            downgrade: []
-        )
-        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
-            status: .autoRenewable,
-            tier: .plus,
-            availableChanges: availableChanges
-        ))
-
-        // Wait for async subscription update
-        let expectation = expectation(description: "Subscription status updated")
-        sut.$subscriptionStatus
-            .dropFirst()
-            .sink { _ in expectation.fulfill() }
-            .store(in: &cancellables)
-
-        wait(for: [expectation], timeout: 1.0)
-
-        // Then
-        XCTAssertFalse(sut.shouldShowUpgrade)
-    }
-
     func testShouldShowUpgrade_WhenNoAvailableUpgrades_ReturnsFalse() {
         // Given - Active subscription with feature flag ON but no upgrades available
-        isProTierPurchaseEnabled = true
         let availableChanges = DuckDuckGoSubscription.AvailableChanges(
             upgrade: [],
             downgrade: [DuckDuckGoSubscription.TierChange(tier: "plus", productIds: [], order: 1)]
@@ -706,7 +634,6 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
 
     func testShouldShowUpgrade_WhenAllConditionsMet_ReturnsTrue() {
         // Given - Active subscription with feature flag ON and upgrades available
-        isProTierPurchaseEnabled = true
         let availableChanges = DuckDuckGoSubscription.AvailableChanges(
             upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
             downgrade: []
@@ -981,7 +908,6 @@ final class PreferencesSubscriptionSettingsModelTests: XCTestCase {
             upgrade: [DuckDuckGoSubscription.TierChange(tier: "pro", productIds: [], order: 1)],
             downgrade: []
         )
-        isProTierPurchaseEnabled = true
         sut = makeSUT(subscription: SubscriptionMockFactory.subscription(
             status: .autoRenewable,
             tier: .pro,

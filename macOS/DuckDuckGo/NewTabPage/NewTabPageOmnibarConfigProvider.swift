@@ -458,23 +458,22 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private var usageLimitsCancellables = Set<AnyCancellable>()
     private var defaultChangesCancellable: AnyCancellable?
     private var userDefaultModelChangesCancellable: AnyCancellable?
-    private var shownNewTabPageTabIDs: Set<String> = []
+    private var newTabPageTabIDsSincePickEnded: Set<String> = []
     private var newTabPageTabsCancellable: AnyCancellable?
 
-    /// Every page shares one pick, so a page shown for another tab starts on the default.
+    /// Every page shares one pick, so it ends once the page shows for a tab it hasn't shown on since.
     @MainActor
     private func endPickWhenAnotherTabShowsTheNewTabPage() {
         guard newChatDefaults != nil, let windowControllersManager else { return }
-        shownNewTabPageTabIDs = Self.newTabPageTabIDsShown(in: windowControllersManager)
+        newTabPageTabIDsSincePickEnded = Self.newTabPageTabIDsShown(in: windowControllersManager)
         newTabPageTabsCancellable = windowControllersManager.tabsChanged
             .receive(on: DispatchQueue.main)
             .sink { [weak self, weak windowControllersManager] in
                 guard let self, let windowControllersManager else { return }
                 let shownTabIDs = Self.newTabPageTabIDsShown(in: windowControllersManager)
-                if !shownTabIDs.isSubset(of: shownNewTabPageTabIDs) {
-                    modelPick.endPick()
-                }
-                shownNewTabPageTabIDs = shownTabIDs
+                guard !shownTabIDs.isSubset(of: newTabPageTabIDsSincePickEnded) else { return }
+                modelPick.endPick()
+                newTabPageTabIDsSincePickEnded = shownTabIDs
             }
     }
 

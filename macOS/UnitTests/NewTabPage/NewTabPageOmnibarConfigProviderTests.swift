@@ -1586,6 +1586,21 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertEqual(provider.selectedModelId, "luna")
     }
 
+    func testWhenReturningToTheSameNewTabPageAfterAnotherTab_ThenThePickStays() async throws {
+        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
+        provider.selectedModelId = "luna"
+
+        tabs.append(tab: Tab(content: .none))
+        tabsChanged.send()
+        await Task.yield()
+        tabs.select(at: .unpinned(0))
+        tabsChanged.send()
+        await Task.yield()
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+    }
+
     private func makeWindowWithNewTabPage() -> (WindowControllersManagerMock, PassthroughSubject<Void, Never>, TabCollectionViewModel) {
         let windowControllersManager = WindowControllersManagerMock()
         let tabsChanged = PassthroughSubject<Void, Never>()

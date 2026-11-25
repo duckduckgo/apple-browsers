@@ -24,7 +24,6 @@ import FeatureFlags_macOS
 import Foundation
 import MaliciousSiteProtection
 import os.log
-import PixelKit
 import PrivacyConfig
 import UserScript
 import WebKit
@@ -54,7 +53,6 @@ final class LinkedPageContextLoader: LinkedPageContextLoading {
     private let maliciousSiteDetector: MaliciousSiteDetecting
     private let isGPCEnabled: () -> Bool
     private let featureFlagger: FeatureFlagger
-    private let onRetryWithoutSession: () -> Void
     var sessionReadDomains = Set<String>()
 
     private lazy var linkProtection = LinkProtection(privacyManager: contentBlocking.privacyConfigurationManager,
@@ -67,17 +65,13 @@ final class LinkedPageContextLoader: LinkedPageContextLoading {
          httpsUpgrade: HTTPSUpgrade,
          maliciousSiteDetector: MaliciousSiteDetecting,
          isGPCEnabled: @escaping () -> Bool,
-         featureFlagger: FeatureFlagger,
-         onRetryWithoutSession: @escaping () -> Void = {
-             PixelKit.fire(AIChatPixel.aiChatLinkAskAboutPageRetryWithoutSession, frequency: .dailyAndCount)
-         }) {
+         featureFlagger: FeatureFlagger) {
         self.burnerMode = burnerMode
         self.contentBlocking = contentBlocking
         self.httpsUpgrade = httpsUpgrade
         self.maliciousSiteDetector = maliciousSiteDetector
         self.isGPCEnabled = isGPCEnabled
         self.featureFlagger = featureFlagger
-        self.onRetryWithoutSession = onRetryWithoutSession
     }
 
     nonisolated static func isSupported(_ url: URL) -> Bool {
@@ -106,8 +100,7 @@ final class LinkedPageContextLoader: LinkedPageContextLoading {
             sessionReadDomains.insert(host)
         }
 
-        return await Self.read(with: { withSession in await self.read(request, withSession: withSession) },
-                               onRetryWithoutSession: onRetryWithoutSession)
+        return await Self.read(with: { withSession in await self.read(request, withSession: withSession) })
     }
 
     /// Returns nil for a request that must not load: there's no warning page to show here.
@@ -128,11 +121,9 @@ final class LinkedPageContextLoader: LinkedPageContextLoading {
     }
 
     /// A cross-origin redirect restarts the read without the session, so the session can't cause side effects there.
-    static func read(with attempt: (_ withSession: Bool) async -> LinkedPageContextLoadResult,
-                     onRetryWithoutSession: () -> Void) async -> LinkedPageContextLoadResult {
+    static func read(with attempt: (_ withSession: Bool) async -> LinkedPageContextLoadResult) async -> LinkedPageContextLoadResult {
         let result = await attempt(true)
         guard result == .failed(.redirectBlocked), !Task.isCancelled else { return result }
-        onRetryWithoutSession()
         return await attempt(false)
     }
 

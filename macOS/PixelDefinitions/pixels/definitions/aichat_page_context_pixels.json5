@@ -127,13 +127,6 @@
             }
         ]
     },
-    "aichat_link_ask_about_page_retry_without_session_macos": {
-        "description": "Fired when a linked page the user asked Duck.ai about redirected to another origin, so it is read again without the user's cookies or logins",
-        "owners": ["jotaemepereira"],
-        "triggers": ["other"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
     "aichat_link_ask_about_page_macos": {
         "description": "Fired when the user picks Ask about page for a link, in its context menu or in a DuckDuckGo search result's menu, to attach the linked page to the Duck.ai sidebar",
         "owners": ["jotaemepereira"],

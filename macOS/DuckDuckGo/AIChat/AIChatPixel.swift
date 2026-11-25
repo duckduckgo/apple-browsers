@@ -184,9 +184,6 @@ enum AIChatPixel: PixelKit.Event {
     /// to ask Duck.ai about the linked page.
     case aiChatLinkAskAboutPage(linkType: AIChatLinkAskAboutPageType, source: AIChatLinkAskAboutPageSource)
 
-    /// Event Trigger: A linked page asked about redirected to another origin, so it's read again without the user's session.
-    case aiChatLinkAskAboutPageRetryWithoutSession
-
     // MARK: - Deleting chat history
 
     /// Event Trigger: User requests to delete Duck.ai chat history from the fire button or history delete dialog
@@ -742,8 +739,6 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_page_context_extraction_prevented"
         case .aiChatLinkAskAboutPage:
             return "aichat_link_ask_about_page_macos"
-        case .aiChatLinkAskAboutPageRetryWithoutSession:
-            return "aichat_link_ask_about_page_retry_without_session_macos"
         case let .aiChatAutoClearHistorySettingToggled(enabled):
             if enabled {
                 return "m_mac_aichat_history_autoclear_enabled"
@@ -1157,7 +1152,6 @@ enum AIChatPixel: PixelKit.Event {
                 .aiFeaturesHideImagesOff,
                 .aiChatAddressBarCustomizeResponsesOpened,
                 .aiChatNtpCustomizeResponsesOpened,
-                .aiChatLinkAskAboutPageRetryWithoutSession,
                 .serpSettingsUnrecognizedValue:
             return nil
         case .aiChatMetricStartNewConversation(let source, let hasPageContext, let surface, let firstPromptNewInstall),
@@ -1343,7 +1337,6 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatTitleBarMenuShown,
                 .aiChatTitleBarMenuOutcome,
                 .aiChatLinkAskAboutPage,
-                .aiChatLinkAskAboutPageRetryWithoutSession,
                 .aiChatTitleBarMiddleClickNewChat,
                 .aiChatSummarizeText,
                 .aiChatSummarizeSourceLinkClicked,
@@ -1512,7 +1505,6 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatTitleBarMenuShown,
                 .aiChatTitleBarMenuOutcome,
                 .aiChatLinkAskAboutPage,
-                .aiChatLinkAskAboutPageRetryWithoutSession,
                 .aiChatTitleBarMiddleClickNewChat,
                 .aiChatScreenshotPermissionNeeded,
                 .aiChatScreenshotPermissionAlertAccepted,

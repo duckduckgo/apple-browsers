@@ -33,7 +33,7 @@ final class NavigationProtectionTabExtension {
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let featureFlagger: FeatureFlagger
 
-    private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, _, _ in
+    static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, _, _ in
         switch event {
         case .ampBlockingRulesCompilationFailed:
             PixelKit.fire(GeneralPixel.ampBlockingRulesCompilationFailed)

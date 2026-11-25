@@ -131,6 +131,7 @@ let package = Package(
                 "GRDB",
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -738,7 +739,8 @@ let package = Package(
             resources: [
                 .process("testUserScript.js"),
                 .process("testLoadJSReplacements.js")
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "DuckAiDataStoreTests",
@@ -788,16 +790,19 @@ let package = Package(
                 .copy("Resources/Database_V1.sqlite"),
                 .copy("Resources/Database_V1.sqlite-shm"),
                 .copy("Resources/Database_V1.sqlite-wal"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "ConfigurationTests",
             dependencies: [
+                .product(name: "Common", package: "Common"),
                 "SharedObjCTestsUtils",
                 "Configuration",
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SyncDataProvidersTests",
@@ -865,7 +870,8 @@ let package = Package(
             resources: [
                 .copy("Resources/phishingHashPrefixes.json"),
                 .copy("Resources/phishingFilterSet.json"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "PixelExperimentKitTests",
@@ -921,7 +927,8 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "AutoconsentStats",
                 .product(name: "Persistence", package: "Persistence"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ],
     cxxLanguageStandard: .cxx11

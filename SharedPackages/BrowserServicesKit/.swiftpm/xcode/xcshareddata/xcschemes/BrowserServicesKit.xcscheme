@@ -314,9 +314,49 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "RemoteMessagingTests"
+               BuildableName = "RemoteMessagingTests"
+               BlueprintName = "RemoteMessagingTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "UserScriptTests"
+               BuildableName = "UserScriptTests"
+               BlueprintName = "UserScriptTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MaliciousSiteProtectionTests"
+               BuildableName = "MaliciousSiteProtectionTests"
+               BlueprintName = "MaliciousSiteProtectionTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "SuggestionsTests"
                BuildableName = "SuggestionsTests"
                BlueprintName = "SuggestionsTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "ConfigurationTests"
+               BuildableName = "ConfigurationTests"
+               BlueprintName = "ConfigurationTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

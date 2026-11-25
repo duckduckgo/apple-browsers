@@ -51,6 +51,7 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     private let pixelFiring: (any PixelKitFiring)?
     private let settings: VPNSettings
     private lazy var startupMonitor = VPNStartupMonitor()
+    private lazy var connectionStatusMonitor = VPNConnectionStatusMonitor(notificationCenter: notificationCenter)
     private var cancellables = Set<AnyCancellable>()
 
     /// Publishes pre-session failures and disconnect reasons observed during startup.
@@ -593,31 +594,27 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
     // MARK: - Observing Status Changes
 
     private func subscribeToStatusChanges() {
-        notificationCenter.publisher(for: .NEVPNStatusDidChange)
-            .sink { [weak self] value in
-                self?.handleStatusChange(value)
-            }
-            .store(in: &cancellables)
+        Task { @MainActor [weak self] in
+            self?.connectionStatusMonitor.observe(onStatus: { [weak self] connection, status in
+                self?.handleStatusChange(connection, status: status)
+            })
+        }
     }
 
-    private func handleStatusChange(_ notification: Notification) {
+    @MainActor
+    private func handleStatusChange(_ connection: NEVPNConnection, status: NEVPNStatus) {
         guard !debugFeatures.alwaysOnDisabled,
-              let session = (notification.object as? NETunnelProviderSession),
-              session.status != previousStatus,
-              let manager = session.manager as? NETunnelProviderManager else {
+              status != previousStatus,
+              let manager = connection.manager as? NETunnelProviderManager else {
             return
         }
 
-        Task { @MainActor in
-            previousStatus = session.status
-
-            switch session.status {
-            case .connected:
+        previousStatus = status
+        if status == .connected {
+            Task { @MainActor in
+                guard connection.status == .connected else { return }
                 try await enableOnDemand(tunnelManager: manager)
-            default:
-                break
             }
-
         }
     }
 

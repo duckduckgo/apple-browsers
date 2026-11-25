@@ -251,7 +251,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         defaults: userDefaults,
         wideEvent: wideEvent,
         subscriptionManager: subscriptionManager,
-        vpnAppState: vpnAppState)
+        vpnAppState: vpnAppState,
+        onStartupFailure: { [weak self] in self?.vpnNotificationsObserver.replayPendingStartupNotification() })
 
     /// An IPC server that provides access to the tunnel controller.
     ///
@@ -315,7 +316,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private lazy var vpnAppEventsHandler = {
-        VPNAppEventsHandler(tunnelController: tunnelController, settings: tunnelSettings, notifications: vpnNotificationsObserver)
+        VPNAppEventsHandler(tunnelController: tunnelController, appState: vpnAppState, settings: tunnelSettings)
     }()
 
     @MainActor
@@ -494,7 +495,9 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
         Logger.networkProtection.log("DuckDuckGoVPN started")
 
-        vpnNotificationsObserver.startObservingVPNStatusChanges()
+        vpnNotificationsObserver.startObservingVPNStatusChanges { [weak self] in
+            await self?.tunnelController.activeSession()
+        }
 
         // Setup Remote Configuration
         configurationManager.start()

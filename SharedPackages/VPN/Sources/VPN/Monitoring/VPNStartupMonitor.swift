@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import Combine
 import Foundation
 import NetworkExtension
 
@@ -67,8 +66,6 @@ public final class VPNStartupMonitor {
     private let notificationCenter: NotificationCenter
     private let statusProvider: (NEVPNConnection) -> NEVPNStatus
     private let disconnectErrorProvider: (NEVPNConnection) async throws -> Void
-    @MainActor private var disconnectObservation: AnyCancellable?
-    @MainActor private var isReportingFailure = false
 
     public init(notificationCenter: NotificationCenter = .default,
                 statusProvider: @escaping (NEVPNConnection) -> NEVPNStatus = { $0.status },
@@ -80,46 +77,6 @@ public final class VPNStartupMonitor {
         self.notificationCenter = notificationCenter
         self.statusProvider = statusProvider
         self.disconnectErrorProvider = disconnectErrorProvider
-    }
-
-    /// Watches the active profile for missing-token and blocked-retry errors, including future On Demand attempts.
-    @MainActor
-    public func observeOnDemandStartupFailures(
-        manager: @escaping @MainActor () async -> NETunnelProviderManager?,
-        onFailure: @escaping @MainActor (NETunnelProviderManager, PacketTunnelProvider.TunnelError.Code) async -> Void
-    ) {
-        disconnectObservation = notificationCenter.publisher(for: .NEVPNStatusDidChange)
-            .sink { [weak self] notification in
-                guard let self, let connection = notification.object as? NEVPNConnection else { return }
-                let status = statusProvider(connection)
-                guard status == .disconnecting || status == .disconnected else { return }
-
-                Task { @MainActor in
-                    guard let current = await manager(), current.connection === connection, current.isOnDemandEnabled,
-                          let code = await self.onDemandFailureCode(for: connection),
-                          !self.isReportingFailure, current.isOnDemandEnabled else { return }
-                    // Both disconnect transitions may report the same failure while recovery is in progress.
-                    self.isReportingFailure = true
-                    defer { self.isReportingFailure = false }
-                    await onFailure(current, code)
-                }
-            }
-    }
-
-    @MainActor
-    private func onDemandFailureCode(for connection: NEVPNConnection) async -> PacketTunnelProvider.TunnelError.Code? {
-        do {
-            try await disconnectErrorProvider(connection)
-            return nil
-        } catch {
-            let failure = StartupError.startTunnelDisconnectedSilently(underlyingError: error)
-            let status = statusProvider(connection)
-            guard status != .connected, status != .reasserting,
-                  let reason = failure.disconnectReason, reason.domain == PacketTunnelProvider.TunnelError.errorDomain,
-                  let code = PacketTunnelProvider.TunnelError.Code(rawValue: reason.code),
-                  code == .startingTunnelWithoutAuthToken || code == .reconnectBlocked else { return nil }
-            return code
-        }
     }
 
     /// Classifies an observed VPN status while waiting for a terminal state.

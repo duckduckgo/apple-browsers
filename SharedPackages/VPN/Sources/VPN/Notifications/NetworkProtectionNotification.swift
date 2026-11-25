@@ -107,6 +107,9 @@ public enum NetworkProtectionNotification: String {
     case showExpiredEntitlementNotification
     case showTestNotification
     case showStrictRoutingReminderNotification
+#if os(macOS)
+    case pendingStartupNotification
+#endif
 
     // Server Selection
     case serverSelected

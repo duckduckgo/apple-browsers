@@ -19,21 +19,23 @@
 import AppKitExtensions
 
 import Foundation
-import NetworkExtension
 import Common
 import VPN
 import os.log
+import VPNAppState
 
 final class VPNAppEventsHandler {
 
+    private let appState: VPNAppState
     private let tunnelController: NetworkProtectionTunnelController
     private let settings: VPNSettings
-    private let notifications: VPNNotificationsObserver
 
-    init(tunnelController: NetworkProtectionTunnelController, settings: VPNSettings, notifications: VPNNotificationsObserver) {
+    init(tunnelController: NetworkProtectionTunnelController,
+         appState: VPNAppState,
+         settings: VPNSettings) {
+        self.appState = appState
         self.tunnelController = tunnelController
         self.settings = settings
-        self.notifications = notifications
     }
 
     func appDidFinishLaunching() {
@@ -58,10 +60,6 @@ final class VPNAppEventsHandler {
 
     @MainActor
     func handleTunnelAtLaunch(launchedAtLogin: Bool) async {
-        tunnelController.startupMonitor.observeOnDemandStartupFailures(
-            manager: { [weak tunnelController] in await tunnelController?.manager },
-            onFailure: { [weak self] manager, code in await self?.recoverOnDemandFailure(for: manager, code: code) }
-        )
         guard launchedAtLogin else { return }
         if await !tunnelController.isConnected && settings.connectOnLogin {
             await tunnelController.start()
@@ -70,27 +68,15 @@ final class VPNAppEventsHandler {
 
     // MARK: - Private code
 
-    @MainActor
-    private func recoverOnDemandFailure(for manager: NETunnelProviderManager, code: PacketTunnelProvider.TunnelError.Code) async {
-        do {
-            guard try await tunnelController.stopAfterOnDemandFailure(manager) else { return }
-        } catch {
-            Logger.networkProtection.error("Failed to disable VPN On Demand after a startup failure: \(error.localizedDescription, privacy: .public)")
-            return
-        }
-
-        if code == .startingTunnelWithoutAuthToken {
-            notifications.showEntitlementNotification()
-        } else {
-            notifications.showConnectionFailureNotification()
-        }
-    }
-
     private func restartTunnel() {
         Task {
             // Restart NetP SysEx on app update
-            if await tunnelController.isConnected {
+            // An On Demand start in progress must be allowed to finish or report its failure.
+            switch await tunnelController.status {
+            case .connected, .reasserting:
                 await tunnelController.restart()
+            default:
+                break
             }
         }
     }

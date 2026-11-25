@@ -34,6 +34,8 @@ import WireGuard
 
 final class MacPacketTunnelProvider: PacketTunnelProvider {
 
+    override var relaysStartupNotificationsToMenuApp: Bool { !Self.isAppex }
+
     static var isAppex: Bool {
 #if NETP_SYSTEM_EXTENSION
         false

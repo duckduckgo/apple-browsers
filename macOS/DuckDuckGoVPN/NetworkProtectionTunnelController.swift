@@ -81,12 +81,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }()
 
     private(set) lazy var startupMonitor = VPNStartupMonitor(notificationCenter: notificationCenter)
+    private lazy var connectionStatusMonitor = VPNConnectionStatusMonitor(notificationCenter: notificationCenter)
+    private var userOperationRevision = 0
+    private var activeUserStarts = 0
+    private var recoverySaveTask: Task<Void, Error>?
+    @MainActor private var isRecoveringOnDemandFailure = false
 
     private let networkExtensionController: NetworkExtensionController
 
     // MARK: - Notification Center
 
     private let notificationCenter: NotificationCenter
+    private let onStartupFailure: @MainActor () -> Void
 
     /// The tunnel manager
     ///
@@ -175,6 +181,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// - Parameters:
     ///         - notificationCenter: (meant for testing) the notification center that this object will use.
     ///
+    @MainActor
     init(availableExtensions: VPNExtensionResolver.AvailableExtensions,
          networkExtensionController: NetworkExtensionController,
          featureFlagger: FeatureFlagger,
@@ -183,12 +190,14 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          wideEvent: WideEventManaging,
          notificationCenter: NotificationCenter = .default,
          subscriptionManager: any SubscriptionManager,
-         vpnAppState: VPNAppState) {
+         vpnAppState: VPNAppState,
+         onStartupFailure: @escaping @MainActor () -> Void) {
 
         self.availableExtensions = availableExtensions
         self.featureFlagger = featureFlagger
         self.networkExtensionController = networkExtensionController
         self.notificationCenter = notificationCenter
+        self.onStartupFailure = onStartupFailure
         self.settings = settings
         self.defaults = defaults
         self.wideEvent = wideEvent
@@ -201,28 +210,41 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Observing Status Changes
 
+    @MainActor
     private func subscribeToStatusChanges() {
-        notificationCenter.publisher(for: .NEVPNStatusDidChange)
-            .sink { [weak self] status in
+        connectionStatusMonitor.observe(
+            onStatus: { [weak self] _, status in
                 self?.handleStatusChange(status)
+            },
+            currentConnection: { [weak self] in await self?.connection },
+            onFailure: { [weak self] connection, _ in
+                guard let self, let manager = connection.manager as? NETunnelProviderManager else { return }
+                self.onStartupFailure()
+                do {
+                    _ = try await self.stopAfterOnDemandFailure(manager)
+                } catch {
+                    Logger.networkProtection.error("Failed to disable VPN On Demand after a startup failure: \(error.localizedDescription, privacy: .public)")
+                }
             }
-            .store(in: &cancellables)
+        )
     }
 
-    private func handleStatusChange(_ notification: Notification) {
-        Logger.networkProtection.log("VPN handle status change: \(notification.debugDescription, privacy: .public)")
-        guard let session = (notification.object as? NETunnelProviderSession),
-              session.status != previousStatus else {
-            return
+    @MainActor
+    private func handleStatusChange(_ status: NEVPNStatus) {
+        guard status != previousStatus else { return }
+        previousStatus = status
+        if status == .invalid {
+            clearInternalManager()
         }
+    }
 
-        Task { @MainActor in
-            previousStatus = session.status
-
-            if session.status == .invalid {
-                clearInternalManager()
-            }
-        }
+    @MainActor
+    private func beginUserOperation() async {
+        userOperationRevision += 1
+        connectionStatusMonitor.resetPendingFailures()
+        // A preference save cannot be cancelled once submitted. Finish it before a newer user
+        // operation saves its configuration, so recovery cannot overwrite that operation.
+        try? await recoverySaveTask?.value
     }
 
     // MARK: - Observing Configuation Changes
@@ -390,9 +412,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             let protocolConfiguration = tunnelManager.protocolConfiguration as? NETunnelProviderProtocol ?? NETunnelProviderProtocol()
             protocolConfiguration.serverAddress = "127.0.0.1" // Dummy address... the NetP service will take care of grabbing a real server
             protocolConfiguration.providerBundleIdentifier = extensionBundleID
-            protocolConfiguration.providerConfiguration = [
-                NetworkProtectionOptionKey.defaultPixelHeaders: APIRequest.Headers().httpHeaders
-            ]
+            var options: [String: Any] = [NetworkProtectionOptionKey.defaultPixelHeaders: APIRequest.Headers().httpHeaders]
+            if extensionBundleID == Bundle.tunnelSysexBundleID {
+                let key = VPNStartupNotificationIncident.profileIdentifierKey
+                options[key] = protocolConfiguration.providerConfiguration?[key] as? String ?? UUID().uuidString
+            }
+            protocolConfiguration.providerConfiguration = options
 
             // always-on
             protocolConfiguration.disconnectOnSleep = false
@@ -682,6 +707,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     @MainActor
     func start() async {
+        activeUserStarts += 1
+        defer { activeUserStarts -= 1 }
+        await beginUserOperation()
         Logger.networkProtection.log("🚀 Start VPN")
         await refreshSystemState()
         setupAndStartConnectionWideEvent()
@@ -889,6 +917,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     func stop(disableOnDemand: Bool) async {
+        await beginUserOperation()
         guard let manager = await manager else {
             return
         }
@@ -912,11 +941,24 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     func stopAfterOnDemandFailure(_ manager: NETunnelProviderManager) async throws -> Bool {
+        let revision = userOperationRevision
+        guard !isRecoveringOnDemandFailure, activeUserStarts == 0, manager.connection === internalManager?.connection else { return false }
+        isRecoveringOnDemandFailure = true
+        defer { isRecoveringOnDemandFailure = false }
         try await manager.loadFromPreferences()
-        guard manager.isOnDemandEnabled else { return false }
+        guard revision == userOperationRevision,
+              manager.connection === internalManager?.connection,
+              manager.isOnDemandEnabled else { return false }
         switch manager.connection.status {
         case .disconnecting, .disconnected, .connecting:
-            try await saveOnDemandDisabled(for: manager)
+            let saveTask = Task { @MainActor in
+                try await saveOnDemandDisabled(for: manager, revision: revision)
+            }
+            recoverySaveTask = saveTask
+            defer { recoverySaveTask = nil }
+            try await saveTask.value
+            guard revision == userOperationRevision,
+                  manager.connection === internalManager?.connection else { return false }
             if manager.connection.status == .connecting {
                 manager.connection.stopVPNTunnel()
             }
@@ -934,6 +976,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     @MainActor
     func restart() async {
+        activeUserStarts += 1
+        defer { activeUserStarts -= 1 }
+        await beginUserOperation()
         guard let internalManager else {
             // This is a temporary thing because we know this method works well
             // in case we need to roll back auth v2
@@ -962,7 +1007,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     @MainActor
-    private func disableOnDemand(tunnelManager: NETunnelProviderManager) async throws {
+    func disableOnDemand(tunnelManager: NETunnelProviderManager) async throws {
         try await tunnelManager.loadFromPreferences()
 
         guard tunnelManager.connection.status != .invalid else {
@@ -973,17 +1018,21 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             return
         }
 
-        try await saveOnDemandDisabled(for: tunnelManager)
+        tunnelManager.isOnDemandEnabled = false
+
+        try await tunnelManager.saveToPreferences()
     }
 
     @MainActor
-    private func saveOnDemandDisabled(for manager: NETunnelProviderManager) async throws {
+    private func saveOnDemandDisabled(for manager: NETunnelProviderManager, revision: Int) async throws {
         let wasEnabled = manager.isOnDemandEnabled
         manager.isOnDemandEnabled = false
         do {
             try await manager.saveToPreferences()
         } catch {
-            manager.isOnDemandEnabled = wasEnabled
+            if revision == userOperationRevision {
+                manager.isOnDemandEnabled = wasEnabled
+            }
             throw error
         }
     }

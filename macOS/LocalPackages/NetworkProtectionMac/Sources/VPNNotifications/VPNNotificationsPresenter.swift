@@ -154,6 +154,20 @@ public final class VPNNotificationsPresenter: NSObject, VPNNotificationsPresenti
         showNotification(.expiredEntitlement, content)
     }
 
+    /// Returns true only after Notification Center accepts the incident for delivery.
+    public func showStartupFailureNotification(incidentIdentifier: UUID) async throws -> Bool {
+        let authorized = await withCheckedContinuation { continuation in
+            requestAlertAuthorization { continuation.resume(returning: $0) }
+        }
+        guard authorized else { return false }
+        let content = notificationContent(title: UserText.vpnConnectionFailureNotificationTitle,
+                                          subtitle: UserText.vpnConnectionFailureNotificationSubtitle)
+        let request = UNNotificationRequest(identifier: "ddg-vpn.notification.startup-auth.\(incidentIdentifier.uuidString)",
+                                            content: content, trigger: nil)
+        try await userNotificationCenter.add(request)
+        return true
+    }
+
     public func showSnoozingNotification(duration: TimeInterval) {
         assertionFailure("macOS does not support VPN snooze")
     }

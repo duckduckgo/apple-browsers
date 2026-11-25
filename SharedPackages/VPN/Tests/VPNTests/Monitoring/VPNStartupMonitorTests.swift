@@ -79,68 +79,6 @@ final class VPNStartupMonitorTests: XCTestCase {
 
     // MARK: - Disconnection Failures
 
-    @MainActor
-    func testOnDemandFailureObserverReportsLaterBlockedRetry() async {
-        let manager = tunnelManager!
-        manager.isOnDemandEnabled = true
-        let reported = expectation(description: "Blocked retry reported")
-        monitor = VPNStartupMonitor(notificationCenter: notificationCenter, statusProvider: { _ in .disconnected },
-                                    disconnectErrorProvider: { _ in throw PacketTunnelProvider.TunnelError.reconnectBlocked })
-        monitor.observeOnDemandStartupFailures(manager: { manager }) { observed, code in
-            XCTAssertTrue(observed === manager)
-            XCTAssertEqual(code, .reconnectBlocked)
-            reported.fulfill()
-        }
-        postStatusChange(connection: manager.connection)
-        await fulfillment(of: [reported], timeout: 1)
-    }
-
-    @MainActor
-    func testOnDemandFailureObserverChecksAgainAfterDisconnectingWithoutAnError() async {
-        let manager = tunnelManager!
-        manager.isOnDemandEnabled = true
-        let firstLookup = expectation(description: "Disconnecting checked")
-        let reported = expectation(description: "Missing token reported")
-        mockStatus = .disconnecting
-        monitor = VPNStartupMonitor(notificationCenter: notificationCenter, statusProvider: { [weak self] _ in self?.mockStatus ?? .invalid },
-                                    disconnectErrorProvider: { [weak self] _ in
-            if self?.mockStatus == .disconnecting {
-                firstLookup.fulfill()
-                return
-            }
-            throw PacketTunnelProvider.TunnelError.startingTunnelWithoutAuthToken(internalError: URLError(.userAuthenticationRequired))
-        })
-        monitor.observeOnDemandStartupFailures(manager: { manager }) { _, code in
-            XCTAssertEqual(code, .startingTunnelWithoutAuthToken)
-            reported.fulfill()
-        }
-        postStatusChange(connection: manager.connection)
-        await fulfillment(of: [firstLookup], timeout: 1)
-        mockStatus = .disconnected
-        postStatusChange(connection: manager.connection)
-        await fulfillment(of: [reported], timeout: 1)
-    }
-
-    @MainActor
-    func testOnDemandFailureObserverChecksOnlyNewDisconnectsForItsProfile() async {
-        let manager = tunnelManager!
-        manager.isOnDemandEnabled = true
-        let lookup = expectation(description: "Matching disconnect checked once")
-        let otherManager = NETunnelProviderManager()
-        monitor = VPNStartupMonitor(notificationCenter: notificationCenter, statusProvider: { _ in .disconnected },
-                                    disconnectErrorProvider: { connection in
-            XCTAssertTrue(connection === manager.connection)
-            lookup.fulfill()
-            throw URLError(.notConnectedToInternet)
-        })
-        monitor.observeOnDemandStartupFailures(manager: { manager }) { _, _ in
-            XCTFail("Unrelated disconnect error reported")
-        }
-        postStatusChange(connection: otherManager.connection)
-        postStatusChange(connection: manager.connection)
-        await fulfillment(of: [lookup], timeout: 1)
-    }
-
     func testThrowsDisconnectedErrorWhenStatusBecomesDisconnected() async {
         let connection = tunnelManager.connection
         mockStatus = .connecting

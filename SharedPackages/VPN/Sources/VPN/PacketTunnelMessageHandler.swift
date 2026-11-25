@@ -69,6 +69,9 @@ final class PacketTunnelMessageHandler {
     private weak var tunnelLifecycle: (any TunnelLifecycleManaging)?
     private weak var snoozeManager: (any SnoozeManaging)?
     private weak var leakCheckController: (any LeakCheckControlling)?
+#if os(macOS)
+    var pendingStartupNotification: (() -> VPNStartupNotificationIncident?)?
+#endif
 
     init(keyStore: NetworkProtectionKeyStore,
          keyExpirationTester: KeyExpirationTesting,
@@ -167,6 +170,10 @@ final class PacketTunnelMessageHandler {
     private func handleRequest(_ request: ExtensionRequest, completionHandler: ((Data?) -> Void)? = nil) {
         Logger.networkProtectionIPC.log("⚪️ Handling app request: \(String(describing: request), privacy: .public)")
         switch request {
+#if os(macOS)
+        case .pendingStartupNotification:
+            completionHandler?(pendingStartupNotification?()?.rawValue)
+#endif
         case .changeTunnelSetting(let change):
             handleSettingChangeAppRequest(change, completionHandler: completionHandler)
             completionHandler?(nil)

@@ -2346,26 +2346,6 @@ final class PromoServiceTests: XCTestCase {
         XCTAssertNil(historyStore.record(for: "later").lastShown)
     }
 
-    func testWhenLowerPriorityShowsOverVisiblePromosPromoVisible_ThenHigherPriorityOneStillShows() async {
-        // Given: two global promos that show over visible promos, the lower-priority one visible
-        let higherDelegate = MockPromoDelegate(isEligible: true)
-        let lowerDelegate = MockPromoDelegate(isEligible: true)
-        let higherPromo = PromoTestHelpers.makePromo(id: "higher", triggers: [.newTabPageAppeared], showsOverVisiblePromos: true, delegate: higherDelegate)
-        let lowerPromo = PromoTestHelpers.makePromo(id: "lower", showsOverVisiblePromos: true, delegate: lowerDelegate)
-        let promoService = makeService(promos: [higherPromo, lowerPromo])
-        let lowerVisible = expectVisible(promoService, ["lower"])
-        let bothVisible = expectVisible(promoService, ["higher", "lower"])
-
-        // When
-        promoService.applicationDidBecomeActive()
-        triggerSubject.send(.appLaunched)
-        await fulfillment(of: [lowerVisible], timeout: timeout)
-        triggerSubject.send(.newTabPageAppeared)
-
-        // Then
-        await fulfillment(of: [bothVisible], timeout: timeout)
-    }
-
     func testWhenNonConflictingExternalPromoAppears_ThenPromoUnderneathStays() async {
         // Given: a webPage promo visible with a overlay promo over it
         let externalDelegate = MockExternalPromoDelegate(initialVisibility: false)

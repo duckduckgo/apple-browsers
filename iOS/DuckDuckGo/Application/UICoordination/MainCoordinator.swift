@@ -720,8 +720,7 @@ final class MainCoordinator {
     }
 
     private func declaredAgeAnchor() -> UIViewController? {
-        // Like modal prompts, the age request skips widget, shortcut and link launches, and a pending modal prompt goes first.
-        // Either way the next foreground retries.
+        // Widget, shortcut and link launches are skipped, and a pending modal prompt goes first: the next foreground retries.
         guard isReadyForLaunchPrompts,
               launchSourceManager.source == .standard,
               !promoCoordinationService.isModalPromptPending else { return nil }

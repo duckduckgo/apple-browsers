@@ -436,15 +436,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(configProvider.selectedReasoningEffort)
     }
 
-    @MainActor
-    func testWhenChatIsSubmittedThenConfigProviderIsTold() async throws {
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
-
-        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
-
-        XCTAssertEqual(configProvider.chatSubmittedCallCount, 1)
-    }
-
     // MARK: - reasoning effort (submitChat)
 
     @MainActor
@@ -896,7 +887,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         try await messageHelper.handleMessageExpectingNilResponse(named: .setImageGenerationActive, parameters: request)
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
-        XCTAssertEqual(configProvider.activateImageGenerationCallCount, 1)
+        XCTAssertEqual(configProvider.activateImageGenerationFromModelIds, [nil])
         XCTAssertEqual(config.createImageModelSwitch, notice)
     }
 
@@ -913,6 +904,71 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertNil(config.createImageModelSwitch)
+    }
+
+    // MARK: - per-tab model pick
+
+    @MainActor
+    func testWhenModelPickIsPerTabThenGetConfigSaysSoAndSendsThePreferredImageModel() async throws {
+        configProvider.isModelPickPerTab = true
+        configProvider.preferredImageGenerationModelId = "luna"
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enablePerTabModelPick, true)
+        XCTAssertEqual(config.imageGenerationModelId, "luna")
+    }
+
+    @MainActor
+    func testWhenModelPickIsSharedThenGetConfigSendsNoPreferredImageModel() async throws {
+        configProvider.preferredImageGenerationModelId = "luna"
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enablePerTabModelPick, false)
+        XCTAssertNil(config.imageGenerationModelId)
+    }
+
+    @MainActor
+    func testWhenModelPickIsPerTabThenSetConfigLeavesTheModelAndEffortAlone() async throws {
+        configProvider.isModelPickPerTab = true
+        configProvider.isReasoningEffortEnabled = true
+        configProvider.selectedModelId = "terra"
+        configProvider.selectedReasoningEffort = "none"
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "luna", aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertEqual(configProvider.mode, .ai)
+        XCTAssertEqual(configProvider.selectedModelId, "terra")
+        XCTAssertEqual(configProvider.selectedReasoningEffort, "none")
+    }
+
+    @MainActor
+    func testSelectModelIsForwardedToTheProvider() async throws {
+        let action = NewTabPageDataModel.OmnibarSelectModelAction(modelId: "luna", previousModelId: "terra")
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectModel, parameters: action)
+
+        XCTAssertEqual(configProvider.pickedModels, [.init(modelId: "luna", previousModelId: "terra")])
+    }
+
+    @MainActor
+    func testSelectReasoningEffortIsForwardedToTheProvider() async throws {
+        let action = NewTabPageDataModel.OmnibarSelectReasoningEffortAction(reasoningEffort: "high")
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectReasoningEffort, parameters: action)
+
+        XCTAssertEqual(configProvider.pickedReasoningEfforts, ["high"])
+    }
+
+    func testWhenImageGenerationIsActivatedFromATabModelThenTheProviderSwitchesFromIt() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+
+        let request = NewTabPageDataModel.OmnibarSetImageGenerationActive(active: true, modelId: "mistral")
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setImageGenerationActive, parameters: request)
+
+        XCTAssertEqual(configProvider.activateImageGenerationFromModelIds, ["mistral"])
     }
 
     // MARK: - attachment privacy disclaimer

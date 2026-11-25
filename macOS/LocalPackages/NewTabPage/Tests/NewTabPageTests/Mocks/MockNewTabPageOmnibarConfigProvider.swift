@@ -60,12 +60,33 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     var imageGenerationModelId: String?
 
     var activateImageGenerationResult: NewTabPageDataModel.OmnibarCreateImageModelSwitch?
-    private(set) var activateImageGenerationCallCount = 0
+    private(set) var activateImageGenerationFromModelIds: [String?] = []
 
     @MainActor
-    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
-        activateImageGenerationCallCount += 1
+    func activateImageGeneration(fromModelId: String?) -> NewTabPageDataModel.OmnibarCreateImageModelSwitch? {
+        activateImageGenerationFromModelIds.append(fromModelId)
         return activateImageGenerationResult
+    }
+
+    var isModelPickPerTab: Bool = false
+
+    @MainActor
+    var preferredImageGenerationModelId: String?
+
+    struct ModelPick: Equatable {
+        let modelId: String
+        let previousModelId: String?
+    }
+    private(set) var pickedModels: [ModelPick] = []
+
+    func modelPicked(modelId: String, previousModelId: String?) {
+        pickedModels.append(ModelPick(modelId: modelId, previousModelId: previousModelId))
+    }
+
+    private(set) var pickedReasoningEfforts: [String] = []
+
+    func reasoningEffortPicked(_ reasoningEffort: String) {
+        pickedReasoningEfforts.append(reasoningEffort)
     }
 
     var isWebSearchEnabled: Bool = false
@@ -150,12 +171,6 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     @MainActor
     func dismissLauncherPromo() {
         dismissLauncherPromoCallCount += 1
-    }
-
-    private(set) var chatSubmittedCallCount = 0
-    @MainActor
-    func chatSubmitted() {
-        chatSubmittedCallCount += 1
     }
 
     private(set) var launcherPromoIgnoredCallCount = 0

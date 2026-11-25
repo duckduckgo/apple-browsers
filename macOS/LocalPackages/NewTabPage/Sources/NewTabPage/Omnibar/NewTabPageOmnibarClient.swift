@@ -50,6 +50,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case attachmentPrivacyDisclaimerShown = "omnibar_attachmentPrivacyDisclaimerShown"
         case openAttachmentPrivacyLearnMore = "omnibar_openAttachmentPrivacyLearnMore"
         case selectUsageLimitsCta = "omnibar_selectUsageLimitsCta"
+        case selectModel = "omnibar_selectModel"
+        case selectReasoningEffort = "omnibar_selectReasoningEffort"
         case launcherPromoShown = "omnibar_launcherPromoShown"
         case selectLauncherPromoCta = "omnibar_selectLauncherPromoCta"
         case dismissLauncherPromo = "omnibar_dismissLauncherPromo"
@@ -158,6 +160,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.attachmentPrivacyDisclaimerShown.rawValue: { [weak self] in try await self?.attachmentPrivacyDisclaimerShown(params: $0, original: $1) },
             MessageName.openAttachmentPrivacyLearnMore.rawValue: { [weak self] in try await self?.openAttachmentPrivacyLearnMore(params: $0, original: $1) },
             MessageName.selectUsageLimitsCta.rawValue: { [weak self] in try await self?.selectUsageLimitsCta(params: $0, original: $1) },
+            MessageName.selectModel.rawValue: { [weak self] in try await self?.selectModel(params: $0, original: $1) },
+            MessageName.selectReasoningEffort.rawValue: { [weak self] in try await self?.selectReasoningEffort(params: $0, original: $1) },
             MessageName.launcherPromoShown.rawValue: { [weak self] in try await self?.launcherPromoShown(params: $0, original: $1) },
             MessageName.selectLauncherPromoCta.rawValue: { [weak self] in try await self?.selectLauncherPromoCta(params: $0, original: $1) },
             MessageName.dismissLauncherPromo.rawValue: { [weak self] in try await self?.dismissLauncherPromo(params: $0, original: $1) },
@@ -207,7 +211,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             screenshotModes: screenshotProvider?.screenshotModes,
             enablePastedAttachments: screenshotProvider?.enablePastedAttachments,
             enablePastedText: configProvider.isPastedTextEnabled,
-            pastedTextLimits: configProvider.pastedTextLimits
+            pastedTextLimits: configProvider.pastedTextLimits,
+            enablePerTabModelPick: configProvider.isModelPickPerTab,
+            imageGenerationModelId: perTabImageGenerationModelId
         )
     }
 
@@ -224,6 +230,16 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         if let showCustomizePopover = config.showCustomizePopover {
             configProvider.showCustomizePopover = showCustomizePopover
         }
+        // With per-tab picks the model fields only echo the default.
+        if !configProvider.isModelPickPerTab {
+            persistModelPick(from: config)
+        }
+        return nil
+    }
+
+    /// Web echoes the whole config, so a shared pick arrives here with every other setting.
+    @MainActor
+    private func persistModelPick(from config: NewTabPageDataModel.OmnibarConfig) {
         if let selectedModelId = config.selectedModelId {
             let item = matchedItem(forModelId: selectedModelId)
             // Reject a model we know is gated; an unmatched id (sections not fetched yet) passes through.
@@ -238,6 +254,29 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             }
         }
         persistReasoningEffort(from: config)
+    }
+
+    /// Only a page that keeps per-tab picks switches a tab's model for Create Image itself.
+    @MainActor
+    private var perTabImageGenerationModelId: String? {
+        configProvider.isModelPickPerTab ? configProvider.preferredImageGenerationModelId : nil
+    }
+
+    @MainActor
+    private func selectModel(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.OmnibarSelectModelAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        configProvider.modelPicked(modelId: action.modelId, previousModelId: action.previousModelId)
+        return nil
+    }
+
+    @MainActor
+    private func selectReasoningEffort(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.OmnibarSelectReasoningEffortAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        configProvider.reasoningEffortPicked(action.reasoningEffort)
         return nil
     }
 
@@ -301,7 +340,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             screenshotModes: screenshotProvider?.screenshotModes,
             enablePastedAttachments: screenshotProvider?.enablePastedAttachments,
             enablePastedText: configProvider.isPastedTextEnabled,
-            pastedTextLimits: configProvider.pastedTextLimits
+            pastedTextLimits: configProvider.pastedTextLimits,
+            enablePerTabModelPick: configProvider.isModelPickPerTab,
+            imageGenerationModelId: perTabImageGenerationModelId
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -373,7 +414,6 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             textPasted: configProvider.isPastedTextEnabled ? action.textPasted : nil,
             aiTermsAccepted: action.aiTermsAccepted == true
         )
-        configProvider.chatSubmitted()
         if let suggestedPromptId = action.suggestedPromptId {
             actionHandler.suggestedPromptSubmitted(promptId: suggestedPromptId)
         }
@@ -411,7 +451,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
               let request: NewTabPageDataModel.OmnibarSetImageGenerationActive = DecodableHelper.decode(from: params) else {
             return nil
         }
-        createImageModelSwitch = request.active ? configProvider.activateImageGeneration() : nil
+        createImageModelSwitch = request.active ? configProvider.activateImageGeneration(fromModelId: request.modelId) : nil
         notifyConfigUpdated()
         return nil
     }

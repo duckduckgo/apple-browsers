@@ -450,6 +450,28 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenModelPickIsPerTab_ThenPickingTheSuggestedModelInATabStandsTheWarningDown() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, isModelPickPerTab: true)
+
+        XCTAssertEqual(sut.provider.usageLimits()?.message, UserText.aiChatUsageWarningsDailyUsage(percent: 75))
+        sut.provider.modelPicked(modelId: "claude-haiku-4-5", previousModelId: "claude-opus-4-8")
+
+        XCTAssertNil(sut.provider.usageLimits())
+    }
+
+    @MainActor
+    func testWhenModelPickIsPerTab_ThenTheUsageLimitsSwitchStandsTheWarningDownAndLeavesTheModelToTheTab() throws {
+        let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, isModelPickPerTab: true)
+        let defaultModelId = sut.provider.selectedModelId
+
+        XCTAssertEqual(sut.provider.selectUsageLimitsCta(modelId: "claude-haiku-4-5"), .handled)
+
+        XCTAssertNil(sut.provider.usageLimits())
+        XCTAssertEqual(sut.provider.selectedModelId, defaultModelId)
+        XCTAssertEqual(sut.persistor.selectedModelId, "claude-opus-4-8")
+    }
+
+    @MainActor
     func testUsageLimits_isNilWhenTheFeatureFlagIsOff() throws {
         let sut = try makeUsageLimitsProvider(seed: .approachingDaily75, isUsageWarningsEnabled: false)
 
@@ -489,7 +511,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     private func makeUsageLimitsProvider(
         seed: DuckAiUsageSnapshotSeed?,
         selectedModelId: String = "claude-opus-4-8",
-        isUsageWarningsEnabled: Bool = true
+        isUsageWarningsEnabled: Bool = true,
+        isModelPickPerTab: Bool = false
     ) throws -> (provider: NewTabPageOmnibarConfigProvider, persistor: MockAIChatPreferencesPersisting) {
         let paid = ["plus", "pro"]
         let free = ["free"] + paid
@@ -515,6 +538,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         let flagger = MockFeatureFlagger()
         flagger.featuresStub[FeatureFlag.aiChatUsageWarnings.rawValue] = isUsageWarningsEnabled
+        flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = isModelPickPerTab
 
         let provider = try makeProvider(
             persistor: persistor,
@@ -745,7 +769,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             availableModelsProvider: { models }
         )
 
-        let notice = provider.activateImageGeneration()
+        let notice = provider.activateImageGeneration(fromModelId: nil)
 
         XCTAssertEqual(persistor.selectedModelId, "preferred-image-model")
         XCTAssertEqual(persistor.selectedModelShortName, "Luna")
@@ -763,7 +787,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             availableModelsProvider: { [previousModel, imageModel] }
         )
 
-        let notice = provider.activateImageGeneration()
+        let notice = provider.activateImageGeneration(fromModelId: nil)
 
         XCTAssertEqual(
             notice,
@@ -772,6 +796,40 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
                 secondaryText: UserText.aiChatCreateImageModelSwitchPrivacySubtitle("Open Model")
             )
         )
+    }
+
+    func testActivateImageGeneration_fromATabModelBuildsTheNoticeFromItWithoutKeepingAPick() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        let flagger = flaggerWithUpdatedCreateImageOn()
+        flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
+        let tabModel = makeModel(id: "oss-model", shortName: "Open Model", provider: .oss)
+        let imageModel = makeModel(id: "image-model", shortName: "Luna", supportsImageGeneration: true, label: .everydayUse)
+        let provider = try makeProvider(persistor: persistor, featureFlagger: flagger, availableModelsProvider: { [tabModel, imageModel] })
+        let defaultModelId = provider.selectedModelId
+
+        let notice = provider.activateImageGeneration(fromModelId: "oss-model")
+
+        XCTAssertEqual(
+            notice,
+            NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+                message: UserText.aiChatCreateImageModelSwitchTitle("Luna"),
+                secondaryText: UserText.aiChatCreateImageModelSwitchPrivacySubtitle("Open Model")
+            )
+        )
+        XCTAssertEqual(provider.selectedModelId, defaultModelId)
+        XCTAssertNil(persistor.selectedModelId)
+    }
+
+    func testPreferredImageGenerationModelId_ignoresTheSelectedModel() throws {
+        let persistor = MockAIChatPreferencesPersisting()
+        persistor.selectedModelId = "selected-image-model"
+        let models = [
+            makeModel(id: "selected-image-model", supportsImageGeneration: true, label: .usesLimitsFaster),
+            makeModel(id: "preferred-image-model", supportsImageGeneration: true, label: .everydayUse)
+        ]
+        let provider = try makeProvider(persistor: persistor, featureFlagger: flaggerWithUpdatedCreateImageOn(), availableModelsProvider: { models })
+
+        XCTAssertEqual(provider.preferredImageGenerationModelId, "preferred-image-model")
     }
 
     func testActivateImageGeneration_clearsInvalidReasoningEffort() throws {
@@ -788,7 +846,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             availableModelsProvider: { models }
         )
 
-        _ = provider.activateImageGeneration()
+        _ = provider.activateImageGeneration(fromModelId: nil)
 
         XCTAssertNil(persistor.selectedReasoningEffort)
     }
@@ -807,7 +865,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             availableModelsProvider: { models }
         )
 
-        _ = provider.activateImageGeneration()
+        _ = provider.activateImageGeneration(fromModelId: nil)
 
         XCTAssertNil(persistor.selectedReasoningEffort)
     }
@@ -833,7 +891,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             availableModelsProvider: { models }
         )
 
-        _ = provider.activateImageGeneration()
+        _ = provider.activateImageGeneration(fromModelId: nil)
 
         XCTAssertEqual(persistor.selectedReasoningEffort, AIChatReasoningEffort.medium.rawValue)
     }
@@ -1397,8 +1455,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
                                             modelsLoaded: Bool = true,
                                             userTier: AIChatUserTier? = .free,
                                             storage: DuckAiNativeStorageHandling? = nil,
-                                            burnerStorage: DuckAiNativeStorageHandling? = nil,
-                                            windowControllersManager: WindowControllersManagerMock? = nil) throws -> NewTabPageOmnibarConfigProvider {
+                                            burnerStorage: DuckAiNativeStorageHandling? = nil) throws -> NewTabPageOmnibarConfigProvider {
         let flagger = flaggerWithReasoningOn()
         flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
         let models = [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
@@ -1414,7 +1471,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             featureFlagger: flagger,
             aiChatPreferencesPersistor: persistor,
             searchPreferences: makeSearchPreferences(),
-            windowControllersManager: windowControllersManager ?? WindowControllersManagerMock(),
+            windowControllersManager: WindowControllersManagerMock(),
             duckAiStorageHandlerProvider: { $0.isBurner ? burnerStorage : storage },
             availableModelsProvider: { models },
             newChatDefaults: newChatDefaults,
@@ -1544,72 +1601,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         cancellable.cancel()
     }
 
-    func testWhenUserDefaultChangesAfterAPick_ThenPagesStartOnTheNewDefault() async throws {
-        let storage = try DuckAiNativeStorageHandler(.memory())
-        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
-        provider.selectedModelId = "luna"
-        let pickEnded = expectation(description: "pick ended")
-        let cancellable = provider.selectedModelIdPublisher.filter { $0 == nil }.sink { _ in pickEnded.fulfill() }
-
-        try storage.putUserDefaultModel("terra")
-
-        await fulfillment(of: [pickEnded], timeout: 1)
-        XCTAssertEqual(provider.selectedModelId, "terra")
-        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: nil)?.parameters["model_source"], "user_default")
-        cancellable.cancel()
-    }
-
-    func testWhenAnotherTabShowsTheNewTabPageAfterAPick_ThenThePickEnds() async throws {
-        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
-        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
-        provider.selectedModelId = "luna"
-        let pickEnded = expectation(description: "pick ended")
-        let cancellable = provider.selectedModelIdPublisher.filter { $0 == nil }.sink { _ in pickEnded.fulfill() }
-
-        tabs.append(tab: Tab(content: .newtab))
-        tabsChanged.send()
-
-        await fulfillment(of: [pickEnded], timeout: 1)
-        XCTAssertEqual(provider.selectedModelId, "terra")
-        cancellable.cancel()
-    }
-
-    func testWhenTabsChangeWithoutShowingAnotherNewTabPage_ThenThePickStays() async throws {
-        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
-        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
-        provider.selectedModelId = "luna"
-
-        tabs.append(tab: Tab(content: .none), selected: false)
-        tabsChanged.send()
-        await Task.yield()
-
-        XCTAssertEqual(provider.selectedModelId, "luna")
-    }
-
-    func testWhenReturningToTheSameNewTabPageAfterAnotherTab_ThenThePickStays() async throws {
-        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
-        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
-        provider.selectedModelId = "luna"
-
-        tabs.append(tab: Tab(content: .none))
-        tabsChanged.send()
-        await Task.yield()
-        tabs.select(at: .unpinned(0))
-        tabsChanged.send()
-        await Task.yield()
-
-        XCTAssertEqual(provider.selectedModelId, "luna")
-    }
-
-    private func makeWindowWithNewTabPage() -> (WindowControllersManagerMock, PassthroughSubject<Void, Never>, TabCollectionViewModel) {
-        let windowControllersManager = WindowControllersManagerMock()
-        let tabsChanged = PassthroughSubject<Void, Never>()
-        let tabs = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab)]), windowControllersManager: windowControllersManager)
-        windowControllersManager.tabsChanged = tabsChanged.eraseToAnyPublisher()
-        windowControllersManager.customAllTabCollectionViewModels = [tabs]
-        return (windowControllersManager, tabsChanged, tabs)
-    }
-
     func testWhenUserDefaultIsSet_ThenItAppliesOutsideDuckAiModeFromRegularStorage() throws {
         let storage = try DuckAiNativeStorageHandler(.memory())
         try storage.putUserDefaultModel("luna")
@@ -1642,36 +1633,29 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         XCTAssertNil(provider.selectedReasoningEffort)
     }
 
-    func testWhenNewChatDefaultIsOnAndModelPicked_ThenGlobalPreferencesAreNotWritten() throws {
+    func testWhenNewChatDefaultIsOn_ThenEachTabKeepsItsOwnPick() throws {
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
+
+        XCTAssertTrue(provider.isModelPickPerTab)
+    }
+
+    func testWhenNewChatDefaultIsOff_ThenThePickIsShared() throws {
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting())
+
+        XCTAssertFalse(provider.isModelPickPerTab)
+    }
+
+    func testWhenNewChatDefaultIsOnAndModelPicked_ThenNativeKeepsNoPickAndWritesNoPreferences() throws {
         let persistor = MockAIChatPreferencesPersisting()
         let provider = try makeNewChatDefaultProvider(persistor: persistor)
 
         provider.selectedModelId = "luna"
         provider.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
 
-        XCTAssertEqual(provider.selectedModelId, "luna")
-        XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.high.rawValue)
-        XCTAssertNil(persistor.selectedModelId)
-        XCTAssertNil(persistor.selectedReasoningEffort)
-    }
-
-    func testWhenNewChatDefaultIsOnAndOtherModelPicked_ThenDefaultEffortNoLongerApplies() throws {
-        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
-
-        provider.selectedModelId = "luna"
-
-        XCTAssertNil(provider.selectedReasoningEffort)
-    }
-
-    func testWhenNewChatDefaultIsOnAndChatSubmitted_ThenPickResetsToDefault() throws {
-        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting())
-        provider.selectedModelId = "luna"
-        provider.selectedReasoningEffort = AIChatReasoningEffort.high.rawValue
-
-        provider.chatSubmitted()
-
         XCTAssertEqual(provider.selectedModelId, "terra")
         XCTAssertEqual(provider.selectedReasoningEffort, AIChatReasoningEffort.none.rawValue)
+        XCTAssertNil(persistor.selectedModelId)
+        XCTAssertNil(persistor.selectedReasoningEffort)
     }
 
     func testWhenNewChatDefaultIsOnAndWebEchoesDefault_ThenItIsNotStoredAsPick() throws {
@@ -1690,9 +1674,10 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: "none")?.parameters,
                        ["model_source": "default", "model_id": "terra", "reasoning_effort": "none"])
-        provider.selectedModelId = "luna"
         XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: nil)?.parameters,
                        ["model_source": "picked", "model_id": "luna"])
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: "high")?.parameters,
+                       ["model_source": "picked", "model_id": "terra", "reasoning_effort": "high"])
         XCTAssertNil(provider.newChatModelPixelParameters(sentModelId: nil, sentReasoningEffort: "none"))
     }
 
@@ -1707,17 +1692,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting())
 
         XCTAssertNil(provider.newChatModelPixelParameters(sentModelId: "luna", sentReasoningEffort: "high"))
-    }
-
-    func testWhenNewChatDefaultIsOffAndChatSubmitted_ThenPersistedPickIsKept() throws {
-        let persistor = MockAIChatPreferencesPersisting()
-        let provider = try makeProvider(persistor: persistor, availableModelsProvider: { [self] in [makeModel(id: "luna")] })
-        provider.selectedModelId = "luna"
-
-        provider.chatSubmitted()
-
-        XCTAssertEqual(persistor.selectedModelId, "luna")
-        XCTAssertEqual(provider.selectedModelId, "luna")
     }
 }
 

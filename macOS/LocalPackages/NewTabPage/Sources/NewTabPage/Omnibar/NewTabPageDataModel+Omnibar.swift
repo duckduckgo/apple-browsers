@@ -322,6 +322,10 @@ public extension NewTabPageDataModel {
         var enablePastedText: Bool?
         /// The paste length that becomes a chip and the cap on typed text plus pastes; absent makes the page use its built-in defaults.
         var pastedTextLimits: OmnibarPastedTextLimits?
+        /// When true, each tab keeps its own model and effort pick, and `selectedModelId` and `selectedReasoningEffort` are the new-chat default.
+        var enablePerTabModelPick: Bool?
+        /// With per-tab picks, the model a tab uses for Create Image when its own model can't create images.
+        var imageGenerationModelId: String?
     }
 
     /// Mirrors `AIChatPromptLimits`: lengths are UTF-16 units, and the cap covers typed text plus every paste.
@@ -337,6 +341,30 @@ public extension NewTabPageDataModel {
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
         let active: Bool
+        /// With per-tab picks, the model the tab was on when Create Image turned on.
+        var modelId: String?
+    }
+
+    // MARK: - omnibar_selectModel
+
+    struct OmnibarSelectModelAction: Codable, Equatable {
+        let modelId: String
+        let previousModelId: String?
+
+        public init(modelId: String, previousModelId: String?) {
+            self.modelId = modelId
+            self.previousModelId = previousModelId
+        }
+    }
+
+    // MARK: - omnibar_selectReasoningEffort
+
+    struct OmnibarSelectReasoningEffortAction: Codable, Equatable {
+        let reasoningEffort: String
+
+        public init(reasoningEffort: String) {
+            self.reasoningEffort = reasoningEffort
+        }
     }
 
     // MARK: - omnibar_captureScreenshot

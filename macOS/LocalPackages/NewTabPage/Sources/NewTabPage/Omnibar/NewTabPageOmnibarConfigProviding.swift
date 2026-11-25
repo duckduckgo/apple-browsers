@@ -49,9 +49,24 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     @MainActor
     var imageGenerationModelId: String? { get }
 
-    /// Switches to an accessible image-capable model when needed and returns native-localized notice copy.
+    /// Switches from `fromModelId` (else the selected model) to an accessible image-capable model when needed
+    /// and returns native-localized notice copy. With per-tab picks the tab's model is left to web.
     @MainActor
-    func activateImageGeneration() -> NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+    func activateImageGeneration(fromModelId: String?) -> NewTabPageDataModel.OmnibarCreateImageModelSwitch?
+
+    /// Whether each New Tab Page tab keeps its own model and effort pick. `selectedModelId` and
+    /// `selectedReasoningEffort` are then the new-chat default, and web reports picks instead of writing them.
+    var isModelPickPerTab: Bool { get }
+
+    /// The model Create Image switches a tab to when the tab's model can't create images.
+    @MainActor
+    var preferredImageGenerationModelId: String? { get }
+
+    /// The user picked a model in one tab, which keeps the pick.
+    func modelPicked(modelId: String, previousModelId: String?)
+
+    /// The user picked a reasoning effort in one tab, which keeps the pick.
+    func reasoningEffortPicked(_ reasoningEffort: String)
 
     var isWebSearchEnabled: Bool { get }
 
@@ -152,10 +167,6 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// nothing is selected or when `isReasoningEffortEnabled` is false.
     var selectedReasoningEffort: String? { get set }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
-
-    /// Called after a chat is submitted, so the next chat can start on the default model and effort.
-    @MainActor
-    func chatSubmitted()
 
     /// Whether recent-chat suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
     var isAIChatDeletionEnabled: Bool { get }

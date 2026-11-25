@@ -254,6 +254,36 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         #expect(fired("aichat_new_chat_first_prompt_sent").map { $0?["hints_shown"] } == ["true"])
         #expect(capStore.ignoredChats == 1)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Switching to a chat tab and back counts the blank chat once and keeps its hints", .timeLimit(.minutes(1)))
+    func chatTabSwitchKeepsNewChat() async throws {
+        let sut = try makeSUT()
+        try await openBlankChat(sut)
+        sut.newChatHintsDidAppear(sut.newChatHints)
+        let chatTab = makeTestUserScript()
+
+        // The main view controller activates each incoming tab before it binds that tab's page.
+        sut.activateForTab("tab-B")
+        #expect(sut.newChatHints.isEmpty)
+        sut.bindToTab(chatTab, hasExistingChat: true)
+        sut.showCollapsed()
+        sut.aiChatStatus = .ready
+
+        sut.activateForTab("tab-A")
+        #expect(sut.newChatHints.isEmpty)
+        sut.bindToTab(script, hasExistingChat: false)
+        sut.showCollapsed()
+        sut.aiChatStatus = .ready
+        sut.isAIChatPromoVisible = false
+        #expect(sut.newChatHints == tabOrder)
+        sut.newChatHintsDidAppear(sut.newChatHints)
+        submitPrompt(sut)
+
+        #expect(fired("aichat_new_chat_shown").count == 1)
+        #expect(fired("aichat_new_chat_hints_shown").count == 1)
+        #expect(fired("aichat_new_chat_first_prompt_sent").map { $0?["hints_shown"] } == ["true"])
+    }
 }
 
 private struct StubHintModelsService: AIChatModelsProviding {

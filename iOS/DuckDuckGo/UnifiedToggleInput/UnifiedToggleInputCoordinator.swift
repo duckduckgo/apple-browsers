@@ -185,7 +185,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             if featureFlagger.isFeatureOn(.newChatHints) {
                 logNewChatHintsState()
             }
-            refreshNewChatHints()
+            refreshNewChatState()
         }
     }
 
@@ -572,7 +572,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             clearAttachmentValidationErrorIfPossible: { [weak self] in self?.attachmentController.clearValidationErrorIfPossible() },
             onTextChanged: { [weak self] in
                 self?.promptLengthGate?.refresh()
-                self?.refreshNewChatHints()
+                self?.refreshNewChatState()
             }
         ))
         keyboardMonitor = UTIKeyboardMonitor(environment: .init(
@@ -705,7 +705,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     onAttachmentsChanged?()
                     footerController?.refresh()
                     promptLengthGate.refresh()
-                    refreshNewChatHints()
+                    refreshNewChatState()
                 },
                 onExpandIfNeeded: { [weak self] in self?.expandIfOnExpandedInputHost() },
                 updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
@@ -749,7 +749,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToAppLifecycle()
         newChatHintsEligibility.updates
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.refreshNewChatHints() }
+            .sink { [weak self] in self?.refreshNewChatState() }
             .store(in: &cancellables)
         // The remote config can turn the hints on or off while a blank chat is open.
         featureFlagger.updatesPublisher
@@ -1330,6 +1330,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     /// Follows the new chat for the hint pixels and the cap, and publishes the hints to show.
+    /// Only `refreshNewChatState` calls this, so the state it reads is never left over from the previous tab.
     private func refreshNewChatHints() {
         let state = newChatState
         guard let tab = currentTabUID, state.isTabSelected else {
@@ -1512,7 +1513,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         footerController?.presenter = viewController
         // The "type @" tip hides the new chat hints while it shows.
-        footerController?.onMessagesChanged = { [weak self] in self?.refreshNewChatHints() }
+        footerController?.onMessagesChanged = { [weak self] in self?.refreshNewChatState() }
         footerController?.onInputBlockChanged = { [weak self] blocked in
             self?.viewController.isInputBlockedByUsageLimit = blocked
             self?.tabMentionController?.refresh()
@@ -3286,7 +3287,7 @@ private extension UnifiedToggleInputCoordinator {
         viewController.refreshPlaceholderForCurrentMode()
         footerController?.setTermsOfServiceSendButton(termsOfServiceSendButton)
         syncTermsOfServiceSendButtonToHandler()
-        refreshNewChatHints()
+        refreshNewChatState()
     }
 
     func resetToolsSelection() {

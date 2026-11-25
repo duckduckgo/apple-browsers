@@ -268,10 +268,13 @@ final class FaviconRasterizer {
 
 extension Data {
 
-    /// Returns whether the data is a PDF: the `%PDF-` header is within the first 1024 bytes, as the PDF
-    /// specification and common readers allow.
+    /// Returns whether the data is a PDF: it starts with the `%PDF-` magic.
+    ///
+    /// Only the very start counts, like the magic of other image formats. Data that merely contains `%PDF-`
+    /// further in (for example an SVG with it in a comment) is not a PDF: `NSImage(data:)` would still treat
+    /// it as the SVG it is, and render it with CoreSVG.
     var isPDFData: Bool {
-        prefix(1024).range(of: Data("%PDF-".utf8)) != nil
+        starts(with: Data("%PDF-".utf8))
     }
 }
 

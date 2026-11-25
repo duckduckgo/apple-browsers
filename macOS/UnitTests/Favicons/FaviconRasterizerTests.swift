@@ -203,14 +203,28 @@ final class FaviconRasterizerTests: XCTestCase {
 
     // MARK: - PDF
 
-    func testPDFHeaderIsRecognizedWithinTheFirst1024Bytes() {
+    func testPDFIsRecognizedOnlyByTheMagicAtOffsetZero() {
         let pdf = Self.pdfData()
         XCTAssertTrue(pdf.isPDFData)
-        XCTAssertTrue((Data(repeating: 0x20, count: 1000) + pdf).isPDFData)
-        XCTAssertFalse((Data(repeating: 0x20, count: 1100) + pdf).isPDFData)
+        XCTAssertFalse((Data(" ".utf8) + pdf).isPDFData)
+        XCTAssertFalse((Data(repeating: 0x20, count: 100) + pdf).isPDFData)
         XCTAssertFalse(Data(Self.svg(width: 16, height: 16).utf8).isPDFData)
         XCTAssertFalse(Data("not an image".utf8).isPDFData)
         XCTAssertFalse(Data().isPDFData)
+    }
+
+    /// A `%PDF-` that isn't at the start must not send an SVG to `NSImage(data:)`, which would render it with CoreSVG.
+    func testSVGWithPDFMagicInsideIsRenderedByWebKit() async throws {
+        let svg = Data(("<!-- %PDF-1.4 -->" + Self.recursiveFilterSVG).utf8)
+        XCTAssertFalse(svg.isPDFData)
+        let rendersWithWebKit = await rasterizer.shouldRender(svg)
+        XCTAssertTrue(rendersWithWebKit)
+
+        let stored = await rasterizer.storableImage(from: svg)
+
+        let image = try XCTUnwrap(stored)
+        XCTAssertTrue(image.representations.allSatisfy { $0 is NSBitmapImageRep })
+        XCTAssertTrue(image.hasVisiblePixels())
     }
 
     func testPDFIsDecodedWithNSImageWithoutWebKit() async throws {

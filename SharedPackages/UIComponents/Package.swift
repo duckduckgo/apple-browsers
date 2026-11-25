@@ -19,6 +19,12 @@
 //
 
 import PackageDescription
+import Foundation
+
+// Set by the iOS "Build and test" CI step. Under CI, SPM builds packages in release configuration, so
+// `.when(configuration: .debug)` below doesn't fire and the DEBUG-only previews and snapshot tests wouldn't
+// compile. This forces DEBUG on for that build. Mirrors SyncUI-iOS/Package.swift.
+let forceDebug = ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1"
 
 let package = Package(
     name: "UIComponents",
@@ -33,7 +39,8 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Infrastructure/DesignResourcesKit"),
-        .package(path: "../Infrastructure/DesignResourcesKitIcons")
+        .package(path: "../Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../SnapshotTestingSupport"),
     ],
     targets: [
         .target(
@@ -41,14 +48,21 @@ let package = Package(
             dependencies: [
                 "DesignResourcesKit",
                 "DesignResourcesKitIcons",
+                .product(name: "PreviewSnapshots", package: "SnapshotTestingSupport"),
             ],
             resources: [
                 .process("Resources/Assets.xcassets")
-            ]
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ] + (forceDebug ? [.define("DEBUG")] : [])
         ),
         .testTarget(
             name: "UIComponentsTests",
-            dependencies: ["UIComponents"]
+            dependencies: [
+                "UIComponents",
+                .product(name: "SnapshotTestingSupport", package: "SnapshotTestingSupport"),
+            ]
         ),
     ]
 )

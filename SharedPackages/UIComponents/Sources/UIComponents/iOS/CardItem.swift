@@ -40,6 +40,7 @@ public struct CardItemIcon {
         case size24
         case size32
         case size40
+        case size48
         case size56
 
         var points: CGFloat {
@@ -47,6 +48,7 @@ public struct CardItemIcon {
             case .size24: 24
             case .size32: 32
             case .size40: 40
+            case .size48: 48
             case .size56: 56
             }
         }

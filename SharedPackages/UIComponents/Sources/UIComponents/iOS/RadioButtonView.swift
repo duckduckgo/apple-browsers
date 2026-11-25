@@ -30,6 +30,15 @@ public enum RadioButtonLayout {
     case horizontal
 }
 
+/// How a `RadioButtonView` row draws its selection indicator.
+public enum RadioButtonIndicatorStyle {
+    /// Draws `selectedCheckboxImage` / `unselectedCheckboxImage`.
+    case checkbox
+    /// Draws a radio: a filled `selectedCheckboxColor` disc with a `selectedCheckboxBackgroundColor` dot when
+    /// selected, and a 2pt `unselectedCheckboxColor` ring when not.
+    case radio
+}
+
 /// Configuration options for customizing the appearance of a `RadioButtonView`.
 ///
 /// Use this structure to define the visual properties of the radio buttons,
@@ -57,6 +66,12 @@ public struct RadioButtonConfiguration {
     public var checkboxSize: CGFloat
     public var layout: RadioButtonLayout
     public var buttonSpacing: CGFloat
+    /// Font for an item's `secondaryText`, shown under its text in the vertical layout.
+    public var secondaryFont: Font
+    public var secondaryTextColor: Color
+    /// Border width for the selected row. `nil` uses `borderWidth`.
+    public var selectedBorderWidth: CGFloat?
+    public var indicatorStyle: RadioButtonIndicatorStyle
 
     public init(
         font: Font = Font(UIFont.daxCaption().withSize(13)),
@@ -78,7 +93,11 @@ public struct RadioButtonConfiguration {
         spacing: CGFloat = 6,
         checkboxSize: CGFloat = 24,
         layout: RadioButtonLayout = .vertical,
-        buttonSpacing: CGFloat = 8
+        buttonSpacing: CGFloat = 8,
+        secondaryFont: Font = Font(UIFont.daxFootnoteRegular()),
+        secondaryTextColor: Color = .init(designSystemColor: .textSecondary),
+        selectedBorderWidth: CGFloat? = nil,
+        indicatorStyle: RadioButtonIndicatorStyle = .checkbox
     ) {
         self.font = font
         self.selectedTextColor = selectedTextColor
@@ -100,6 +119,10 @@ public struct RadioButtonConfiguration {
         self.checkboxSize = checkboxSize
         self.layout = layout
         self.buttonSpacing = buttonSpacing
+        self.secondaryFont = secondaryFont
+        self.secondaryTextColor = secondaryTextColor
+        self.selectedBorderWidth = selectedBorderWidth
+        self.indicatorStyle = indicatorStyle
     }
 }
 
@@ -223,13 +246,26 @@ private struct RadioButtonRow: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: configuration.cornerRadius)
-                .stroke(borderColor, lineWidth: configuration.borderWidth)
+                .stroke(borderColor, lineWidth: borderWidth)
         )
         .contentShape(Rectangle()) // This makes the entire area tappable
         .onTapGesture {
             action()
         }
         .animation(.easeInOut(duration: 0.1), value: isSelected)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAction { action() }
+    }
+
+    private var accessibilityLabel: Text {
+        guard let secondaryText = item.secondaryText else { return Text(item.text) }
+        return Text(item.text) + Text(", ") + Text(secondaryText)
+    }
+
+    private var borderWidth: CGFloat {
+        isSelected ? (configuration.selectedBorderWidth ?? configuration.borderWidth) : configuration.borderWidth
     }
 
     private var backgroundColor: Color {
@@ -250,6 +286,34 @@ private struct RadioButtonRow: View {
 
     @ViewBuilder
     private var checkbox: some View {
+        switch configuration.indicatorStyle {
+        case .checkbox:
+            checkboxImage
+        case .radio:
+            radio
+        }
+    }
+
+    @ViewBuilder
+    private var radio: some View {
+        let size = configuration.checkboxSize
+        ZStack {
+            if isSelected {
+                Circle()
+                    .fill(checkboxColor ?? configuration.selectedBorderColor)
+                Circle()
+                    .fill(configuration.selectedCheckboxBackgroundColor ?? .white)
+                    .frame(width: size * 10 / 24, height: size * 10 / 24)
+            } else {
+                Circle()
+                    .strokeBorder(checkboxColor ?? configuration.unselectedBorderColor, lineWidth: 2)
+            }
+        }
+        .frame(width: size, height: size)
+    }
+
+    @ViewBuilder
+    private var checkboxImage: some View {
         if isSelected, let backgroundColor = configuration.selectedCheckboxBackgroundColor {
             ZStack {
                 // The fill shows through any knocked-out areas in the checkbox image, inset so it stays within the tinted disc.
@@ -274,11 +338,22 @@ private struct RadioButtonRow: View {
 
     @ViewBuilder
     private var verticalRowContent: some View {
-        Text(item.text)
-            .font(configuration.font)
-            .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
-            .multilineTextAlignment(.leading)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(item.text)
+                .font(configuration.font)
+                .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let secondaryText = item.secondaryText {
+                Text(secondaryText)
+                    .font(configuration.secondaryFont)
+                    .foregroundColor(configuration.secondaryTextColor)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
 
         checkbox
     }
@@ -333,21 +408,26 @@ private extension Image {
 public struct RadioButtonItem: Identifiable, Hashable {
     public let id = UUID()
     public let text: String
+    /// Optional supporting text shown under `text` in the vertical layout.
+    public let secondaryText: String?
     public let value: AnyHashable?
 
     /// Creates a new radio button item.
     ///
     /// - Parameters:
     ///   - text: The text label for the item.
+    ///   - secondaryText: Optional supporting text shown under the label in the vertical layout.
     ///   - value: An optional value associated with the item for data binding.
-    public init(text: String, value: AnyHashable? = nil) {
+    public init(text: String, secondaryText: String? = nil, value: AnyHashable? = nil) {
         self.text = text
+        self.secondaryText = secondaryText
         self.value = value
     }
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
         hasher.combine(text)
+        hasher.combine(secondaryText)
         if let value = value {
             hasher.combine(value)
         }

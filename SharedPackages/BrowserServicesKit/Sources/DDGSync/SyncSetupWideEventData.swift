@@ -138,9 +138,31 @@ public final class SyncSetupWideEventData: WideEventData {
 
 extension SyncSetupWideEventData {
 
+    public static let unknownTimeoutStage = "unknown"
+
     public enum StatusReason {
         public static let appRestart = "app_restart"
         public static let duplicated = "duplicated"
+        public static let codeRejected = "code_rejected"
+        public static let alreadyUpgraded = "already_upgraded"
+        public static let alreadyPaired = "already_paired"
+        public static let accountSwitchBlocked = "account_switch_blocked"
+        public static let peerLeft = "peer_left"
+    }
+
+    public struct Outcome: Equatable {
+        public let status: WideEventStatus
+        public let statusReason: String?
+        public let timeoutStage: String?
+
+        public init(status: WideEventStatus, statusReason: String? = nil, timeoutStage: String? = nil) {
+            self.status = status
+            self.statusReason = statusReason
+            self.timeoutStage = timeoutStage
+        }
+
+        public static let alreadyPaired = Outcome(status: .cancelled, statusReason: StatusReason.alreadyPaired)
+        public static let accountSwitchBlocked = Outcome(status: .cancelled, statusReason: StatusReason.accountSwitchBlocked)
     }
 
     public enum SetupMode: String, Codable, CaseIterable {

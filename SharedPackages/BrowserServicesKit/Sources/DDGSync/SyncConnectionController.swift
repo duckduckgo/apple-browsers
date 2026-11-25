@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import WideEvent
 
 @MainActor
 public protocol SyncConnectionControllerDelegate: AnyObject {
@@ -54,7 +55,8 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 
 public enum SyncConnectionError: Error, Equatable {
     case unableToRecognizeCode
-    case updateRequired
+    case unreadablePairingMessage
+    case updateRequired(detectedDuring: SyncUpdateRequiredStage)
     case unsupportedThirdPartyRecoveryCode
     case thirdPartyAccountAlreadyUpgraded
     case syncCancelledFromOtherDevice
@@ -92,6 +94,11 @@ public enum SyncConnectionError: Error, Equatable {
     case missingThirdPartyKey
     case localStorageFailed
     case invalidCredentials
+}
+
+public enum SyncUpdateRequiredStage: Equatable {
+    case codeRead
+    case pairingSession
 }
 
 public enum SyncSetupTimeoutStage: String, Equatable, Sendable {
@@ -155,7 +162,7 @@ public extension SyncConnectionError {
             return SyncSetupFailureReason.incompatibleCode
         case .thirdPartyAccountAlreadyUpgraded:
             return SyncSetupFailureReason.alreadyUpgraded
-        case .unableToRecognizeCode:
+        case .unableToRecognizeCode, .unreadablePairingMessage:
             return SyncSetupFailureReason.unrecognizedCode
         case .accountCreationFailed:
             return SyncSetupFailureReason.accountCreationFailed
@@ -193,6 +200,34 @@ public extension SyncConnectionError {
             return SyncSetupFailureReason.missingThirdPartyKey
         case .localStorageFailed:
             return SyncSetupFailureReason.localStorageFailed
+        }
+    }
+
+    var syncSetupWideEventOutcome: SyncSetupWideEventData.Outcome {
+        typealias Outcome = SyncSetupWideEventData.Outcome
+        typealias StatusReason = SyncSetupWideEventData.StatusReason
+        switch self {
+        case .unableToRecognizeCode,
+                .unsupportedThirdPartyRecoveryCode,
+                .updateRequired(detectedDuring: .codeRead):
+            return Outcome(status: .cancelled, statusReason: StatusReason.codeRejected)
+        case .thirdPartyAccountAlreadyUpgraded:
+            return Outcome(status: .cancelled, statusReason: StatusReason.alreadyUpgraded)
+        case .syncCancelledFromOtherDevice:
+            return Outcome(status: .cancelled, statusReason: StatusReason.peerLeft)
+        case .pairingV2SessionTimedOut(let stage):
+            switch stage {
+            case .waitingForJoinStatus:
+                return Outcome(status: .success)
+            case .waitingForPeerHello, .waitingForConfirmation:
+                return Outcome(status: .cancelled, statusReason: SyncSetupFailureReason.sessionTimeout, timeoutStage: stage?.rawValue)
+            case .waitingForPeerStatus, .waitingForRecoveryCode, .loggingIn, nil:
+                return Outcome(status: .failure,
+                               statusReason: SyncSetupFailureReason.sessionTimeout,
+                               timeoutStage: stage?.rawValue ?? SyncSetupWideEventData.unknownTimeoutStage)
+            }
+        default:
+            return Outcome(status: .failure, statusReason: syncSetupFailureReason)
         }
     }
 
@@ -494,7 +529,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             return false
         }
 
-        await delegate?.controllerDidError(.updateRequired, underlyingError: PairingV2Error.unsupportedVersion(unsupportedVersion), setupRole: setupRole)
+        await delegate?.controllerDidError(.updateRequired(detectedDuring: .codeRead), underlyingError: PairingV2Error.unsupportedVersion(unsupportedVersion), setupRole: setupRole)
         return false
     }
 
@@ -706,9 +741,9 @@ public class SyncConnectionController: SyncConnectionControlling {
     private func pairingV2CryptoConnectionError(for error: PairingV2MessageCryptoError) -> SyncConnectionError {
         switch error {
         case .unsupportedVersion(let version):
-            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
+            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor, detectedDuring: .pairingSession)
         default:
-            return .unableToRecognizeCode
+            return .unreadablePairingMessage
         }
     }
 
@@ -997,7 +1032,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         case .recoveryCodeUnavailable:
             return .peerRecoveryCodeUnavailable
         case .unsupportedVersion(let version):
-            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor)
+            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor, detectedDuring: .pairingSession)
         case .v2ScanningDisabled, .unknownCode, .unsupportedFlow:
             return .unableToRecognizeCode
         case .secondHello:
@@ -1035,15 +1070,17 @@ public class SyncConnectionController: SyncConnectionControlling {
         guard isPairingV2ScanningEnabled else {
             return .unableToRecognizeCode
         }
-        return unsupportedVersionConnectionError(for: version, supportedMajor: SyncCode.Recovery.supportedMajor)
+        return unsupportedVersionConnectionError(for: version, supportedMajor: SyncCode.Recovery.supportedMajor, detectedDuring: .codeRead)
     }
 
-    private func unsupportedVersionConnectionError(for version: String, supportedMajor: Int) -> SyncConnectionError {
+    private func unsupportedVersionConnectionError(for version: String,
+                                                   supportedMajor: Int,
+                                                   detectedDuring stage: SyncUpdateRequiredStage) -> SyncConnectionError {
         guard let major = SyncProtocolVersion.parseMajor(version),
               major > supportedMajor else {
-            return .unableToRecognizeCode
+            return stage == .codeRead ? .unableToRecognizeCode : .unreadablePairingMessage
         }
-        return .updateRequired
+        return .updateRequired(detectedDuring: stage)
     }
 }
 

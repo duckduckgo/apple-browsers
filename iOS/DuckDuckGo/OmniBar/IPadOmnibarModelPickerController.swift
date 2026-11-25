@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import Subscription
 import UIKit
 
@@ -34,6 +35,7 @@ final class IPadOmnibarModelPickerController {
     private let store: UTIModelStore
     private let menuFactory: UnifiedToggleInputModelMenuFactory
     private let upsellPresenter: DuckAISubscriptionUpselling
+    let startsNewChatsOnDefault: Bool
     var onModelsUpdated: (() -> Void)?
 
     /// A model whose selection was blocked behind an upsell; re-applied once a
@@ -50,20 +52,25 @@ final class IPadOmnibarModelPickerController {
         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
         upsellPresenter: DuckAISubscriptionUpselling? = nil,
-        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature()
+        updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
+        startsNewChatsOnDefault: Bool = false,
+        overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil
     ) {
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
+        self.startsNewChatsOnDefault = startsNewChatsOnDefault
         self.upsellPresenter = upsellPresenter ?? DuckAISubscriptionUpsellPresenter(
             policy: DuckAISubscriptionUpsellPolicy(subscriptionManager: subscriptionManager))
         self.menuFactory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled)
         store = UTIModelStore(
             modelsService: modelsService ?? AIChatModelsService(
-                baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL),
+                baseURL: AIChatModelsService.baseURL(forChatURL: aiChatSettings.aiChatURL),
                 accessTokenProvider: subscriptionManager
             ),
             preferences: preferences,
             subscriptionManager: subscriptionManager,
-            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
+            startsNewChatsOnDefault: startsNewChatsOnDefault,
+            overLimitNewChatDefaults: overLimitNewChatDefaults
         )
         store.onModelsUpdated = { [weak self] in
             self?.onModelsUpdated?()
@@ -85,6 +92,14 @@ final class IPadOmnibarModelPickerController {
 
     func activate() {
         store.fetchModels()
+    }
+
+    var liveSelection: UTIModelSelection {
+        store.liveSelection
+    }
+
+    func apply(_ selection: UTIModelSelection) {
+        store.applyPersistedSelection(modelID: selection.modelID, reasoningMode: selection.reasoningMode)
     }
 
     func makeMenu(onSelect: @escaping (String) -> Void) -> UIMenu? {

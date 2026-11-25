@@ -82,6 +82,16 @@ struct DuckAIOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Only Fire is usable until Fire is used", .timeLimit(.minutes(1)))
+    func uiLockedExceptFireUntilFire() {
+        #expect(sut.uiLock == .locked(except: [.fire]))
+
+        progress.fireButtonUsedOnce = true
+
+        #expect(sut.uiLock == .unlocked)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Got it is handled by the ending; That's Duck.ai! has nothing after it", .timeLimit(.minutes(1)))
     func gotIt() {
         subscriptionManager.hasAppStoreProductsAvailable = true

@@ -32,9 +32,10 @@ final class SiteBreakageExperimentMetricsTests: XCTestCase {
     override func setUpWithError() throws {
         mockFeatureFlagger = MockFeatureFlagger()
         PixelKit.configureExperimentKit(featureFlagger: mockFeatureFlagger, eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()), fire: { _, _, _ in })
-        SiteBreakageExperimentMetrics.configureSiteBreakageExperimentMetrics { subfeatureID, metric, conversionWindow, value in
-            self.pixelCalls.append((subfeatureID, metric, conversionWindow, value))
-        }
+    }
+
+    private func recordPixel(_ subfeatureID: SubfeatureID, metric: String, window: ConversionWindow, value: String) {
+        pixelCalls.append((subfeatureID, metric, window, value))
     }
 
     override func tearDownWithError() throws {
@@ -48,7 +49,7 @@ final class SiteBreakageExperimentMetricsTests: XCTestCase {
         ]
 
         // WHEN
-        SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: "testEtag") { parameters in
+        SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: "testEtag", firePixelExperiment: recordPixel) { parameters in
             self.debugCalls.append(parameters)
         }
 
@@ -65,7 +66,7 @@ final class SiteBreakageExperimentMetricsTests: XCTestCase {
 
     func test_OnfireTdsExperimentMetricPrivacyToggleUsed_WhenNoExperimentActive_ThenCorrectPixelFunctionsCalled() {
         // WHEN
-        SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: "testEtag") { parameters in
+        SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: "testEtag", firePixelExperiment: recordPixel) { parameters in
             self.debugCalls.append(parameters)
         }
 

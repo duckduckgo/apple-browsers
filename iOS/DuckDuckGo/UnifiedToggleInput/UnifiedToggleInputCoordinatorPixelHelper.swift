@@ -192,6 +192,14 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
     static let resubmitOfSearchKey = "resubmit_of_search"
     static let resubmitOfPromptKey = "resubmit_of_prompt"
 
+    /// Temporary, for the `unifiedToggleInputSimplifiedPromptBox` rollout: `on` when the iPhone prompt box is the
+    /// simplified one, so dashboards can compare flag-on and flag-off devices. Remove after monitoring.
+    static let simplifiedPromptBoxKey = "simplified_prompt_box"
+
+    static func simplifiedPromptBoxValue(_ isOn: Bool) -> String {
+        isOn ? "on" : "off"
+    }
+
     static func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment,
                                            surface: UnifiedToggleInputPixelSurface,
                                            pageType: UnifiedToggleInputPromptPageType = .unknown,
@@ -252,12 +260,17 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         }
     }
 
-    static func fireToolSelectedPixel(for tool: AIChatRAGTool, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
+    static func fireToolSelectedPixel(for tool: AIChatRAGTool,
+                                      surface: UnifiedToggleInputPixelSurface,
+                                      simplifiedPromptBox: Bool,
+                                      firing: UTIPixelFiring = .live) {
+        var parameters = surfaceParameters(surface)
+        parameters[simplifiedPromptBoxKey] = simplifiedPromptBoxValue(simplifiedPromptBox)
         switch tool {
         case .imageGeneration:
-            firing.fireDailyAndCount(.unifiedToggleInputImageGenerationSelected, surfaceParameters(surface))
+            firing.fireDailyAndCount(.unifiedToggleInputImageGenerationSelected, parameters)
         case .webSearch:
-            firing.fireDailyAndCount(.unifiedToggleInputWebSearchSelected, surfaceParameters(surface))
+            firing.fireDailyAndCount(.unifiedToggleInputWebSearchSelected, parameters)
         default:
             break
         }
@@ -288,6 +301,8 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         usageContext: UsageContext? = nil,
         addressBarPosition: AddressBarPosition? = nil,
         resubmitOfSearch: CrossModeResubmitDetector.DelayBucket? = nil,
+        simplifiedPromptBox: Bool,
+        modelSource: DuckAINewChatModelSource? = nil,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
@@ -312,6 +327,8 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         parameters.merge(usageContext?.parameters ?? [:]) { $1 }
         parameters[Self.addressBarPositionKey] = addressBarPosition?.rawValue
         parameters[Self.resubmitOfSearchKey] = resubmitOfSearch?.rawValue
+        parameters[Self.simplifiedPromptBoxKey] = simplifiedPromptBoxValue(simplifiedPromptBox)
+        parameters[DuckAINewChatModelSource.pixelParameterKey] = modelSource?.rawValue
 
         firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
     }

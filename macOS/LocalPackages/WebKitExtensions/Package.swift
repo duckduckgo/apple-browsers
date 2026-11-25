@@ -43,6 +43,7 @@ let package = Package(
                 "AppKitExtensions"
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug)),
             ]
         )

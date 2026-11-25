@@ -142,6 +142,7 @@ final class SearchHistoryBrowserToolTests: XCTestCase {
         XCTAssertEqual(first["title"], "A")
         XCTAssertEqual(first["url"], "https://a.example/")
         XCTAssertEqual(first["visitedAt"], "2026-09-24T10:00:00.250Z")
+        XCTAssertEqual(tool.resultCount(of: payload), 1)
     }
 
     func testWhenArgumentsAreMalformedThenTheyAreInvalid() async {
@@ -164,6 +165,7 @@ final class SearchHistoryBrowserToolTests: XCTestCase {
         let result = await tool.execute(arguments: nil, context: context())
 
         XCTAssertEqual(result, .success(["results": []]))
+        XCTAssertEqual(tool.resultCount(of: ["results": []]), 0)
     }
 
     func testWhenCalledInAFireWindowThenCallIsUnavailable() async {

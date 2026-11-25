@@ -46,10 +46,6 @@ jobs:
         RUNS_ON: image:osx-27-edge,general-purpose # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
-      outputs:
-        commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
-        pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
-
       steps:
 
       - name: Register SSH keys for private repos
@@ -166,13 +162,6 @@ jobs:
           path: |
             SharedPackages/DataBrokerProtectionCore/build-log.txt
             SharedPackages/DataBrokerProtectionCore/DerivedData/Logs/Test/*.xcresult
-
-      - name: Fetch latest commit author and PR reviewers
-        if: failure() && github.ref_name == 'main' && github.run_attempt == 1
-        id: fetch_commit_author
-        uses: ./.github/actions/fetch-commit-info
-        with:
-          github-token: ${{ github.token }}
 
   unit-tests-ios:
 
@@ -373,8 +362,6 @@ jobs:
           action: create-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
-          commit-author: ${{ needs.unit-tests.outputs.commit_author }}
-          pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.APPLE_GH_RO_PAT }}
 
   close-asana-task:

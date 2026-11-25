@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import FeatureFlags_macOS
 import Foundation
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
@@ -34,11 +35,13 @@ final class LocalModelAccessPreferencesTests {
     private var confirms = true
     private var confirmations = 0
     private var redraws = 0
+    private let pixelFiring = PixelKitMock()
 
     private lazy var service = AIChatLocalModelService(featureFlagger: featureFlagger,
                                                        storage: storage,
                                                        engine: engine,
-                                                       notificationCenter: NotificationCenter())
+                                                       notificationCenter: NotificationCenter(),
+                                                       instrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
 
     private func makePreferences() -> AIChatPreferences {
         AIChatPreferences(storage: storage,
@@ -51,6 +54,15 @@ final class LocalModelAccessPreferencesTests {
                               confirmations += 1
                               return confirms
                           })
+    }
+
+    private func selectedInSettings(_ model: AIChatPageSummariesModel) -> ExpectedFireCall {
+        ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: .selected(model, source: .settings)), frequency: .standard)
+    }
+
+    /// The service also sends its daily state, which these tests don't look at.
+    private var selectedPixels: [ExpectedFireCall] {
+        pixelFiring.actualFireCalls.filter { $0.pixel.name == "aichat_local_model_selected_macos" }
     }
 
     @available(iOS 16, macOS 13, *)
@@ -132,6 +144,31 @@ final class LocalModelAccessPreferencesTests {
 
         #expect(confirmations == 0)
         #expect(storage.pageSummariesModel == .duckAI)
+    }
+
+    // MARK: - Pixels
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turn On and Turn Off send selected with the settings source", .timeLimit(.minutes(1)))
+    func settingsSendsSelected() async {
+        let preferences = makePreferences()
+
+        await preferences.turnOnLocalModel()
+        preferences.turnOffLocalModel()
+
+        #expect(selectedPixels == [selectedInSettings(.appleIntelligence), selectedInSettings(.duckAI)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Cancel, or Turn Off while already off, sends nothing", .timeLimit(.minutes(1)))
+    func noChangeSendsNothing() async {
+        confirms = false
+        let preferences = makePreferences()
+
+        await preferences.turnOnLocalModel()
+        preferences.turnOffLocalModel()
+
+        #expect(selectedPixels.isEmpty)
     }
 
     private func waitUntil(_ condition: () -> Bool) async {

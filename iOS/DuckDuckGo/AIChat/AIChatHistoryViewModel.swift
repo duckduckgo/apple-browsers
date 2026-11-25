@@ -73,12 +73,17 @@ final class AIChatHistoryViewModel: ObservableObject {
     private let instrumentation: AIChatHistoryInstrumentation
     private let source: AIChatHistorySource
     private let featureFlagger: FeatureFlagger
+    private let simplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding
     private let isFireMode: Bool
     private var cancellables: Set<AnyCancellable> = []
 
     /// Gates the redesigned Chats UI (overflow menu + multi-select); off keeps the original layout.
     var isRedesignEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatHistoryMultiselect)
+    }
+
+    var showsDuckAISettingsButton: Bool {
+        isRedesignEnabled && simplifiedPromptBoxFeature.isAvailable
     }
 
     weak var delegate: AIChatHistoryViewModelDelegate?
@@ -97,6 +102,7 @@ final class AIChatHistoryViewModel: ObservableObject {
     ) {
         self.reader = reader
         self.featureFlagger = featureFlagger
+        self.simplifiedPromptBoxFeature = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger)
         self.fireExecutor = fireExecutor
         self.downloader = downloader
         self.modelDisplays = modelDisplays
@@ -229,6 +235,11 @@ final class AIChatHistoryViewModel: ObservableObject {
     func openChatProtection() {
         instrumentation.chatProtectionTapped()
         delegate?.viewModelDidRequestChatProtection()
+    }
+
+    func openDuckAISettings(source: AIChatHistorySettingsSource) {
+        instrumentation.duckAISettingsTapped(source: source)
+        delegate?.viewModelDidRequestDuckAISettings()
     }
 
     func deleteChat(chatId: String) {
@@ -427,6 +438,8 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
 
     /// Dismiss the sheet and open the Duck.ai chat protection page.
     func viewModelDidRequestChatProtection()
+
+    func viewModelDidRequestDuckAISettings()
 
     /// A chat export finished writing to disk. Present the "Download complete" toast for
     /// `filename` with a "Show" action that dismisses the sheet and opens the in-app

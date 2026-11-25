@@ -381,6 +381,102 @@ extension ClientToolInvokerTests {
         #expect(harness.source.prompts.isEmpty)
         #expect(harness.tool.calls.isEmpty)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [
+        ("auto", BrowserToolPermissionPath.auto, true), ("always", .always, true), ("never", .never, false),
+        ("allowOnce", .prompt, true), ("dontAllow", .prompt, false), ("dismiss", .prompt, false)
+    ])
+    func traceSaysWhatLetTheCallRunAndHowLongItRan(setup: String, path: BrowserToolPermissionPath, runs: Bool) async throws {
+        let harness = ClientToolTestHarness()
+        switch setup {
+        case "auto": harness.tool.permissionMode = .auto
+        case "always": harness.permissions.storedDecisions[harness.tool.name] = .allow
+        case "never": harness.permissions.storedDecisions[harness.tool.name] = .deny
+        default: break
+        }
+        let request = try harness.request()
+        let call = Task { await harness.invoker.invokeClientToolWithTrace(request, context: harness.context, permissionPrompter: harness.source) }
+        let decisions: [String: ClientToolPermissionDecision] = ["allowOnce": .allowOnce, "dontAllow": .dontAllow, "dismiss": .dismiss]
+        if let decision = decisions[setup] {
+            await harness.source.waitForPrompts(1)
+            harness.answer(harness.source.prompts[0], decision: decision)
+        }
+
+        let (response, trace) = await call.value
+
+        #expect(trace?.permissionPath == path)
+        #expect((trace?.executionDuration != nil) == runs)
+        #expect(harness.tool.calls.count == (runs ? 1 : 0))
+        if runs { #expect(response == .success(callId: "call", value: ["content": "page"])) }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func aCallAllowedForTheChatTracesChatOnTheNextCall() async throws {
+        let harness = ClientToolTestHarness()
+        harness.configuration.isRequestAccessEnabled = true
+        func call(_ callID: String) throws -> Task<(response: ExecuteClientToolResponse, trace: BrowserToolCallTrace?), Never> {
+            let data = try JSONEncoder().encode(JSONValue.object([
+                "callId": .string(callID), "capability": ["name": "readTabContent", "version": 1], "input": [:], "chatId": "chat"
+            ]))
+            let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: data)
+            return Task { await harness.invoker.invokeClientToolWithTrace(request, context: harness.context, permissionPrompter: harness.source) }
+        }
+
+        let first = try call("first")
+        await harness.source.waitForPrompts(1)
+        harness.answer(harness.source.prompts[0], decision: .allowForChat)
+        let second = try await call("second").value
+
+        #expect(await first.value.trace?.permissionPath == .prompt)
+        #expect(second.trace?.permissionPath == .chat)
+        #expect(second.response == .success(callId: "second", value: ["content": "page"]))
+        #expect(harness.source.prompts.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func refusalsBeforePermissionTraceNoneAndFireAndRequestAccessAreNotTraced() async throws {
+        let harness = ClientToolTestHarness()
+        harness.configuration.isRequestAccessEnabled = true
+
+        let invalid = await harness.invoker.invokeClientToolWithTrace(try harness.request(input: ["unknown": true]), context: harness.context,
+                                                                      permissionPrompter: harness.source)
+        harness.configuration.disabled.insert(harness.tool.name)
+        let unavailable = await harness.invoker.invokeClientToolWithTrace(try harness.request(), context: harness.context,
+                                                                          permissionPrompter: harness.source)
+        let fire = await harness.invoker.invokeClientToolWithTrace(try harness.request(name: harness.otherTool.name),
+                                                                   context: BrowserToolCallContext(ownerTabID: "owner", isBurner: true),
+                                                                   permissionPrompter: harness.source)
+        let access = await harness.invoker.invokeClientToolWithTrace(try harness.request(name: "requestAccess", input: ["capabilities": ["searchHistory"]]),
+                                                                     context: harness.context, permissionPrompter: harness.source)
+
+        #expect(invalid.trace == BrowserToolCallTrace(permissionPath: .beforePermission))
+        #expect(unavailable.trace == BrowserToolCallTrace(permissionPath: .beforePermission))
+        #expect(fire.response == .failure(callId: "call", error: .unavailable))
+        #expect(fire.trace == nil)
+        #expect(access.trace == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func traceCountsTheShapedResultOfACountingToolOnly() async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.permissionMode = .auto
+        harness.tool.result = .success(["items": [1, 2, 3, 4]])
+        harness.tool.clientResult = { value in .success(["items": .array(Array(value["items"]?.arrayValue?.prefix(2) ?? []))]) }
+
+        let uncounted = await harness.invoker.invokeClientToolWithTrace(try harness.request(), context: harness.context, permissionPrompter: harness.source)
+        harness.tool.countsResults = true
+        let counted = await harness.invoker.invokeClientToolWithTrace(try harness.request(), context: harness.context, permissionPrompter: harness.source)
+        harness.tool.result = .failure(.notFound)
+        let failed = await harness.invoker.invokeClientToolWithTrace(try harness.request(), context: harness.context, permissionPrompter: harness.source)
+
+        #expect(uncounted.trace?.resultCount == nil)
+        #expect(counted.trace?.resultCount == 2)
+        #expect(failed.trace?.resultCount == nil)
+    }
 }
 
 @MainActor
@@ -396,8 +492,8 @@ private final class StubClientToolPermissionCoordinator: ClientToolPermissionCoo
     func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?, chatID: String?, accessToolNames: [String]?,
                    prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         calls.append((callID, tool, targetsOtherTab, prompter))
-        guard outcome != "denied" else { return .refused(.denied) }
-        return .granted(performExecution: { [self] operation in
+        guard outcome != "denied" else { return .refused(.denied, .prompt, answer: .never) }
+        return .granted(.prompt, performExecution: { [self] operation in
             permissionConfirmationCount += 1
             return outcome == "granted" ? await operation() : nil
         })

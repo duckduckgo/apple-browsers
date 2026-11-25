@@ -52,6 +52,38 @@ final class PixelExperimentKitTests: XCTestCase {
         firedIncludeAppVersion = []
     }
 
+    func testReconfigurationDuringThresholdCheckAppliesToTheNextEvent() {
+        struct ReconfiguringTracker: ExperimentEventTracking {
+            let reconfigure: () -> Void
+
+            func incrementAndCheckThreshold(forKey key: ExprimentPixelNameAndParameters,
+                                            threshold: NumberOfActions,
+                                            isInWindow: Bool) -> Bool {
+                reconfigure()
+                return isInWindow
+            }
+        }
+
+        let experiment = "reconfigured"
+        mockFeatureFlagger.experiments = [
+            experiment: ExperimentData(parentID: "parent", cohortID: "control", enrollmentDate: Date())
+        ]
+        var receivedBy = [String]()
+        let tracker = ReconfiguringTracker {
+            PixelKit.configureExperimentKit(featureFlagger: self.mockFeatureFlagger) { _, _, _ in
+                receivedBy.append("replacement")
+            }
+        }
+        PixelKit.configureExperimentKit(featureFlagger: mockFeatureFlagger, eventTracker: tracker) { _, _, _ in
+            receivedBy.append("original")
+        }
+
+        PixelKit.fireExperimentPixelIfThresholdReached(for: experiment, metric: "action", conversionWindowDays: 0...0, threshold: 1)
+        PixelKit.fireExperimentPixel(for: experiment, metric: "action", conversionWindowDays: 0...0, value: "1")
+
+        XCTAssertEqual(receivedBy, ["original", "replacement"])
+    }
+
     func testfireExperimentEnrollmentPixelPixelSendsExpectedData() {
         // GIVEN
         let subfeatureID = "testSubfeature"

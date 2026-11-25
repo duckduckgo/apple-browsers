@@ -384,3 +384,239 @@ struct ClientToolPermissionCoordinatorTests {
         #expect(harness.tool.calls.isEmpty)
     }
 }
+
+// MARK: - Prompt instrumentation
+
+@MainActor
+final class RecordingBrowserToolsInstrumentation: BrowserToolsInstrumentation {
+    struct Prompt: Equatable {
+        let tool: String
+        let answer: BrowserToolPromptAnswer
+        let number: Int?
+        let timeToAnswer: TimeInterval
+    }
+    var prompts: [Prompt] = []
+    var accessRequests: [BrowserToolAccessRequestOutcome] = []
+
+    func accessRequestDidFinish(_ outcome: BrowserToolAccessRequestOutcome) {
+        accessRequests.append(outcome)
+    }
+
+    func toolCallDidFinish(tool: String, response: ExecuteClientToolResponse, trace: BrowserToolCallTrace) {}
+
+    func promptDidClose(tool: String, answer: BrowserToolPromptAnswer, promptNumberInChat: Int?, timeToAnswer: TimeInterval) {
+        prompts.append(Prompt(tool: tool, answer: answer, number: promptNumberInChat, timeToAnswer: timeToAnswer))
+    }
+}
+
+@MainActor
+struct ClientToolPromptInstrumentationTests {
+
+    private func start(_ harness: ClientToolTestHarness, callID: String, tool: String = "readTabContent",
+                       chatID: String? = nil) throws -> Task<ExecuteClientToolResponse, Never> {
+        var fields: [String: JSONValue] = ["callId": .string(callID), "capability": ["name": .string(tool), "version": 1], "input": [:]]
+        fields["chatId"] = chatID.map(JSONValue.string)
+        let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: JSONEncoder().encode(JSONValue.object(fields)))
+        return Task { await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source) }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [
+        (ClientToolPermissionDecision.allowOnce, BrowserToolPromptAnswer.allowOnce), (.always, .always), (.never, .never), (.dismiss, .dismiss)
+    ])
+    func anAnsweredPromptReportsItsAnswerAndTimeWithoutAChatNumber(decision: ClientToolPermissionDecision,
+                                                                   answer: BrowserToolPromptAnswer) async throws {
+        let harness = ClientToolTestHarness()
+        let instrumentation = RecordingBrowserToolsInstrumentation()
+        harness.coordinator.instrumentation = instrumentation
+        harness.clock.advance(to: 10)
+        let call = try start(harness, callID: "call")
+        await harness.source.waitForPrompts(1)
+        harness.clock.advance(to: 15, dispatchTimers: false)
+
+        harness.answer(harness.source.prompts[0], decision: decision)
+        _ = await call.value
+
+        #expect(instrumentation.prompts == [.init(tool: "readTabContent", answer: answer, number: nil, timeToAnswer: 5)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func promptsInAChatAreNumberedUntilTheGrantsAreRevoked() async throws {
+        let harness = ClientToolTestHarness()
+        harness.configuration.isRequestAccessEnabled = true
+        let instrumentation = RecordingBrowserToolsInstrumentation()
+        harness.coordinator.instrumentation = instrumentation
+
+        let first = try start(harness, callID: "first", chatID: "chat")
+        await harness.source.waitForPrompts(1)
+        harness.answer(harness.source.prompts[0], decision: .allowForChat)
+        _ = await first.value
+        _ = await (try start(harness, callID: "granted", chatID: "chat")).value
+        let second = try start(harness, callID: "second", tool: "searchHistory", chatID: "chat")
+        await harness.source.waitForPrompts(2)
+        harness.answer(harness.source.prompts[1], decision: .never)
+        _ = await second.value
+        let otherChat = try start(harness, callID: "other", chatID: "other-chat")
+        await harness.source.waitForPrompts(3)
+        harness.answer(harness.source.prompts[2], decision: .allowOnce)
+        _ = await otherChat.value
+        harness.coordinator.revokeChatGrants()
+        let afterRevoke = try start(harness, callID: "after", chatID: "chat")
+        await harness.source.waitForPrompts(4)
+        harness.answer(harness.source.prompts[3], decision: .dismiss)
+        _ = await afterRevoke.value
+
+        #expect(instrumentation.prompts.map(\.answer) == [.allowForChat, .never, .allowOnce, .dismiss])
+        #expect(instrumentation.prompts.map(\.number) == [1, 2, 1, 1])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func anUnansweredPromptReportsTimeoutAndACancelledCallReportsWithdrawn() async throws {
+        let harness = ClientToolTestHarness()
+        let instrumentation = RecordingBrowserToolsInstrumentation()
+        harness.coordinator.instrumentation = instrumentation
+
+        let unanswered = try start(harness, callID: "unanswered")
+        await harness.source.waitForPrompts(1)
+        await harness.clock.waitForRegistrations(1)
+        harness.clock.advance(to: 121)
+        _ = await unanswered.value
+        let cancelled = try start(harness, callID: "cancelled")
+        await harness.source.waitForPrompts(2)
+        harness.clock.advance(to: 124, dispatchTimers: false)
+        cancelled.cancel()
+        _ = await cancelled.value
+
+        #expect(instrumentation.prompts == [
+            .init(tool: "readTabContent", answer: .timeout, number: nil, timeToAnswer: 121),
+            .init(tool: "readTabContent", answer: .withdrawn, number: nil, timeToAnswer: 3)
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func aRequestAccessPromptIsNotReportedAsAToolPrompt() async throws {
+        let harness = ClientToolTestHarness()
+        harness.configuration.isRequestAccessEnabled = true
+        let instrumentation = RecordingBrowserToolsInstrumentation()
+        harness.coordinator.instrumentation = instrumentation
+        var fields: [String: JSONValue] = ["callId": "access", "capability": ["name": "requestAccess", "version": 1],
+                                           "input": ["capabilities": ["searchHistory"]]]
+        fields["chatId"] = "chat"
+        let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: JSONEncoder().encode(JSONValue.object(fields)))
+
+        let access = Task { await harness.invoker.invokeClientTool(request, context: harness.context, permissionPrompter: harness.source) }
+        await harness.source.waitForPrompts(1)
+        harness.answer(harness.source.prompts[0], decision: .allowAccess(excluding: []))
+        _ = await access.value
+
+        #expect(instrumentation.prompts.isEmpty)
+    }
+
+    // MARK: requestAccess
+
+    private func requestAccess(_ harness: ClientToolTestHarness, _ names: [String], chatID: String? = "chat",
+                               context: BrowserToolCallContext? = nil) throws -> Task<ExecuteClientToolResponse, Never> {
+        var fields: [String: JSONValue] = ["callId": "access", "capability": ["name": "requestAccess", "version": 1],
+                                           "input": ["capabilities": .array(names.map(JSONValue.string))]]
+        fields["chatId"] = chatID.map(JSONValue.string)
+        let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: JSONEncoder().encode(JSONValue.object(fields)))
+        return Task { await harness.invoker.invokeClientTool(request, context: context ?? harness.context, permissionPrompter: harness.source) }
+    }
+
+    private func accessHarness() -> (ClientToolTestHarness, RecordingBrowserToolsInstrumentation) {
+        let harness = ClientToolTestHarness()
+        harness.configuration.isRequestAccessEnabled = true
+        let instrumentation = RecordingBrowserToolsInstrumentation()
+        harness.invoker.instrumentation = instrumentation
+        return (harness, instrumentation)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func allowingAccessWithAToolRemovedReportsEachToolsResult() async throws {
+        let (harness, instrumentation) = accessHarness()
+        harness.permissions.storedDecisions["searchHistory"] = .allow
+
+        let call = try requestAccess(harness, ["readTabContent", "searchHistory", "pinTab", "listOpenTabs"])
+        await harness.source.waitForPrompts(1)
+        harness.answer(harness.source.prompts[0], decision: .allowAccess(excluding: []))
+        _ = await call.value
+
+        #expect(instrumentation.accessRequests == [BrowserToolAccessRequestOutcome(
+            decision: .allow, requested: 4, asked: 1, removed: 0,
+            results: [("readTabContent", .granted), ("searchHistory", .alreadyAllowed), ("pinTab", .unavailable), ("listOpenTabs", .unavailable)])])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func aToolTheUserTakesOutIsRemoved() async throws {
+        let (harness, instrumentation) = accessHarness()
+
+        let call = try requestAccess(harness, ["readTabContent", "searchHistory"])
+        await harness.source.waitForPrompts(1)
+        harness.answer(harness.source.prompts[0], decision: .allowAccess(excluding: ["searchHistory"]))
+        _ = await call.value
+
+        #expect(instrumentation.accessRequests.map(\.removed) == [1])
+        #expect(instrumentation.accessRequests.first?.results.map(\.result) == [.granted, .removed])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [
+        (ClientToolPermissionDecision.dontAllow, BrowserToolAccessRequestOutcome.Decision.dontAllow), (.never, .dontAllow), (.dismiss, .dismiss)
+    ])
+    func aRefusedPromptReportsItsDecisionAndDeniesTheAskedTools(decision: ClientToolPermissionDecision,
+                                                                expected: BrowserToolAccessRequestOutcome.Decision) async throws {
+        let (harness, instrumentation) = accessHarness()
+        harness.permissions.storedDecisions["searchHistory"] = .deny
+
+        let call = try requestAccess(harness, ["readTabContent", "searchHistory"])
+        await harness.source.waitForPrompts(1)
+        harness.answer(harness.source.prompts[0], decision: decision)
+        _ = await call.value
+
+        #expect(instrumentation.accessRequests == [BrowserToolAccessRequestOutcome(
+            decision: expected, requested: 2, asked: 1, removed: 0, results: [("readTabContent", .denied), ("searchHistory", .never)])])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func anUnansweredOrWithdrawnPromptIsReportedAsSuch() async throws {
+        let (harness, instrumentation) = accessHarness()
+
+        let unanswered = try requestAccess(harness, ["readTabContent"])
+        await harness.source.waitForPrompts(1)
+        await harness.clock.waitForRegistrations(1)
+        harness.clock.advance(to: 121)
+        _ = await unanswered.value
+        let withdrawn = try requestAccess(harness, ["readTabContent"])
+        await harness.source.waitForPrompts(2)
+        harness.coordinator.cancelRequests(from: harness.source)
+        _ = await withdrawn.value
+
+        #expect(instrumentation.accessRequests.map(\.decision) == [.timeout, .withdrawn])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func noPromptInvalidUnavailableAndFireAreReportedWithoutAsking() async throws {
+        let (harness, instrumentation) = accessHarness()
+        harness.permissions.storedDecisions["readTabContent"] = .allow
+
+        _ = await (try requestAccess(harness, ["readTabContent"])).value
+        _ = await (try requestAccess(harness, ["readTabContent"], chatID: nil)).value
+        _ = await (try requestAccess(harness, ["readTabContent"], context: BrowserToolCallContext(ownerTabID: "owner", isBurner: true))).value
+        harness.configuration.isRequestAccessEnabled = false
+        _ = await (try requestAccess(harness, ["readTabContent"])).value
+
+        #expect(instrumentation.accessRequests == [
+            BrowserToolAccessRequestOutcome(decision: .noPrompt, requested: 1, asked: 0, removed: 0, results: [("readTabContent", .alreadyAllowed)]),
+            BrowserToolAccessRequestOutcome(decision: .invalid),
+            BrowserToolAccessRequestOutcome(decision: .unavailable)
+        ])
+        #expect(harness.source.prompts.isEmpty)
+    }
+}

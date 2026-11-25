@@ -21,7 +21,8 @@ let package = Package(
         ),
         .testTarget(
             name: "NetworkQualityMonitorTests",
-            dependencies: ["NetworkQualityMonitor"]
+            dependencies: ["NetworkQualityMonitor"],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         )
     ]
 )

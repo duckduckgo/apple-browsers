@@ -38,6 +38,8 @@ final class FaviconRasterizer {
 
     enum RasterizationError: Error {
         case dataTooLarge
+        /// The data is neither a PDF nor SVG-like (see `Data.looksLikeSVG`), so it never reaches the web view.
+        case unsupportedData
         case invalidResult
         /// WebKit loaded the data and it isn't an image.
         case undecodable
@@ -103,6 +105,10 @@ final class FaviconRasterizer {
     /// discarded so that the next call starts with a fresh one instead of reusing a dead or busy process.
     func rasterize(_ data: Data) async throws -> Data {
         guard data.count <= Self.maxDataSize else { throw RasterizationError.dataTooLarge }
+        guard data.isPDFData || data.looksLikeSVG else {
+            Logger.favicons.debug("FaviconRasterizer: the data is neither a PDF nor an SVG, skipping it")
+            throw RasterizationError.unsupportedData
+        }
         try Task.checkCancellation()
 
         let webView = acquireWebView()
@@ -301,6 +307,25 @@ extension Data {
     /// loads the data with: PDF needs `application/pdf`, anything else is loaded as SVG.
     var isPDFData: Bool {
         starts(with: Data("%PDF-".utf8))
+    }
+}
+
+extension Data {
+
+    /// How many leading bytes are searched for `<svg`. Editors put comments, a DOCTYPE and metadata before the root
+    /// element, and a few KB cover them.
+    static let svgSniffLength = 8192
+
+    /// Returns whether the first `svgSniffLength` bytes contain `<svg`, ignoring case, in UTF-8 (the BOM is
+    /// harmless) or in UTF-16 with a byte order mark.
+    ///
+    /// This only spares the web view for data that can't be an SVG (an HTML error page, a truncated file). It is not
+    /// a safety check: WebKit renders whatever passes, and anything that fails to render is dropped.
+    var looksLikeSVG: Bool {
+        let head = prefix(Self.svgSniffLength)
+        let isUTF16 = head.starts(with: [0xFF, 0xFE]) || head.starts(with: [0xFE, 0xFF])
+        let text = isUTF16 ? String(data: head, encoding: .utf16) : String(bytes: head, encoding: .isoLatin1)
+        return text?.lowercased().contains("<svg") ?? false
     }
 }
 

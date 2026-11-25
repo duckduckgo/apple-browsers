@@ -312,9 +312,33 @@ final class FaviconRasterizerTests: XCTestCase {
     }
 
     func testDecodeFailureKeepsTheWebView() async throws {
-        _ = try? await rasterizer.rasterize(Data("not an image".utf8))
+        _ = try? await rasterizer.rasterize(Data("<svg>broken".utf8))
 
         XCTAssertTrue(rasterizer.hasWebView)
+    }
+
+    func testDataThatIsNeitherPDFNorSVGDoesNotReachTheWebView() async {
+        let html = Data("<html><body>Not found</body></html>".utf8)
+        do {
+            _ = try await rasterizer.rasterize(html)
+            XCTFail("Expected an error")
+        } catch {
+            XCTAssertEqual(error as? FaviconRasterizer.RasterizationError, .unsupportedData)
+        }
+        XCTAssertFalse(rasterizer.hasWebView)
+    }
+
+    func testLooksLikeSVGSniffsTheFirstBytes() throws {
+        let svg = Self.svg(width: 16, height: 16)
+        XCTAssertTrue(Data(svg.utf8).looksLikeSVG)
+        XCTAssertTrue(Data(svg.uppercased().utf8).looksLikeSVG)
+        XCTAssertTrue((Data([0xEF, 0xBB, 0xBF]) + Data(svg.utf8)).looksLikeSVG)
+        XCTAssertTrue(try XCTUnwrap(svg.data(using: .utf16)).looksLikeSVG)
+        XCTAssertTrue(Data(("<?xml version=\"1.0\"?><!-- " + String(repeating: "x", count: 4000) + " -->" + svg).utf8).looksLikeSVG)
+        XCTAssertFalse(Data((String(repeating: " ", count: Data.svgSniffLength) + svg).utf8).looksLikeSVG)
+        XCTAssertFalse(Data("<html><body>Not found</body></html>".utf8).looksLikeSVG)
+        XCTAssertFalse(Data("not an image".utf8).looksLikeSVG)
+        XCTAssertFalse(Data().looksLikeSVG)
     }
 
     func testCancellingTheCallerReleasesItWithoutWaitingForTheWebView() async {

@@ -149,6 +149,11 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         recordDebugEvent(kind: .actionResponse,
                          actionType: .extract,
                          details: DebugHelper.prettyPrintedJSON(from: profiles, meta: meta))
+#if DEBUG
+        if capturesDebugSnapshots {
+            await captureDebugSnapshot(.result, action: actionsHandler?.currentAction())
+        }
+#endif
         complete(profiles)
         await executeNextStep()
     }

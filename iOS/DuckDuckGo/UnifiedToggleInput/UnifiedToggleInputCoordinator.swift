@@ -381,8 +381,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var cancellables = Set<AnyCancellable>()
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
-    /// The tab that was active when `boundUserScript` was bound. A tab switch activates the incoming tab before it
-    /// binds that tab's script, and in between the bound script still belongs to the outgoing tab.
+    /// The tab `boundUserScript` was bound for, set once the bind has reset and synced the session. A tab switch
+    /// activates the incoming tab before it binds that tab's script, and in between nothing on the input is that tab's yet.
     private var boundUserScriptTabUID: TabUID?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
     private let lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding?
@@ -786,10 +786,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // A freed script's address can be reused by the next one, so a matching identifier alone doesn't prove it's the same script.
         if boundUserScriptIdentifier == newIdentifier, boundUserScript === userScript {
             boundUserScript = userScript
-            boundUserScriptTabUID = currentTabUID
             userScript.inputBoxHandler = self
             syncChipVisibility(hasExistingChat: hasExistingChat)
             refreshToolsPresentation()
+            boundUserScriptTabUID = currentTabUID
             refreshNewChatState()
             return
         }
@@ -797,7 +797,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = userScript
         boundUserScriptIdentifier = newIdentifier
-        boundUserScriptTabUID = currentTabUID
         if hadPreviousScript {
             resetSessionState()
         }
@@ -805,6 +804,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         userScript.inputBoxHandler = self
         syncChipVisibility(hasExistingChat: hasExistingChat)
         refreshToolsPresentation()
+        // Last: until here the session state still mixes the outgoing chat with this page.
+        boundUserScriptTabUID = currentTabUID
         refreshNewChatState()
     }
 

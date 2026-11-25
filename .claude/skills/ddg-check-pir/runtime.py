@@ -460,11 +460,13 @@ class Runtime:
             raise
         self._capture(self._simulator_pid(output, product), product)
 
-    def launch_scheduler(self, mode, profile_json):
+    def launch_scheduler(self, mode, profile_json, brokers=()):
         if mode not in ("seed", "reseed"):
             raise RuntimeError("Managed scheduler launches require seed or reseed")
         metadata, product = self._verified_build()
         environment = {"PIR_SCHEDULER_MODE": mode, "PIR_SCHEDULER_INSTANCE_ID": self.instance, "PIR_PROFILE_JSON": profile_json}
+        if brokers:
+            environment["PIR_SCHEDULER_BROKERS"] = json.dumps(list(brokers))
         if self.platform == "ios":
             self._reserve_port()
             self._secure_launch_logs()
@@ -476,6 +478,11 @@ class Runtime:
                 "PIR_DEBUG_PORT": str(self.port), "PIR_DEBUG_INSTANCE_ID": self.instance})
             return {"platform": "ios", "instanceID": self.instance, "port": self.port, "process": self.identity,
                     "product": product, "simulator": self.simulator, "sourceSHA256": metadata["sourceSHA256"]}
+        self._acquire_scheduler_lock(product)
+        environment["PIR_SCHEDULER_RECEIPT"] = str(self._receipt)
+        return self._launch_browser(environment, metadata, product)
+
+    def _acquire_scheduler_lock(self, product):
         descriptor = os.open(SCHEDULER_LOCK, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
         lock = os.fdopen(descriptor, "r+")
         try:
@@ -497,7 +504,9 @@ class Runtime:
                 # An iOS simulator app has the same executable name but a flat bundle.
                 if bundle and (bundle / "Contents/Info.plist").is_file() and _info(bundle).get("CFBundleIdentifier") == BROWSER_BUNDLE:
                     raise RuntimeError("A DEBUG browser is already running; close it before seeding")
-        environment["PIR_SCHEDULER_RECEIPT"] = str(self._receipt)
+
+    def _launch_browser(self, environment, metadata, product):
+        browser = Path(product["browserExecutable"])
         self._secure_launch_logs()
         with self.stdout.open("ab") as stdout, self.stderr.open("ab") as stderr:
             self._child = subprocess.Popen([str(browser)], cwd=self.root,
@@ -506,6 +515,27 @@ class Runtime:
         self._capture(self._child.pid, {"executable": str(browser), "bundleId": BROWSER_BUNDLE, "sha256": product["browserSHA256"]})
         return {"platform": "macos", "instanceID": self.instance, "port": self.port, "process": self.identity,
                 "product": product, "sourceSHA256": metadata["sourceSHA256"]}
+
+    def launch_existing(self, simulator=None):
+        """Launches this build on the existing PIR store with its debug server on, without saving or resetting a profile."""
+        metadata, product = self._verified_build()
+        if self.platform == "ios":
+            matches = [device for device in self._simulators() if device.get("udid") == simulator]
+            if len(matches) != 1 or not matches[0].get("name", "").startswith("ddg-check-pir-"):
+                raise RuntimeError("--simulator must name a simulator that a ddg-check-pir seed kept")
+            self.simulator, self.keep = {"udid": simulator, "name": matches[0]["name"]}, True
+            if matches[0].get("state") != "Booted":
+                self._simctl("boot", simulator)
+                self._simctl("bootstatus", simulator, "-b", timeout=180)
+            self._reserve_port()
+            self._secure_launch_logs()
+            self._simctl("install", simulator, product["path"])
+            self._launch_simulator_app(simulator, product, {"PIR_DEBUG_SERVER": "true", "PIR_DEBUG_PORT": str(self.port),
+                                                            "PIR_DEBUG_INSTANCE_ID": self.instance})
+            return {"platform": "ios", "instanceID": self.instance, "port": self.port, "process": self.identity,
+                    "product": product, "simulator": self.simulator, "sourceSHA256": metadata["sourceSHA256"]}
+        self._acquire_scheduler_lock(product)
+        return self._launch_browser({"PIR_DEBUG_SERVER": "true"}, metadata, product)
 
     def scheduler_receipt(self):
         deadline = time.monotonic() + SCHEDULER_SETUP_TIMEOUT

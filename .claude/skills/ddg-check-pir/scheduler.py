@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import math
 from pathlib import Path
 import subprocess
@@ -44,6 +44,7 @@ class SeedRequest:
     timeout: float
     platform: str = "macos"
     port: int = 8474
+    brokers: tuple[str, ...] = ()
 
 
 def _date(value):
@@ -91,13 +92,102 @@ def parse_scope(args):
                  _jobs(args.scheduler_jobs or []), _timeout(args.scheduler_timeout))
 
 
+@dataclass(frozen=True)
+class UpgradeRequest:
+    platform: str
+    brokers: tuple[str, ...]
+    timeout: float
+    simulator: str | None = None
+    reset_delivery: bool = False
+    port: int = 8474
+
+
+def _brokers(args):
+    brokers = tuple(getattr(args, "scheduler_brokers", None) or ())
+    for broker in brokers:
+        if (not broker or broker.strip() != broker or any(c.isspace() or ord(c) < 32 for c in broker)
+                or "/" in broker or ":" in broker):
+            raise ValueError("--broker takes a bare broker URL such as peoplefinders.com")
+    if len(set(brokers)) != len(brokers):
+        raise ValueError("--broker values must be unique")
+    return brokers
+
+
+def parse_upgrade(args):
+    if any(value is not None for value in (args.scheduler_port, args.scheduler_since, args.scheduler_jobs, args.scheduler_profile)):
+        raise ValueError("upgrade launches the existing DEBUG store; it takes no profile, port, cutoff or jobs")
+    brokers = _brokers(args)
+    if not brokers:
+        raise ValueError("upgrade requires --broker for each broker to scan after the refresh")
+    simulator = getattr(args, "scheduler_simulator", None)
+    if (args.platform == "ios") != (simulator is not None):
+        raise ValueError("upgrade takes --simulator on iOS, naming the simulator a seed kept, and only there")
+    return UpgradeRequest(args.platform, brokers, _timeout(args.scheduler_timeout), simulator,
+                          bool(getattr(args, "scheduler_reset_delivery", False)))
+
+
+def _maintenance(client, path, body, deadline):
+    started = client.request("POST", path, body)
+    operation = started.get("id")
+    if not isinstance(operation, str):
+        raise RuntimeError(f"{path} did not start a maintenance operation")
+    while time.monotonic() < deadline:
+        state = client.request("GET", f"/api/debug/maintenance/{operation}")
+        if state.get("status") == "succeeded":
+            return state.get("result")
+        if state.get("status") == "failed":
+            raise RuntimeError(f"{path} failed in the app: {state.get('error')}")
+        time.sleep(.5)
+    raise RuntimeError(f"{path} did not finish before the timeout")
+
+
+def listener_on(port):
+    """Whether anything already listens on this loopback port."""
+    result = subprocess.run(["/usr/sbin/lsof", "-nP", "-a", f"-iTCP@127.0.0.1:{port}", "-sTCP:LISTEN", "-t"],
+                            capture_output=True, text=True, timeout=5)
+    return bool(result.stdout.split())
+
+
+def upgrade(context, client, request, expected_executable):
+    """Refreshes broker JSON on a store an earlier build seeded, then scans the requested brokers now and observes them."""
+    deadline = time.monotonic() + request.timeout
+    while True:
+        try:
+            identity = _identity(request.platform, request.port, deadline)
+            client.request("GET", "/api", timeout=5)
+            break
+        except (RuntimeError, OSError, ValueError) as error:
+            if time.monotonic() >= deadline:
+                raise RuntimeError("the upgraded build's debug server did not answer before the timeout") from error
+            time.sleep(1)
+    if Path(identity["executable"]).resolve() != Path(expected_executable).resolve():
+        raise RuntimeError("The debug server is not the PIR app from this attempt's DEBUG build")
+    client.owned = True
+    brokers = _maintenance(client, "/api/debug/broker-json/refresh", dict(resetDelivery=request.reset_delivery), deadline)
+    context.write("upgrade-refresh.json", brokers)
+    since = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(seconds=1)
+    scans = _maintenance(client, "/api/debug/scans/immediate", dict(brokers=list(request.brokers)), deadline)
+    context.write("upgrade-scans.json", scans)
+    context.result["upgrade"] = dict(brokers=brokers, queued=scans.get("queued", []), notQueued=scans.get("notQueued", []))
+    queued = scans.get("queued") or []
+    if not queued:
+        return dict(status="inconclusive", reason="no requested broker was queued: " + ", ".join(scans.get("notQueued", [])))
+    scope = Scope(request.platform, request.port, since, _jobs((job.get("brokerURL"), job.get("profileQueryId")) for job in queued),
+                  max(1, deadline - time.monotonic()), managed=True)
+    outcome = observe(context, client, scope, expected_executable)
+    if scans.get("notQueued"):
+        outcome = dict(outcome, reason=f"{outcome.get('reason', '')}; not queued: {', '.join(scans['notQueued'])}")
+    return outcome
+
+
 def parse_seed(args):
     if any(value is not None for value in (args.scheduler_port, args.scheduler_since, args.scheduler_jobs)):
         raise ValueError("seed and reseed discover the agent, cutoff and jobs automatically")
     if args.scheduler_profile is None:
         raise ValueError("seed and reseed require --profile-file")
+    brokers = _brokers(args)
     return SeedRequest(args.scheduler_mode, args.scheduler_profile.expanduser().resolve(), _timeout(args.scheduler_timeout),
-                       args.platform)
+                       args.platform, brokers=brokers)
 
 
 def receipt_scope(receipt, request, instance):
@@ -107,6 +197,9 @@ def receipt_scope(receipt, request, instance):
         error = receipt.get("errorCode")
         if error == "profileAlreadyExists":
             raise RuntimeError("The DEBUG PIR store already has a profile. Use observe or explicitly choose reseed.")
+        if error == "unknownBroker":
+            reasons = ", ".join(f"{url} ({reason})" for url, reason in sorted((receipt.get("missingBrokers") or {}).items()))
+            raise RuntimeError("A --broker value has no eligible Freemium scan in this build" + (f": {reasons}" if reasons else ""))
         if error == "authenticatedAccount":
             raise RuntimeError("Scheduler seeding found the DEBUG account still signed in")
         raise RuntimeError("The DEBUG app did not complete scheduler setup; see scheduler-launch.json")

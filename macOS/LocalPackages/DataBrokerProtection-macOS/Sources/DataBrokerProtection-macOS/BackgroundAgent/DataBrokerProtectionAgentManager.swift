@@ -628,6 +628,24 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                 }
                 return await DebugPrerequisiteResult.subscription(subscriptionManager, settings: settings)
             }
+            let brokerUpdater = brokerUpdater
+            let jobDependencies = jobDependencies
+            server.brokerJSONRefresher = { resetDelivery in
+                BrokerUpdaterUserDefaults().resetLastCheckedVersion()
+                if resetDelivery { jobDependencies.dataBrokerProtectionSettings.resetBrokerDeliveryData() }
+                try await brokerUpdater.checkForUpdates(skipsLimiter: true)
+                return try jobDependencies.database.fetchAllDataBrokers().map(DebugBrokerState.init)
+            }
+            server.immediateScanStarter = { [weak self] brokerURLs in
+                guard let self else { throw CancellationError() }
+                jobDependencies.dataBrokerProtectionSettings.debugTestBrokerURLs = brokerURLs
+                let jobs = try PIRDebugLaunchOptions.scanJobs(database: jobDependencies.database,
+                                                              isAuthenticatedUser: self.currentRunIsFreeScan != true,
+                                                              brokerURLs: brokerURLs, includesMaintenance: true)
+                try PIRDebugLaunchOptions.makeScansDue(jobs, database: jobDependencies.database)
+                self.startImmediateOperations(showWebView: false)
+                return DebugImmediateScans(queued: jobs, requested: brokerURLs)
+            }
             #endif
             try server.start()
             debugServer = server

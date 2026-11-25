@@ -149,6 +149,25 @@ Choose by what should happen to the DEBUG profile:
   explicit approval for the reset first.
 - `scheduler observe` watches scans triggered separately in the app, on macOS or an iOS simulator.
 
+A seed or reseed scans every eligible broker unless it gets `--broker <url>`, repeated for each broker to keep. The seed
+then plans and runs only those brokers, still subject to the app's own eligibility and feature settings, and fails if a
+listed broker has no eligible scan. The subset is a DEBUG setting the scheduled scans read. On macOS it persists after the
+seed, so the DEBUG agent keeps scanning only those brokers until a seed without `--broker` clears it.
+
+`scheduler upgrade` checks what a build does to a store an earlier build seeded. Seed on the earlier build first (on
+iOS with `--keep`), then run `upgrade` from the later build's worktree with `--broker` for each broker to scan, and on
+iOS `--simulator <udid>` from that seed's launch record. It launches the later build on the existing store without
+saving or resetting a profile, makes it re-read the bundled and remote broker JSON at once
+(`POST /api/debug/broker-json/refresh`, ignoring the hourly limit; `--reset-delivery` also re-downloads every remote
+broker), then scans the `--broker` brokers now (`POST /api/debug/scans/immediate`) and observes them as a seed does.
+`upgrade-refresh.json` lists every stored broker's version, `isRemoved` and ID after the refresh, and
+`upgrade-scans.json` lists the queued jobs and any requested broker the app didn't queue. A seed refused because a
+`--broker` has no eligible Freemium scan names each broker and why in `scheduler-launch.json`: `notStored`, `removed`,
+`requiresSubscription` or `noScanJob`.
+
+When a scenario takes several commands, pass `--step <name>` with `--scenario` on each one. A step attempt shows in the
+batch report under its scenario but doesn't count as the scenario's run.
+
 These make live broker scans. On macOS, close any DEBUG browser. A seed signs the DEBUG account out first, so the agent
 takes the Freemium path and plans scans only; sign in again afterwards if you need the subscription. The private browser saves through the real PIR data manager, starts its login item and debug server on
 port 8474, and the tool reports the cutoff and planned jobs, stops the browser and leaves the profile and registered agent

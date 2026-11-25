@@ -1,4 +1,5 @@
 fixtures.local.md
 fixtures/profiles/*
 !fixtures/profiles/example.json
+!fixtures/profiles/john-smith-houston.json
 fixtures/brokers/

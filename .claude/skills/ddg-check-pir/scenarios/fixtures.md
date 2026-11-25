@@ -8,6 +8,7 @@ file, with the same tables. It and local profiles are gitignored.
 | Name | File |
 | --- | --- |
 | `example` | `fixtures/profiles/example.json`, a made-up person |
+| `john-smith-houston` | `fixtures/profiles/john-smith-houston.json`, a made-up person (John Smith, born 1974, Houston TX) |
 
 Every match on a live broker is a real person's record, so an opt-out always targets a pinned `profileUrl`. Which
 records a profile matches changes over time. If a scenario that needs a match gets none, try another profile and note it
@@ -34,5 +35,5 @@ A local broker is named by its JSON file instead. `fakebroker.com` is the PIR fa
 | Name | What it is | Needed for |
 | --- | --- | --- |
 | `fresh-simulator` | A simulator ddg-check-pir creates for one iOS attempt and deletes afterwards. | Every iOS scenario. |
-| `fake-broker-john-doe` | The PIR fake broker running locally (web on port 3000, API on 3001) with one record seeded: `curl -X POST http://localhost:3001/api/profiles -H 'Content-Type: application/json' -d '{"firstName":"John","lastName":"Doe","middleName":"Michael","age":41,"city":"Springfield","state":"IL"}'` | `fakebroker.com` scenarios. Its opt-out removes the record, so seed it again before each run. |
-| `signed-out-empty-store` | The macOS DEBUG account signed out, with no saved PIR profile. | `scheduler seed` on macOS. |
+| `fake-broker-john-doe` | The PIR fake broker running locally (web on port 3000, API on 3001) with one record seeded: `curl -X POST http://localhost:3001/api/profiles -H 'Content-Type: application/json' -d '{"firstName":"John","lastName":"Doe","middleName":"Michael","age":41,"city":"Springfield","state":"IL"}'` | The gate 3 scenarios. Its opt-out removes the record, so seed it again before each run. |
+| `empty-store` | No saved PIR profile in the macOS DEBUG store. The seed signs the DEBUG account out itself; use `reseed`, with approval, to replace an existing profile. | `scheduler seed` on macOS. |

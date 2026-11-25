@@ -900,6 +900,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
             server.prerequisiteReader = {
                 await Self.readDebugPrerequisites(subscriptionManager: subscriptionManager, settings: settings)
             }
+            installDebugMaintenance(on: server)
             #endif
             try server.start()
             debugServer = server
@@ -963,6 +964,28 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DebugCommandsDelegate 
 
 #if DEBUG
 extension DataBrokerProtectionIOSManager {
+    private func installDebugMaintenance(on server: DataBrokerProtectionDebugHTTPServer) {
+        server.brokerJSONRefresher = { [weak self] resetDelivery in
+            guard let self else { throw CancellationError() }
+            let resources = try self.vaultResources()
+            BrokerUpdaterUserDefaults().resetLastCheckedVersion()
+            if resetDelivery { resources.jobDependencies.dataBrokerProtectionSettings.resetBrokerDeliveryData() }
+            try await resources.brokerUpdater?.checkForUpdates(skipsLimiter: true)
+            return try resources.database.fetchAllDataBrokers().map(DebugBrokerState.init)
+        }
+        server.immediateScanStarter = { [weak self] brokerURLs in
+            guard let self else { throw CancellationError() }
+            let resources = try self.vaultResources()
+            resources.jobDependencies.dataBrokerProtectionSettings.debugTestBrokerURLs = brokerURLs
+            let jobs = try PIRDebugLaunchOptions.scanJobs(database: resources.database,
+                                                          isAuthenticatedUser: await self.refreshFreeScanState(),
+                                                          brokerURLs: brokerURLs, includesMaintenance: true)
+            try PIRDebugLaunchOptions.makeScansDue(jobs, database: resources.database)
+            await self.startImmediateScanOperations()
+            return DebugImmediateScans(queued: jobs, requested: brokerURLs)
+        }
+    }
+
     /// Mirrors `saveProfile`, capturing the scan plan between the save and the initial scans that change it.
     @MainActor
     public func seedProfileForDebugLaunch(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile,
@@ -976,6 +999,7 @@ extension DataBrokerProtectionIOSManager {
             try deleteAllUserProfileData()
             freemiumDBPUserStateManager.resetAllState()
         }
+        managedSeed.applyBrokerSelection(to: resources.jobDependencies.dataBrokerProtectionSettings)
         // A fresh install's first broker update can remove bundled brokers after the plan names them.
         try? await refreshRemoteBrokerJSON()
         try await saveProfileAndPrepareForInitialScans(profile)

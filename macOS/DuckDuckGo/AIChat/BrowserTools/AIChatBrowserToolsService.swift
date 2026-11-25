@@ -73,7 +73,7 @@ final class AIChatBrowserToolsService {
         let invoker = BrowserToolInvoker(catalog: catalog, clientToolPermissions: clientToolPermissions)
         invoker.instrumentation = instrumentation
         self.invoker = invoker
-        self.lastClientToolsConfiguration = Self.clientToolsConfiguration(for: catalog)
+        self.lastClientToolsConfiguration = catalog.clientToolsConfiguration
         self.featureFlagChanges = featureFlagger.updatesPublisher.sink { [weak self] in
             Task { @MainActor in
                 self?.pushClientToolsChangedIfNeeded()
@@ -111,15 +111,7 @@ final class AIChatBrowserToolsService {
 
     /// Advertised to Duck.ai in `getAIChatNativeConfigValues`. Nil when no tool is enabled.
     var clientToolsConfiguration: ClientToolsConfiguration? {
-        Self.clientToolsConfiguration(for: catalog)
-    }
-
-    private static func clientToolsConfiguration(for catalog: BrowserToolCatalog) -> ClientToolsConfiguration? {
-        let capabilities = catalog.enabledClientToolCapabilities
-        guard !capabilities.isEmpty,
-              let configuration = try? ClientToolsConfiguration(capabilities: capabilities),
-              ClientToolPayloadLimits.fits(configuration, within: ClientToolPayloadLimits.configBytes) else { return nil }
-        return configuration
+        catalog.clientToolsConfiguration
     }
 
     // MARK: - Pushes

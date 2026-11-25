@@ -40,7 +40,7 @@ public struct AIChatTabChangedData: Encodable, Equatable, Sendable {
 // MARK: - Failures
 
 /// Failures reported by native tool execution.
-public enum BrowserToolFailure: String, Equatable, Sendable, CaseIterable {
+public enum BrowserToolFailure: String, Error, CaseIterable {
 
     /// Arguments did not satisfy the tool's input schema.
     case invalidArguments = "invalid_arguments"

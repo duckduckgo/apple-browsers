@@ -110,11 +110,7 @@ extension AIChatBrowserToolsService {
     var isEnabled: Bool { configuration.isEnabled }
 
     var clientToolsConfiguration: ClientToolsConfiguration? {
-        let capabilities = catalog.enabledClientToolCapabilities
-        guard !capabilities.isEmpty,
-              let configuration = try? ClientToolsConfiguration(capabilities: capabilities),
-              ClientToolPayloadLimits.fits(configuration, within: ClientToolPayloadLimits.configBytes) else { return nil }
-        return configuration
+        catalog.clientToolsConfiguration
     }
 
     func configuration(for source: AIChatUserScript) -> ClientToolsConfiguration? {

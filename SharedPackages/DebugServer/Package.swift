@@ -49,11 +49,13 @@ let package = Package(
             name: "LaunchProfile",
             dependencies: [
                 .product(name: "DDGError", package: "DDGError"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "LaunchProfileTests",
-            dependencies: ["LaunchProfile"]
+            dependencies: ["LaunchProfile"],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

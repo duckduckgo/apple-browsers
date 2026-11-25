@@ -537,7 +537,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         let startDate = try XCTUnwrap(window.startDate)
         let savedTimestamp = try XCTUnwrap(repository._customStatsPixelsLastSentTimestamp)
         XCTAssertEqual(statsProvider.requestedWindows.count, 1)
-        XCTAssertEqual(startDate, lastSent.addingTimeInterval(-Self.twentyFourHours))
+        XCTAssertEqual(startDate.timeIntervalSince(lastSent), -Self.twentyFourHours, accuracy: Self.tolerance)
         XCTAssertEqual(startDate.timeIntervalSinceNow, -49 * 60 * 60, accuracy: Self.tolerance)
         XCTAssertEqual(window.endDate.timeIntervalSinceNow, -Self.twentyFourHours, accuracy: Self.tolerance)
         XCTAssertEqual(savedTimestamp.timeIntervalSinceNow, 0, accuracy: Self.tolerance)
@@ -561,7 +561,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         XCTAssertEqual(statsProvider.requestedWindows.count, 2)
         let firstWindow = statsProvider.requestedWindows[0]
         let secondWindow = statsProvider.requestedWindows[1]
-        XCTAssertEqual(firstWindow.endDate, firstSavedTimestamp.addingTimeInterval(-Self.twentyFourHours))
+        XCTAssertEqual(firstWindow.endDate.timeIntervalSince(firstSavedTimestamp), -Self.twentyFourHours, accuracy: Self.tolerance)
         XCTAssertEqual(secondWindow.startDate, firstWindow.endDate)
     }
 

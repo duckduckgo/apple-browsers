@@ -29,15 +29,14 @@ enum SubscriptionTransactionErrorAlert {
         case appStore
         case backend
         case general
-        /// Any purchase failure when the paywall was opened from onboarding.
-        case onboardingPurchaseFailed
+        /// A backend error when the paywall was presented from onboarding: "OK" instead of "Back to Settings".
+        case onboardingBackend
     }
 
-    /// Like `displayContent(for:)`, but purchase failures share one message when the paywall was opened from onboarding.
-    static func displayContent(for error: SubscriptionPurchaseError?, isOpenedFromOnboarding: Bool) -> MessageType? {
-        guard let messageType = displayContent(for: error) else { return nil }
-        guard isOpenedFromOnboarding, messageType != .activeSubscription else { return messageType }
-        return .onboardingPurchaseFailed
+    /// Like `displayContent(for:)`, but backend errors don't point back to Settings when the paywall was presented from onboarding.
+    static func displayContent(for error: SubscriptionPurchaseError?, isPresentedFromOnboarding: Bool) -> MessageType? {
+        let messageType = displayContent(for: error)
+        return isPresentedFromOnboarding && messageType == .backend ? .onboardingBackend : messageType
     }
 
     /// Whether to show an alert and which message type. Returns nil when no alert should be shown (e.g. user cancelled).
@@ -79,7 +78,7 @@ enum SubscriptionTransactionErrorAlert {
                 message: Text(UserText.subscriptionAppStoreErrorMessage),
                 dismissButton: .cancel(Text(UserText.actionOK), action: onDismiss)
             )
-        case .onboardingPurchaseFailed:
+        case .onboardingBackend:
             return Alert(
                 title: Text(UserText.subscriptionBackendErrorTitle),
                 message: Text(UserText.subscriptionBackendErrorMessage),
@@ -92,5 +91,17 @@ enum SubscriptionTransactionErrorAlert {
                 dismissButton: .cancel(Text(UserText.subscriptionBackendErrorButton), action: onDismiss)
             )
         }
+    }
+}
+
+private struct IsPaywallPresentedFromOnboardingKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Whether the paywall was presented from the onboarding flow, as opposed to Settings or a promo.
+    var isPaywallPresentedFromOnboarding: Bool {
+        get { self[IsPaywallPresentedFromOnboardingKey.self] }
+        set { self[IsPaywallPresentedFromOnboardingKey.self] = newValue }
     }
 }

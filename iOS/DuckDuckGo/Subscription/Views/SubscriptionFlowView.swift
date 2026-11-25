@@ -26,7 +26,6 @@ import DataBrokerProtection_iOS
 import PrivacyConfig
 import VPN
 import PixelKit
-import Subscription
 
 struct SubscriptionFlowView: View {
 
@@ -55,13 +54,7 @@ struct SubscriptionFlowView: View {
         static let backButtonImage = "chevron.left"
     }
 
-    private var isOpenedFromOnboarding: Bool {
-        let origin = URLComponents(url: viewModel.initialURL, resolvingAgainstBaseURL: false)?
-            .queryItems?
-            .first { $0.name == AttributionParameter.origin }?
-            .value
-        return origin == SubscriptionFunnelOrigin.onboarding.rawValue
-    }
+    @Environment(\.isPaywallPresentedFromOnboarding) private var isPresentedFromOnboarding
 
     let featureFlagger: FeatureFlagger
 
@@ -163,7 +156,7 @@ struct SubscriptionFlowView: View {
         }
         
         .onChange(of: viewModel.state.transactionError) { value in
-            if !isPresentingError, let messageType = SubscriptionTransactionErrorAlert.displayContent(for: value, isOpenedFromOnboarding: isOpenedFromOnboarding) {
+            if !isPresentingError, let messageType = SubscriptionTransactionErrorAlert.displayContent(for: value, isPresentedFromOnboarding: isPresentedFromOnboarding) {
                 errorMessageType = messageType
                 isPresentingError = true
             }

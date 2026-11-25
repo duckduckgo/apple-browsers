@@ -4930,7 +4930,8 @@ class MainViewController: UIViewController {
 
     /// - Parameter includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
     private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
-                                                    includesPostPurchaseOnboarding: Bool) -> UIViewController {
+                                                    includesPostPurchaseOnboarding: Bool,
+                                                    isPresentedFromOnboarding: Bool = false) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
             privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -4956,7 +4957,7 @@ class MainViewController: UIViewController {
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
             onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
-        ))
+        ).environment(\.isPaywallPresentedFromOnboarding, isPresentedFromOnboarding))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController
     }
@@ -9979,7 +9980,8 @@ extension MainViewController: OnboardingDelegate {
         // The onboarding continues with its own VPN setup, so skip the subscription onboarding after purchase.
         let paywall = makeSubscriptionFlowViewController(
             redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue),
-            includesPostPurchaseOnboarding: false
+            includesPostPurchaseOnboarding: false,
+            isPresentedFromOnboarding: true
         )
         let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)
         navigationController.onDismiss = onDismiss

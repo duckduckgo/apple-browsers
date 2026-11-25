@@ -25,41 +25,45 @@ struct SubscriptionTransactionErrorAlertTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(
-        "From onboarding, every purchase failure shows the same message",
+        "From onboarding, backend errors don't point back to Settings",
         .timeLimit(.minutes(1)),
-        arguments: [SubscriptionPurchaseError.purchaseFailed, .purchasePendingTransaction, .failedToRestorePastPurchase, .failedToGetSubscriptionOptions, .generalError]
+        arguments: [SubscriptionPurchaseError.failedToGetSubscriptionOptions, .generalError]
     )
-    func onboardingPurchaseFailure(error: SubscriptionPurchaseError) {
-        #expect(SubscriptionTransactionErrorAlert.displayContent(for: error, isOpenedFromOnboarding: true) == .onboardingPurchaseFailed)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("From onboarding, an existing subscription still offers to restore it", .timeLimit(.minutes(1)))
-    func onboardingActiveSubscription() {
-        #expect(SubscriptionTransactionErrorAlert.displayContent(for: .hasActiveSubscription, isOpenedFromOnboarding: true) == .activeSubscription)
+    func onboardingBackendError(error: SubscriptionPurchaseError) {
+        #expect(SubscriptionTransactionErrorAlert.displayContent(for: error, isPresentedFromOnboarding: true) == .onboardingBackend)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(
-        "From onboarding, errors without an alert still show none",
+        "From onboarding, every other error keeps its usual message",
         .timeLimit(.minutes(1)),
-        arguments: [SubscriptionPurchaseError.cancelledByUser, .missingEntitlements, .failedToSetSubscription, .subscriptionExpired]
+        arguments: [
+            (SubscriptionPurchaseError.purchaseFailed, SubscriptionTransactionErrorAlert.MessageType?.some(.appStore)),
+            (.purchasePendingTransaction, .appStore),
+            (.failedToRestorePastPurchase, .appStore),
+            (.hasActiveSubscription, .activeSubscription),
+            (.cancelledByUser, nil),
+            (.missingEntitlements, nil),
+            (.failedToSetSubscription, nil),
+            (.subscriptionExpired, nil),
+        ]
     )
-    func onboardingNoAlert(error: SubscriptionPurchaseError) {
-        #expect(SubscriptionTransactionErrorAlert.displayContent(for: error, isOpenedFromOnboarding: true) == nil)
+    func onboardingOtherErrors(error: SubscriptionPurchaseError, expected: SubscriptionTransactionErrorAlert.MessageType?) {
+        #expect(SubscriptionTransactionErrorAlert.displayContent(for: error, isPresentedFromOnboarding: true) == expected)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(
-        "Outside onboarding, the message depends on the error",
+        "Outside onboarding, the message depends only on the error",
         .timeLimit(.minutes(1)),
         arguments: [
             (SubscriptionPurchaseError.purchaseFailed, SubscriptionTransactionErrorAlert.MessageType.appStore),
             (.generalError, .backend),
+            (.failedToGetSubscriptionOptions, .backend),
             (.hasActiveSubscription, .activeSubscription),
         ]
     )
     func outsideOnboarding(error: SubscriptionPurchaseError, expected: SubscriptionTransactionErrorAlert.MessageType) {
-        #expect(SubscriptionTransactionErrorAlert.displayContent(for: error, isOpenedFromOnboarding: false) == expected)
+        #expect(SubscriptionTransactionErrorAlert.displayContent(for: error, isPresentedFromOnboarding: false) == expected)
     }
 }

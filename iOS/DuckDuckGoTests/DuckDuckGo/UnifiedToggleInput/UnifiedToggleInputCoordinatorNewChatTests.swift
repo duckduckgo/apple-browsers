@@ -238,6 +238,35 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("While a tab switch binds the incoming page, the state never pairs it with the outgoing chat", .timeLimit(.minutes(1)))
+    func bindPublishesOnlyTheIncomingChat() async {
+        let sut = makeSUT()
+        let blankChat = PageScript()
+        let historyChat = PageScript()
+        sut.activateForTab("tab-B")
+        sut.bindToTab(historyChat.script, hasExistingChat: true)
+        sut.showCollapsed()
+        await historyChat.reportResponseState("ready")
+        sut.activateForTab("tab-A")
+        sut.bindToTab(blankChat.script)
+        await blankChat.reportResponseState("ready")
+        #expect(sut.isGuaranteedNewChat)
+        var published: [NewChatState] = []
+        let publishing = sut.$newChatState.dropFirst().sink { published.append($0) }
+
+        sut.activateForTab("tab-B")
+        sut.bindToTab(historyChat.script, hasExistingChat: true)
+        #expect(!published.contains { $0.isGuaranteedNewChat })
+
+        published = []
+        sut.activateForTab("tab-A")
+        sut.bindToTab(blankChat.script)
+        #expect(!published.contains { $0.isTabSelected && $0.hasChat })
+        #expect(sut.isGuaranteedNewChat)
+        publishing.cancel()
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Turning the flag off while a blank chat is open ends it", .timeLimit(.minutes(1)))
     func flagTurnsOff() async throws {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.newChatHints])

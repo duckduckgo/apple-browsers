@@ -267,6 +267,37 @@ struct ContextualDialogsManagerPathTests {
 
         #expect(try savedPrompt == nil)
     }
+
+    // MARK: - Reopened Duck.ai chat
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A restarted Duck.ai chat shows That's Duck.ai again instead of the ending", .timeLimit(.minutes(1)))
+    func restartedChatShowsThatsDuckAIAgain() async throws {
+        manager.startPath(.duckAI, query: "Plan a day in London")
+        let duckAITab = await Tab(content: .aiChat(try #require(URL(string: "https://duck.ai/chat"))))
+        #expect(manager.dialogTypeForTab(duckAITab) == .thatsDuckAI)
+
+        manager.restartDuckAIChat()
+
+        let reopenedTab = await Tab(content: .aiChat(try #require(URL(string: "https://duck.ai/chat"))))
+        #expect(manager.dialogTypeForTab(reopenedTab) == .thatsDuckAI)
+        #expect(manager.uiLock == .locked(except: [.fire]))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Falling back from Duck.ai starts the search path at Try a search, unlocked", .timeLimit(.minutes(1)))
+    func fallBackStartsTheSearchPath() async throws {
+        manager.startPath(.duckAI, query: "Plan a day in London")
+
+        manager.fallBackToSearchPath()
+
+        #expect(try store.object(forKey: "contextual-onboarding_path-kind") as? String == "search")
+        #expect(try savedPrompt == nil)
+        #expect(!manager.isWaitingForDuckAIChatDeletion)
+        #expect(manager.uiLock == .unlocked)
+        let newTab = await Tab(content: .newtab)
+        #expect(manager.dialogTypeForTab(newTab) == .tryASearch)
+    }
 }
 
 final class CapturingUILocker: ContextualOnboardingUILocking {

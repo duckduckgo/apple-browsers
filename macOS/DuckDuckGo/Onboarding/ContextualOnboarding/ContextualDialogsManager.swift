@@ -204,6 +204,10 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     func fireButtonUsed() {
         progress.fireButtonUsedOnce = true
         progress.duckAIPrompt = nil
+        // Fire can be used before a reopened chat shows "That's Duck.ai!"; the ending must still follow.
+        if progress.pathKind == .duckAI {
+            progress.markSeen(.thatsDuckAI)
+        }
         updateUILock()
     }
 

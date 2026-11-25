@@ -25,8 +25,8 @@ import Testing
 @MainActor
 struct OnboardingDuckAIPathWindowRestorerTests {
 
-    let onboarding = FakeDuckAIOnboarding()
-    let window = CapturingDuckAIOnboardingWindow()
+    private let onboarding = FakeDuckAIOnboarding()
+    private let window = CapturingDuckAIOnboardingWindow()
     let windowDidOpen = PassthroughSubject<DuckAIOnboardingWindow, Never>()
 
     private func makeRestorer(isDuckAIAvailable: Bool = true,
@@ -104,7 +104,7 @@ struct OnboardingDuckAIPathWindowRestorerTests {
     }
 }
 
-final class FakeDuckAIOnboarding: DuckAIOnboardingResuming {
+private final class FakeDuckAIOnboarding: DuckAIOnboardingResuming {
     var isWaitingForDuckAIChatDeletion = true
     var duckAIPrompt: String? = "Plan a day in London"
     private(set) var restartCount = 0
@@ -119,7 +119,8 @@ final class FakeDuckAIOnboarding: DuckAIOnboardingResuming {
     }
 }
 
-final class CapturingDuckAIOnboardingWindow: DuckAIOnboardingWindow {
+private final class CapturingDuckAIOnboardingWindow: DuckAIOnboardingWindow {
+    let canHoldDuckAIChat = true
     private(set) var contents: [Tab.TabContent] = []
     var onReplace: ((Tab.TabContent) -> Void)?
 

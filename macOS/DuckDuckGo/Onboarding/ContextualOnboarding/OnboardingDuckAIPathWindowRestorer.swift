@@ -31,10 +31,16 @@ protocol DuckAIOnboardingResuming: AnyObject {
 extension ContextualDialogsManager: DuckAIOnboardingResuming {}
 
 protocol DuckAIOnboardingWindow: AnyObject {
+    /// Fire and pop-up windows can't hold the chat.
+    @MainActor var canHoldDuckAIChat: Bool { get }
     @MainActor func replaceTabs(with tab: Tab)
 }
 
-extension MainWindowController: DuckAIOnboardingWindow {}
+extension MainWindowController: DuckAIOnboardingWindow {
+    var canHoldDuckAIChat: Bool {
+        !mainViewController.isBurner && !mainViewController.isInPopUpWindow
+    }
+}
 
 /// Reopens the Duck.ai onboarding chat in a window opened before Fire: after a relaunch, or after the window was closed.
 /// The chat starts over from the saved prompt, as the old one can't be reopened.
@@ -62,18 +68,19 @@ final class OnboardingDuckAIPathWindowRestorer {
     }
 
     func windowDidOpen(_ window: DuckAIOnboardingWindow) {
-        guard onboarding.isWaitingForDuckAIChatDeletion else { return }
+        guard onboarding.isWaitingForDuckAIChatDeletion, window.canHoldDuckAIChat else { return }
         guard isDuckAIAvailable(), let prompt = onboarding.duckAIPrompt else {
-            window.replaceTabs(with: Tab(content: .newtab))
             onboarding.fallBackToSearchPath()
+            window.replaceTabs(with: Tab(content: .newtab))
             return
         }
         // A blank tab stops a restored Duck.ai tab from sending the prompt again before the old chat is cleared.
         window.replaceTabs(with: Tab(content: .none))
-        onboarding.restartDuckAIChat()
         Task { [weak window] in
             await clearDuckAIChats()
+            // Fire may have been used while the old chat was cleared.
             guard let window, onboarding.isWaitingForDuckAIChatDeletion else { return }
+            onboarding.restartDuckAIChat()
             let url = AIChatURLParameters.desktopOnboardingPromptURL(from: aiChatURL(), prompt: prompt)
             window.replaceTabs(with: Tab(content: .aiChat(url)))
         }

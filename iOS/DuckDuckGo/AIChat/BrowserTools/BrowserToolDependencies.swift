@@ -27,7 +27,7 @@ extension ListOpenTabsBrowserTool {
             guard let scope = scopeProvider(context), scope.accepts(context) else { return nil }
             let tabs: [TabEntry] = scope.source.tabsProvider().compactMap { tab in
                 guard tab.mode == .normal, let link = tab.link, !link.url.isDuckAIURL, !link.url.isFileURL else { return nil }
-                return TabEntry(id: tab.uid, title: link.displayTitle, url: link.url)
+                return TabEntry(id: tab.uid, title: link.title ?? link.url.host ?? "", url: link.url)
             }
             return (tabs, scope.selectedTabID())
         }

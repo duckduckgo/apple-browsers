@@ -24,6 +24,7 @@ import FoundationExtensions
 import Subscription
 import SubscriptionTestingUtilities
 import BrowserServicesKit
+import DDGSync
 @testable import DuckDuckGo
 
 final class WideEventServiceTests: XCTestCase {
@@ -218,6 +219,32 @@ final class WideEventServiceTests: XCTestCase {
         guard case .unknown = completion?.1 else {
             return XCTFail("Expected the stalled refresh to complete as UNKNOWN")
         }
+    }
+
+    // MARK: - Sync setup
+
+    func testForegroundResume_leavesSyncSetupAttemptOpen() async {
+        wideEventMock.started = [makeSyncSetupData()]
+
+        await service.sendPendingEvents(trigger: .appLaunch, includingLaunchOnlyEvents: false)
+
+        XCTAssertFalse(wideEventMock.completions.contains { $0.0 is SyncSetupWideEventData })
+    }
+
+    func testColdLaunch_completesSyncSetupAttemptAsAppRestart() async {
+        wideEventMock.started = [makeSyncSetupData()]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        let completion = wideEventMock.completions.first { $0.0 is SyncSetupWideEventData }
+        guard case .unknown(let reason) = completion?.1 else {
+            return XCTFail("Expected the open sync setup attempt to complete as UNKNOWN")
+        }
+        XCTAssertEqual(reason, "app_restart")
+    }
+
+    private func makeSyncSetupData() -> SyncSetupWideEventData {
+        SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2, contextData: WideEventContextData())
     }
 
     private func createMockWideEventData(activateAccountDuration: WideEvent.MeasuredInterval? = nil) -> SubscriptionPurchaseWideEventData {

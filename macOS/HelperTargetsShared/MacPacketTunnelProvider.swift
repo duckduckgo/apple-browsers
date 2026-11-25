@@ -526,6 +526,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let wideEvent = WideEvent(
             useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            isDevMode: !BuildFlags.isProductionBuild,
             featureFlagProvider: WideEventFeatureFlagProvider(settings: settings)
         )
         self.wideEvent = wideEvent

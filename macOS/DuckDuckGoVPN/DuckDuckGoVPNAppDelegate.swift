@@ -136,6 +136,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             let buildType = StandardApplicationBuildType()
             return buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild
         }(),
+        isDevMode: !BuildFlags.isProductionBuild,
         storage: WideEventUserDefaultsStorage(userDefaults: UserDefaults(suiteName: wideEventVPNAppStorageSuiteName) ?? .standard),
         featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
     )

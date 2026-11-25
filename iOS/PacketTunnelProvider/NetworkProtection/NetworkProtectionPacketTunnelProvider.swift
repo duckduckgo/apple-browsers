@@ -499,6 +499,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             false
 #endif
         }(),
+                                  isDevMode: !BuildFlags.isProductionBuild,
                                   featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
         self.wideEvent = wideEvent
 

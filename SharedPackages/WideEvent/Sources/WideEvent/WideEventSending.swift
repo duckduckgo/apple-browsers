@@ -40,25 +40,32 @@ public final class DefaultWideEventSender: WideEventSending {
     private let pixelKitProvider: () -> PixelKit?
     private let postRequestHandler: POSTRequestHandler
     private let storage: WideEventStoring
+    private let isDevMode: Bool
 
+    /// - Parameter isDevMode: Marks POST payloads with `app.dev_mode` so dashboards can separate non-production
+    ///   builds. The pixel parameters are deliberately left unchanged.
     public init(
         pixelKitProvider: @escaping () -> PixelKit?,
         postRequestHandler: @escaping POSTRequestHandler,
+        isDevMode: Bool = false,
         storage: WideEventStoring = WideEventUserDefaultsStorage()
     ) {
         self.pixelKitProvider = pixelKitProvider
         self.postRequestHandler = postRequestHandler
+        self.isDevMode = isDevMode
         self.storage = storage
     }
 
     public convenience init(
         useMockRequests: Bool,
+        isDevMode: Bool = false,
         pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
         storage: WideEventStoring = WideEventUserDefaultsStorage()
     ) {
         self.init(
             pixelKitProvider: pixelKitProvider,
             postRequestHandler: useMockRequests ? Self.mockPOSTRequestHandler : Self.defaultPOSTRequestHandler,
+            isDevMode: isDevMode,
             storage: storage
         )
     }
@@ -235,6 +242,10 @@ public final class DefaultWideEventSender: WideEventSending {
 
         if isFirstDailyOccurrence {
             parameters[WideEventParameter.Global.isFirstDailyOccurrence] = true
+        }
+
+        if isDevMode {
+            parameters[WideEventParameter.App.devMode] = true
         }
 
         return parameters

@@ -221,7 +221,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 guard let self, let manager = connection.manager as? NETunnelProviderManager else { return }
                 self.onStartupFailure()
                 do {
-                    _ = try await self.stopAfterOnDemandFailure(manager)
+                    try await self.stopAfterOnDemandFailure(manager)
                 } catch {
                     Logger.networkProtection.error("Failed to disable VPN On Demand after a startup failure: \(error.localizedDescription, privacy: .public)")
                 }
@@ -940,15 +940,15 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     @MainActor
-    func stopAfterOnDemandFailure(_ manager: NETunnelProviderManager) async throws -> Bool {
+    func stopAfterOnDemandFailure(_ manager: NETunnelProviderManager) async throws {
         let revision = userOperationRevision
-        guard !isRecoveringOnDemandFailure, activeUserStarts == 0, manager.connection === internalManager?.connection else { return false }
+        guard !isRecoveringOnDemandFailure, activeUserStarts == 0, manager.connection === internalManager?.connection else { return }
         isRecoveringOnDemandFailure = true
         defer { isRecoveringOnDemandFailure = false }
         try await manager.loadFromPreferences()
         guard revision == userOperationRevision,
               manager.connection === internalManager?.connection,
-              manager.isOnDemandEnabled else { return false }
+              manager.isOnDemandEnabled else { return }
         switch manager.connection.status {
         case .disconnecting, .disconnected, .connecting:
             let saveTask = Task { @MainActor in
@@ -958,13 +958,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             defer { recoverySaveTask = nil }
             try await saveTask.value
             guard revision == userOperationRevision,
-                  manager.connection === internalManager?.connection else { return false }
+                  manager.connection === internalManager?.connection else { return }
             if manager.connection.status == .connecting {
                 manager.connection.stopVPNTunnel()
             }
-            return true
         default:
-            return false
+            return
         }
     }
 

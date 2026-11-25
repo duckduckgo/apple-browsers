@@ -5890,6 +5890,12 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.omniBar
     }
 
+    var addressBarChromeView: UIView {
+        let barView = omniBar.barView
+        guard let toolbar = viewCoordinator.toolbar, barView.isDescendant(of: toolbar) else { return barView }
+        return toolbar.capsuleView
+    }
+
     func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         coordinator.setContentOverlaySuppressed(suppressed)
@@ -8142,6 +8148,11 @@ extension MainViewController: NewTabPageControllerDelegate {
 }
 
 extension MainViewController: TabDelegate {
+
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool {
+        notificationView != nil || findInPageView?.isHidden == false || tab.isDuckPlayerPillVisible
+            || tab.daxContextualOnboardingController != nil
+    }
 
     func tabDidLoadPageForAppRatingPrompt(_ tab: TabViewController) {
         promoCoordinationService?.registerAppRatingPromptUsage()

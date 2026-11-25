@@ -3526,6 +3526,14 @@ public struct UserText {
     public static let vcardAddContactParseFailure = NSLocalizedString("vcard.add-contact.parse-failure", value: "Unable to add contact. Try opening the contact file from Downloads instead.", comment: "Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content)")
     public static let vcardContactAdded = NSLocalizedString("vcard.contact-added", value: "Contact added", comment: "Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts")
 
+    // MARK: - Web Page Translation
+    public static let translationBannerTitle = NSLocalizedString("translation.banner.title", value: "Translate this page?", comment: "Title of the banner offering to translate a web page that is in another language")
+    public static let translationBannerTranslateButton = NSLocalizedString("translation.banner.translate", value: "Translate", comment: "Button in the translation banner that translates the current web page")
+
+    public static func translationBannerSubtitle(source: String, target: String) -> String {
+        String(format: NSLocalizedString("translation.banner.subtitle", value: "%1$@ to %2$@", comment: "Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to"), source, target)
+    }
+
     // MARK: - OmniBar Long Press Menu
     public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")
     public static let omnibarLongPressMoveToTop = NSLocalizedString("omnibar.menu.move-to-top", value: "Move Address Bar to Top", comment: "Label for moving the address bar to the top of the screen")

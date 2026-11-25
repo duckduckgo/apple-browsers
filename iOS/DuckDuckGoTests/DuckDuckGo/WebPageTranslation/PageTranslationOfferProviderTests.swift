@@ -67,6 +67,21 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en")))
     }
 
+    func testBannerOfferForAnUnchangedPage() async throws {
+        let webView = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!])
+        let provider = try makeProvider(deviceLanguages: ["en-US"])
+        let offer = await provider.bannerOffer(in: webView)
+        XCTAssertEqual(offer, TranslationOffer(source: "fr", target: "en"))
+    }
+
+    func testNoBannerOfferWhenThePageChangedDuringDetection() async throws {
+        let webView = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!,
+                                                                URL(string: "https://example.fr/other")!])
+        let provider = try makeProvider(deviceLanguages: ["en-US"])
+        let offer = await provider.bannerOffer(in: webView)
+        XCTAssertNil(offer)
+    }
+
     func testEligibility() {
         XCTAssertTrue(PageTranslationOfferProvider.isEligible(URL(string: "https://example.fr/article")!))
         XCTAssertTrue(PageTranslationOfferProvider.isEligible(URL(string: "http://example.fr/")!))
@@ -74,6 +89,16 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         XCTAssertFalse(PageTranslationOfferProvider.isEligible(URL(string: "file:///tmp/page.html")!))
         XCTAssertFalse(PageTranslationOfferProvider.isEligible(URL(string: "https://duckduckgo.com/?q=bonjour")!))
         XCTAssertFalse(PageTranslationOfferProvider.isEligible(URL(string: "https://duck.ai/")!))
+    }
+
+    private func loadedFrenchPage(urlsReported: [URL]) async throws -> WKWebView {
+        let webView = URLSequenceWebView()
+        let navigationDelegate = FinishedLoading()
+        webView.navigationDelegate = navigationDelegate
+        webView.loadHTMLString("<html><body><p>\(Self.french)</p></body></html>", baseURL: URL(string: "https://example.fr/"))
+        await fulfillment(of: [navigationDelegate.finished], timeout: 10)
+        webView.urlsReported = urlsReported
+        return webView
     }
 
     private func makeProvider(isEnabled: Bool = true,
@@ -94,6 +119,15 @@ final class PageTranslationOfferProviderTests: XCTestCase {
             }}
             """
         return try? TranslationManifest.decode(Data(json.utf8))
+    }
+}
+
+/// Reports the given URLs in turn, the last one from then on, to simulate the tab navigating mid-detection.
+private final class URLSequenceWebView: WKWebView {
+    var urlsReported: [URL] = []
+
+    override var url: URL? {
+        urlsReported.count > 1 ? urlsReported.removeFirst() : urlsReported.first
     }
 }
 

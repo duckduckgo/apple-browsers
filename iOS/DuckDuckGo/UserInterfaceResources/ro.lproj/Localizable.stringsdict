@@ -820,5 +820,23 @@ I-am blocat!
 			<string>%2$@ Trackere</string>
 		</dict>
 	</dict>
+	<key>duckai.text-selection.word-count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@words@</string>
+		<key>words</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d cuvânt</string>
+			<key>few</key>
+			<string>%1$d cuvinte</string>
+			<key>other</key>
+			<string>%1$d de cuvinte</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -724,5 +724,21 @@ Jag blockerade dem!
 			<string>%2$@ Spårare</string>
 		</dict>
 	</dict>
+	<key>duckai.text-selection.word-count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@words@</string>
+		<key>words</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d ord</string>
+			<key>other</key>
+			<string>%1$d ord</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

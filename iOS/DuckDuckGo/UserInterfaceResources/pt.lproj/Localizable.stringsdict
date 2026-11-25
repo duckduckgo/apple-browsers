@@ -724,5 +724,21 @@ Bloqueei-os!
 			<string>%2$@ rastreadores</string>
 		</dict>
 	</dict>
+	<key>duckai.text-selection.word-count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@words@</string>
+		<key>words</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d palavra</string>
+			<key>other</key>
+			<string>%1$d palavras</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

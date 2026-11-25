@@ -71,7 +71,7 @@ public struct GetSubscriptionTierFeaturesResponse: Codable {
     public let features: [String: [TierFeature]]
 }
 
-public struct GetTierProductsResponse: Codable {
+public struct GetTierProductsResponse: Codable, Sendable {
     public let products: [TierProduct]
 }
 
@@ -80,7 +80,7 @@ public enum TierProductsLocation: Equatable {
     case legacyUSRegion
 }
 
-public struct TierProduct: Codable, Equatable {
+public struct TierProduct: Codable, Equatable, Sendable {
     public let productName: String
     public let tier: TierName
     public let regions: [String]
@@ -88,7 +88,7 @@ public struct TierProduct: Codable, Equatable {
     public let billingCycles: [BillingCycle]
 }
 
-public struct BillingCycle: Codable, Equatable {
+public struct BillingCycle: Codable, Equatable, Sendable {
     public let productId: String
     public let period: String  // "Monthly", "Yearly"
     public let price: String

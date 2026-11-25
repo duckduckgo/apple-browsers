@@ -38,7 +38,7 @@ class DummyCoreDataStoreMock: CoreDataStoring {
     var coordinator: NSPersistentStoreCoordinator
     
     var onLoadStore: ((NSManagedObjectContext?, Error?) -> Void) -> Void = { _ in }
-    func loadStore(completion: @escaping (NSManagedObjectContext?, Error?) -> Void) {
+    func loadStore(completion: @escaping @Sendable (NSManagedObjectContext?, Error?) -> Void) {
         onLoadStore(completion)
     }
 
@@ -66,7 +66,7 @@ class CoreDataStoreMock: CoreDataStoring {
     }
 
     var onLoadStore: () -> Void = { }
-    func loadStore(completion: @escaping (NSManagedObjectContext?, Error?) -> Void) {
+    func loadStore(completion: @escaping @Sendable (NSManagedObjectContext?, Error?) -> Void) {
         onLoadStore()
         db.loadStore(completion: completion)
     }

@@ -106,7 +106,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         )
     }
 
-    fileprivate func makeBubbleView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
+    func makeBubbleView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
         switch type {
         case .tryASearch:
             return AnyView(tryASearchDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onSuggestionPressed: onSuggestionPressed))
@@ -124,8 +124,11 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .subscriptionUpsell:
             return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .thatsDuckAI:
-            // To do: replace with the That's Duck.ai! dialog. Placeholder: the Fire dialog.
-            return AnyView(tryFireButtonDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
+            // Opens Fire without dismissing the dialog or the Fire highlight: cancelling Fire leaves both in place.
+            return AnyView(OnboardingRebranding.OnboardingThatsDuckAIDialog { [onboardingPixelReporter, fireCoordinator] in
+                onboardingPixelReporter.measureFireButtonTryIt()
+                fireCoordinator.fireButtonAction()
+            })
         }
     }
 

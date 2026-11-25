@@ -16,31 +16,14 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 @testable import MaliciousSiteProtection
 
-final class MockMaliciousSiteProtectionEmbeddedDataProvider: MaliciousSiteProtection.EmbeddedDataProviding {
-    var embeddedRevision: Int = 65
-    var loadHashPrefixesCalled: Bool = false
-    var loadFilterSetCalled: Bool = true
-    var hashPrefixes: Set<String> = [] {
-        didSet {
-            hashPrefixesData = try! JSONEncoder().encode(hashPrefixes)
-        }
-    }
-    var hashPrefixesData: Data!
-
-    var filterSet: Set<Filter> = [] {
-        didSet {
-            filterSetData = try! JSONEncoder().encode(filterSet)
-        }
-    }
-    var filterSetData: Data!
-
-    init() {
-        hashPrefixes = Set(["aabb"])
-        filterSet = Set([Filter(hash: "dummyhash", regex: "dummyregex")])
-    }
+final class MockMaliciousSiteProtectionEmbeddedDataProvider: MaliciousSiteProtection.EmbeddedDataProviding, @unchecked Sendable {
+    @Locked var embeddedRevision = 65
+    @Locked var hashPrefixes: Set<String> = ["aabb"]
+    @Locked var filterSet: Set<Filter> = [Filter(hash: "dummyhash", regex: "dummyregex")]
 
     func revision(for detectionKind: MaliciousSiteProtection.DataManager.StoredDataType) -> Int {
         embeddedRevision
@@ -49,10 +32,8 @@ final class MockMaliciousSiteProtectionEmbeddedDataProvider: MaliciousSiteProtec
     func url(for dataType: MaliciousSiteProtection.DataManager.StoredDataType) -> URL {
         switch dataType {
         case .filterSet:
-            self.loadFilterSetCalled = true
             return URL(string: "filterSet")!
         case .hashPrefixSet:
-            self.loadHashPrefixesCalled = true
             return URL(string: "hashPrefixSet")!
         }
     }
@@ -67,11 +48,11 @@ final class MockMaliciousSiteProtectionEmbeddedDataProvider: MaliciousSiteProtec
     func data(withContentsOf url: URL) throws -> Data {
         switch url.absoluteString {
         case "filterSet":
-            self.loadFilterSetCalled = true
-            return filterSetData
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .sortedKeys
+            return try encoder.encode(filterSet.sorted { ($0.hash, $0.regex) < ($1.hash, $1.regex) })
         case "hashPrefixSet":
-            self.loadHashPrefixesCalled = true
-            return hashPrefixesData
+            return try JSONEncoder().encode(hashPrefixes.sorted())
         default:
             fatalError("Unexpected url \(url.absoluteString)")
         }

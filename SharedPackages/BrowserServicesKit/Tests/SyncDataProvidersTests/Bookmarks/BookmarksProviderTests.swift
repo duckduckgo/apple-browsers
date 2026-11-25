@@ -702,7 +702,7 @@ internal class BookmarksProviderTests: BookmarksProviderTestsBase {
         })
     }
 
-    func testWhenObjectWasUpdatedLocallyAfterStartingSyncThenRemoteDeletionIsApplied() async throws {
+    func testWhenLocallyEditedBookmarkIsDeletedRemotelyThenItIsDetachedWithLocalChanges() async throws {
         let context = bookmarksDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
 
         let bookmarkTree = BookmarkTree {
@@ -720,16 +720,20 @@ internal class BookmarksProviderTests: BookmarksProviderTestsBase {
             try! context.save()
         }
 
+        let syncStart = Date()
         let sent = try await provider.fetchChangedObjects(encryptedUsing: crypter)
 
-        context.performAndWait {
+        let modifiedAt = context.performAndWait {
             let bookmark = BookmarkEntity.fetchBookmarks(with: ["1"], in: context).first!
             bookmark.title = "test3"
             try! context.save()
+            return bookmark.modifiedAt
         }
 
-        let rootFolder = try await handleSyncResponse(sent: sent, received: received, clientTimestamp: Date().addingTimeInterval(-1), serverTimestamp: "1234", in: context)
-        assertEquivalent(rootFolder, BookmarkTree(lastChildrenArrayReceivedFromSync: []) {})
+        let rootFolder = try await handleSyncResponse(sent: sent, received: received, clientTimestamp: syncStart, serverTimestamp: "1234", in: context)
+        assertEquivalent(rootFolder, BookmarkTree(lastChildrenArrayReceivedFromSync: []) {
+            Bookmark("test3", id: "1", url: "test", modifiedAt: modifiedAt, isOrphaned: true)
+        })
     }
 
     func testWhenBookmarkIsMovedBetweenFoldersRemotelyAndUpdatedLocallyAfterStartingSyncThenItsModifiedAtIsNotCleared() async throws {

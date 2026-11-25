@@ -29,21 +29,18 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
     }
 
     func testLoadImageReturnsImageOnSuccess() async throws {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockData = createValidImageData()
-        mockProvider.mockResponse = createSuccessResponse()
+        let mockProvider = MockRemoteMessagingImageDataProvider(data: createValidImageData(), response: createSuccessResponse())
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
         let image = try await loader.loadImage(from: testURL)
 
         XCTAssertNotNil(image)
-        XCTAssertEqual(mockProvider.dataCallCount, 1)
+        let requests = await mockProvider.requestedURLs
+        XCTAssertEqual(requests.count, 1)
     }
 
     func testLoadImageThrowsOnInvalidImageData() async {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockData = Data("not an image".utf8)
-        mockProvider.mockResponse = createSuccessResponse()
+        let mockProvider = MockRemoteMessagingImageDataProvider(data: Data("not an image".utf8), response: createSuccessResponse())
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
@@ -56,9 +53,7 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
     }
 
     func testEmptyDataWithValidResponseThrowsInvalidImageData() async {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockData = Data()
-        mockProvider.mockResponse = createSuccessResponse()
+        let mockProvider = MockRemoteMessagingImageDataProvider(data: Data(), response: createSuccessResponse())
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
@@ -76,14 +71,12 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
         let badStatusCodes = [300, 301, 400, 404, 429, 500, 503]
 
         for statusCode in badStatusCodes {
-            let mockProvider = MockRemoteMessagingImageDataProvider()
-            mockProvider.mockData = createValidImageData()
-            mockProvider.mockResponse = HTTPURLResponse(
+            let mockProvider = MockRemoteMessagingImageDataProvider(data: createValidImageData(), response: HTTPURLResponse(
                 url: testURL,
                 statusCode: statusCode,
                 httpVersion: nil,
                 headerFields: ["Content-Type": "image/png"]
-            )
+            )!)
 
             let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
@@ -101,14 +94,12 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
     }
 
     func testLoadImageThrowsOnNonImageContentType() async {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockData = createValidImageData()
-        mockProvider.mockResponse = HTTPURLResponse(
+        let mockProvider = MockRemoteMessagingImageDataProvider(data: createValidImageData(), response: HTTPURLResponse(
             url: testURL,
             statusCode: 200,
             httpVersion: nil,
             headerFields: ["Content-Type": "text/html"]
-        )
+        )!)
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
@@ -121,8 +112,7 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
     }
 
     func testLoadImagePropagatesNetworkError() async {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockError = URLError(.notConnectedToInternet)
+        let mockProvider = MockRemoteMessagingImageDataProvider(error: URLError(.notConnectedToInternet))
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
@@ -135,14 +125,11 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
     }
 
     func testConcurrentRequestsForSameURLOnlyFetchOnce() async throws {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockData = createValidImageData()
-        mockProvider.mockResponse = createSuccessResponse()
-
-        mockProvider.delay = 0.1
+        let mockProvider = MockRemoteMessagingImageDataProvider(data: createValidImageData(), response: createSuccessResponse(), delay: 0.1)
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
+        let testURL = self.testURL
         async let image1 = loader.loadImage(from: testURL)
         async let image2 = loader.loadImage(from: testURL)
         async let image3 = loader.loadImage(from: testURL)
@@ -150,28 +137,28 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
         let results = try await [image1, image2, image3]
 
         XCTAssertEqual(results.count, 3)
-        XCTAssertEqual(mockProvider.dataCallCount, 1, "Should only fetch once for concurrent requests")
+        let requests = await mockProvider.requestedURLs
+        XCTAssertEqual(requests.count, 1, "Should only fetch once for concurrent requests")
         XCTAssertTrue(results[0] === results[1], "All callers should receive the same image instance")
         XCTAssertTrue(results[1] === results[2], "All callers should receive the same image instance")
     }
 
     func testPendingTaskCleanupAllowsNextFetch() async throws {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockData = createValidImageData()
-        mockProvider.mockResponse = createSuccessResponse()
+        let mockProvider = MockRemoteMessagingImageDataProvider(data: createValidImageData(), response: createSuccessResponse())
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
         _ = try await loader.loadImage(from: testURL)
-        XCTAssertEqual(mockProvider.dataCallCount, 1)
+        let requests = await mockProvider.requestedURLs
+        XCTAssertEqual(requests.count, 1)
 
         _ = try await loader.loadImage(from: testURL)
-        XCTAssertEqual(mockProvider.dataCallCount, 2, "Should fetch again after pending task is cleaned up")
+        let subsequentRequests = await mockProvider.requestedURLs
+        XCTAssertEqual(subsequentRequests.count, 2, "Should fetch again after pending task is cleaned up")
     }
 
     func testErrorDoesNotBlockSubsequentRequests() async throws {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockError = URLError(.notConnectedToInternet)
+        let mockProvider = MockRemoteMessagingImageDataProvider(error: URLError(.notConnectedToInternet))
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
@@ -182,23 +169,18 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
             // Expected, No-op
         }
 
-        mockProvider.mockError = nil
-        mockProvider.mockData = createValidImageData()
-        mockProvider.mockResponse = createSuccessResponse()
+        await mockProvider.respond(with: createValidImageData(), response: createSuccessResponse())
 
         let image = try await loader.loadImage(from: testURL)
         XCTAssertNotNil(image, "Should succeed after failure")
-        XCTAssertEqual(mockProvider.dataCallCount, 2)
+        let subsequentRequests = await mockProvider.requestedURLs
+        XCTAssertEqual(subsequentRequests.count, 2)
     }
 
     func testPrefetchFetchesAllURLs() async {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockData = createValidImageData()
-        mockProvider.mockResponse = createSuccessResponse()
-
         let expectation = expectation(description: "All prefetches called")
         expectation.expectedFulfillmentCount = 3
-        mockProvider.onDataCalled = { expectation.fulfill() }
+        let mockProvider = MockRemoteMessagingImageDataProvider(data: createValidImageData(), response: createSuccessResponse()) { expectation.fulfill() }
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
@@ -212,18 +194,15 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
 
         await fulfillment(of: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(mockProvider.dataCallCount, 3, "Should fetch all URLs")
-        XCTAssertEqual(Set(mockProvider.requestedURLs), Set(urls), "Should fetch each unique URL")
+        let requests = await mockProvider.requestedURLs
+        XCTAssertEqual(requests.count, 3, "Should fetch all URLs")
+        XCTAssertEqual(Set(requests), Set(urls), "Should fetch each unique URL")
     }
 
     func testPrefetchWithDuplicateURLsOnlyFetchesOnce() async {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockData = createValidImageData()
-        mockProvider.mockResponse = createSuccessResponse()
-
         let expectation = expectation(description: "Prefetch called")
         expectation.expectedFulfillmentCount = 1
-        mockProvider.onDataCalled = { expectation.fulfill() }
+        let mockProvider = MockRemoteMessagingImageDataProvider(data: createValidImageData(), response: createSuccessResponse()) { expectation.fulfill() }
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
@@ -233,15 +212,13 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
 
         await fulfillment(of: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(mockProvider.dataCallCount, 1, "Should only fetch once for duplicate URLs")
+        let requests = await mockProvider.requestedURLs
+        XCTAssertEqual(requests.count, 1, "Should only fetch once for duplicate URLs")
     }
 
     func testPrefetchDoesNotThrowOnFailure() async {
-        let mockProvider = MockRemoteMessagingImageDataProvider()
-        mockProvider.mockError = URLError(.notConnectedToInternet)
-
         let expectation = expectation(description: "Prefetch called")
-        mockProvider.onDataCalled = { expectation.fulfill() }
+        let mockProvider = MockRemoteMessagingImageDataProvider(error: URLError(.notConnectedToInternet)) { expectation.fulfill() }
 
         let loader = RemoteMessagingImageLoader(dataProvider: mockProvider)
 
@@ -249,7 +226,8 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
 
         await fulfillment(of: [expectation], timeout: 1.0)
 
-        XCTAssertEqual(mockProvider.dataCallCount, 1)
+        let requests = await mockProvider.requestedURLs
+        XCTAssertEqual(requests.count, 1)
     }
 
     func testCachedImageReturnsNilWhenNotCached() {
@@ -316,27 +294,34 @@ final class RemoteMessagingImageLoaderTests: XCTestCase {
 
 // MARK: - Mock
 
-final class MockRemoteMessagingImageDataProvider: RemoteMessagingImageDataProviding {
-    var mockData: Data?
-    var mockError: Error?
-    var mockResponse: URLResponse?
-    var delay: TimeInterval = 0
-    var dataCallCount = 0
-    var requestedURLs: [URL] = []
-    var onDataCalled: (() -> Void)?
+private actor MockRemoteMessagingImageDataProvider: RemoteMessagingImageDataProviding {
+    private var result: Result<(Data, URLResponse), Error>
+    private let delay: TimeInterval
+    private let onRequest: @Sendable () -> Void
+    private(set) var requestedURLs: [URL] = []
+
+    init(data: Data = Data(), response: URLResponse = URLResponse(), delay: TimeInterval = 0, onRequest: @escaping @Sendable () -> Void = {}) {
+        self.result = .success((data, response))
+        self.delay = delay
+        self.onRequest = onRequest
+    }
+
+    init(error: Error, onRequest: @escaping @Sendable () -> Void = {}) {
+        self.result = .failure(error)
+        self.delay = 0
+        self.onRequest = onRequest
+    }
+
+    func respond(with data: Data, response: URLResponse) {
+        result = .success((data, response))
+    }
 
     func data(from url: URL) async throws -> (Data, URLResponse) {
-        dataCallCount += 1
         requestedURLs.append(url)
-        onDataCalled?()
-
+        onRequest()
         if delay > 0 {
-            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         }
-
-        if let error = mockError { throw error }
-
-        let response = mockResponse ?? URLResponse()
-        return (mockData ?? Data(), response)
+        return try result.get()
     }
 }

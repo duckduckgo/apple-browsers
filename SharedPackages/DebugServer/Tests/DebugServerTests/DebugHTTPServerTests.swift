@@ -32,12 +32,12 @@ final class DebugHTTPServerTests: XCTestCase {
     // MARK: - Lifecycle
 
     func testWhenCreatedThenStateIsStopped() {
-        server = DebugHTTPServer(port: 8090)
+        server = DebugHTTPServer(port: 0)
         XCTAssertEqual(server.state, .stopped)
     }
 
     func testWhenStartedThenStateBecomesRunning() throws {
-        server = DebugHTTPServer(port: 8091)
+        server = DebugHTTPServer(port: 0)
 
         let expectation = expectation(description: "Server started")
         server.stateDidChange = { state in
@@ -50,14 +50,14 @@ final class DebugHTTPServerTests: XCTestCase {
         wait(for: [expectation], timeout: 5)
 
         if case .running(let port) = server.state {
-            XCTAssertEqual(port, 8091)
+            XCTAssertGreaterThan(port, 0)
         } else {
             XCTFail("Expected running state, got \(server.state)")
         }
     }
 
     func testWhenStoppedThenStateIsStopped() throws {
-        server = DebugHTTPServer(port: 8092)
+        server = DebugHTTPServer(port: 0)
 
         let started = expectation(description: "Server started")
         server.stateDidChange = { state in
@@ -83,32 +83,23 @@ final class DebugHTTPServerTests: XCTestCase {
     }
 
     func testWhenStateChangesThenCallbackIsCalled() throws {
-        server = DebugHTTPServer(port: 8093)
+        server = DebugHTTPServer(port: 0)
 
-        var observedStates: [ServerState] = []
+        let starting = expectation(description: "Starting")
         let running = expectation(description: "Running")
-
         server.stateDidChange = { state in
-            observedStates.append(state)
-            if case .running = state {
-                running.fulfill()
-            }
+            if case .starting = state { starting.fulfill() }
+            if case .running = state { running.fulfill() }
         }
 
         try server.start()
-        wait(for: [running], timeout: 5)
-
-        XCTAssertTrue(observedStates.contains(.starting))
-        XCTAssertTrue(observedStates.contains(where: {
-            if case .running = $0 { return true }
-            return false
-        }))
+        wait(for: [starting, running], timeout: 5, enforceOrder: true)
     }
 
     // MARK: - Integration (Full Request/Response Cycle)
 
-    func testWhenGETRequestSentThenCorrectResponseIsReturned() throws {
-        server = DebugHTTPServer(port: 8094)
+    func testWhenGETRequestSentThenCorrectResponseIsReturned() async throws {
+        server = DebugHTTPServer(port: 0)
         server.addRoute("/hello", method: .GET) { _ in
             .text("world")
         }
@@ -119,14 +110,14 @@ final class DebugHTTPServerTests: XCTestCase {
         }
 
         try server.start()
-        wait(for: [started], timeout: 5)
+        await fulfillment(of: [started], timeout: 5)
 
-        let responseBody = try performRequest(port: 8094, path: "/hello")
+        let responseBody = try await performRequest(path: "/hello")
         XCTAssertEqual(responseBody, "world")
     }
 
-    func testWhenUnknownRouteThenReturns404() throws {
-        server = DebugHTTPServer(port: 8095)
+    func testWhenUnknownRouteThenReturns404() async throws {
+        server = DebugHTTPServer(port: 0)
 
         let started = expectation(description: "Server started")
         server.stateDidChange = { state in
@@ -134,14 +125,14 @@ final class DebugHTTPServerTests: XCTestCase {
         }
 
         try server.start()
-        wait(for: [started], timeout: 5)
+        await fulfillment(of: [started], timeout: 5)
 
-        let (statusCode, _) = try performRequestWithStatus(port: 8095, path: "/nonexistent")
+        let (statusCode, _) = try await performRequestWithStatus(path: "/nonexistent")
         XCTAssertEqual(statusCode, 404)
     }
 
-    func testWhenStaticRouteRegisteredThenHTMLIsReturned() throws {
-        server = DebugHTTPServer(port: 8096)
+    func testWhenStaticRouteRegisteredThenHTMLIsReturned() async throws {
+        server = DebugHTTPServer(port: 0)
         server.addStaticRoute("/page", htmlString: "<h1>Hello</h1>")
 
         let started = expectation(description: "Server started")
@@ -150,21 +141,17 @@ final class DebugHTTPServerTests: XCTestCase {
         }
 
         try server.start()
-        wait(for: [started], timeout: 5)
+        await fulfillment(of: [started], timeout: 5)
 
-        let responseBody = try performRequest(port: 8096, path: "/page")
+        let responseBody = try await performRequest(path: "/page")
         XCTAssertEqual(responseBody, "<h1>Hello</h1>")
     }
 
-    func testWhenPOSTWithBodyThenHandlerReceivesBody() throws {
-        server = DebugHTTPServer(port: 8097)
+    func testWhenPOSTWithBodyThenHandlerReceivesBody() async throws {
+        server = DebugHTTPServer(port: 0)
 
-        var receivedBody: String?
         server.addRoute("/echo", method: .POST) { request in
-            if let body = request.body {
-                receivedBody = String(data: body, encoding: .utf8)
-            }
-            return .text("ok")
+            .text(request.body.flatMap { String(data: $0, encoding: .utf8) } ?? "")
         }
 
         let started = expectation(description: "Server started")
@@ -173,15 +160,15 @@ final class DebugHTTPServerTests: XCTestCase {
         }
 
         try server.start()
-        wait(for: [started], timeout: 5)
+        await fulfillment(of: [started], timeout: 5)
 
         let body = "test-body"
-        _ = try performRequest(port: 8097, path: "/echo", method: "POST", body: body)
+        let receivedBody = try await performRequest(path: "/echo", method: "POST", body: body)
         XCTAssertEqual(receivedBody, body)
     }
 
-    func testWhenMultiplePrefixRoutesMatchThenMostSpecificRouteIsUsed() throws {
-        server = DebugHTTPServer(port: 8100)
+    func testWhenMultiplePrefixRoutesMatchThenMostSpecificRouteIsUsed() async throws {
+        server = DebugHTTPServer(port: 0)
         server.addPrefixRoute("/api/", method: .GET) { _ in
             .text("generic")
         }
@@ -195,14 +182,14 @@ final class DebugHTTPServerTests: XCTestCase {
         }
 
         try server.start()
-        wait(for: [started], timeout: 5)
+        await fulfillment(of: [started], timeout: 5)
 
-        let responseBody = try performRequest(port: 8100, path: "/api/chats/123")
+        let responseBody = try await performRequest(path: "/api/chats/123")
         XCTAssertEqual(responseBody, "specific")
     }
 
-    func testWhenHandlerThrowsThenReturns500() throws {
-        server = DebugHTTPServer(port: 8098)
+    func testWhenHandlerThrowsThenReturns500() async throws {
+        server = DebugHTTPServer(port: 0)
         server.addRoute("/fail", method: .GET) { _ in
             throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "intentional"])
         }
@@ -213,30 +200,31 @@ final class DebugHTTPServerTests: XCTestCase {
         }
 
         try server.start()
-        wait(for: [started], timeout: 5)
+        await fulfillment(of: [started], timeout: 5)
 
-        let (statusCode, _) = try performRequestWithStatus(port: 8098, path: "/fail")
+        let (statusCode, _) = try await performRequestWithStatus(path: "/fail")
         XCTAssertEqual(statusCode, 500)
     }
 
     // MARK: - Helpers
 
     private func performRequest(
-        port: UInt16,
         path: String,
         method: String = "GET",
         body: String? = nil
-    ) throws -> String {
-        let (_, responseBody) = try performRequestWithStatus(port: port, path: path, method: method, body: body)
+    ) async throws -> String {
+        let (_, responseBody) = try await performRequestWithStatus(path: path, method: method, body: body)
         return responseBody
     }
 
     private func performRequestWithStatus(
-        port: UInt16,
         path: String,
         method: String = "GET",
         body: String? = nil
-    ) throws -> (Int, String) {
+    ) async throws -> (Int, String) {
+        guard case .running(let port) = server.state else {
+            throw URLError(.cannotConnectToHost)
+        }
         let url = URL(string: "http://localhost:\(port)\(path)")!
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -244,21 +232,10 @@ final class DebugHTTPServerTests: XCTestCase {
             request.httpBody = body.data(using: .utf8)
         }
 
-        let responseExpectation = expectation(description: "Response received")
-        var responseData: Data?
-        var httpResponse: HTTPURLResponse?
-
-        let task = URLSession.shared.dataTask(with: request) { data, response, _ in
-            responseData = data
-            httpResponse = response as? HTTPURLResponse
-            responseExpectation.fulfill()
-        }
-        task.resume()
-
-        wait(for: [responseExpectation], timeout: 5)
-
-        let statusCode = httpResponse?.statusCode ?? 0
-        let responseBody = responseData.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        request.timeoutInterval = 5
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let responseBody = String(data: data, encoding: .utf8) ?? ""
         return (statusCode, responseBody)
     }
 }

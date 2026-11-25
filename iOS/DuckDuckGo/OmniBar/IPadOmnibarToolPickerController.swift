@@ -178,7 +178,7 @@ final class IPadOmnibarToolPickerController {
             UnifiedToggleInputCoordinatorPixelHelper.fireToolDeselectedPixel(for: previous, surface: .addressBar)
         }
         if let current {
-            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current, surface: .addressBar)
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: current, surface: .addressBar, simplifiedPromptBox: false)
         }
     }
 }

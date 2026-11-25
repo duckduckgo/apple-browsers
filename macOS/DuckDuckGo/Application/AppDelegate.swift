@@ -151,9 +151,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let visualizeFireSettingsDecider: VisualizeFireSettingsDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let contentScopePreferences: ContentScopePreferences
-    private(set) lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+    private(set) lazy var segmentSkipPreferences = SegmentSkipPreferences(store: keyValueStore)
     /// One instance for the app, so every tab shares the segments cache.
-    let sponsorBlockSegmentsProvider = SponsorBlockSegmentsProvider()
+    let segmentSkipSegmentsProvider = SegmentSkipSegmentsProvider()
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
@@ -1415,7 +1415,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
         crashReporting = CrashReportingFactory.makeCrashReporting(internalUserDecider: internalUserDecider,
-                                                                  featureFlagger: featureFlagger,
                                                                   keyValueStore: UserDefaults.standard)
 
         let watchdogDiagnosticProvider = MacWatchdogDiagnosticProvider(windowControllersManager: windowControllersManager)
@@ -1956,6 +1955,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.fire(GeneralPixel.dailyActiveUser, frequency: .legacyDaily)
         PixelKit.fire(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault), frequency: .daily)
         PixelKit.fire(GeneralPixel.dailyAddedToDock(isAddedToDock: dockCustomization.isAddedToDock), frequency: .daily)
+        OtherDistributionInstalledPixelReporter().fireDailyPixel()
     }
 
     private func fireDailyFireWindowConfigurationPixels() {

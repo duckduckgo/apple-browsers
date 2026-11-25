@@ -22,7 +22,8 @@
                     "tabbar-button",
                     "ask-about-page",
                     "open-sidebar",
-                    "main-menu-ask-about-page"
+                    "main-menu-ask-about-page",
+                    "ask-about-link"
                 ]
             },
             {

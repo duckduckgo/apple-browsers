@@ -32,6 +32,12 @@ extension MockFeatureFlagger {
         }
     }
 
+    static func enabling(_ features: [FeatureFlag]) -> MockFeatureFlagger {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = features
+        return featureFlagger
+    }
+
     func enableFeatures(_ features: [FeatureFlag]) {
         enabledFeatureFlags = features
     }

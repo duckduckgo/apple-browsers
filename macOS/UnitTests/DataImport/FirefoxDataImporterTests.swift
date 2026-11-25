@@ -17,7 +17,10 @@
 //
 
 import Foundation
+import FeatureFlags_macOS
 import History
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @_spi(Testing) import PixelKit
 import SharedTestUtilities
 import XCTest
@@ -133,6 +136,7 @@ class FirefoxDataImporterTests: XCTestCase {
         loginImporter: LoginImporter = MockLoginImporter(),
         bookmarkImporter: BookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 0, duplicates: 0, failed: 0) }),
         faviconManager: FaviconManagement = FaviconManagerMock(),
+        faviconRasterizer: FaviconRasterizer = FaviconRasterizer(featureFlagger: MockFeatureFlagger.enabling([.faviconWebKitSVGRendering])),
         historyReader: FirefoxHistoryVisitsReaderProtocol = MockFirefoxHistoryVisitsReader(),
         historyImporter: HistoryImporterProtocol = MockHistoryImporter(),
         pixelFiring: PixelFiring? = nil
@@ -142,6 +146,7 @@ class FirefoxDataImporterTests: XCTestCase {
                             loginImporter: loginImporter,
                             bookmarkImporter: bookmarkImporter,
                             faviconManager: faviconManager,
+                            faviconRasterizer: faviconRasterizer,
                             historyReader: historyReader,
                             historyImporter: historyImporter,
                             pixelFiring: pixelFiring)

@@ -45,7 +45,7 @@ internal class FirefoxDataImporter: DataImporter {
         loginImporter: LoginImporter,
         bookmarkImporter: BookmarkImporter,
         faviconManager: FaviconManagement,
-        faviconRasterizer: FaviconRasterizer = FaviconRasterizer(),
+        faviconRasterizer: FaviconRasterizer,
         historyReader: FirefoxHistoryVisitsReaderProtocol,
         historyImporter: HistoryImporterProtocol,
         pixelFiring: PixelFiring? = PixelKit.shared
@@ -67,6 +67,7 @@ internal class FirefoxDataImporter: DataImporter {
                   loginImporter: loginImporter,
                   bookmarkImporter: bookmarkImporter,
                   faviconManager: NSApp.delegateTyped.faviconManager,
+                  faviconRasterizer: FaviconRasterizer(featureFlagger: Application.appDelegate.featureFlagger),
                   historyReader: FirefoxHistoryVisitsReader(firefoxDataDirectoryURL: profile.profileURL),
                   historyImporter: HistoryImporter(historyCoordinator: NSApp.delegateTyped.historyCoordinator))
     }

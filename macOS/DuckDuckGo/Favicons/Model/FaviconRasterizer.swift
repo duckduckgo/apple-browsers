@@ -18,7 +18,9 @@
 
 import CoreImage
 import Foundation
+import FeatureFlags_macOS
 import OSLog
+import PrivacyConfig
 import WebKit
 
 /// Rasterizes favicon data that CoreImage can't decode (in practice SVG) to PNG using WebKit.
@@ -63,9 +65,17 @@ final class FaviconRasterizer {
     var idleLifetime: TimeInterval
     var scriptTimeout: TimeInterval
 
-    nonisolated init(hardTimeout: TimeInterval = FaviconRasterizer.defaultHardTimeout,
+    nonisolated(unsafe) private let featureFlagger: FeatureFlagger
+
+    /// Whether favicons are rendered with WebKit (the temporary `faviconWebKitSVGRendering` flag).
+    /// When off, `storableImage` and the import helpers keep the legacy decoding, `NSImage(data:)`.
+    var isEnabled: Bool { featureFlagger.isFeatureOn(.faviconWebKitSVGRendering) }
+
+    nonisolated init(featureFlagger: FeatureFlagger,
+                     hardTimeout: TimeInterval = FaviconRasterizer.defaultHardTimeout,
                      idleLifetime: TimeInterval = FaviconRasterizer.defaultIdleLifetime,
                      scriptTimeout: TimeInterval = FaviconRasterizer.timeout) {
+        self.featureFlagger = featureFlagger
         self.hardTimeout = hardTimeout
         self.idleLifetime = idleLifetime
         self.scriptTimeout = scriptTimeout
@@ -264,12 +274,18 @@ extension FaviconRasterizer {
     /// SVG renders queue up in the single web view, so the limit keeps each render well inside `hardTimeout`.
     nonisolated static let importConcurrency = 4
 
-    /// Returns an image that is safe to store for the given favicon data.
+    /// Returns an image to store for the given favicon data.
     ///
-    /// Raster data is decoded as is, on the calling executor (not the main thread). Data CoreImage can't decode
-    /// (SVG) is rendered by WebKit, because `NSImage(data:)` would keep a lazy SVG that CoreSVG renders later,
-    /// while archiving, and CoreSVG can crash. Returns nil if the data can't be decoded.
+    /// With the `faviconWebKitSVGRendering` flag on, raster data is decoded as is, on the calling executor (not
+    /// the main thread), and data CoreImage can't decode (SVG) is rendered by WebKit, because `NSImage(data:)`
+    /// would keep a lazy SVG that CoreSVG renders later, while archiving, and CoreSVG can crash. With the flag
+    /// off, the legacy `NSImage(data:)` is used. Returns nil if the data can't be decoded.
     nonisolated func storableImage(from data: Data) async -> NSImage? {
+        guard await isEnabled else { return NSImage(data: data) }
+        return await renderedImage(from: data)
+    }
+
+    private nonisolated func renderedImage(from data: Data) async -> NSImage? {
         if CIImage(data: data) != nil {
             return NSImage(data: data)
         }
@@ -285,7 +301,7 @@ extension FaviconRasterizer {
             pages.append((pageURL, importedFavicons.map(\.imageData)))
         }
 
-        let images = await storableImages(from: pages.flatMap(\.datas))
+        let images = await storableImages(from: pages.flatMap(\.datas), isEnabled: await isEnabled)
 
         var faviconsByDocument = [URL: [Favicon]]()
         var imageIndex = 0
@@ -312,21 +328,22 @@ extension FaviconRasterizer {
     }
 
     /// Decodes the favicons with at most `importConcurrency` in flight, keeping the order of `datas`.
-    private nonisolated func storableImages(from datas: [Data]) async -> [NSImage?] {
-        await withTaskGroup(of: DecodedImage.self) { group in
+    private nonisolated func storableImages(from datas: [Data], isEnabled: Bool) async -> [NSImage?] {
+        guard isEnabled else { return datas.map { NSImage(data: $0) } }
+        return await withTaskGroup(of: DecodedImage.self) { group in
             var images = [NSImage?](repeating: nil, count: datas.count)
             var nextIndex = 0
 
             while nextIndex < min(Self.importConcurrency, datas.count) {
                 let index = nextIndex
-                group.addTask { DecodedImage(index: index, image: await self.storableImage(from: datas[index])) }
+                group.addTask { DecodedImage(index: index, image: await self.renderedImage(from: datas[index])) }
                 nextIndex += 1
             }
             for await decoded in group {
                 images[decoded.index] = decoded.image
                 guard nextIndex < datas.count else { continue }
                 let index = nextIndex
-                group.addTask { DecodedImage(index: index, image: await self.storableImage(from: datas[index])) }
+                group.addTask { DecodedImage(index: index, image: await self.renderedImage(from: datas[index])) }
                 nextIndex += 1
             }
             return images

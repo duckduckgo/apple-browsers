@@ -41,7 +41,7 @@ internal class ChromiumDataImporter: DataImporter {
         loginImporter: LoginImporter?,
         bookmarkImporter: BookmarkImporter,
         faviconManager: FaviconManagement,
-        faviconRasterizer: FaviconRasterizer = FaviconRasterizer(),
+        faviconRasterizer: FaviconRasterizer,
         historyReader: ChromiumHistoryReaderProtocol,
         historyImporter: HistoryImporterProtocol,
         pixelFiring: PixelFiring? = PixelKit.shared
@@ -61,6 +61,7 @@ internal class ChromiumDataImporter: DataImporter {
                   loginImporter: loginImporter,
                   bookmarkImporter: bookmarkImporter,
                   faviconManager: NSApp.delegateTyped.faviconManager,
+                  faviconRasterizer: FaviconRasterizer(featureFlagger: Application.appDelegate.featureFlagger),
                   historyReader: ChromiumHistoryReader(chromiumDataDirectoryURL: profile.profileURL),
                   historyImporter: HistoryImporter(historyCoordinator: NSApp.delegateTyped.historyCoordinator))
     }

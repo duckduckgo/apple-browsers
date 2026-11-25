@@ -52,7 +52,7 @@ final class SafariDataImporter: DataImporter {
     init(profile: DataImport.BrowserProfile,
          bookmarkImporter: BookmarkImporter,
          faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager,
-         faviconRasterizer: FaviconRasterizer = FaviconRasterizer()) {
+         faviconRasterizer: FaviconRasterizer = FaviconRasterizer(featureFlagger: Application.appDelegate.featureFlagger)) {
         self.profile = profile
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager

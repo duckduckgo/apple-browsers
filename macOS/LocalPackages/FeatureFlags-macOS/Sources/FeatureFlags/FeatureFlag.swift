@@ -365,6 +365,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215720760576164
     case faviconStoringImprovements
 
+    /// TEMPORARY (remove after rollout): render SVG favicons with WebKit instead of CoreSVG, which can crash the
+    /// app on some filtered SVGs (default-ON kill switch; off reverts to the legacy `NSImage(data:)` decoding).
+    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1220652898192245
+    case faviconWebKitSVGRendering
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case aiChatSync
 
@@ -974,6 +979,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconLazyImageLoading))
         case .faviconStoringImprovements:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconStoringImprovements))
+        case .faviconWebKitSVGRendering:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconWebKitSVGRendering))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:

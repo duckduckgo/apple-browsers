@@ -17,6 +17,7 @@
 //
 
 import Combine
+import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
@@ -27,17 +28,19 @@ class FaviconManagerTests: XCTestCase {
     var faviconManager: FaviconManager!
     var imageCache: CapturingFaviconImageCache!
     var referenceCache: CapturingFaviconReferenceCache!
+    var featureFlagger: MockFeatureFlagger!
 
     @MainActor
     override func setUp() async throws {
         imageCache = CapturingFaviconImageCache()
         referenceCache = CapturingFaviconReferenceCache()
+        featureFlagger = MockFeatureFlagger.enabling([.faviconWebKitSVGRendering])
         faviconManager = FaviconManager(
             cacheType: .inMemory,
             bookmarkManager: MockBookmarkManager(),
             fireproofDomains: MockFireproofDomains(domains: []),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             imageCache: { _ in self.imageCache },
             referenceCache: { _ in self.referenceCache }
         )
@@ -47,6 +50,7 @@ class FaviconManagerTests: XCTestCase {
         faviconManager = nil
         imageCache = nil
         referenceCache = nil
+        featureFlagger = nil
     }
 
     @MainActor
@@ -110,6 +114,19 @@ class FaviconManagerTests: XCTestCase {
         XCTAssertTrue(stored.representations.allSatisfy { $0 is NSBitmapImageRep })
         XCTAssertEqual(stored.size, NSSize(width: 64, height: 64))
         XCTAssertTrue(stored.hasVisiblePixels())
+    }
+
+    /// With the flag off, the legacy `NSImage(data:)` is kept. A harmless SVG is used: it stays vector-backed.
+    @MainActor
+    func testStoreFaviconKeepsLegacyDecodingWhenWebKitRenderingIsOff() async throws {
+        featureFlagger.enabledFeatureFlags = []
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        let svg = ##"<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16"/></svg>"##
+
+        try await faviconManager.storeFavicon(Data(svg.utf8), with: nil, for: documentURL)
+
+        let stored = try XCTUnwrap(imageCache.insertCalls.first?.first?.image)
+        XCTAssertFalse(stored.representations.contains { $0 is NSBitmapImageRep })
     }
 
     @MainActor

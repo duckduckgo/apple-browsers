@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import FeatureFlags_macOS
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
 
@@ -28,12 +31,17 @@ final class FaviconRasterizerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        rasterizer = FaviconRasterizer()
+        rasterizer = Self.makeRasterizer(enabled: true)
     }
 
     override func tearDown() {
         rasterizer = nil
         super.tearDown()
+    }
+
+    private static func makeRasterizer(enabled: Bool) -> FaviconRasterizer {
+        let featureFlagger = MockFeatureFlagger.enabling(enabled ? [.faviconWebKitSVGRendering] : [])
+        return FaviconRasterizer(featureFlagger: featureFlagger)
     }
 
     // MARK: - Fixtures
@@ -145,6 +153,36 @@ final class FaviconRasterizerTests: XCTestCase {
         let results = try await [first, second, third]
 
         XCTAssertTrue(try results.allSatisfy { try decode($0).hasVisiblePixels() })
+    }
+
+    // MARK: - Feature flag off
+
+    /// With the flag off the legacy decoding is kept: a lazy `NSImage(data:)`, which for an SVG is vector-backed.
+    func testStorableImageUsesLegacyDecodingWhenTheFlagIsOff() async throws {
+        let legacy = Self.makeRasterizer(enabled: false)
+        let svg = Data(Self.svg(width: 16, height: 16).utf8)
+
+        let rendered = await legacy.storableImage(from: svg)
+
+        let image = try XCTUnwrap(rendered)
+        XCTAssertFalse(image.representations.contains { $0 is NSBitmapImageRep })
+        XCTAssertFalse(legacy.hasWebView)
+    }
+
+    func testImportedFaviconsUseLegacyDecodingWhenTheFlagIsOff() async throws {
+        let legacy = Self.makeRasterizer(enabled: false)
+        let png = try await rasterizer.rasterize(Data(Self.svg(width: 16, height: 16).utf8))
+        let svg = Data(Self.svg(width: 16, height: 16).utf8)
+        let imported = ["https://example.com": [ImportedFavicon(imageData: png), ImportedFavicon(imageData: svg)]]
+
+        let faviconsByDocument = await legacy.favicons(fromImported: imported)
+
+        let url = try XCTUnwrap(URL(string: "https://example.com"))
+        let images = try XCTUnwrap(faviconsByDocument[url]).map(\.image)
+        XCTAssertEqual(images.count, 2)
+        XCTAssertTrue(images.allSatisfy { $0 != nil })
+        XCTAssertFalse(images[1]?.representations.contains { $0 is NSBitmapImageRep } ?? true)
+        XCTAssertFalse(legacy.hasWebView)
     }
 
     // MARK: - Failures

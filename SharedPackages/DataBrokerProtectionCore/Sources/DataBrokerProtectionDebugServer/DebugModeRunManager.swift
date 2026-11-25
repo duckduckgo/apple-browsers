@@ -62,6 +62,20 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
         }
     }
 
+    #if DEBUG
+    public func applyingDebugPIRSettings(to result: DebugPrerequisiteResult) -> DebugPrerequisiteResult {
+        let settings = runner.settings
+        var endpoint = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: false)
+        endpoint?.user = nil
+        endpoint?.password = nil
+        endpoint?.query = nil
+        endpoint?.fragment = nil
+        return DebugPrerequisiteResult(status: result.status, backend: result.backend, environment: result.environment,
+                                       pirEnvironment: settings.selectedEnvironment.rawValue, pirEndpoint: endpoint?.string,
+                                       authenticated: result.authenticated, errorCode: result.errorCode)
+    }
+    #endif
+
     // MARK: - DataBrokerProtectionDebugModeRunning
 
     public func startScan(_ request: DebugModeScanRequest) throws -> DebugModeRun {
@@ -169,6 +183,13 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
 
     private func optOut(_ scanResult: DebugScanResult, resultId: String, showWebView: Bool, runId: String) async {
         let label = DebugModeRunner.profileQueryText(for: scanResult.profileQuery)
+        guard !scanResult.dataBroker.performsOptOutWithinParent() else {
+            setOptOutStatus(.optsOutInParent, resultId: resultId, runId: runId)
+            addEvent(runId, kind: .history, profileQuery: label,
+                     summary: "Opt-out skipped: broker opts out in parent",
+                     details: scanResult.dataBroker.parent ?? "")
+            return
+        }
         addHistoryEvent(.optOutStarted, runId: runId, profileQuery: label)
         do {
             let requiresEmailConfirmation = try await runner.optOut(scanResult,

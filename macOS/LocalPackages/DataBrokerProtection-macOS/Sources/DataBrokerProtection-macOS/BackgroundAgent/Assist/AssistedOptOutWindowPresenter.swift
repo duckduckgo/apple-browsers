@@ -260,7 +260,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
     }
 
     private func updatePageLockAndDim(of webView: WKWebView, for phase: AssistedAttemptPhase) {
-        let ignoresInput = phase == .queued || phase == .agentInControl
+        let ignoresInput = phase == .queued || phase == .agentInControl || phase == .submitted
         (webView as? UserInputIgnoring)?.ignoresUserInput = ignoresInput
         webView.animator().alphaValue = ignoresInput ? 0.85 : 1
     }

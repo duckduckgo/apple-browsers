@@ -172,10 +172,15 @@ public final class BrowserToolInvoker {
             return .failure(callId: request.callId, error: error)
         case .granted(_, let performExecution):
             // Settles the granted entry; there is nothing to run.
-            guard await performExecution({ .success(.null) }) != nil else {
+            let failure: ClientToolError? = switch await performExecution({ .success(.null) }) {
+            case nil: .cancelled
+            case .some(.failure(let error)): Self.clientToolError(error)
+            case .some(.success): nil
+            }
+            if let failure {
                 toAsk.forEach { results[$0] = .denied }
                 report(.withdrawn)
-                return .failure(callId: request.callId, error: .cancelled)
+                return .failure(callId: request.callId, error: failure)
             }
         }
         for name in toAsk {

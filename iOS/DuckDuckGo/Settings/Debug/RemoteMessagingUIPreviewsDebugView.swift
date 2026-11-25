@@ -62,7 +62,7 @@ struct RemoteMessagingUIPreviewsDebugView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(verbatim: sample.name)
                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(Color(baseColor: .gray70))
+                            .foregroundStyle(Color(designSystemColor: .textSecondary))
                         HomeMessageView(viewModel: viewModel(id: sample.name, modelType: sample.modelType))
                     }
                 }

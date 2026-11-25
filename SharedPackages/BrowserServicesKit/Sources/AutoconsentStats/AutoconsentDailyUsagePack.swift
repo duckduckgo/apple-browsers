@@ -18,7 +18,7 @@
 
 import Foundation
 
-public struct AutoconsentDailyUsagePack {
+public struct AutoconsentDailyUsagePack: Sendable {
 
     public enum Constants {
         public static let averageClicksBlockingCookiePopUp = "averageClicksBlockingCookiePopUp"

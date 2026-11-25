@@ -3745,6 +3745,12 @@ https://duckduckgo.com/mac";
 /* Name of the New Tab Page section showing messages, in the customization sheet */
 "new-tab-page.customization.messages" = "Messages";
 
+/* Accessibility label of the blue illustrated theme option in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-blue" = "Blue";
+
+/* Accessibility label of the plain theme option, without an illustration, in the New Tab Page customization sheet */
+"new-tab-page.customization.theme-plain" = "Plain";
+
 /* Title of the sheet for customizing the New Tab Page */
 "new-tab-page.customization.title" = "Customize Your Start";
 

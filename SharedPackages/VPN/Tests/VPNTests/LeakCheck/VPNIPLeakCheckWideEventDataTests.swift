@@ -132,7 +132,7 @@ final class VPNIPLeakCheckWideEventDataTests: XCTestCase {
 
     func testMetadata() {
         XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.featureName, "vpn-ip-leak-check")
-        XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.version, "1.2.0")
+        XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.version, "1.2.1")
         #if os(iOS)
         XCTAssertEqual(VPNIPLeakCheckWideEventData.metadata.type, "ios-vpn-ip-leak-check")
         #elseif os(macOS)

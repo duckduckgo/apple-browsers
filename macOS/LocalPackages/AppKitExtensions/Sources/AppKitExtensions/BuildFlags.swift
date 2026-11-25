@@ -16,14 +16,23 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 public enum BuildFlags {
 
     public static var isProductionBuild: Bool {
-        let buildType = StandardApplicationBuildType()
+        isProductionBuild(buildType: StandardApplicationBuildType(), bundleIdentifier: Bundle.main.bundleIdentifier)
+    }
+
+    /// Xcode builds Swift packages as release under the CI configuration, so `isDebugBuild` can be false in CI
+    /// builds whenever `SPM_FORCE_DEBUG` isn't set. Debug and CI bundle identifiers always contain `.debug`,
+    /// which keeps those builds out of production data regardless of how the package was compiled.
+    static func isProductionBuild(buildType: ApplicationBuildType, bundleIdentifier: String?) -> Bool {
         if buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild {
             return false
-        } else {
-            return true
         }
+
+        let isDebugBundle = bundleIdentifier?.contains(".debug") ?? false
+        return !isDebugBundle
     }
 }

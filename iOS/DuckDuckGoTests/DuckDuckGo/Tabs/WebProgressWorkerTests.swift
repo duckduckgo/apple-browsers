@@ -25,6 +25,8 @@ final class WebProgressWorkerTests: XCTestCase {
     private final class SpyProgressView: ProgressView {
         var shows = 0
         var progresses: [CGFloat] = []
+        var finishes = 0
+        var hides = 0
 
         override func show(initialProgress: CGFloat = 0) {
             shows += 1
@@ -32,6 +34,14 @@ final class WebProgressWorkerTests: XCTestCase {
 
         override func increaseProgress(to progress: CGFloat, animated: Bool = false) {
             progresses.append(progress)
+        }
+
+        override func finishAndHide() {
+            finishes += 1
+        }
+
+        override func hide(animated: Bool = false) {
+            hides += 1
         }
     }
 
@@ -67,5 +77,43 @@ final class WebProgressWorkerTests: XCTestCase {
         worker.didStartLoading(.translation)
 
         XCTAssertTrue(bar.fillsLinearly)
+    }
+
+    func testATranslationDoesNotMoveOrFinishAPageLoadsBar() {
+        worker.didStartLoading()
+        worker.didStartLoading(.translation)
+        worker.progressDidChange(0.6, for: .translation)
+        worker.didFinishLoading(.translation)
+
+        XCTAssertEqual(bar.progresses, [0.1])
+        XCTAssertEqual(bar.finishes, 0)
+    }
+
+    func testPageLoadProgressDoesNotMoveATranslationsBar() {
+        worker.didStartLoading(.translation)
+        worker.progressDidChange(0.9)
+        worker.didFinishLoading()
+
+        XCTAssertEqual(bar.progresses, [0.1])
+        XCTAssertEqual(bar.finishes, 0)
+    }
+
+    func testCancellingATranslationHidesItsBarWithoutFillingIt() {
+        worker.didStartLoading(.translation)
+        let hidesBefore = bar.hides
+
+        worker.didCancelLoading(.translation)
+
+        XCTAssertEqual(bar.hides, hidesBefore + 1)
+        XCTAssertEqual(bar.finishes, 0)
+    }
+
+    func testCancellingATranslationLeavesAPageLoadsBar() {
+        worker.didStartLoading()
+        let hidesBefore = bar.hides
+
+        worker.didCancelLoading(.translation)
+
+        XCTAssertEqual(bar.hides, hidesBefore)
     }
 }

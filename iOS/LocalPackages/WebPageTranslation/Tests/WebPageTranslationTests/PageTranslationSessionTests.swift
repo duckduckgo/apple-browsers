@@ -30,6 +30,16 @@ struct PageTranslationSessionTests {
         var extractError: Error?
         var applied: [(updates: [PageTranslationUpdate], source: String, target: String, documentID: UUID)] = []
         let documentID = UUID()
+        /// With `suspendsApply`, each apply waits until `resumeApply()`.
+        var suspendsApply = false
+        private var applyContinuation: CheckedContinuation<Void, Never>?
+
+        var isApplySuspended: Bool { applyContinuation != nil }
+
+        func resumeApply() {
+            applyContinuation?.resume()
+            applyContinuation = nil
+        }
 
         func extract() async throws -> (units: [PageTranslationUnit], documentID: UUID) {
             if let extractError { throw extractError }
@@ -38,6 +48,9 @@ struct PageTranslationSessionTests {
 
         func apply(_ updates: [PageTranslationUpdate], from source: String, to target: String, in documentID: UUID) async throws -> Int {
             applied.append((updates, source, target, documentID))
+            if suspendsApply {
+                await withCheckedContinuation { applyContinuation = $0 }
+            }
             return updates.count
         }
     }
@@ -184,6 +197,25 @@ struct PageTranslationSessionTests {
 
         #expect(translator.calls.count == 1)
         #expect(bridge.applied.isEmpty)
+        #expect(progress.events == ["start"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("an apply that returns after a cancel moves no bar", .timeLimit(.minutes(1)))
+    func applyAfterCancelReportsNothing() async {
+        bridge.units = units(visible: [5])
+        bridge.suspendsApply = true
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        while !bridge.isApplySuspended {
+            await Task.yield()
+        }
+        session.cancel()
+        bridge.resumeApply()
+        await waitUntilDone(session)
+
+        #expect(bridge.applied.count == 1)
         #expect(progress.events == ["start"])
     }
 

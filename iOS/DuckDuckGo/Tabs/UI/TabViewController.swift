@@ -2985,11 +2985,11 @@ extension TabViewController: PageTranslationProgress {
     }
 
     func translationDidProgress(_ fraction: Double) {
-        progressWorker.progressDidChange(fraction)
+        progressWorker.progressDidChange(fraction, for: .translation)
     }
 
     func translationDidFinish() {
-        progressWorker.didFinishLoading()
+        progressWorker.didFinishLoading(.translation)
     }
 }
 
@@ -3219,10 +3219,11 @@ extension TabViewController: WKNavigationDelegate {
         session.start(offer)
     }
 
-    /// Stops the page's translation, if any, without finishing the progress bar: a navigation owns it now.
+    /// Stops the page's translation, if any, and clears its bar; a bar that a page load has taken over stays.
     private func cancelPageTranslation() {
         pageTranslationSession?.cancel()
         pageTranslationSession = nil
+        progressWorker.didCancelLoading(.translation)
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.

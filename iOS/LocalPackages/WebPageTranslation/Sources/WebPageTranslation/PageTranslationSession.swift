@@ -98,7 +98,7 @@ public final class PageTranslationSession {
         } catch {
             logFailure(error)
         }
-        if !bar.isFinished {
+        if !bar.isFinished && !Task.isCancelled {
             progress?.translationDidFinish()
         }
     }
@@ -113,7 +113,7 @@ public final class PageTranslationSession {
 
     /// Moves the bar past the batch's tracked units, and finishes it with the last of them.
     private func advance(_ bar: inout BarProgress, past batch: [PageTranslationUnit]) {
-        guard !bar.isFinished else { return }
+        guard !bar.isFinished, !Task.isCancelled else { return }
         bar.add(batch)
         progress?.translationDidProgress(bar.fraction)
         if bar.isFinished {

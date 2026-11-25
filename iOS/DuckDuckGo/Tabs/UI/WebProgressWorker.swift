@@ -21,7 +21,7 @@ import UIKit
 
 class WebProgressWorker {
 
-    /// What the bar shows.
+    /// What the bar shows. Each call names its activity, and calls from an activity that doesn't own the bar are ignored.
     enum Activity {
         /// Driven by WebKit's rough estimate. Takes the bar over from a translation, which the navigation has cancelled.
         case pageLoad
@@ -62,7 +62,7 @@ class WebProgressWorker {
         progressBar?.increaseProgress(to: Constants.initialProgress, animated: true)
     }
     
-    func progressDidChange(_ progress: Double) {
+    func progressDidChange(_ progress: Double, for activity: Activity = .pageLoad) {
         guard isLoading else { return }
         
         let progress = CGFloat(progress)
@@ -72,10 +72,18 @@ class WebProgressWorker {
         progressBar?.increaseProgress(to: progress, animated: true)
     }
     
-    func didFinishLoading() {
+    func didFinishLoading(_ activity: Activity = .pageLoad) {
         guard isLoading else { return }
-        activity = nil
+        self.activity = nil
         progressBar?.finishAndHide()
+        currentProgress = 0
+    }
+
+    /// Hides the bar without filling it, so a stopped activity doesn't look finished.
+    func didCancelLoading(_ activity: Activity) {
+        guard self.activity == activity else { return }
+        self.activity = nil
+        progressBar?.hide()
         currentProgress = 0
     }
 }

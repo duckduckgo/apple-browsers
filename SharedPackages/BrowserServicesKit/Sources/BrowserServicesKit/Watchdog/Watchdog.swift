@@ -24,7 +24,7 @@ import os.log
 
 // MARK: - Settings
 
-public struct WatchdogSettings {
+public struct WatchdogSettings: Sendable {
     let checkInterval: TimeInterval
     let minimumHangDuration: TimeInterval
     let maximumHangDuration: TimeInterval

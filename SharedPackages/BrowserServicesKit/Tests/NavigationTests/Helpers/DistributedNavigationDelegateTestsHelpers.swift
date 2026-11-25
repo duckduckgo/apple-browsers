@@ -26,6 +26,7 @@ import XCTest
 @testable import DDGNavigation
 
 @available(iOS 15.0, *)
+@MainActor
 class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     let standardTimeout: TimeInterval = 15
@@ -62,7 +63,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
     static let urls = URLs()
     var urls: URLs { Self.urls }
 
-    override func setUp() {
+    override func setUp() async throws {
         NavigationAction.resetIdentifier()
 
         server?.stop()
@@ -75,7 +76,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
         }
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         server.stop()
         server = nil
         self.navigationDelegate.responders.forEach { responder in

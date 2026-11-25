@@ -32,7 +32,7 @@ public actor SegmentSkipSegmentsProvider {
 
     public typealias DataLoader = (URLRequest) async throws -> (Data, URLResponse)
 
-    public struct Segment: Encodable, Equatable {
+    public struct Segment: Encodable, Equatable, Sendable {
         public let start: Double
         public let end: Double
         public let category: String
@@ -41,7 +41,7 @@ public actor SegmentSkipSegmentsProvider {
         public let videoDuration: Double?
     }
 
-    public struct Query: Hashable {
+    public struct Query: Hashable, Sendable {
         public static let defaultCategories = ["sponsor"]
         public static let defaultActionTypes = ["skip"]
 

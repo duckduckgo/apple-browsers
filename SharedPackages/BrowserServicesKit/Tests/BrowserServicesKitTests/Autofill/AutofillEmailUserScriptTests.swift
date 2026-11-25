@@ -22,6 +22,7 @@ import UserScript
 import BrowserServicesKitTestsUtils
 @testable import BrowserServicesKit
 
+@MainActor
 class AutofillEmailUserScriptTests: XCTestCase {
 
     let userScript: AutofillUserScript = {

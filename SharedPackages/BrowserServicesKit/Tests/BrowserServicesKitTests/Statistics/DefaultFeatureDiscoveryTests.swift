@@ -81,7 +81,7 @@ final class DefaultFeatureDiscoveryTests: XCTestCase {
 
         featureDiscovery.setWasUsedBefore(.aiChat)
 
-        waitForExpectations(timeout: 1, handler: nil)
+        wait(for: [expectation], timeout: 1)
         mockNotificationCenter.removeObserver(observer)
     }
 

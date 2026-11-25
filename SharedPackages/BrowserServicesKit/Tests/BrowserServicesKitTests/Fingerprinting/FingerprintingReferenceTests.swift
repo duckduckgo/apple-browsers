@@ -28,6 +28,7 @@ import WebKit
 @testable import TrackerRadarKit
 @testable import BrowserServicesKit
 
+@MainActor
 final class FingerprintingReferenceTests: XCTestCase {
     private var referenceTests = [Test]()
     private let schemeHandler = TestSchemeHandler()
@@ -67,8 +68,8 @@ final class FingerprintingReferenceTests: XCTestCase {
                                            internalUserDecider: MockInternalUserDecider())
     }()
 
-    override func tearDown() {
-        super.tearDown()
+    override func tearDown() async throws {
+        try await super.tearDown()
         referenceTests.removeAll()
     }
 

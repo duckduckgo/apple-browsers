@@ -993,17 +993,17 @@ class SyncGzipPayloadCompressorMock: SyncPayloadCompressing {
     }
 }
 
-struct CryptingMock: CryptingInternal {
+struct CryptingMock: CryptingInternal, Sendable {
 
-    var _encryptAndBase64Encode: (String) throws -> String = { "encrypted_\($0)" }
-    var _base64DecodeAndDecrypt: (String) throws -> String = { $0.dropping(prefix: "encrypted_") }
-    var _extractLoginInfo: (SyncCode.RecoveryKey) throws -> ExtractedLoginInfo = { _ in
+    var _encryptAndBase64Encode: @Sendable (String) throws -> String = { "encrypted_\($0)" }
+    var _base64DecodeAndDecrypt: @Sendable (String) throws -> String = { $0.dropping(prefix: "encrypted_") }
+    var _extractLoginInfo: @Sendable (SyncCode.RecoveryKey) throws -> ExtractedLoginInfo = { _ in
         ExtractedLoginInfo(userId: "user", primaryKey: Data(), passwordHash: Data(), stretchedPrimaryKey: Data())
     }
-    var _createAccountCreationKeys: (String, String) throws -> AccountCreationKeys = { _, _ in
+    var _createAccountCreationKeys: @Sendable (String, String) throws -> AccountCreationKeys = { _, _ in
         AccountCreationKeys(primaryKey: Data(), secretKey: Data(), protectedSecretKey: Data(), passwordHash: Data())
     }
-    var _extractSecretKey: (Data, Data) throws -> Data = { _, _ in Data() }
+    var _extractSecretKey: @Sendable (Data, Data) throws -> Data = { _, _ in Data() }
 
     func fetchSecretKey() throws -> Data {
         .init()

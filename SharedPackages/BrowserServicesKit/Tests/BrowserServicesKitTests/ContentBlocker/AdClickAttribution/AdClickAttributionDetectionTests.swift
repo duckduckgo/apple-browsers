@@ -165,7 +165,7 @@ final class AdClickAttributionDetectionTests: XCTestCase {
         detection.on2XXResponse(url: URL(string: "https://test.com")!)
         detection.onDidFinishNavigation(url: URL(string: "https://test.com")!)
 
-        waitForExpectations(timeout: 0.1)
+        wait(for: [delegateCalled], timeout: 0.1)
     }
 
     func testWhenThereAreMatchesThenVendorIsDetected_Directly() {
@@ -188,7 +188,7 @@ final class AdClickAttributionDetectionTests: XCTestCase {
         detection.on2XXResponse(url: URL(string: "https://test.com")!)
         detection.onDidFinishNavigation(url: URL(string: "https://test.com")!)
 
-        waitForExpectations(timeout: 0.1)
+        wait(for: [delegateCalled], timeout: 0.1)
     }
 
     func testWhenThereAreMatchesThenVendorIsETLDplus1_Heuristic() {
@@ -209,7 +209,7 @@ final class AdClickAttributionDetectionTests: XCTestCase {
         detection.on2XXResponse(url: URL(string: "https://a.sub.test.com")!)
         detection.onDidFinishNavigation(url: URL(string: "https://a.sub.test.com")!)
 
-        waitForExpectations(timeout: 0.1)
+        wait(for: [delegateCalled], timeout: 0.1)
     }
 
     func testWhenThereAreMatchesThenVendorIsETLDplus1_Directly() {
@@ -232,7 +232,7 @@ final class AdClickAttributionDetectionTests: XCTestCase {
         detection.on2XXResponse(url: URL(string: "https://sub.test.com")!)
         detection.onDidFinishNavigation(url: URL(string: "https://sub.test.com")!)
 
-        waitForExpectations(timeout: 0.1)
+        wait(for: [delegateCalled], timeout: 0.1)
     }
 
     func testWhenMatchedAndWrongParameterThenFallbackToHeuristic() {
@@ -260,7 +260,7 @@ final class AdClickAttributionDetectionTests: XCTestCase {
 
         detection.onDidFinishNavigation(url: URL(string: "https://another.test.com")!)
 
-        waitForExpectations(timeout: 0.1)
+        wait(for: [delegateCalled], timeout: 0.1)
     }
 
     func testWhenNavigationFailsThenCorrectVendorIsDetected() {
@@ -299,6 +299,6 @@ final class AdClickAttributionDetectionTests: XCTestCase {
         detection.on2XXResponse(url: URL(string: "https://a.something.com")!)
         detection.onDidFinishNavigation(url: URL(string: "https://a.something.com")!)
 
-        waitForExpectations(timeout: 0.1)
+        wait(for: [delegateCalled], timeout: 0.1)
     }
 }

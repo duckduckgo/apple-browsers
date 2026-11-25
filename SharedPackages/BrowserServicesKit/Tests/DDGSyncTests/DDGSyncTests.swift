@@ -69,6 +69,10 @@ final class DDGSyncTests: XCTestCase {
 
     // MARK: - Setup
 
+    private var syncExpectations: [XCTestExpectation] {
+        [syncStartedExpectation, fetchExpectation, handleSyncResponseExpectation, syncFinishedExpectation].compactMap { $0 }
+    }
+
     func setUpExpectations(started syncStartedExpectedCount: Int, fetch fetchExpectedCount: Int, handleResponse handleSyncResponseExpectedCount: Int, finished syncFinishedExpectedCount: Int) {
         if syncStartedExpectedCount > 0 {
             syncStartedExpectation = expectation(description: "syncStarted")
@@ -197,7 +201,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 1)
+        wait(for: syncExpectations, timeout: 1)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -235,7 +239,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 5)
+        wait(for: syncExpectations, timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -278,7 +282,7 @@ final class DDGSyncTests: XCTestCase {
 
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 5)
+        wait(for: syncExpectations, timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -313,7 +317,7 @@ final class DDGSyncTests: XCTestCase {
 
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 1)
+        wait(for: syncExpectations, timeout: 1)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -361,7 +365,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 5)
+        wait(for: syncExpectations, timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -409,7 +413,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 1)
+        wait(for: syncExpectations, timeout: 1)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -445,7 +449,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 0.1)
+        wait(for: syncExpectations, timeout: 0.1)
 
         XCTAssertEqual(recordedEvents, [])
 
@@ -470,7 +474,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         syncService.scheduler.resumeSyncQueue()
 
-        waitForExpectations(timeout: 0.1)
+        wait(for: syncExpectations, timeout: 0.1)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -500,7 +504,7 @@ final class DDGSyncTests: XCTestCase {
         syncService.scheduler.requestSyncImmediately()
         try dependencies.secureStore.removeAccount()
 
-        waitForExpectations(timeout: 5)
+        wait(for: syncExpectations, timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -531,7 +535,7 @@ final class DDGSyncTests: XCTestCase {
 
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 2)
+        wait(for: syncExpectations, timeout: 2)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),
@@ -561,7 +565,7 @@ final class DDGSyncTests: XCTestCase {
 
         syncService.scheduler.requestSyncImmediately()
 
-        waitForExpectations(timeout: 5)
+        wait(for: syncExpectations, timeout: 5)
 
         XCTAssertEqual(recordedEvents, [
             .started(1),

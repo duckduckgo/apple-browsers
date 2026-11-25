@@ -29,8 +29,8 @@ import os.log
 @available(iOS 15.0, *)
 class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         setenv("OS_LOG_CAPTURE", "1", 1)
         setenv("OS_LOG_DEBUG", "1", 1)

@@ -40,6 +40,7 @@ final class StorePurchaseManagerTests: XCTestCase {
                                           monthlyFreeTrialDecider: MockMonthlyFreeTrialDecider())
     }
 
+    @MainActor
     func testUpdateAvailableProductsSuccessfully() async {
         // Given
         let monthlyProduct = createMonthlyProduct()
@@ -56,6 +57,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertTrue(products.contains(where: { $0.id == yearlyProduct.id }))
     }
 
+    @MainActor
     func testUpdateAvailableProductsWithError() async {
         // Given
         mockProductFetcher.fetchError = MockProductError.fetchFailed
@@ -68,6 +70,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertTrue(products.isEmpty)
     }
 
+    @MainActor
     func testUpdateAvailableProductsWithNoProductsOverrideClearsProducts() async {
         // Given
         mockProductFetcher.mockProducts = [createMonthlyProduct(), createYearlyProduct()]
@@ -83,6 +86,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertEqual(mockProductFetcher.fetchCount, 2)
     }
 
+    @MainActor
     func testUpdateAvailableProductsWithDifferentRegions() async {
         // Given
         let usaMonthlyProduct = MockSubscriptionProduct(
@@ -144,6 +148,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertEqual(rowMonthlyPrice, "€8.99")
     }
 
+    @MainActor
     func testIsUserEligibleForFreeTrialReturnsTrueWhenEligibleProductExists() async {
         // Given
         let monthlyProduct = createMonthlyProduct(withTrial: true)
@@ -158,6 +163,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertTrue(isEligible)
     }
 
+    @MainActor
     func testIsUserEligibleForFreeTrialReturnsFalseWhenNoEligibleProductExists() async {
         // Given
         let monthlyProduct = createMonthlyProduct(withTrial: true, isEligibleForFreeTrial: false)
@@ -172,6 +178,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertFalse(isEligible)
     }
 
+    @MainActor
     func testIsUserEligibleForFreeTrialReturnsFalseWhenNoTrialProductsExist() async {
         // Given
         let monthlyProduct = createMonthlyProduct(withTrial: false, isEligibleForFreeTrial: false)

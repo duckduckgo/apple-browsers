@@ -20,7 +20,7 @@ import Foundation
 import FoundationExtensions
 import URLPredictor
 
-public class TLD {
+public final class TLD: Sendable {
 
     static let tlds: Set<String> = {
         guard let pslString = try? Classifier.getPSLData() else { return [] }

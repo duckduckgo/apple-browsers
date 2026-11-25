@@ -91,20 +91,11 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
 #if _WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED
     func testWhenCustomHeadersAreSet_headersAreSent() throws {
-        var _shouldAddHeaders = true
-        let lock = NSLock()
-        var shouldAddHeaders: Bool {
-            get {
-                lock.withLock { _shouldAddHeaders }
-            }
-            set {
-                lock.withLock { _shouldAddHeaders = newValue }
-            }
-        }
+        let shouldAddHeaders = Locked(wrappedValue: true)
         let headers = ["x-custom-header": "val", "x-another-header": "test"]
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         responder(at: 0).onNavigationAction = { _, preferences in
-            if shouldAddHeaders {
+            if shouldAddHeaders.wrappedValue {
                 preferences.customHeaders = [CustomHeaderFields(fields: headers)!]
             }
             return .allow
@@ -114,10 +105,10 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             eDidFinish.fulfill()
         }
 
-        var eDidReceiveRequest = expectation(description: "request received")
+        let receivedRequest = Locked(wrappedValue: expectation(description: "request received"))
         server.middleware = [{ [data] request in
-            eDidReceiveRequest.fulfill()
-            if shouldAddHeaders {
+            receivedRequest.wrappedValue.fulfill()
+            if shouldAddHeaders.wrappedValue {
                 XCTAssertEqual(request.headers.filter { headers[$0.key] != nil }, headers)
             } else {
                 XCTAssertEqual(request.headers.filter { headers[$0.key] != nil }, [:])
@@ -134,9 +125,9 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         waitForExpectations()
 
         // send again without headers
-        shouldAddHeaders = false
+        shouldAddHeaders.wrappedValue = false
         eDidFinish = expectation(description: "onDidFinish 2")
-        eDidReceiveRequest = expectation(description: "request received 2")
+        receivedRequest.wrappedValue = expectation(description: "request received 2")
         withWebView { webView in
             _=webView.load(req(urls.local))
         }

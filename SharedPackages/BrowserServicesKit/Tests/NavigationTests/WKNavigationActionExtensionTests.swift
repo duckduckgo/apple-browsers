@@ -29,6 +29,7 @@ import XCTest
 /// `Tools/TestWebKitAPI/Tests/WebKit/WKWebView/mac/FragmentNavigation.mm`), which is the
 /// same O(1) approach used here instead of scanning `absoluteString`.
 @available(macOS 12.0, *)
+@MainActor
 class WKNavigationActionExtensionTests: XCTestCase {
 
     // MARK: - Helpers

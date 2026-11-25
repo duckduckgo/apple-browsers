@@ -25,6 +25,7 @@ import Common
 import BrowserServicesKitTestsUtils
 @testable import BrowserServicesKit
 
+@MainActor
 class AutofillVaultUserScriptTests: XCTestCase {
 
     lazy var hostProvider: UserScriptHostProvider = SecurityOriginHostProvider()

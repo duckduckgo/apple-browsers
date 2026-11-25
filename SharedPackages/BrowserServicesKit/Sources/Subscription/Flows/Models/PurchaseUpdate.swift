@@ -18,7 +18,7 @@
 
 import Foundation
 
-public struct PurchaseUpdate: Codable, Equatable {
+public struct PurchaseUpdate: Codable, Equatable, Sendable {
     let type: String
     let token: String?
 

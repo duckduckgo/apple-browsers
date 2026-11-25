@@ -76,6 +76,7 @@ final class AssistedOptOutWindowPresenter: AssistedOptOutPresenting {
         } else {
             if !applicationIsActive { activateApplication() }
             window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
         }
     }
 

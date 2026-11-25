@@ -43,6 +43,7 @@ extension PromoServiceFactory {
                              context: .global,
                              respectsGlobalCooldown: false,
                              setsGlobalCooldown: false,
+                             canShowDuringOnboarding: true,
                              showsOverVisiblePromos: true,
                              delegate: delegate)
     }

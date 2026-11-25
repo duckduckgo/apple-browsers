@@ -35,6 +35,50 @@ final class VPNConnectionStatusMonitorTests: XCTestCase {
         try await super.tearDown()
     }
 
+    func testLaunchCheckRecognizesBothStartupErrorsOnADisconnectedConnection() async {
+        let errors: [PacketTunnelProvider.TunnelError] = [
+            .startingTunnelWithoutAuthToken(internalError: URLError(.userAuthenticationRequired)),
+            .reconnectBlocked
+        ]
+        for error in errors {
+            monitor = makeMonitor { _ in throw error }
+            let shouldNotify = await monitor.hasStartupFailureAtLaunch(on: manager.connection)
+            XCTAssertTrue(shouldNotify)
+        }
+    }
+
+    func testLaunchCheckIgnoresUnrelatedAndMissingErrors() async {
+        monitor = makeMonitor { _ in throw URLError(.timedOut) }
+        let unrelated = await monitor.hasStartupFailureAtLaunch(on: manager.connection)
+        XCTAssertFalse(unrelated)
+        monitor = makeMonitor { _ in }
+        let missing = await monitor.hasStartupFailureAtLaunch(on: manager.connection)
+        XCTAssertFalse(missing)
+    }
+
+    func testLaunchCheckSkipsActiveConnectionsAndDiscardsSupersededLookups() async {
+        status = .connecting
+        monitor = makeMonitor { _ in XCTFail("A retry in progress belongs to the live monitor") }
+        let retry = await monitor.hasStartupFailureAtLaunch(on: manager.connection)
+        XCTAssertFalse(retry)
+
+        status = .disconnected
+        monitor = makeMonitor { _ in
+            await MainActor.run { self.status = .connected }
+            throw PacketTunnelProvider.TunnelError.reconnectBlocked
+        }
+        let recovered = await monitor.hasStartupFailureAtLaunch(on: manager.connection)
+        XCTAssertFalse(recovered)
+
+        status = .disconnected
+        monitor = makeMonitor { _ in
+            await MainActor.run { self.monitor.resetPendingFailures() }
+            throw PacketTunnelProvider.TunnelError.reconnectBlocked
+        }
+        let superseded = await monitor.hasStartupFailureAtLaunch(on: manager.connection)
+        XCTAssertFalse(superseded)
+    }
+
     func testStatusOnlyObservationDoesNotFetchErrorsOrReplayStatus() async {
         let statusReceived = expectation(description: "Connected status received once")
         monitor = makeMonitor { _ in XCTFail("Status-only observation must not fetch errors") }

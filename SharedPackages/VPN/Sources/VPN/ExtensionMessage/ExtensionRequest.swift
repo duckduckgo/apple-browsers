@@ -34,7 +34,4 @@ public enum VPNCommand: Codable {
 public enum ExtensionRequest: Codable {
     case changeTunnelSetting(_ change: VPNSettings.Change)
     case command(_ command: VPNCommand)
-#if os(macOS)
-    case pendingStartupNotification
-#endif
 }

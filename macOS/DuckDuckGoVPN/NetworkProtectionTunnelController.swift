@@ -92,7 +92,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     // MARK: - Notification Center
 
     private let notificationCenter: NotificationCenter
-    private let onStartupFailure: @MainActor () -> Void
+    private let onStartupFailure: @MainActor () async -> Bool
+    private static let startupFailurePresentedKey = "vpn.startupFailureNotificationPresented"
+    @MainActor private var startupFailureNotificationTask: Task<Void, Never>?
 
     /// The tunnel manager
     ///
@@ -191,7 +193,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          notificationCenter: NotificationCenter = .default,
          subscriptionManager: any SubscriptionManager,
          vpnAppState: VPNAppState,
-         onStartupFailure: @escaping @MainActor () -> Void) {
+         onStartupFailure: @escaping @MainActor () async -> Bool) {
 
         self.availableExtensions = availableExtensions
         self.featureFlagger = featureFlagger
@@ -213,13 +215,15 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     @MainActor
     private func subscribeToStatusChanges() {
         connectionStatusMonitor.observe(
-            onStatus: { [weak self] _, status in
-                self?.handleStatusChange(status)
+            onStatus: { [weak self] connection, status in
+                self?.handleStatusChange(connection, status: status)
             },
             currentConnection: { [weak self] in await self?.connection },
             onFailure: { [weak self] connection, _ in
                 guard let self, let manager = connection.manager as? NETunnelProviderManager else { return }
-                self.onStartupFailure()
+                if (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == Bundle.tunnelSysexBundleID {
+                    self.notifyStartupFailureIfNeeded()
+                }
                 do {
                     try await self.stopAfterOnDemandFailure(manager)
                 } catch {
@@ -230,7 +234,42 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     @MainActor
-    private func handleStatusChange(_ status: NEVPNStatus) {
+    func checkStartupFailureAtLaunch() async {
+        guard #available(macOS 13, *), let manager = internalManager,
+              (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == Bundle.tunnelSysexBundleID else { return }
+
+        if manager.connection.status == .connected || manager.connection.status == .reasserting {
+            resetStartupFailureNotification()
+        } else if await connectionStatusMonitor.hasStartupFailureAtLaunch(on: manager.connection),
+                  manager === internalManager {
+            notifyStartupFailureIfNeeded()
+        }
+    }
+
+    @MainActor
+    private func notifyStartupFailureIfNeeded() {
+        guard startupFailureNotificationTask == nil, !defaults.suppressEntitlementMessaging,
+              !defaults.bool(forKey: Self.startupFailurePresentedKey) else { return }
+        startupFailureNotificationTask = Task { @MainActor in
+            let presented = await onStartupFailure()
+            guard !Task.isCancelled else { return }
+            if presented { defaults.set(true, forKey: Self.startupFailurePresentedKey) }
+            startupFailureNotificationTask = nil
+        }
+    }
+
+    @MainActor
+    private func resetStartupFailureNotification() {
+        startupFailureNotificationTask?.cancel()
+        startupFailureNotificationTask = nil
+        defaults.removeObject(forKey: Self.startupFailurePresentedKey)
+    }
+
+    @MainActor
+    private func handleStatusChange(_ connection: NEVPNConnection, status: NEVPNStatus) {
+        if connection === internalManager?.connection, status == .connected || status == .reasserting {
+            resetStartupFailureNotification()
+        }
         guard status != previousStatus else { return }
         previousStatus = status
         if status == .invalid {
@@ -412,12 +451,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             let protocolConfiguration = tunnelManager.protocolConfiguration as? NETunnelProviderProtocol ?? NETunnelProviderProtocol()
             protocolConfiguration.serverAddress = "127.0.0.1" // Dummy address... the NetP service will take care of grabbing a real server
             protocolConfiguration.providerBundleIdentifier = extensionBundleID
-            var options: [String: Any] = [NetworkProtectionOptionKey.defaultPixelHeaders: APIRequest.Headers().httpHeaders]
-            if extensionBundleID == Bundle.tunnelSysexBundleID {
-                let key = VPNStartupNotificationIncident.profileIdentifierKey
-                options[key] = protocolConfiguration.providerConfiguration?[key] as? String ?? UUID().uuidString
-            }
-            protocolConfiguration.providerConfiguration = options
+            protocolConfiguration.providerConfiguration = [
+                NetworkProtectionOptionKey.defaultPixelHeaders: APIRequest.Headers().httpHeaders
+            ]
 
             // always-on
             protocolConfiguration.disconnectOnSleep = false

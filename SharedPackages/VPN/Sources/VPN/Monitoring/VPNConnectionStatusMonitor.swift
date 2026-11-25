@@ -83,24 +83,42 @@ public final class VPNConnectionStatusMonitor {
                         return
                     }
                     guard isCurrentFailure() else { return }
-                    do {
-                        try await self.disconnectErrorProvider(connection)
-                    } catch {
-                        let failure = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: error)
-                        guard let reason = failure.disconnectReason,
-                              reason.domain == PacketTunnelProvider.TunnelError.errorDomain,
-                              let code = PacketTunnelProvider.TunnelError.Code(rawValue: reason.code),
-                              code == .startingTunnelWithoutAuthToken || code == .reconnectBlocked,
-                              await currentConnection() === connection,
-                              isCurrentFailure() else { return }
-                        // A retry may already be connecting. Only a success, invalidation, or deliberate operation
-                        // supersedes an observed failure; automatic retries must still allow recovery.
-                        let currentStatus = self.statusProvider(connection)
-                        guard currentStatus != .connected, currentStatus != .reasserting, currentStatus != .invalid else { return }
-                        await onFailure(connection, code)
-                    }
+                    guard let code = await self.lastStartupFailure(on: connection),
+                          await currentConnection() === connection,
+                          isCurrentFailure() else { return }
+                    // A retry may already be connecting. Only a success, invalidation, or deliberate operation
+                    // supersedes an observed failure; automatic retries must still allow recovery.
+                    let currentStatus = self.statusProvider(connection)
+                    guard currentStatus != .connected, currentStatus != .reasserting, currentStatus != .invalid else { return }
+                    await onFailure(connection, code)
                 }
             }
+    }
+
+    /// The launch check is notification-only. A new or recovered connection supersedes the historical error.
+    @MainActor
+    public func hasStartupFailureAtLaunch(on connection: NEVPNConnection) async -> Bool {
+        guard statusProvider(connection) == .disconnected else { return false }
+        let identifier = ObjectIdentifier(connection)
+        let revision = failureRevisions[identifier, default: UUID()]
+        failureRevisions[identifier] = revision
+        guard await lastStartupFailure(on: connection) != nil else { return false }
+        return statusProvider(connection) == .disconnected && failureRevisions[identifier] == revision
+    }
+
+    @MainActor
+    private func lastStartupFailure(on connection: NEVPNConnection) async -> PacketTunnelProvider.TunnelError.Code? {
+        do {
+            try await disconnectErrorProvider(connection)
+            return nil
+        } catch {
+            let failure = VPNStartupMonitor.StartupError.startTunnelDisconnectedSilently(underlyingError: error)
+            guard let reason = failure.disconnectReason,
+                  reason.domain == PacketTunnelProvider.TunnelError.errorDomain,
+                  let code = PacketTunnelProvider.TunnelError.Code(rawValue: reason.code),
+                  code == .startingTunnelWithoutAuthToken || code == .reconnectBlocked else { return nil }
+            return code
+        }
     }
 
     /// Discards outstanding error lookups when the controller deliberately starts or stops the VPN.

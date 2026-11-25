@@ -388,9 +388,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private let notificationsPresenter: VPNNotificationsPresenting
 #if os(macOS)
-    /// System extensions rely on the per-user VPN menu app for notification delivery.
-    open var relaysStartupNotificationsToMenuApp: Bool { false }
-    private var migratedStartupNotificationProfileIdentifier: String?
+    open var isSystemExtension: Bool { false }
 #endif
 
     // MARK: - Registration Key
@@ -717,11 +715,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             snoozeManager: self,
             leakCheckController: self
         )
-#if os(macOS)
-        self.messageHandler.pendingStartupNotification = { [weak self] in
-            self?.pendingStartupNotification
-        }
-#endif
 
         Logger.networkProtectionMemory.log("[+] PacketTunnelProvider initialized")
 
@@ -992,9 +985,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         } catch let internalError {
             let error: Error
             let needsBackoff: Bool
-#if os(macOS)
-            var legacyNotification: VPNStartupNotificationIncident?
-#endif
 
             switch internalError {
             case TunnelError.reconnectBlocked:
@@ -1005,12 +995,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     break
                 }
 
-#if os(macOS)
-                let (managedToShutdown, incident) = await shutdownAfterStartupFailure(dueTo: error)
-                legacyNotification = incident
-#else
                 let managedToShutdown = await shutdown(dueTo: error)
-#endif
                 needsBackoff = !managedToShutdown
             case SubscriptionManagerError.noTokenAvailable:
                 error = TunnelError.startingTunnelWithoutAuthToken(internalError: internalError)
@@ -1018,8 +1003,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 switch startupOptions.startupMethod {
                 case .automaticOnDemand, .manualByTheSystem:
 #if os(macOS)
-                    if relaysStartupNotificationsToMenuApp {
-                        (_, legacyNotification) = await shutdownAfterStartupFailure(dueTo: error)
+                    if #available(macOS 13, *), isSystemExtension {
+                        _ = await shutdown(dueTo: error)
                         needsBackoff = false
                         break
                     }
@@ -1062,11 +1047,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             Logger.networkProtection.error("🔴 Interrupting tunnel start as preconditions weren't met: \(error, privacy: .public)")
             completeAndCleanupConnectionWideEvent(with: error, description: error.contextualizedDescription())
-#if os(macOS)
-            throw legacyNotification?.attached(to: error) ?? error
-#else
             throw error
-#endif
         }
 
         do {
@@ -1080,9 +1061,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             let reason: AdapterStartReason = startupOptions.startupMethod == .automaticOnDemand ? .onDemand : .manual
             try await startTunnel(reason: reason)
             hasStartedSuccessfully = true
-#if os(macOS)
-            clearResolvedStartupNotification()
-#endif
 
             providerEvents.fire(.tunnelStartAttempt(.success))
             providerEvents.fire(.reportConnectionAttempt(attempt: .success, source: .start))
@@ -1598,11 +1576,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     ///
     @MainActor
     public func disableOnDemandIfSupportedByOS() async throws {
-        try await disableOnDemandIfSupportedByOS(recordsLegacyStartupNotification: false)
-    }
-
-    @MainActor
-    private func disableOnDemandIfSupportedByOS(recordsLegacyStartupNotification: Bool) async throws {
         enum DisableOnDemandError: LocalizedError {
             case notSupportedByOS
 
@@ -1623,45 +1596,25 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         Logger.networkProtection.log("🔴 Disabling Connect On Demand and shutting down the tunnel")
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
-
-        let manager: NETunnelProviderManager?
 #if os(macOS)
-        var migratedProfileIdentifier: String?
-        if recordsLegacyStartupNotification, relaysStartupNotificationsToMenuApp {
-            guard let matching = tunnelProviderProtocol?.notificationProfile(in: managers, identifier: startupNotificationProfileIdentifier) else {
-                throw DisableOnDemandError.notSupportedByOS
-            }
-            manager = matching
-            if startupNotificationProfileIdentifier == nil, !defaults.suppressEntitlementMessaging,
-               let configuration = matching.protocolConfiguration as? NETunnelProviderProtocol {
-                let identifier = UUID().uuidString
-                var providerConfiguration = configuration.providerConfiguration ?? [:]
-                providerConfiguration[VPNStartupNotificationIncident.profileIdentifierKey] = identifier
-                configuration.providerConfiguration = providerConfiguration
-                matching.protocolConfiguration = configuration
-                migratedProfileIdentifier = identifier
-            }
-        } else {
-            manager = managers.first
-        }
+        // A system extension can see multiple configurations. Leave ambiguous matches to the menu app.
+        let candidates = isSystemExtension ? managers.filter {
+            guard let configuration = $0.protocolConfiguration as? NETunnelProviderProtocol,
+                  let current = tunnelProviderProtocol else { return false }
+            return configuration.providerBundleIdentifier == current.providerBundleIdentifier &&
+                configuration.serverAddress == current.serverAddress &&
+                NSDictionary(dictionary: configuration.providerConfiguration ?? [:]).isEqual(to: current.providerConfiguration ?? [:])
+        } : managers
+        guard !isSystemExtension || candidates.count == 1 else { throw DisableOnDemandError.notSupportedByOS }
 #else
-        manager = managers.first
+        let candidates = managers
 #endif
-        guard let manager else {
+        guard let manager = candidates.first else {
             throw DisableOnDemandError.notSupportedByOS
         }
 
         manager.isOnDemandEnabled = false
         try await manager.saveToPreferences()
-#if os(macOS)
-        if let identifier = migratedProfileIdentifier {
-            // Commit the handoff only after the same save both tags this profile and disables On Demand.
-            migratedStartupNotificationProfileIdentifier = identifier
-            VPNStartupNotificationStore(defaults: defaults).recordIfNeeded(profileIdentifier: identifier,
-                                                                           legacyProviderIdentifier: tunnelProviderProtocol?.providerBundleIdentifier)
-            DistributedNotificationCenter.default().post(.pendingStartupNotification)
-        }
-#endif
         try await manager.loadFromPreferences()
     }
 
@@ -1768,58 +1721,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case userNeedsToOpenApp
     }
 
-#if os(macOS)
-    private var startupNotificationProfileIdentifier: String? {
-        tunnelProviderProtocol?.providerConfiguration?[VPNStartupNotificationIncident.profileIdentifierKey] as? String
-            ?? migratedStartupNotificationProfileIdentifier
-    }
-
-    private var pendingStartupNotification: VPNStartupNotificationIncident? {
-        guard let profileIdentifier = startupNotificationProfileIdentifier else { return nil }
-        return VPNStartupNotificationStore(defaults: defaults).pending(profileIdentifier: profileIdentifier)
-    }
-
-    private func clearResolvedStartupNotification() {
-        guard relaysStartupNotificationsToMenuApp, let profileIdentifier = startupNotificationProfileIdentifier else { return }
-        VPNStartupNotificationStore(defaults: defaults).reset(profileIdentifier: profileIdentifier)
-    }
-
-    /// A profile created by an older app has no identifier until its next configuration save.
-    /// Its own OS-reported disconnect error can carry the notification receipt in the meantime.
-    @MainActor
-    private func recordStartupNotification() -> VPNStartupNotificationIncident? {
-        guard !defaults.suppressEntitlementMessaging else { return nil }
-        if let profileIdentifier = startupNotificationProfileIdentifier {
-            VPNStartupNotificationStore(defaults: defaults).recordIfNeeded(profileIdentifier: profileIdentifier)
-            DistributedNotificationCenter.default().post(.pendingStartupNotification)
-            return nil
-        }
-        if #available(macOS 13, *), let provider = tunnelProviderProtocol?.providerBundleIdentifier {
-            return VPNStartupNotificationIncident(profileIdentifier: provider, legacyProviderIdentifier: provider)
-        }
-
-        return nil
-    }
-
-    @MainActor
-    private func showLegacyStartupNotificationIfNeeded() {
-        guard #unavailable(macOS 13), startupNotificationProfileIdentifier == nil else { return }
-        defaults.enableEntitlementMessaging()
-        notificationsPresenter.showEntitlementNotification()
-    }
-
-    @MainActor
-    private func shutdownAfterStartupFailure(dueTo error: Error) async -> (Bool, VPNStartupNotificationIncident?) {
-        let incident = relaysStartupNotificationsToMenuApp ? recordStartupNotification() : nil
-        let stopped = await shutdown(dueTo: error, recordsLegacyStartupNotification: relaysStartupNotificationsToMenuApp)
-        if relaysStartupNotificationsToMenuApp, !stopped {
-            showLegacyStartupNotificationIfNeeded()
-        }
-        // After migration the menu reads the incident from this profile's provider session.
-        return (stopped, startupNotificationProfileIdentifier == nil ? incident : nil)
-    }
-#endif
-
     @MainActor
     func handleAccessRevoked(dueTo error: Error, notification: AuthNotification) async -> Bool {
         switch notification {
@@ -1828,7 +1729,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             notificationsPresenter.showEntitlementNotification()
 
 #if !os(macOS)
-            // Give the notification time to appear before shutting down.
+            // We add a delay here so the notification has a chance to show up
             try? await Task.sleep(interval: .seconds(5))
 #endif
         }
@@ -1847,11 +1748,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// - Returns: `true` on success, `false` on failure
     ///
     @MainActor
-    private func shutdown(dueTo error: Error, recordsLegacyStartupNotification: Bool = false) async -> Bool {
+    private func shutdown(dueTo error: Error) async -> Bool {
         Logger.networkProtection.log("Shutting down due to: \(error.localizedDescription, privacy: .public)")
 
         do {
-            try await disableOnDemandIfSupportedByOS(recordsLegacyStartupNotification: recordsLegacyStartupNotification)
+            try await disableOnDemandIfSupportedByOS()
 
             return true
         } catch {

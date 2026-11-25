@@ -20,8 +20,6 @@ import AppLauncher
 import AppKit
 import Combine
 import Foundation
-import NetworkExtension
-import VPN
 import VPNNotifications
 import os.log
 
@@ -59,9 +57,6 @@ final class VPNNotificationsObserver {
 
     /// Set of Combine cancellables for managing notification observation subscriptions.
     private var cancellables = Set<AnyCancellable>()
-    private var startupNotificationTask: Task<Void, Never>?
-    private var startupNotificationReplayRequested = false
-    private var sessionProvider: (@MainActor () async -> NETunnelProviderSession?)?
 
     /// Starts observing VPN status changes via distributed notifications.
     ///
@@ -76,20 +71,12 @@ final class VPNNotificationsObserver {
     ///
     /// All notification handlers are dispatched to the main queue to ensure UI updates
     /// occur on the main thread.
-    func startObservingVPNStatusChanges(sessionProvider: @escaping @MainActor () async -> NETunnelProviderSession?) {
-        self.sessionProvider = sessionProvider
+    func startObservingVPNStatusChanges() {
         Logger.networkProtection.log("Register with sysex")
 
         // Register the notification-center delegate at launch so taps on VPN notifications reach
         // `didReceive`. The permission prompt stays gated on `.serverSelected` below.
         notificationsPresenter.registerAsNotificationCenterDelegate()
-
-        distributedNotificationCenter.publisher(for: .pendingStartupNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.replayPendingStartupNotification() }
-            .store(in: &cancellables)
-
-        replayPendingStartupNotification()
 
         distributedNotificationCenter.publisher(for: .showIssuesStartedNotification)
             .receive(on: DispatchQueue.main)
@@ -140,36 +127,6 @@ final class VPNNotificationsObserver {
             }.store(in: &cancellables)
     }
 
-    func replayPendingStartupNotification() {
-        startupNotificationReplayRequested = true
-        guard startupNotificationTask == nil else { return }
-        startupNotificationReplayRequested = false
-        startupNotificationTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            defer {
-                self.startupNotificationTask = nil
-                if self.startupNotificationReplayRequested {
-                    self.replayPendingStartupNotification()
-                }
-            }
-            guard let session = await self.sessionProvider?(),
-                  let configuration = session.manager.protocolConfiguration as? NETunnelProviderProtocol,
-                  configuration.providerBundleIdentifier == Bundle.tunnelSysexBundleID else { return }
-            do {
-                // An older profile may have been tagged by the extension while the agent was closed.
-                if configuration.providerConfiguration?[VPNStartupNotificationIncident.profileIdentifierKey] == nil {
-                    try? await session.manager.loadFromPreferences()
-                }
-                guard let incident = try await session.pendingStartupNotification() else { return }
-                try await incident.presentIfNeeded(in: .standard) { identifier in
-                    try await notificationsPresenter.showStartupFailureNotification(incidentIdentifier: identifier)
-                }
-            } catch {
-                Logger.networkProtection.error("Could not deliver pending VPN startup notification: \(error.localizedDescription, privacy: .public)")
-            }
-        }
-    }
-
     // MARK: - Showing Notifications
 
     /// Displays a notification indicating the VPN has successfully connected.
@@ -204,6 +161,15 @@ final class VPNNotificationsObserver {
     func showConnectionFailureNotification() {
         Logger.networkProtection.info("Presenting failure notification")
         notificationsPresenter.showConnectionFailureNotification()
+    }
+
+    func showStartupFailureNotification() async -> Bool {
+        do {
+            return try await notificationsPresenter.showStartupFailureNotification()
+        } catch {
+            Logger.networkProtection.error("Could not deliver VPN startup notification: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
     }
 
     /// Displays a notification indicating the VPN has been superseded by another VPN.

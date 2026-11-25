@@ -79,11 +79,6 @@ extension UserDefaults {
         }
         set {
             set(newValue, forKey: suppressEntitlementMessagingKey)
-#if os(macOS)
-            if newValue {
-                VPNStartupNotificationStore(defaults: self).resetAll()
-            }
-#endif
         }
     }
 
@@ -103,9 +98,6 @@ extension UserDefaults {
     }
 
     public func resetEntitlementMessaging() {
-#if os(macOS)
-        VPNStartupNotificationStore(defaults: self).resetAll()
-#endif
         removeObject(forKey: showEntitlementAlertKey)
         removeObject(forKey: showEntitlementNotificationKey)
         suppressEntitlementMessaging = false

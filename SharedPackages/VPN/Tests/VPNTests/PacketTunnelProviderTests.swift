@@ -50,6 +50,18 @@ final class PacketTunnelProviderTests: XCTestCase {
         XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByMainApp), .allowed)
     }
 
+    func testOnDemandRetryDelayForBlockedReconnect() {
+#if os(macOS)
+        XCTAssertEqual(PacketTunnelProvider.onDemandRetryDelay(for: TunnelError.reconnectBlocked), 5)
+#else
+        XCTAssertEqual(PacketTunnelProvider.onDemandRetryDelay(for: TunnelError.reconnectBlocked), 15)
+#endif
+    }
+
+    func testOnDemandRetryDelayForOtherStartupFailures() {
+        XCTAssertEqual(PacketTunnelProvider.onDemandRetryDelay(for: TunnelError.settingsMissing), 15)
+    }
+
     func testBlockedStartupPersistsAcrossGuardAndDefaultsInstances() throws {
         VPNStartupGuard(defaults: startupDefaults).blockStartup()
         let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))

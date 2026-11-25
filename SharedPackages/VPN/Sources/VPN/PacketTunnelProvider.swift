@@ -1032,7 +1032,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
 
             if needsBackoff {
-                await backOffBeforeFailingStartup()
+                await backOffBeforeFailingStartup(dueTo: error)
             }
 
             Logger.networkProtection.error("🔴 Interrupting tunnel start as preconditions weren't met: \(error, privacy: .public)")
@@ -1070,7 +1070,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF
                 // cycling.
-                await backOffBeforeFailingStartup()
+                await backOffBeforeFailingStartup(dueTo: error)
             }
 
             let errorDescription = (error as? LocalizedError)?.localizedDescription ?? String(describing: error)
@@ -1164,9 +1164,17 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
-    private func backOffBeforeFailingStartup() async {
-        Logger.networkProtection.log("Waiting 15 seconds before failing VPN startup to limit automatic retries")
-        try? await Task.sleep(interval: .seconds(15))
+    static func onDemandRetryDelay(for error: Error) -> TimeInterval {
+#if os(macOS)
+        if case TunnelError.reconnectBlocked = error { return .seconds(5) }
+#endif
+        return .seconds(15)
+    }
+
+    private func backOffBeforeFailingStartup(dueTo error: Error) async {
+        let delay = Self.onDemandRetryDelay(for: error)
+        Logger.networkProtection.log("Waiting \(delay) seconds before failing VPN startup to limit automatic retries")
+        try? await Task.sleep(interval: delay)
         Logger.networkProtection.log("VPN startup failure delay finished")
     }
 
@@ -1698,8 +1706,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             defaults.enableEntitlementMessaging()
             notificationsPresenter.showEntitlementNotification()
 
-            // We add a delay here so the notification has a chance to show up
+#if !os(macOS)
+            // Give the notification time to appear before shutting down.
             try? await Task.sleep(interval: .seconds(5))
+#endif
         }
 
         return await shutdown(dueTo: error)

@@ -20,6 +20,7 @@ import AppKit
 import BrowserServicesKit
 import Combine
 import FeatureFlags_macOS
+import os.log
 import PrivacyConfig
 
 /// Presents Apple's Declared Age Range sheet through the promo queue.
@@ -73,7 +74,10 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
 
     @MainActor
     func show(history: PromoHistoryRecord, force: Bool) async -> PromoResult {
+        Logger.declaredAge.info("Showing the promo (force: \(force))")
+
         guard let window = windowProvider() else {
+            Logger.declaredAge.error("No main window to present the request in")
             return .noChange
         }
 

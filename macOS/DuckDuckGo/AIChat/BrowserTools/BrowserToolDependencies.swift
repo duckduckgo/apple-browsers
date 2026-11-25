@@ -43,6 +43,12 @@ extension ReadTabContentBrowserTool {
         self.init(readPage: pageLoader(windowControllersManager: windowControllersManager, reader: reader))
     }
 }
+
+extension FindInPageBrowserTool {
+    convenience init(windowControllersManager: WindowControllersManagerProtocol, reader: BrowserToolPageContentReading) {
+        self.init(readPage: pageLoader(windowControllersManager: windowControllersManager, reader: reader))
+    }
+}
 private func pageLoader(windowControllersManager: WindowControllersManagerProtocol, reader: BrowserToolPageContentReading) -> BrowserToolPageLoader {
     { tabIDArgument, context in
         switch BrowserToolTargetTab.resolve(tabIDArgument: tabIDArgument, context: context, in: windowControllersManager) {

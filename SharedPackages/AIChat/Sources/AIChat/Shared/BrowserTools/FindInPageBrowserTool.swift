@@ -1,6 +1,5 @@
 //
 //  FindInPageBrowserTool.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,20 +16,19 @@
 //  limitations under the License.
 //
 
-import AIChat
 import Foundation
-import FoundationExtensions
+import PrivacyConfig
 
 @MainActor
-final class FindInPageBrowserTool: BrowserTool {
+public final class FindInPageBrowserTool: BrowserTool {
 
     static let defaultMaxMatches = 10
     static let maxMaxMatches = 50
 
-    let name = "findInPage"
-    let permissionMode = BrowserToolPermissionMode.ask
+    public let name = AIChatBrowserToolsSubfeature.findInPage.rawValue
+    public let permissionMode = BrowserToolPermissionMode.ask
 
-    let inputSchema: JSONValue = [
+    public let inputSchema: JSONValue = [
         "type": "object",
         "properties": [
             "query": [
@@ -54,16 +52,13 @@ final class FindInPageBrowserTool: BrowserTool {
         ],
         "required": ["query"]
     ]
+    private let readPage: BrowserToolPageLoader
 
-    private let scopeProvider: BrowserToolScopeProvider
-    private let reader: BrowserToolPageContentReading
-
-    init(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) {
-        self.scopeProvider = scopeProvider
-        self.reader = reader
+    public init(readPage: @escaping BrowserToolPageLoader) {
+        self.readPage = readPage
     }
 
-    func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
+    public func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
 
         guard case .some(.object) = arguments,
@@ -75,21 +70,13 @@ final class FindInPageBrowserTool: BrowserTool {
 
         guard let options = Self.options(arguments) else { return .failure(.invalidArguments) }
 
-        guard let scope = scopeProvider(context), scope.accepts(context) else { return .failure(.unavailable) }
-        let tab: Tab
-        switch BrowserToolTargetTab.resolve(tabIDArgument: arguments?["tabId"], context: context, scope: scope) {
+        let pageContext: AIChatPageContextData
+        switch await readPage(arguments?["tabId"], context) {
         case .failure(let failure): return .failure(failure)
-        case .resolved(let target): tab = target
+        case .success(let page): pageContext = page
         }
-        guard !Task.isCancelled, scope.canRead(tab) else { return .failure(.unavailable) }
-        let tabID = tab.uid
 
-        guard let pageContext = await reader.pageContext(for: tab, in: scope) else {
-            return .failure(.unavailable)
-        }
-        guard !Task.isCancelled, scope.accepts(context), scope.canRead(tab) else { return .failure(.unavailable) }
-
-        guard pageContext.mimeType == AIChatPageContextData.htmlMIMEType else { return .failure(.unavailable) }
+        guard let tabID = pageContext.tabId else { return .failure(.unavailable) }
         let found = Self.search(content: pageContext.content, query: query, caseSensitive: options.caseSensitive, maxMatches: options.maxMatches)
         return .success([
             "tabId": .string(tabID),
@@ -120,12 +107,12 @@ final class FindInPageBrowserTool: BrowserTool {
 
     static let snippetRadius = 40
 
-    struct Match: Equatable {
-        let snippet: String
-        let matchIndex: Int
+    public struct Match: Equatable {
+        public let snippet: String
+        public let matchIndex: Int
     }
 
-    static func search(content: String, query: String, caseSensitive: Bool, maxMatches: Int) -> (matchCount: Int, matches: [Match]) {
+    public static func search(content: String, query: String, caseSensitive: Bool, maxMatches: Int) -> (matchCount: Int, matches: [Match]) {
         guard !content.isEmpty, !query.isEmpty else { return (0, []) }
         let options: String.CompareOptions = caseSensitive ? [] : [.caseInsensitive]
         var matches: [Match] = []
@@ -172,10 +159,10 @@ final class FindInPageBrowserTool: BrowserTool {
             .joined(separator: " ")
     }
 
-    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+    public func clientToolResult(from value: JSONValue) -> BrowserToolResult {
         guard var fields = value.objectValue, let matches = fields["matches"]?.arrayValue else { return .failure(.unavailable) }
         fields["title"] = BrowserToolOutputLimits.clip(fields["title"], to: BrowserToolOutputLimits.title)
-        fields["url"] = .string(ReadTabContentBrowserTool.redactedURL(fields["url"]?.stringValue ?? ""))
+        fields["url"] = BrowserToolOutputLimits.redactedURL(fields["url"])
         fields["matches"] = .array(matches.map { match in
             var matchFields = match.objectValue ?? [:]
             matchFields["snippet"] = BrowserToolOutputLimits.clip(matchFields["snippet"], to: BrowserToolOutputLimits.snippet)

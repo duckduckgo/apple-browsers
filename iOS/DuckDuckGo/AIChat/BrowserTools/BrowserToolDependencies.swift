@@ -38,6 +38,19 @@ extension ReadTabContentBrowserTool {
         self.init(readPage: pageLoader(scopeProvider: scopeProvider, reader: reader))
     }
 }
+
+extension FindInPageBrowserTool {
+    convenience init(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) {
+        let load = pageLoader(scopeProvider: scopeProvider, reader: reader)
+        self.init { tabIDArgument, context in
+            let result = await load(tabIDArgument, context)
+            if case .success(let page) = result, page.mimeType != AIChatPageContextData.htmlMIMEType {
+                return .failure(.unavailable)
+            }
+            return result
+        }
+    }
+}
 private func pageLoader(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) -> BrowserToolPageLoader {
     { tabIDArgument, context in
         guard let scope = scopeProvider(context), scope.accepts(context) else { return .failure(.unavailable) }

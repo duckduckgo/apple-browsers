@@ -33,7 +33,9 @@ struct SettingsBrowserAccessView: View {
     var body: some View {
         let canSee = enabledRows(BrowserAccessTool.canSee)
         let canDo = enabledRows(BrowserAccessTool.canDo)
-        let canResetAll = (canSee + canDo).contains { storedStates[$0.id] != nil }
+        let canResetAll = (canSee + canDo).contains { row in
+            storedStates[row.id] != nil && row.state != row.defaultState
+        }
 
         List {
             if !canSee.isEmpty {
@@ -82,6 +84,7 @@ struct SettingsBrowserAccessView: View {
             guard let tool = service.catalog.tool(for: item.capability) else { return nil }
             return BrowserAccessRow(item: item,
                                     state: service.permissions.effectiveState(for: tool),
+                                    defaultState: tool.asksEveryTime ? .ask : tool.permissionMode.defaultState,
                                     options: tool.asksEveryTime ? [.ask, .deny] : [.ask, .allow, .deny])
         }
     }
@@ -197,6 +200,7 @@ private struct BrowserAccessToolCell: View {
 private struct BrowserAccessRow: Identifiable {
     let item: BrowserAccessTool
     let state: BrowserToolPermissionState
+    let defaultState: BrowserToolPermissionState
     let options: [BrowserToolPermissionState]
 
     var id: String { item.capability.name }
@@ -241,6 +245,6 @@ private struct BrowserAccessTool {
         .init(capability: .switchToTab,
               title: UserText.settingsBrowserAccessSwitchToTab,
               detail: UserText.settingsBrowserAccessSwitchToTabDetail,
-              icon: DesignSystemImages.Glyphs.Size20.tab)
+              icon: Icons.arrowCircleRight)
     ]
 }

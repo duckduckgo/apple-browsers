@@ -56,7 +56,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 public enum SyncConnectionError: Error, Equatable {
     case unableToRecognizeCode
     case unreadablePairingMessage
-    case updateRequired(detectedDuring: SyncUpdateRequiredStage)
+    case updateRequired(detectedDuring: SyncSetupErrorStage)
     case unsupportedThirdPartyRecoveryCode
     case thirdPartyAccountAlreadyUpgraded
     case syncCancelledFromOtherDevice
@@ -96,7 +96,7 @@ public enum SyncConnectionError: Error, Equatable {
     case invalidCredentials
 }
 
-public enum SyncUpdateRequiredStage: Equatable {
+public enum SyncSetupErrorStage: Equatable {
     case codeRead
     case pairingSession
 }
@@ -598,8 +598,10 @@ public class SyncConnectionController: SyncConnectionControlling {
             }
         }
 
+        var errorStage = SyncSetupErrorStage.codeRead
         do {
             try await coordinator.startScanning(qrPayload: qrPayload)
+            errorStage = .pairingSession
             let completion = try await pollPairingV2UntilFinished(coordinator)
             await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             return true
@@ -609,7 +611,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             do {
                 try await coordinator.completeAccountSwitch(didSucceed: didSwitchAccounts)
             } catch {
-                await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+                await handlePairingV2PollingError(error, detectedDuring: .pairingSession, coordinator: coordinator, setupRole: setupRole)
                 if shouldEndFlowAfterReporting {
                     await delegate?.controllerDidFinishReportingAccountSwitch(didSucceed: false)
                 }
@@ -620,7 +622,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             }
             return didSwitchAccounts
         } catch {
-            await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+            await handlePairingV2PollingError(error, detectedDuring: errorStage, coordinator: coordinator, setupRole: setupRole)
             return false
         }
     }
@@ -645,7 +647,7 @@ public class SyncConnectionController: SyncConnectionControlling {
                 }
                 await handlePairingV2Completion(completion, coordinator: coordinator, setupRole: setupRole)
             } catch {
-                await handlePairingV2PollingError(error, coordinator: coordinator, setupRole: setupRole)
+                await handlePairingV2PollingError(error, detectedDuring: .pairingSession, coordinator: coordinator, setupRole: setupRole)
             }
         }
 
@@ -654,7 +656,10 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
     }
 
-    private func handlePairingV2PollingError(_ error: Error, coordinator: PairingV2Coordinator, setupRole: SyncSetupRole) async {
+    private func handlePairingV2PollingError(_ error: Error,
+                                             detectedDuring stage: SyncSetupErrorStage,
+                                             coordinator: PairingV2Coordinator,
+                                             setupRole: SyncSetupRole) async {
         if let pairingV2Error = error as? PairingV2Error, pairingV2Error == .cancelled {
             return
         }
@@ -679,7 +684,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         } else if let pairingV2Error = error as? PairingV2Error {
             await delegate?.controllerDidError(pairingV2ConnectionError(for: pairingV2Error), underlyingError: nil, setupRole: setupRole)
         } else if let cryptoError = error as? PairingV2MessageCryptoError {
-            await delegate?.controllerDidError(pairingV2CryptoConnectionError(for: cryptoError), underlyingError: cryptoError, setupRole: setupRole)
+            await delegate?.controllerDidError(pairingV2CryptoConnectionError(for: cryptoError, detectedDuring: stage), underlyingError: cryptoError, setupRole: setupRole)
         } else {
             await delegate?.controllerDidError(.unexpectedFailure, underlyingError: error, setupRole: setupRole)
         }
@@ -738,12 +743,13 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
     }
 
-    private func pairingV2CryptoConnectionError(for error: PairingV2MessageCryptoError) -> SyncConnectionError {
+    private func pairingV2CryptoConnectionError(for error: PairingV2MessageCryptoError,
+                                                detectedDuring stage: SyncSetupErrorStage) -> SyncConnectionError {
         switch error {
         case .unsupportedVersion(let version):
-            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor, detectedDuring: .pairingSession)
+            return unsupportedVersionConnectionError(for: version, supportedMajor: PairingV2ProtocolVersion.supportedMajor, detectedDuring: stage)
         default:
-            return .unreadablePairingMessage
+            return stage == .codeRead ? .unableToRecognizeCode : .unreadablePairingMessage
         }
     }
 
@@ -1075,7 +1081,7 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func unsupportedVersionConnectionError(for version: String,
                                                    supportedMajor: Int,
-                                                   detectedDuring stage: SyncUpdateRequiredStage) -> SyncConnectionError {
+                                                   detectedDuring stage: SyncSetupErrorStage) -> SyncConnectionError {
         guard let major = SyncProtocolVersion.parseMajor(version),
               major > supportedMajor else {
             return stage == .codeRead ? .unableToRecognizeCode : .unreadablePairingMessage

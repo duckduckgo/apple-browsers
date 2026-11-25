@@ -1736,6 +1736,21 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
+    func test_syncCodeEntered_withV2UrlWithInvalidPublicKey_notifiesUnableToRecognizeCode() async throws {
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        dependencies.createPairingV2MessageExchangerStub = PairingV2MessageExchangingMock()
+        let peerKeyPair = try makePeerKeyPair()
+        let payload = PairingV2QRCodePayload(channelId: peerKeyPair.channelID, publicKey: "not-a-public-key")
+        let url = try payload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+
+        let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .unableToRecognizeCode)
+        XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? PairingV2MessageCryptoError, .invalidPublicKey)
+    }
+
+    @MainActor
     func test_syncCodeEntered_withV2MessageCryptoError_notifiesUnreadablePairingMessage() async throws {
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let messageExchanger = PairingV2MessageExchangingMock()

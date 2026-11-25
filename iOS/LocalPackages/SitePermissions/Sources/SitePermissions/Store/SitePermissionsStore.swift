@@ -23,11 +23,13 @@ import Persistence
 enum SitePermissionsStorageKeyNames: String, StorageKeyDescribing {
     case perSitePermissions = "site-permissions-per-site"
     case globalDefaults = "site-permissions-global-defaults"
+    case browserToolDecisions = "ai-chat_browser-tool-permissions"
 }
 
 public struct SitePermissionsStoringKeys: StoringKeys {
     let perSitePermissions = StorageKey<[String: [String: String]]>(SitePermissionsStorageKeyNames.perSitePermissions)
     let globalDefaults = StorageKey<[String: String]>(SitePermissionsStorageKeyNames.globalDefaults)
+    let browserToolDecisions = StorageKey<[String: String]>(SitePermissionsStorageKeyNames.browserToolDecisions)
 
     public init() { }
 }
@@ -48,11 +50,16 @@ public final class SitePermissionsStore {
     public typealias SitePermissionRecord = [SitePermissionType: SitePermissionDecision]
 
     private let changesSubject = PassthroughSubject<Void, Never>()
+    private let browserToolChangesSubject = PassthroughSubject<Void, Never>()
 
     /// Emits whenever a durable permission setting changes. The signal intentionally carries no
     /// site value, so consumers recompute only their own context without broadcasting domains.
     public var changesPublisher: AnyPublisher<Void, Never> {
         changesSubject.eraseToAnyPublisher()
+    }
+
+    public var browserToolChangesPublisher: AnyPublisher<Void, Never> {
+        browserToolChangesSubject.eraseToAnyPublisher()
     }
 
     private let storage: any KeyedStoring<SitePermissionsStoringKeys>
@@ -111,6 +118,29 @@ public final class SitePermissionsStore {
         guard storage.globalDefaults != nil else { return }
         storage.removeValue(for: \.globalDefaults)
         changesSubject.send()
+    }
+
+    /// Duck.ai's browser access settings apply across sites and survive site-data clearing.
+    public var browserToolDecisions: [String: SitePermissionDecision] {
+        (storage.browserToolDecisions ?? [:]).compactMapValues(SitePermissionDecision.init(rawValue:))
+    }
+
+    public func browserToolDecision(for name: String) -> SitePermissionDecision? {
+        (storage.browserToolDecisions?[name]).flatMap(SitePermissionDecision.init(rawValue:))
+    }
+
+    public func setBrowserToolDecision(_ decision: SitePermissionDecision?, for name: String) {
+        var decisions = storage.browserToolDecisions ?? [:]
+        guard decisions[name] != decision?.rawValue else { return }
+        decisions[name] = decision?.rawValue
+        storage.browserToolDecisions = decisions.isEmpty ? nil : decisions
+        browserToolChangesSubject.send()
+    }
+
+    public func resetBrowserToolDecisions() {
+        guard storage.browserToolDecisions != nil else { return }
+        storage.removeValue(for: \.browserToolDecisions)
+        browserToolChangesSubject.send()
     }
 
     @discardableResult

@@ -458,6 +458,25 @@ extension ClientToolInvokerTests {
         #expect(fire.trace == nil)
         #expect(access.trace == nil)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func traceCountsTheShapedResultOfACountingToolOnly() async throws {
+        let harness = ClientToolTestHarness()
+        harness.tool.permissionMode = .auto
+        harness.tool.result = .success(["items": [1, 2, 3, 4]])
+        harness.tool.clientResult = { value in .success(["items": .array(Array(value["items"]?.arrayValue?.prefix(2) ?? []))]) }
+
+        let uncounted = await harness.invoker.invokeClientToolWithTrace(try harness.request(), context: harness.context, permissionPrompter: harness.source)
+        harness.tool.countsResults = true
+        let counted = await harness.invoker.invokeClientToolWithTrace(try harness.request(), context: harness.context, permissionPrompter: harness.source)
+        harness.tool.result = .failure(.notFound)
+        let failed = await harness.invoker.invokeClientToolWithTrace(try harness.request(), context: harness.context, permissionPrompter: harness.source)
+
+        #expect(uncounted.trace?.resultCount == nil)
+        #expect(counted.trace?.resultCount == 2)
+        #expect(failed.trace?.resultCount == nil)
+    }
 }
 
 @MainActor
@@ -473,7 +492,7 @@ private final class StubClientToolPermissionCoordinator: ClientToolPermissionCoo
     func authorize(callID: String, tool: any BrowserTool, targetsOtherTab: Bool, target: String?, chatID: String?, accessToolNames: [String]?,
                    prompter: (any ClientToolPermissionPrompting)?) async -> ClientToolPermissionAuthorization {
         calls.append((callID, tool, targetsOtherTab, prompter))
-        guard outcome != "denied" else { return .refused(.denied, .prompt) }
+        guard outcome != "denied" else { return .refused(.denied, .prompt, answer: .never) }
         return .granted(.prompt, performExecution: { [self] operation in
             permissionConfirmationCount += 1
             return outcome == "granted" ? await operation() : nil

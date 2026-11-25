@@ -1082,6 +1082,13 @@ public struct UserText {
         return "Your trial ends in \(daysUntilTrialEnds) \(unit)"
     }
     public static let subscriptionExpirationReminderNotificationBody = NotLocalizedString("subscription.expiration-reminder.notification.body", value: "Try all your new premium protections before your trial ends!", comment: "Body for the Privacy Pro free-trial expiration reminder notification. Used for en_US locale only.")
+    public static let subscriptionNotificationsDeniedDialogTitle = NotLocalizedString("subscription.notifications-denied-dialog.title", value: "Get Notified About Your Trial?", comment: "Title of the dialog asking users who turned off notifications to enable them for the free-trial reminder. Used for en_US locale only.")
+    public static func subscriptionNotificationsDeniedDialogMessage(daysBeforeTrialEnds: Int) -> String {
+        let unit = daysBeforeTrialEnds == 1 ? "day" : "days"
+        return "If you turn on notifications in Settings, we'll send you a notification \(daysBeforeTrialEnds) \(unit) before your free trial ends."
+    }
+    public static let subscriptionNotificationsDeniedDialogNotNow = NotLocalizedString("subscription.notifications-denied-dialog.not-now", value: "Not Now", comment: "Button that dismisses the free-trial reminder notifications dialog. Used for en_US locale only.")
+    public static let subscriptionNotificationsDeniedDialogOpenSettings = NotLocalizedString("subscription.notifications-denied-dialog.open-settings", value: "Open Settings", comment: "Button that opens the app's notification settings from the free-trial reminder notifications dialog. Used for en_US locale only.")
 
     // MARK: Settings Screen
 
@@ -2010,6 +2017,8 @@ public struct UserText {
 
     public static let newTabPageCustomizationTitle = NSLocalizedString("new-tab-page.customization.title", value: "Customize Your Start", comment: "Title of the sheet for customizing the New Tab Page")
     public static let newTabPageCustomizationMessages = NSLocalizedString("new-tab-page.customization.messages", value: "Messages", comment: "Name of the New Tab Page section showing messages, in the customization sheet")
+    public static let newTabPageCustomizationThemeBlue = NSLocalizedString("new-tab-page.customization.theme-blue", value: "Blue", comment: "Accessibility label of the blue illustrated theme option in the New Tab Page customization sheet")
+    public static let newTabPageCustomizationThemePlain = NSLocalizedString("new-tab-page.customization.theme-plain", value: "Plain", comment: "Accessibility label of the plain theme option, without an illustration, in the New Tab Page customization sheet")
     public static let newTabPageCustomizationAlwaysShowKeyboard = NSLocalizedString("new-tab-page.customization.always-show-keyboard", value: "Always Show Keyboard", comment: "Setting to always show the keyboard when a new tab is opened")
     public static let newTabPageCustomizationAllSettings = NSLocalizedString("new-tab-page.customization.all-settings", value: "All Settings", comment: "Opens the app settings from the New Tab Page customization sheet")
     public static let settingsKeyboard = NSLocalizedString("settings.keyboard", value: "Keyboard", comment: "Settings screen cell for Keyboard")
@@ -2497,6 +2506,9 @@ public struct UserText {
     public static let aiChatReasoningModeExtendedSubtitle = NSLocalizedString("aichat.reasoning.extended.subtitle", value: "For analytical tasks", comment: "Subtitle for the extended reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Add Image", comment: "Top-level attachment menu option to add an image to an AI chat message")
     public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
+    public static let aiChatAttachmentOptionAddImages = NSLocalizedString("aichat.attachment.option.add.images", value: "Add Images", comment: "Attachment menu option to add one or more images to a Duck.ai message")
+    public static let aiChatAttachmentOptionAddFiles = NSLocalizedString("aichat.attachment.option.add.files", value: "Add Files", comment: "Attachment menu option to add one or more files to a Duck.ai message")
+    public static let aiChatToolbarAddButtonAccessibilityLabel = NSLocalizedString("aichat.toolbar.add.button.accessibility.label", value: "Add", comment: "Accessibility label for the circled-plus button that opens the attach and tools menu in the Duck.ai native input toolbar")
     public static let aiChatAttachmentOptionTakePhoto = NSLocalizedString("aichat.attachment.option.take.photo", value: "Take Photo", comment: "Top-level attachment menu option to take a photo using the device camera for attaching to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutPage = NSLocalizedString("aichat.attachment.option.ask.about.page", value: "Ask About Page", comment: "Top-level attachment menu option to attach the current page content to an AI chat message")
     public static let aiChatAttachmentOptionAskAboutDocument = NSLocalizedString("aichat.attachment.option.ask.about.document", value: "Ask About Document", comment: "Address bar Duck.ai menu option shown on a document (e.g. a PDF); attaches that document's content to a new Duck.ai chat")
@@ -2731,6 +2743,27 @@ public struct UserText {
 
     public static let settingsDuckAISettings = NSLocalizedString("settings.aichat.duckai.settings", value: "Duck.ai Settings", comment: "Settings row that opens Duck.ai in a new tab")
 
+    static let settingsBrowserAccessTitle = NSLocalizedString("browser-tool.settings.title", value: "Browser Access", comment: "Settings screen and navigation row for Duck.ai browser tool permissions")
+    static let settingsBrowserAccessSwitchToTab = NSLocalizedString("browser-tool.settings.switch-to-tab.title", value: "Switch to Tab", comment: "Name of Duck.ai's browser tool for bringing an open tab forward")
+    static let settingsBrowserAccessSwitchToTabDetail = NSLocalizedString("browser-tool.settings.switch-to-tab.detail", value: "Bring one of your open tabs to the front.", comment: "Description of Duck.ai's Switch to Tab browser tool")
+    static let settingsBrowserAccessCanSee = NSLocalizedString("browser-tool.settings.can-see", value: "What Duck.ai Can See", comment: "Heading for read-only Duck.ai browser tools")
+    static let settingsBrowserAccessCanDo = NSLocalizedString("browser-tool.settings.can-do", value: "What Duck.ai Can Do", comment: "Heading for Duck.ai browser tools that perform actions")
+    static let settingsBrowserAccessFooter = NSLocalizedString("browser-tool.settings.caption", value: "Choose what actions Duck.ai can take in the browser, and whether it can act without asking for permission each time. These settings apply to every site and chat.", comment: "Explains the scope of Duck.ai browser tool permissions in Settings")
+    static let settingsBrowserAccessResetAll = NSLocalizedString("browser-tool.settings.reset-all", value: "Reset All", comment: "Button that restores the default permission for every Duck.ai browser tool")
+    static let settingsBrowserAccessResetAlertTitle = NSLocalizedString("browser-tool.settings.reset-alert.title", value: "Reset Browser Access?", comment: "Title of the confirmation alert for resetting all Duck.ai browser tool permissions")
+    static let settingsBrowserAccessResetAlertMessage = NSLocalizedString("browser-tool.settings.reset-alert.message", value: "This restores the default permission for every browser tool.", comment: "Message of the confirmation alert for resetting all Duck.ai browser tool permissions")
+    static let settingsBrowserAccessAlwaysAsk = NSLocalizedString("browser-tool.settings.state.ask", value: "Always Ask", comment: "Browser tool permission option that asks the user before acting")
+    static let settingsBrowserAccessAlwaysAllow = NSLocalizedString("browser-tool.settings.state.allow", value: "Always Allow", comment: "Browser tool permission option that lets Duck.ai act without asking")
+    static let settingsBrowserAccessNeverAllow = NSLocalizedString("browser-tool.settings.state.deny", value: "Never Allow", comment: "Browser tool permission option that denies access")
+    static let settingsBrowserAccessReadTabContent = NSLocalizedString("browser-tool.settings.read-tab-content.title", value: "Read Tab Content", comment: "Name of Duck.ai's browser tool for reading a tab")
+    static let settingsBrowserAccessReadTabContentDetail = NSLocalizedString("browser-tool.settings.read-tab-content.detail", value: "Read the title, address, and text of a tab.", comment: "Description of Duck.ai's Read Tab Content browser tool")
+    static let settingsBrowserAccessListOpenTabs = NSLocalizedString("browser-tool.settings.list-open-tabs.title", value: "List Open Tabs", comment: "Name of Duck.ai's browser tool for listing open tabs")
+    static let settingsBrowserAccessListOpenTabsDetail = NSLocalizedString("browser-tool.settings.list-open-tabs.detail", value: "See the title and address of each open tab.", comment: "Description of Duck.ai's List Open Tabs browser tool")
+    static let settingsBrowserAccessFindInPageDetail = NSLocalizedString("browser-tool.settings.find-in-page.detail", value: "Find text on a page and see short snippets around each match.", comment: "Description of Duck.ai's Find in Page browser tool")
+    static let settingsBrowserAccessSearchHistory = NSLocalizedString("browser-tool.settings.search-history.title", value: "Search Browsing History", comment: "Name of Duck.ai's browser tool for searching browsing history")
+    static let settingsBrowserAccessSearchHistoryDetail = NSLocalizedString("browser-tool.settings.search-history.detail", value: "Search the sites you’ve visited, including before this chat.", comment: "Description of Duck.ai's Search Browsing History browser tool")
+    static let settingsBrowserAccessSwitchToTabPrompt = NSLocalizedString("browser-tool.permission.title.switch-to-tab", value: "Allow Duck.ai to switch to another tab?", comment: "Title of the prompt asking to let Duck.ai switch tabs")
+
     public static let settingsAiChatSearchInputFooter = NSLocalizedString("settings.aichat.shortcuts.input.footer", value: "Search the web or ask Duck.ai directly from the Address Bar", comment: "Settings screen footer text for showing AI Chat in the input box")
 
     public static let settingsAiChatSearchInput = NSLocalizedString("settings.aichat.shortcuts.input", value: "Experimental Address Bar", comment: "Settings screen text for showing AI Chat in the input box")
@@ -2808,7 +2841,7 @@ public struct UserText {
 
     public static let aiChatFollowUpPlaceholder = NSLocalizedString("input.field.placeholder.duckai.followup", value: "Reply...", comment: "Placeholder text for the duck.ai input field when a chat is already active")
 
-    public static let aiChatImageGenerationPlaceholder = NotLocalizedString("input.field.placeholder.duckai.imageGeneration", value: "Create images privately", comment: "Placeholder text for the duck.ai input field when the image generation tool is selected")
+    public static let aiChatImageGenerationPlaceholder = NSLocalizedString("input.field.placeholder.duckai.imageGeneration", value: "Create images privately", comment: "Placeholder text for the duck.ai input field when the image generation tool is selected")
 
     // MARK: - AI Chat Welcome Message
     public static let aiChatWelcomeMessage = NSLocalizedString("duckai.welcome.message", value: "All chats are %@ private", comment: "Welcome message in Duck.ai contextual sheet. %@ is replaced by a shield icon.")

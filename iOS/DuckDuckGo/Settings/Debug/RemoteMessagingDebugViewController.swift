@@ -19,6 +19,7 @@
 
 import UIKit
 import SwiftUI
+import DesignResourcesKit
 import RemoteMessaging
 import Core
 import CoreData
@@ -55,7 +56,7 @@ struct RemoteMessagingDebugRootView: View {
                     Spacer()
                     Text(verbatim: model.currentDaysSinceInstalled.map(String.init) ?? "Not set")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color(baseColor: .gray70))
+                        .foregroundStyle(Color(designSystemColor: .textSecondary))
                 }
                 Button {
                     daysInput = model.currentDaysSinceInstalled.map(String.init) ?? ""
@@ -94,7 +95,7 @@ struct RemoteMessagingDebugRootView: View {
                 if model.messages.isEmpty {
                     Text(verbatim: "No messages")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color(baseColor: .gray70))
+                        .foregroundStyle(Color(designSystemColor: .textSecondary))
                 } else {
                     ForEach(model.messages, id: \.id) { message in
                         VStack(alignment: .leading, spacing: 6) {
@@ -102,7 +103,7 @@ struct RemoteMessagingDebugRootView: View {
                                 .font(.system(size: 15))
                             Text(verbatim: message.json ?? "")
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color(baseColor: .gray70))
+                                .foregroundStyle(Color(designSystemColor: .textSecondary))
                         }
                     }
                 }
@@ -129,13 +130,13 @@ struct RemoteMessagingDebugRootView: View {
                 } else if model.recentLogs.isEmpty {
                     Text(verbatim: "No Logs")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color(baseColor: .gray70))
+                        .foregroundStyle(Color(designSystemColor: .textSecondary))
                 } else {
                     ForEach(model.recentLogs.indices, id: \.self) { index in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(verbatim: model.recentLogs[index].timestamp)
                                 .font(.system(size: 10))
-                                .foregroundStyle(Color(baseColor: .gray50))
+                                .foregroundStyle(Color(designSystemColor: .textSecondary))
                             Text(verbatim: model.recentLogs[index].message)
                                 .font(.system(size: 12, design: .monospaced))
                         }
@@ -186,7 +187,7 @@ struct RemoteMessagingDebugRootView: View {
                     Spacer()
                     Text(verbatim: model.hardwareOSUpgradeCapability.rawValue)
                         .font(.system(size: 15))
-                        .foregroundStyle(Color(baseColor: .gray70))
+                        .foregroundStyle(Color(designSystemColor: .textSecondary))
                 }
                 Picker(selection: $model.osUpgradeCapabilityOverride) {
                     ForEach(OSUpgradeCapabilityOverride.allCases, id: \.self) { override in

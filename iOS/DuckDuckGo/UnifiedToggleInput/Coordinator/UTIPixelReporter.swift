@@ -54,6 +54,8 @@ struct UTIPixelContext {
     let pageType: UnifiedToggleInputPromptPageType
     let duckAIEntrySource: AIChatEntryPointSource?
     var addressBarPosition: AddressBarPosition?
+    /// Whether the simplified prompt box is showing; sent as the temporary `simplified_prompt_box` param.
+    var usesSimplifiedPromptBox = false
 }
 
 /// Owns the omnibar UTI's pixel firing. Resolves the surface (and the other live inputs) through a
@@ -172,7 +174,7 @@ final class UTIPixelReporter {
     }
 
     func reportFileAttached(source: String) {
-        withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, ["surface": $0.surface.rawValue, "source": source]) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, Self.parameters($0, ["source": source])) }
     }
 
     func reportImageValidationFailed(reason: String, source: String) {
@@ -186,15 +188,16 @@ final class UTIPixelReporter {
     }
 
     func reportImageAttached(source: String) {
-        withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, ["surface": $0.surface.rawValue, "source": source]) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputImageAttached, Self.parameters($0, ["source": source])) }
     }
 
     func reportAttachMenuShown() {
-        withContext { firing.fire(UnifiedToggleInputAttachMenuPixel.shown(surface: $0.surface), frequency: .dailyAndCount) }
+        withContext { firing.fire(UnifiedToggleInputAttachMenuPixel.shown(surface: $0.surface, simplifiedPromptBox: $0.usesSimplifiedPromptBox), frequency: .dailyAndCount) }
     }
 
     func reportAttachMenuItemSelected(_ item: UnifiedToggleInputAttachMenuItem) {
-        withContext { firing.fire(UnifiedToggleInputAttachMenuPixel.itemSelected(item, surface: $0.surface), frequency: .dailyAndCount) }
+        withContext { firing.fire(UnifiedToggleInputAttachMenuPixel.itemSelected(item, surface: $0.surface,
+                                                                         simplifiedPromptBox: $0.usesSimplifiedPromptBox), frequency: .dailyAndCount) }
     }
 
     func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
@@ -269,7 +272,10 @@ final class UTIPixelReporter {
     }
 
     func reportToolSelected(_ tool: AIChatRAGTool) {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(for: tool, surface: $0.surface, firing: firing) }
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireToolSelectedPixel(
+                for: tool, surface: $0.surface, simplifiedPromptBox: $0.usesSimplifiedPromptBox, firing: firing)
+        }
     }
 
     func reportToolDeselected(_ tool: AIChatRAGTool) {
@@ -277,7 +283,7 @@ final class UTIPixelReporter {
     }
 
     func reportCustomizeResponsesSelected() {
-        withContext { firing.fireDailyAndCount(.unifiedToggleInputCustomizeResponsesSelected, ["surface": $0.surface.rawValue]) }
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputCustomizeResponsesSelected, Self.parameters($0)) }
     }
 
     // MARK: - Submission
@@ -289,7 +295,8 @@ final class UTIPixelReporter {
                                modelId: String?,
                                defaultOmnibarMode: DefaultOmnibarMode,
                                isFirstPromptNewInstall: Bool,
-                               resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil) {
+                               resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil,
+                               modelSource: DuckAINewChatModelSource? = nil) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -304,6 +311,8 @@ final class UTIPixelReporter {
                 isFirstPromptNewInstall: isFirstPromptNewInstall,
                 addressBarPosition: $0.addressBarPosition,
                 resubmitOfSearch: resubmitDelay,
+                simplifiedPromptBox: $0.usesSimplifiedPromptBox,
+                modelSource: modelSource,
                 firing: firing
             )
         }
@@ -351,6 +360,14 @@ final class UTIPixelReporter {
     }
 
     // MARK: - Context resolution
+
+    /// `surface` plus the temporary `simplified_prompt_box` param, merged over `extra`.
+    private static func parameters(_ context: UTIPixelContext, _ extra: [String: String] = [:]) -> [String: String] {
+        var parameters = extra
+        parameters["surface"] = context.surface.rawValue
+        parameters[PixelKeys.simplifiedPromptBoxKey] = PixelKeys.simplifiedPromptBoxValue(context.usesSimplifiedPromptBox)
+        return parameters
+    }
 
     /// Resolves the live context and runs `body`; a nil context (coordinator gone) fires nothing.
     private func withContext(_ body: (UTIPixelContext) -> Void) {

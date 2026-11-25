@@ -53,7 +53,7 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
         case .subscriptionUpsell:
             dialogView = AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .thatsDuckAI:
-            // To do: replace with the That's Duck.ai! dialog. Placeholder: the Fire dialog.
+            assertionFailure("The Duck.ai path isn't offered on macOS 12")
             dialogView = AnyView(tryFireButtonDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         }
         onboardingPixelReporter.measureDialogShown(dialogType: type)

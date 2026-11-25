@@ -25,6 +25,7 @@ import FeatureFlags_iOS
 import JavaScriptCore
 import Persistence
 import PrivacyConfig
+import SitePermissions
 import UserScript
 import WebKit
 import XCTest
@@ -523,8 +524,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         let result = await fixture.invoke()
         XCTAssertEqual(result, fixture.success)
         XCTAssertEqual(fixture.listings, 1)
-        XCTAssertEqual(fixture.presenter.prompts.count, 1)
-        XCTAssertEqual(fixture.presenter.messages, ["Duck.ai wants to see your open tabs."])
+        XCTAssertEqual(fixture.presenter.prompts.map(\.toolName), ["listOpenTabs"])
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
         XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
     }
@@ -566,7 +566,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         let tool = BrowserToolsBridgeAskTool()
         let authorization = await fixture.service.clientToolPermissions.authorize(callID: "call", tool: tool, prompter: fixture.script)
         switch authorization {
-        case .refused(let error, _):
+        case .refused(let error, _, _):
             XCTAssertEqual(error, .cancelled)
         case .granted(_, let performExecution):
             XCTFail("A tool requiring a native prompt must be cancelled")
@@ -791,7 +791,7 @@ final class BrowserToolsBridgeFixture {
         self.defaults = defaults
         self.flags = flags
         owner = Tab(uid: "owner", link: Link(title: "Owner", url: URL(string: "https://owner.example")!), fireTab: fire)
-        service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: historyManager, permissionStorage: defaults.keyedStoring(),
+        service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: historyManager, sitePermissionsStore: SitePermissionsStore(storage: defaults.keyedStoring()),
                                             capabilities: capabilities)
         handler = AIChatUserScriptHandler(experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: flags),
                                           syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(),

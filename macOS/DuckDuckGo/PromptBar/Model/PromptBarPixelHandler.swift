@@ -45,7 +45,7 @@ struct PromptBarPixelHandler: DuckAIPromptPixelFiring {
     /// interactive here either, so gated-row clicks aren't reported.
     static func promptBarPixel(for event: DuckAIPromptPixelEvent) -> PromptBarPixel? {
         switch event {
-        case .promptSubmitted: .submitPrompt
+        case .promptSubmitted(let newChatModel): .submitPrompt(newChatModel: newChatModel)
         case .urlSubmitted: .submitURL
         case .imageGenerationSubmitted: .imageGenerationSubmitted
         case .webSearchSubmitted: .webSearchSubmitted

@@ -22,7 +22,7 @@ import CoreData
 /**
  * This enum defines available favorites folders with their UUIDs as raw value.
  */
-public enum FavoritesFolderID: String, CaseIterable {
+public enum FavoritesFolderID: String, CaseIterable, Sendable {
     /// Mobile form factor favorites folder
     case mobile = "mobile_favorites_root"
     /// Desktop form factor favorites folder

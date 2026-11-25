@@ -21,9 +21,7 @@ import DesignResourcesKit
 import SwiftUI
 
 enum SimplifiedSyncStyle {
-    static let screenBackground = Color(baseColor: .gray90)
-    static let instructionText = Color(baseColor: .gray30)
-    static let primaryActionBackground = Color(baseColor: .blue20)
+    static let screenBackground = Color(singleUseColor: .syncScreenBackground)
     static let subduedPanelBackground = Color.white.opacity(0.09)
 
     // Using this instead of a design system color, because the associated design system color

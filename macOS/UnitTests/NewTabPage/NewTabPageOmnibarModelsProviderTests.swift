@@ -453,6 +453,19 @@ final class NewTabPageOmnibarModelsProviderTests: XCTestCase {
         XCTAssertTrue(sections.isEmpty)
     }
 
+    func testWhenNothingFetchedYetThenNewChatDefaultIsUnknown() {
+        XCTAssertNil(provider.newChatDefaults.selectionOrLocalDefaultBeforeModelsLoad)
+    }
+
+    func testWhenPaidUserFetchFailsThenNewChatDefaultIsPaidLocalDefault() async {
+        mockSubscriptionManager.resultSubscription = .success(makeSubscription(tier: .plus))
+        mockModelsService.errorToThrow = NSError(domain: "test", code: -1)
+
+        _ = await provider.fetchAIModelSections()
+
+        XCTAssertEqual(provider.newChatDefaults.selectionOrLocalDefaultBeforeModelsLoad?.modelId, "gpt-5.6-terra")
+    }
+
     /// A transient failure after a prior success must not pair a fresh-empty model list with the
     /// stale `isEligibleForFreeTrial`/`attachmentLimits` left over from that success.
     func testWhenFetchFailsAfterPriorSuccessThenLastKnownGoodSectionsAreReturned() async {

@@ -71,7 +71,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
-    case sponsorBlock
+    case segmentSkip
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -204,10 +204,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
     case memoryUsageReporting
 
-    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
-    case crashCollectionLimitCallStackTreeDepth
-
     /// Ctrl+click compatibility fix to preserve right click behavior
     case controlClickFix
 
@@ -254,6 +250,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Shows the Add to Dock instructions video before Set as Default in the App Store build, from Default Browser and Dock prompts that offer both actions.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220622522685112
     case appStoreBothDefaultBrowserAndDockCTA
+
+    /// Declared Age Range: age signal request
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220879781552636
+    case declaredAgeRange
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -424,6 +424,11 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
     case unifiedToggleInputKeyboardEdgeSweep
 
+    /// Simplifies the Duck.ai prompt box on iPhone: one ⊕ menu holds the attachments and tools, the tools button
+    /// and Customize Responses leave the input, and Chats gets a Duck.ai Settings button.
+    /// https://app.asana.com/0/0/1220262271015348/f
+    case unifiedToggleInputSimplifiedPromptBox
+
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     case iPadAttachmentPrivacy
 
@@ -472,6 +477,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables handing a PDF tab to Duck.ai as page context (bytes instead of markdown)
     case pdfPageContext
+
+    /// "Ask about page" in the context menu of links on DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case askAboutSerpPage
+
+    /// "Ask about page" in the context menu of links on any page other than DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case askAboutLinkedPage
 
     /// Attaches page context to the sidebar by default; a manual remove lasts across navigation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219574855267767?focus=true
@@ -635,6 +648,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// iOS only. Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
     case swipeUpNewChat
+
+    /// New Duck.ai chats start on the default model and effort instead of the last one picked.
+    /// https://app.asana.com/1/137249556945/task/1220520342210072
+    case newChatDefaultModel
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -783,6 +800,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
     case improvedPairingFlow
+
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1220380918806338
+    case sendSyncSetupWideEvent
 }
 
 public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
@@ -854,8 +874,8 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case nativeUI // Use Duckplayer's native UI
 }
 
-public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .sponsorBlock }
+public enum SegmentSkipPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .segmentSkip }
     case mvpEnabled
 }
 
@@ -1118,6 +1138,9 @@ public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extensionManagement }
 
     case isLaunchedExtensions
+    /// Enables web extensions for internal users on macOS, independently of `isLaunchedExtensions`.
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1220747893847476
+    case isLaunchedExtensionsInternal
 }
 
 public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature {

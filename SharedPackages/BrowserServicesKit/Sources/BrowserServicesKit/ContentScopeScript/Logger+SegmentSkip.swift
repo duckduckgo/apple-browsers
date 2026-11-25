@@ -1,5 +1,5 @@
 //
-//  Logger+SponsorBlock.swift
+//  Logger+SegmentSkip.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static let sponsorBlock = Logger(subsystem: "Sponsor Block", category: "")
+    static let segmentSkip = Logger(subsystem: "Segment Skip", category: "")
 }

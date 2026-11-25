@@ -18,6 +18,7 @@
 //
 
 import Core
+import DesignResourcesKit
 import UIKit
 import SwiftUI
 import SyncUI_iOS
@@ -640,7 +641,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         : UINavigationController(rootViewController: controller)
 
         navController.overrideUserInterfaceStyle = .dark
-        navController.view.backgroundColor = UIColor(baseColor: .gray90)
+        navController.view.backgroundColor = UIColor(singleUseColor: .syncScreenBackground)
         let transparentAppearance = UINavigationBarAppearance()
         transparentAppearance.configureWithTransparentBackground()
         navController.navigationBar.standardAppearance = transparentAppearance

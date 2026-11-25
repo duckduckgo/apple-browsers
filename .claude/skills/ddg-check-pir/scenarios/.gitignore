@@ -1,0 +1,4 @@
+fixtures.local.md
+fixtures/profiles/*
+!fixtures/profiles/example.json
+fixtures/brokers/

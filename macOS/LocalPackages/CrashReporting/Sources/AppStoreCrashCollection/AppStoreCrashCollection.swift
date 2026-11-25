@@ -21,19 +21,16 @@ import Common
 import FoundationExtensions
 import Crashes
 import CrashReportingShared
-import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
 extension CrashReportingFactory: AppStoreCrashReportingFactory {
     public static func instantiate(internalUserDecider: InternalUserDecider,
-                                   featureFlagger: FeatureFlagger,
                                    crashReportSender: CrashReportSending,
                                    crashSenderPixelEvents: EventMapping<CrashReportSenderEvent>?,
                                    fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,
                                    promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) -> any CrashReporting {
         return AppStoreCrashCollection(internalUserDecider: internalUserDecider,
-                                       featureFlagger: featureFlagger,
                                        crashReportSender: crashReportSender,
                                        fireCrashPixel: fireCrashPixel,
                                        promptForConsent: promptForConsent)
@@ -45,27 +42,21 @@ public final class AppStoreCrashCollection: CrashReporting {
     private let crashReportSender: CrashReportSending
     private lazy var crashCollection = CrashCollection(crashReportSender: crashReportSender)
     private let internalUserDecider: InternalUserDecider
-    private let featureFlagger: FeatureFlagger
     private let fireCrashPixel: (_ parameters: [CrashReportPixelParameter: String]) -> Void
     private let promptForConsent: (_ crashPayload: Data) async -> Bool
 
     public init(internalUserDecider: InternalUserDecider,
-                featureFlagger: FeatureFlagger,
                 crashReportSender: CrashReportSending,
                 fireCrashPixel: @escaping (_ parameters: [CrashReportPixelParameter: String]) -> Void,
                 promptForConsent: @escaping (_ crashPayload: Data) async -> Bool) {
         self.internalUserDecider = internalUserDecider
-        self.featureFlagger = featureFlagger
         self.crashReportSender = crashReportSender
         self.fireCrashPixel = fireCrashPixel
         self.promptForConsent = promptForConsent
     }
 
     public func start() async {
-        let isCallStackLimitingEnabled = featureFlagger.isFeatureOn(.crashCollectionLimitCallStackTreeDepth)
-        let callStackDepthLimit: Int? = isCallStackLimitingEnabled ? 250 : nil
-
-        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: callStackDepthLimit) { [weak self] pixelParameters, payloads, completion in
+        crashCollection.startAttachingCrashLogMessages(callStackDepthLimit: 250) { [weak self] pixelParameters, payloads, completion in
             guard let self else { return }
 
             pixelParameters.forEach { parameters in

@@ -2743,6 +2743,27 @@ public struct UserText {
 
     public static let settingsDuckAISettings = NSLocalizedString("settings.aichat.duckai.settings", value: "Duck.ai Settings", comment: "Settings row that opens Duck.ai in a new tab")
 
+    static let settingsBrowserAccessTitle = NSLocalizedString("browser-tool.settings.title", value: "Browser Access", comment: "Settings screen and navigation row for Duck.ai browser tool permissions")
+    static let settingsBrowserAccessSwitchToTab = NSLocalizedString("browser-tool.settings.switch-to-tab.title", value: "Switch to Tab", comment: "Name of Duck.ai's browser tool for bringing an open tab forward")
+    static let settingsBrowserAccessSwitchToTabDetail = NSLocalizedString("browser-tool.settings.switch-to-tab.detail", value: "Bring one of your open tabs to the front.", comment: "Description of Duck.ai's Switch to Tab browser tool")
+    static let settingsBrowserAccessCanSee = NSLocalizedString("browser-tool.settings.can-see", value: "What Duck.ai Can See", comment: "Heading for read-only Duck.ai browser tools")
+    static let settingsBrowserAccessCanDo = NSLocalizedString("browser-tool.settings.can-do", value: "What Duck.ai Can Do", comment: "Heading for Duck.ai browser tools that perform actions")
+    static let settingsBrowserAccessFooter = NSLocalizedString("browser-tool.settings.caption", value: "Choose what actions Duck.ai can take in the browser, and whether it can act without asking for permission each time. These settings apply to every site and chat.", comment: "Explains the scope of Duck.ai browser tool permissions in Settings")
+    static let settingsBrowserAccessResetAll = NSLocalizedString("browser-tool.settings.reset-all", value: "Reset All", comment: "Button that restores the default permission for every Duck.ai browser tool")
+    static let settingsBrowserAccessResetAlertTitle = NSLocalizedString("browser-tool.settings.reset-alert.title", value: "Reset Browser Access?", comment: "Title of the confirmation alert for resetting all Duck.ai browser tool permissions")
+    static let settingsBrowserAccessResetAlertMessage = NSLocalizedString("browser-tool.settings.reset-alert.message", value: "This restores the default permission for every browser tool.", comment: "Message of the confirmation alert for resetting all Duck.ai browser tool permissions")
+    static let settingsBrowserAccessAlwaysAsk = NSLocalizedString("browser-tool.settings.state.ask", value: "Always Ask", comment: "Browser tool permission option that asks the user before acting")
+    static let settingsBrowserAccessAlwaysAllow = NSLocalizedString("browser-tool.settings.state.allow", value: "Always Allow", comment: "Browser tool permission option that lets Duck.ai act without asking")
+    static let settingsBrowserAccessNeverAllow = NSLocalizedString("browser-tool.settings.state.deny", value: "Never Allow", comment: "Browser tool permission option that denies access")
+    static let settingsBrowserAccessReadTabContent = NSLocalizedString("browser-tool.settings.read-tab-content.title", value: "Read Tab Content", comment: "Name of Duck.ai's browser tool for reading a tab")
+    static let settingsBrowserAccessReadTabContentDetail = NSLocalizedString("browser-tool.settings.read-tab-content.detail", value: "Read the title, address, and text of a tab.", comment: "Description of Duck.ai's Read Tab Content browser tool")
+    static let settingsBrowserAccessListOpenTabs = NSLocalizedString("browser-tool.settings.list-open-tabs.title", value: "List Open Tabs", comment: "Name of Duck.ai's browser tool for listing open tabs")
+    static let settingsBrowserAccessListOpenTabsDetail = NSLocalizedString("browser-tool.settings.list-open-tabs.detail", value: "See the title and address of each open tab.", comment: "Description of Duck.ai's List Open Tabs browser tool")
+    static let settingsBrowserAccessFindInPageDetail = NSLocalizedString("browser-tool.settings.find-in-page.detail", value: "Find text on a page and see short snippets around each match.", comment: "Description of Duck.ai's Find in Page browser tool")
+    static let settingsBrowserAccessSearchHistory = NSLocalizedString("browser-tool.settings.search-history.title", value: "Search Browsing History", comment: "Name of Duck.ai's browser tool for searching browsing history")
+    static let settingsBrowserAccessSearchHistoryDetail = NSLocalizedString("browser-tool.settings.search-history.detail", value: "Search the sites you’ve visited, including before this chat.", comment: "Description of Duck.ai's Search Browsing History browser tool")
+    static let settingsBrowserAccessSwitchToTabPrompt = NSLocalizedString("browser-tool.permission.title.switch-to-tab", value: "Allow Duck.ai to switch to another tab?", comment: "Title of the prompt asking to let Duck.ai switch tabs")
+
     public static let settingsAiChatSearchInputFooter = NSLocalizedString("settings.aichat.shortcuts.input.footer", value: "Search the web or ask Duck.ai directly from the Address Bar", comment: "Settings screen footer text for showing AI Chat in the input box")
 
     public static let settingsAiChatSearchInput = NSLocalizedString("settings.aichat.shortcuts.input", value: "Experimental Address Bar", comment: "Settings screen text for showing AI Chat in the input box")

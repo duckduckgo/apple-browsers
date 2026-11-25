@@ -125,6 +125,12 @@ private struct SettingsAINativeFeaturesView: AIFeaturesSettingsRowProviding {
                 autoSendContentRow
                 keyboardAnimationRow
                 manageShortcutsRow
+                if let service = viewModel.browserToolsService, !service.catalog.enabledTools.isEmpty {
+                    NavigationLink(destination: SettingsBrowserAccessView(service: service).environmentObject(viewModel)) {
+                        SettingsCellView(label: UserText.settingsBrowserAccessTitle)
+                    }
+                    .accessibilityIdentifier("Settings.AIFeatures.BrowserAccess")
+                }
                 duckAISettingsRow
             } header: {
                 Text(UserText.settingsDuckAiSectionHeader)

@@ -25,6 +25,7 @@ import Foundation
 import FoundationExtensions
 import Persistence
 import PrivacyConfig
+import SitePermissions
 
 @MainActor
 final class AIChatBrowserToolsService {
@@ -52,7 +53,7 @@ final class AIChatBrowserToolsService {
             guard let self else { return .unavailable }
             return self.permissionAdmissionFailure(toolName: toolName, requiresRequestAccess: requiresRequestAccess, from: source)
         })
-    let permissions: BrowserToolPermissionStoring
+    let permissions: BrowserToolSitePermissions
     let clientToolPermissions: ClientToolPermissionCoordinator
     private let historyManager: HistoryManaging
     private let configuration: AIChatBrowserToolsConfiguration
@@ -68,7 +69,7 @@ final class AIChatBrowserToolsService {
     init(featureFlagger: any FeatureFlagger,
          historyManager: HistoryManaging,
          scopeProvider: BrowserToolScopeProvider? = nil,
-         permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
+         sitePermissionsStore: SitePermissionsStore? = nil,
          capabilities: [ClientToolCapability]? = nil) {
         self.historyManager = historyManager
         configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
@@ -76,7 +77,8 @@ final class AIChatBrowserToolsService {
         if let capabilities {
             self.supportedCapabilities = capabilities
         }
-        let permissions = BrowserToolPermissionStore(storage: permissionStorage) { true }
+        let store = sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.standard.keyedStoring())
+        let permissions = BrowserToolSitePermissions(store: store)
         self.permissions = permissions
         clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
         lastClientToolsConfiguration = clientToolsConfiguration

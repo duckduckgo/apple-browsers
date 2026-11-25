@@ -22,6 +22,7 @@ import Core
 import FeatureFlags_iOS
 import Persistence
 import PrivacyConfig
+import SitePermissions
 import XCTest
 @testable import DuckDuckGo
 
@@ -51,7 +52,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
     func testDebugSessionSwitchesTabWithoutPromptingOrChangingOwner() async throws {
         let fixture = BrowserToolsBridgeFixture(enabledFlags: [.aiChatBrowserTools, .aiChatBrowserToolSwitchToTab])
         defer { fixture.cleanUp() }
-        let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(), permissionStorage: fixture.defaults.keyedStoring())
+        let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(), sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring()))
         let owner = fixture.owner
         let target = Tab(uid: "target", link: Link(title: "Target", url: URL(string: "https://example.com")!), fireTab: false)
         var selected = owner
@@ -188,7 +189,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         defer { fixture.cleanUp() }
         let scope = try XCTUnwrap(fixture.makeScope())
         let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(), scopeProvider: { _ in scope },
-                                                permissionStorage: fixture.defaults.keyedStoring(), capabilities: [.listOpenTabs])
+                                                sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring()), capabilities: [.listOpenTabs])
         service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
         let context = BrowserToolCallContext(ownerTabID: scope.ownerTabID, ownerWindowToken: scope.token,
                                              isBurner: false)
@@ -263,7 +264,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let suiteName = UUID().uuidString
         let storage = UserDefaults(suiteName: suiteName)!
         defer { storage.removePersistentDomain(forName: suiteName) }
-        let service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: MockHistoryManager(), permissionStorage: storage.keyedStoring(), capabilities: [.listOpenTabs])
+        let service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: MockHistoryManager(), sitePermissionsStore: SitePermissionsStore(storage: storage.keyedStoring()), capabilities: [.listOpenTabs])
         let catalog = service.catalog
         let invoker = service.invoker
         let permissions = service.permissions
@@ -299,7 +300,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let storage = UserDefaults(suiteName: suiteName)!
         defer { storage.removePersistentDomain(forName: suiteName) }
         let service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: MockHistoryManager(),
-                                               permissionStorage: storage.keyedStoring(), capabilities: [.listOpenTabs])
+                                               sitePermissionsStore: SitePermissionsStore(storage: storage.keyedStoring()), capabilities: [.listOpenTabs])
         let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
         for name in ["switchToTab", "searchHistory", "readTabContent", "findInPage", "highlightInPage", "unknown", "featureEnabled"] {
             XCTAssertNil(service.catalog.tool(named: name))
@@ -325,7 +326,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let storage = UserDefaults(suiteName: suiteName)!
         defer { storage.removePersistentDomain(forName: suiteName) }
         let service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: MockHistoryManager(),
-                                               permissionStorage: storage.keyedStoring(), capabilities: [.listOpenTabs])
+                                               sitePermissionsStore: SitePermissionsStore(storage: storage.keyedStoring()), capabilities: [.listOpenTabs])
         service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
         let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
         let result = await service.invoker.invokeClientTool(try request(), context: context, permissionPrompter: nil)
@@ -343,7 +344,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let storage = UserDefaults(suiteName: suiteName)!
         defer { storage.removePersistentDomain(forName: suiteName) }
         let service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: MockHistoryManager(), scopeProvider: { _ in available ? scope : nil },
-                                               permissionStorage: storage.keyedStoring(), capabilities: [.listOpenTabs])
+                                               sitePermissionsStore: SitePermissionsStore(storage: storage.keyedStoring()), capabilities: [.listOpenTabs])
         let context = BrowserToolCallContext(ownerTabID: owner.uid, ownerWindowToken: scope.token,
                                              isBurner: false)
         service.permissions.setState(.allow, forToolNamed: "listOpenTabs")
@@ -365,7 +366,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         defer { fixture.cleanUp() }
         fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
         let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(),
-                                               permissionStorage: fixture.defaults.keyedStoring())
+                                               sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring()))
         fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: fixture.makeScope)
         XCTAssertEqual(service.configuration(for: fixture.script)?.capabilities, [.listOpenTabs, .switchToTab])
         XCTAssertEqual(service.catalog.enabledTools.map(\.name), ["listOpenTabs", "switchToTab"])
@@ -381,7 +382,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(),
-                                               permissionStorage: fixture.defaults.keyedStoring())
+                                               sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring()))
         let catalog = service.catalog
         let states: [([FeatureFlag], [ClientToolCapability])] = [
             ([], []),
@@ -408,7 +409,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         defer { fixture.cleanUp() }
         fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
         let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(),
-                                               permissionStorage: fixture.defaults.keyedStoring())
+                                               sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring()))
         fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: fixture.makeScope)
         fixture.presenter.isAvailable = false
         let result = await service.invoke(try request(name: "switchToTab", input: ["tabId": "owner"]), from: fixture.script)
@@ -421,7 +422,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         defer { fixture.cleanUp() }
         fixture.flags.enabledFeatureFlags.append(.aiChatBrowserToolSwitchToTab)
         let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(),
-                                               permissionStorage: fixture.defaults.keyedStoring())
+                                               sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring()))
         let source = MultiTabAttachmentSource(currentTabID: fixture.owner.uid, mode: .normal,
                                               tabsProvider: { [fixture.owner] })
         let scope = BrowserToolScope(owner: fixture.owner, source: source, selectedTabID: { fixture.owner.uid },
@@ -448,7 +449,7 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         let scope = BrowserToolScope(owner: fixture.owner, source: source, selectedTabID: { fixture.owner.uid },
                                      selectTab: { selections.append($0); return true })
         let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(),
-                                               permissionStorage: fixture.defaults.keyedStoring())
+                                               sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring()))
         service.permissions.setState(.deny, forToolNamed: "switchToTab")
         fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: { scope })
         fixture.presenter.autoAnswer = nil
@@ -468,6 +469,49 @@ final class AIChatBrowserToolsServiceTests: XCTestCase {
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
         XCTAssertEqual(fixture.presenter.prompts.count, 1)
         XCTAssertTrue(fixture.presenter.isPresentingPermission)
+    }
+
+    func testSwitchToTabWaitsForApprovalAfterReloadingStoredAsk() async throws {
+        let fixture = BrowserToolsBridgeFixture(
+            enabledFlags: [.aiChatBrowserTools, .aiChatBrowserToolSwitchToTab],
+            capabilities: [.switchToTab]
+        )
+        defer { fixture.cleanUp() }
+        fixture.service.permissions.setState(.ask, forToolNamed: "switchToTab")
+
+        let service = AIChatBrowserToolsService(
+            featureFlagger: fixture.flags,
+            historyManager: MockHistoryManager(),
+            sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring())
+        )
+        let target = Tab(uid: "target", link: Link(title: "Target", url: URL(string: "https://example.com")!), fireTab: false)
+        var selections: [String] = []
+        let source = MultiTabAttachmentSource(currentTabID: fixture.owner.uid, mode: .normal,
+                                              tabsProvider: { [fixture.owner, target] })
+        let scope = BrowserToolScope(owner: fixture.owner, source: source, selectedTabID: { fixture.owner.uid }, selectTab: {
+            selections.append($0.uid)
+            return true
+        })
+        fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: { scope })
+        fixture.presenter.autoAnswer = nil
+        let shown = expectation(description: "Switch to Tab permission prompt shown")
+        fixture.presenter.onPresent = { shown.fulfill() }
+        let switchRequest = try request(name: "switchToTab", input: ["tabId": "target"])
+
+        let invocation = Task { await service.invoke(switchRequest, from: fixture.script) }
+        defer { invocation.cancel() }
+        await fulfillment(of: [shown], timeout: 1)
+
+        let prompt = try XCTUnwrap(fixture.presenter.prompts.first)
+        XCTAssertEqual(prompt.toolName, "switchToTab")
+        XCTAssertNotNil(AIChatToolPermissionView.Prompt(prompt))
+        XCTAssertTrue(selections.isEmpty)
+
+        fixture.presenter.select(.allowOnce)
+        let result = await invocation.value
+
+        XCTAssertEqual(result, .success(callId: "call", value: ["tabId": "target"]))
+        XCTAssertEqual(selections, [target.uid])
     }
 
 }

@@ -1099,7 +1099,18 @@ final class FireExecutorTests: XCTestCase {
 
     // MARK: - Site Permissions Fire Worker Tests
 
-    func testWhenBurningNormalModeDataThenFireproofedSitePermissionsSurvive() async {
+    func testWhenBurningNormalModeDataThenFireproofedSiteAndBrowserToolPermissionsSurvive() async {
+        sitePermissionsStore = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        mockFeatureFlagger.enabledFeatureFlags.append(contentsOf: [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs, .aiChatBrowserToolSwitchToTab])
+        let browserToolsService = AIChatBrowserToolsService(
+            featureFlagger: mockFeatureFlagger,
+            historyManager: mockHistoryManager,
+            sitePermissionsStore: sitePermissionsStore
+        )
+        mockTabManager.browserToolsService = browserToolsService
+        browserToolsService.permissions.setState(.allow, forToolNamed: "listOpenTabs")
+        browserToolsService.permissions.setState(.deny, forToolNamed: "switchToTab")
+
         for permissionType in SitePermissionType.allCases {
             storePermission(for: "protected.example", type: permissionType)
             storePermission(for: "cleared.example", type: permissionType, decision: .deny)
@@ -1118,6 +1129,7 @@ final class FireExecutorTests: XCTestCase {
         }
         XCTAssertEqual(sitePermissionsStore.storedSites, [makeSitePermissionKey("protected.example")])
         XCTAssertTrue(permissionsDidChange)
+        XCTAssertEqual(browserToolsService.permissions.storedDecisions, ["listOpenTabs": .allow, "switchToTab": .deny])
     }
 
     func testWhenBurningNormalModeDataThenFireproofedParentDomainProtectsItsSubdomain() async {

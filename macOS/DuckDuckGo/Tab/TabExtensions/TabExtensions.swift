@@ -340,7 +340,15 @@ extension TabExtensionsBuilder {
                                     aiChatSessionStore: dependencies.aiChatSessionStore,
                                     aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
                                     isLoadedInSidebar: args.isTabLoadedInSidebar,
-                                    faviconManagement: dependencies.faviconManagement)
+                                    faviconManagement: dependencies.faviconManagement,
+                                    linkedPageLoader: LinkedPageContextLoader(burnerMode: args.burnerMode,
+                                                                              contentBlocking: dependencies.privacyFeatures.contentBlocking,
+                                                                              httpsUpgrade: dependencies.privacyFeatures.httpsUpgrade,
+                                                                              maliciousSiteDetector: dependencies.maliciousSiteDetector,
+                                                                              isGPCEnabled: { [webTrackingProtectionPreferences = dependencies.webTrackingProtectionPreferences] in
+                                                                                  webTrackingProtectionPreferences.isGPCEnabled
+                                                                              },
+                                                                              featureFlagger: dependencies.featureFlagger))
         }
 
         add {

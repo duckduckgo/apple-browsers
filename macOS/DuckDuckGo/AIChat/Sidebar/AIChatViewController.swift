@@ -119,7 +119,12 @@ final class AIChatViewController: NSViewController {
     }
 
     public func setPageContext(_ pageContext: AIChatPageContextData?) {
-        aiTab.aiChat?.submitAIChatPageContext(pageContext)
+        aiTab.aiChat?.submitAIChatPageContext(PageContextResponse(pageContext: pageContext))
+    }
+
+    /// Duck.ai shows "No page content available" until the next `setPageContext`.
+    public func setPageContextUnavailable() {
+        aiTab.aiChat?.submitAIChatPageContext(.unavailable)
     }
 
     public func submitSelectionContext(_ selection: AIChatSelectionContextData) {

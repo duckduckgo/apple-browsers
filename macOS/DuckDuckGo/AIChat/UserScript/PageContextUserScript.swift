@@ -32,8 +32,16 @@ struct PageContextCollectionPayload: Codable {
     let error: String?
 }
 
-struct PageContextResponse: Codable {
+/// With `pageContextError` set, `pageContext` is nil and Duck.ai shows its "No page content available" error.
+struct PageContextResponse: Codable, Equatable {
+    enum PageContextError: String, Codable {
+        case unavailable
+    }
+
     let pageContext: AIChatPageContextData?
+    var pageContextError: PageContextError?
+
+    static let unavailable = PageContextResponse(pageContext: nil, pageContextError: .unavailable)
 }
 
 struct SelectionContextResponse: Codable {

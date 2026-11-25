@@ -740,7 +740,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didSubmitAIChatSelectionContext = false
     var didTogglePageContextTelemetry = false
     var didReceiveResponse = false
-    var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    var pageContextSubject = PassthroughSubject<PageContextResponse, Never>()
     var selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
@@ -857,7 +857,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> {
+    var pageContextPublisher: AnyPublisher<PageContextResponse, Never> {
         pageContextSubject.eraseToAnyPublisher()
     }
 
@@ -911,7 +911,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         syncStatusSubject.eraseToAnyPublisher()
     }
 
-    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
+    func submitAIChatPageContext(_ response: PageContextResponse) {
         didSubmitAIChatPageContext = true
     }
 

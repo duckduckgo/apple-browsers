@@ -110,7 +110,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     @MainActor func getAIChatPageContext(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatSelectionContext(params: Any, message: UserScriptMessage) -> Encodable?
-    var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
+    var pageContextPublisher: AnyPublisher<PageContextResponse, Never> { get }
     var selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
@@ -128,7 +128,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var directNavigationFallback: AIChatConversationSource? { get set }
 
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatPageContext(_ response: PageContextResponse)
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData)
     func resetConversationSourceForNewDocument()
 
@@ -190,7 +190,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
-    public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
+    public let pageContextPublisher: AnyPublisher<PageContextResponse, Never>
     public let selectionContextPublisher: AnyPublisher<AIChatSelectionContextData, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
     public let pageContextConsumedPublisher: AnyPublisher<Void, Never>
@@ -201,7 +201,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
-    private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
+    private let pageContextSubject = PassthroughSubject<PageContextResponse, Never>()
+    private var pageContextError: PageContextResponse.PageContextError?
     private let selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let pageContextConsumedSubject = PassthroughSubject<Void, Never>()
@@ -429,6 +430,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         let pageContext = messageHandling.getDataForMessageType(.pageContext) as? AIChatPageContextData
+        let pageContextError = pageContextError
+        self.pageContextError = nil
 
         // On an explicit user action (Ask-About-Page chip or tapping a suggestion), the user wants
         // the page CONTENT attached. If we only have a signals-only payload (auto-attach off) or no
@@ -443,7 +446,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             }
         }
 
-        return PageContextResponse(pageContext: pageContext)
+        return PageContextResponse(pageContext: pageContext, pageContextError: pageContextError)
     }
 
     /// Triggers a fresh page-context collection and awaits the collected result, so
@@ -458,6 +461,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let collectedContext = AsyncStream<AIChatPageContextData?> { continuation in
             var cancellable: AnyCancellable?
             cancellable = pageContextSubject
+                // An unavailable linked page isn't this collection's result.
+                .filter { $0.pageContextError == nil }
+                .map(\.pageContext)
                 .first()
                 .sink { result in
                     continuation.yield(result)
@@ -593,9 +599,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         hasPendingNativePrompt = true
     }
 
-    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
-        hasAttachedPageContext = pageContext.map { $0.attached != false && $0.hasAttachedPage } ?? false
-        pageContextSubject.send(pageContext)
+    func submitAIChatPageContext(_ response: PageContextResponse) {
+        messageHandling.setData(response.pageContext, forMessageType: .pageContext)
+        pageContextError = response.pageContextError
+        hasAttachedPageContext = response.pageContext.map { $0.attached != false && $0.hasAttachedPage } ?? false
+        pageContextSubject.send(response)
     }
 
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {

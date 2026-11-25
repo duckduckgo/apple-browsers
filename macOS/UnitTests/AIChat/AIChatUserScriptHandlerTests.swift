@@ -2061,6 +2061,36 @@ struct AIChatUserScriptHandlerTests {
         }
     }
 
+    // MARK: - Page context unavailable
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An unavailable page context encodes Duck.ai's error and a normal one doesn't", .timeLimit(.minutes(1)))
+    func testPageContextResponseJSON() throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+
+        #expect(String(data: try encoder.encode(PageContextResponse.unavailable), encoding: .utf8) == #"{"pageContextError":"unavailable"}"#)
+        let normal = PageContextResponse(pageContext: AIChatPageContextData(title: "T", favicon: [], url: "https://example.com", content: "c",
+                                                                            truncated: false, fullContentLength: 1))
+        let json = try #require(try JSONSerialization.jsonObject(with: encoder.encode(normal)) as? [String: Any])
+        #expect(json["pageContextError"] == nil)
+        #expect(json["pageContext"] != nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Duck.ai reads the unavailable state until a page context replaces it", .timeLimit(.minutes(1)))
+    @MainActor
+    func testGetPageContextReturnsUnavailableUntilReplaced() async {
+        let initParams = ["reason": "init"]
+        handler.submitAIChatPageContext(.unavailable)
+        #expect(await handler.getAIChatPageContext(params: initParams, message: WKScriptMessage.mock()) as? PageContextResponse == .unavailable)
+
+        handler.submitAIChatPageContext(.unavailable)
+        handler.submitAIChatPageContext(PageContextResponse(pageContext: nil))
+        #expect(await handler.getAIChatPageContext(params: initParams, message: WKScriptMessage.mock()) as? PageContextResponse
+                == PageContextResponse(pageContext: nil))
+    }
+
     // MARK: - Page context added / removed
 
     @available(iOS 16, macOS 13, *)

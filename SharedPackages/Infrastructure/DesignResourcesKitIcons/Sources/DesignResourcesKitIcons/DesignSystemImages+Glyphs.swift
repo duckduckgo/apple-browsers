@@ -259,6 +259,7 @@ public extension DesignSystemImages {
             public static var feedback: DesignSystemImage { .init(resource: .feedback16) }
             public static var feedbackAlert: DesignSystemImage { .init(resource: .feedbackAlert16) }
             public static var feedbackBlank: DesignSystemImage { .init(resource: .feedbackBlank16) }
+            public static var file: DesignSystemImage { .init(resource: .file16) }
             public static var findInPage: DesignSystemImage { .init(resource: .findInPage16) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch16) }
             public static var findSearchGradientColor: DesignSystemImage { .init(resource: .findSearchGradientColor16) }

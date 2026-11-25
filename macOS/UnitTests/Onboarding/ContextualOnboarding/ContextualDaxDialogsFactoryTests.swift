@@ -89,6 +89,29 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertEqual(reporter.shownDialog, dialogType)
     }
 
+    func testWhenMakeRebrandedViewForThatsDuckAIThenDialogShownPixelIsFired() {
+        // GIVEN
+        let factory = RebrandedContextualDaxDialogsFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
+
+        // WHEN
+        _ = factory.makeView(for: .thatsDuckAI, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+        // THEN
+        XCTAssertEqual(reporter.shownDialog, .thatsDuckAI)
+    }
+
+    func testWhenMakeRebrandedBubbleForThatsDuckAIThenThatsDuckAIDialogIsUsedInsteadOfFireDialog() {
+        // GIVEN
+        let factory = RebrandedContextualDaxDialogsFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
+
+        // WHEN
+        let result = factory.makeBubbleView(for: .thatsDuckAI, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+        // THEN
+        XCTAssertNotNil(find(OnboardingRebranding.OnboardingThatsDuckAIDialog.self, in: result))
+        XCTAssertNil(find(OnboardingRebranding.OnboardingFireDialog.self, in: result))
+    }
+
     // MARK: - Default Onboarding
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {

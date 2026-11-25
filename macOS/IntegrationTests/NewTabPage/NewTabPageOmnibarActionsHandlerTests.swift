@@ -97,7 +97,7 @@ final class NewTabPageOmnibarActionsHandlerTests: XCTestCase {
 
     /// Parameters of the one `new-tab-page_prompt_submitted` fired so far.
     private func promptSubmittedParameters() -> [String: String]? {
-        let submitted = firedEvents.filter { $0.name == NewTabPagePixel.promptSubmitted(hasPastedText: false).name }
+        let submitted = firedEvents.filter { $0.name == NewTabPagePixel.promptSubmitted(hasPastedText: false, newChatModel: nil).name }
         XCTAssertEqual(submitted.count, 1)
         return submitted.first?.parameters
     }

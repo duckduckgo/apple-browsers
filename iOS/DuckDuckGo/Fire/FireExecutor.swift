@@ -285,7 +285,7 @@ class FireExecutor: FireExecuting {
         }
 
         burnInProgress = true
-        let browserToolsToken = beginBrowserToolsClearing(browserToolsTarget(for: request.scope))
+        let browserToolsToken = browserToolsTarget(for: request.scope).flatMap { tabManager.browserToolsService.beginFireClearing($0) }
         defer {
             if let browserToolsToken { tabManager.browserToolsService.endClearing(browserToolsToken) }
         }

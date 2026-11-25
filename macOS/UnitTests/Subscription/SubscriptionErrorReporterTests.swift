@@ -227,17 +227,6 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsFailure(error: error).name])
     }
 
-    func testReporterForTierOptionsUnexpectedProTier() async throws {
-        // Given
-        let event = SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier
-
-        // When
-        reporter.report(subscriptionTierOptionEvent: event)
-
-        // Then
-        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier.name])
-    }
-
     public func XCTAssertPrivacyPixelsFired(_ pixels: [String], file: StaticString = #file, line: UInt = #line) {
         let pixelsFired = Set(pixelsFired)
         let expectedPixels = Set(pixels)

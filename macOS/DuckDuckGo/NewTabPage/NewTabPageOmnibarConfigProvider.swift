@@ -99,7 +99,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let remoteSettings: AIChatRemoteSettings
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let firePixel: (PixelKit.Event) -> Void
-    private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
+    /// The persisted global pick; with new chats on the default, an in-memory one that ends with each sent prompt.
+    private let modelPick: DuckAIPublishingModelPickStoring
+    /// Set while new chats start on the default.
+    private let newChatDefaults: AIChatNewChatDefaultSource?
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
@@ -138,6 +141,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          duckAiLauncherPromo: DuckAiLauncherPromo? = nil,
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
+         newChatDefaults: AIChatNewChatDefaultSource = AIChatNewChatDefaultSource(),
          isTrialEligibleProvider: @escaping () -> Bool = { false },
          allowsSubscriptionUpsellProvider: @escaping () -> Bool = { true },
          firePixel: @escaping (PixelKit.Event) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
@@ -146,7 +150,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.featureFlagger = featureFlagger
         self.remoteSettings = remoteSettings
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
+        var aiChatPreferencesPersistor = aiChatPreferencesPersistor
+        Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &aiChatPreferencesPersistor)
+        let startsNewChatsOnDefault = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
+        self.modelPick = startsNewChatsOnDefault ? InMemoryModelPickStore() : PersistedModelPickStore(preferences: aiChatPreferencesPersistor)
+        self.newChatDefaults = startsNewChatsOnDefault ? newChatDefaults : nil
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
@@ -160,7 +168,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
         self.firePixel = firePixel
 
-        Self.migrateLegacySelectedModelIdIfNeeded(from: keyValueStore, into: &self.aiChatPreferencesPersistor)
+        overLimitDefaultChangesCancellable = self.newChatDefaults?.overLimitDefaultChanges
+            .sink { [weak self] in self?.usageLimitsChangedSubject.send(()) }
 
         // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
         // NTPs update without waiting for their own toggle. The NTP's own paths notify directly.
@@ -274,18 +283,19 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.isFeatureOn(.aiChatNtpChatTools)
     }
 
+    /// The pick, else the new-chat default (flag on). Web echoes it back, so the setter compares against it too.
     var selectedModelId: String? {
         get {
-            aiChatPreferencesPersistor.selectedModelId
+            modelPick.modelId ?? newChatDefaultSelection?.modelId
         }
         set {
-            guard newValue != aiChatPreferencesPersistor.selectedModelId else { return }
+            guard newValue != selectedModelId else { return }
             // The drawer's CTA by another route, so it settles the message too. Before the write:
             // it needs the model we were on.
             if let newValue {
-                usageWarningViewModel?.userSwitchedModel(from: aiChatPreferencesPersistor.selectedModelId, to: newValue)
+                usageWarningViewModel?.userSwitchedModel(from: selectedModelId, to: newValue)
             }
-            aiChatPreferencesPersistor.selectedModelId = newValue
+            modelPick.modelId = newValue
             if newValue != nil {
                 PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
@@ -293,16 +303,47 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     var selectedModelIdPublisher: AnyPublisher<String?, Never> {
-        aiChatPreferencesPersistor.selectedModelIdPublisher
+        modelPick.modelIdPublisher
     }
 
     var selectedModelShortName: String? {
         get {
-            aiChatPreferencesPersistor.selectedModelShortName
+            modelPick.modelShortName ?? newChatDefaultModel?.shortName
         }
         set {
-            aiChatPreferencesPersistor.selectedModelShortName = newValue
+            modelPick.modelShortName = newValue
         }
+    }
+
+    /// Sent only while new chats start on the default. Every New Tab Page prompt opens a new chat.
+    func newChatModelPixelParameters(sentModelId: String?,
+                                     sentReasoningEffort: String?,
+                                     isImageGeneration: Bool = false) -> DuckAINewChatModelPixelParameters? {
+        guard newChatDefaults != nil else { return nil }
+        return DuckAINewChatModelPixelParameters(sentModelId: sentModelId,
+                                                 sentReasoningEffort: sentReasoningEffort,
+                                                 isModelPicked: modelPick.modelId != nil,
+                                                 pickedReasoningEffort: modelPick.reasoningEffort,
+                                                 newChatDefault: newChatDefaultSelection,
+                                                 isImageGeneration: isImageGeneration)
+    }
+
+    /// The model and effort a new chat starts on when nothing was picked; `nil` while new chats start on the last pick.
+    private var newChatDefaultSelection: AIChatNewChatSelection? {
+        newChatDefaults?.selectionOrLocalDefaultBeforeModelsLoad
+    }
+
+    private var newChatDefaultModel: AIChatModel? {
+        guard let modelId = newChatDefaultSelection?.modelId else { return nil }
+        return availableModelsProvider().first { $0.id == modelId }
+    }
+
+    private var newChatDefaultReasoningEffort: String? {
+        newChatDefaultSelection?.reasoningEffort(onModelId: selectedModelId)?.rawValue
+    }
+
+    func chatSubmitted() {
+        modelPick.promptSent()
     }
 
     var isReasoningEffortEnabled: Bool {
@@ -314,12 +355,12 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     var selectedReasoningEffort: String? {
         get {
             guard isReasoningEffortEnabled else { return nil }
-            return aiChatPreferencesPersistor.selectedReasoningEffort
+            return modelPick.reasoningEffort ?? newChatDefaultReasoningEffort
         }
         set {
             guard isReasoningEffortEnabled else { return }
-            guard newValue != aiChatPreferencesPersistor.selectedReasoningEffort else { return }
-            aiChatPreferencesPersistor.selectedReasoningEffort = newValue
+            guard newValue != selectedReasoningEffort else { return }
+            modelPick.reasoningEffort = newValue
             if newValue != nil {
                 PixelKit.fire(AIChatPixel.aiChatNtpReasoningEffortSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
             }
@@ -327,7 +368,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> {
-        aiChatPreferencesPersistor.selectedReasoningEffortPublisher
+        modelPick.reasoningEffortPublisher
     }
 
     var isImageGenerationEnabled: Bool {
@@ -349,14 +390,14 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         guard isUpdatedCreateImageEnabled else { return nil }
 
         let models = availableModelsProvider()
-        let previousModel = models.first(where: { $0.id == aiChatPreferencesPersistor.selectedModelId })
+        let previousModel = models.first(where: { $0.id == selectedModelId })
         guard let imageModel = imageGenerationModel(in: models),
               previousModel?.id != imageModel.id else {
             return nil
         }
 
-        aiChatPreferencesPersistor.selectedModelId = imageModel.id
-        aiChatPreferencesPersistor.selectedModelShortName = imageModel.shortName
+        modelPick.modelId = imageModel.id
+        modelPick.modelShortName = imageModel.shortName
         clearReasoningEffortIfUnsupported(by: imageModel)
 
         guard let previousModel else { return nil }
@@ -368,7 +409,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     private func imageGenerationModel(in models: [AIChatModel]) -> AIChatModel? {
-        if let selectedModel = models.first(where: { $0.id == aiChatPreferencesPersistor.selectedModelId }),
+        if let selectedModel = models.first(where: { $0.id == selectedModelId }),
            selectedModel.entityHasAccess,
            selectedModel.supportsTool(.imageGeneration) {
             return selectedModel
@@ -377,13 +418,13 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     private func clearReasoningEffortIfUnsupported(by model: AIChatModel) {
-        guard let rawValue = aiChatPreferencesPersistor.selectedReasoningEffort else { return }
+        guard let rawValue = modelPick.reasoningEffort else { return }
         guard let effort = AIChatReasoningEffort(rawValue: rawValue) else {
-            aiChatPreferencesPersistor.selectedReasoningEffort = nil
+            modelPick.reasoningEffort = nil
             return
         }
         guard !model.supportedReasoningEffort.contains(effort) else { return }
-        aiChatPreferencesPersistor.selectedReasoningEffort = nil
+        modelPick.reasoningEffort = nil
     }
 
     var isWebSearchEnabled: Bool {
@@ -411,6 +452,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
     private var highUsageNoticeSource: AIChatHighUsageNoticeSource?
     private var usageLimitsCancellables = Set<AnyCancellable>()
+    private var overLimitDefaultChangesCancellable: AnyCancellable?
 
     var usageLimitsPublisher: AnyPublisher<Void, Never> {
         usageLimitsChangedSubject.eraseToAnyPublisher()
@@ -426,14 +468,14 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         usageWarningViewModel = store.makeWarningViewModel(
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: availableModelsProvider,
-                currentModelIdProvider: { [aiChatPreferencesPersistor] in aiChatPreferencesPersistor.selectedModelId }
+                currentModelIdProvider: { [weak self] in self?.selectedModelId }
             ),
             isTrialEligible: isTrialEligibleProvider,
             allowsSubscriptionUpsell: allowsSubscriptionUpsellProvider,
             isFireMode: { burnerMode.isBurner }
         )
-        highUsageNoticeSource = store.makeHighUsageNoticeSource(modelProvider: { [aiChatPreferencesPersistor] in
-            (aiChatPreferencesPersistor.selectedModelId, aiChatPreferencesPersistor.selectedModelShortName)
+        highUsageNoticeSource = store.makeHighUsageNoticeSource(modelProvider: { [weak self] in
+            (self?.selectedModelId, self?.selectedModelShortName)
         })
         usageWarningViewModel?.onAction = { [weak self, store] action in
             switch action {
@@ -452,6 +494,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         store.snapshotUpdates?
             .sink { [weak self] in self?.usageWarningViewModel?.refresh() }
             .store(in: &usageLimitsCancellables)
+        observeOverLimitNewChatDefault(in: store)
         // After the first resolve, so entering Duck.ai mode doesn't push an update on top of the
         // `getConfig` response that triggered it.
         usageWarningViewModel?.$warning
@@ -459,6 +502,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .removeDuplicates()
             .sink { [weak self] _ in self?.usageLimitsChangedSubject.send(()) }
             .store(in: &usageLimitsCancellables)
+    }
+
+    /// Over the usage limit, new chats start on the default web sends in the usage-limits snapshot.
+    private func observeOverLimitNewChatDefault(in store: DuckAiUsageLimitsStore) {
+        newChatDefaults?.observeOverLimitDefaults(store.overLimitNewChatDefaultPublisher(receivingUpdatesOn: ImmediateScheduler.shared))
     }
 
     @MainActor
@@ -512,15 +560,15 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             ? availableModelsProvider().filter { !$0.isAdvanced }
             : availableModelsProvider()
         let accessible = AIChatModelSectionBuilder.groupByAccess(models: models).accessible
-            .filter { $0.id != aiChatPreferencesPersistor.selectedModelId }
+            .filter { $0.id != selectedModelId }
         let byLabel = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
         return byLabel.withLabel + byLabel.withoutLabel
     }
 
     private func applyModelSwitch(toModelId modelId: String, shortName: String?) {
         // Both, or the picker label keeps showing the model we just switched away from.
-        aiChatPreferencesPersistor.selectedModelId = modelId
-        aiChatPreferencesPersistor.selectedModelShortName = shortName
+        modelPick.modelId = modelId
+        modelPick.modelShortName = shortName
         guard let model = availableModelsProvider().first(where: { $0.id == modelId }) else { return }
         clearReasoningEffortIfUnsupported(by: model)
     }

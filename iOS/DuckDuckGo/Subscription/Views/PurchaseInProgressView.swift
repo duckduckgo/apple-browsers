@@ -20,15 +20,11 @@ import SwiftUI
 import DesignResourcesKit
 
 struct PurchaseInProgressView: View {
-    @Environment(\.colorScheme) var colorScheme
-    
     var status: String
     enum DesignConstants {
         static let coverOpacity = 0.6
         static let cornerRadius = 12.0
         static let shadowRadius = 10.0
-        static let lightShadowColor = Color(baseColor: .gray50)
-        static let darkShadowColor = Color(baseColor: .gray100)
         static let spinnerScale = 2.0
         static let internalZStackWidth = 220.0
         static let horizontalPadding = 20.0
@@ -48,7 +44,7 @@ struct PurchaseInProgressView: View {
                 RoundedRectangle(cornerRadius: DesignConstants.cornerRadius)
                     .fill(Color(designSystemColor: .background))
                     .frame(width: DesignConstants.internalZStackWidth, height: viewHeight) // Use the dynamic height
-                    .shadow(color: colorScheme == .dark ? DesignConstants.darkShadowColor : DesignConstants.lightShadowColor,
+                    .shadow(color: Color(singleUseColor: .purchaseProgressShadow),
                             radius: DesignConstants.shadowRadius)
                 
                 VStack {

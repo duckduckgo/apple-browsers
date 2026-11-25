@@ -1581,6 +1581,133 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isInputFirstResponder)
     }
 
+    // MARK: - New chats start on the default (flag on)
+
+    func test_newChatDefault_whenChatChanges_userPickResetsToDefault() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.modelStore.updateSelectedModel("gpt-5.6-terra", isNewChatContext: true)
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
+    func test_newChatDefault_whenOpenedWithExplicitModel_thatChatStartsOnIt() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.updateSelectedModel("gpt-5.6-terra")
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+        XCTAssertNil(mockPreferences.selectedModelId)
+    }
+
+    func test_newChatDefault_explicitModelAppliesToTheOpenedChatOnly() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.updateSelectedModel("gpt-5.6-terra")
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
+    func test_newChatModelSource_whenAnEntryPointOpenedTheChatOnTheSentModel_isNotOnboarding() {
+        let pixelKit = PixelKitMock()
+        let coordinator = makeNewChatDefaultCoordinator(pixelKit: pixelKit)
+        coordinator.updateSelectedModel("gpt-5.6-terra")
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(promptSubmittedModelSource(in: pixelKit), "picked")
+    }
+
+    func test_newChatModelSource_whenOnboardingOpenedTheChatOnTheSentModel_isOnboarding() {
+        let pixelKit = PixelKitMock()
+        let coordinator = makeNewChatDefaultCoordinator(pixelKit: pixelKit)
+        coordinator.updateSelectedModel("gpt-5.6-terra", origin: .onboarding)
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(promptSubmittedModelSource(in: pixelKit), "onboarding")
+    }
+
+    func test_newChatDefault_whenOnlyAStorageHandlerIsPassed_overLimitDefaultStillApplies() {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try? storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: """
+        {"notice": {"id": "weeklyReachedDegraded", "window": "weekly", "resetsAt": "2030-01-01T00:00:00Z"}, \
+        "newChatDefault": {"modelId": "gpt-5.6-terra"}}
+        """)
+
+        let coordinator = makeNewChatDefaultCoordinator(duckAiNativeStorageHandler: storage)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+    }
+
+    func test_newChatDefault_whenTabHasNoPick_itFollowsADefaultChangeAfterATabSwitch() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.activateForTab("tab-B")
+
+        coordinator.modelStore.newChatDefaults?.overLimitDefault = AIChatOverLimitNewChatDefault(.model(id: "gpt-5.6-terra", reasoningEffort: nil),
+                                                                                                  resetsAt: .distantFuture)
+        coordinator.activateForTab("tab-A")
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+        XCTAssertNil(coordinator.modelStore.currentModelId)
+    }
+
+    func test_newChatDefault_whenTabHasAPick_itSurvivesATabSwitch() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.modelStore.updateSelectedModel("gpt-5.6-terra", isNewChatContext: true)
+        coordinator.activateForTab("tab-B")
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+
+        coordinator.activateForTab("tab-A")
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+    }
+
+    func test_newChatDefault_voicePromptInExistingChat_sendsNeitherModelNorEffort() {
+        let coordinator = makeNewChatDefaultCoordinator(supportedReasoningEffort: [.none, .low, .high])
+        XCTAssertNotNil(coordinator.voicePromptSubmissionConfiguration.reasoningEffort)
+
+        coordinator.bindToTab(makeTestUserScript(), hasExistingChat: true)
+
+        XCTAssertNil(coordinator.voicePromptSubmissionConfiguration.modelId)
+        XCTAssertNil(coordinator.voicePromptSubmissionConfiguration.reasoningEffort)
+    }
+
+    private func promptSubmittedModelSource(in pixelKit: PixelKitMock) -> String? {
+        pixelKit.actualFireCalls.last { $0.pixel.name == "m_aichat_unified_input_prompt_submitted" }?.additionalParameters?["model_source"]
+    }
+
+    private func makeNewChatDefaultCoordinator(supportedReasoningEffort: [AIChatReasoningEffort] = [],
+                                               pixelKit: PixelKitMock? = nil,
+                                               duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> UnifiedToggleInputCoordinator {
+        let models = ["gpt-6-luna", "gpt-5.6-terra"].map {
+            AIChatModel(id: $0, name: $0, provider: .openAI, supportsImageUpload: false, entityHasAccess: true,
+                        supportedReasoningEffort: supportedReasoningEffort)
+        }
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            modelsService: AppOpenModelsService(models: []),
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            pixelFiring: UTIPixelFiring(pixelKit: { pixelKit }),
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewChatDefaultModel]),
+            scheduleInputFocus: { _ in })
+        coordinator.modelStore.subscriptionState = .free
+        coordinator.modelStore.models = models
+        coordinator.activateForTab("tab-A")
+        return coordinator
+    }
+
     private func makeAppOpenCoordinator(isFloatingUIEnabled: Bool = false,
                                         schedule: @escaping (@escaping () -> Void) -> Void) -> UnifiedToggleInputCoordinator {
         let remoteModel = AIChatRemoteModel(id: "app-open-model", name: "App Open Model", provider: "openai",
@@ -3117,7 +3244,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
     }
 
-    func test_updateSelectedModel_withoutPersistingSelection_onNewChat_doesNotChangePreferredModel() {
+    func test_updateSelectedModel_fromOnboarding_onNewChat_doesNotChangePreferredModel() {
         sut.modelStore.models = [
             makeModel(id: "haiku", access: true),
             makeModel(id: "mistral", access: true)
@@ -3125,7 +3252,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.updateSelectedModel("haiku")
         XCTAssertFalse(sut.hasSubmittedPrompt)
 
-        sut.updateSelectedModel("mistral", persistsSelection: false)
+        sut.updateSelectedModel("mistral", origin: .onboarding)
 
         XCTAssertEqual(mockPreferences.selectedModelId, "haiku",
                        "a chat-only pick must not retarget the new-chat default")

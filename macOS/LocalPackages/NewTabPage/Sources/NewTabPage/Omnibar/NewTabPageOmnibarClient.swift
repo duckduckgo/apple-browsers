@@ -373,6 +373,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             textPasted: configProvider.isPastedTextEnabled ? action.textPasted : nil,
             aiTermsAccepted: action.aiTermsAccepted == true
         )
+        configProvider.chatSubmitted()
         if let suggestedPromptId = action.suggestedPromptId {
             actionHandler.suggestedPromptSubmitted(promptId: suggestedPromptId)
         }

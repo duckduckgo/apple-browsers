@@ -473,6 +473,24 @@ struct PageContextLinkedPageTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A host read with the session is burnable with the tab and its window", .timeLimit(.minutes(1)))
+    func sessionReadHostIsBurnable() async {
+        let extensionBuilder = TestTabExtensionsBuilder(load: [PageContextTabExtension.self]) { builder in { _, _ in
+            builder.override { [pageContext] in pageContext }
+        }}
+        let tab = Tab(content: .newtab, extensionsBuilder: extensionBuilder)
+        let tabCollection = TabCollection(tabs: [tab])
+        #expect(!tab.localHistoryDomains.contains("linked.example"))
+
+        loader.sessionReadDomains = ["linked.example"]
+
+        #expect(tab.localHistoryDomains.contains("linked.example"))
+        #expect(tabCollection.localHistoryDomains.contains("linked.example"))
+        _ = tabCollection.removeTab(at: 0)
+        #expect(tabCollection.localHistoryDomainsOfRemovedTabs.contains("linked.example"))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Once the link is attached, a same-document URL change gives the slot back", .timeLimit(.minutes(1)))
     func sameDocumentChangeAfterAttachReleasesLink() async throws {
         content.send(.url(URL(string: "https://example.com/start")!, source: .link))
@@ -486,6 +504,45 @@ struct PageContextLinkedPageTests {
         try await Task.sleep(nanoseconds: 300_000_000)
 
         #expect(!pageContext.isLinkedPageInSlot)
+    }
+
+    private func makeTab(with pageContext: PageContextTabExtension) -> Tab {
+        let extensionBuilder = TestTabExtensionsBuilder(load: [PageContextTabExtension.self]) { builder in { _, _ in
+            builder.override { pageContext }
+        }}
+        return Tab(content: .url(URL(string: "https://example.com")!, source: .link), extensionsBuilder: extensionBuilder)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Hosts read with the session stay burnable after the tab is suspended or the app relaunches", .timeLimit(.minutes(1)))
+    func sessionReadHostSurvivesRestoration() throws {
+        loader.sessionReadDomains = ["linked.example"]
+        let archived = try NSKeyedArchiver.archivedData(withRootObject: makeTab(with: pageContext).makeRestorationData(),
+                                                        requiringSecureCoding: true)
+        let restored = try #require(try NSKeyedUnarchiver.unarchivedObject(ofClass: TabRestorationData.self, from: archived))
+
+        let unloaded = UnloadedTab(from: restored, isFromSessionRestore: true)
+        #expect(AnyTab.unloaded(unloaded).localHistoryDomains.contains("linked.example"))
+
+        let freshLoader = ControlledLinkedPageLoader()
+        let materialized = unloaded.materialize(extensionsBuilder: TestTabExtensionsBuilder(load: [PageContextTabExtension.self]) { builder in { _, _ in
+            builder.override { Self.makePageContext(loader: freshLoader) }
+        }})
+        #expect(materialized.localHistoryDomains.contains("linked.example"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A burn that keeps the tab open forgets the hosts read with the session", .timeLimit(.minutes(1)))
+    func clearingHistoryForgetsSessionReadHosts() {
+        let tab = makeTab(with: pageContext)
+        loader.sessionReadDomains = ["linked.example"]
+
+        tab.clearNavigationHistory(keepingCurrent: true)
+        #expect(!tab.localHistoryDomains.contains("linked.example"))
+
+        let unloaded = UnloadedTab(content: .url(URL(string: "https://example.com")!, source: .link), linkedPageDomains: ["linked.example"])
+        unloaded.clearNavigationHistory(keepingCurrent: true)
+        #expect(!AnyTab.unloaded(unloaded).localHistoryDomains.contains("linked.example"))
     }
 }
 

@@ -646,8 +646,8 @@
     "onboardingEventType": {
         "key": "event",
         "type": "string",
-        "description": "Event type to classify what happened at each onboarding step",
-        "enum": ["shown", "clicked", "confirmed"]
+        "description": "Event type to classify what happened at each onboarding step. failed: something went wrong on the step, with the reason in value",
+        "enum": ["shown", "clicked", "confirmed", "failed"]
     },
     "onboardingClickedValue": {
         "key": "value",

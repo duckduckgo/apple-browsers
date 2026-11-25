@@ -62,8 +62,12 @@ enum SubscriptionFlowType {
 enum SubscriptionFlowEvent: Equatable {
     /// The purchase failed, for reasons other than the user cancelling it.
     case purchaseFailed
-    /// The App Store found a subscription the user already has ("Subscription Found").
+    /// The App Store found a subscription the user already has, so the flow shows "Subscription Found".
     case subscriptionFound
+    /// The user tapped Restore on "Subscription Found".
+    case subscriptionFoundRestoreTapped
+    /// The user tapped Cancel on "Subscription Found".
+    case subscriptionFoundCancelled
     /// "Subscription Found" → Restore succeeded.
     case subscriptionRestored
 }
@@ -579,8 +583,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
         }
     }
 
+    /// Restore on "Subscription Found".
     @MainActor
     func restoreAppstoreTransaction() {
+        onFlowEvent?(.subscriptionFoundRestoreTapped)
         let data = SubscriptionRestoreWideEventData(
             restorePlatform: .purchaseBackgroundTask,
             funnelName: SubscriptionRestoreFunnelOrigin.prePurchaseCheck.rawValue
@@ -624,6 +630,12 @@ final class SubscriptionFlowViewModel: ObservableObject {
     @MainActor
     func clearTransactionError() {
         state.transactionError = nil
+    }
+
+    /// Cancel on "Subscription Found".
+    @MainActor
+    func subscriptionFoundCancelled() {
+        onFlowEvent?(.subscriptionFoundCancelled)
     }
     
 }

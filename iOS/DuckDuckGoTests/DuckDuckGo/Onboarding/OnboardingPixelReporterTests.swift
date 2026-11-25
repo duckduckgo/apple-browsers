@@ -1315,6 +1315,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sut.measureSkipTryVPNAction()
         sut.measureTryVPNPaywallEvent(.purchaseFailed)
         sut.measureTryVPNPaywallEvent(.subscriptionFound)
+        sut.measureTryVPNPaywallEvent(.subscriptionFoundRestoreTapped)
+        sut.measureTryVPNPaywallEvent(.subscriptionFoundCancelled)
         sut.measureTryVPNPaywallEvent(.subscriptionRestored)
         sut.measureVPNActivationImpression()
         sut.measureVPNActivationContinue(isVPNOn: true)
@@ -1329,9 +1331,11 @@ final class OnboardingPixelReporterTests: XCTestCase {
             .tryVPN(.shown),
             .tryVPN(.clicked(.engage)),
             .tryVPN(.clicked(.dismiss)),
-            .tryVPNPaywall(.purchaseFailed),
-            .tryVPNPaywall(.subscriptionFound),
-            .tryVPNPaywall(.restored),
+            .tryVPNPaywall(.failed(.purchaseFailed)),
+            .tryVPNSubscriptionFound(.shown),
+            .tryVPNSubscriptionFound(.clicked(.engage)),
+            .tryVPNSubscriptionFound(.clicked(.dismiss)),
+            .tryVPNSubscriptionFound(.confirmed),
             .vpnActivation(.shown),
             .vpnActivation(.clicked(.engage)),
             .vpnActivation(.clicked(.dismiss)),

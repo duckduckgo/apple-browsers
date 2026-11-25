@@ -294,34 +294,54 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
     }
 
     @MainActor
-    func test_restoreAppstoreTransaction_restoreSucceeds_reportsSubscriptionRestored() async {
+    func test_restoreAppstoreTransaction_restoreSucceeds_reportsRestoreTapAndRestore() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         restoreFlow.restoreAccountFromPastPurchaseResult = .success("transactionJWS")
-        let reported = expectation(description: "onFlowEvent called")
+        let restored = expectation(description: "subscriptionRestored reported")
         var events: [SubscriptionFlowEvent] = []
         let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow),
                                 featureFlagger: PrivacyConfig.MockFeatureFlagger(),
-                                onFlowEvent: { events.append($0); reported.fulfill() })
+                                onFlowEvent: { event in
+                                    events.append(event)
+                                    if event == .subscriptionRestored { restored.fulfill() }
+                                })
 
         sut.restoreAppstoreTransaction()
 
-        await fulfillment(of: [reported], timeout: 1.0)
-        XCTAssertEqual(events, [.subscriptionRestored])
+        await fulfillment(of: [restored], timeout: 1.0)
+        XCTAssertEqual(events, [.subscriptionFoundRestoreTapped, .subscriptionRestored])
     }
 
     @MainActor
-    func test_restoreAppstoreTransaction_restoreFails_reportsNothing() async {
+    func test_restoreAppstoreTransaction_restoreFails_reportsOnlyRestoreTap() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         restoreFlow.restoreAccountFromPastPurchaseResult = .failure(.missingAccountOrTransactions)
-        let reported = expectation(description: "onFlowEvent called")
-        reported.isInverted = true
+        let restored = expectation(description: "subscriptionRestored reported")
+        restored.isInverted = true
+        var events: [SubscriptionFlowEvent] = []
         let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow),
                                 featureFlagger: PrivacyConfig.MockFeatureFlagger(),
-                                onFlowEvent: { _ in reported.fulfill() })
+                                onFlowEvent: { event in
+                                    events.append(event)
+                                    if event == .subscriptionRestored { restored.fulfill() }
+                                })
 
         sut.restoreAppstoreTransaction()
 
-        await fulfillment(of: [reported], timeout: 1.0)
+        await fulfillment(of: [restored], timeout: 1.0)
+        XCTAssertEqual(events, [.subscriptionFoundRestoreTapped])
+    }
+
+    @MainActor
+    func test_subscriptionFoundCancelled_reportsCancel() {
+        var events: [SubscriptionFlowEvent] = []
+        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock()),
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { events.append($0) })
+
+        sut.subscriptionFoundCancelled()
+
+        XCTAssertEqual(events, [.subscriptionFoundCancelled])
     }
 
     @MainActor

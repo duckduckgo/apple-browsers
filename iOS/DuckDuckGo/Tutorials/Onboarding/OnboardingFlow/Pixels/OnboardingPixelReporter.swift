@@ -645,15 +645,19 @@ extension OnboardingPixelReporter: OnboardingDownloadReasonPixelReporting {
         fireSharedPixel(.tryVPN(.clicked(.dismiss)))
     }
 
-    /// Purchase failures and found subscriptions on the paywall opened from Try VPN, and restores from it.
+    /// Purchase failures on the paywall opened from Try VPN, and what happens on its "Subscription Found" alert.
     func measureTryVPNPaywallEvent(_ event: SubscriptionFlowEvent) {
         switch event {
         case .purchaseFailed:
-            fireSharedPixel(.tryVPNPaywall(.purchaseFailed))
+            fireSharedPixel(.tryVPNPaywall(.failed(.purchaseFailed)))
         case .subscriptionFound:
-            fireSharedPixel(.tryVPNPaywall(.subscriptionFound))
+            fireSharedPixel(.tryVPNSubscriptionFound(.shown))
+        case .subscriptionFoundRestoreTapped:
+            fireSharedPixel(.tryVPNSubscriptionFound(.clicked(.engage)))
+        case .subscriptionFoundCancelled:
+            fireSharedPixel(.tryVPNSubscriptionFound(.clicked(.dismiss)))
         case .subscriptionRestored:
-            fireSharedPixel(.tryVPNPaywall(.restored))
+            fireSharedPixel(.tryVPNSubscriptionFound(.confirmed))
         }
     }
 

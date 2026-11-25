@@ -512,17 +512,40 @@
         ]
     },
     "m_ios_onboarding_try-vpn-paywall": {
-        "description": "Fired on the subscription paywall opened from the Try VPN onboarding step, when a purchase fails, when the App Store finds a subscription the user already has (Subscription Found), and when the user restores it (Subscription Found, then Restore). Users who didn't restore a found subscription are subscription_found minus restored.",
+        "description": "Fired on the subscription paywall opened from the Try VPN onboarding step when a purchase fails, for reasons other than the user cancelling it (the same errors as the subscription purchase failure pixels).",
         "owners": ["jozsef-vesza"],
         "triggers": ["feature_lifecycle"],
         "parameters": [
             "appVersion",
             "pixelSource",
+            "onboardingEventType",
             {
-                "key": "event",
+                "key": "value",
                 "type": "string",
-                "description": "purchase_failed: the purchase failed, for reasons other than the user cancelling it (the same errors as the subscription purchase failure pixels). subscription_found: the App Store found an existing subscription. restored: the user restored it",
-                "enum": ["purchase_failed", "subscription_found", "restored"]
+                "description": "On failed: purchase_failed",
+                "enum": ["purchase_failed"]
+            },
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingSource",
+            "onboardingFlow",
+            "onboardingVariantSearchExperience",
+            "onboardingVariantDownloadReason"
+        ]
+    },
+    "m_ios_onboarding_try-vpn-subscription-found": {
+        "description": "Fired on the Subscription Found alert of the paywall opened from the Try VPN onboarding step, shown when the App Store finds a subscription the user already has. Users who didn't restore it are shown minus confirmed.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "onboardingEventType",
+            {
+                "key": "value",
+                "type": "string",
+                "description": "On the engagement (clicked) event: engage for Restore, dismiss for Cancel. The confirmed event means the restore succeeded",
+                "enum": ["engage", "dismiss"]
             },
             "onboardingInstallType",
             "onboardingDaysSinceInstall",
@@ -539,12 +562,7 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "event",
-                "type": "string",
-                "description": "shown: the step was shown. clicked: the user continued. failed: turning on the VPN failed",
-                "enum": ["shown", "clicked", "failed"]
-            },
+            "onboardingEventType",
             {
                 "key": "value",
                 "type": "string",

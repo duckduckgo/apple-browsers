@@ -251,6 +251,9 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     // VPN download-reason path — iOS only
     case tryVPN(EngagementEvent) // "Try for Free" is engage, "Skip" is dismiss
     case tryVPNPaywall(TryVPNPaywallEvent)
+    /// The "Subscription Found" alert on the Try VPN paywall: shown, Restore (engage) or Cancel (dismiss),
+    /// and confirmed once the restore succeeds.
+    case tryVPNSubscriptionFound(EngagementEvent)
     case vpnActivation(VPNActivationEvent)
     case subscriptionReminder(EngagementEvent)
 
@@ -272,12 +275,12 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
 
     /// The paywall opened from the Try VPN step.
     public enum TryVPNPaywallEvent: Equatable {
-        /// The user restored a subscription they already had ("Subscription Found" → Restore).
-        case restored
-        /// The purchase failed, for reasons other than the user cancelling it.
-        case purchaseFailed
-        /// The App Store found a subscription the user already has, and the paywall offered to restore it.
-        case subscriptionFound
+        public enum FailureReason: String {
+            /// The purchase failed, for reasons other than the user cancelling it.
+            case purchaseFailed = "purchase_failed"
+        }
+
+        case failed(FailureReason)
     }
 
     /// The Turn on VPN step after Try VPN.
@@ -477,6 +480,7 @@ private extension OnboardingSharedPixelEvent {
         case .preferencesAdBlocking: return "preferences_ad-blocking"
         case .tryVPN: return "try-vpn"
         case .tryVPNPaywall: return "try-vpn-paywall"
+        case .tryVPNSubscriptionFound: return "try-vpn-subscription-found"
         case .vpnActivation: return "vpn-activation"
         case .subscriptionReminder: return "subscription-reminder"
         }
@@ -487,9 +491,6 @@ private extension OnboardingSharedPixelEvent {
         static let clicked = "clicked"
         static let dismiss = "dismiss"
         static let confirmed = "confirmed"
-        static let restored = "restored"
-        static let purchaseFailed = "purchase_failed"
-        static let subscriptionFound = "subscription_found"
         static let failed = "failed"
     }
 
@@ -512,6 +513,7 @@ private extension OnboardingSharedPixelEvent {
                 .endTryDuckAI(let event),
                 .subscriptionPromo(let event),
                 .tryVPN(let event),
+                .tryVPNSubscriptionFound(let event),
                 .subscriptionReminder(let event):
             switch event {
             case .shown:
@@ -523,12 +525,8 @@ private extension OnboardingSharedPixelEvent {
             }
         case .tryVPNPaywall(let event):
             switch event {
-            case .restored:
-                return ParameterValues.restored
-            case .purchaseFailed:
-                return ParameterValues.purchaseFailed
-            case .subscriptionFound:
-                return ParameterValues.subscriptionFound
+            case .failed:
+                return ParameterValues.failed
             }
         case .vpnActivation(let event):
             switch event {
@@ -646,6 +644,7 @@ private extension OnboardingSharedPixelEvent {
                 .endTryDuckAI(let event),
                 .subscriptionPromo(let event),
                 .tryVPN(let event),
+                .tryVPNSubscriptionFound(let event),
                 .subscriptionReminder(let event):
             switch event {
             case .shown, .confirmed:
@@ -653,8 +652,11 @@ private extension OnboardingSharedPixelEvent {
             case .clicked(let value):
                 return value.rawValue
             }
-        case .tryVPNPaywall:
-            return nil
+        case .tryVPNPaywall(let event):
+            switch event {
+            case .failed(let reason):
+                return reason.rawValue
+            }
         case .vpnActivation(let event):
             switch event {
             case .shown:

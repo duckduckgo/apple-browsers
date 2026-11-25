@@ -222,6 +222,12 @@ struct YouTubeAdBlockView: View {
                 YouTubeAdBlockUnavailableRowView()
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
+
+                // Sponsor skipping does not depend on ad blocking, so it stays usable here, as in Settings.
+                if viewModel.isSegmentSkipAvailable {
+                    SegmentSkipRowView(currentSetting: $viewModel.segmentSkipSetting)
+                        .popoverRowContainer()
+                }
             } else {
                 VStack(spacing: 0) {
                     YouTubeAdBlockRowView(currentSetting: $viewModel.setting)
@@ -231,14 +237,7 @@ struct YouTubeAdBlockView: View {
                         SegmentSkipRowView(currentSetting: $viewModel.segmentSkipSetting)
                     }
                 }
-                .background(Color(designSystemColor: .permissionCenterContainerBackground))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
-                )
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                .popoverRowContainer()
 
                 if viewModel.showBreakageReportBanner {
                     YouTubeAdBlockBreakageReportRowView {
@@ -251,6 +250,19 @@ struct YouTubeAdBlockView: View {
         }
         .frame(width: Layout.width)
         .background(Color(viewModel.backgroundColor))
+    }
+}
+
+private extension View {
+    func popoverRowContainer() -> some View {
+        background(Color(designSystemColor: .permissionCenterContainerBackground))
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
     }
 }
 

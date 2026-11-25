@@ -110,9 +110,15 @@ final class TranslationBannerPresenter {
         let clearOfChrome = isBarAtBottom
             ? bannerView.bottomAnchor.constraint(lessThanOrEqualTo: host.view.bottomAnchor)
             : bannerView.topAnchor.constraint(greaterThanOrEqualTo: host.view.topAnchor)
+        let maximumWidth = NewTabPageView.escapeHatchMaximumWidth(horizontalSizeClass: UserInterfaceSizeClass(host.traitCollection.horizontalSizeClass))
+        let fillWidth = bannerView.widthAnchor.constraint(equalTo: safeArea.widthAnchor, constant: -2 * Constants.horizontalMargin)
+        fillWidth.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            bannerView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor, constant: Constants.horizontalMargin),
-            bannerView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor, constant: -Constants.horizontalMargin),
+            // Spans the safe area like on a phone, but on a wide screen stops growing and stays centred.
+            bannerView.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
+            bannerView.widthAnchor.constraint(lessThanOrEqualTo: safeArea.widthAnchor, constant: -2 * Constants.horizontalMargin),
+            bannerView.widthAnchor.constraint(lessThanOrEqualToConstant: maximumWidth),
+            fillWidth,
             nextToBar,
             inSafeArea,
             clearOfChrome

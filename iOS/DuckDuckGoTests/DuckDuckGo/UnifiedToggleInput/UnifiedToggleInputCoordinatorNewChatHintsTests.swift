@@ -320,6 +320,20 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         #expect(sut.newChatHints == tabOrder)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A new chat started in place counts as a new chat, not the one it replaced", .timeLimit(.minutes(1)))
+    func newChatInPlaceCountsAgain() async throws {
+        let sut = try makeSUT()
+        try await openBlankChat(sut)
+        sut.newChatHintsDidAppear(sut.newChatHints)
+
+        sut.startNewChat()
+        submitPrompt(sut)
+
+        #expect(fired("aichat_new_chat_shown").count == 2)
+        #expect(fired("aichat_new_chat_first_prompt_sent").map { $0?["hints_shown"] } == ["false"])
+    }
+
     /// Flag updates arrive on the main queue, after the call that sends them.
     private func waitUntil(_ condition: () -> Bool) async throws {
         for _ in 0..<50 where !condition() {

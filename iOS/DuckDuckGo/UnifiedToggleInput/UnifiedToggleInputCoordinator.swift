@@ -2200,6 +2200,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func startNewChat() {
         Logger.unifiedInputState.debug("startNewChat [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
+        // The chat this replaces is over, even when both are blank, so the new one counts and reports fresh.
+        if let currentTabUID {
+            newChatHintsUsage.leftNewChat(tab: currentTabUID)
+        }
         attachmentController.resetPasteConversation()
         isNewChatPending = true
         multiTabPromotionSource?.startNewChat()

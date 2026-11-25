@@ -25,17 +25,14 @@ import WebKit
 import WebPageTranslation
 
 /// Talks to C-S-S's `pageTranslation` bundle in the isolated world, injecting it once per document.
-/// The bundle answers each push with a separate notification that carries no request id, so only one
-/// request is in flight, and once a reply may still arrive late (timeout, cancel) the bridge asks
-/// nothing more of that document.
+/// The bundle answers each push with a separate notification that echoes the push's `requestId`, so a
+/// late reply to a request that timed out or was cancelled is ignored. One request is in flight at a time.
 final class PageTranslationBridge: NSObject, Subfeature {
 
     enum Error: DDGError {
         case timeout
         /// A request is already waiting for its reply.
         case busy
-        /// A reply may still arrive for an abandoned request, so this document gets no more requests.
-        case ended
         /// The bundle's reply didn't have the expected shape.
         case malformedReply
 
@@ -45,8 +42,7 @@ final class PageTranslationBridge: NSObject, Subfeature {
             switch self {
             case .timeout: return 1
             case .busy: return 2
-            case .ended: return 3
-            case .malformedReply: return 4
+            case .malformedReply: return 3
             }
         }
 
@@ -54,7 +50,6 @@ final class PageTranslationBridge: NSObject, Subfeature {
             switch self {
             case .timeout: return "The page translation script didn't reply in time"
             case .busy: return "A page translation request is already in progress"
-            case .ended: return "The page translation script may still reply to an abandoned request"
             case .malformedReply: return "The page translation script's reply didn't have the expected shape"
             }
         }
@@ -73,7 +68,12 @@ final class PageTranslationBridge: NSObject, Subfeature {
         let count: Int
     }
 
+    private struct ExtractParams: Encodable {
+        let requestId: String
+    }
+
     private struct ApplyParams: Encodable {
+        let requestId: String
         let sourceLanguage: String
         let targetLanguage: String
         let updates: [PageTranslationUpdate]
@@ -89,9 +89,10 @@ final class PageTranslationBridge: NSObject, Subfeature {
     private let customPush: ((String, Encodable) -> Void)?
 
     @MainActor private var isRequesting = false
-    @MainActor private var pending: (reply: Reply, continuation: CheckedContinuation<Any, Swift.Error>)?
+    @MainActor private var pending: (reply: Reply, requestID: String, continuation: CheckedContinuation<Any, Swift.Error>)?
     @MainActor private var timeoutTask: Task<Void, Never>?
-    @MainActor private var isEnded = false
+    /// Set by `cancelPending()` while the request is still injecting, before it has a pending reply.
+    @MainActor private var isCancelled = false
     @MainActor private var isInjected = false
     /// Changes with every document, so a request can tell the page changed while it was injecting.
     @MainActor private var document = 0
@@ -122,58 +123,60 @@ final class PageTranslationBridge: NSObject, Subfeature {
 
     @MainActor
     func extract() async throws -> [PageTranslationUnit] {
-        let params = try await request("extract", params: [String: String](), reply: .extractResult)
+        let params = try await request("extract", reply: .extractResult) { ExtractParams(requestId: $0) }
         return try Self.decode(ExtractResult.self, from: params).units
     }
 
     @MainActor
     func apply(_ updates: [PageTranslationUpdate], from source: String, to target: String) async throws -> Int {
-        let params = try await request("apply",
-                                       params: ApplyParams(sourceLanguage: source, targetLanguage: target, updates: updates),
-                                       reply: .applyResult)
+        let params = try await request("apply", reply: .applyResult) {
+            ApplyParams(requestId: $0, sourceLanguage: source, targetLanguage: target, updates: updates)
+        }
         return try Self.decode(ApplyResult.self, from: params).count
     }
 
-    /// Fails the request in progress with `CancellationError`. A reply may still come, so the bridge ends.
+    /// Fails the request in progress with `CancellationError`; its reply is ignored if it still comes.
     @MainActor
     func cancelPending() {
         guard isRequesting else { return }
-        finish(.failure(CancellationError()), ending: true)
+        isCancelled = true
+        finish(.failure(CancellationError()))
     }
 
-    /// A new document has no late replies to wait for, and doesn't have the bundle yet.
+    /// A new document doesn't have the bundle yet.
     @MainActor
     func documentDidChange() {
-        finish(.failure(CancellationError()), ending: false)
-        isEnded = false
+        finish(.failure(CancellationError()))
         isInjected = false
         document += 1
     }
 
+    /// - Parameter params: the push's params for the request's id.
     @MainActor
-    private func request(_ method: String, params: Encodable, reply: Reply) async throws -> Any {
-        guard !isEnded else { throw Error.ended }
+    private func request(_ method: String, reply: Reply, params: (String) -> Encodable) async throws -> Any {
         guard !isRequesting else { throw Error.busy }
         isRequesting = true
+        isCancelled = false
         defer { isRequesting = false }
 
         if !isInjected {
             let document = document
             try await inject()
             // The bundle went into a page that's gone, or the request was cancelled meanwhile.
-            guard document == self.document, !isEnded else { throw CancellationError() }
+            guard document == self.document, !isCancelled else { throw CancellationError() }
             isInjected = true
         }
 
+        let requestID = UUID().uuidString
         return try await withCheckedThrowingContinuation { continuation in
-            pending = (reply, continuation)
+            pending = (reply, requestID, continuation)
             let timeout = timeout
             timeoutTask = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                 guard !Task.isCancelled else { return }
-                self?.finish(.failure(Error.timeout), ending: true)
+                self?.finish(.failure(Error.timeout))
             }
-            push(method, params)
+            push(method, params(requestID))
         }
     }
 
@@ -188,18 +191,16 @@ final class PageTranslationBridge: NSObject, Subfeature {
 
     @MainActor
     private func receive(_ reply: Reply, params: Any) {
-        // A reply to a request that isn't pending is late or forged.
-        guard pending?.reply == reply else { return }
-        finish(.success(params), ending: false)
+        // A reply to a request that isn't pending is late (timed out, cancelled) or forged.
+        guard let pending, pending.reply == reply,
+              (params as? [String: Any])?["requestId"] as? String == pending.requestID else { return }
+        finish(.success(params))
     }
 
     @MainActor
-    private func finish(_ result: Result<Any, Swift.Error>, ending: Bool) {
+    private func finish(_ result: Result<Any, Swift.Error>) {
         timeoutTask?.cancel()
         timeoutTask = nil
-        if ending {
-            isEnded = true
-        }
         let continuation = pending?.continuation
         pending = nil
         continuation?.resume(with: result)

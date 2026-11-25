@@ -51,9 +51,20 @@ final class PageTranslationBridgeTests: XCTestCase {
         }
     }
 
-    private func reply(_ bridge: PageTranslationBridge, _ method: String, _ params: Any) async throws {
+    /// Replies as the bundle does, echoing the `requestId` of push number `push` (the latest by default).
+    private func reply(_ bridge: PageTranslationBridge, _ method: String, _ params: [String: Any], to push: Int? = nil) async throws {
+        var params = params
+        params["requestId"] = try requestID(of: push ?? pushes.count - 1)
+        try await send(bridge, method, params)
+    }
+
+    private func send(_ bridge: PageTranslationBridge, _ method: String, _ params: Any) async throws {
         let handler = try XCTUnwrap(bridge.handler(forMethodNamed: method))
         _ = try await handler(params, .mock())
+    }
+
+    private func requestID(of push: Int) throws -> String {
+        try XCTUnwrap(json(pushes[push].params)["requestId"] as? String)
     }
 
     private func json(_ value: Encodable) throws -> NSDictionary {
@@ -69,6 +80,7 @@ final class PageTranslationBridgeTests: XCTestCase {
 
         let units = try await extraction.value
         XCTAssertEqual(pushes.map(\.method), ["extract"])
+        XCTAssertFalse(try requestID(of: 0).isEmpty)
         XCTAssertEqual(units, [PageTranslationUnit(id: 1, text: "Hola", html: false, vp: 1)])
         XCTAssertTrue(units[0].isVisible)
     }
@@ -85,6 +97,7 @@ final class PageTranslationBridgeTests: XCTestCase {
         XCTAssertEqual(count, 2)
         XCTAssertEqual(pushes.map(\.method), ["apply"])
         XCTAssertEqual(try json(pushes[0].params), [
+            "requestId": try requestID(of: 0),
             "sourceLanguage": "es",
             "targetLanguage": "en",
             "updates": [["id": 1, "text": "Hello"], ["id": 2, "tree": "{\"t\":1}"]]
@@ -106,7 +119,7 @@ final class PageTranslationBridgeTests: XCTestCase {
         _ = try? await extraction.value
     }
 
-    func testTimeoutThrowsAndEndsTheBridge() async throws {
+    func testTimeoutFailsOnlyThatRequest() async throws {
         let bridge = makeBridge(timeout: 0.1)
 
         do {
@@ -115,28 +128,33 @@ final class PageTranslationBridgeTests: XCTestCase {
         } catch PageTranslationBridge.Error.timeout {
         }
 
-        do {
-            _ = try await bridge.extract()
-            XCTFail("Expected ended")
-        } catch PageTranslationBridge.Error.ended {
-        }
-        XCTAssertEqual(pushes.count, 1)
+        // The next request goes out; waiting for its reply here would race the short timeout.
+        let extraction = Task { try await bridge.extract() }
+        await waitForPush(count: 2)
+        XCTAssertEqual(pushes.map(\.method), ["extract", "extract"])
+
+        bridge.cancelPending()
+        _ = try? await extraction.value
     }
 
-    func testLateReplyAfterTimeoutIsIgnored() async throws {
-        let bridge = makeBridge(timeout: 0.1)
-        _ = try? await bridge.extract()
+    func testLateReplyToAnEarlierRequestIsIgnored() async throws {
+        let bridge = makeBridge()
+        let abandoned = Task { try await bridge.extract() }
+        await waitForPush()
+        bridge.cancelPending()
+        _ = try? await abandoned.value
 
-        try await reply(bridge, "extractResult", ["units": []])
+        let extraction = Task { try await bridge.extract() }
+        await waitForPush(count: 2)
+        // The first request's reply arrives after it was abandoned, while the second is waiting.
+        try await reply(bridge, "extractResult", ["units": [["id": 1, "text": "Hola", "html": false, "vp": 1]]], to: 0)
+        try await reply(bridge, "extractResult", ["units": []], to: 1)
 
-        do {
-            _ = try await bridge.apply([], from: "es", to: "en")
-            XCTFail("Expected ended")
-        } catch PageTranslationBridge.Error.ended {
-        }
+        let units = try await extraction.value
+        XCTAssertEqual(units, [])
     }
 
-    func testCancelPendingThrowsCancellation() async throws {
+    func testCancelPendingFailsOnlyThatRequest() async throws {
         let bridge = makeBridge()
         let extraction = Task { try await bridge.extract() }
         await waitForPush()
@@ -149,21 +167,52 @@ final class PageTranslationBridgeTests: XCTestCase {
         } catch is CancellationError {
         }
 
-        // Its reply may still come, so nothing else is asked of this document.
+        let application = Task { try await bridge.apply([], from: "es", to: "en") }
+        await waitForPush(count: 2)
+        try await reply(bridge, "applyResult", ["count": 0])
+        let count = try await application.value
+        XCTAssertEqual(count, 0)
+    }
+
+    func testReplyWithoutTheRequestIdIsIgnored() async throws {
+        let bridge = makeBridge(timeout: 0.1)
+        let extraction = Task { try await bridge.extract() }
+        await waitForPush()
+
+        try await send(bridge, "extractResult", ["units": []])
+
         do {
-            _ = try await bridge.extract()
-            XCTFail("Expected ended")
-        } catch PageTranslationBridge.Error.ended {
+            _ = try await extraction.value
+            XCTFail("Expected timeout")
+        } catch PageTranslationBridge.Error.timeout {
         }
     }
 
-    func testNonObjectReplyFailsTheRequest() async throws {
+    func testCancelDuringInjectionSendsNothing() async throws {
+        let bridge = makeBridge(suspendingInjection: true)
+        let extraction = Task { try await bridge.extract() }
+        while resumeInjection == nil {
+            await Task.yield()
+        }
+
+        bridge.cancelPending()
+        resumeInjection?.resume()
+
+        do {
+            _ = try await extraction.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+        }
+        XCTAssertTrue(pushes.isEmpty)
+    }
+
+    func testMalformedReplyFailsTheRequest() async throws {
         let bridge = makeBridge()
         let extraction = Task { try await bridge.extract() }
         await waitForPush()
 
-        // What the broker hands over for a script that notifies with `params: null`.
-        try await reply(bridge, "extractResult", NSNull())
+        // A reply with the right id but a body that isn't the expected shape.
+        try await reply(bridge, "extractResult", ["units": NSNull()])
 
         do {
             _ = try await extraction.value
@@ -255,10 +304,12 @@ final class PageTranslationBridgeTests: XCTestCase {
     }
 
     func testNewDocumentAllowsRequestsAgain() async throws {
-        let bridge = makeBridge(timeout: 0.1)
-        _ = try? await bridge.extract()
+        let bridge = makeBridge()
+        let abandoned = Task { try await bridge.extract() }
+        await waitForPush()
 
         bridge.documentDidChange()
+        _ = try? await abandoned.value
 
         let extraction = Task { try await bridge.extract() }
         await waitForPush(count: 2)

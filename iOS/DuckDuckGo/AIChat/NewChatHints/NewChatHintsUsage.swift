@@ -115,7 +115,7 @@ final class NewChatHintsUsage {
         newChats[tab]?.tappedHint = hint
     }
 
-    /// The tab moved to a chat that isn't new, without sending from this one.
+    /// The tab moved to a chat that isn't new, or off Duck.ai, without sending from this one.
     func leftNewChat(tab: TabUID) {
         newChats[tab] = nil
     }

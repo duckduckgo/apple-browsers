@@ -1343,6 +1343,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         publishNewChatHints(inputs.visibleHints)
     }
 
+    /// `tab` is on screen showing something other than Duck.ai, so any new chat it had is over. Not called for a tab
+    /// the user only switched away from, so returning to its blank chat doesn't count it again.
+    func tabLeftDuckAI(_ tab: TabUID) {
+        newChatHintsUsage.leftNewChat(tab: tab)
+    }
+
     /// The row put `hints` on screen, so they count as shown.
     /// Passed in rather than read back, as the row hears of new hints before `newChatHints` is set.
     func newChatHintsDidAppear(_ hints: [NewChatHint]) {

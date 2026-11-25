@@ -88,6 +88,38 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
 
     private var tabOrder: [NewChatHint] { NewChatHint.order(forTab: "tab-A") }
 
+    private func fired(_ name: String) -> [[String: String]?] {
+        pixels.actualFireCalls.filter { $0.pixel.name == name }.map(\.pixel.parameters)
+    }
+
+    private func submitPrompt(_ sut: UnifiedToggleInputCoordinator) {
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "prompt", mode: .aiChat, trigger: .sendButton)
+    }
+
+    /// What the main view controller does when tab A's page leaves Duck.ai for a website.
+    private func navigateToWebsite(_ sut: UnifiedToggleInputCoordinator) {
+        sut.activateForTab("tab-A")
+        sut.tabLeftDuckAI("tab-A")
+        sut.deactivateToOmnibar()
+        sut.hide()
+        sut.unbind()
+    }
+
+    /// What the main view controller does when switching to tab B, a website, then back to tab A's blank chat.
+    private func switchToWebsiteTabAndBack(_ sut: UnifiedToggleInputCoordinator) {
+        sut.deactivateToOmnibar(animateDismiss: false)
+        sut.hide()
+        sut.unbind()
+        sut.activateForTab("tab-B")
+        sut.tabLeftDuckAI("tab-B")
+        sut.deactivateToOmnibar(animateDismiss: false)
+        sut.activateForTab("tab-A")
+        sut.bindToTab(script, hasExistingChat: false)
+        sut.showCollapsed()
+        sut.aiChatStatus = .ready
+        sut.isAIChatPromoVisible = false
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("A returning user's blank chat shows every hint in the tab's order, counted once on screen", .timeLimit(.minutes(1)))
     func showsHints() async throws {
@@ -186,6 +218,41 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         try await Task.sleep(nanoseconds: 300_000_000)
         #expect(sut.newChatHints.isEmpty)
         #expect(pixels.actualFireCalls.filter { $0.pixel.name == "aichat_new_chat_shown" }.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Leaving a blank chat for a website ends it: the next blank chat in that tab counts again and reports fresh",
+          .timeLimit(.minutes(1)))
+    func websiteEndsNewChat() async throws {
+        let sut = try makeSUT()
+        try await openBlankChat(sut)
+        sut.newChatHintsDidAppear(sut.newChatHints)
+
+        navigateToWebsite(sut)
+        try await openBlankChat(sut)
+        submitPrompt(sut)
+
+        #expect(fired("aichat_new_chat_shown").count == 2)
+        #expect(fired("aichat_new_chat_first_prompt_sent").map { $0?["hints_shown"] } == ["false"])
+        #expect(capStore.ignoredChats == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Switching to a website tab and back to the blank chat counts it once", .timeLimit(.minutes(1)))
+    func tabSwitchKeepsNewChat() async throws {
+        let sut = try makeSUT()
+        try await openBlankChat(sut)
+        sut.newChatHintsDidAppear(sut.newChatHints)
+
+        switchToWebsiteTabAndBack(sut)
+        #expect(sut.newChatHints == tabOrder)
+        sut.newChatHintsDidAppear(sut.newChatHints)
+        submitPrompt(sut)
+
+        #expect(fired("aichat_new_chat_shown").count == 1)
+        #expect(fired("aichat_new_chat_hints_shown").count == 1)
+        #expect(fired("aichat_new_chat_first_prompt_sent").map { $0?["hints_shown"] } == ["true"])
+        #expect(capStore.ignoredChats == 1)
     }
 }
 

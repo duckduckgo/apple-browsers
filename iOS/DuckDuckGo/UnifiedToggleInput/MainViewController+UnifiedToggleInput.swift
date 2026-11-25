@@ -284,6 +284,9 @@ extension MainViewController {
         activateUnifiedToggleInput(for: tab.tabModel)
 
         let action = refreshAction(for: tab, coordinator: coordinator, isRefreshingCurrentTab: isRefreshingCurrentTab)
+        if !action.isAITab {
+            coordinator.tabLeftDuckAI(tab.tabModel.uid)
+        }
 
         switch action {
         case .unbindInactiveNonAITab(let needsLayoutRefresh):
@@ -451,6 +454,11 @@ enum UnifiedToggleInputRefreshAction: Equatable {
     case refreshNonAITab
     /// The coordinator is mid-omnibar session on a non-AI tab — leave it alone.
     case preserveOmnibarSession
+
+    var isAITab: Bool {
+        if case .refreshAITab = self { return true }
+        return false
+    }
 }
 
 enum AITabRefreshBehavior: Equatable {

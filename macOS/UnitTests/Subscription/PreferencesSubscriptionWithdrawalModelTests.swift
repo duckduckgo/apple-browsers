@@ -168,10 +168,19 @@ final class PreferencesSubscriptionWithdrawalModelTests {
         let features = listFormatter.string(from: [UserText.vpnServiceTitle,
                                                    UserText.personalInformationRemovalServiceTitle,
                                                    UserText.identityTheftRestorationServiceTitle,
-                                                   UserText.paidAIChatTitle])!
+                                                   UserText.withdrawDialogFeatureAdvancedDuckAI])!
 
         #expect(model.confirmationMessage(for: offer) == UserText.withdrawDialogMessage(tierName: "Plus", refundAmount: "£9.99")
                 + "\n\n" + UserText.withdrawDialogFeaturesMessage(features: features))
+    }
+
+    @available(macOS 13, *)
+    @Test("When Duck.ai is the only feature, the feature paragraph starts with a capital letter", .timeLimit(.minutes(1)))
+    func confirmationMessageCapitalizesLeadingDuckAI() {
+        let model = makeModel()
+        let offer = SubscriptionWithdrawalOffer(eligibleUntil: nil, refundAmount: "£9.99", tierName: "Plus", entitlements: [.paidAIChat])
+
+        #expect(model.confirmationMessage(for: offer).hasSuffix("\n\nAdvanced Duck.ai models stop working once you confirm."))
     }
 
     @available(macOS 13, *)

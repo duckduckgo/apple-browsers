@@ -724,5 +724,21 @@ Ich habe sie blockiert!
 			<string>%2$@ Tracker blockiert</string>
 		</dict>
 	</dict>
+	<key>duckai.text-selection.word-count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@words@</string>
+		<key>words</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Wort</string>
+			<key>other</key>
+			<string>%1$d Wörter</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

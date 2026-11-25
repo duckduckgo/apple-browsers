@@ -73,7 +73,7 @@ public struct DuckAiNativeStorageInvalidValue: Equatable {
     }
 }
 
-public protocol DuckAiNativeStoragePixelFiring {
+public protocol DuckAiNativeStoragePixelFiring: Sendable {
     func fire(_ event: DuckAiNativeStorageEvent)
 }
 

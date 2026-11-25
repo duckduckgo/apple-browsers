@@ -31,15 +31,31 @@ import os
 /// }
 /// try server.start()
 /// ```
-public final class DebugHTTPServer: HTTPServerProtocol {
+/// The listener queue owns connections and listener state. The lock protects the
+/// routes, published state, and callback that callers can access from any thread.
+public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
 
     // MARK: - Properties
 
-    public private(set) var state: ServerState = .stopped {
-        didSet { stateDidChange?(state) }
+    private let lock = NSLock()
+    private var publishedState: ServerState = .stopped
+    private var stateHandler: (@Sendable (ServerState) -> Void)?
+
+    public private(set) var state: ServerState {
+        get { lock.withLock { publishedState } }
+        set {
+            let handler = lock.withLock {
+                publishedState = newValue
+                return stateHandler
+            }
+            handler?(newValue)
+        }
     }
 
-    public var stateDidChange: (@Sendable (ServerState) -> Void)?
+    public var stateDidChange: (@Sendable (ServerState) -> Void)? {
+        get { lock.withLock { stateHandler } }
+        set { lock.withLock { stateHandler = newValue } }
+    }
 
     private let port: UInt16
     private let loopbackOnly: Bool
@@ -127,12 +143,12 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
     public func addRoute(_ path: String, method: HTTPMethod, handler: @escaping RouteHandler) {
         let key = RouteKey(method: method, path: path)
-        routes[key] = handler
+        lock.withLock { routes[key] = handler }
     }
 
     public func addPrefixRoute(_ pathPrefix: String, method: HTTPMethod, handler: @escaping RouteHandler) {
         let key = RouteKey(method: method, path: pathPrefix)
-        prefixRoutes[key] = handler
+        lock.withLock { prefixRoutes[key] = handler }
     }
 
     public func addStaticRoute(_ path: String, htmlString: String) {
@@ -146,8 +162,9 @@ public final class DebugHTTPServer: HTTPServerProtocol {
     private func handleListenerStateChange(_ listenerState: NWListener.State) {
         switch listenerState {
         case .ready:
-            state = .running(port: port)
-            logger.info("DebugServer listening on port \(self.port)")
+            guard let listeningPort = listener?.port?.rawValue else { return }
+            state = .running(port: listeningPort)
+            logger.info("DebugServer listening on port \(listeningPort)")
         case .failed(let error):
             state = .failed(error.localizedDescription)
             logger.error("DebugServer failed: \(error.localizedDescription)")
@@ -244,11 +261,8 @@ public final class DebugHTTPServer: HTTPServerProtocol {
 
             let key = RouteKey(method: request.method, path: request.path)
 
-            if let handler = routes[key] {
-                return try handler(request)
-            }
-
-            if let handler = findPrefixHandler(for: request) {
+            let handler = lock.withLock { routes[key] ?? findPrefixHandler(for: request) }
+            if let handler {
                 return try handler(request)
             }
 

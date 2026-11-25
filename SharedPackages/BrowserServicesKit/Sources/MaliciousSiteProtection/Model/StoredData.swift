@@ -18,7 +18,7 @@
 
 import Foundation
 
-protocol MaliciousSiteDataKey: Hashable {
+protocol MaliciousSiteDataKey: Hashable, Sendable {
     associatedtype EmbeddedDataSet: Decodable
     associatedtype DataSet: IncrementallyUpdatableDataSet, LoadableFromEmbeddedData<EmbeddedDataSet>
 
@@ -31,7 +31,7 @@ public extension DataManager {
         case hashPrefixSet(HashPrefixes)
         case filterSet(FilterSet)
 
-        public enum Kind: String, CaseIterable {
+        public enum Kind: String, CaseIterable, Sendable {
             case hashPrefixSet, filterSet
         }
         // keep to get a compiler error when number of cases changes

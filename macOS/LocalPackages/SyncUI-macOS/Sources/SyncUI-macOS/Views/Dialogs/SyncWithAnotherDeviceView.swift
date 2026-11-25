@@ -183,8 +183,8 @@ struct SyncWithAnotherDeviceView: View {
         VStack(alignment: .leading, spacing: 10) {
             InstructionStep(
                 number: 1,
-                format: UserText.syncWithAnotherDeviceScanStep1,
-                detail: UserText.syncWithAnotherDeviceScanStep1Detail,
+                format: selectedTab == .scanCode ? UserText.syncWithAnotherDeviceScanStep1 : UserText.syncWithAnotherDeviceEnterStep1,
+                detail: selectedTab == .scanCode ? UserText.syncWithAnotherDeviceScanStep1Detail : UserText.syncWithAnotherDeviceEnterStep1Detail,
                 showsAppIcon: true
             )
 
@@ -202,10 +202,12 @@ struct SyncWithAnotherDeviceView: View {
                     : UserText.syncWithAnotherDeviceEnterStep3
             )
 
-            InstructionStep(
-                number: 4,
-                text: UserText.syncWithAnotherDeviceStep4
-            )
+            if selectedTab == .scanCode {
+                InstructionStep(
+                    number: 4,
+                    text: UserText.syncWithAnotherDeviceStep4
+                )
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -396,7 +398,9 @@ private struct InstructionStep: View {
         let suffix = parts.dropFirst().joined()
 
         var detailText = detailImage.map { Text(Image(nsImage: $0)).baselineOffset(NSFont.systemFont(ofSize: 12).descender - 2) }
-            ?? Text(detail).foregroundColor(Color(designSystemColor: .textPrimary))
+            ?? Text(detail)
+                .fontWeight(.semibold)
+                .foregroundColor(Color(designSystemColor: .textPrimary))
         if showsAppIcon {
             detailText = detailText
                 + Text(verbatim: "\u{00A0}")

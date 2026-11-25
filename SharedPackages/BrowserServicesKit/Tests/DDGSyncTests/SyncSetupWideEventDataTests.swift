@@ -163,6 +163,19 @@ struct SyncSetupWideEventDataTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Boolean fields are booleans in the POST payload", .timeLimit(.minutes(1)))
+    func booleanFieldsInJSON() {
+        let data = makeData()
+        data.accountSwitch = true
+        let json = data.jsonParameters()
+
+        #expect(json["feature.data.ext.existing_account"] as? Bool == false)
+        #expect(json["feature.data.ext.account_switch"] as? Bool == true)
+        #expect(json["feature.data.ext.device_auth_shown"] as? Bool == false)
+        #expect(json["feature.data.ext.sync_this_device_fallback"] as? Bool == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Every field is sent once set", .timeLimit(.minutes(1)))
     func populatedFields() {
         let data = makeData(setupMode: .multiDevice)

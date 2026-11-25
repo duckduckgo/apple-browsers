@@ -63,13 +63,13 @@ final class OnboardingDuckAIPathWindowRestorer {
 
     func windowDidOpen(_ window: DuckAIOnboardingWindow) {
         guard onboarding.isWaitingForDuckAIChatDeletion else { return }
-        // Stops a restored Duck.ai tab from sending the prompt again before the old chat is cleared.
-        window.replaceTabs(with: Tab(content: .newtab))
-
         guard isDuckAIAvailable(), let prompt = onboarding.duckAIPrompt else {
+            window.replaceTabs(with: Tab(content: .newtab))
             onboarding.fallBackToSearchPath()
             return
         }
+        // A blank tab stops a restored Duck.ai tab from sending the prompt again before the old chat is cleared.
+        window.replaceTabs(with: Tab(content: .none))
         onboarding.restartDuckAIChat()
         Task { [weak window] in
             await clearDuckAIChats()

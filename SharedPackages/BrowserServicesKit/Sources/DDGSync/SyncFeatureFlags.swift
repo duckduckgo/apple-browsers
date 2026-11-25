@@ -22,7 +22,7 @@ import PrivacyConfig
 /**
  * This enum describes available Sync features.
  */
-public struct SyncFeatureFlags: OptionSet {
+public struct SyncFeatureFlags: OptionSet, Sendable {
     public let rawValue: Int
     public private(set) var unavailableReason: PrivacyConfigurationFeatureDisabledReason?
 

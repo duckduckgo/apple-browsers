@@ -2096,66 +2096,6 @@
         }
       }
     },
-    "subscription.dialog.withdraw.features.message" : {
-      "comment" : "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ funktionieren nicht mehr, sobald du bestätigst."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%@ stop working once you confirm."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ dejarán de funcionar una vez que confirmes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ cesse de fonctionner une fois que vous avez confirmé."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dopo aver confermato, %@ smetteranno di funzionare."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ werken niet meer zodra je bevestigt."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Po potwierdzeniu funkcje %@ przestaną działać."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ deixarão de funcionar assim que confirmares."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "После подтверждения вы потеряете доступ к таким функциям: %@."
-          }
-        }
-      }
-    },
     "subscription.dialog.withdraw.keep.button" : {
       "comment" : "Button that dismisses the withdrawal confirmation and keeps the subscription",
       "extractionState" : "extracted_with_value",
@@ -2212,6 +2152,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Оставить подписку"
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.lose.access.prefix" : {
+      "comment" : "Start of the second paragraph of the dialog confirming withdrawal from the subscription contract. It is followed by a list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Once you confirm, you will lose access to"
           }
         }
       }
@@ -2392,6 +2344,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отказаться от подписки?"
+          }
+        }
+      }
+    },
+    "subscription.dialog.withdraw.vpn.article" : {
+      "comment" : "Article placed before VPN in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the"
           }
         }
       }

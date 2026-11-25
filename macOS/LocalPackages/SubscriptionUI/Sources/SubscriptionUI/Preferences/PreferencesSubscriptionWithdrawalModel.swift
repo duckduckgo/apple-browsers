@@ -103,7 +103,7 @@ final class PreferencesSubscriptionWithdrawalModel: ObservableObject {
         let entitlements = Set(offer.entitlements)
         var featureNames: [String] = []
         if entitlements.contains(.networkProtection) {
-            featureNames.append(UserText.vpnServiceTitle)
+            featureNames.append(UserText.withdrawDialogVPNArticle + " " + UserText.vpnServiceTitle)
         }
         if entitlements.contains(.dataBrokerProtection) {
             featureNames.append(UserText.personalInformationRemovalServiceTitle)
@@ -115,8 +115,7 @@ final class PreferencesSubscriptionWithdrawalModel: ObservableObject {
             featureNames.append(UserText.withdrawDialogFeatureAdvancedDuckAI)
         }
         guard !featureNames.isEmpty, let list = listFormatter.string(from: featureNames) else { return message }
-        let featuresMessage = UserText.withdrawDialogFeaturesMessage(features: list)
-        return message + "\n\n" + featuresMessage.prefix(1).uppercased(with: locale) + featuresMessage.dropFirst()
+        return message + "\n\n" + UserText.withdrawDialogLoseAccessPrefix + " " + list + "."
     }
 
     @MainActor

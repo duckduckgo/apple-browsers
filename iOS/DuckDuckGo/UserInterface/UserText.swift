@@ -2217,12 +2217,8 @@ public struct UserText {
                                            comment: "Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus).")
         return String(format: localized, tierName)
     }
-    static func subscriptionWithdrawConfirmFeaturesMessage(features: String) -> String {
-        let localized = NSLocalizedString("subscription.withdraw.confirm.features.message",
-                                           value: "%@ stop working once you confirm.",
-                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.")
-        return String(format: localized, features)
-    }
+    public static let subscriptionWithdrawConfirmLoseAccessPrefix = NSLocalizedString("subscription.withdraw.confirm.lose.access.prefix", value: "Once you confirm, you will lose access to", comment: "Start of the second paragraph of the alert confirming withdrawal from the subscription contract. It is followed by a list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models.")
+    public static let subscriptionWithdrawConfirmVPNArticle = NSLocalizedString("subscription.withdraw.confirm.vpn.article", value: "the", comment: "Article placed before VPN in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models")
     public static let subscriptionWithdrawConfirmFeatureAdvancedDuckAI = NSLocalizedString("subscription.withdraw.confirm.feature.advanced.duckai", value: "advanced Duck.ai models", comment: "Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models")
     public static let subscriptionWithdrawConfirmButton = NSLocalizedString("subscription.withdraw.confirm.button", value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
     public static let subscriptionWithdrawKeepButton = NSLocalizedString("subscription.withdraw.keep.button", value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")

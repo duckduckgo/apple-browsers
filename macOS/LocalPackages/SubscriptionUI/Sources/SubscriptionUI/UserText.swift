@@ -310,13 +310,9 @@ enum UserText {
         return String(format: localized, tierName)
     }
 
-    static func withdrawDialogFeaturesMessage(features: String) -> String {
-        let localized = NSLocalizedString("subscription.dialog.withdraw.features.message",
-                                          bundle: Bundle.module,
-                                          value: "%@ stop working once you confirm.",
-                                          comment: "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.")
-        return String(format: localized, features)
-    }
+    static let withdrawDialogLoseAccessPrefix = NSLocalizedString("subscription.dialog.withdraw.lose.access.prefix", bundle: Bundle.module, value: "Once you confirm, you will lose access to", comment: "Start of the second paragraph of the dialog confirming withdrawal from the subscription contract. It is followed by a list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models.")
+
+    static let withdrawDialogVPNArticle = NSLocalizedString("subscription.dialog.withdraw.vpn.article", bundle: Bundle.module, value: "the", comment: "Article placed before VPN in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models")
 
     static let withdrawDialogFeatureAdvancedDuckAI = NSLocalizedString("subscription.dialog.withdraw.feature.advanced.duckai", bundle: Bundle.module, value: "advanced Duck.ai models", comment: "Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models")
 

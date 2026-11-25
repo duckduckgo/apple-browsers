@@ -236,6 +236,23 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         updateUILock()
     }
 
+    /// Shows "That's Duck.ai!" again for the chat reopened in a new window.
+    func restartDuckAIChat() {
+        progress.markUnseen(.thatsDuckAI)
+    }
+
+    /// Moves to the search path, from Try a search, when the Duck.ai chat can't be reopened.
+    func fallBackToSearchPath() {
+        progress.pathKind = .search
+        progress.duckAIPrompt = nil
+        activePath = makePath(.search)
+        updateUILock()
+    }
+
+    var duckAIPrompt: String? {
+        progress.duckAIPrompt
+    }
+
     // Called to turn off the contextual onboarding.
     func turnOffFeature() {
         state = .onboardingCompleted

@@ -71,6 +71,10 @@ final class ContextualOnboardingProgress: ContextualOnboardingProgressReading {
         storage.contextualDialogsSeen.append(dialog.stringRepresentation)
     }
 
+    func markUnseen(_ dialog: ContextualDialogType) {
+        storage.contextualDialogsSeen.removeAll { $0 == dialog.stringRepresentation }
+    }
+
     /// Clears everything a restarted onboarding must not inherit. The state itself is set by the caller.
     func reset() {
         storage.contextualDialogsSeen = []

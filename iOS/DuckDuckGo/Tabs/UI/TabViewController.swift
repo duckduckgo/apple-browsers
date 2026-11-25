@@ -871,6 +871,7 @@ class TabViewController: UIViewController {
         if let script = userScripts?.aiChatUserScript { browserToolsService?.sourceWillDisappear(script) }
     }
 
+    var pageTranslationOfferProvider: PageTranslationOfferProvider?
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -3124,6 +3125,23 @@ extension TabViewController: WKNavigationDelegate {
         return PageContextAttachabilityPolicy(settings: blocklist)
     }
 
+    /// Detects the page's language once per page load and logs what translation to offer.
+    private func offerTranslationIfNeeded(in webView: WKWebView) {
+        guard let provider = pageTranslationOfferProvider, provider.isEnabled,
+              webView === self.webView, !isError,
+              let url = webView.url,
+              PageTranslationOfferProvider.isEligible(url),
+              lastMainFramePageContextMIMEType(for: url) != "application/pdf" else {
+            return
+        }
+
+        Task { [weak webView] in
+            guard let webView else { return }
+            _ = await provider.decision(in: webView)
+            // TODO: Show the banner if needed.
+        }
+    }
+
     /// `nil` unless the last observed main-frame response was for this URL.
     private func lastMainFramePageContextMIMEType(for url: URL) -> String? {
         lastMainFramePageContextResponse.flatMap { $0.url == url ? $0.mimeType : nil }
@@ -3319,6 +3337,7 @@ extension TabViewController: WKNavigationDelegate {
                                               to: webView)
         }
         updateFloatingPageBackgroundColor(in: webView)
+        offerTranslationIfNeeded(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url

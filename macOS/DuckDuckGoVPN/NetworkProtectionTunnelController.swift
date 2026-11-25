@@ -80,7 +80,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         })
     }()
 
-    private lazy var startupMonitor = VPNStartupMonitor()
+    private(set) lazy var startupMonitor = VPNStartupMonitor(notificationCenter: notificationCenter)
 
     private let networkExtensionController: NetworkExtensionController
 
@@ -108,8 +108,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     /// Should not be used for checking the current status.
     ///
-    @MainActor private var previousStatus: NEVPNStatus = .invalid
-    @MainActor var onTunnelDisconnect: (@MainActor (NETunnelProviderManager, NEVPNStatus) async -> Void)?
+    private var previousStatus: NEVPNStatus = .invalid
 
     // MARK: - User Defaults
 
@@ -212,22 +211,17 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     private func handleStatusChange(_ notification: Notification) {
         Logger.networkProtection.log("VPN handle status change: \(notification.debugDescription, privacy: .public)")
-        guard let session = notification.object as? NETunnelProviderSession else {
+        guard let session = (notification.object as? NETunnelProviderSession),
+              session.status != previousStatus else {
             return
         }
 
-        let status = session.status
         Task { @MainActor in
-            if session.status != previousStatus {
-                previousStatus = session.status
-                if previousStatus == .invalid {
-                    clearInternalManager()
-                }
-            }
+            previousStatus = session.status
 
-            guard status == .disconnecting || status == .disconnected,
-                  let manager = await manager, manager.connection === session else { return }
-            await onTunnelDisconnect?(manager, status)
+            if session.status == .invalid {
+                clearInternalManager()
+            }
         }
     }
 
@@ -929,34 +923,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             return true
         default:
             return false
-        }
-    }
-
-    @MainActor
-    func startupFailureCode(for tunnelManager: NETunnelProviderManager, observedStatus: NEVPNStatus) async -> PacketTunnelProvider.TunnelError.Code? {
-        guard #available(macOS 13, *) else { return nil }
-
-        let connection = tunnelManager.connection
-        do {
-            switch observedStatus {
-            case .connecting:
-                // Allow for the extension's backoff on blocked retries at login.
-                try await startupMonitor.waitForStartSuccess(tunnelManager, timeout: 30)
-            case .disconnecting, .disconnected:
-                try await connection.fetchLastDisconnectError()
-            default:
-                break
-            }
-            return nil
-        } catch {
-            let startupError = error as? VPNStartupMonitor.StartupError ?? .startTunnelDisconnectedSilently(underlyingError: error)
-            guard let reason = startupError.disconnectReason,
-                  reason.domain == PacketTunnelProvider.TunnelError.errorDomain,
-                  connection.status != .connected, connection.status != .reasserting else {
-                return nil
-            }
-
-            return PacketTunnelProvider.TunnelError.Code(rawValue: reason.code)
         }
     }
 

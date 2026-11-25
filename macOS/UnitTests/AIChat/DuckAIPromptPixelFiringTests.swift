@@ -22,10 +22,13 @@ import XCTest
 
 final class DuckAIPromptPixelFiringTests: XCTestCase {
 
+    private static let sampleNewChatModel = DuckAINewChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: "none", isModelPicked: true, pickedReasoningEffort: nil, newChatDefault: nil)
+
     /// Add a row whenever a case is added: associated values rule out `CaseIterable`, so nothing
     /// makes a gap here fail to compile.
     private static let addressBarMapping: [(event: DuckAIPromptPixelEvent, pixel: AIChatPixel?)] = [
-        (.promptSubmitted, .aiChatAddressBarAIChatSubmitPrompt),
+        (.promptSubmitted(newChatModel: nil), .aiChatAddressBarAIChatSubmitPrompt(newChatModel: nil)),
+        (.promptSubmitted(newChatModel: sampleNewChatModel), .aiChatAddressBarAIChatSubmitPrompt(newChatModel: sampleNewChatModel)),
         (.urlSubmitted, .aiChatAddressBarAIChatSubmitURL),
         (.imageGenerationSubmitted, .aiChatAddressBarImageGenerationSubmitted),
         (.webSearchSubmitted, .aiChatAddressBarWebSearchSubmitted),
@@ -78,7 +81,8 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
     /// `nil` where `DuckAIPromptSurface` turns the feature off for the Prompt Bar — page context,
     /// Customize Responses and the subscription upsell. Same rule as above: add a row per case.
     private static let promptBarMapping: [(event: DuckAIPromptPixelEvent, pixel: PromptBarPixel?)] = [
-        (.promptSubmitted, .submitPrompt),
+        (.promptSubmitted(newChatModel: nil), .submitPrompt(newChatModel: nil)),
+        (.promptSubmitted(newChatModel: sampleNewChatModel), .submitPrompt(newChatModel: sampleNewChatModel)),
         (.urlSubmitted, .submitURL),
         (.imageGenerationSubmitted, .imageGenerationSubmitted),
         (.webSearchSubmitted, .webSearchSubmitted),
@@ -158,6 +162,26 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
             XCTAssertEqual(pixel.name, name)
             XCTAssertEqual(pixel.parameters, parameters, name)
         }
+    }
+
+    func testWhenPromptIsSubmittedWithoutNewChatModel_ThenNoModelParametersAreSent() {
+        XCTAssertNil(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt(newChatModel: nil).parameters)
+        XCTAssertNil(PromptBarPixel.submitPrompt(newChatModel: nil).parameters)
+        XCTAssertEqual(NewTabPagePixel.promptSubmitted(hasPastedText: false, newChatModel: nil).parameters, ["has_pasted_text": "false"])
+    }
+
+    func testWhenPromptIsSubmittedWithNewChatModel_ThenEverySurfaceSendsTheModelParameters() throws {
+        let newChatModel = try XCTUnwrap(DuckAINewChatModelPixelParameters(sentModelId: "luna",
+                                                                           sentReasoningEffort: "high",
+                                                                           isModelPicked: true,
+                                                                           pickedReasoningEffort: "high",
+                                                                           newChatDefault: nil))
+        let expected = ["model_source": "picked", "model_id": "luna", "reasoning_effort": "high"]
+
+        XCTAssertEqual(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt(newChatModel: newChatModel).parameters, expected)
+        XCTAssertEqual(PromptBarPixel.submitPrompt(newChatModel: newChatModel).parameters, expected)
+        XCTAssertEqual(NewTabPagePixel.promptSubmitted(hasPastedText: true, newChatModel: newChatModel).parameters,
+                       expected.merging(["has_pasted_text": "true"]) { current, _ in current })
     }
 
     func testPickerImpressionPixelNames() {

@@ -70,7 +70,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
     private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
-    private(set) var sponsorBlockSubfeature: SponsorBlockSubfeature
+    private(set) var segmentSkipSubfeature: SegmentSkipSubfeature
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
     private(set) var browserUiLockSubfeature = BrowserUiLockSubfeature()
 
@@ -86,8 +86,8 @@ final class UserScripts: UserScriptsProvider {
          internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
          geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         sponsorBlockPreferences: SponsorBlockPreferences,
-         sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = AppDependencyProvider.shared.sponsorBlockSegmentsProvider,
+         segmentSkipPreferences: SegmentSkipPreferences,
+         segmentSkipSegmentsProvider: SegmentSkipSegmentsProvider = AppDependencyProvider.shared.segmentSkipSegmentsProvider,
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
 
@@ -97,9 +97,9 @@ final class UserScripts: UserScriptsProvider {
         selectionFrameScript = SelectionFrameUserScript()
         duckAILoadingSkeletonUserScript = DuckAILoadingSkeletonUserScript(unifiedToggleInputFeature: unifiedToggleInputFeature,
                                                                           debugSettings: aiChatDebugSettings)
-        sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
-                                                        preferences: sponsorBlockPreferences,
-                                                        isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
+        segmentSkipSubfeature = SegmentSkipSubfeature(segmentsProvider: segmentSkipSegmentsProvider,
+                                                        preferences: segmentSkipPreferences,
+                                                        isFeatureFlagOn: { featureFlagger.isFeatureOn(.segmentSkip) })
         self.mediaCaptureUserScript = mediaCaptureUserScript
         self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil
 
@@ -204,7 +204,7 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: sponsorBlockSubfeature)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: segmentSkipSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: browserUiLockSubfeature)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)

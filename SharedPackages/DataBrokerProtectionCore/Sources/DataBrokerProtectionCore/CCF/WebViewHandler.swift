@@ -256,6 +256,13 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         try await webView?.evaluateJavaScript(javaScript) as Void?
     }
 
+#if DEBUG
+    func captureSnapshot(using snapshots: DebugActionSnapshots, step: StepType, action: ActionType,
+                         moment: DebugActionSnapshots.Moment) async -> String? {
+        await snapshots.capture(webView: webView, step: step, action: action, moment: moment)
+    }
+#endif
+
     public func takeSnaphost(path: String, fileName: String) async throws {
         guard let height: CGFloat = try await webView?.evaluateJavaScript("document.body.scrollHeight") else { return }
 

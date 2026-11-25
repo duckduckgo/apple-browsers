@@ -259,6 +259,7 @@ public extension DesignSystemImages {
             public static var feedback: DesignSystemImage { .init(resource: .feedback16) }
             public static var feedbackAlert: DesignSystemImage { .init(resource: .feedbackAlert16) }
             public static var feedbackBlank: DesignSystemImage { .init(resource: .feedbackBlank16) }
+            public static var file: DesignSystemImage { .init(resource: .file16) }
             public static var findInPage: DesignSystemImage { .init(resource: .findInPage16) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch16) }
             public static var findSearchGradientColor: DesignSystemImage { .init(resource: .findSearchGradientColor16) }
@@ -464,6 +465,7 @@ public extension DesignSystemImages {
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility24) }
             public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked24) }
             public static var add: DesignSystemImage { .init(resource: .add24) }
+            public static var addCircle: DesignSystemImage { .init(resource: .addCircle24) }
             public static var addition: DesignSystemImage { .init(resource: .addition24) }
             public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop24) }
             public static var addressBarBottom: DesignSystemImage { .init(resource: .addressBarPositionBottom24) }

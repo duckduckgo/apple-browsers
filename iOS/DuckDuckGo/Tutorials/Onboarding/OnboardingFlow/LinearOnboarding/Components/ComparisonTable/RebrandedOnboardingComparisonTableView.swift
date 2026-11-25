@@ -311,7 +311,7 @@ struct CircleCheckView: View {
         ZStack {
             // 1. Background circle
             Circle()
-                .fill(Color.green50)
+                .fill(Color(designSystemColor: .statusGreen))
                 .frame(width: size, height: size)
                 .scaleEffect(circleScale)
 

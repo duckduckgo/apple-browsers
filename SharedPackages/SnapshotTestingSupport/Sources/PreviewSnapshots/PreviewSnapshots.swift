@@ -18,7 +18,7 @@
 
 import SwiftUI
 
-public struct PreviewSnapshotScope: OptionSet, Equatable {
+public struct PreviewSnapshotScope: OptionSet, Equatable, Sendable {
     public let rawValue: Int
 
     public init(rawValue: Int) {

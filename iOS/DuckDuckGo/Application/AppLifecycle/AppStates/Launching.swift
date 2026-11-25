@@ -219,7 +219,7 @@ struct Launching: LaunchingHandling {
                                     onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
                                         keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
+        let crashCollectionService = CrashCollectionService()
         let launchTimeMetricsService = LaunchTimeMetricsService()
         let hangMetricsService = HangMetricsService()
         let statisticsService = StatisticsService()
@@ -372,7 +372,7 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
-        let usageContextProvider = UsageContextProvider()
+        let usageContextProvider = UsageContextProvider(featureFlagger: featureFlagger)
         mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                               syncService: syncService,
                                               contentBlockingService: contentBlockingService,
@@ -516,6 +516,7 @@ struct Launching: LaunchingHandling {
                 await dbpService.prepareSecureVaultResourcesAtLaunch()
 #if DEBUG
                 await dbpService.startDebugServerIfRequestedAtLaunch()
+                await dbpService.seedProfileIfRequestedAtLaunch()
 #endif
                 taskContext.finish()
             }

@@ -795,7 +795,7 @@ class TabViewController: UIViewController {
                                     featureFlagger: featureFlagger,
                                     userScriptsDependencies: userScriptsDependencies,
                                     // Same app store as ContentBlockingService's instance; instances sync through the store notification.
-                                    sponsorBlockPreferences: SponsorBlockPreferences(store: keyValueStore),
+                                    segmentSkipPreferences: SegmentSkipPreferences(store: keyValueStore),
                                     floatingUIManager: floatingUIManager)
 
         if duckPlayer.settings.nativeUI {
@@ -856,7 +856,7 @@ class TabViewController: UIViewController {
 
     var browserToolsService: AIChatBrowserToolsService?
     private var browserToolsSurfaceVisible = false
-    private var browserToolsPermissionPresenter: AIChatNativePermissionPresenter?
+    private var browserToolsPermissionPresenter: AIChatToolPermissionPresenter?
 
     func browserToolsDidBecomeActive() {
         browserToolsSurfaceVisible = true
@@ -5406,9 +5406,9 @@ extension TabViewController: UserContentControllerDelegate {
         if let browserToolsService, let browserToolScopeFactory,
            let webView, webView.configuration.userContentController === userContentController {
             if browserToolsPermissionPresenter == nil {
-                browserToolsPermissionPresenter = AIChatNativePermissionPresenter { [weak self] in
+                browserToolsPermissionPresenter = AIChatToolPermissionPresenter { [weak self] in
                     guard let self, self.browserToolsSurfaceVisible, self.isTabCurrentlyPresented() else { return nil }
-                    return self
+                    return .init(self)
                 }
             }
             userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel,

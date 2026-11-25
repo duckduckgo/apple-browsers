@@ -18,7 +18,7 @@
 
 import Foundation
 
-struct FilterDictionary: Codable, Equatable {
+struct FilterDictionary: Codable, Equatable, Sendable {
 
     /// Filter set revision
     var revision: Int

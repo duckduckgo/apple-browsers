@@ -17,18 +17,37 @@
 //  limitations under the License.
 //
 
+import Combine
 import DesignResourcesKit
 import SwiftUI
 
 /// Shared raised surface for controls on the redesigned New Tab Page. The border matches the unified toggle input card.
 /// With `usesLiquidGlass` on iOS 26 it is a Liquid Glass surface, like the focused unified toggle input.
 struct RedesignedNewTabPageCardBackground: View {
+    static let cornerRadius: CGFloat = Metrics.cornerRadius
+
     var usesLiquidGlass = false
     private let cornerRadius: CGFloat = Metrics.cornerRadius
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    private let customizationStore: NewTabPageCustomizationStore
+    @State private var theme: NewTabPageTheme
+
+    init(usesLiquidGlass: Bool = false, customizationStore: NewTabPageCustomizationStore = NewTabPageCustomizationStore()) {
+        self.usesLiquidGlass = usesLiquidGlass
+        self.customizationStore = customizationStore
+        _theme = State(initialValue: customizationStore.theme)
+    }
+
+    var body: some View {
+        content
+            .onReceive(customizationStore.themePublisher.receive(on: DispatchQueue.main)) { theme in
+                self.theme = theme
+            }
+    }
 
     @ViewBuilder
-    var body: some View {
-        if #available(iOS 26, *), usesLiquidGlass {
+    private var content: some View {
+        if #available(iOS 26, *), usesLiquidGlass, !reduceTransparency {
             Color.clear.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         } else {
             raisedSurface
@@ -37,7 +56,7 @@ struct RedesignedNewTabPageCardBackground: View {
 
     private var raisedSurface: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        let fill = Color(singleUseColor: .newTabPageSearchCardBackground)
+        let fill = Color(theme.cardBackgroundColor)
         let shadowColor = Color(designSystemColor: .shadowSecondary)
         let borderColor = Color(singleUseColor: .inputContentSeparator)
         // Each shadow comes from its own fill-only layer. Chaining `.shadow` on the composite makes the second

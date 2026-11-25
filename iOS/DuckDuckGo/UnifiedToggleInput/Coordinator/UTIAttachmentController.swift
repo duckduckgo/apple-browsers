@@ -72,6 +72,8 @@ final class UTIAttachmentController {
         var isEditing: () -> Bool = { false }
         var isVoiceSessionActive: () -> Bool = { false }
         var pastedTextSheetMode: (AIChatPastedText) -> PastedTextSheetMode = { _ in .editable(limit: 0) }
+        var usesSimplifiedAttachMenu: () -> Bool = { false }
+        var attachMenuTools: () -> UTIAttachMenuTools? = { nil }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -123,6 +125,9 @@ final class UTIAttachmentController {
         }
         presenter.pixelSurfaceProvider = { [weak self] in
             self?.environment.pixelSurface() ?? .addressBar
+        }
+        presenter.simplifiedPromptBoxProvider = { [weak self] in
+            self?.environment.usesSimplifiedAttachMenu() ?? false
         }
         presenter.onExpandIfNeeded = { [weak self] in
             self?.callbacks.onExpandIfNeeded()
@@ -445,8 +450,14 @@ final class UTIAttachmentController {
             tabActionHandler: { [weak self] candidate, isAttached, source in
                 guard let self, self.pasteContextIdentity == tabSelectionContextIdentity else { return .rejected }
                 return self.setTabAttachment(candidate, isAttached: isAttached, attachmentSource: source)
-            }
+            },
+            isSimplified: environment.usesSimplifiedAttachMenu(),
+            tools: simplifiedAttachMenuTools
         )
+    }
+
+    private var simplifiedAttachMenuTools: UTIAttachMenuTools? {
+        environment.usesSimplifiedAttachMenu() ? environment.attachMenuTools() : nil
     }
 
     var canUseTabAttachments: Bool {
@@ -538,9 +549,11 @@ final class UTIAttachmentController {
         let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment || supportsTabAttachment
         let canAttachMore = hasAvailableAttachmentAction && !view.isGenerating()
         let showsUnavailableAttachmentButton = environment.hasSelectedModel() && environment.keepsUnavailableAttachmentButtonVisible()
-        view.setImageButtonHidden(!supportsAttachments && !showsUnavailableAttachmentButton)
-        view.setImageButtonEnabled(canAttachMore)
-        view.setAttachmentMenu(supportsAttachments && canAttachMore ? makeAttachmentMenu() : nil)
+        let hasEnabledTool = simplifiedAttachMenuTools?.menu.hasEnabledItem ?? false
+        let canUseTool = hasEnabledTool && !view.isGenerating()
+        view.setImageButtonHidden(!supportsAttachments && !hasEnabledTool && !showsUnavailableAttachmentButton)
+        view.setImageButtonEnabled(canAttachMore || canUseTool)
+        view.setAttachmentMenu((supportsAttachments && canAttachMore) || canUseTool ? makeAttachmentMenu() : nil)
     }
 
     // MARK: - Validation banner

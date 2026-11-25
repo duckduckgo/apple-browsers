@@ -237,15 +237,12 @@ final class PermissionManager: PermissionManagerProtocol {
         })
     }
 
-    /// Keeps every permission of a kept domain, and on other domains only what a burn must not loosen: a Duck.ai
-    /// browser tool's Never allow or Always ask, so Fire never lets a tool run without asking. Always allow is cleared.
+    /// Keeps every permission of a kept domain, and on other domains only Duck.ai browser tool decisions:
+    /// they are browser settings (Settings > Browser Permissions), not site data, so Fire leaves them alone.
     private static func keepingBurnSurvivors(of permissions: [String: [PermissionType: StoredPermission]],
                                              keepingDomain: (String) -> Bool) -> [String: [PermissionType: StoredPermission]] {
         permissions.reduce(into: [:]) { result, entry in
-            let kept = keepingDomain(entry.key) ? entry.value : entry.value.filter { type, permission in
-                guard case .browserTool = type else { return false }
-                return permission.decision != .allow
-            }
+            let kept = keepingDomain(entry.key) ? entry.value : entry.value.filter { type, _ in type.isBrowserTool }
             if !kept.isEmpty {
                 result[entry.key] = kept
             }

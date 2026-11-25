@@ -22,13 +22,15 @@ let package = Package(
             name: "InstallStatistics",
             dependencies: [
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions")
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "InstallStatisticsTests",
             dependencies: [
                 "InstallStatistics"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         )
     ]
 )

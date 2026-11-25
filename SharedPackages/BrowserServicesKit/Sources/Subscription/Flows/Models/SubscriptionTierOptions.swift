@@ -59,12 +59,12 @@ public struct SubscriptionTier: Encodable, Equatable {
     }
 }
 
-public struct TierFeature: Codable, Equatable {
+public struct TierFeature: Codable, Equatable, Sendable {
     public let product: SubscriptionEntitlement
     public let name: TierName
 }
 
-public enum TierName: String, Codable {
+public enum TierName: String, Codable, Sendable {
     case plus
     case pro
 

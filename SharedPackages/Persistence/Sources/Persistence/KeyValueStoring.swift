@@ -119,7 +119,7 @@ protocol AnyStorageKey {
     var migrateLegacyKey: String? { get }
 }
 
-public struct StorageKey<Value>: AnyStorageKey {
+public struct StorageKey<Value>: AnyStorageKey, Sendable {
     let rawValue: String
     let migrateLegacyKey: String?
 
@@ -162,7 +162,7 @@ public struct StorageKey<Value>: AnyStorageKey {
     }
 }
 
-public protocol StoringKeys {
+public protocol StoringKeys: Sendable {
     init()
 }
 
@@ -336,11 +336,11 @@ private func encodeValue<Value>(_ value: Value) throws -> Any? {
         return try JSONEncoder().encode(encodable)
     }
 
-    throw KeyValueStoringError.invalidValue(value)
+    throw KeyValueStoringError.invalidValue(String(describing: value))
 }
 
 enum KeyValueStoringError: Error, LocalizedError {
-    case invalidValue(Any)
+    case invalidValue(String)
 
     var errorDescription: String? {
         switch self {
@@ -382,7 +382,7 @@ public struct KeyedStorage<Keys: StoringKeys>: KeyedStoring, ThrowingKeyedStorin
             // Migrate: write to new key, then remove legacy key
             do {
                 guard let encodedValue = try encodeValue(value) else {
-                    throw KeyValueStoringError.invalidValue(value)
+                    throw KeyValueStoringError.invalidValue(String(describing: value))
                 }
                 storage.set(encodedValue, forKey: storageKey.rawValue)
                 storage.removeObject(forKey: legacyKey)
@@ -451,7 +451,7 @@ public struct ThrowingKeyedStorage<Keys: StoringKeys>: ThrowingKeyedStoring {
             // Migrate: write to new key, then remove legacy key
             do {
                 guard let encodedValue = try encodeValue(value) else {
-                    throw KeyValueStoringError.invalidValue(value)
+                    throw KeyValueStoringError.invalidValue(String(describing: value))
                 }
                 try storage.set(encodedValue, forKey: storageKey.rawValue)
                 try? storage.removeObject(forKey: legacyKey)
@@ -592,7 +592,7 @@ public final class ObservableKeyedStorage<Keys: StoringKeys>: ObservableKeyedSto
             // Migrate: write to new key, then remove legacy key
             do {
                 guard let encodedValue = try encodeValue(value) else {
-                    throw KeyValueStoringError.invalidValue(value)
+                    throw KeyValueStoringError.invalidValue(String(describing: value))
                 }
                 storage.set(encodedValue, forKey: storageKey.rawValue)
                 storage.removeObject(forKey: legacyKey)
@@ -702,7 +702,7 @@ public final class ObservableThrowingKeyedStorage<Keys: StoringKeys>: Observable
             // Migrate: write to new key, then remove legacy key
             do {
                 guard let encodedValue = try encodeValue(value) else {
-                    throw KeyValueStoringError.invalidValue(value)
+                    throw KeyValueStoringError.invalidValue(String(describing: value))
                 }
                 try storage.set(encodedValue, forKey: storageKey.rawValue)
                 try? storage.removeObject(forKey: legacyKey)
@@ -786,61 +786,36 @@ extension ObservableThrowingKeyValueStoring {
 
 // MARK: - Private Helpers
 
-/// Cache of Keys instances for efficient key path lookup ([StoringKeys.self -> StoringKeys])
-private var keysCache = [ObjectIdentifier: any StoringKeys]()
-/// Cache of all keys for efficient key path lookup ([StoringKeys.self -> [String]])
-private var allKeysCache = [ObjectIdentifier: [String]]()
+@MainActor
+private enum StorageKeysCache {
+    static var instances = [ObjectIdentifier: any StoringKeys]()
+    static var names = [ObjectIdentifier: [String]]()
 
-extension KeyedStorageWrapper {
-    /// Get a cached Keys instance or instantiate a new one if not cached.
-    private func cachedKeysCreatingIfNeeded() -> Keys {
-        dispatchPrecondition(condition: .onQueue(.main))
-
-        let keysId = ObjectIdentifier(Keys.self)
-        if let cachedKeys = keysCache[keysId] as? Keys {
-            return cachedKeys
-        } else {
-            let keys = Keys()
-            keysCache[keysId] = keys
-            return keys
-        }
+    static func instance<Keys: StoringKeys>(of type: Keys.Type) -> Keys {
+        let id = ObjectIdentifier(type)
+        if let existing = instances[id] as? Keys { return existing }
+        let keys = Keys()
+        instances[id] = keys
+        return keys
     }
 
-    /// Get the Key instance for a specific StoringKeys key path.
+    static func allNames<Keys: StoringKeys>(for type: Keys.Type) -> [String] {
+        let id = ObjectIdentifier(type)
+        if let existing = names[id] { return existing }
+        let mirror = Mirror(reflecting: instance(of: type))
+        let keys = mirror.children.compactMap { ($0.value as? AnyStorageKey)?.rawValue }
+        names[id] = keys
+        return keys
+    }
+}
+
+extension KeyedStorageWrapper {
     func storageKey<Value>(for keyPath: KeyPath<Keys, StorageKey<Value>>) -> StorageKey<Value> {
-        let keys: Keys
-        if Thread.isMainThread {
-            keys = cachedKeysCreatingIfNeeded()
-        } else {
-            keys = Keys()
-        }
+        let keys = Thread.isMainThread ? MainActor.assumeIsolated { StorageKeysCache.instance(of: Keys.self) } : Keys()
         return keys[keyPath: keyPath]
     }
 
-    /// Get all the key raw values for the current Keys instance.
     func allKeys() -> [String] {
-        dispatchPrecondition(condition: .onQueue(.main))
-
-        let keysId = ObjectIdentifier(Keys.self)
-
-        // Check cache first
-        if let cached = allKeysCache[keysId] {
-            return cached
-        }
-
-        // Get cached Keys instance
-        let keysInstance = cachedKeysCreatingIfNeeded()
-
-        // Use reflection to extract all StorageKey properties
-        let mirror = Mirror(reflecting: keysInstance)
-
-        var keys: [String] = []
-        for case let storageKey as AnyStorageKey in mirror.children.lazy.map(\.value) {
-            keys.append(storageKey.rawValue)
-        }
-
-        // Cache the result
-        allKeysCache[keysId] = keys
-        return keys
+        MainActor.assumeIsolated { StorageKeysCache.allNames(for: Keys.self) }
     }
 }

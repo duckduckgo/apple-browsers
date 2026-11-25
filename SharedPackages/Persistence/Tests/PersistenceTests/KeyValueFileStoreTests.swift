@@ -68,17 +68,32 @@ final class KeyValueFileStoreTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("File reuse throws error", .timeLimit(.minutes(1)))
-    func fileReusedErrorIsThrown() throws {
+    @Test("A failed open preserves the current owner's claim", .timeLimit(.minutes(1)))
+    func failedOpenPreservesClaim() throws {
         let name = UUID().uuidString
-        let firstStore = try KeyValueFileStore(location: Self.tempDir, name: name)
-
-        #expect(throws: (any Error).self) {
-            try KeyValueFileStore(location: Self.tempDir, name: name)
+        let owner = try KeyValueFileStore(location: Self.tempDir, name: name)
+        withExtendedLifetime(owner) {
+            for _ in 0..<2 {
+                #expect(throws: (any Error).self) {
+                    try KeyValueFileStore(location: Self.tempDir, name: name)
+                }
+            }
         }
+    }
 
-        // Keep firstStore alive until after the test
-        _ = firstStore
+    @available(iOS 16, macOS 13, *)
+    @Test("Releasing the previous instance preserves the new owner's claim", .timeLimit(.minutes(1)))
+    func previousOwnerCannotReleaseNewClaim() throws {
+        let name = UUID().uuidString
+        var previous: KeyValueFileStore? = try KeyValueFileStore(location: Self.tempDir, name: name)
+        KeyValueFileStore.relinquish(fileURL: try #require(previous).fileURL)
+        let current = try KeyValueFileStore(location: Self.tempDir, name: name)
+        previous = nil
+        withExtendedLifetime(current) {
+            #expect(throws: (any Error).self) {
+                try KeyValueFileStore(location: Self.tempDir, name: name)
+            }
+        }
     }
 
     @available(iOS 16, macOS 13, *)

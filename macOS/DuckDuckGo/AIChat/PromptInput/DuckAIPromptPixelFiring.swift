@@ -29,7 +29,7 @@ enum AIChatImageAttachmentSource: String {
 
 /// Named after the action rather than the pixel, so each surface can report it under its own name.
 enum DuckAIPromptPixelEvent: Equatable {
-    case promptSubmitted
+    case promptSubmitted(newChatModel: DuckAINewChatModelPixelParameters?)
     case urlSubmitted
     case imageGenerationSubmitted
     case webSearchSubmitted
@@ -103,7 +103,7 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
 
     static func addressBarPixel(for event: DuckAIPromptPixelEvent) -> AIChatPixel? {
         switch event {
-        case .promptSubmitted: .aiChatAddressBarAIChatSubmitPrompt
+        case .promptSubmitted(let newChatModel): .aiChatAddressBarAIChatSubmitPrompt(newChatModel: newChatModel)
         case .urlSubmitted: .aiChatAddressBarAIChatSubmitURL
         case .imageGenerationSubmitted: .aiChatAddressBarImageGenerationSubmitted
         case .webSearchSubmitted: .aiChatAddressBarWebSearchSubmitted

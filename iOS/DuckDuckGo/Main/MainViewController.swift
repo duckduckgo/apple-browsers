@@ -8794,7 +8794,7 @@ extension MainViewController: TabDelegate {
                 duckAIInputFocus.forget()
                 navigationController.dismiss(animated: false)
             }
-            forgetAllChats(in: mode)
+            closeChatTabsAndDeleteAllChats(in: mode)
         }
         duckAIInputFocus.setAside()
         present(navigationController, animated: true)

@@ -71,15 +71,6 @@ extension TabManaging {
             controller.reloadContextualAIChatIfNeeded()
         }
     }
-
-    /// Reloads Duck.ai tabs that kept an empty chat through Delete All Chats, so they stop listing deleted chats.
-    @MainActor
-    func reloadIdleChatTabs(in mode: BrowsingMode) {
-        for tab in tabsModel(for: mode).tabs {
-            guard let controller = controller(for: tab), controller.isShowingIdleAIChat else { continue }
-            controller.reloadFullModeAIChatIfNeeded()
-        }
-    }
 }
 
 enum FireModeSwitchSource: String {

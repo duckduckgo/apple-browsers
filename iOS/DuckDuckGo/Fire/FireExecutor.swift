@@ -677,9 +677,6 @@ class FireExecutor: FireExecuting {
         case .allChats(.fire):
             result = await burnFireModeAIHistory(trigger: request.trigger, source: .fireButtonAll, applicationState: applicationState)
         }
-        if case .allChats(let mode) = request.scope, case .success = result {
-            tabManager.reloadIdleChatTabs(in: mode)
-        }
         dataClearingWideEventService?.update(.clearAIChatHistory, result: result)
     }
 

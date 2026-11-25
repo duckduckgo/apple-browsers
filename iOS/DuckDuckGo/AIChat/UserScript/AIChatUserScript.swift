@@ -267,8 +267,6 @@ final class AIChatUserScript: NSObject, Subfeature {
     private var pendingOpenChat: PendingOpenChat?
     /// How long `openChat(chatId:)` waits for the page's `openChatActionHandled`.
     var openChatReplyTimeout: TimeInterval = 1.5
-    /// Whether a prompt was submitted since the page last started a new chat.
-    @MainActor private(set) var hasSubmittedPrompt = false
 
     /// Text selections to send on the prompt's `selections` key, alongside `pageContext` rather than in place of it.
     var attachedSelectionsProvider: (() -> [AIChatSelectionContextData])?
@@ -380,9 +378,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         switch message {
         case .newChatStarted, .newImageGenerationChatStarted, .closeAIChat:
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                hasSubmittedPrompt = false
-                cancelPendingTabContextSubmission()
+                self?.cancelPendingTabContextSubmission()
             }
         default:
             break
@@ -736,7 +732,6 @@ final class AIChatUserScript: NSObject, Subfeature {
                                        request: MultiTabAttachmentRequest?,
                                        didSubmit: (() -> Void)? = nil,
                                        makePayload: @escaping (AIChatPageContextPayload?) -> AIChatNativePrompt) {
-        hasSubmittedPrompt = true
         let waitForInitialPrompt = handler.captureInitialPromptWait()
         guard request != nil || pendingTabContextSubmission != nil || waitForInitialPrompt != nil else {
             guard pushPrompt(makePayload(currentPageContext.map(AIChatPageContextPayload.single))) else { return }
@@ -1067,11 +1062,7 @@ extension AIChatUserScript: AIChatLocalModelPushing {
 // MARK: - AIChatMetricReportingHandling
 
 extension AIChatUserScript: AIChatMetricReportingHandling {
-    @MainActor
     func didReportMetric(_ metric: AIChatMetric) {
-        if metric.metricName == .userDidSubmitPrompt || metric.metricName == .userDidSubmitFirstPrompt {
-            hasSubmittedPrompt = true
-        }
         delegate?.aiChatUserScript(self, didReceiveMetric: metric)
     }
 }

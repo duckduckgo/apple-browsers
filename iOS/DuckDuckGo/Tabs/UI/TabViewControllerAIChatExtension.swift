@@ -145,13 +145,6 @@ extension TabViewController: AITabController {
         guard !isProtectedFromCacheEviction, tabModel.isShowingSavedAIChat, let chatID = tabModel.link?.url.duckAIChatID else { return false }
         return (webView?.url ?? tabModel.link?.url)?.duckAIChatID == chatID
     }
-
-    /// Whether the tab shows an empty Duck.ai chat with nothing loading or submitted.
-    var isShowingIdleAIChat: Bool {
-        guard isAITab, !isProtectedFromCacheEviction, let webView, !webView.isLoading,
-              (webView.url ?? tabModel.link?.url)?.duckAIChatID == nil else { return false }
-        return userScripts?.aiChatUserScript.hasSubmittedPrompt != true
-    }
 }
 
 extension TabViewController {

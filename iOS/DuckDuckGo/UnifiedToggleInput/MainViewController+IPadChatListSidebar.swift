@@ -158,7 +158,7 @@ extension MainViewController {
                 detachIPadChatListSidebar()
                 iPadChatListSidebarState.isOpen = false
             }
-            forgetAllChats(in: mode)
+            closeChatTabsAndDeleteAllChats(in: mode)
         }
         let sidebar = IPadChatListSidebar(viewModel: viewModel,
                                           fireButtonAnimator: fireButtonAnimator,

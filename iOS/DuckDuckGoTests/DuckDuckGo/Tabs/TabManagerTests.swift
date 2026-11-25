@@ -423,12 +423,10 @@ final class TabManagerTests: XCTestCase {
                 webView.currentURL = link.url
                 let isSavedChat = link.url.duckAIChatID != nil
                 XCTAssertEqual(controller.isShowingSavedAIChat, isSavedChat)
-                XCTAssertEqual(controller.isShowingIdleAIChat, !isSavedChat)
 
                 controller.setInitialAIChatTabAttachmentPrompt(AIChatInitialPromptDelivery(prompt: .queryPrompt("prompt", autoSubmit: true)) {})
 
                 XCTAssertFalse(controller.isShowingSavedAIChat)
-                XCTAssertFalse(controller.isShowingIdleAIChat)
                 controller.cancelPendingAIChatTabAttachmentPrompt()
             }
         }

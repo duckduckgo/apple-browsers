@@ -76,7 +76,7 @@ struct PageContextResponse: Encodable {
 }
 
 protocol AIChatMetricReportingHandling: AnyObject {
-    @MainActor func didReportMetric(_ metric: AIChatMetric)
+    func didReportMetric(_ metric: AIChatMetric)
 }
 
 enum AIChatUserScriptErrorFailureReason: String {
@@ -411,7 +411,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             let jsonData = try JSONSerialization.data(withJSONObject: paramsDict, options: [])
             let metric = try JSONDecoder().decode(AIChatMetric.self, from: jsonData)
             handleTermsAcceptedIfNeeded(metric)
-            await metricReportingHandler?.didReportMetric(metric)
+            metricReportingHandler?.didReportMetric(metric)
         } catch {
             Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             aiChatUserScriptErrorEventMapper.fire(.reportMetricDecodingFailed(

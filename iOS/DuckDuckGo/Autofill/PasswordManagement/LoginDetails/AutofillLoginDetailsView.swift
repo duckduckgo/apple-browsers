@@ -292,7 +292,7 @@ struct AutofillLoginDetailsView: View {
                 Text("Duck Address").label4Style()
                 Text(viewModel.privateEmailMessage)
                     .font(.footnote)
-                    .label4Style(design: .default, foregroundColorLight: Color(baseColor: .gray50), foregroundColorDark: Color(baseColor: .gray30))
+                    .modifier(Label4SubtitleStyle())
 
             }
             Spacer(minLength: Constants.textFieldImageSize)

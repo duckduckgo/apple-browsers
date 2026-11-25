@@ -99762,62 +99762,14 @@
         }
       }
     },
-    "preferences.ad-blocking.youtube-section-header" : {
-      "comment" : "Section header for YouTube-specific ad blocking settings",
+    "preferences.ad-blocking.youtube-section-title" : {
+      "comment" : "Section header for YouTube-specific settings on the Ad Blocking settings page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "YouTube-Werbeblocker"
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "YouTube Ad Blocking"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bloqueo de anuncios en YouTube"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blocage des publicités sur YouTube"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blocco degli annunci su YouTube"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "YouTube-advertentieblokkering"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blokowanie reklam na YouTube"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bloqueio de anúncios do YouTube"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Блокировка рекламы на YouTube"
+            "value" : "YouTube"
           }
         }
       }

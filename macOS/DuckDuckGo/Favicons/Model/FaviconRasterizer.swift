@@ -133,6 +133,9 @@ final class FaviconRasterizer {
             Logger.favicons.debug("FaviconRasterizer: the data could not be rendered as an image")
             return
         }
+        // The calls in flight on a failed web view all fail together. The first one handles it.
+        guard webView === failedWebView else { return }
+
         Logger.favicons.error("FaviconRasterizer: the web view failed (\(error.localizedDescription)), discarding it")
         if Self.isProcessTermination(error) {
             pixelFiring?.fire(FaviconPixel.svgRenderingProcessTerminated(error: error), frequency: .dailyAndCount)
@@ -159,10 +162,16 @@ final class FaviconRasterizer {
         return !isScriptException
     }
 
-    /// Only the web view that failed is dropped: a newer one, created by another call, stays.
+    /// Drops the failed web view and ends its web content process. Releasing the web view is not enough: the call in
+    /// flight keeps it, and a process stuck in a rendering never exits on its own.
     private func discardWebView(_ failedWebView: WKWebView) {
-        guard webView === failedWebView else { return }
         webView = nil
+        guard failedWebView.responds(to: Selector.killWebContentProcessAndResetState) else { return }
+        failedWebView.perform(Selector.killWebContentProcessAndResetState)
+    }
+
+    private enum Selector {
+        static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
     }
 
     private func acquireWebView() -> WKWebView {
@@ -360,29 +369,36 @@ extension FaviconRasterizer {
     }
 
     /// Builds the favicons to store for each page URL read from another browser's favicon database.
+    ///
+    /// The databases return one row per page and icon, so one icon repeats for every page that uses it. Each distinct
+    /// image data is decoded once, and the pages that use it share the resulting image.
     nonisolated func favicons<F: ImportedFaviconDataProviding>(fromImported faviconsByPageURL: [String: [F]]) async -> [URL: [Favicon]] {
-        var pages = [(url: URL, datas: [Data])]()
+        var distinctDatas = [Data]()
+        var indexesByData = [Data: Int]()
+        var pages = [(url: URL, imageIndexes: [Int])]()
         for (pageURLString, importedFavicons) in faviconsByPageURL {
             guard let pageURL = URL(string: pageURLString) else { continue }
-            pages.append((pageURL, importedFavicons.map(\.imageData)))
+            let imageIndexes = importedFavicons.map { imported -> Int in
+                if let index = indexesByData[imported.imageData] { return index }
+                indexesByData[imported.imageData] = distinctDatas.count
+                distinctDatas.append(imported.imageData)
+                return distinctDatas.count - 1
+            }
+            pages.append((pageURL, imageIndexes))
         }
 
-        let images = await storableImages(from: pages.flatMap(\.datas), isEnabled: await isEnabled)
+        let images = await storableImages(from: distinctDatas, isEnabled: await isEnabled)
 
         var faviconsByDocument = [URL: [Favicon]]()
-        var imageIndex = 0
         for page in pages {
-            var favicons = [Favicon]()
-            for _ in page.datas {
-                favicons.append(Favicon(identifier: UUID(),
-                                        url: page.url,
-                                        image: images[imageIndex],
-                                        relation: .icon,
-                                        documentUrl: page.url,
-                                        dateCreated: Date()))
-                imageIndex += 1
+            faviconsByDocument[page.url] = page.imageIndexes.map { imageIndex in
+                Favicon(identifier: UUID(),
+                        url: page.url,
+                        image: images[imageIndex],
+                        relation: .icon,
+                        documentUrl: page.url,
+                        dateCreated: Date())
             }
-            faviconsByDocument[page.url] = favicons
         }
         return faviconsByDocument
     }

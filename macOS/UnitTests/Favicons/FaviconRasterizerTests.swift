@@ -243,6 +243,30 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertTrue(rasterizer.hasWebView)
     }
 
+    func testImportedFaviconsWithTheSameDataShareOneImage() async throws {
+        let first = Data(Self.svg(width: 100, height: 50).utf8)
+        let second = Data(Self.svg(width: 50, height: 100).utf8)
+        let imported = [
+            "https://a.example": [ImportedFavicon(imageData: first), ImportedFavicon(imageData: second)],
+            "https://b.example": [ImportedFavicon(imageData: first)],
+            "https://c.example": [ImportedFavicon(imageData: second), ImportedFavicon(imageData: first)]
+        ]
+
+        let faviconsByDocument = await rasterizer.favicons(fromImported: imported)
+
+        func image(_ page: String, _ index: Int) throws -> NSImage {
+            let url = try XCTUnwrap(URL(string: page))
+            return try XCTUnwrap(faviconsByDocument[url]?[index].image)
+        }
+        let firstImage = try image("https://a.example", 0)
+        XCTAssertEqual(firstImage.size, NSSize(width: 64, height: 32))
+        XCTAssertTrue(try image("https://b.example", 0) === firstImage)
+        XCTAssertTrue(try image("https://c.example", 1) === firstImage)
+        let secondImage = try image("https://a.example", 1)
+        XCTAssertEqual(secondImage.size, NSSize(width: 32, height: 64))
+        XCTAssertTrue(try image("https://c.example", 0) === secondImage)
+    }
+
     func testImportedPDFFaviconIsKept() async throws {
         let imported = ["https://example.com": [ImportedFavicon(imageData: Self.pdfData())]]
 
@@ -267,6 +291,38 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), ["favicon-svg-rendering_process-terminated_macos"])
         XCTAssertEqual(pixelKit.actualFireCalls.first?.frequency, .dailyAndCount)
         XCTAssertFalse(rasterizer.hasWebView)
+    }
+
+    func testFailuresOfAnAlreadyDiscardedWebViewAreIgnored() async throws {
+        let pixelKit = PixelKitMock()
+        let rasterizer = Self.makeRasterizer(enabled: true, pixelFiring: pixelKit)
+        _ = try await rasterizer.rasterize(Data(Self.svg(width: 16, height: 16).utf8))
+        let webView = try XCTUnwrap(rasterizer.currentWebView)
+        let terminated = WKError(.webContentProcessTerminated)
+
+        rasterizer.handle(failure: terminated, of: webView)
+        rasterizer.handle(failure: terminated, of: webView)
+        rasterizer.handle(failure: terminated, of: webView)
+
+        XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
+    }
+
+    /// A rendering that hangs the process never returns on its own. Discarding the web view ends the process, which
+    /// ends the call in flight.
+    func testDiscardingTheWebViewEndsAProcessThatIsStuck() async throws {
+        let rasterizer = Self.makeRasterizer(enabled: true)
+        _ = try await rasterizer.rasterize(Data(Self.svg(width: 16, height: 16).utf8))
+        let webView = try XCTUnwrap(rasterizer.currentWebView)
+        let callEnded = expectation(description: "the stuck call ends")
+        Task {
+            _ = try? await webView.callAsyncJavaScript("while (true) {}", arguments: [:], in: nil, contentWorld: .defaultClient)
+            callEnded.fulfill()
+        }
+        try await Task.sleep(nanoseconds: 500_000_000)
+
+        rasterizer.handle(failure: FaviconRasterizer.RasterizationError.timedOut, of: webView)
+
+        await fulfillment(of: [callEnded], timeout: 10)
     }
 
     func testOtherFailuresDoNotFireTheProcessTerminationPixel() async throws {

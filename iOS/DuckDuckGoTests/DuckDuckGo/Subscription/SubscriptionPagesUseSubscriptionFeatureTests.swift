@@ -120,13 +120,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testRestoreAccountFromAppStorePurchase_SyncsWithAppStoreBeforeRestoring() async throws {
         // Given
         mockAppStoreRestoreFlow.restoreAccountFromPastPurchaseResult = .success("transactionJWS")
+        let wideEventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
 
         // When
-        try await sut.restoreAccountFromAppStorePurchase()
+        try await sut.restoreAccountFromAppStorePurchase(wideEventData: wideEventData)
 
         // Then
         XCTAssertTrue(mockAppStoreRestoreFlow.syncAndRestoreAccountFromPastPurchaseCalled)
         XCTAssertFalse(mockAppStoreRestoreFlow.restoreAccountFromPastPurchaseCalled)
+        XCTAssertTrue(mockAppStoreRestoreFlow.syncAndRestoreAccountFromPastPurchaseWideEventData === wideEventData)
     }
 
     func testRestoreAccountFromAppStorePurchase_WhenNoTransactionAfterSync_ThrowsRestoreFailedDueToNoSubscription() async {
@@ -135,7 +137,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         // When
         do {
-            try await sut.restoreAccountFromAppStorePurchase()
+            try await sut.restoreAccountFromAppStorePurchase(wideEventData: nil)
             XCTFail("Expected restore to fail")
         } catch {
             // Then

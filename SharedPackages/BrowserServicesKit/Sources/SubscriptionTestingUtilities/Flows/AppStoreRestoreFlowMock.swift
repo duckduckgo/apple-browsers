@@ -33,9 +33,11 @@ public final class AppStoreRestoreFlowMock: AppStoreRestoreFlow {
     }
 
     public var syncAndRestoreAccountFromPastPurchaseCalled: Bool = false
+    public var syncAndRestoreAccountFromPastPurchaseWideEventData: SubscriptionRestoreWideEventData?
 
-    @discardableResult public func syncAndRestoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError> {
+    @discardableResult public func syncAndRestoreAccountFromPastPurchase(wideEventData: SubscriptionRestoreWideEventData?) async -> Result<String, AppStoreRestoreFlowError> {
         syncAndRestoreAccountFromPastPurchaseCalled = true
+        syncAndRestoreAccountFromPastPurchaseWideEventData = wideEventData
         return restoreAccountFromPastPurchaseResult
     }
 

@@ -462,19 +462,22 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
         for await result in Transaction.all {
             transactions.append(result)
         }
-        let lastTransaction = Self.mostRecent(in: transactions, purchaseDate: { $0.unsafePayloadValue.purchaseDate })
-        Logger.subscriptionStorePurchaseManager.log("Most recent transaction fetched: \(lastTransaction?.debugDescription ?? "?") (tot: \(transactions.count) transactions)")
+        let lastTransaction = Self.mostRecentVerified(in: transactions,
+                                                      isVerified: { if case .verified = $0 { true } else { false } },
+                                                      purchaseDate: { $0.unsafePayloadValue.purchaseDate })
+        Logger.subscriptionStorePurchaseManager.log("Most recent verified transaction fetched: \(lastTransaction?.debugDescription ?? "?") (tot: \(transactions.count) transactions)")
         return lastTransaction?.jwsRepresentation
     }
 
-    /// Returns the item with the latest purchase date.
+    /// Returns the verified item with the latest purchase date.
     ///
     /// - Parameters:
     ///   - items: The items to search, in any order.
+    ///   - isVerified: Returns whether StoreKit verified an item. Unverified items are never returned.
     ///   - purchaseDate: Returns the purchase date of an item.
-    /// - Returns: The item with the latest purchase date, the first of them if several share it, or `nil` if `items` is empty.
-    static func mostRecent<Item>(in items: [Item], purchaseDate: (Item) -> Date) -> Item? {
-        items.max { purchaseDate($0) < purchaseDate($1) }
+    /// - Returns: The verified item with the latest purchase date, the first of them if several share it, or `nil` if no item is verified.
+    static func mostRecentVerified<Item>(in items: [Item], isVerified: (Item) -> Bool, purchaseDate: (Item) -> Date) -> Item? {
+        items.filter(isVerified).max { purchaseDate($0) < purchaseDate($1) }
     }
 
     @MainActor

@@ -67,8 +67,10 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
                 wideEvent.startFlow(data)
             }
             try await subscriptionManager.storePurchaseManager().syncAppleIDAccount()
+            subscriptionRestoreWideEventData?.recordAppStoreSync(error: nil)
             await continueRestore()
         } catch {
+            subscriptionRestoreWideEventData?.recordAppStoreSync(error: error)
             await uiHandler.dismissProgressViewController()
 
             switch error as? StoreKitError {

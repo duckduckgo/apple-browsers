@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-subscription-restore",
-            "version": "1.0"
+            "version": "1.1"
         },
         "feature": {
             "name": "subscription-restore",
@@ -45,6 +45,19 @@
                         "type": "integer",
                         "description": "Time taken to restore via email address activation, in milliseconds, rounded up into a bucket. A value of -1 indicates the restore ran past the 15 minute window.",
                         "enum": [10000, 30000, 60000, 300000, 600000, 900000, -1]
+                    },
+                    "app_store_sync_result": {
+                        "type": "string",
+                        "description": "Outcome of syncing transactions with the App Store before an Apple Account restore. `success` = the sync completed; `user_cancelled` = the user dismissed the Apple Account sign-in; `failure` = the sync threw any other error. Absent when the restore did not sync.",
+                        "enum": ["success", "user_cancelled", "failure"]
+                    },
+                    "app_store_sync_error_domain": {
+                        "type": "string",
+                        "description": "Domain of the error the App Store sync threw. Present when app_store_sync_result is `user_cancelled` or `failure`."
+                    },
+                    "app_store_sync_error_code": {
+                        "type": "integer",
+                        "description": "Code of the error the App Store sync threw. Present when app_store_sync_result is `user_cancelled` or `failure`."
                     },
                     "error": "errorParameters"
                 }

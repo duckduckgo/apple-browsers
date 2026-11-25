@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import StoreKit
 import WideEvent
 
 public class SubscriptionRestoreWideEventData: WideEventData {
@@ -25,7 +26,7 @@ public class SubscriptionRestoreWideEventData: WideEventData {
         featureName: "subscription-restore",
         mobileMetaType: "ios-subscription-restore",
         desktopMetaType: "macos-subscription-restore",
-        version: "1.1.0"
+        version: "1.1.1"
     )
 
     public static let restoreTimeout: TimeInterval = .minutes(15)
@@ -39,6 +40,9 @@ public class SubscriptionRestoreWideEventData: WideEventData {
     public var appleAccountRestoreDuration: WideEvent.MeasuredInterval?
     public var emailAddressRestoreDuration: WideEvent.MeasuredInterval?
     public var emailAddressRestoreLastURL: EmailAddressRestoreURL?
+    public var appStoreSyncResult: AppStoreSyncResult?
+    public var appStoreSyncErrorDomain: String?
+    public var appStoreSyncErrorCode: Int?
 
     public var errorData: WideEventErrorData?
 
@@ -122,6 +126,34 @@ extension SubscriptionRestoreWideEventData {
         }
     }
 
+    /// The outcome of syncing transactions with the App Store before an Apple Account restore.
+    public enum AppStoreSyncResult: String, Codable, CaseIterable {
+        case success
+        case userCancelled = "user_cancelled"
+        case failure
+    }
+
+    /// Records the outcome of syncing transactions with the App Store.
+    ///
+    /// - Parameter error: The error the sync threw, or `nil` if it succeeded.
+    public func recordAppStoreSync(error: Error?) {
+        guard let error else {
+            appStoreSyncResult = .success
+            appStoreSyncErrorDomain = nil
+            appStoreSyncErrorCode = nil
+            return
+        }
+
+        if case .userCancelled = error as? StoreKitError {
+            appStoreSyncResult = .userCancelled
+        } else {
+            appStoreSyncResult = .failure
+        }
+        let nsError = error as NSError
+        appStoreSyncErrorDomain = nsError.domain
+        appStoreSyncErrorCode = nsError.code
+    }
+
     public enum StatusReason: String {
         case partialData = "partial_data"
         case timeout
@@ -134,6 +166,9 @@ extension SubscriptionRestoreWideEventData {
             (WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLastURL, emailAddressRestoreLastURL?.rawValue),
             (WideEventParameter.SubscriptionRestoreFeature.appleAccountRestoreLatency, appleAccountRestoreDuration?.intValue(.bucketed(Self.appleAccountBucket))),
             (WideEventParameter.SubscriptionRestoreFeature.emailAddressRestoreLatency, emailAddressRestoreDuration?.intValue(.bucketed(Self.emailAddressBucket))),
+            (WideEventParameter.SubscriptionRestoreFeature.appStoreSyncResult, appStoreSyncResult?.rawValue),
+            (WideEventParameter.SubscriptionRestoreFeature.appStoreSyncErrorDomain, appStoreSyncErrorDomain),
+            (WideEventParameter.SubscriptionRestoreFeature.appStoreSyncErrorCode, appStoreSyncErrorCode),
         ])
     }
 }
@@ -176,5 +211,8 @@ extension WideEventParameter {
         static let appleAccountRestoreLatency = "feature.data.ext.apple_account_restore_latency_ms_bucketed"
         static let emailAddressRestoreLatency = "feature.data.ext.email_address_restore_latency_ms_bucketed"
         static let emailAddressRestoreLastURL = "feature.data.ext.email_address_restore_last_url"
+        static let appStoreSyncResult = "feature.data.ext.app_store_sync_result"
+        static let appStoreSyncErrorDomain = "feature.data.ext.app_store_sync_error_domain"
+        static let appStoreSyncErrorCode = "feature.data.ext.app_store_sync_error_code"
     }
 }

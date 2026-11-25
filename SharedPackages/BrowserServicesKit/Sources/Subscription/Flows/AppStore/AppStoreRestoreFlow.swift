@@ -65,8 +65,9 @@ public protocol AppStoreRestoreFlow {
     ///
     /// Call this only when the user asks to restore a purchase: syncing can ask them to sign in to their Apple Account.
     /// If the sync fails or the user dismisses the sign-in, the restore uses the transactions already on the device.
+    /// - Parameter wideEventData: The restore wide event to record the sync outcome on, if the caller tracks one.
     /// - Returns: The JWS representation of the restored transaction, or the reason the restore failed.
-    @discardableResult func syncAndRestoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError>
+    @discardableResult func syncAndRestoreAccountFromPastPurchase(wideEventData: SubscriptionRestoreWideEventData?) async -> Result<String, AppStoreRestoreFlowError>
 
     func restoreSubscriptionAfterExpiredRefreshToken() async throws
 }
@@ -115,13 +116,15 @@ public final class DefaultAppStoreRestoreFlow: AppStoreRestoreFlow {
     }
 
     @discardableResult
-    public func syncAndRestoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowError> {
+    public func syncAndRestoreAccountFromPastPurchase(wideEventData: SubscriptionRestoreWideEventData?) async -> Result<String, AppStoreRestoreFlowError> {
         Logger.subscriptionAppStoreRestoreFlow.log("Syncing with the App Store before restoring")
 
         do {
             try await storePurchaseManager.syncAppleIDAccount()
+            wideEventData?.recordAppStoreSync(error: nil)
         } catch {
             Logger.subscriptionAppStoreRestoreFlow.error("App Store sync failed, restoring from local transactions: \(error, privacy: .public)")
+            wideEventData?.recordAppStoreSync(error: error)
         }
 
         return await restoreAccountFromPastPurchase()

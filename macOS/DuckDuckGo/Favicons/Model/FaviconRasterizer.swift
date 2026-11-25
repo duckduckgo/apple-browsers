@@ -206,12 +206,40 @@ final class FaviconRasterizer {
         if let webView {
             return webView
         }
-        let configuration = WKWebViewConfiguration()
-        configuration.websiteDataStore = .nonPersistent()
-        let newWebView = WKWebView(frame: .zero, configuration: configuration)
+        let newWebView = makeWebView()
         Logger.favicons.debug("FaviconRasterizer: created a web view")
         webView = newWebView
         return newWebView
+    }
+
+    /// A web view that can do nothing but draw the image it is given: no stored data or credentials, no scripts from
+    /// web content, no windows, and every navigation and authentication challenge is refused.
+    func makeWebView() -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
+        let newWebView = WKWebView(frame: .zero, configuration: configuration)
+        newWebView.navigationDelegate = navigationGuard
+        return newWebView
+    }
+
+    private let navigationGuard = NavigationGuard()
+
+    /// Refuses everything the web view could load or ask for. The rendering needs neither.
+    private final class NavigationGuard: NSObject, WKNavigationDelegate {
+
+        func webView(_ webView: WKWebView,
+                     decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            decisionHandler(.cancel)
+        }
+
+        func webView(_ webView: WKWebView,
+                     didReceive challenge: URLAuthenticationChallenge,
+                     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
     }
 
     private func releaseWebViewWhenIdle() {

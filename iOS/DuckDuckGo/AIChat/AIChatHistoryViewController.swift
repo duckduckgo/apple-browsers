@@ -756,8 +756,12 @@ extension AIChatHistoryViewController: UITableViewDataSource {
         guard let chatCell = cell as? AIChatHistoryCell else { return cell }
         chatCell.titleLabel.text = viewModel.title(forRowAt: indexPath)
         chatCell.iconImageView.image = viewModel.icon(forRowAt: indexPath)
+        let chatId = viewModel.chatId(forRowAt: indexPath)
+        chatCell.onFireTapped = { [weak self] in
+            guard let self, let chatId, !self.isEditingChats else { return }
+            self.performDelete(chatId: chatId)
+        }
         if isSidebar {
-            let chatId = viewModel.chatId(forRowAt: indexPath)
             chatCell.applySidebarAppearance(isCurrentChat: chatId != nil && chatId == currentChatId)
         }
         return chatCell
@@ -889,7 +893,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         })
     }
 
-    /// Deletes a single chat from the long-press menu, animating the row out like the swipe action.
+    /// Deletes a single chat from the row's Fire Button or the long-press menu, animating the row out like the swipe action.
     private func performDelete(chatId: String) {
         viewModel.deleteChat(chatId: chatId)
         // Animate only when a row remains afterwards. Removing the last visible chat flips the

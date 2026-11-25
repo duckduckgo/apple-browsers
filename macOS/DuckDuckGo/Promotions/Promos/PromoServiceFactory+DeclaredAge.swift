@@ -37,7 +37,7 @@ extension PromoServiceFactory {
                                                 windowProvider: { windowControllersManager.lastKeyMainWindowController?.window })
 
         return InternalPromo(id: "declared-age",
-                             triggers: [.appLaunched, .windowBecameKey],
+                             triggers: [.windowBecameKey, .declaredAgeBecameEligible],
                              initiated: .app,
                              promoType: PromoType(.appModal),
                              context: .global,

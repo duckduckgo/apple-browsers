@@ -50,13 +50,6 @@ final class DeclaredAgePromptTests: XCTestCase {
         XCTAssertEqual(service.requestCount, 0)
     }
 
-    func testWhenOnboardingIsNotCompleteThenAppleIsNotAsked() async {
-        await makePrompt(hasSeenOnboarding: false).presentIfNeeded(in: viewController)
-
-        XCTAssertEqual(service.isRequestRequiredCount, 0)
-        XCTAssertEqual(service.requestCount, 0)
-    }
-
     func testWhenRequestIsNotRequiredThenItDoesNotRequest() async {
         service.isRequired = false
 
@@ -95,10 +88,9 @@ final class DeclaredAgePromptTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makePrompt(isFlagOn: Bool = true, hasSeenOnboarding: Bool = true) -> DeclaredAgePrompt {
+    private func makePrompt(isFlagOn: Bool = true) -> DeclaredAgePrompt {
         DeclaredAgePrompt(requester: DeclaredAgeRequester(service: service, storage: storage),
-                          featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.declaredAgeRange] : []),
-                          onboardingStatusProvider: MockContextualOnboardingStatusProvider(hasSeenOnboarding: hasSeenOnboarding))
+                          featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.declaredAgeRange] : []))
     }
 }
 

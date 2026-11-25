@@ -167,8 +167,7 @@ final class MainCoordinator {
         self.promoCoordinationService = promoCoordinationService
         self.declaredAgePrompt = DeclaredAgePrompt(
             requester: DeclaredAgeRequester(service: DefaultDeclaredAgeService(), storage: keyValueStore.throwingKeyedStoring()),
-            featureFlagger: featureFlagger,
-            onboardingStatusProvider: daxDialogs
+            featureFlagger: featureFlagger
         )
         self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
@@ -707,7 +706,7 @@ final class MainCoordinator {
 
     func presentDeclaredAgePromptIfNeeded() {
         Task {
-            await declaredAgePrompt.presentIfNeeded(in: controller)
+            await declaredAgePrompt.presentIfNeeded(in: controller.topPresentedViewController)
         }
     }
 

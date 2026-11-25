@@ -28,13 +28,11 @@ final class DeclaredAgePrompt {
 
     private let requester: DeclaredAgeRequester
     private let featureFlagger: FeatureFlagger
-    private let onboardingStatusProvider: ContextualDaxDialogStatusProvider
     private var wasAttempted = false
 
-    init(requester: DeclaredAgeRequester, featureFlagger: FeatureFlagger, onboardingStatusProvider: ContextualDaxDialogStatusProvider) {
+    init(requester: DeclaredAgeRequester, featureFlagger: FeatureFlagger) {
         self.requester = requester
         self.featureFlagger = featureFlagger
-        self.onboardingStatusProvider = onboardingStatusProvider
     }
 
     func presentIfNeeded(in viewController: UIViewController) async {
@@ -58,8 +56,7 @@ private extension DeclaredAgePrompt {
 
     /// The flag doubles as a kill switch, so Apple's API isn't touched while it's off.
     var isDue: Bool {
-        onboardingStatusProvider.hasSeenOnboarding
-            && !wasAttempted
+        !wasAttempted
             && featureFlagger.isFeatureOn(.declaredAgeRange)
             && requester.isRequestDue()
     }

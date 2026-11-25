@@ -371,6 +371,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var cancellables = Set<AnyCancellable>()
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
+    /// The tab that was active when `boundUserScript` was bound. A tab switch activates the incoming tab before it
+    /// binds that tab's script, and in between the bound script still belongs to the outgoing tab.
+    private var boundUserScriptTabUID: TabUID?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
     private let lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding?
     private let lastUsedModelCache: NSCache<NSString, NSString> = {
@@ -756,6 +759,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // A freed script's address can be reused by the next one, so a matching identifier alone doesn't prove it's the same script.
         if boundUserScriptIdentifier == newIdentifier, boundUserScript === userScript {
             boundUserScript = userScript
+            boundUserScriptTabUID = currentTabUID
             userScript.inputBoxHandler = self
             syncChipVisibility(hasExistingChat: hasExistingChat)
             refreshToolsPresentation()
@@ -766,6 +770,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = userScript
         boundUserScriptIdentifier = newIdentifier
+        boundUserScriptTabUID = currentTabUID
         if hadPreviousScript {
             resetSessionState()
         }
@@ -780,6 +785,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
         boundUserScriptIdentifier = nil
+        boundUserScriptTabUID = nil
         isTermsOfServiceShownOnPage = false
         isAIChatPromoVisible = nil
         resetSessionState()
@@ -1274,7 +1280,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let state = NewChatState(
             isIPhone: isIPhone,
             isFullTabInput: host == .omnibar && isAITabState,
-            isTabSelected: currentTabUID != nil && boundUserScript != nil,
+            isTabSelected: currentTabUID != nil && boundUserScript != nil && boundUserScriptTabUID == currentTabUID,
             // The page reports `ready` once it can take a prompt; it never sends `showChatInput` on a plain load.
             isInputReady: aiChatStatus == .ready && !isAIChatStatusFromEarlierDocument && aiChatInputBoxVisibility != .hidden,
             hasChat: hasSubmittedPrompt || url?.duckAIChatID != nil,

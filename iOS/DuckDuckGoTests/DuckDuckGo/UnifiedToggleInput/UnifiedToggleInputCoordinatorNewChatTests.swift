@@ -217,6 +217,26 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Not for an incoming tab until its own page is bound", .timeLimit(.minutes(1)))
+    func incomingTabBeforeItsPageIsBound() async {
+        let sut = makeSUT()
+        let blankChat = PageScript()
+        sut.activateForTab("tab-A")
+        sut.bindToTab(blankChat.script)
+        sut.showCollapsed()
+        await blankChat.reportResponseState("ready")
+        #expect(sut.isGuaranteedNewChat)
+
+        // The main view controller activates the incoming tab before it binds that tab's page.
+        sut.activateForTab("tab-B")
+        #expect(!sut.isGuaranteedNewChat)
+
+        sut.activateForTab("tab-A")
+        sut.bindToTab(blankChat.script)
+        #expect(sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("The promo is clear only once the page says so", .timeLimit(.minutes(1)))
     func promoClear() {
         let sut = makeSUT()

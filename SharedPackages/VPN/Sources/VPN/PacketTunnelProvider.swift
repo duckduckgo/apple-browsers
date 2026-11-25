@@ -387,6 +387,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - User Notifications
 
     private let notificationsPresenter: VPNNotificationsPresenting
+#if os(macOS)
+    open var isSystemExtension: Bool { false }
+#endif
 
     // MARK: - Registration Key
 
@@ -998,10 +1001,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 error = TunnelError.startingTunnelWithoutAuthToken(internalError: internalError)
 
                 switch startupOptions.startupMethod {
-                case .automaticOnDemand:
-                    let managedToShutdown = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
-                    needsBackoff = !managedToShutdown
-                case .manualByTheSystem:
+                case .automaticOnDemand, .manualByTheSystem:
+#if os(macOS)
+                    if #available(macOS 13, *), isSystemExtension {
+                        _ = await shutdown(dueTo: error)
+                        needsBackoff = false
+                        break
+                    }
+#endif
                     _ = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
                     needsBackoff = false
                 case .manualByMainApp:
@@ -1035,7 +1042,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             }
 
             if needsBackoff {
-                await backOffBeforeFailingStartup()
+                await backOffBeforeFailingStartup(dueTo: error)
             }
 
             Logger.networkProtection.error("🔴 Interrupting tunnel start as preconditions weren't met: \(error, privacy: .public)")
@@ -1073,7 +1080,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF
                 // cycling.
-                await backOffBeforeFailingStartup()
+                await backOffBeforeFailingStartup(dueTo: error)
             }
 
             let errorDescription = (error as? LocalizedError)?.localizedDescription ?? String(describing: error)
@@ -1167,9 +1174,17 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
 
-    private func backOffBeforeFailingStartup() async {
-        Logger.networkProtection.log("Waiting 15 seconds before failing VPN startup to limit automatic retries")
-        try? await Task.sleep(interval: .seconds(15))
+    static func onDemandRetryDelay(for error: Error) -> TimeInterval {
+#if os(macOS)
+        if case TunnelError.reconnectBlocked = error { return .seconds(5) }
+#endif
+        return .seconds(15)
+    }
+
+    private func backOffBeforeFailingStartup(dueTo error: Error) async {
+        let delay = Self.onDemandRetryDelay(for: error)
+        Logger.networkProtection.log("Waiting \(delay) seconds before failing VPN startup to limit automatic retries")
+        try? await Task.sleep(interval: delay)
         Logger.networkProtection.log("VPN startup failure delay finished")
     }
 
@@ -1581,8 +1596,20 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         Logger.networkProtection.log("🔴 Disabling Connect On Demand and shutting down the tunnel")
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
-
-        guard let manager = managers.first else {
+#if os(macOS)
+        // A system extension can see multiple configurations. Leave ambiguous matches to the menu app.
+        let candidates = isSystemExtension ? managers.filter {
+            guard let configuration = $0.protocolConfiguration as? NETunnelProviderProtocol,
+                  let current = tunnelProviderProtocol else { return false }
+            return configuration.providerBundleIdentifier == current.providerBundleIdentifier &&
+                configuration.serverAddress == current.serverAddress &&
+                NSDictionary(dictionary: configuration.providerConfiguration ?? [:]).isEqual(to: current.providerConfiguration ?? [:])
+        } : managers
+        guard !isSystemExtension || candidates.count == 1 else { throw DisableOnDemandError.notSupportedByOS }
+#else
+        let candidates = managers
+#endif
+        guard let manager = candidates.first else {
             throw DisableOnDemandError.notSupportedByOS
         }
 
@@ -1701,8 +1728,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             defaults.enableEntitlementMessaging()
             notificationsPresenter.showEntitlementNotification()
 
+#if !os(macOS)
             // We add a delay here so the notification has a chance to show up
             try? await Task.sleep(interval: .seconds(5))
+#endif
         }
 
         return await shutdown(dueTo: error)
@@ -1727,7 +1756,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             return true
         } catch {
-            Logger.networkProtection.debug("Shutdown cancelled, probably because the OS does not support disabling on-demand: \(error.localizedDescription, privacy: .public)")
+            Logger.networkProtection.error("Shutdown cancelled, probably because the OS does not support disabling on-demand: \(error.localizedDescription, privacy: .public)")
 
             // If we can't cleanly shut the tunneldown, we'll do our best to
             // shut it down even if the process keeps running.

@@ -251,7 +251,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         defaults: userDefaults,
         wideEvent: wideEvent,
         subscriptionManager: subscriptionManager,
-        vpnAppState: vpnAppState)
+        vpnAppState: vpnAppState,
+        onStartupFailure: { [weak self] in await self?.vpnNotificationsObserver.showStartupFailureNotification() ?? false })
 
     /// An IPC server that provides access to the tunnel controller.
     ///
@@ -514,6 +515,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
             setupSystemExtensionStateObserver()
             await tunnelController.refreshSystemState()
+            await tunnelController.checkStartupFailureAtLaunch()
 
             vpnAppEventsHandler.appDidFinishLaunching()
 

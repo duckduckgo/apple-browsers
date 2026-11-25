@@ -61,8 +61,12 @@ final class VPNAppEventsHandler {
     private func restartTunnel() {
         Task {
             // Restart NetP SysEx on app update
-            if await tunnelController.isConnected {
+            // An On Demand start in progress must be allowed to finish or report its failure.
+            switch await tunnelController.status {
+            case .connected, .reasserting:
                 await tunnelController.restart()
+            default:
+                break
             }
         }
     }

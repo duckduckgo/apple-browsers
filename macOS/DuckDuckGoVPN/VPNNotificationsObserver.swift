@@ -163,6 +163,15 @@ final class VPNNotificationsObserver {
         notificationsPresenter.showConnectionFailureNotification()
     }
 
+    func showStartupFailureNotification() async -> Bool {
+        do {
+            return try await notificationsPresenter.showStartupFailureNotification()
+        } catch {
+            Logger.networkProtection.error("Could not deliver VPN startup notification: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+    }
+
     /// Displays a notification indicating the VPN has been superseded by another VPN.
     ///
     /// This notification is shown when another VPN configuration takes precedence

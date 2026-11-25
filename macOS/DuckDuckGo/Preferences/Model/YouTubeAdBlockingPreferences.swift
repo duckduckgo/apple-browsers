@@ -110,23 +110,12 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         featureFlagger?.isFeatureOn(.segmentSkip) ?? false
     }
 
+    /// Settings checkbox: checking it always restores the default `.askToSkip`.
     var segmentSkipEnabled: Bool {
-        get { segmentSkipPreferences.isEnabled }
-        set {
-            objectWillChange.send()
-            segmentSkipPreferences.isEnabled = newValue
-        }
+        get { segmentSkipSetting != .off }
+        set { segmentSkipSetting = newValue ? .askToSkip : .off }
     }
 
-    var segmentSkipMode: SegmentSkipMode {
-        get { segmentSkipPreferences.skipMode }
-        set {
-            objectWillChange.send()
-            segmentSkipPreferences.skipMode = newValue
-        }
-    }
-
-    /// Single Always / Ask to Skip / Off choice used by the address bar popover, which has no separate on/off checkbox.
     var segmentSkipSetting: SegmentSkipSetting {
         get { segmentSkipPreferences.setting }
         set {

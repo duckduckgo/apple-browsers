@@ -98,15 +98,24 @@ extension Preferences {
             }
         }
 
+        /// The picker has no Off entry, so while the checkbox is unchecked it shows the default it would restore.
+        private var segmentSkipModeBinding: Binding<SegmentSkipSetting> {
+            .init {
+                model.segmentSkipSetting == .off ? .askToSkip : model.segmentSkipSetting
+            } set: {
+                model.segmentSkipSetting = $0
+            }
+        }
+
         private var segmentSkipSettings: some View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     ToggleMenuItem(UserText.segmentSkipTitle, isOn: $model.segmentSkipEnabled)
                         .accessibilityIdentifier("Preferences.SegmentSkip.enabledToggle")
 
-                    Picker(selection: $model.segmentSkipMode) {
-                        Text(UserText.segmentSkipOptionAlways).tag(SegmentSkipMode.auto)
-                        Text(UserText.segmentSkipOptionAskToSkip).tag(SegmentSkipMode.manual)
+                    Picker(selection: segmentSkipModeBinding) {
+                        Text(UserText.segmentSkipOptionAlways).tag(SegmentSkipSetting.always)
+                        Text(UserText.segmentSkipOptionAskToSkip).tag(SegmentSkipSetting.askToSkip)
                     } label: {
                         EmptyView()
                     }

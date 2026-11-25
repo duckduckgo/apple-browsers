@@ -35,44 +35,24 @@ final class SegmentSkipPreferencesTests: XCTestCase {
         preferences = SegmentSkipPreferences(store: store, notificationCenter: notificationCenter)
     }
 
-    func testDefaultsAreEnabledAndManual() {
-        XCTAssertTrue(preferences.isEnabled)
-        XCTAssertEqual(preferences.skipMode, .manual)
+    func testDefaultIsAskToSkip() {
+        XCTAssertEqual(preferences.setting, .askToSkip)
     }
 
-    func testValuesPersistAcrossInstancesSharingTheStore() {
-        preferences.isEnabled = false
-        preferences.skipMode = .auto
+    func testValuePersistsAcrossInstancesSharingTheStore() {
+        preferences.setting = .always
 
         let other = SegmentSkipPreferences(store: store, notificationCenter: notificationCenter)
-        XCTAssertFalse(other.isEnabled)
-        XCTAssertEqual(other.skipMode, .auto)
+        XCTAssertEqual(other.setting, .always)
     }
 
     func testEveryWriteEmitsOneUpdate() {
         var updates = 0
         preferences.updates.sink { updates += 1 }.store(in: &cancellables)
 
-        preferences.isEnabled = false
-        preferences.skipMode = .auto
+        preferences.setting = .off
+        preferences.setting = .always
 
         XCTAssertEqual(updates, 2)
-    }
-
-    func testSettingMapsOntoTheStoredFlagAndMode() {
-        XCTAssertEqual(preferences.setting, .askToSkip)
-
-        preferences.setting = .always
-        XCTAssertTrue(preferences.isEnabled)
-        XCTAssertEqual(preferences.skipMode, .auto)
-
-        preferences.setting = .off
-        XCTAssertFalse(preferences.isEnabled)
-        XCTAssertEqual(preferences.skipMode, .auto, "Turning off keeps the last chosen mode")
-        XCTAssertEqual(preferences.setting, .off)
-
-        preferences.setting = .askToSkip
-        XCTAssertTrue(preferences.isEnabled)
-        XCTAssertEqual(preferences.skipMode, .manual)
     }
 }

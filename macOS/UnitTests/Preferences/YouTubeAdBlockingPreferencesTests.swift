@@ -275,17 +275,17 @@ final class YouTubeAdBlockingPreferencesTests: XCTestCase {
         XCTAssertFalse(makeSegmentSkipSUT(flagOn: false).isSegmentSkipAvailable)
     }
 
-    func testSegmentSkipSettingsPersistThroughTheSharedStore() {
+    func testSegmentSkipCheckboxMapsToOffAndTheDefault() {
         sut = makeSegmentSkipSUT(flagOn: true)
         XCTAssertTrue(sut.segmentSkipEnabled)
-        XCTAssertEqual(sut.segmentSkipMode, .manual)
+        XCTAssertEqual(sut.segmentSkipSetting, .askToSkip)
 
+        sut.segmentSkipSetting = .always
         sut.segmentSkipEnabled = false
-        sut.segmentSkipMode = .auto
+        XCTAssertEqual(SegmentSkipPreferences(store: defaults).setting, .off)
 
-        let shared = SegmentSkipPreferences(store: defaults)
-        XCTAssertFalse(shared.isEnabled)
-        XCTAssertEqual(shared.skipMode, .auto)
+        sut.segmentSkipEnabled = true
+        XCTAssertEqual(SegmentSkipPreferences(store: defaults).setting, .askToSkip, "The last mode is not remembered")
     }
 
     func testPopoverChangesRefreshTheSettingsModel() {
@@ -296,12 +296,10 @@ final class YouTubeAdBlockingPreferencesTests: XCTestCase {
 
         popoverModel.segmentSkipSetting = .always
         XCTAssertGreaterThan(changes, 0)
-        XCTAssertTrue(sut.segmentSkipEnabled)
-        XCTAssertEqual(sut.segmentSkipMode, .auto)
+        XCTAssertEqual(sut.segmentSkipSetting, .always)
 
         popoverModel.segmentSkipSetting = .off
         XCTAssertFalse(sut.segmentSkipEnabled)
-        XCTAssertEqual(sut.segmentSkipSetting, .off)
         cancellable.cancel()
     }
 }

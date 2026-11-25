@@ -171,13 +171,6 @@
             }
         ]
     },
-    "m_mac_direct_subscription_tier-options_unexpected-pro-tier": {
-        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out (direct distribution)",
-        "owners": ["SabrinaTardio"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
 
     // Tier Options Pixels - App Store Distribution
     "m_mac_store_subscription_tier-options_requested": {
@@ -224,13 +217,6 @@
                 "description": "Underlying error code at any depth"
             }
         ]
-    },
-    "m_mac_store_subscription_tier-options_unexpected-pro-tier": {
-        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out (App Store distribution)",
-        "owners": ["SabrinaTardio"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     // Plan Change Click Pixels - Direct Distribution

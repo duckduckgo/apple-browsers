@@ -21,7 +21,6 @@ import SwiftUI
 import VPN
 import Subscription
 import Core
-import FeatureFlags_iOS
 import PixelKit
 
 struct NetworkProtectionRootView: View {
@@ -52,8 +51,6 @@ struct NetworkProtectionRootView: View {
             subscriptionManager: subscriptionManager,
             vpnMetadataCollector: DefaultVPNMetadataCollector(),
             dbpMetadataCollector: DefaultDBPMetadataCollector(),
-            isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
-            isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
             source: .vpn))
     }
 

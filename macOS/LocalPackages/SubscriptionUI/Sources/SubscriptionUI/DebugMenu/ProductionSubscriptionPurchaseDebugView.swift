@@ -331,7 +331,7 @@ final class ProductionSubscriptionPurchaseViewModel: ObservableObject {
             Logger.subscription.info("[ProductionSubscriptionDebug] Using external ID: \(externalID) (new: \(isNewAccount))")
 
             // Direct purchase bypassing AppStorePurchaseFlow
-            let result = await subscriptionManager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID, includeProTier: true)
+            let result = await subscriptionManager.storePurchaseManager().purchaseSubscription(with: identifier, externalID: externalID)
 
             switch result {
             case .success:

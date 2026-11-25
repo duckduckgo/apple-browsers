@@ -19,7 +19,6 @@
 import AppKit
 import SwiftUI
 import Foundation
-import PrivacyConfig
 import PixelKit
 import Subscription
 
@@ -36,16 +35,13 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
 
     private var popover: VPNUpsellPopover?
     private let subscriptionManager: any SubscriptionManager
-    private let featureFlagger: FeatureFlagger
     private let buttonDelegate: VPNUpsellToolbarButtonPromoDelegate // swiftlint:disable:this weak_delegate
     private let pixelHandler: (SubscriptionPixel) -> Void
 
     init(subscriptionManager: any SubscriptionManager,
-         featureFlagger: FeatureFlagger,
          buttonDelegate: VPNUpsellToolbarButtonPromoDelegate,
          pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) }) {
         self.subscriptionManager = subscriptionManager
-        self.featureFlagger = featureFlagger
         self.buttonDelegate = buttonDelegate
         self.pixelHandler = pixelHandler
     }
@@ -70,7 +66,6 @@ final class DefaultVPNUpsellPopoverPresenter: VPNUpsellPopoverPresenter, Popover
 
         let viewModel = VPNUpsellPopoverViewModel(
             subscriptionManager: subscriptionManager,
-            featureFlagger: featureFlagger,
             upsellDismisser: buttonDelegate,
             onDismiss: { [weak self] in
                 self?.dismiss()

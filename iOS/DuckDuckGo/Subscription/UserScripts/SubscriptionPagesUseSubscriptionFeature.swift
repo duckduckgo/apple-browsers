@@ -103,7 +103,6 @@ public enum SubscriptionTransactionStatus: String {
 public struct GetFeatureConfigurationResponse: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool = true
-    let usePaidDuckAi: Bool
     let useAlternateStripePaymentFlow: Bool
     let useGetSubscriptionTierOptions: Bool = true
 }
@@ -425,7 +424,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         return GetFeatureConfigurationResponse(
-            usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
             useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
         )
     }
@@ -447,16 +445,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         tierEventReporter.reportTierOptionsRequested()
 
-        let subscriptionTierOptionsResponse = await subscriptionManager.subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+        let subscriptionTierOptionsResponse = await subscriptionManager.subscriptionTierOptions()
 
         switch subscriptionTierOptionsResponse {
         case .success(let subscriptionTierOptions):
-            // Check if Pro tier was unexpectedly returned
-            let hasProTier = subscriptionTierOptions.products.contains { $0.tier == .pro }
-            if hasProTier && !subscriptionFeatureAvailability.isProTierPurchaseEnabled {
-                tierEventReporter.reportTierOptionsUnexpectedProTier()
-            }
-
             tierEventReporter.reportTierOptionsSuccess()
 
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
@@ -518,7 +510,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         let purchaseIsFreeTrial: Bool
 
         // 4: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
         case .success(let result):
             Logger.subscription.log("Subscription purchased successfully")
             purchaseTransactionJWS = result.transactionJWS

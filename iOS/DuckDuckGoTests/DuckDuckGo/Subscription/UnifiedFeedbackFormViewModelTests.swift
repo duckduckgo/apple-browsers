@@ -33,8 +33,6 @@ struct UnifiedFeedbackFormViewModelTests {
 
     private func makeViewModel(
         subscriptionFeatures: [SubscriptionEntitlement] = [],
-        isPaidAIChatFeatureEnabled: Bool = false,
-        isProTierPurchaseEnabled: Bool = false,
         source: UnifiedFeedbackFormViewModel.Source = .unknown,
         feedbackSender: MockFeedbackSender = MockFeedbackSender()
     ) -> UnifiedFeedbackFormViewModel {
@@ -46,8 +44,6 @@ struct UnifiedFeedbackFormViewModelTests {
             dbpMetadataCollector: MockUnifiedMetadataCollector(),
             defaultMetadatCollector: MockUnifiedMetadataCollector(),
             feedbackSender: feedbackSender,
-            isPaidAIChatFeatureEnabled: { isPaidAIChatFeatureEnabled },
-            isProTierPurchaseEnabled: { isProTierPurchaseEnabled },
             source: source
         )
 
@@ -80,38 +76,22 @@ struct UnifiedFeedbackFormViewModelTests {
 
     // MARK: - Category Tests
 
-    @Test func testDuckAiCategory_WhenFeatureEnabledAndSubscriptionIncludesPaidAIChat_IsAvailable() async throws {
+    @Test func testDuckAiCategory_WhenSubscriptionIncludesPaidAIChat_IsAvailable() async throws {
         let viewModel = makeViewModel(
-            subscriptionFeatures: [.paidAIChat],
-            isPaidAIChatFeatureEnabled: true
+            subscriptionFeatures: [.paidAIChat]
         )
 
         // Wait for DuckAi category to become available
         try await waitForCondition {
             viewModel.availableCategories.contains(.duckAi)
         }
-        
+
         #expect(viewModel.availableCategories.contains(.duckAi))
-    }
-
-    @Test func testDuckAiCategory_WhenFeatureDisabled_IsNotAvailable() async throws {
-        let viewModel = makeViewModel(
-            subscriptionFeatures: [.paidAIChat],
-            isPaidAIChatFeatureEnabled: false
-        )
-
-        // Wait for categories to be processed, then verify DuckAi is not included
-        try await waitForCondition {
-            !viewModel.availableCategories.isEmpty
-        }
-        
-        #expect(!viewModel.availableCategories.contains(.duckAi))
     }
 
     @Test func testDuckAiCategory_WhenSubscriptionDoesNotIncludePaidAIChat_IsNotAvailable() async throws {
         let viewModel = makeViewModel(
-            subscriptionFeatures: [],
-            isPaidAIChatFeatureEnabled: true
+            subscriptionFeatures: []
         )
 
         // Wait for categories to be processed, then verify DuckAi is not included
@@ -175,23 +155,13 @@ struct UnifiedFeedbackFormViewModelTests {
         #expect(SubscriptionFeedbackSubcategory.somethingElse.url.absoluteString.contains("payments") == true)
     }
 
-    @Test func testAvailableSubscriptionSubcategories_WhenProTierEnabled_IncludesUnableToAccessFeatures() {
-        let viewModel = makeViewModel(isProTierPurchaseEnabled: true)
+    @Test func testAvailableSubscriptionSubcategories_IncludesUnableToAccessFeatures() {
+        let viewModel = makeViewModel()
 
         let subcategories = viewModel.availableSubscriptionSubcategories
 
         #expect(subcategories.contains(.otp))
         #expect(subcategories.contains(.unableToAccessFeatures))
-        #expect(subcategories.contains(.somethingElse))
-    }
-
-    @Test func testAvailableSubscriptionSubcategories_WhenProTierDisabled_ExcludesUnableToAccessFeatures() {
-        let viewModel = makeViewModel(isProTierPurchaseEnabled: false)
-
-        let subcategories = viewModel.availableSubscriptionSubcategories
-
-        #expect(subcategories.contains(.otp))
-        #expect(!subcategories.contains(.unableToAccessFeatures))
         #expect(subcategories.contains(.somethingElse))
     }
 
@@ -392,7 +362,6 @@ struct UnifiedFeedbackFormViewModelTests {
         let sender = MockFeedbackSender()
         let viewModel = makeViewModel(
             subscriptionFeatures: [.paidAIChat],
-            isPaidAIChatFeatureEnabled: true,
             feedbackSender: sender
         )
 

@@ -121,10 +121,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     public let usesUnifiedFeedbackForm: Bool
 
     /// Returns the tier badge variant to display, or nil if badge should not be shown
-    /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
     var tierBadgeToDisplay: TierBadgeView.Variant? {
         guard let tier = state.subscriptionInfo?.tier else { return nil }
-        guard tier == .pro || featureFlagger.isFeatureOn(.allowProTierPurchase) else { return nil }
         switch tier {
         case .plus: return .plus
         case .pro: return .pro
@@ -134,20 +132,18 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     /// Returns true if "View All Plans" option should be shown
     /// Requirements:
     /// - Subscription is active
-    /// - Pro tier purchase feature flag is enabled OR user has Pro tier subscription
     var shouldShowViewAllPlans: Bool {
         guard let subscriptionInfo = state.subscriptionInfo,
               subscriptionInfo.isActive else {
             return false
         }
-        return featureFlagger.isFeatureOn(.allowProTierPurchase) || subscriptionInfo.tier == .pro
+        return true
     }
 
     /// Returns true if "Upgrade" section should be shown
     /// Requirements:
     /// - Subscription is active
     /// - No pending plan (don't show upgrade if downgrade is scheduled)
-    /// - Pro tier purchase feature flag is enabled
     /// - Backend reports available upgrades
     var shouldShowUpgrade: Bool {
         guard let subscriptionInfo = state.subscriptionInfo,
@@ -156,7 +152,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         }
         // Don't show upgrade if there's a pending plan (downgrade scheduled)
         guard subscriptionInfo.pendingPlans?.isEmpty ?? true else { return false }
-        guard featureFlagger.isFeatureOn(.allowProTierPurchase) else { return false }
         return firstAvailableUpgradeTier != nil
     }
 
@@ -171,9 +166,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         if isAppleSubscriptionWithCancellationFlowEnabled {
             return UserText.subscriptionManageSubscription
         }
-        return featureFlagger.isFeatureOn(.allowProTierPurchase)
-            ? UserText.subscriptionManagePayment
-            : UserText.subscriptionChangePlan
+        return UserText.subscriptionManagePayment
     }
 
     var isEligibleToCancel: Bool {
@@ -385,10 +378,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
         let entryPoint: SubscriptionCancellationWideEventData.EntryPoint = if isAppleSubscriptionWithCancellationFlowEnabled {
             .manageSubscription
-        } else if featureFlagger.isFeatureOn(.allowProTierPurchase) {
-            .managePaymentOrCancel
         } else {
-            .changePlan
+            .managePaymentOrCancel
         }
         cancellationInstrumentation.manageSubscriptionTapped(entryPoint: entryPoint, subscription: state.subscriptionInfo)
 

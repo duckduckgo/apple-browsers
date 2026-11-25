@@ -176,7 +176,8 @@
                     "protocol_error",
                     "needs_upgrade",
                     "v1_failure",
-                    "relay_channel_failure"
+                    "relay_channel_failure",
+                    "unrecognized_code"
                 ]
             },
             {

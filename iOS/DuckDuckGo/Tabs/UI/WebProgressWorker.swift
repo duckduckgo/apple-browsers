@@ -63,7 +63,7 @@ class WebProgressWorker {
     }
     
     func progressDidChange(_ progress: Double, for activity: Activity = .pageLoad) {
-        guard isLoading else { return }
+        guard self.activity == activity else { return }
         
         let progress = CGFloat(progress)
         guard progress > currentProgress else { return }
@@ -73,7 +73,7 @@ class WebProgressWorker {
     }
     
     func didFinishLoading(_ activity: Activity = .pageLoad) {
-        guard isLoading else { return }
+        guard self.activity == activity else { return }
         self.activity = nil
         progressBar?.finishAndHide()
         currentProgress = 0

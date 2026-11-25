@@ -720,7 +720,7 @@ final class MainCoordinator {
     }
 
     private func declaredAgeAnchor() -> UIViewController? {
-        // A pending modal prompt goes first: its close handler retries.
+        // A pending modal prompt goes first: the next foreground retries.
         guard isReadyForLaunchPrompts, !promoCoordinationService.isModalPromptPending else { return nil }
 
         return controller.topPresentedViewController
@@ -747,8 +747,6 @@ final class MainCoordinator {
         promoCoordinationService.runOnceModalPromptCloses(while: { true }) { [weak self] in
             self?.controller.recordPendingNewTabPagePresentationIfVisible()
             handler()
-
-            self?.declaredAgePrompt.presentIfNeeded()
         }
     }
 

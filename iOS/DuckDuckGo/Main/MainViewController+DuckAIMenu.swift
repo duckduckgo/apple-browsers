@@ -247,7 +247,7 @@ extension MainViewController {
             tabViewModel: nil,
             pixelSource: .browsing,
             fireContext: .deleteChats(count: chatCount, onDelete: { [weak self] in
-                self?.dismiss(animated: true) { self?.deleteAllChats(isFireMode: isFireMode) }
+                self?.dismiss(animated: true) { self?.deleteAllChatsFromMenu(isFireMode: isFireMode) }
             }),
             browsingMode: isFireMode ? .fire : .normal,
             onConfirm: { _ in },
@@ -256,9 +256,9 @@ extension MainViewController {
     }
 
     /// With `fireButtonDeleteAllChats` on, deletes the chats through the Fire button like Delete All Chats in the Fire confirmation.
-    func deleteAllChats(isFireMode: Bool) {
+    private func deleteAllChatsFromMenu(isFireMode: Bool) {
         guard featureFlagger.isFeatureOn(.fireButtonDeleteAllChats) else {
-            burnAllChats(isFireMode: isFireMode)
+            legacyBurnAllChats(isFireMode: isFireMode)
             return
         }
         forgetAllWithAnimation(request: FireRequest(options: [.tabs, .aiChats],
@@ -267,7 +267,8 @@ extension MainViewController {
                                                     source: .browsing))
     }
 
-    private func burnAllChats(isFireMode: Bool) {
+    /// The path used while `fireButtonDeleteAllChats` is off: deletes the chats without closing tabs, then reloads open chats.
+    private func legacyBurnAllChats(isFireMode: Bool) {
         let fireExecutor = self.fireExecutor
         fireButtonAnimator.animate { [weak self] in
             guard case .success = await fireExecutor.burnAllChats(isFireMode: isFireMode) else { return }

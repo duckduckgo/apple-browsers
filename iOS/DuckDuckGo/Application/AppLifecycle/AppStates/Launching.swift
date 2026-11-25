@@ -148,7 +148,8 @@ struct Launching: LaunchingHandling {
                                       privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                       faviconStoring: favicons,
-                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                      isAppLaunchedInBackground: isAppLaunchedInBackground)
         launchBreadcrumb.mark(.sync)
 
         let webExtensionManagerHolder = WebExtensionManagerHolder()

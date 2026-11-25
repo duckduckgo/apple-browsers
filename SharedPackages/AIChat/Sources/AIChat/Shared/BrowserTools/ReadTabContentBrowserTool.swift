@@ -1,6 +1,5 @@
 //
 //  ReadTabContentBrowserTool.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,17 +16,18 @@
 //  limitations under the License.
 //
 
-import AIChat
 import Foundation
-import FoundationExtensions
+import PrivacyConfig
+
+public typealias BrowserToolPageLoader = @MainActor (JSONValue?, BrowserToolCallContext) async -> Result<AIChatPageContextData, BrowserToolFailure>
 
 @MainActor
-final class ReadTabContentBrowserTool: BrowserTool {
+public final class ReadTabContentBrowserTool: BrowserTool {
 
-    let name = "readTabContent"
-    let permissionMode = BrowserToolPermissionMode.ask
+    public let name = AIChatBrowserToolsSubfeature.readTabContent.rawValue
+    public let permissionMode = BrowserToolPermissionMode.ask
 
-    let inputSchema: JSONValue = [
+    public let inputSchema: JSONValue = [
         "type": "object",
         "properties": [
             "tabId": [
@@ -37,15 +37,13 @@ final class ReadTabContentBrowserTool: BrowserTool {
         ]
     ]
 
-    private let scopeProvider: BrowserToolScopeProvider
-    private let reader: BrowserToolPageContentReading
+    private let readPage: BrowserToolPageLoader
 
-    init(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) {
-        self.scopeProvider = scopeProvider
-        self.reader = reader
+    public init(readPage: @escaping BrowserToolPageLoader) {
+        self.readPage = readPage
     }
 
-    func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
+    public func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
 
         switch arguments {
@@ -54,35 +52,25 @@ final class ReadTabContentBrowserTool: BrowserTool {
             return .failure(.invalidArguments)
         }
 
-        guard let scope = scopeProvider(context), scope.accepts(context) else { return .failure(.unavailable) }
-        let tab: Tab
-        switch BrowserToolTargetTab.resolve(tabIDArgument: arguments?["tabId"], context: context, scope: scope) {
-        case .failure(let failure):
-            return .failure(failure)
-        case .resolved(let target): tab = target
+        let pageContext: AIChatPageContextData
+        switch await readPage(arguments?["tabId"], context) {
+        case .failure(let failure): return .failure(failure)
+        case .success(let page): pageContext = page
         }
-        guard !Task.isCancelled, scope.canRead(tab) else { return .failure(.unavailable) }
-        let tabID = tab.uid
 
-        guard let pageContext = await reader.pageContext(for: tab, in: scope) else {
-            return .failure(.unavailable)
-        }
-        guard !Task.isCancelled, scope.accepts(context), scope.canRead(tab) else {
-            return .failure(.unavailable)
-        }
-        guard let payload = Self.jsonValue(for: pageContext.withTabId(tabID)) else {
+        guard let payload = Self.jsonValue(for: pageContext) else {
             return .failure(.unavailable)
         }
         return .success(payload)
     }
 
-    static func jsonValue(for pageContext: AIChatPageContextData) -> JSONValue? {
+    private static func jsonValue(for pageContext: AIChatPageContextData) -> JSONValue? {
         guard let data = try? JSONEncoder().encode(pageContext),
               let string = String(data: data, encoding: .utf8) else { return nil }
         return try? JSONValue(jsonString: string)
     }
 
-    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+    public func clientToolResult(from value: JSONValue) -> BrowserToolResult {
         guard let tabID = value["tabId"]?.stringValue, let content = value["content"]?.stringValue else { return .failure(.unavailable) }
         // Documents (PDF) carry bytes, which the contract has no field for.
         if let mimeType = value["mimeType"]?.stringValue, mimeType != AIChatPageContextData.htmlMIMEType {
@@ -90,7 +78,7 @@ final class ReadTabContentBrowserTool: BrowserTool {
         }
         let clippedContent = BrowserToolOutputLimits.clip(content, to: BrowserToolOutputLimits.content)
         let fullContentLength = value["fullContentLength"]?.intValue ?? 0
-        let redactedURL = Self.redactedURL(value["url"]?.stringValue ?? "")
+        let redactedURL = BrowserToolOutputLimits.redactedURL(value["url"]?.stringValue ?? "")
         return .success([
             "title": .string(BrowserToolOutputLimits.clip(value["title"]?.stringValue ?? "", to: BrowserToolOutputLimits.title)),
             "url": .string(redactedURL),
@@ -103,14 +91,4 @@ final class ReadTabContentBrowserTool: BrowserTool {
         ])
     }
 
-    static func redactedURL(_ url: String) -> String {
-        var redacted = String(url[..<(url.firstIndex(where: { $0 == "?" || $0 == "#" }) ?? url.endIndex)])
-        if let scheme = redacted.range(of: "://") {
-            let authorityEnd = redacted[scheme.upperBound...].firstIndex(of: "/") ?? redacted.endIndex
-            if let at = redacted[scheme.upperBound..<authorityEnd].lastIndex(of: "@") {
-                redacted.removeSubrange(scheme.upperBound...at)
-            }
-        }
-        return BrowserToolOutputLimits.clip(redacted, to: BrowserToolOutputLimits.url)
-    }
 }

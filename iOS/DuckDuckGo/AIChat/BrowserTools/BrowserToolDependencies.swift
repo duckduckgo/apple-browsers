@@ -33,3 +33,29 @@ extension ListOpenTabsBrowserTool {
         }
     }
 }
+extension ReadTabContentBrowserTool {
+    convenience init(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) {
+        self.init(readPage: pageLoader(scopeProvider: scopeProvider, reader: reader))
+    }
+}
+private func pageLoader(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) -> BrowserToolPageLoader {
+    { tabIDArgument, context in
+        guard let scope = scopeProvider(context), scope.accepts(context) else { return .failure(.unavailable) }
+        let tab: Tab
+        switch BrowserToolTargetTab.resolve(tabIDArgument: tabIDArgument, context: context, scope: scope) {
+        case .failure(let failure):
+            return .failure(failure)
+        case .resolved(let target): tab = target
+        }
+        guard !Task.isCancelled, scope.canRead(tab) else { return .failure(.unavailable) }
+        let tabID = tab.uid
+
+        guard let pageContext = await reader.pageContext(for: tab, in: scope) else {
+            return .failure(.unavailable)
+        }
+        guard !Task.isCancelled, scope.accepts(context), scope.canRead(tab) else {
+            return .failure(.unavailable)
+        }
+        return .success(pageContext.withTabId(tabID))
+    }
+}

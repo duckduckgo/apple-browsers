@@ -28,14 +28,17 @@ final class NewChatHintsPresenter {
         static let cardSpacing: CGFloat = 10
     }
 
-    private let row = NewChatHintsView()
+    /// The chip row. Tab swipes move it with the input.
+    let row = NewChatHintsView()
     private var cancellable: AnyCancellable?
 
-    init(coordinator: UnifiedToggleInputCoordinator, parentView: UIView, below inputContainer: UIView) {
+    /// `swipeOverlay` covers the screen with sliding snapshots during a tab swipe; the row goes under it like the rest
+    /// of the tab, so the chips slide away in the snapshot instead of staying on top.
+    init(coordinator: UnifiedToggleInputCoordinator, parentView: UIView, swipeOverlay: UIView?) {
         row.translatesAutoresizingMaskIntoConstraints = false
         row.accessibilityIdentifier = "NewChatHints"
-        if inputContainer.superview === parentView {
-            parentView.insertSubview(row, belowSubview: inputContainer)
+        if let swipeOverlay, swipeOverlay.superview === parentView {
+            parentView.insertSubview(row, belowSubview: swipeOverlay)
         } else {
             parentView.addSubview(row)
         }

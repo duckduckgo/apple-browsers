@@ -141,7 +141,7 @@ extension MainViewController {
         coordinator.onTabMentionSuggestionsChanged = { [weak mentions] in mentions?.show($0) }
         newChatHintsPresenter = NewChatHintsPresenter(coordinator: coordinator,
                                                       parentView: view,
-                                                      below: viewCoordinator.unifiedToggleInputContainer)
+                                                      swipeOverlay: swipeTabsCoordinator?.swipeOverlayView)
         installFloatingReturnKeyViewController()
         installDuckAIKeyboardEdgeSweep()
         installSwipeTabsGesturesForUnifiedInput()

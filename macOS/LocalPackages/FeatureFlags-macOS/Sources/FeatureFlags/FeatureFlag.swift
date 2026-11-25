@@ -732,12 +732,6 @@ public enum FeatureFlag: String, CaseIterable {
 
 extension FeatureFlag: FeatureFlagDescribing {
 
-    /// Cohorts for the autoconsent heuristic action experiment
-    public enum HeuristicActionCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
     /// Cohorts for the onboarding Chrome extension install experiment
     public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
         case control
@@ -967,7 +961,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:
-            Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
+            Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
         case .heuristicHitTest:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AutoconsentSubfeature.heuristicHitTest), category: .popupBlocking)
         case .popupMutationObserver:

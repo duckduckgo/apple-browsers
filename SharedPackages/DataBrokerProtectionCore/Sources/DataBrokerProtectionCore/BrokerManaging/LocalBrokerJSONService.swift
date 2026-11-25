@@ -122,6 +122,13 @@ public final class BrokerUpdaterUserDefaults: BrokerUpdaterRepository {
     public func getLastCheckedVersion() -> String? {
         UserDefaults.standard.string(forKey: Consts.shouldCheckForUpdatesKey)
     }
+
+#if DEBUG
+    /// Makes the next update check re-read the bundled broker JSON, as after an app update.
+    public func resetLastCheckedVersion() {
+        UserDefaults.standard.removeObject(forKey: Consts.shouldCheckForUpdatesKey)
+    }
+#endif
 }
 
 public protocol AppVersionNumberProvider {

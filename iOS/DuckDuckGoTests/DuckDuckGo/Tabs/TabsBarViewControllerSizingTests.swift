@@ -484,6 +484,7 @@ private final class TabsBarSelectionDelegate: NSObject, TabsBarDelegate {
     func tabsBarDidPressAIChatMenuButton(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestOpenAISettings(_ controller: TabsBarViewController) {}
     func tabsBarDidRequestOpenDataClearingSettings(_ controller: TabsBarViewController) {}
+    func tabsBarOffersDataClearingSettings(_ controller: TabsBarViewController) -> Bool { true }
     func tabsBarDidRequestDismissContextualSheet(_ controller: TabsBarViewController, completion: @escaping () -> Void) { completion() }
 }
 

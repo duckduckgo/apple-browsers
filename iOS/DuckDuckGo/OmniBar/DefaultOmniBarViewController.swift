@@ -60,6 +60,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
     private let featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     private var modelPickerController: IPadOmnibarModelPickerController?
+    private var isFireMode = false
     private var reasoningPickerController: IPadOmnibarReasoningPickerController?
     private var toolPickerController: IPadOmnibarToolPickerController?
     private var attachmentController: IPadOmnibarAttachmentController?
@@ -162,6 +163,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     // MARK: - Initialization
+
+    override func refreshFireMode(fireMode: Bool) {
+        super.refreshFireMode(fireMode: fireMode)
+        isFireMode = fireMode
+        modelPickerController?.refreshFireMode(fireMode)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -731,8 +738,10 @@ extension DefaultOmniBarViewController {
         let controller = IPadOmnibarModelPickerController(
             startsNewChatsOnDefault: dependencies.featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel),
             duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
+            duckAiFireModeStorageHandler: dependencies.duckAiFireModeStorageHandler,
             featureFlagger: dependencies.featureFlagger
         )
+        controller.refreshFireMode(isFireMode)
         modelPickerController = controller
 
         // The reasoning and tool pickers share the model picker's store so all chips reflect the

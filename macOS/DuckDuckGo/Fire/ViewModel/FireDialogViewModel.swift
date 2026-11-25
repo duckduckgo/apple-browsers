@@ -367,7 +367,8 @@ final class FireDialogViewModel: ObservableObject {
     var shouldShowChatHistoryToggle: Bool {
         let isPresentedOnAIChatTab = tabCollectionViewModel?.selectedTab?.url?.isDuckAIURL ?? false
         // Only hide chats toggle when no chats in the new dialog, so default this to `true` when the flag is off.
-        let hasChats = featureFlagger.isFeatureOn(.fireDialogSimplified) ? chats.count > 0 : true
+        // The onboarding dialog always offers to delete chats: the list can be empty while the chat is still stored.
+        let hasChats = mode == .duckAIOnboarding || (featureFlagger.isFeatureOn(.fireDialogSimplified) ? chats.count > 0 : true)
         return aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption
             && mode.shouldShowChatHistoryToggle(featureFlagger)
             && (clearingOption.shouldShowChatHistoryToggle || isPresentedOnAIChatTab)

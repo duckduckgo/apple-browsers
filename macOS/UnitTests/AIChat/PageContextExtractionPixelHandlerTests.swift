@@ -120,13 +120,4 @@ struct PageContextExtractionPixelHandlerTests {
         #expect(serp.parameters == ["link_type": "serp"])
         #expect(AIChatPixel.aiChatLinkAskAboutPage(linkType: .other).parameters == ["link_type": "other"])
     }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A read retried without the session has its own pixel, with no legacy name prefix", .timeLimit(.minutes(1)))
-    func retryWithoutSessionPixelName() {
-        let pixel = AIChatPixel.aiChatLinkAskAboutPageRetryWithoutSession
-        #expect(pixel.name == "aichat_link_ask_about_page_retry_without_session_macos")
-        #expect(pixel.namePrefix == .none)
-        #expect(pixel.parameters == nil)
-    }
 }

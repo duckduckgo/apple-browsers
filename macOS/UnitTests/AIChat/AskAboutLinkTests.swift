@@ -246,15 +246,13 @@ struct LinkedPageRetryTests {
     @Test("A redirect to another origin is read again without the session", .timeLimit(.minutes(1)))
     func redirectRetriesWithoutSession() async {
         var attempts: [Bool] = []
-        var retries = 0
         let result = await LinkedPageContextLoader.read(with: { withSession in
             attempts.append(withSession)
             return withSession ? .failed(.redirectBlocked) : .success(Self.page)
-        }, onRetryWithoutSession: { retries += 1 })
+        })
 
         #expect(result == .success(Self.page))
         #expect(attempts == [true, false])
-        #expect(retries == 1)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -265,7 +263,7 @@ struct LinkedPageRetryTests {
         let result = await LinkedPageContextLoader.read(with: { withSession in
             attempts.append(withSession)
             return first
-        }, onRetryWithoutSession: { Issue.record("no retry expected") })
+        })
 
         #expect(result == first)
         #expect(attempts == [true])

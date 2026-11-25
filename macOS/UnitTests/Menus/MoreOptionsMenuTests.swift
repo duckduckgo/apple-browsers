@@ -401,27 +401,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     // MARK: - Paid AI Chat
 
     @MainActor
-    func testWhenUserIsAuthenticatedWithPaidAIChatFeatureAndFeatureFlagEnabledThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
-        // Given
-        mockAuthentication()
-        mockSubscriptionManager.resultFeatures = [.paidAIChat]
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
-        setupMoreOptionsMenu()
-
-        // When
-        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        XCTAssertTrue(subscriptionItem.hasSubmenu, "Subscription item should have submenu when user is authenticated")
-
-        await waitForSubscriptionSubmenuBuilding()
-        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
-
-        // Then
-        let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
-        XCTAssertNotNil(paidAIChatItem, "Paid AI Chat item should appear in subscription submenu when user has entitlement and feature flag is enabled")
-    }
-
-    @MainActor
-    func testWhenUserIsAuthenticatedWithPaidAIChatFeatureButFeatureFlagDisabledThenPaidAIChatItemDoesNotAppear() async throws {
+    func testWhenUserIsAuthenticatedWithPaidAIChatFeatureThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
         // Given
         mockAuthentication()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
@@ -436,7 +416,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         // Then
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
-        XCTAssertNil(paidAIChatItem, "Paid AI Chat item should not appear when feature flag is disabled")
+        XCTAssertNotNil(paidAIChatItem, "Paid AI Chat item should appear in subscription submenu when user has entitlement")
     }
 
     @MainActor
@@ -444,7 +424,6 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         mockSubscriptionManager.resultFeatures = []
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
@@ -464,7 +443,6 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate
         let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })

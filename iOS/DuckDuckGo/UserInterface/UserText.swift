@@ -1849,23 +1849,14 @@ public struct UserText {
     // Subscription Section
     public static let settingsSubscriptionSection = NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
     public static let settingsPProSectionFooter = NSLocalizedString("settings.ppro.footer", value: "Privacy Policy and Terms of Service", comment: "Title for Link in the Footer of Privacy Pro section")
-    public static func settingsSubscription(isPaidAIChatEnabled: Bool) -> String {
-        if isPaidAIChatEnabled {
-            return NSLocalizedString("settings.subscription.subscribe.title", value: "Secure your Wi-Fi, and chat privately with advanced AI models", comment: "Call to action title for Privacy Pro settings")
-        }
-        return NSLocalizedString("settings.subscription.subscribe.title.no.ai.chat", value: "Secure your Wi-Fi, and protect identity", comment: "Call to action title for Privacy Pro settings")
+    public static func settingsSubscription() -> String {
+        return NSLocalizedString("settings.subscription.subscribe.title", value: "Secure your Wi-Fi, and chat privately with advanced AI models", comment: "Call to action title for Privacy Pro settings")
     }
-    public static func settingsSubscriptionDescription(isPaidAIChatEnabled: Bool, isUS: Bool) -> String {
-        switch (isPaidAIChatEnabled, isUS) {
-        case (true, true):
+    public static func settingsSubscriptionDescription(isUS: Bool) -> String {
+        if isUS {
             return NSLocalizedString("settings.subscription.description.us", value: "Subscribers get our VPN, advanced AI models in Duck.ai, Personal Information Removal, and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
-        case (true, false):
-            return NSLocalizedString("settings.subscription.description.row", value: "Subscribers get our VPN, advanced AI models in Duck.ai, and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
-        case (false, true):
-            return NSLocalizedString("settings.subscription.description.no.duck.ai.us", value: "Subscribers get our VPN, Personal Information Removal, and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
-        case (false, false):
-            return NSLocalizedString("settings.subscription.description.no.duck.ai.row", value: "Subscribers get our VPN and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
         }
+        return NSLocalizedString("settings.subscription.description.row", value: "Subscribers get our VPN, advanced AI models in Duck.ai, and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
     }
     public static let settingsPProActivating = NSLocalizedString("settings.subscription.activating", value: "Activating", comment: "Privacy pro description subtitle in settings when the is activating")
 
@@ -2203,7 +2194,6 @@ public struct UserText {
         let format = NSLocalizedString("subscription.upgrade.button", value: "Upgrade to %@", comment: "Button to upgrade subscription. Parameter is the tier name (e.g., 'Pro')")
         return String(format: format, tierName.capitalized)
     }
-    public static let subscriptionChangePlan = NSLocalizedString("subscription.change.plan", value: "Update Plan or Cancel", comment: "Change plan or cancel title")
     public static let subscriptionManagePayment = NSLocalizedString("subscription.manage.payment", value: "Manage Payment or Cancel", comment: "Manage Payment or cancel action title")
     public static let subscriptionManageSubscription = NotLocalizedString("subscription.manage.subscription", value: "Manage Subscription", comment: "Action title that opens the payment platform's subscription management screen. Used for en_US locale only.")
     public static let subscriptionCancelSubscription = NotLocalizedString("subscription.cancel.subscription", value: "Cancel Subscription", comment: "Action title that starts the subscription cancellation flow. Used for en_US locale only.")
@@ -2230,9 +2220,10 @@ public struct UserText {
     static func subscriptionWithdrawConfirmFeaturesMessage(features: String) -> String {
         let localized = NSLocalizedString("subscription.withdraw.confirm.features.message",
                                            value: "%@ stop working once you confirm.",
-                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai.")
+                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.")
         return String(format: localized, features)
     }
+    public static let subscriptionWithdrawConfirmFeatureAdvancedDuckAI = NSLocalizedString("subscription.withdraw.confirm.feature.advanced.duckai", value: "advanced Duck.ai models", comment: "Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models")
     public static let subscriptionWithdrawConfirmButton = NSLocalizedString("subscription.withdraw.confirm.button", value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
     public static let subscriptionWithdrawKeepButton = NSLocalizedString("subscription.withdraw.keep.button", value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")
     public static let subscriptionNotSubscribed = NSLocalizedString("subscription.not.subscribed", value: "Not Subscribed", comment: "Subscription status shown after the user withdrew from the subscription contract")
@@ -2742,6 +2733,27 @@ public struct UserText {
     public static let settingsManageAIChatShortcuts = NSLocalizedString("settings.aichat.manage.shortcuts", value: "Manage Duck.ai Shortcuts", comment: "Top level settings for managing AI Chat shortcuts")
 
     public static let settingsDuckAISettings = NSLocalizedString("settings.aichat.duckai.settings", value: "Duck.ai Settings", comment: "Settings row that opens Duck.ai in a new tab")
+
+    static let settingsBrowserAccessTitle = NSLocalizedString("browser-tool.settings.title", value: "Browser Access", comment: "Settings screen and navigation row for Duck.ai browser tool permissions")
+    static let settingsBrowserAccessSwitchToTab = NSLocalizedString("browser-tool.settings.switch-to-tab.title", value: "Switch to Tab", comment: "Name of Duck.ai's browser tool for bringing an open tab forward")
+    static let settingsBrowserAccessSwitchToTabDetail = NSLocalizedString("browser-tool.settings.switch-to-tab.detail", value: "Bring one of your open tabs to the front.", comment: "Description of Duck.ai's Switch to Tab browser tool")
+    static let settingsBrowserAccessCanSee = NSLocalizedString("browser-tool.settings.can-see", value: "What Duck.ai Can See", comment: "Heading for read-only Duck.ai browser tools")
+    static let settingsBrowserAccessCanDo = NSLocalizedString("browser-tool.settings.can-do", value: "What Duck.ai Can Do", comment: "Heading for Duck.ai browser tools that perform actions")
+    static let settingsBrowserAccessFooter = NSLocalizedString("browser-tool.settings.caption", value: "Choose what actions Duck.ai can take in the browser, and whether it can act without asking for permission each time. These settings apply to every site and chat.", comment: "Explains the scope of Duck.ai browser tool permissions in Settings")
+    static let settingsBrowserAccessResetAll = NSLocalizedString("browser-tool.settings.reset-all", value: "Reset All", comment: "Button that restores the default permission for every Duck.ai browser tool")
+    static let settingsBrowserAccessResetAlertTitle = NSLocalizedString("browser-tool.settings.reset-alert.title", value: "Reset Browser Access?", comment: "Title of the confirmation alert for resetting all Duck.ai browser tool permissions")
+    static let settingsBrowserAccessResetAlertMessage = NSLocalizedString("browser-tool.settings.reset-alert.message", value: "This restores the default permission for every browser tool.", comment: "Message of the confirmation alert for resetting all Duck.ai browser tool permissions")
+    static let settingsBrowserAccessAlwaysAsk = NSLocalizedString("browser-tool.settings.state.ask", value: "Always Ask", comment: "Browser tool permission option that asks the user before acting")
+    static let settingsBrowserAccessAlwaysAllow = NSLocalizedString("browser-tool.settings.state.allow", value: "Always Allow", comment: "Browser tool permission option that lets Duck.ai act without asking")
+    static let settingsBrowserAccessNeverAllow = NSLocalizedString("browser-tool.settings.state.deny", value: "Never Allow", comment: "Browser tool permission option that denies access")
+    static let settingsBrowserAccessReadTabContent = NSLocalizedString("browser-tool.settings.read-tab-content.title", value: "Read Tab Content", comment: "Name of Duck.ai's browser tool for reading a tab")
+    static let settingsBrowserAccessReadTabContentDetail = NSLocalizedString("browser-tool.settings.read-tab-content.detail", value: "Read the title, address, and text of a tab.", comment: "Description of Duck.ai's Read Tab Content browser tool")
+    static let settingsBrowserAccessListOpenTabs = NSLocalizedString("browser-tool.settings.list-open-tabs.title", value: "List Open Tabs", comment: "Name of Duck.ai's browser tool for listing open tabs")
+    static let settingsBrowserAccessListOpenTabsDetail = NSLocalizedString("browser-tool.settings.list-open-tabs.detail", value: "See the title and address of each open tab.", comment: "Description of Duck.ai's List Open Tabs browser tool")
+    static let settingsBrowserAccessFindInPageDetail = NSLocalizedString("browser-tool.settings.find-in-page.detail", value: "Find text on a page and see short snippets around each match.", comment: "Description of Duck.ai's Find in Page browser tool")
+    static let settingsBrowserAccessSearchHistory = NSLocalizedString("browser-tool.settings.search-history.title", value: "Search Browsing History", comment: "Name of Duck.ai's browser tool for searching browsing history")
+    static let settingsBrowserAccessSearchHistoryDetail = NSLocalizedString("browser-tool.settings.search-history.detail", value: "Search the sites you’ve visited, including before this chat.", comment: "Description of Duck.ai's Search Browsing History browser tool")
+    static let settingsBrowserAccessSwitchToTabPrompt = NSLocalizedString("browser-tool.permission.title.switch-to-tab", value: "Allow Duck.ai to switch to another tab?", comment: "Title of the prompt asking to let Duck.ai switch tabs")
 
     public static let settingsAiChatSearchInputFooter = NSLocalizedString("settings.aichat.shortcuts.input.footer", value: "Search the web or ask Duck.ai directly from the Address Bar", comment: "Settings screen footer text for showing AI Chat in the input box")
 
@@ -3421,18 +3433,6 @@ public struct UserText {
                 comment: "Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message."
             )
 
-            static let vpnAndTwoMoreBold = NSLocalizedString(
-                "onboarding.subscription.promo.message.vpn-two-more-bold",
-                value: "VPN + 2 more premium protections",
-                comment: "Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag."
-            )
-
-            static let optionalSubscriptionBoldDeprecated = NSLocalizedString(
-                "onboarding.subscription.promo.message.optional-subscription-bold",
-                value: "optional paid subscription",
-                comment: "Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message."
-            )
-
             static let messageFormat = NSLocalizedString(
                 "onboarding.duckduckgo.subscription.promo.message",
                 value: "DuckDuckGo also has an %1$@, available with a %2$@ and %3$@.",
@@ -3443,12 +3443,6 @@ public struct UserText {
                 "subscription.promo.reinstaller.message",
                 value: "DuckDuckGo also has an **optional paid subscription**, with a secure **VPN** and **advanced, private AI**.",
                 comment: "Body text of the reinstaller subscription promo. ** markers indicate bold text and should be preserved in translations."
-            )
-
-            static let messageFormatDeprecated = NSLocalizedString(
-                "onboarding.subscription.promo.message",
-                value: "DuckDuckGo also has a secure %1$@, available with an %2$@.",
-                comment: "Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold)."
             )
 
             // MARK: - Legacy Methods
@@ -3475,28 +3469,6 @@ public struct UserText {
 
                 // Apply bold formatting
                 if let optionalSubscriptionRange = fullText.range(of: privateAIBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
-                }
-
-                return attributedString
-            }
-            static func messageDeprecated() -> NSAttributedString {
-                // Localized full message with numbered placeholders
-                let fullText = String(format: messageFormatDeprecated, vpnAndTwoMoreBold, optionalSubscriptionBoldDeprecated)
-
-                let attributedString = NSMutableAttributedString(string: fullText)
-
-                let boldAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.daxBodyBold()
-                ]
-
-                // Apply bold formatting
-                if let vpnAndTwoMorRange = fullText.range(of: vpnAndTwoMoreBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(vpnAndTwoMorRange, in: fullText))
-                }
-
-                // Apply bold formatting
-                if let optionalSubscriptionRange = fullText.range(of: optionalSubscriptionBoldDeprecated) {
                     attributedString.addAttributes(boldAttributes, range: NSRange(optionalSubscriptionRange, in: fullText))
                 }
 

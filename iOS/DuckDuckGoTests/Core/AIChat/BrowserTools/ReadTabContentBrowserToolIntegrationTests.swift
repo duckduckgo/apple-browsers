@@ -34,8 +34,7 @@ final class ReadTabContentBrowserToolIntegrationTests: XCTestCase {
             defer { fixture.cleanUp() }
             fixture.presenter.autoAnswer = decision
             let response = await fixture.service.invoke(try request(), from: fixture.script)
-            XCTAssertEqual(fixture.presenter.prompts.count, 1)
-            XCTAssertEqual(fixture.presenter.messages, ["Duck.ai wants to read this tab's content."])
+            XCTAssertEqual(fixture.presenter.prompts.map(\.toolName), ["readTabContent"])
             let tool = try XCTUnwrap(fixture.service.catalog.tool(for: .readTabContent))
             XCTAssertEqual(tool.permissionMode, .ask)
             switch decision {

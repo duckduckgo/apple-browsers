@@ -152,6 +152,12 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
         dismissLauncherPromoCallCount += 1
     }
 
+    private(set) var chatSubmittedCallCount = 0
+    @MainActor
+    func chatSubmitted() {
+        chatSubmittedCallCount += 1
+    }
+
     private(set) var launcherPromoIgnoredCallCount = 0
     @MainActor
     func launcherPromoIgnored() {

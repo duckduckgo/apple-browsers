@@ -67,9 +67,28 @@ final class DuckAiUsageLimitsStore {
     /// Lets an open surface update instead of waiting for the next activation, and is what releases
     /// a message the user has already acted on.
     var snapshotUpdates: AnyPublisher<Void, Never>? {
-        guard featureFlagger.isFeatureOn(.aiChatUsageWarnings),
-              let observing = storageHandler as? DuckAiNativeEntriesObserving else { return nil }
+        guard featureFlagger.isFeatureOn(.aiChatUsageWarnings) else { return nil }
+        return usageLimitsEntryUpdates
+    }
 
+    /// Not gated on the warnings flag: it only decides which model a new chat starts on.
+    var overLimitNewChatDefault: AIChatOverLimitNewChatDefault {
+        guard let storageHandler else { return .notOverLimit }
+        return DuckAiUsageSnapshotProvider(storage: storageHandler).currentSnapshot().overLimitNewChatDefault
+    }
+
+    /// The current over-limit default, then each different one web writes.
+    func overLimitNewChatDefaultPublisher<S: Scheduler>(receivingUpdatesOn scheduler: S) -> AnyPublisher<AIChatOverLimitNewChatDefault, Never> {
+        (usageLimitsEntryUpdates ?? Empty().eraseToAnyPublisher())
+            .receive(on: scheduler)
+            .map { self.overLimitNewChatDefault }
+            .prepend(overLimitNewChatDefault)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    private var usageLimitsEntryUpdates: AnyPublisher<Void, Never>? {
+        guard let observing = storageHandler as? DuckAiNativeEntriesObserving else { return nil }
         return observing.reservedEntryUpdatesPublisher
             .filter { $0 == .usageLimits }
             .map { _ in () }

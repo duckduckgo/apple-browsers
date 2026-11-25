@@ -13,6 +13,8 @@ on:
       - 'SharedPackages/BrowserServicesKit/**'
       - 'SharedPackages/Common/**'
       - 'SharedPackages/DDGError/**'
+      - 'SharedPackages/DebugServer/**'
+      - 'SharedPackages/HangMetrics/**'
       - 'SharedPackages/ICSParser/**'
       - 'SharedPackages/LocalModels/**'
       - 'SharedPackages/Infrastructure/SystemFrameworksExtensions/**'
@@ -59,6 +61,8 @@ jobs:
         SharedPackages/BrowserServicesKit/**
         SharedPackages/Common/**
         SharedPackages/DDGError/**
+        SharedPackages/DebugServer/**
+        SharedPackages/HangMetrics/**
         SharedPackages/ICSParser/**
         SharedPackages/LocalModels/**
         SharedPackages/Infrastructure/SystemFrameworksExtensions/**
@@ -383,6 +387,9 @@ jobs:
             SharedPackages/AttributedMetric/ios-unittests.xml
             SharedPackages/AutomationServer/ios-unittests.xml
             SharedPackages/DDGError/ios-unittests.xml
+            SharedPackages/DebugServer/ios-unittests.xml
+            SharedPackages/HangMetrics/ios-unittests.xml
+            SharedPackages/Persistence/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
             SharedPackages/LocalModels/ios-unittests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
@@ -402,6 +409,9 @@ jobs:
             SharedPackages/AttributedMetric/ios-unittests.xml
             SharedPackages/AutomationServer/ios-unittests.xml
             SharedPackages/DDGError/ios-unittests.xml
+            SharedPackages/DebugServer/ios-unittests.xml
+            SharedPackages/HangMetrics/ios-unittests.xml
+            SharedPackages/Persistence/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
             SharedPackages/LocalModels/ios-unittests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
@@ -435,6 +445,9 @@ jobs:
             SharedPackages/AttributedMetric/ios-build-log.txt
             SharedPackages/AutomationServer/ios-build-log.txt
             SharedPackages/DDGError/ios-build-log.txt
+            SharedPackages/DebugServer/ios-build-log.txt
+            SharedPackages/HangMetrics/ios-build-log.txt
+            SharedPackages/Persistence/ios-build-log.txt
             SharedPackages/ICSParser/ios-build-log.txt
             SharedPackages/LocalModels/ios-build-log.txt
             SharedPackages/Infrastructure/DesignResourcesKit/ios-build-log.txt
@@ -456,6 +469,9 @@ jobs:
             SharedPackages/AttributedMetric/DerivedData/Logs/Test/*.xcresult
             SharedPackages/AutomationServer/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/DebugServer/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/HangMetrics/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/Persistence/DerivedData/Logs/Test/*.xcresult
             SharedPackages/ICSParser/DerivedData/Logs/Test/*.xcresult
             SharedPackages/LocalModels/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/DesignResourcesKit/DerivedData/Logs/Test/*.xcresult
@@ -562,6 +578,26 @@ jobs:
           junit-path: package-tests.xml
           log-path: build-log.txt
           title: DDGError (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+      - name: Process test results (DebugServer)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/DebugServer
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: DebugServer (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+      - name: Process test results (HangMetrics)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/HangMetrics
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: HangMetrics (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
       - name: Process test results (ICSParser)
@@ -684,6 +720,8 @@ jobs:
             SharedPackages/AutomationServer/package-tests.xml
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
+            SharedPackages/DebugServer/package-tests.xml
+            SharedPackages/HangMetrics/package-tests.xml
             SharedPackages/ICSParser/package-tests.xml
             SharedPackages/LocalModels/package-tests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/package-tests.xml
@@ -699,6 +737,8 @@ jobs:
             SharedPackages/AutomationServer/package-tests-crash-details.json
             SharedPackages/Common/package-tests-crash-details.json
             SharedPackages/DDGError/package-tests-crash-details.json
+            SharedPackages/DebugServer/package-tests-crash-details.json
+            SharedPackages/HangMetrics/package-tests-crash-details.json
             SharedPackages/ICSParser/package-tests-crash-details.json
             SharedPackages/LocalModels/package-tests-crash-details.json
             SharedPackages/Infrastructure/DesignResourcesKit/package-tests-crash-details.json
@@ -722,6 +762,8 @@ jobs:
             SharedPackages/AutomationServer/package-tests.xml
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
+            SharedPackages/DebugServer/package-tests.xml
+            SharedPackages/HangMetrics/package-tests.xml
             SharedPackages/ICSParser/package-tests.xml
             SharedPackages/LocalModels/package-tests.xml
             SharedPackages/Infrastructure/DesignResourcesKit/package-tests.xml
@@ -764,6 +806,8 @@ jobs:
             SharedPackages/AutomationServer/build-log.txt
             SharedPackages/Common/build-log.txt
             SharedPackages/DDGError/build-log.txt
+            SharedPackages/DebugServer/build-log.txt
+            SharedPackages/HangMetrics/build-log.txt
             SharedPackages/ICSParser/build-log.txt
             SharedPackages/LocalModels/build-log.txt
             SharedPackages/Infrastructure/DesignResourcesKit/build-log.txt
@@ -791,6 +835,8 @@ jobs:
             SharedPackages/AutomationServer/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Common/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/DebugServer/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/HangMetrics/DerivedData/Logs/Test/*.xcresult
             SharedPackages/ICSParser/DerivedData/Logs/Test/*.xcresult
             SharedPackages/LocalModels/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/DesignResourcesKit/DerivedData/Logs/Test/*.xcresult

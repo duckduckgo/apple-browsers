@@ -32,12 +32,14 @@ let package = Package(
         .target(
             name: "DebugServer",
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .testTarget(
             name: "DebugServerTests",
-            dependencies: ["DebugServer"]
+            dependencies: ["DebugServer"],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

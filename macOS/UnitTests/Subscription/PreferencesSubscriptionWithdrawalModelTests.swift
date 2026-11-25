@@ -165,13 +165,13 @@ final class PreferencesSubscriptionWithdrawalModelTests {
                                                                .identityTheftRestoration, .dataBrokerProtection, .unknown])
         let listFormatter = ListFormatter()
         listFormatter.locale = Locale(identifier: "en_US")
-        let features = listFormatter.string(from: [UserText.withdrawDialogVPNArticle + " " + UserText.vpnServiceTitle,
+        let features = listFormatter.string(from: [UserText.withdrawDialogFeatureVPN,
                                                    UserText.personalInformationRemovalServiceTitle,
                                                    UserText.identityTheftRestorationServiceTitle,
                                                    UserText.withdrawDialogFeatureAdvancedDuckAI])!
 
         #expect(model.confirmationMessage(for: offer) == UserText.withdrawDialogMessage(tierName: "Plus", refundAmount: "£9.99")
-                + "\n\n" + UserText.withdrawDialogLoseAccessPrefix + " " + features + ".")
+                + "\n\n" + UserText.withdrawDialogLoseAccessMessage(features: features))
     }
 
     @available(macOS 13, *)

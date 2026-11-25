@@ -141,13 +141,13 @@ struct SubscriptionWithdrawalModelTests {
                                                                .identityTheftRestoration, .dataBrokerProtection, .unknown])
         let listFormatter = ListFormatter()
         listFormatter.locale = Locale(identifier: "en_US")
-        let features = listFormatter.string(from: [UserText.subscriptionWithdrawConfirmVPNArticle + " " + UserText.settingsPProVPNTitle,
+        let features = listFormatter.string(from: [UserText.subscriptionWithdrawConfirmFeatureVPN,
                                                    UserText.settingsPProDBPTitle,
                                                    UserText.settingsPProITRTitle,
                                                    UserText.subscriptionWithdrawConfirmFeatureAdvancedDuckAI])!
 
         #expect(model.confirmationMessage(for: offer) == UserText.subscriptionWithdrawConfirmMessage(tierName: "Plus", refundAmount: "£9.99")
-                + "\n\n" + UserText.subscriptionWithdrawConfirmLoseAccessPrefix + " " + features + ".")
+                + "\n\n" + UserText.subscriptionWithdrawConfirmLoseAccessMessage(features: features))
     }
 
     @available(iOS 16, macOS 13, *)

@@ -2096,6 +2096,18 @@
         }
       }
     },
+    "subscription.dialog.withdraw.feature.vpn" : {
+      "comment" : "VPN item in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "the VPN"
+          }
+        }
+      }
+    },
     "subscription.dialog.withdraw.keep.button" : {
       "comment" : "Button that dismisses the withdrawal confirmation and keeps the subscription",
       "extractionState" : "extracted_with_value",
@@ -2156,14 +2168,14 @@
         }
       }
     },
-    "subscription.dialog.withdraw.lose.access.prefix" : {
-      "comment" : "Start of the second paragraph of the dialog confirming withdrawal from the subscription contract. It is followed by a list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models.",
+    "subscription.dialog.withdraw.lose.access.message" : {
+      "comment" : "Second paragraph of the dialog confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Once you confirm, you will lose access to"
+            "value" : "Once you confirm, you will lose access to %@."
           }
         }
       }
@@ -2344,18 +2356,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отказаться от подписки?"
-          }
-        }
-      }
-    },
-    "subscription.dialog.withdraw.vpn.article" : {
-      "comment" : "Article placed before VPN in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "the"
           }
         }
       }

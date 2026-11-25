@@ -58,4 +58,21 @@ final class SegmentSkipPreferencesTests: XCTestCase {
 
         XCTAssertEqual(updates, 2)
     }
+
+    func testSettingMapsOntoTheStoredFlagAndMode() {
+        XCTAssertEqual(preferences.setting, .askToSkip)
+
+        preferences.setting = .always
+        XCTAssertTrue(preferences.isEnabled)
+        XCTAssertEqual(preferences.skipMode, .auto)
+
+        preferences.setting = .off
+        XCTAssertFalse(preferences.isEnabled)
+        XCTAssertEqual(preferences.skipMode, .auto, "Turning off keeps the last chosen mode")
+        XCTAssertEqual(preferences.setting, .off)
+
+        preferences.setting = .askToSkip
+        XCTAssertTrue(preferences.isEnabled)
+        XCTAssertEqual(preferences.skipMode, .manual)
+    }
 }

@@ -287,6 +287,23 @@ final class YouTubeAdBlockingPreferencesTests: XCTestCase {
         XCTAssertFalse(shared.isEnabled)
         XCTAssertEqual(shared.skipMode, .auto)
     }
+
+    func testPopoverChangesRefreshTheSettingsModel() {
+        sut = makeSegmentSkipSUT(flagOn: true)
+        let popoverModel = makeSegmentSkipSUT(flagOn: true)
+        var changes = 0
+        let cancellable = sut.objectWillChange.sink { changes += 1 }
+
+        popoverModel.segmentSkipSetting = .always
+        XCTAssertGreaterThan(changes, 0)
+        XCTAssertTrue(sut.segmentSkipEnabled)
+        XCTAssertEqual(sut.segmentSkipMode, .auto)
+
+        popoverModel.segmentSkipSetting = .off
+        XCTAssertFalse(sut.segmentSkipEnabled)
+        XCTAssertEqual(sut.segmentSkipSetting, .off)
+        cancellable.cancel()
+    }
 }
 
 private final class TestAdBlockingAvailability: AdBlockingAvailabilityProviding {

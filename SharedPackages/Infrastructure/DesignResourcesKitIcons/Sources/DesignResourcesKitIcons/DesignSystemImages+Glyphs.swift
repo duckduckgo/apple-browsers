@@ -331,6 +331,7 @@ public extension DesignSystemImages {
             public static var platformWindows: DesignSystemImage { .init(resource: .platformWindows16) }
             public static var playSolid: DesignSystemImage { .init(resource: .playSolid16) }
             public static var permissionAutoplay: DesignSystemImage { .init(resource: .playerVideo16) }
+            public static var playerVideoAuto: DesignSystemImage { .init(resource: .playerVideoAuto16) }
             public static var pointUpSolid: DesignSystemImage { .init(resource: .pointUpSolid16) }
             public static var popupBlocked: DesignSystemImage { .init(resource: .popupBlocked16) }
             public static var print: DesignSystemImage { .init(resource: .print16) }

@@ -98,6 +98,36 @@ extension Preferences {
             }
         }
 
+        private var segmentSkipSettings: some View {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    ToggleMenuItem(UserText.segmentSkipTitle, isOn: $model.segmentSkipEnabled)
+                        .accessibilityIdentifier("Preferences.SegmentSkip.enabledToggle")
+
+                    Picker(selection: $model.segmentSkipMode) {
+                        Text(UserText.segmentSkipOptionAlways).tag(SegmentSkipMode.auto)
+                        Text(UserText.segmentSkipOptionAskToSkip).tag(SegmentSkipMode.manual)
+                    } label: {
+                        EmptyView()
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .fixedSize()
+                    .disabled(!model.segmentSkipEnabled)
+                    .accessibilityIdentifier("Preferences.SegmentSkip.skipModePicker")
+                }
+
+                VStack(alignment: .leading, spacing: 1) {
+                    TextMenuItemCaption(UserText.segmentSkipDescription)
+                    SegmentSkipDisclaimerView()
+                    TextButton(UserText.youTubeAdBlockingLearnMoreButton) {
+                        model.openLearnMoreURL()
+                    }
+                }
+                .padding(.leading, 19)
+            }
+        }
+
         var body: some View {
             PreferencePane(UserText.youTubeAdBlocking, spacing: 4) {
 
@@ -145,27 +175,9 @@ extension Preferences {
                         }
                         .padding(.leading, 19)
                     }
-                }
 
-                if model.isSegmentSkipAvailable {
-                    PreferencePaneSection(SegmentSkipCopy.sectionHeader) {
-                        TextMenuItemCaption(SegmentSkipCopy.explanation)
-
-                        Spacer().frame(height: 4)
-
-                        ToggleMenuItem(SegmentSkipCopy.toggle, isOn: $model.segmentSkipEnabled)
-                            .accessibilityIdentifier("Preferences.SegmentSkip.enabledToggle")
-
-                        if model.segmentSkipEnabled {
-                            Picker(SegmentSkipCopy.skipModeLabel, selection: $model.segmentSkipMode) {
-                                Text(verbatim: SegmentSkipCopy.manual).tag(SegmentSkipMode.manual)
-                                Text(verbatim: SegmentSkipCopy.auto).tag(SegmentSkipMode.auto)
-                            }
-                            .pickerStyle(.menu)
-                            .fixedSize()
-                            .padding(.leading, 19)
-                            .accessibilityIdentifier("Preferences.SegmentSkip.skipModePicker")
-                        }
+                    if model.isSegmentSkipAvailable {
+                        segmentSkipSettings
                     }
                 }
 
@@ -216,13 +228,12 @@ extension Preferences {
     }
 }
 
-private enum SegmentSkipCopy {
-    static let sectionHeader = "Sponsor Segments"
-    static let toggle = "Skip sponsor segments"
-    static let explanation = "Marks sponsored segments on the video progress bar. Manual mode shows a Skip button, Automatic mode skips them for you."
-    static let skipModeLabel = "Skip mode:"
-    static let manual = "Manual"
-    static let auto = "Automatic"
+/// Kept separate so it can later be shown only under specific feature flags.
+private struct SegmentSkipDisclaimerView: View {
+    var body: some View {
+        TextMenuItemCaption(UserText.segmentSkipDisclaimer)
+            .padding(.top, 4)
+    }
 }
 
 /// "YouTube Ad Block Unavailable" notice shown in the Preferences pane when the feature is

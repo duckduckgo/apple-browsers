@@ -72,3 +72,32 @@ public final class SegmentSkipPreferences {
         notificationCenter.post(name: Self.didChangeNotification, object: nil)
     }
 }
+
+/// The single user-facing choice shown in Settings and the address bar popover, mapped onto the stored on/off flag and skip mode.
+public enum SegmentSkipSetting: CaseIterable {
+    case always
+    case askToSkip
+    case off
+}
+
+public extension SegmentSkipPreferences {
+
+    var setting: SegmentSkipSetting {
+        get {
+            guard isEnabled else { return .off }
+            return skipMode == .auto ? .always : .askToSkip
+        }
+        set {
+            switch newValue {
+            case .off:
+                isEnabled = false
+            case .askToSkip:
+                skipMode = .manual
+                isEnabled = true
+            case .always:
+                skipMode = .auto
+                isEnabled = true
+            }
+        }
+    }
+}

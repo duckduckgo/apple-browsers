@@ -126,6 +126,15 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         }
     }
 
+    /// Single Always / Ask to Skip / Off choice used by the address bar popover, which has no separate on/off checkbox.
+    var segmentSkipSetting: SegmentSkipSetting {
+        get { segmentSkipPreferences.setting }
+        set {
+            objectWillChange.send()
+            segmentSkipPreferences.setting = newValue
+        }
+    }
+
     var duckPlayerMode: DuckPlayerMode {
         get { duckPlayerPreferences.duckPlayerMode }
         set { duckPlayerPreferences.duckPlayerMode = newValue }
@@ -204,6 +213,13 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
         self.duckPlayerPreferences.objectWillChange
             .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        // Keeps Settings in sync with changes made from the address bar popover, and vice versa.
+        segmentSkipPreferences.updates
+            .sink { [weak self] in
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)

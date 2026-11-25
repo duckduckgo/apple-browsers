@@ -41,6 +41,13 @@ public final class SubscriptionTokensDebugViewModel: ObservableObject {
         var id: String { field.rawValue }
     }
 
+    /// An invalidated token forked from the main token, and the Terminal command that writes it into the VPN extension's keychain item.
+    struct VPNExtensionOverride {
+        let command: String
+        let displayedCommand: String
+        let summary: String
+    }
+
     struct Alert {
         let title: String
         let message: String
@@ -50,13 +57,18 @@ public final class SubscriptionTokensDebugViewModel: ObservableObject {
     @Published private(set) var lastGetResult: String?
     @Published private(set) var isGettingToken = false
     @Published private(set) var invalidating: Field?
+    @Published private(set) var isGeneratingVPNExtensionOverride = false
+    @Published private(set) var vpnExtensionOverride: VPNExtensionOverride?
     @Published var alert: Alert?
 
     var canInvalidate: Bool { invalidate != nil }
+    var canGenerateVPNExtensionOverride: Bool { canInvalidate && vpnSystemExtensionBundleID != nil }
 
     private let keychainManager: any KeychainManaging
     private let getTokenContainer: (AuthTokensCachePolicy) async throws -> TokenContainer
     private let invalidate: ((String) async throws -> Void)?
+    private let fork: (TokenContainer) async throws -> TokenContainer
+    private let vpnSystemExtensionBundleID: String?
     /// The Terminal command that deletes the VPN system extension's token from the System keychain, or `nil` to leave it out.
     let vpnExtensionTokenRemovalCommand: String?
 
@@ -64,15 +76,19 @@ public final class SubscriptionTokensDebugViewModel: ObservableObject {
     ///   - keychainManager: Reads and deletes the subscription token keychain items.
     ///   - getTokenContainer: Gets the token through the subscription manager with the given policy.
     ///   - invalidate: Invalidates the given refresh token on the server. Nil outside staging.
+    ///   - fork: Spends the refresh token of the given container once and returns the new pair, without storing anything.
     ///   - vpnSystemExtensionBundleID: The bundle ID of the VPN system extension, used to build the command that deletes its token,
     ///     or `nil` when the VPN doesn't run as a system extension.
     public init(keychainManager: any KeychainManaging,
                 getTokenContainer: @escaping (AuthTokensCachePolicy) async throws -> TokenContainer,
                 invalidate: ((String) async throws -> Void)?,
+                fork: @escaping (TokenContainer) async throws -> TokenContainer,
                 vpnSystemExtensionBundleID: String? = nil) {
         self.keychainManager = keychainManager
         self.getTokenContainer = getTokenContainer
         self.invalidate = invalidate
+        self.fork = fork
+        self.vpnSystemExtensionBundleID = vpnSystemExtensionBundleID
         self.vpnExtensionTokenRemovalCommand = vpnSystemExtensionBundleID.map(Self.vpnExtensionTokenRemovalCommand(bundleID:))
         reload()
     }
@@ -90,6 +106,37 @@ public final class SubscriptionTokensDebugViewModel: ObservableObject {
                           message: "The server invalidated the stored \(field.rawValue) refresh token. The token stays in the keychain.")
         } catch {
             alert = Alert(title: "Invalidation failed", message: String(describing: error))
+        }
+    }
+
+    /// Forks the main token into two pairs: the app keeps one, and the other is invalidated and put into a command
+    /// that overrides the VPN extension's token.
+    func generateInvalidVPNExtensionTokenOverride() async {
+        guard let invalidate, let vpnSystemExtensionBundleID, case .found(let current) = read(.tokenContainer) else { return }
+        isGeneratingVPNExtensionOverride = true
+        vpnExtensionOverride = nil
+        defer {
+            isGeneratingVPNExtensionOverride = false
+            reload()
+        }
+        do {
+            let extensionToken = try await fork(current)
+            // Spending the same refresh token again mints an independent pair, which becomes the app's token.
+            _ = try await getTokenContainer(.localForceRefresh)
+            try await invalidate(extensionToken.refreshToken)
+            guard let data = extensionToken.data as? Data else {
+                alert = Alert(title: "Override failed", message: "Can't encode the forked token.")
+                return
+            }
+            let hex = data.map { String(format: "%02x", $0) }.joined()
+            let issued = extensionToken.decodedRefreshToken.issuedAtDate.formatted(date: .omitted, time: .standard)
+            vpnExtensionOverride = VPNExtensionOverride(
+                command: Self.vpnExtensionTokenOverrideCommand(bundleID: vpnSystemExtensionBundleID, tokenHex: hex),
+                displayedCommand: Self.vpnExtensionTokenOverrideCommand(bundleID: vpnSystemExtensionBundleID,
+                                                                        tokenHex: "\(hex.prefix(16))…(\(data.count) bytes)"),
+                summary: "Account \(extensionToken.decodedAccessToken.externalID), refresh token issued \(issued), invalidated on the server.")
+        } catch {
+            alert = Alert(title: "Override failed", message: String(describing: error))
         }
     }
 
@@ -114,13 +161,26 @@ public final class SubscriptionTokensDebugViewModel: ObservableObject {
 
     /// Builds the `security` command that deletes the token the VPN system extension with the given bundle ID stores in the System keychain.
     static func vpnExtensionTokenRemovalCommand(bundleID: String) -> String {
-        "sudo security delete-generic-password -s '\(bundleID).authTokenContainer' -a '\(bundleID).tokenContainer' /Library/Keychains/System.keychain"
+        "sudo security delete-generic-password \(vpnExtensionTokenItem(bundleID: bundleID)) \(systemKeychain)"
     }
 
-    func copyVPNExtensionTokenRemovalCommand() {
-        guard let vpnExtensionTokenRemovalCommand else { return }
+    /// Builds the command that replaces the VPN system extension's token with the token container JSON given as hex.
+    /// `-U` updates the existing item in place, so it keeps the access list that trusts the extension.
+    static func vpnExtensionTokenOverrideCommand(bundleID: String, tokenHex: String) -> String {
+        "TOKEN_HEX=\(tokenHex); "
+            + "sudo security add-generic-password -U \(vpnExtensionTokenItem(bundleID: bundleID)) -l '\(vpnExtensionTokenLabel)' -X \"$TOKEN_HEX\" \(systemKeychain)"
+    }
+
+    private static let systemKeychain = "/Library/Keychains/System.keychain"
+    private static let vpnExtensionTokenLabel = "DuckDuckGo Network Protection Auth Token Container"
+
+    private static func vpnExtensionTokenItem(bundleID: String) -> String {
+        "-s '\(bundleID).authTokenContainer' -a '\(bundleID).tokenContainer'"
+    }
+
+    func copy(_ command: String) {
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(vpnExtensionTokenRemovalCommand, forType: .string)
+        NSPasteboard.general.setString(command, forType: .string)
     }
 
     func remove(_ field: Field) {
@@ -143,12 +203,13 @@ public final class SubscriptionTokensDebugViewModel: ObservableObject {
     }
 }
 
-/// Shows the main and backup subscription tokens stored in the keychain, and lets the user get, fork or remove them.
+/// Shows the main and backup subscription tokens stored in the keychain, and lets the user get, invalidate or remove them.
 public struct SubscriptionTokensDebugView: View {
 
     @ObservedObject var model: SubscriptionTokensDebugViewModel
     @State private var pendingRemoval: SubscriptionTokensDebugViewModel.Field?
     @State private var pendingInvalidation: SubscriptionTokensDebugViewModel.Field?
+    @State private var isConfirmingVPNExtensionOverride = false
 
     public init(model: SubscriptionTokensDebugViewModel) {
         self.model = model
@@ -189,6 +250,15 @@ public struct SubscriptionTokensDebugView: View {
             Button("Invalidate", role: .destructive) {
                 if let pendingInvalidation { Task { await model.invalidateRefreshToken(pendingInvalidation) } }
             }
+        }
+        .confirmationDialog("Fork the main token and invalidate the copy for the VPN extension?",
+                            isPresented: $isConfirmingVPNExtensionOverride,
+                            titleVisibility: .visible) {
+            Button("Generate", role: .destructive) {
+                Task { await model.generateInvalidVPNExtensionTokenOverride() }
+            }
+        } message: {
+            Text(verbatim: "The main token is replaced by a new working pair. The other pair is invalidated on the server.")
         }
         .alert(model.alert?.title ?? "", isPresented: Binding(get: { model.alert != nil }, set: { if !$0 { model.alert = nil } })) {
             Button("OK", role: .cancel) {}
@@ -260,7 +330,35 @@ public struct SubscriptionTokensDebugView: View {
                 Text(command)
                     .font(.footnote.monospaced())
                     .textSelection(.enabled)
-                Button("Copy") { model.copyVPNExtensionTokenRemovalCommand() }
+                Button("Copy") { model.copy(command) }
+
+                Divider()
+
+                HStack {
+                    Button("Generate Invalid Token Override", role: .destructive) {
+                        isConfirmingVPNExtensionOverride = true
+                    }
+                    .disabled(!model.canGenerateVPNExtensionOverride || model.isGeneratingVPNExtensionOverride)
+                    if model.isGeneratingVPNExtensionOverride {
+                        SwiftUI.ProgressView().controlSize(.small)
+                    }
+                }
+                if !model.canGenerateVPNExtensionOverride {
+                    Text(verbatim: "Generating works only on the staging environment.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                if let override = model.vpnExtensionOverride {
+                    Text(override.summary)
+                    Text(verbatim: "Run this in Terminal to replace the extension's token with it:")
+                    Text(override.displayedCommand)
+                        .font(.footnote.monospaced())
+                        .textSelection(.enabled)
+                    Button("Copy") { model.copy(override.command) }
+                    Text(verbatim: "The extension's item must exist: an item created by this command trusts only `security`, so the extension can't read it. Then start the VPN from System Settings, or let on-demand start it. Starting it from DuckDuckGo replaces the extension's token with the app's token.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)

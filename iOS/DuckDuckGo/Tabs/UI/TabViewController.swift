@@ -2167,6 +2167,12 @@ class TabViewController: UIViewController {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL, isNavigationError: lastError != nil)
         }
 
+        // An in-page link only changes the fragment; any other change, such as an in-page app's route, leaves the page.
+        let withoutFragment = { (url: URL?) in url?.absoluteString.components(separatedBy: "#").first }
+        if withoutFragment(previousURL) != withoutFragment(newURL) {
+            cancelPageTranslation()
+        }
+
         guard let newURL = newURL else { return }
 
         if url == nil {
@@ -2914,6 +2920,7 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        Task { @MainActor [pageTranslationSession] in pageTranslationSession?.cancel() }
         let browserToolsScript = userScripts?.aiChatUserScript
         Task { @MainActor in browserToolsScript?.detachBrowserTools() }
         delegateSessionFindInPage?.done()
@@ -2968,6 +2975,22 @@ extension TabViewController: LoginFormDetectionDelegate {
         detectedLoginURL = webView.url
     }
     
+}
+
+// The page's translation shows on the same bar as page loads.
+extension TabViewController: PageTranslationProgress {
+
+    func translationDidStart() {
+        progressWorker.didStartLoading(.translation)
+    }
+
+    func translationDidProgress(_ fraction: Double) {
+        progressWorker.progressDidChange(fraction)
+    }
+
+    func translationDidFinish() {
+        progressWorker.didFinishLoading()
+    }
 }
 
 // MARK: - WKNavigationDelegate
@@ -3030,7 +3053,7 @@ extension TabViewController: WKNavigationDelegate {
             signpostSearchCommit(url: webView.url)
             pageTranslationBridge?.documentDidChange()
             // The old page's translation may still be running; the new page gets its own session.
-            pageTranslationSession = nil
+            cancelPageTranslation()
         }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
@@ -3187,9 +3210,19 @@ extension TabViewController: WKNavigationDelegate {
 
     private func translatePage(_ offer: TranslationOffer) {
         guard let bridge = pageTranslationBridge, let pageTranslator else { return }
-        let session = pageTranslationSession ?? PageTranslationSession(bridge: bridge, translator: pageTranslator)
+        let settings = WebPageTranslationSettings(privacyConfigurationManager: privacyConfigurationManager)
+        let session = pageTranslationSession ?? PageTranslationSession(bridge: bridge,
+                                                                       translator: pageTranslator,
+                                                                       batchCharacterLimit: { settings.batchCharacterLimit },
+                                                                       progress: self)
         pageTranslationSession = session
         session.start(offer)
+    }
+
+    /// Stops the page's translation, if any, without finishing the progress bar: a navigation owns it now.
+    private func cancelPageTranslation() {
+        pageTranslationSession?.cancel()
+        pageTranslationSession = nil
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.
@@ -3306,6 +3339,7 @@ extension TabViewController: WKNavigationDelegate {
         if webView === self.webView {
             firstPaintCover.didStartNavigation(navigation)
             translationBannerPresenter.dismiss(animated: false)
+            cancelPageTranslation()
         }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {

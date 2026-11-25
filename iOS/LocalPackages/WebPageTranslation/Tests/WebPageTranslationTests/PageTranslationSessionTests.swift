@@ -64,20 +64,34 @@ struct PageTranslationSessionTests {
         }
     }
 
+    private final class ProgressSpy: PageTranslationProgress {
+        var events: [String] = []
+
+        func translationDidStart() { events.append("start") }
+        func translationDidProgress(_ fraction: Double) { events.append("\(fraction)") }
+        func translationDidFinish() { events.append("finish") }
+    }
+
     private struct ExtractFailure: Error {}
 
     private let bridge = FakeBridge()
     private let translator = FakeTranslator()
+    private let progress = ProgressSpy()
     private let offer = TranslationOffer(source: "fr", target: "en", pairID: "fr-en-base")
 
-    private func makeSession() -> PageTranslationSession {
-        PageTranslationSession(bridge: bridge, translator: translator)
+    private func makeSession(characterLimit: @escaping () -> Int = { 2000 }) -> PageTranslationSession {
+        PageTranslationSession(bridge: bridge, translator: translator, batchCharacterLimit: characterLimit, progress: progress)
     }
 
     private func waitUntilDone(_ session: PageTranslationSession) async {
         while session.isTranslating {
             await Task.yield()
         }
+    }
+
+    /// Five one-character units, ids 1 to 5; `visible` lists the ones in the viewport.
+    private func units(visible: Set<Int>) -> [PageTranslationUnit] {
+        (1...5).map { PageTranslationUnit(id: $0, text: "\($0)", html: false, vp: visible.contains($0) ? 1 : 0) }
     }
 
     @available(iOS 16, macOS 13, *)
@@ -101,6 +115,105 @@ struct PageTranslationSessionTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("batches are translated and applied one at a time, visible units first", .timeLimit(.minutes(1)))
+    func appliesOneBatchAtATimeVisibleFirst() async {
+        bridge.units = units(visible: [5])
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(translator.calls.map { $0.units.map(\.id) } == [[5, 1], [2, 3], [4]])
+        #expect(bridge.applied.map { $0.updates.map(\.id) } == [[5, 1], [2, 3], [4]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("progress moves after each applied batch, then finishes, with all units visible or none",
+          .timeLimit(.minutes(1)), arguments: [Set(1...5), []])
+    func reportsProgressPerBatch(visible: Set<Int>) async {
+        bridge.units = units(visible: visible)
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(progress.events == ["start", "0.4", "0.8", "1.0", "finish"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("the bar finishes once the visible units are applied, and the rest of the page carries on", .timeLimit(.minutes(1)))
+    func finishesProgressWhenTheVisibleUnitsAreApplied() async {
+        bridge.units = units(visible: [5])
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(progress.events == ["start", "1.0", "finish"])
+        #expect(bridge.applied.count == 3)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("the batch character limit is read when a translation starts", .timeLimit(.minutes(1)))
+    func readsBatchCharacterLimitAtStart() async {
+        bridge.units = units(visible: [5])
+        var limit = 2
+        let session = makeSession(characterLimit: { limit })
+        limit = 100
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(bridge.applied.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("cancel stops before the next apply and leaves the progress bar to the navigation", .timeLimit(.minutes(1)))
+    func cancelDoesNotFinishProgress() async {
+        bridge.units = units(visible: [5])
+        translator.suspends = true
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        while !translator.isSuspended {
+            await Task.yield()
+        }
+        session.cancel()
+        translator.resume()
+        await waitUntilDone(session)
+
+        #expect(translator.calls.count == 1)
+        #expect(bridge.applied.isEmpty)
+        #expect(progress.events == ["start"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a page with no units finishes at once", .timeLimit(.minutes(1)))
+    func zeroUnitsFinishes() async {
+        let session = makeSession()
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(translator.calls.isEmpty)
+        #expect(progress.events == ["start", "finish"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("an error ends the translation and finishes the progress bar", .timeLimit(.minutes(1)))
+    func errorFinishesProgress() async {
+        bridge.extractError = ExtractFailure()
+        let session = makeSession()
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(translator.calls.isEmpty)
+        #expect(bridge.applied.isEmpty)
+        #expect(progress.events == ["start", "finish"])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("start while translating is ignored", .timeLimit(.minutes(1)))
     func startWhileTranslatingIsIgnored() async {
         bridge.units = [PageTranslationUnit(id: 1, text: "Bonjour", html: false, vp: 1)]
@@ -117,19 +230,5 @@ struct PageTranslationSessionTests {
 
         #expect(translator.calls.count == 1)
         #expect(bridge.applied.count == 1)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("errors end the translation quietly", .timeLimit(.minutes(1)))
-    func errorsEndQuietly() async {
-        bridge.extractError = ExtractFailure()
-        let session = makeSession()
-
-        session.start(offer)
-        await waitUntilDone(session)
-
-        #expect(!session.isTranslating)
-        #expect(translator.calls.isEmpty)
-        #expect(bridge.applied.isEmpty)
     }
 }

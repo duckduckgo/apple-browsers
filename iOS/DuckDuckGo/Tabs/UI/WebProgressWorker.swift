@@ -20,7 +20,15 @@
 import UIKit
 
 class WebProgressWorker {
-    
+
+    /// What the bar shows.
+    enum Activity {
+        /// Driven by WebKit's rough estimate. Takes the bar over from a translation, which the navigation has cancelled.
+        case pageLoad
+        /// Driven by an exact fraction, so the bar fills as reported. Waits for a page load to finish.
+        case translation
+    }
+
     private struct Constants {
         static let initialProgress: CGFloat = 0.1
     }
@@ -28,7 +36,8 @@ class WebProgressWorker {
     weak var progressBar: ProgressView? {
         didSet(oldValue) {
             oldValue?.hide()
-            
+            progressBar?.fillsLinearly = activity == .translation
+
             if isLoading {
                 self.progressBar?.show(initialProgress: currentProgress)
             } else {
@@ -37,13 +46,18 @@ class WebProgressWorker {
         }
     }
     
-    private var isLoading = false
+    /// Nil while the bar is hidden.
+    private var activity: Activity?
+    private var isLoading: Bool { activity != nil }
     private var currentProgress: CGFloat = 0.0
     
-    func didStartLoading() {
-        guard isLoading == false else { return }
+    func didStartLoading(_ activity: Activity = .pageLoad) {
+        let pageLoadReplacesTranslation = self.activity == .translation && activity == .pageLoad
+        guard !isLoading || pageLoadReplacesTranslation else { return }
 
-        isLoading = true
+        self.activity = activity
+        currentProgress = 0
+        progressBar?.fillsLinearly = activity == .translation
         progressBar?.show()
         progressBar?.increaseProgress(to: Constants.initialProgress, animated: true)
     }
@@ -60,7 +74,7 @@ class WebProgressWorker {
     
     func didFinishLoading() {
         guard isLoading else { return }
-        isLoading = false
+        activity = nil
         progressBar?.finishAndHide()
         currentProgress = 0
     }

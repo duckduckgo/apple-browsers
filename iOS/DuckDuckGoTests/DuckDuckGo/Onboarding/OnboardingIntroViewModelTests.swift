@@ -1826,6 +1826,113 @@ extension OnboardingIntroViewModelTests {
     }
 }
 
+// MARK: - Download reason set from the install source (Duck.ai App Store custom product page)
+
+extension OnboardingIntroViewModelTests {
+
+    /// The steps the manager returns for a Duck.ai CPP install: the reason is already stored and there is no Download Screen.
+    private func setPrivateAICPPInstall() {
+        onboardingManagerMock.currentOnboardingFlow = .default
+        onboardingManagerMock.currentDownloadReason = .privateAIChat
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false)] + OnboardingStepsHelper.expectedRemainingSteps(for: .privateAIChat)
+    }
+
+    func testWhenStartOnboardingWithPresetAIDownloadReasonThenAIPersonalizationIsApplied() {
+        for isResumingOnboarding in [false, true] {
+            // GIVEN
+            onboardingManagerMock = OnboardingManagerMock()
+            pixelReporterMock = OnboardingPixelReporterMock()
+            setPrivateAICPPInstall()
+            let personalizationManager = MockOnboardingPersonalizationManager()
+            let searchExperienceProvider = MockOnboardingSearchExperienceProvider()
+            let prefetcher = MockOnboardingAIModelsPrefetcher()
+            let sut = makeSUT(
+                onboardingSearchExperienceProvider: searchExperienceProvider,
+                personalizationManager: personalizationManager,
+                aiModelsPrefetcher: prefetcher
+            )
+            sut.onAppear()
+            XCTAssertEqual(prefetcher.prefetchCallCount, 0)
+
+            // WHEN
+            sut.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
+
+            // THEN
+            XCTAssertEqual(personalizationManager.applyDefaultsCallCount, 1, "isResumingOnboarding: \(isResumingOnboarding)")
+            XCTAssertEqual(personalizationManager.capturedApplyDefaultsReason, .privateAIChat)
+            XCTAssertEqual(searchExperienceProvider.lastStoredValue, true)
+            XCTAssertEqual(prefetcher.prefetchCallCount, 1)
+            XCTAssertFalse(pixelReporterMock.didCallMeasureDownloadReasonSelection)
+            XCTAssertFalse(pixelReporterMock.didCallMeasureDownloadReasonImpression)
+            XCTAssertFalse(onboardingManagerMock.didCallSelectDownloadReason)
+            XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
+        }
+    }
+
+    func testWhenStartOnboardingWithoutDownloadReasonThenNoPersonalizationIsAppliedAndDownloadScreenIsShown() {
+        // GIVEN an organic install: no reason yet, the Download Screen follows the intro
+        onboardingManagerMock.currentOnboardingFlow = .default
+        onboardingManagerMock.currentDownloadReason = nil
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection]
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        let searchExperienceProvider = MockOnboardingSearchExperienceProvider()
+        let prefetcher = MockOnboardingAIModelsPrefetcher()
+        let sut = makeSUT(
+            onboardingSearchExperienceProvider: searchExperienceProvider,
+            personalizationManager: personalizationManager,
+            aiModelsPrefetcher: prefetcher
+        )
+        sut.onAppear()
+
+        // WHEN
+        sut.startOnboardingAction()
+
+        // THEN
+        XCTAssertEqual(personalizationManager.applyDefaultsCallCount, 0)
+        XCTAssertFalse(searchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoiceCalled)
+        XCTAssertEqual(prefetcher.prefetchCallCount, 0)
+        XCTAssertEqual(sut.state.intro?.type, .downloadReasonDialog(content: .mock))
+    }
+
+    func testWhenStartOnboardingWithChosenDownloadReasonAndDownloadScreenInFlowThenNoPersonalizationIsApplied() {
+        // GIVEN an organic user who answered the Download Screen before and whose flow still lists it
+        onboardingManagerMock.currentOnboardingFlow = .default
+        onboardingManagerMock.currentDownloadReason = .privateAIChat
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection] + OnboardingStepsHelper.expectedRemainingSteps(for: .privateAIChat)
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        let sut = makeSUT(personalizationManager: personalizationManager)
+        sut.onAppear()
+
+        // WHEN
+        sut.startOnboardingAction()
+
+        // THEN the setup runs on the Download Screen tap, not here
+        XCTAssertEqual(personalizationManager.applyDefaultsCallCount, 0)
+    }
+
+    func testWhenAdvancingWithPresetAIDownloadReasonThenAIChatStepsAreShownWithoutDownloadScreen() {
+        // GIVEN
+        setPrivateAICPPInstall()
+        let sut = makeSUT()
+        sut.onAppear()
+
+        // WHEN
+        sut.startOnboardingAction()
+
+        // THEN
+        XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
+
+        // WHEN
+        sut.setDefaultBrowserAction()
+
+        // THEN
+        guard case .aiModelDialog = sut.state.intro?.type else {
+            return XCTFail("Expected aiModelDialog state, got \(String(describing: sut.state.intro?.type))")
+        }
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDownloadReasonImpression)
+    }
+}
+
 // MARK: - Reason-tailored step side effects
 
 extension OnboardingIntroViewModelTests {

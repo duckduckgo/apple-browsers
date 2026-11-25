@@ -221,6 +221,8 @@ final class OnboardingIntroViewModel: ObservableObject {
             pixelReporter.measureStartOnboardingCTAAction()
             enrollInDownloadReasonVPNExperimentIfNeeded()
         }
+        // Also runs on Skip → Resume, which starts from the intro too.
+        applyDownloadReasonFromInstallSourceIfNeeded()
         makeNextViewState()
     }
 
@@ -630,6 +632,14 @@ private extension OnboardingIntroViewModel {
     func enrollInDownloadReasonVPNExperimentIfNeeded() {
         guard currentIntroStep == introSteps.first else { return }
         onboardingManager.enrollInDownloadReasonVPNExperimentIfNeeded()
+    }
+
+    /// Runs the Download Screen setup for a reason preset from the install (the flow has no Download Screen).
+    func applyDownloadReasonFromInstallSourceIfNeeded() {
+        guard currentIntroStep == introSteps.first,
+              !introSteps.contains(.downloadReasonSelection),
+              let reason = onboardingManager.currentDownloadReason else { return }
+        postDownloadSelectionPersonalizationSetup(for: reason)
     }
 
     func makeNextViewState() {

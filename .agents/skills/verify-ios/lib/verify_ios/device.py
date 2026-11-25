@@ -22,6 +22,17 @@ def parse_locator(s):
     return {"sel": sel}
 
 
+def launch_profile(flags):
+    """The app's -launchProfile JSON pinning these flags, or None when there is nothing to pin."""
+    return json.dumps({"featureFlags": dict(sorted(flags.items()))}) if flags else None
+
+
+def launch_profile_line(log):
+    """The newest LAUNCH_PROFILE_ result in the app's log, or None."""
+    lines = [line[line.index("LAUNCH_PROFILE_"):].strip() for line in log.splitlines() if "LAUNCH_PROFILE_" in line]
+    return lines[-1] if lines else None
+
+
 def native(locator):
     loc = parse_locator(locator)
     if "web" in loc:
@@ -212,21 +223,36 @@ class Device:
         problem = env.flag_problem(flags)
         if problem:
             raise Failed(problem)
-        # The app applies -ff. overrides only for internal users or in UI-test mode (AppDependencyProvider's
-        # allowOverrides). UI-test mode is the narrower switch: it doesn't turn on internal-only features.
+        # The app applies flag overrides only for internal users or in UI-test mode (AppDependencyProvider's
+        # allowOverrides). UI-test mode is the narrower switch: it doesn't turn on internal-only features, so the
+        # profile leaves out "internalUser". The -ff. arguments repeat the flags for builds from before launch
+        # profiles, such as an older base of `prove --base`, which ignore -launchProfile.
         args = ["isRunningUITests", "-AppleLanguages", f"({language['language']})", "-AppleLocale", language["locale"]]
+        profile = launch_profile(flags)
+        if profile:
+            args += ["-launchProfile", profile]
         args += [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]
+        since = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() - 1))
         self.driver.launch({"AUTOMATION_TOKEN": self.token}, args)
         self.language = dict(language)
         if self.web.wait_ready(60) is None:
             raise Failed(f"AutomationServer on [::1]:{self.web_port} never reported /contentBlockerReady true")
+        profile_result = self.launch_profile_line(since) if profile else None
+        if profile_result and not profile_result.startswith("LAUNCH_PROFILE_APPLIED"):
+            raise Failed(f"the app rejected the launch profile: {profile_result}", profile=profile)
         self.driver.wait({"id": "searchEntry"}, "exists", 20)
         ident = self.identity()
         if not ident.get("ok"):
             raise Failed("running app is not this worktree's build", build=ident)
         return dict(device=self.device, udid=self.udid, bundleId=BUNDLE, build=ident, driver=self.driver.name, flags=flags,
-                    language=language, ports=dict(web=self.web_port, runner=self.runner_port), readyMs=int((time.time() - t0) * 1000),
-                    runnerStarted=bool(started))
+                    launchProfile=profile_result, language=language, ports=dict(web=self.web_port, runner=self.runner_port),
+                    readyMs=int((time.time() - t0) * 1000), runnerStarted=bool(started))
+
+    def launch_profile_line(self, since):
+        """The app's LAUNCH_PROFILE_ line logged since `since`, or None (a build from before launch profiles)."""
+        p = run(["xcrun", "simctl", "spawn", self.udid, "log", "show", "--start", since, "--style", "compact",
+                 "--predicate", f'subsystem == "{BUNDLE}" AND category == "LaunchProfile"'], timeout=60)
+        return launch_profile_line(p.stdout)
 
     # capture conditions -----------------------------------------------------------
     def ui(self, option, value=None):

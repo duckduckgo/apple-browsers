@@ -10,22 +10,28 @@ Works in Debug and Alpha builds only.
 
 ## Launch
 
-1. Install the build. When you switch to a different PR or bug, uninstall first
-   (`xcrun simctl uninstall <udid> com.duckduckgo.mobile.ios`): a profile sets only the keys it lists, and saved values
-   from the previous one, such as flag overrides, would otherwise still apply. For the same PR, install over it.
-2. Launch with the profile:
+Launch with the skill's `launch` script. It boots this worktree's own simulator, installs the app, launches it with
+the profile and prints the result line:
 
 ```bash
-xcrun simctl launch --terminate-running-process <udid> com.duckduckgo.mobile.ios -launchProfile '{
+.claude/skills/ddg-ios-launch-profile/launch --fresh --app <path to DuckDuckGo.app> '{
   "internalUser": true,
   "onboardingCompleted": true,
-  "featureFlags": { "sitePermissions": true },
+  "featureFlags": { "floatingUIiOS27": true },
   "tabs": ["https://example.com"]
 }'
 ```
 
-`-launchProfile` takes inline JSON or an absolute path to a `.json` file. In XCUITest, which can't reinstall
-between tests, append `["-clearAllDefaults", "-launchProfile", json]` to `app.launchArguments`.
+- `--fresh` uninstalls first. Use it when you switch to a different PR or bug: a profile sets only the keys it lists,
+  and saved values from the previous one, such as flag overrides, would otherwise still apply. For the same PR, leave
+  it out.
+- Leave out `--app` to relaunch the installed build. `--device ipad` uses an iPad. `--udid` picks another simulator.
+- Exit 0: applied. 1: the app rejected the profile. 2: anything else.
+- Don't launch the app with `xcrun simctl` yourself. The script refuses `verify-ios-*` simulators; on one of them, a
+  running proof would check your app instead of its own.
+
+The profile is inline JSON or an absolute path to a `.json` file. In XCUITest, which can't reinstall between tests,
+append `["-clearAllDefaults", "-launchProfile", json]` to `app.launchArguments`.
 
 ## Keys
 
@@ -65,12 +71,12 @@ The catalog is `iOS/DuckDuckGo/LaunchProfile/IOSLaunchSettings.swift`, with the 
 
 ## Result
 
-The app logs one line and prints it to stderr (`xcrun simctl launch --console-pty` shows it). Otherwise read it with
+The app logs one line, which the `launch` script prints. In XCUITest, read it with
 `xcrun simctl spawn <udid> log show --last 1m --predicate 'category == "LaunchProfile"'`.
 
 | Line | Meaning |
 |---|---|
-| `LAUNCH_PROFILE_APPLIED keys=internalUser,featureFlags.sitePermissions` | Everything was written |
+| `LAUNCH_PROFILE_APPLIED keys=internalUser,featureFlags.floatingUIiOS27` | Everything was written |
 | `LAUNCH_PROFILE_FAILED Unknown key "featureFlag.x".` | Nothing was written. Fix the profile and launch again |
 | `LAUNCH_PROFILE_FAILED applied=internalUser,tabs <problem>` | A write failed after the listed keys were written. Reinstall and launch again |
 | No line | A Release build, or the argument didn't reach the app |
@@ -89,6 +95,8 @@ same profile without `tabs`, so the open tabs stay. XCUITest sends `launchArgume
 - If the profile fails, a key's meaning is unclear, or a PR's summary and JSON disagree: when the intent is clear,
   fix it, carry on and flag what you changed in your result; when it isn't, stop and ask. Quote the
   `LAUNCH_PROFILE_FAILED` line either way.
+- No profile in the PR: build one from its testing steps and the diff (new flags), say in your result what you
+  inferred, and do the steps no key covers by hand.
 
 ## In a PR
 
@@ -101,7 +109,7 @@ numbered in order with full URLs and the selected one marked.
 ````markdown
 **Starting state**
 - Feature flags:
-  - `sitePermissions`: ON
+  - `aiChatOmnibarDefaultPosition`: ON (Duck.ai setting for the address bar's starting mode)
   - `floatingUIiOS27`: OFF (classic toolbar)
 - Open tabs (2):
   1. https://example.com/
@@ -113,7 +121,7 @@ numbered in order with full URLs and the selected one marked.
 {
   "internalUser": true,
   "onboardingCompleted": true,
-  "featureFlags": { "sitePermissions": true, "floatingUIiOS27": false },
+  "featureFlags": { "aiChatOmnibarDefaultPosition": true, "floatingUIiOS27": false },
   "tabs": ["https://example.com/", "https://duckduckgo.com/"]
 }
 ```

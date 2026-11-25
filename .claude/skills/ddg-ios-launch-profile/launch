@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Launch the iOS app with a -launchProfile on this worktree's own simulator, and print the app's result line.
+
+Usage: launch [--device iphone|ipad] [--udid UDID] [--app PATH] [--fresh] PROFILE
+PROFILE is inline JSON or an absolute path to a .json file. Exit 0 when the profile applied, 1 when the app rejected
+it, 2 for any other problem. Never touches a verify-ios simulator: a proof running there would check our app instead.
+"""
+import argparse, hashlib, json, os, subprocess, sys, time
+
+BUNDLE = "com.duckduckgo.mobile.ios"
+DEVICE_TYPES = {"iphone": "iPhone 17 Pro", "ipad": "iPad Pro 11-inch (M5)"}
+VERIFY_IOS_PREFIX = "verify-ios-"
+RESULT_PREFIX = "LAUNCH_PROFILE_"
+RESULT_TIMEOUT = 60
+
+
+class Problem(Exception):
+    pass
+
+
+def run(cmd, check=False):
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    if check and p.returncode:
+        raise Problem(f"{' '.join(cmd[:4])} failed: {p.stderr.strip()}")
+    return p
+
+
+def simulator_name(device):
+    root = run(["git", "rev-parse", "--show-toplevel"], check=True).stdout.strip()
+    key = os.path.basename(root) + "-" + hashlib.sha1(root.encode()).hexdigest()[:6]
+    return f"launch-profile-{key}-{device}"
+
+
+def simulators():
+    devices = json.loads(run(["xcrun", "simctl", "list", "devices", "-j"], check=True).stdout)["devices"]
+    return [d for ds in devices.values() for d in ds if d.get("isAvailable", True)]
+
+
+def newest_ios_runtime():
+    runtimes = json.loads(run(["xcrun", "simctl", "list", "runtimes", "-j"], check=True).stdout)["runtimes"]
+    ios = [r for r in runtimes if r.get("platform") == "iOS" and r.get("isAvailable")]
+    if not ios:
+        raise Problem("no iOS simulator runtime is installed")
+    return max(ios, key=lambda r: [int(n) for n in r["version"].split(".")])["identifier"]
+
+
+def own_simulator(device):
+    """This worktree's simulator for the device, created if it doesn't exist."""
+    name = simulator_name(device)
+    found = next((d for d in simulators() if d["name"] == name), None)
+    if found:
+        return found["udid"], name
+    udid = run(["xcrun", "simctl", "create", name, DEVICE_TYPES[device], newest_ios_runtime()], check=True).stdout.strip()
+    return udid, name
+
+
+def chosen_simulator(udid):
+    found = next((d for d in simulators() if d["udid"] == udid), None)
+    if not found:
+        raise Problem(f"no available simulator with UDID {udid}")
+    if found["name"].startswith(VERIFY_IOS_PREFIX):
+        raise Problem(f"{found['name']} belongs to verify-ios; launching there would disturb its proofs. "
+                      "Leave out --udid to use this worktree's own simulator.")
+    return udid, found["name"]
+
+
+def boot(udid):
+    run(["xcrun", "simctl", "boot", udid])   # fails harmlessly when it's already booted
+    run(["xcrun", "simctl", "bootstatus", udid, "-b"], check=True)
+
+
+def install(udid, app, fresh):
+    if fresh:
+        run(["xcrun", "simctl", "uninstall", udid, BUNDLE])
+    if app:
+        run(["xcrun", "simctl", "install", udid, app], check=True)
+    if run(["xcrun", "simctl", "get_app_container", udid, BUNDLE]).returncode:
+        raise Problem("the app isn't installed on this simulator: pass --app <path to DuckDuckGo.app>")
+
+
+def launch(udid, profile):
+    """Launch with the profile and return the app's LAUNCH_PROFILE_ line."""
+    since = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() - 1))
+    run(["xcrun", "simctl", "launch", "--terminate-running-process", udid, BUNDLE, "-launchProfile", profile], check=True)
+    deadline = time.time() + RESULT_TIMEOUT
+    while time.time() < deadline:
+        line = result_line(udid, since)
+        if line:
+            return line
+        time.sleep(1)
+    raise Problem(f"the app logged no {RESULT_PREFIX} line within {RESULT_TIMEOUT} s: a Release build, or one from "
+                  "before launch profiles")
+
+
+def result_line(udid, since):
+    """The app's newest LAUNCH_PROFILE_ log line since `since`, or None."""
+    log = run(["xcrun", "simctl", "spawn", udid, "log", "show", "--start", since, "--style", "compact",
+               "--predicate", f'subsystem == "{BUNDLE}" AND category == "LaunchProfile"']).stdout
+    lines = [l[l.index(RESULT_PREFIX):].strip() for l in log.splitlines() if RESULT_PREFIX in l]
+    return lines[-1] if lines else None
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("profile", help="inline JSON or an absolute path to a .json file")
+    parser.add_argument("--device", choices=sorted(DEVICE_TYPES), default="iphone")
+    parser.add_argument("--udid", help="use this simulator instead of the worktree's own; verify-ios ones are refused")
+    parser.add_argument("--app", help="install this DuckDuckGo.app first")
+    parser.add_argument("--fresh", action="store_true", help="uninstall first, so no saved state from earlier profiles applies")
+    args = parser.parse_args()
+    try:
+        udid, name = chosen_simulator(args.udid) if args.udid else own_simulator(args.device)
+        print(f"simulator: {name} {udid}", flush=True)
+        boot(udid)
+        install(udid, args.app, args.fresh)
+        line = launch(udid, args.profile)
+    except Problem as problem:
+        print(f"error: {problem}", file=sys.stderr)
+        return 2
+    print(line)
+    return 0 if line.startswith(RESULT_PREFIX + "APPLIED") else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

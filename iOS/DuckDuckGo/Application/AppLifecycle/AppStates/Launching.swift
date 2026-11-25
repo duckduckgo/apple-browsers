@@ -617,7 +617,7 @@ struct Launching: LaunchingHandling {
     /// Nil when web page translation is off, or when its store or models folder can't be opened:
     /// translation is then unavailable rather than failing launch.
     private static func makeTranslationModels(featureFlagger: FeatureFlagger) -> TranslationModels? {
-        guard featureFlagger.isFeatureOn(.webPageTranslation) else {
+        guard featureFlagger.isFeatureOn(.pageTranslation) else {
             return nil
         }
 

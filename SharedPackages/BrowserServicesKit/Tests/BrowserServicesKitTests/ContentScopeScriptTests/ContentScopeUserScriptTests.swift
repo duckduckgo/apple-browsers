@@ -318,6 +318,26 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertLessThan(try source(for: .brokerProtection).count, try source(for: .contentScopeIsolated).count)
     }
 
+    func testPageTranslationContextRunsIsolatedOnTheIsolatedHandler() {
+        // GIVEN
+        let context = ContentScopeScriptContext.pageTranslation
+
+        // THEN
+        XCTAssertTrue(context.isIsolated)
+        XCTAssertFalse(context.appliesUserUnprotectedDomains)
+        XCTAssertEqual(context.fileName, "pageTranslation")
+        XCTAssertEqual(context.messagingContextName, "contentScopeScriptsIsolated")
+    }
+
+    func testPageTranslationSourceLoads() throws {
+        let source = try source(for: .pageTranslation)
+
+        XCTAssertFalse(source.isEmpty)
+        for placeholder in ["$CONTENT_SCOPE_JSON$", "$USER_PREFERENCES$", "$WEBKIT_MESSAGING_CONFIG$"] {
+            XCTAssertFalse(source.contains(placeholder), placeholder)
+        }
+    }
+
     // MARK: - Surrogate tracker data encoding
 
     func testWhenContentScopeContextHasSurrogateTrackerDataThenItIsEncodedAsTrackerData() throws {

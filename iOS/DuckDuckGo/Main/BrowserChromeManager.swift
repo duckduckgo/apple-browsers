@@ -68,10 +68,15 @@ protocol BrowserChromeDelegate: AnyObject {
     var floatingNewTabPageTopObscuredHeight: CGFloat { get }
 
     var omniBar: any OmniBar { get }
+
+    /// The view the address bar is drawn in: the floating toolbar's glass when the bar is embedded in it.
+    var addressBarChromeView: UIView { get }
     var tabBarContainer: UIView { get }
 }
 
 extension BrowserChromeDelegate {
+
+    var addressBarChromeView: UIView { omniBar.barView }
 
     func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets? { nil }
 

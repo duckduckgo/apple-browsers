@@ -1483,7 +1483,6 @@ extension Pixel {
         case subscriptionTierOptionsRequested
         case subscriptionTierOptionsSuccess
         case subscriptionTierOptionsFailure
-        case subscriptionTierOptionsUnexpectedProTier
 
         // Plan Change
         case subscriptionViewAllPlansClick
@@ -3355,7 +3354,6 @@ extension Pixel.Event {
         case .subscriptionTierOptionsRequested: return "m_subscription_tier-options_requested"
         case .subscriptionTierOptionsSuccess: return "m_subscription_tier-options_success"
         case .subscriptionTierOptionsFailure: return "m_subscription_tier-options_failure"
-        case .subscriptionTierOptionsUnexpectedProTier: return "m_subscription_tier-options_unexpected-pro-tier"
 
         // Plan Change
         case .subscriptionViewAllPlansClick: return "m_subscription_settings_view-all-plans_click"

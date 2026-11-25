@@ -136,6 +136,7 @@ final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplaySummarizationMenuItem = false
     var shouldDisplayTranslationMenuItem = false
     var shouldDisplaySelectionContextMenuItem = false
+    func shouldDisplayAskAboutLinkMenuItem(onSERP: Bool) -> Bool { false }
     var shouldAutomaticallySendPageContext = false
     var shouldDisplayAddressBarShortcutWhenTyping: Bool = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?

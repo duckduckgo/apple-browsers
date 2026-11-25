@@ -42,6 +42,7 @@ final class ContextMenuManager: NSObject {
     private let isLoadedInSidebar: Bool
     private let internalUserDecider: InternalUserDecider
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    private let aiChatLinkContextAttacher: AIChatLinkContextAttaching?
     private let tld: TLD
 
     private var isEmailAddress: Bool {
@@ -70,12 +71,14 @@ final class ContextMenuManager: NSObject {
          isLoadedInSidebar: Bool = false,
          internalUserDecider: InternalUserDecider,
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
+         aiChatLinkContextAttacher: AIChatLinkContextAttaching? = nil,
          tld: TLD
     ) {
         self.tabsPreferences = tabsPreferences
         self.isLoadedInSidebar = isLoadedInSidebar
         self.internalUserDecider = internalUserDecider
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
+        self.aiChatLinkContextAttacher = aiChatLinkContextAttacher
         self.tld = tld
         super.init()
 
@@ -207,6 +210,13 @@ extension ContextMenuManager {
         if selectedText?.isEmpty == false {
             menu.insertItem(.separator(), at: currentIndex)
             menu.insertItem(self.copySelectionMenuItem(), at: currentIndex + 1)
+            currentIndex += 2
+        }
+
+        if let askAboutLinkURL {
+            menu.insertItem(.separator(), at: currentIndex)
+            menu.insertItem(duckAISectionHeaderMenuItem(), at: currentIndex + 1)
+            menu.insertItem(askAboutLinkMenuItem(for: askAboutLinkURL), at: currentIndex + 2)
         }
     }
 
@@ -287,6 +297,18 @@ extension ContextMenuManager {
         default:
             return aiChatMenuConfiguration.shouldDisplayTranslationMenuItem
         }
+    }
+
+    private var askAboutLinkURL: URL? {
+        guard !isLoadedInSidebar,
+              case .url(let tabURL, _, _) = tabContent,
+              LinkedPageContextLoader.isSupported(tabURL),
+              let url = linkURL.flatMap(URL.init(string:)),
+              LinkedPageContextLoader.isSupported(url),
+              aiChatMenuConfiguration.shouldDisplayAskAboutLinkMenuItem(onSERP: tabURL.isDuckDuckGoSearch) else {
+            return nil
+        }
+        return url
     }
 
     private var shouldShowAttachSelection: Bool {
@@ -459,6 +481,22 @@ private extension ContextMenuManager {
             .withImage(DesignSystemImages.Glyphs.Size12.textSelectedRight, visibleOnMacOS27: true)
     }
 
+    func duckAISectionHeaderMenuItem() -> NSMenuItem {
+        if #available(macOS 14.0, *) {
+            return .sectionHeader(title: UserText.aiChatTitle)
+        }
+        let item = NSMenuItem(title: UserText.aiChatTitle)
+        item.isEnabled = false
+        return item
+    }
+
+    /// `linkURL` is gone by the time the item is clicked, so the item carries the link.
+    func askAboutLinkMenuItem(for url: URL) -> NSMenuItem {
+        NSMenuItem(title: UserText.aiChatMenuAskAboutPage, action: #selector(askAboutLink), target: self, representedObject: url)
+            .withImage(DesignSystemImages.Glyphs.Size12.aiChat, visibleOnMacOS27: true)
+            .withAccessibilityIdentifier("ContextMenuManager.askAboutLinkMenuItem")
+    }
+
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {
         return makeMenuItem(withTitle: title, action: action, from: item, withIdentifierIn: [identifier], keyEquivalent: keyEquivalent)
     }
@@ -532,6 +570,15 @@ private extension ContextMenuManager {
         }
 
         mainViewController?.aiChatSelectionContextAttacher.attach(text: selectedText, url: webView?.url, source: .contextMenu)
+    }
+
+    func askAboutLink(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? URL else {
+            assertionFailure("Ask About Page item without a link")
+            return
+        }
+        let linkType: AIChatLinkAskAboutPageType = tabContent?.urlForWebView?.isDuckDuckGoSearch == true ? .serp : .other
+        (aiChatLinkContextAttacher ?? mainViewController?.aiChatLinkContextAttacher)?.askAboutLink(url, linkType: linkType)
     }
 
     func translate(_ sender: NSMenuItem) {

@@ -880,6 +880,7 @@ class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplaySummarizationMenuItem = false
     var shouldDisplayTranslationMenuItem = false
     var shouldDisplaySelectionContextMenuItem = false
+    func shouldDisplayAskAboutLinkMenuItem(onSERP: Bool) -> Bool { false }
     var shouldAutomaticallySendPageContext = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?
 

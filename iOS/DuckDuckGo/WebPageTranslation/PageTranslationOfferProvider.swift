@@ -62,7 +62,7 @@ final class PageTranslationOfferProvider {
 
     /// Reads the page's text sample in an isolated content world, so the page can't see or tamper with it.
     func decision(in webView: WKWebView) async -> TranslationOfferDecision? {
-        guard isEnabled else {
+        guard isEnabled, settings.isEnabled(forDomain: webView.url?.host) else {
             return nil
         }
 

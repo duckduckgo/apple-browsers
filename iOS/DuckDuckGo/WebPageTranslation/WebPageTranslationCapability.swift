@@ -24,7 +24,7 @@ import WebPageTranslation
 
 /// Protocol for resolving web page translation state.
 ///
-/// Translation is only enabled when the `webPageTranslation` feature flag is on AND its models could be set up at launch.
+/// Translation is only enabled when the `pageTranslation` feature flag is on AND its models could be set up at launch.
 protocol WebPageTranslationCapable {
     /// Whether web page translation is enabled right now.
     var isWebPageTranslationEnabled: Bool { get }
@@ -53,7 +53,7 @@ struct WebPageTranslationDefaultCapability: WebPageTranslationCapable {
     /// The flag is read live, so turning it off remotely stops translation mid-session.
     /// Turning it on takes effect at the next launch, when the models are set up.
     var isWebPageTranslationEnabled: Bool {
-        featureFlagger.isFeatureOn(.webPageTranslation)
+        featureFlagger.isFeatureOn(.pageTranslation)
             && UserDefaults.app.bool(forKey: WebPageTranslationCapability.modelsAvailableKey)
     }
 }

@@ -42,21 +42,29 @@ struct PageTranslatorTests {
 
     struct FakeModelsProvider: TranslationModelsProviding {
         let installed: Set<String>
+        var installs = StubInstalls()
 
         func installedPair(_ pairID: String) -> (pair: TranslationManifest.Pair, folder: URL)? {
             guard installed.contains(pairID) else { return nil }
             let languages = pairID.split(separator: "-").map(String.init)
             return (PageTranslatorTests.pair(from: languages[0], to: languages[1]), URL(fileURLWithPath: "/models/\(pairID)"))
         }
+
+        func install(_ pairID: String) -> AsyncThrowingStream<Double, Error> {
+            installs.start()
+        }
     }
+
 
     private let engine = StubEngine()
     private let loads = Loads()
 
+    private let installs = StubInstalls()
+
     private func makeTranslator(installed: Set<String> = ["fr-en", "de-en"]) -> PageTranslator {
         let engine = engine
         let loads = loads
-        return PageTranslator(modelsProvider: FakeModelsProvider(installed: installed),
+        return PageTranslator(modelsProvider: FakeModelsProvider(installed: installed, installs: installs),
                               loadEngine: { spec in
                                   loads.specs.append(spec)
                                   return engine
@@ -128,5 +136,33 @@ struct PageTranslatorTests {
 
         _ = try await translator.translate([Self.unit(3, "Danke")], pairID: "de-en")
         #expect(loads.specs.map(\.sourceLang) == ["fr", "de"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("an installed pair is ready at once, without a download", .timeLimit(.minutes(1)))
+    func installedPairYieldsOneImmediately() async {
+        let listener = ProgressListener()
+        await listener.listen(to: makeTranslator().prepare("fr-en")).value
+
+        #expect(listener.fractions == [1])
+        #expect(installs.count == 0)
+        #expect(makeTranslator().isInstalled("fr-en"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a missing pair is installed, with its download's progress", .timeLimit(.minutes(1)))
+    func downloadsWhenMissing() async {
+        let translator = makeTranslator(installed: [])
+        let listener = ProgressListener()
+        let listening = listener.listen(to: translator.prepare("es-en"))
+        await waitUntil { installs.count == 1 }
+
+        installs.send(0.5)
+        installs.send(1)
+        installs.finish()
+        await listening.value
+
+        #expect(listener.fractions == [0.5, 1])
+        #expect(!translator.isInstalled("es-en"))
     }
 }

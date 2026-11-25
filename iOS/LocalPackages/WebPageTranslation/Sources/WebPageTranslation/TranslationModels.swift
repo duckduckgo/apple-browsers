@@ -60,6 +60,7 @@ public final class TranslationModels: TranslationModelsProviding, @unchecked Sen
 
     private let store: ModelStore
     private let manifestStore: TranslationManifestStore
+    private let downloads = SharedDownloads()
 
     /// `directory` holds one folder per installed pair.
     public init(directory: URL,
@@ -94,7 +95,8 @@ public final class TranslationModels: TranslationModelsProviding, @unchecked Sen
         }
     }
 
-    /// Installs a pair the manifest lists, reporting progress from 0 to 1.
+    /// Installs a pair the manifest lists, reporting progress from 0 to 1. Every caller, a tab or settings, shares one
+    /// download per pair, and a caller that stops listening leaves it running.
     public func install(_ pairID: String) -> AsyncThrowingStream<Double, Error> {
         guard let manifest else {
             return AsyncThrowingStream { $0.finish(throwing: TranslationModelsError.manifestUnavailable) }
@@ -103,7 +105,8 @@ public final class TranslationModels: TranslationModelsProviding, @unchecked Sen
             return AsyncThrowingStream { $0.finish(throwing: TranslationModelsError.unknownPair(pairID)) }
         }
 
-        return store.install(bundle, policy: Self.decompressingPolicy(for: pair))
+        let store = store
+        return downloads.download(pairID) { store.install(bundle, policy: Self.decompressingPolicy(for: pair)) }
     }
 
     public func installed() -> [InstalledBundle] {

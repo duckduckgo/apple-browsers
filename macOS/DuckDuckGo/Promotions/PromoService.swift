@@ -555,16 +555,8 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     }
 
     private func conflictsWithVisiblePromos(_ promo: Promo, ignoring ignoredIds: Set<String>) -> Bool {
+        guard !promo.showsOverVisiblePromos else { return false }
         let visibleIds = Set(activeSessions.keys).union(externalVisiblePromoIds).subtracting(ignoredIds)
-
-        // A promo that shows over visible promos skips the conflict check, except against a visible higher-priority promo that does the same,
-        // so a lower-priority one never covers it. `promos` is in priority order: everything before this promo outranks it.
-        if promo.showsOverVisiblePromos {
-            let higherPriorityPromos = promos.prefix { $0.id != promo.id }
-            return higherPriorityPromos.contains { other in
-                other.showsOverVisiblePromos && visibleIds.contains(other.id) && conflicts(promo, with: other)
-            }
-        }
         return visibleIds.contains { otherId in
             guard otherId != promo.id, let other = promos.first(where: { $0.id == otherId }) else { return false }
             return conflicts(promo, with: other)

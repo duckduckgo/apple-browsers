@@ -138,14 +138,14 @@ final class PromoServiceFactoryTests: XCTestCase {
         let promo = await PromoServiceFactory.declaredAge(dependencies: dependencies)
 
         XCTAssertEqual(promo.id, "declared-age")
-        XCTAssertEqual(promo.triggers, [.appLaunched, .windowBecameKey])
+        XCTAssertEqual(promo.triggers, [.windowBecameKey, .declaredAgeBecameEligible])
         XCTAssertEqual(promo.initiated, .app)
         XCTAssertEqual(promo.promoType.severity, .high)
         XCTAssertNil(promo.promoType.timeoutInterval)
         XCTAssertEqual(promo.context, .global)
         XCTAssertFalse(promo.respectsGlobalCooldown)
         XCTAssertFalse(promo.setsGlobalCooldown)
-        XCTAssertFalse(promo.canShowDuringOnboarding)
+        XCTAssertTrue(promo.canShowDuringOnboarding)
         XCTAssertTrue(promo.showsOverVisiblePromos)
         XCTAssertNotNil(promo.delegate)
     }

@@ -29,6 +29,7 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
     private let requester: DeclaredAgeRequester
     private let isReinstall: Bool
     private let featureFlagger: FeatureFlagger
+    private let notificationCenter: NotificationCenter
     private let windowProvider: @MainActor () -> NSWindow?
     private let isRequestNeededSubject = CurrentValueSubject<Bool, Never>(false)
     private var cancellables = Set<AnyCancellable>()
@@ -36,26 +37,15 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
     init(requester: DeclaredAgeRequester,
          reinstallUserDetection: ReinstallingUserDetecting,
          featureFlagger: FeatureFlagger,
+         notificationCenter: NotificationCenter = .default,
          windowProvider: @escaping @MainActor () -> NSWindow?) {
         self.requester = requester
         self.isReinstall = reinstallUserDetection.isReinstallingUser
         self.featureFlagger = featureFlagger
+        self.notificationCenter = notificationCenter
         self.windowProvider = windowProvider
 
-        // The flag doubles as a kill switch, so Apple's API isn't touched until the first time it's on.
-        featureFlagger.updatesPublisher
-            .prepend(())
-            .filter { _ in
-                featureFlagger.isFeatureOn(.declaredAgeRange)
-            }
-            .first()
-            .sink { [requester, isReinstall, isRequestNeededSubject] in
-                Task { @MainActor in
-                    let isNeeded = await requester.isRequestNeeded(isReinstall: isReinstall)
-                    isRequestNeededSubject.send(isNeeded)
-                }
-            }
-            .store(in: &cancellables)
+        startListeningToFeatureFlagger()
     }
 
     var isEligible: Bool {
@@ -91,5 +81,35 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
     @MainActor
     func hide() {
         // Apple's age range sheet can't be dismissed programmatically.
+    }
+}
+
+private extension DeclaredAgePromoDelegate {
+
+    func startListeningToFeatureFlagger() {
+        let featureFlagsDidChange = featureFlagger.updatesPublisher
+        let internalUserDidChange = featureFlagger.internalUserDecider.isInternalUserPublisher.asVoid()
+
+        Publishers.Merge(featureFlagsDidChange, internalUserDidChange)
+            .prepend(())
+            .first { [featureFlagger] in
+                featureFlagger.isFeatureOn(.declaredAgeRange)
+            }
+            .sink { [weak self] in
+                Task { @MainActor [weak self] in
+                    await self?.refreshIsRequestNeeded()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    @MainActor
+    func refreshIsRequestNeeded() async {
+        let isNeeded = await requester.isRequestNeeded(isReinstall: isReinstall)
+        isRequestNeededSubject.send(isNeeded)
+
+        if isNeeded {
+            notificationCenter.post(name: .declaredAgeBecameEligible, object: nil)
+        }
     }
 }

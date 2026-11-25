@@ -76,7 +76,8 @@ extension TabCollection: NSSecureCoding {
                     interactionStateData: unloaded.interactionStateData,
                     lastSelectedAt: unloaded.lastSelectedAt,
                     localHistoryIDs: unloaded.localHistoryIDs,
-                    tabSnapshotIdentifier: unloaded.tabSnapshotIdentifier
+                    tabSnapshotIdentifier: unloaded.tabSnapshotIdentifier,
+                    linkedPageDomains: unloaded.linkedPageDomains
                 )
             }
         }

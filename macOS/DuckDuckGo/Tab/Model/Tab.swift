@@ -1245,6 +1245,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         invalidateInteractionStateData()
 
         self.history?.clearNavigationHistory(keepingCurrent: keepingCurrent)
+        self.pageContext?.linkedPageDomains = []
     }
 
     private var webViewCancellables = Set<AnyCancellable>()

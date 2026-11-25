@@ -45,6 +45,8 @@ final class UnloadedTab: Identifiable {
     var localHistoryIDs: [URL]?
     /// Pass-through from TabSnapshotExtension.
     let tabSnapshotIdentifier: String?
+    /// Pass-through from PageContextTabExtension.
+    var linkedPageDomains: [String]?
 
     init(uuid: TabIdentifier = UUID().uuidString,
          content: Tab.TabContent,
@@ -55,6 +57,7 @@ final class UnloadedTab: Identifiable {
          interactionStateData: Data? = nil,
          localHistoryIDs: [URL]? = nil,
          tabSnapshotIdentifier: String? = nil,
+         linkedPageDomains: [String]? = nil,
          isSuspended: Bool = false) {
         self.uuid = uuid
         self.content = content
@@ -66,6 +69,7 @@ final class UnloadedTab: Identifiable {
         self.interactionStateData = interactionStateData
         self.localHistoryIDs = localHistoryIDs
         self.tabSnapshotIdentifier = tabSnapshotIdentifier
+        self.linkedPageDomains = linkedPageDomains
         self.isSuspended = isSuspended
         self.isFromSessionRestore = false
     }
@@ -81,11 +85,13 @@ final class UnloadedTab: Identifiable {
         self.isPersistent = true    // Restored tabs always come from persistent storage
         self.localHistoryIDs = data.localHistoryIDs
         self.tabSnapshotIdentifier = data.tabSnapshotIdentifier
+        self.linkedPageDomains = data.linkedPageDomains
         self.isSuspended = false
         self.isFromSessionRestore = isFromSessionRestore
     }
 
     func clearNavigationHistory(keepingCurrent: Bool) {
+        linkedPageDomains = nil
         if keepingCurrent, let currentHost = content.urlForWebView?.host {
             localHistoryIDs = localHistoryIDs?.filter { $0.host == currentHost }
         } else {
@@ -110,6 +116,9 @@ final class UnloadedTab: Identifiable {
 
         if let localHistoryIDs {
             tab.history?.restoreLocalHistoryIDs(localHistoryIDs)
+        }
+        if let linkedPageDomains {
+            tab.pageContext?.linkedPageDomains = Set(linkedPageDomains)
         }
         if let snapshotIdString = tabSnapshotIdentifier,
            let snapshotId = UUID(uuidString: snapshotIdString) {

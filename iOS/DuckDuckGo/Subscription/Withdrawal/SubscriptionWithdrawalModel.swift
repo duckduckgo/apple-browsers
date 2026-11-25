@@ -109,12 +109,13 @@ final class SubscriptionWithdrawalModel: ObservableObject {
                 case .vpn: return UserText.settingsPProVPNTitle
                 case .pir: return UserText.settingsPProDBPTitle
                 case .idtr: return UserText.settingsPProITRTitle
-                case .duckAI: return UserText.settingsSubscriptionAiChatTitle
+                case .duckAI: return UserText.subscriptionWithdrawConfirmFeatureAdvancedDuckAI
                 }
             }
         guard !featureNames.isEmpty else { return message }
         guard let list = listFormatter.string(from: featureNames) else { return message }
-        return message + "\n\n" + UserText.subscriptionWithdrawConfirmFeaturesMessage(features: list)
+        let featuresMessage = UserText.subscriptionWithdrawConfirmFeaturesMessage(features: list)
+        return message + "\n\n" + featuresMessage.prefix(1).uppercased(with: locale) + featuresMessage.dropFirst()
     }
 
     @MainActor

@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
@@ -60,6 +61,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private let messagesModel: NewTabPageMessagesModel?
     private let searchInputModel: NewTabPageSearchInputModel?
     private let isStickyInputEnabled: Bool
+    private let returnSettings: NewTabPageReturnSettings
     private let customizationStateReporter = NewTabPageCustomizationStateReporter()
     private var isRemoteMessageSurfacePresented = false
     private var areFavoritesHidden = false
@@ -93,7 +95,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         var isLeavingFocus = false
     }
 
-    private let backgroundImageView = UIImageView(image: UIImage(resource: .backgroundPond))
+    private let backgroundImageView = UIImageView()
+    private var themeCancellable: AnyCancellable?
 
     private let contentContainerView: UIView = {
         let view = UIView()
@@ -139,6 +142,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
          messagesModel: NewTabPageMessagesModel? = nil,
          searchInputModel: NewTabPageSearchInputModel? = nil,
          isStickyInputEnabled: Bool = false,
+         returnSettings: NewTabPageReturnSettings,
          onboardingCoordinator: NewTabPageOnboardingCoordinator? = nil) {
         self.onboardingCoordinator = onboardingCoordinator
         self.blocks = blocks
@@ -147,6 +151,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         self.messagesModel = messagesModel
         self.searchInputModel = searchInputModel
         self.isStickyInputEnabled = isStickyInputEnabled
+        self.returnSettings = returnSettings
         super.init(nibName: nil, bundle: nil)
         onboardingCoordinator?.page = self
         messagesModel?.onMessageVisibilityChanged = { [weak self] in
@@ -177,6 +182,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             scrollView.contentInsetAdjustmentBehavior = .never
             applyScrollInsets()
         }
+        observeTheme()
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -215,7 +221,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     @objc private func customizeButtonTapped() {
-        let model = NewTabPageCustomizationModel()
+        let model = NewTabPageCustomizationModel(returnSettings: returnSettings)
         model.reportOpening()
         let customizationViewController = NewTabPageCustomizationViewController(model: model)
         customizationViewController.onAllSettingsSelected = { [weak self] in
@@ -307,6 +313,22 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         entranceAnimator?.stopAnimation(true)
         entranceAnimator = nil
         restoreEntrancePose()
+    }
+
+    private func observeTheme() {
+        let store = NewTabPageCustomizationStore()
+        applyBackground(of: store.theme)
+        themeCancellable = store.themePublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] theme in
+                self?.applyBackground(of: theme)
+            }
+    }
+
+    private func applyBackground(of theme: NewTabPageTheme) {
+        backgroundImageView.image = theme.backgroundImage
+        backgroundImageView.isHidden = theme.backgroundImage == nil
     }
 
     private func addSubviews() {

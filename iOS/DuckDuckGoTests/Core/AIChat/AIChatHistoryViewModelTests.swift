@@ -151,10 +151,9 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         sut.delegate = delegate
 
         sut.openDuckAISettings(source: .headerButton)
-        sut.openDuckAISettings(source: .overflowMenu)
 
         XCTAssertTrue(delegate.didRequestDuckAISettings)
-        XCTAssertEqual(instrumentation.duckAISettingsSources, [.headerButton, .overflowMenu])
+        XCTAssertEqual(instrumentation.duckAISettingsSources, [.headerButton])
     }
 
     func testShowsDuckAISettingsButton_followsSimplifiedPromptBoxFlag() {

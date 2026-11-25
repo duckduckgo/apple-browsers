@@ -286,6 +286,7 @@ extension DataBrokerProtectionManager {
                 freemiumState.resetAllState()
                 NotificationCenter.default.post(name: .freemiumDBPResetForDebugLaunch, object: nil)
             }
+            options.managedSeed?.applyBrokerSelection(to: DataBrokerProtectionSettings(defaults: .dbp))
             // 4. Save the fixture and activate freemium for unauthenticated users if needed.
             if let profileToSave {
                 Logger.dataBrokerProtection.log("PIR debug launch: saving fixture.")

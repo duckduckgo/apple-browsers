@@ -81,7 +81,7 @@ public final class WideEvent: WideEventManaging {
     }
 
     public convenience init(
-        useMockRequests: Bool = false,
+        useMockRequests: Bool = AppVersion.runType != .normal,
         isDevMode: Bool = false,
         storage: WideEventStoring = WideEventUserDefaultsStorage(),
         failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping,

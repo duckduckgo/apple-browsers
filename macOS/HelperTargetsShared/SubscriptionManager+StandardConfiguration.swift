@@ -55,9 +55,7 @@ extension DefaultSubscriptionManager {
             WideEventFeatureFlagAdapter(featureFlagger: $0)
         } ?? StaticWideEventFeatureFlagProvider()
 
-        let buildType = StandardApplicationBuildType()
-        let wideEvent: WideEventManaging = WideEvent(useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
-                                                     isDevMode: !BuildFlags.isProductionBuild,
+        let wideEvent: WideEventManaging = WideEvent(isDevMode: !BuildFlags.isProductionBuild,
                                                      featureFlagProvider: featureFlagProvider)
         let isAuthV2WideEventEnabled = {
 #if DEBUG

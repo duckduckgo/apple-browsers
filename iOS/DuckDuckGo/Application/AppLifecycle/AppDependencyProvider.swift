@@ -226,13 +226,6 @@ final class AppDependencyProvider: DependencyProvider {
                                         eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
 
         self.wideEvent = WideEvent(
-            useMockRequests: {
-#if DEBUG || REVIEW || ALPHA
-                true
-#else
-                false
-#endif
-            }(),
             isDevMode: !BuildFlags.isProductionBuild,
             featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
         )

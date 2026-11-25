@@ -33,12 +33,14 @@ protocol LocalModelAccessAsking: AnyObject {
 final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
 
     private let themeManager: ThemeManager
+    private let instrumentation: AIChatLocalModelInstrumentation
     private var popover: NSPopover?
     private var answer: AIChatLocalModelAccessReply.Result?
     private var waiting: [CheckedContinuation<AIChatLocalModelAccessReply.Result, Never>] = []
 
-    init(themeManager: ThemeManager) {
+    init(themeManager: ThemeManager, instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
         self.themeManager = themeManager
+        self.instrumentation = instrumentation
     }
 
     func ask(from webView: WKWebView?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
@@ -46,7 +48,9 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
             waiting.append(continuation)
             // A second request while the pop-up is up, from a double click or another window, gets the same answer.
             guard popover == nil else { return }
-            if !show(from: webView, modelName: modelName) {
+            if show(from: webView, modelName: modelName) {
+                instrumentation.fire(.promoShown)
+            } else {
                 finish(.declined)
             }
         }
@@ -75,7 +79,8 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
             let top = webView.isFlipped ? webView.bounds.minY : webView.bounds.maxY - 1
             popover.show(positionedBelow: NSRect(x: webView.bounds.midX, y: top, width: 1, height: 1), in: webView)
         }
-        return true
+        // AppKit skips the pop-up for a hidden window, and a pop-up that never shows never closes to answer the page.
+        return popover.isShown
     }
 
     private func duckAIButton(in window: NSWindow?) -> NSView? {
@@ -106,7 +111,11 @@ extension LocalModelAccessPrompt: NSPopoverDelegate {
 
     /// Every way the pop-up closes ends here, so Escape or a click outside answers `declined`.
     func popoverDidClose(_ notification: Notification) {
-        finish(answer ?? .declined)
+        let result = answer ?? .declined
+        if result == .declined {
+            instrumentation.fire(.promoClosed)
+        }
+        finish(result)
     }
 }
 

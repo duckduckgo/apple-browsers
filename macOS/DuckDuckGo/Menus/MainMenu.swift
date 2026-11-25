@@ -1230,15 +1230,14 @@ final class MainMenu: NSMenu {
                                       let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType),
                                                                             pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
                                       let subscriptionManager = Application.appDelegate.subscriptionManager
-                                      let authService = DefaultOAuthService(baseURL: currentEnvironment.authEnvironment.url,
-                                                                            apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-                                      let tokenRefresher = DefaultTokenRefresher(authService: authService, clientID: DefaultOAuthClient.clientID, refreshEventMapping: nil)
+                                      let invalidator = StagingTokenInvalidator(environment: currentEnvironment.authEnvironment,
+                                                                                apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
                                       return SubscriptionTokensDebugViewModel(keychainManager: keychainManager,
                                                                               getTokenContainer: { policy in
                                                                                   try await subscriptionManager.getTokenContainer(policy: policy)
                                                                               },
-                                                                              fork: { container in
-                                                                                  try await tokenRefresher.refresh(container, refreshID: nil)
+                                                                              invalidate: invalidator.map { invalidator in
+                                                                                  { refreshToken in try await invalidator.invalidate(refreshToken: refreshToken) }
                                                                               },
                                                                               vpnSystemExtensionBundleID: vpnSystemExtensionBundleID)
                                   })

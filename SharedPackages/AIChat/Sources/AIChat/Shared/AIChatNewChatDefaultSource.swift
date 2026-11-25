@@ -56,13 +56,13 @@ public final class AIChatNewChatDefaultSource {
         self.serverDefault = serverDefault
     }
 
-    /// Before `/models` loads, the user default stands in for the selection, else the local tier default once the tier is known.
+    /// Before `/models` loads, only the local tier default is known to be usable, so a user default applies only when it's that model.
     public var selectionOrLocalDefaultBeforeModelsLoad: AIChatNewChatSelection? {
         guard models.isEmpty else { return selection }
-        if case let .model(id, reasoningEffort)? = userDefault(followedBy: serverDefaults()) {
-            return AIChatNewChatSelection(modelId: id, reasoningEffort: reasoningEffort, origin: .user)
-        }
-        return userTier.map(AIChatNewChatDefaultResolver.resolveBeforeModelsLoad(userTier:))
+        guard let userTier else { return nil }
+        let localDefault = AIChatNewChatDefaultResolver.resolveBeforeModelsLoad(userTier: userTier)
+        guard case let .model(id, _)? = userDefault(followedBy: serverDefaults()), id == localDefault.modelId else { return localDefault }
+        return AIChatNewChatSelection(modelId: id, reasoningEffort: localDefault.reasoningEffort, origin: .user)
     }
 
     /// Follows `defaults` instead of any earlier one. Its first value applies quietly, as the state the input opens with.

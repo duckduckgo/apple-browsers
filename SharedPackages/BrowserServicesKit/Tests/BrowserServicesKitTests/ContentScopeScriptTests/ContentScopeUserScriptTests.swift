@@ -26,6 +26,7 @@ import XCTest
 @testable import BrowserServicesKit
 @testable import UserScript
 
+@MainActor
 final class ContentScopeUserScriptTests: XCTestCase {
 
     let generatorConfig = "generatorConfig"
@@ -56,8 +57,8 @@ final class ContentScopeUserScriptTests: XCTestCase {
         return result
     }
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "", messageSecret: "", featureToggles: ContentScopeFeatureToggles(emailProtection: false, emailProtectionIncontextSignup: false, credentialsAutofill: false, identitiesAutofill: false, creditCardsAutofill: false, credentialsSaving: false, passwordGeneration: false, inlineIconCredentials: false, thirdPartyCredentialsProvider: false, unknownUsernameCategorization: false, partialFormSaves: false, passwordVariantCategorization: true, inputFocusApi: false, autocompleteAttributeSupport: false), currentCohorts: [experimentData])
         configGenerator = MockCSSPrivacyConfigGenerator()
         mockPrivacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration(),
@@ -65,10 +66,10 @@ final class ContentScopeUserScriptTests: XCTestCase {
         mockPrivacyConfigurationManager.currentConfigString = managerConfig
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         configGenerator = nil
         mockPrivacyConfigurationManager = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testPrivacyConfigurationJSONGeneratorIsUsed() throws {
@@ -115,7 +116,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
         )
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
-        let message = await WKScriptMessage.mock(name: ContentScopeScriptContext.contentScopeIsolated.messagingContextName, body: mockMessageBody)
+        let message = WKScriptMessage.mock(name: ContentScopeScriptContext.contentScopeIsolated.messagingContextName, body: mockMessageBody)
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(),
@@ -137,7 +138,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
         )
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
-        let message = await WKScriptMessage.mock(name: ContentScopeScriptContext.contentScope().messagingContextName, body: mockMessageBody)
+        let message = WKScriptMessage.mock(name: ContentScopeScriptContext.contentScope().messagingContextName, body: mockMessageBody)
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(),
@@ -160,7 +161,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
                                                             privacyConfigurationJSONGenerator: configGenerator)
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
-        let message = await WKScriptMessage.mock(name: featureName, body: mockMessageBody(featureName: featureName))
+        let message = WKScriptMessage.mock(name: featureName, body: mockMessageBody(featureName: featureName))
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(),
@@ -480,7 +481,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
             "method": "testMethod",
             "params": [:]
         ]
-        let message = await WKScriptMessage.mock(name: "duckAiDataClearing", body: mockMessageBody)
+        let message = WKScriptMessage.mock(name: "duckAiDataClearing", body: mockMessageBody)
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(), didReceive: message)
@@ -506,7 +507,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
             "method": "testMethod",
             "params": [:]
         ]
-        let message = await WKScriptMessage.mock(name: "duckAiDataClearing", body: mockMessageBody)
+        let message = WKScriptMessage.mock(name: "duckAiDataClearing", body: mockMessageBody)
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(), didReceive: message)

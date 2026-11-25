@@ -50,7 +50,7 @@ final class FileLoader {
     }
 }
 
-final class JsonTestDataLoader {
+final class JsonTestDataLoader: Sendable {
 
     func empty() -> Data {
         return "".data(using: .utf16)!

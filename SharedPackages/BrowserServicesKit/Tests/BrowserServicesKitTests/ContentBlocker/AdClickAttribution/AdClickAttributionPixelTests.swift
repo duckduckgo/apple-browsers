@@ -201,6 +201,7 @@ final class AdClickAttributionPixelTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
 
+    @MainActor
     func testWhenAttributionIsInactiveThenNoActivityPixelIsSent() async {
         currentEventHandler = Self.noEventExpectedHandler
 
@@ -224,6 +225,7 @@ final class AdClickAttributionPixelTests: XCTestCase {
                                                          pageUrl: "test.com"))
     }
 
+    @MainActor
     func testWhenAttributionIsActiveThenActivityPixelIsSentOnce() async {
         let expectation = expectation(description: "Event fired")
         expectation.expectedFulfillmentCount = 1

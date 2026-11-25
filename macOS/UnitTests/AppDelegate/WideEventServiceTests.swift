@@ -101,6 +101,7 @@ final class WideEventServiceTests: XCTestCase {
         mockWideEvent.started.append(SyncSetupWideEventData(existingAccount: false,
                                                             flowVersion: .v21,
                                                             uiVersion: .v1,
+                                                            launchID: "previous-launch",
                                                             contextData: WideEventContextData()))
 
         await sut.sendPendingEvents()

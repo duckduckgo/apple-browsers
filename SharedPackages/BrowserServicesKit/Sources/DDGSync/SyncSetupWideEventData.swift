@@ -30,6 +30,8 @@ public final class SyncSetupWideEventData: WideEventData {
         version: "1.0.0"
     )
 
+    public static let currentLaunchID = UUID().uuidString
+
     private static let maxStepEntries = 20
     private static let latencyBucketBounds = [1000, 2000, 3000, 5000, 10000, 30000, 60000, 120000, 180000, 300000, 600000]
 
@@ -60,6 +62,7 @@ public final class SyncSetupWideEventData: WideEventData {
     public var statusReason: String?
     public var timeoutStage: String?
 
+    public let launchID: String
     public private(set) var steps: [Step]
     public private(set) var totalDuration: WideEvent.MeasuredInterval
     public private(set) var lastStepDuration: WideEvent.MeasuredInterval
@@ -70,6 +73,7 @@ public final class SyncSetupWideEventData: WideEventData {
                 uiVersion: UIVersion,
                 setupMode: SetupMode? = nil,
                 startedAt: Date = Date(),
+                launchID: String = SyncSetupWideEventData.currentLaunchID,
                 contextData: WideEventContextData,
                 appData: WideEventAppData = WideEventAppData(),
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
@@ -78,10 +82,11 @@ public final class SyncSetupWideEventData: WideEventData {
         self.uiVersion = uiVersion
         self.setupMode = setupMode
         self.initialSetupMode = setupMode
+        self.launchID = launchID
         self.steps = [.started]
         self.totalDuration = WideEvent.MeasuredInterval(start: startedAt)
         self.lastStepDuration = WideEvent.MeasuredInterval(start: startedAt)
-        self.contextData = contextData
+        self.contextData = contextData.name == nil ? WideEventContextData(name: Self.unknownContextName) : contextData
         self.appData = appData
         self.globalData = globalData
     }
@@ -111,6 +116,7 @@ public final class SyncSetupWideEventData: WideEventData {
     public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
         switch trigger {
         case .appLaunch:
+            guard launchID != Self.currentLaunchID else { return .keepPending }
             return .complete(.unknown(reason: StatusReason.appRestart))
         }
     }
@@ -127,6 +133,7 @@ public final class SyncSetupWideEventData: WideEventData {
     }
 
     private static let truncatedStepsMarker = "truncated"
+    private static let unknownContextName = "unknown"
 }
 
 extension SyncSetupWideEventData {

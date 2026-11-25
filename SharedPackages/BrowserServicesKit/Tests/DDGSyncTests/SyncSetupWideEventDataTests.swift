@@ -218,15 +218,37 @@ struct SyncSetupWideEventDataTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A pending attempt at app launch completes as UNKNOWN app_restart", .timeLimit(.minutes(1)))
+    @Test("An attempt from an earlier launch completes as UNKNOWN app_restart at app launch", .timeLimit(.minutes(1)))
     func appLaunchCompletesAsAppRestart() async {
-        let decision = await makeData().completionDecision(for: .appLaunch)
+        let data = SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,
+                                          launchID: "previous-launch", contextData: WideEventContextData())
+        let decision = await data.completionDecision(for: .appLaunch)
 
         guard case .complete(.unknown(let reason)) = decision else {
             Issue.record("Expected UNKNOWN, got \(decision)")
             return
         }
         #expect(reason == "app_restart")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An attempt started in this launch stays open at app launch cleanup", .timeLimit(.minutes(1)))
+    func currentLaunchAttemptStaysPending() async {
+        let decision = await makeData().completionDecision(for: .appLaunch)
+
+        guard case .keepPending = decision else {
+            Issue.record("Expected the attempt to stay pending, got \(decision)")
+            return
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An attempt with no entry point sends context.name unknown", .timeLimit(.minutes(1)))
+    func missingContextNameIsUnknown() {
+        let data = SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,
+                                          contextData: WideEventContextData())
+
+        #expect(data.contextData.pixelParameters()["context.name"] == "unknown")
     }
 
     @available(iOS 16, macOS 13, *)

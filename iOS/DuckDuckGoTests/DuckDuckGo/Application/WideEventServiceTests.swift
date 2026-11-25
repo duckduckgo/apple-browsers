@@ -244,7 +244,8 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     private func makeSyncSetupData() -> SyncSetupWideEventData {
-        SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2, contextData: WideEventContextData())
+        SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,
+                               launchID: "previous-launch", contextData: WideEventContextData())
     }
 
     private func createMockWideEventData(activateAccountDuration: WideEvent.MeasuredInterval? = nil) -> SubscriptionPurchaseWideEventData {

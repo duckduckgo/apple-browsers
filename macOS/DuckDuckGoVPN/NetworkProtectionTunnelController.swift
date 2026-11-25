@@ -897,7 +897,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     @MainActor
-    private func stop(tunnelManager: NETunnelProviderManager, disableOnDemand: Bool) async {
+    func stop(tunnelManager: NETunnelProviderManager, disableOnDemand: Bool) async {
         if disableOnDemand {
             try? await self.disableOnDemand(tunnelManager: tunnelManager)
         }
@@ -907,6 +907,34 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             tunnelManager.connection.stopVPNTunnel()
         default:
             break
+        }
+    }
+
+    @MainActor
+    func startupFailureCode(for tunnelManager: NETunnelProviderManager) async -> PacketTunnelProvider.TunnelError.Code? {
+        guard #available(macOS 13, *) else { return nil }
+
+        let connection = tunnelManager.connection
+        do {
+            switch connection.status {
+            case .connecting:
+                // Allow for the extension's backoff on blocked retries.
+                try await startupMonitor.waitForStartSuccess(tunnelManager, timeout: 30)
+            case .disconnecting, .disconnected:
+                try await connection.fetchLastDisconnectError()
+            default:
+                break
+            }
+            return nil
+        } catch {
+            let startupError = error as? VPNStartupMonitor.StartupError ?? .startTunnelDisconnectedSilently(underlyingError: error)
+            guard let reason = startupError.disconnectReason,
+                  reason.domain == PacketTunnelProvider.TunnelError.errorDomain,
+                  connection.status != .connected, connection.status != .reasserting else {
+                return nil
+            }
+
+            return PacketTunnelProvider.TunnelError.Code(rawValue: reason.code)
         }
     }
 

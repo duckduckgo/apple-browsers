@@ -998,10 +998,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 error = TunnelError.startingTunnelWithoutAuthToken(internalError: internalError)
 
                 switch startupOptions.startupMethod {
-                case .automaticOnDemand:
-                    let managedToShutdown = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
-                    needsBackoff = !managedToShutdown
-                case .manualByTheSystem:
+                case .automaticOnDemand, .manualByTheSystem:
                     _ = await handleAccessRevoked(dueTo: error, notification: .userNeedsToOpenApp)
                     needsBackoff = false
                 case .manualByMainApp:
@@ -1727,7 +1724,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             return true
         } catch {
-            Logger.networkProtection.debug("Shutdown cancelled, probably because the OS does not support disabling on-demand: \(error.localizedDescription, privacy: .public)")
+            Logger.networkProtection.error("Shutdown cancelled, probably because the OS does not support disabling on-demand: \(error.localizedDescription, privacy: .public)")
 
             // If we can't cleanly shut the tunneldown, we'll do our best to
             // shut it down even if the process keeps running.

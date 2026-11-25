@@ -86,8 +86,11 @@ public final class PageTranslationSession {
         do {
             let (units, documentID) = try await bridge.extract()
             bar = BarProgress(tracking: units)
+            let limit = batchCharacterLimit()
+            // Measuring every HTML unit takes long enough on a big page to stall scrolling, so batching runs off the main actor.
+            let batches = await Task.detached { PageTranslationBatches.make(units, characterLimit: limit) }.value
             var applied = 0
-            for batch in PageTranslationBatches.make(units, characterLimit: batchCharacterLimit()) {
+            for batch in batches {
                 applied += try await translateAndApply(batch, offer: offer, in: documentID)
                 advance(&bar, past: batch)
             }

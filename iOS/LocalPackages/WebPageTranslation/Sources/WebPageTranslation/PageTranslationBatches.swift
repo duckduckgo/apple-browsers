@@ -22,15 +22,19 @@ import Foundation
 /// Splits a page's units into batches the way the translation contract sets out.
 public enum PageTranslationBatches {
 
-    /// Visible units first, then the rest, each in page order. Plain and HTML units fill separate batches,
-    /// so a page that alternates them doesn't make tiny ones; batches come out in the order of their first unit.
+    /// The visible units' batches, then the rest's. A batch never mixes the two, so the whole screen is
+    /// translated before anything below it.
     public static func make(_ units: [PageTranslationUnit], characterLimit: Int) -> [[PageTranslationUnit]] {
-        let ordered = units.filter(\.isVisible) + units.filter { !$0.isVisible }
+        batches(of: units.filter(\.isVisible), characterLimit: characterLimit)
+            + batches(of: units.filter { !$0.isVisible }, characterLimit: characterLimit)
+    }
 
-        let plain = chunk(ordered.filter { !$0.html }, characterLimit: characterLimit)
-        let html = chunk(ordered.filter(\.html), characterLimit: characterLimit)
-
-        return sortedByFirstUnit(plain + html, in: ordered)
+    /// Plain and HTML units fill separate batches, so a page that alternates them doesn't make tiny ones;
+    /// batches come out in the order of their first unit.
+    private static func batches(of units: [PageTranslationUnit], characterLimit: Int) -> [[PageTranslationUnit]] {
+        let plain = chunk(units.filter { !$0.html }, characterLimit: characterLimit)
+        let html = chunk(units.filter(\.html), characterLimit: characterLimit)
+        return sortedByFirstUnit(plain + html, in: units)
     }
 
     /// Puts batches in the order their first unit appears in `units`, so plain and HTML batches interleave

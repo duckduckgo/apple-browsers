@@ -36,7 +36,15 @@ struct PageTranslationBatchesTests {
     func visibleUnitsComeFirst() {
         let units = [Self.unit(1, "a", visible: false), Self.unit(2, "b"), Self.unit(3, "c", visible: false), Self.unit(4, "d")]
 
-        #expect(Self.ids(PageTranslationBatches.make(units, characterLimit: 100)) == [[2, 4, 1, 3]])
+        #expect(Self.ids(PageTranslationBatches.make(units, characterLimit: 100)) == [[2, 4], [1, 3]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("visible HTML isn't held behind a plain batch that carries off-screen units", .timeLimit(.minutes(1)))
+    func visibleAndOffscreenUnitsNeverShareABatch() {
+        let units = [Self.unit(1, "a"), Self.unit(2, "<b>b</b>", html: true), Self.unit(3, "c", visible: false)]
+
+        #expect(Self.ids(PageTranslationBatches.make(units, characterLimit: 100)) == [[1], [2], [3]])
     }
 
     @available(iOS 16, macOS 13, *)

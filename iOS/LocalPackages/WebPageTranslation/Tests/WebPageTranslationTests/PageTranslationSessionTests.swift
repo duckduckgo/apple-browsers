@@ -118,13 +118,10 @@ struct PageTranslationSessionTests {
         #expect(session.isTranslating)
         await waitUntilDone(session)
 
-        #expect(translator.calls.map(\.pairID) == ["fr-en-base"])
-        #expect(bridge.applied.count == 1)
-        #expect(bridge.applied.first?.updates == [PageTranslationUpdate(id: 1, text: "Bonjour (en)"),
-                                                 PageTranslationUpdate(id: 2, text: "Merci (en)")])
-        #expect(bridge.applied.first?.source == "fr")
-        #expect(bridge.applied.first?.target == "en")
-        #expect(bridge.applied.first?.documentID == bridge.documentID)
+        #expect(translator.calls.map(\.pairID) == ["fr-en-base", "fr-en-base"])
+        #expect(bridge.applied.flatMap(\.updates) == [PageTranslationUpdate(id: 1, text: "Bonjour (en)"),
+                                                      PageTranslationUpdate(id: 2, text: "Merci (en)")])
+        #expect(bridge.applied.allSatisfy { $0.source == "fr" && $0.target == "en" && $0.documentID == bridge.documentID })
     }
 
     @available(iOS 16, macOS 13, *)
@@ -136,8 +133,8 @@ struct PageTranslationSessionTests {
         session.start(offer)
         await waitUntilDone(session)
 
-        #expect(translator.calls.map { $0.units.map(\.id) } == [[5, 1], [2, 3], [4]])
-        #expect(bridge.applied.map { $0.updates.map(\.id) } == [[5, 1], [2, 3], [4]])
+        #expect(translator.calls.map { $0.units.map(\.id) } == [[5], [1, 2], [3, 4]])
+        #expect(bridge.applied.map { $0.updates.map(\.id) } == [[5], [1, 2], [3, 4]])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -169,7 +166,7 @@ struct PageTranslationSessionTests {
     @available(iOS 16, macOS 13, *)
     @Test("the batch character limit is read when a translation starts", .timeLimit(.minutes(1)))
     func readsBatchCharacterLimitAtStart() async {
-        bridge.units = units(visible: [5])
+        bridge.units = units(visible: [])
         var limit = 2
         let session = makeSession(characterLimit: { limit })
         limit = 100

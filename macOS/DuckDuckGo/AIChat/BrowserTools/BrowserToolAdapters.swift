@@ -1,5 +1,5 @@
 //
-//  BrowserToolDependencies.swift
+//  BrowserToolAdapters.swift
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //

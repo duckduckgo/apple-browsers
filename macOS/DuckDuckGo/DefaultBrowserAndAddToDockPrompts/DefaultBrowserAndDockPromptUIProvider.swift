@@ -41,6 +41,7 @@ private extension BrowsersComparisonChart.Configuration {
                                               fontWeight: Metrics.fontWeight,
                                               showFeatureIcons: true,
                                               showBottomDivider: false,
+                                              showHeaderDivider: false,
                                               rowStyle: .alternatingBackground(Color(singleUseColor: .defaultBrowserAndDockPromptChartRowBackground),
                                                                                cornerRadius: Metrics.rowCornerRadius),
                                               rowHeight: Metrics.rowHeight,

@@ -38,6 +38,7 @@ extension BrowsersComparisonChart {
         var allowContentToScrollUnderHeader: Bool
         var showFeatureIcons: Bool
         var showBottomDivider: Bool
+        var showHeaderDivider: Bool
         var rowStyle: RowStyle
         var rowHeight: CGFloat
         var availabilityIconStyle: AvailabilityIconStyle
@@ -47,6 +48,7 @@ extension BrowsersComparisonChart {
                     allowContentToScrollUnderHeader: Bool = false,
                     showFeatureIcons: Bool = false,
                     showBottomDivider: Bool? = nil,
+                    showHeaderDivider: Bool = true,
                     rowStyle: RowStyle = .divided,
                     rowHeight: CGFloat = 50.0,
                     availabilityIconStyle: AvailabilityIconStyle = .standard) {
@@ -54,6 +56,7 @@ extension BrowsersComparisonChart {
             self.allowContentToScrollUnderHeader = allowContentToScrollUnderHeader
             self.showFeatureIcons = showFeatureIcons
             self.showBottomDivider = showBottomDivider ?? !allowContentToScrollUnderHeader
+            self.showHeaderDivider = showHeaderDivider
             self.rowStyle = rowStyle
             self.rowHeight = rowHeight
             self.availabilityIconStyle = availabilityIconStyle
@@ -80,7 +83,7 @@ public struct BrowsersComparisonChart: View {
 
     public var body: some View {
         VStack(spacing: Metrics.stackSpacing) {
-            Header(browsers: BrowsersComparisonModel.Browser.allCases)
+            Header(browsers: BrowsersComparisonModel.Browser.allCases, showDivider: configuration.showHeaderDivider)
                 .frame(height: Metrics.headerHeight)
                 .padding(.horizontal, configuration.horizontalPadding)
 
@@ -120,6 +123,7 @@ extension BrowsersComparisonChart {
 
     struct Header: View {
         let browsers: [BrowsersComparisonModel.Browser]
+        let showDivider: Bool
 
         var body: some View {
             HStack(alignment: .bottom) {
@@ -130,7 +134,9 @@ extension BrowsersComparisonChart {
                         .frame(width: Metrics.headerImageContainerSize.width, height: Metrics.headerImageContainerSize.height)
 
                     if index < browsers.count - 1 {
+                        // Hidden rather than removed, so the icons stay aligned with the status columns below
                         Divider()
+                            .opacity(showDivider ? 1 : 0)
                     }
                 }
             }

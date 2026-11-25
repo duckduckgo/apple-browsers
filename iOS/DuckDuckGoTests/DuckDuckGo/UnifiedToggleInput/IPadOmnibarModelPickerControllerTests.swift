@@ -44,7 +44,8 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
             preferences: preferences,
             subscriptionManager: subscriptionManager,
             upsellPresenter: upsellPresenter,
-            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: MockFeatureFlagger()
         )
     }
 
@@ -336,6 +337,23 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         XCTAssertEqual(sut.currentModelId, "gpt-5.6-terra")
     }
 
+    func testWhenTheDefaultIsClearedInAFireTabThenOnlyFireTabsStartOnTheServerDefault() async throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        try storage.putUserDefaultModel("gpt-5.6-terra")
+        let fireStorage = try DuckAiNativeStorageHandler(.memory(seedSource: storage))
+        try fireStorage.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue)
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let sut = makeNewChatDefaultSUT(duckAiNativeStorageHandler: storage, duckAiFireModeStorageHandler: fireStorage)
+        await activateAndWaitForModels(sut)
+
+        sut.refreshFireMode(true)
+        XCTAssertEqual(sut.currentModelId, "gpt-6-luna")
+
+        sut.refreshFireMode(false)
+        XCTAssertEqual(sut.currentModelId, "gpt-5.6-terra")
+    }
+
     func testWhenNewChatsStartOnTheDefaultThenTheTierAppliesBeforeModelsLoadAndTheServerDefaultAfter() async {
         subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
         modelsService.result = .failure(URLError(.notConnectedToInternet))
@@ -356,7 +374,8 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
         ["gpt-6-luna", "gpt-5.6-terra"].map { makeRemoteModel(id: $0, shortName: $0) }
     }
 
-    private func makeNewChatDefaultSUT(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> IPadOmnibarModelPickerController {
+    private func makeNewChatDefaultSUT(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                                       duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil) -> IPadOmnibarModelPickerController {
         IPadOmnibarModelPickerController(
             modelsService: modelsService,
             preferences: preferences,
@@ -365,6 +384,7 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
             startsNewChatsOnDefault: true,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.utiDuckAIWarnings])
         )
     }
@@ -389,7 +409,8 @@ final class IPadOmnibarModelPickerControllerTests: XCTestCase {
             preferences: preferences,
             subscriptionManager: subscriptionManager,
             upsellPresenter: upsellPresenter,
-            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: updatedModelPickerEnabled)
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: updatedModelPickerEnabled),
+            featureFlagger: MockFeatureFlagger()
         )
     }
 

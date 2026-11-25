@@ -47,6 +47,9 @@ final class IPadOmnibarModelPickerController {
     /// selected model / subscription state and avoid a second `/models` fetch.
     var modelStore: UTIModelStore { store }
 
+    private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+
     init(
         modelsService: AIChatModelsProviding? = nil,
         preferences: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
@@ -56,8 +59,11 @@ final class IPadOmnibarModelPickerController {
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         startsNewChatsOnDefault: Bool = false,
         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
+        duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        featureFlagger: FeatureFlagger
     ) {
+        self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
         let isUpdatedModelPickerEnabled = updatedModelPickerFeature.isAvailable
         self.startsNewChatsOnDefault = startsNewChatsOnDefault
         self.upsellPresenter = upsellPresenter ?? DuckAISubscriptionUpsellPresenter(
@@ -78,6 +84,11 @@ final class IPadOmnibarModelPickerController {
         store.onModelsUpdated = { [weak self] in
             self?.onModelsUpdated?()
         }
+    }
+
+    /// Follows the user default in the tab's own storage, so a fire tab sees what was changed in it.
+    func refreshFireMode(_ fireMode: Bool) {
+        store.observeUserDefaultModel(in: fireMode ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler)
     }
 
     /// Over the usage limit, new chats start on the default web sends in the usage-limits snapshot.

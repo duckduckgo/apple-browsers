@@ -19,21 +19,21 @@
 import AppKitExtensions
 
 import Foundation
+import NetworkExtension
 import Common
 import VPN
 import os.log
-import VPNAppState
 
 final class VPNAppEventsHandler {
 
-    private let appState: VPNAppState
     private let tunnelController: NetworkProtectionTunnelController
+    private let settings: VPNSettings
+    private let notifications: VPNNotificationsObserver
 
-    init(tunnelController: NetworkProtectionTunnelController,
-         appState: VPNAppState) {
-
-        self.appState = appState
+    init(tunnelController: NetworkProtectionTunnelController, settings: VPNSettings, notifications: VPNNotificationsObserver) {
         self.tunnelController = tunnelController
+        self.settings = settings
+        self.notifications = notifications
     }
 
     func appDidFinishLaunching() {
@@ -53,6 +53,35 @@ final class VPNAppEventsHandler {
         let buildType = StandardApplicationBuildType()
         if versionStore.lastAgentVersionRun != currentVersion || buildType.isDebugBuild || buildType.isReviewBuild {
             restartTunnel()
+        }
+    }
+
+    @MainActor
+    func appDidLaunchAtLogin() async {
+        guard let manager = await tunnelController.manager,
+              manager.isOnDemandEnabled,
+              let code = await tunnelController.startupFailureCode(for: manager),
+              code == .startingTunnelWithoutAuthToken || code == .reconnectBlocked else {
+            if await !tunnelController.isConnected && settings.connectOnLogin {
+                await tunnelController.start()
+            }
+            return
+        }
+
+        do {
+            try await tunnelController.disableOnDemand(tunnelManager: manager)
+        } catch {
+            Logger.networkProtection.error("Failed to disable VPN On Demand at startup: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
+        guard manager.connection.status != .invalid else { return }
+        await tunnelController.stop(tunnelManager: manager, disableOnDemand: false)
+
+        if code == .startingTunnelWithoutAuthToken {
+            notifications.showEntitlementNotification()
+        } else {
+            notifications.showConnectionFailureNotification()
         }
     }
 

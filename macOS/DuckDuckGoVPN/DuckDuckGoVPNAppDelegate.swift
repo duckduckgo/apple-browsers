@@ -315,7 +315,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private lazy var vpnAppEventsHandler = {
-        VPNAppEventsHandler(tunnelController: tunnelController, appState: vpnAppState)
+        VPNAppEventsHandler(tunnelController: tunnelController, settings: tunnelSettings, notifications: vpnNotificationsObserver)
     }()
 
     @MainActor
@@ -524,33 +524,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             setUpSubscriptionMonitoring()
 
             if launchedOnStartup {
-                Task {
-                    do {
-                        if let manager = await tunnelController.manager,
-                           manager.isOnDemandEnabled,
-                           let code = await tunnelController.startupFailureCode(for: manager),
-                           code == .startingTunnelWithoutAuthToken || code == .reconnectBlocked {
-                            try await tunnelController.disableOnDemand(tunnelManager: manager)
-                            guard manager.connection.status != .invalid else { return }
-                            await tunnelController.stop(tunnelManager: manager, disableOnDemand: false)
-                            if code == .startingTunnelWithoutAuthToken {
-                                vpnNotificationsObserver.showEntitlementNotification()
-                            } else {
-                                vpnNotificationsObserver.showConnectionFailureNotification()
-                            }
-                            return
-                        }
-                    } catch {
-                        Logger.networkProtection.error("Failed to disable VPN On Demand at startup: \(error.localizedDescription, privacy: .public)")
-                        return
-                    }
-
-                    let isConnected = await tunnelController.isConnected
-
-                    if !isConnected && tunnelSettings.connectOnLogin {
-                        await tunnelController.start()
-                    }
-                }
+                await vpnAppEventsHandler.appDidLaunchAtLogin()
             }
         }
     }

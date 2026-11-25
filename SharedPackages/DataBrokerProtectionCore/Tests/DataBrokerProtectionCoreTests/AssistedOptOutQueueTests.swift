@@ -53,7 +53,7 @@ struct AssistedOptOutQueueTests {
         let presenter = Presenter()
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
         queue.presenter = presenter
-        #expect(try await queue.assistedOptOuts().map(\.extractedProfileId) == [1, 2])
+        #expect(try await queue.assistedOptOuts().map { AssistedOptOutID($0.id)?.extractedProfileId } == [1, 2])
         try await queue.start(id: fixture.id)
         let session = try #require(queue.activeSessions.first)
         try await queue.start(id: fixture.id)

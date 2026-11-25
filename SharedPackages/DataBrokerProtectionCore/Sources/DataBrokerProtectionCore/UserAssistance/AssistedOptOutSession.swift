@@ -69,7 +69,6 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
         }
         return AssistedOptOut(id: id.description,
                               dataBroker: broker,
-                              extractedProfileId: id.extractedProfileId,
                               state: AssistedOptOut.State(phase: phase, isWindowKey: isWindowKey),
                               step: step)
     }

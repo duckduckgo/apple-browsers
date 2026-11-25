@@ -82,7 +82,7 @@ public final class AssistedOptOutQueue {
         let waiting = candidates.filter { $0.id != session?.id && needsUser($0) }.map {
             AssistedOptOut(id: $0.id.description,
                            dataBroker: .init(name: $0.data.dataBroker.name, url: $0.data.dataBroker.url),
-                           extractedProfileId: $0.id.extractedProfileId, state: .waiting)
+                           state: .waiting)
         }
         return live + waiting
     }

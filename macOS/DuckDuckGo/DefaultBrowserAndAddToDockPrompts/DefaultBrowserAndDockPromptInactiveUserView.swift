@@ -56,6 +56,7 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             Image(.defaultBrowserAndDockPromptBackground)
+                .accessibilityHidden(true)
 
             HStack(spacing: Metrics.padding) {
                 PromptMessageAndImage(message: viewModel.message, image: viewModel.image)

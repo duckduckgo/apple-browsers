@@ -42,6 +42,7 @@ struct AddToDockVideoSheet: View {
     let showsInstructions: Bool
     let onAction: (AddToDockVideoAction) -> Void
     private let featureFlagger: FeatureFlagger
+    @ObservedObject private var themeManager: ThemeManager
 
     @Binding var isPresented: Bool
     @StateObject private var coordinator = VideoPlayerCoordinator()
@@ -52,13 +53,15 @@ struct AddToDockVideoSheet: View {
          showsInstructions: Bool = false,
          isPresented: Binding<Bool>,
          onAction: @escaping (AddToDockVideoAction) -> Void = { _ in },
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
         self.videoURL = videoURL
         self.videoSize = videoSize
         self.primaryAction = primaryAction
         self.showsInstructions = showsInstructions
         self.onAction = onAction
         self.featureFlagger = featureFlagger
+        self.themeManager = themeManager
         self._isPresented = isPresented
     }
 
@@ -72,6 +75,7 @@ struct AddToDockVideoSheet: View {
             if showsInstructions {
                 HStack(alignment: .top, spacing: 8) {
                     Image(nsImage: DesignSystemImages.Color.Size16.addToDock)
+                        .accessibilityHidden(true)
                     Text(.init(UserText.addToDockInstructionsCaption))
                 }
                 .frame(minWidth: Layout.minWidth, maxWidth: .infinity, alignment: .leading)
@@ -95,7 +99,7 @@ struct AddToDockVideoSheet: View {
             }
         }
         .padding()
-        .background(Color(designSystemColor: .surfaceTertiary))
+        .background(Color(designSystemColor: .surfaceTertiary, palette: themeManager.designColorPalette))
         .frame(maxWidth: Layout.maxWidth)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear {

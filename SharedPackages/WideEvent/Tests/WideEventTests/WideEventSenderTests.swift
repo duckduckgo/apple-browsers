@@ -846,9 +846,20 @@ final class WideEventSenderTests: XCTestCase {
         }
     }
 
-    private func sendAndCapturePOSTAppSection(with sender: DefaultWideEventSender) -> [String: Any]? {
+    #if os(macOS)
+    func testPOSTRequestOmitsVerificationTopicFromAppName() {
+        let data = makeTestData()
+        data.appData.name = "DuckDuckGo - verify-test-topic"
+
+        let app = sendAndCapturePOSTAppSection(with: makeSender(isDevMode: true), data: data)
+
+        XCTAssertEqual(app?["name"] as? String, "DuckDuckGo")
+    }
+    #endif
+
+    private func sendAndCapturePOSTAppSection(with sender: DefaultWideEventSender, data: SenderTestWideEventData? = nil) -> [String: Any]? {
         let expectation = XCTestExpectation(description: "Request sent")
-        sender.send(makeTestData(), status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
+        sender.send(data ?? makeTestData(), status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
             expectation.fulfill()
         }
 

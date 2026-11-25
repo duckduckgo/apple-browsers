@@ -67,13 +67,13 @@ final class OpenTabBrowserTool: BrowserTool {
         return AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token, in: windowControllersManager)
     }
 
-    /// Only web pages: other schemes could reach local files, scripts or browser-internal pages.
+    /// Only web pages other than Duck.ai: other schemes could reach local files, scripts or browser-internal pages.
     private static func webURL(from value: JSONValue?) -> URL? {
         guard let string = value?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
               !string.isEmpty, BrowserToolOutputLimits.fits(string, within: BrowserToolOutputLimits.url),
               let url = URL(string: string),
               let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme),
-              url.host?.isEmpty == false else { return nil }
+              url.host?.isEmpty == false, !url.isDuckAIURL else { return nil }
         return url
     }
 }

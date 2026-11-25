@@ -57,32 +57,41 @@ enum BrowserToolTargetTab {
                                                                            in: windowControllersManager) else {
             return .failure(.unavailable)
         }
-        guard collection.indexInAllTabs(where: { $0.uuid == tabID }) != nil else {
+        guard let tab = tab(withID: tabID, in: collection) else {
             return .failure(.notFound)
+        }
+        // The chat's own tab too: the sidebar can sit beside Settings or another browser page.
+        guard isListed(tab) else {
+            return .failure(.unavailable)
         }
         return .resolved(tabID: tabID, collection: collection)
     }
 
+    /// The tabs every tool may act on: web pages other than Duck.ai. Browser pages such as
+    /// Settings are not the tools' to touch, and a file URL names a local path that can include
+    /// the user's name.
     static func isListed(_ tab: AnyTab) -> Bool {
-        // Web pages only: a file URL names a local path that can include the user's name.
         guard case .url(let url, _, _) = tab.content, url.isHttpOrHttps else { return false }
         return !url.isDuckAIURL
     }
 
-    static func actionableTab(withID tabID: TabIdentifier, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> AnyTab? {
-        let tab: AnyTab? = switch collection.indexInAllTabs(where: { $0.uuid == tabID }) {
+    static func actionableTab(withID tabID: TabIdentifier, in collection: TabCollectionViewModel) -> AnyTab? {
+        guard let tab = tab(withID: tabID, in: collection), isListed(tab) else { return nil }
+        return tab
+    }
+
+    private static func tab(withID tabID: TabIdentifier, in collection: TabCollectionViewModel) -> AnyTab? {
+        switch collection.indexInAllTabs(where: { $0.uuid == tabID }) {
         case .pinned(let index): collection.pinnedTabsCollection?.tabs[safe: index]
         case .unpinned(let index): collection.tabCollection.tabs[safe: index]
         case .none: nil
         }
-        guard let tab, tab.uuid == ownerTabID || isListed(tab) else { return nil }
-        return tab
     }
 
     static func actionableTabs(withIDs tabIDs: [TabIdentifier]?, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> [AnyTab]? {
         var unique: [TabIdentifier] = []
         for tabID in tabIDs ?? [ownerTabID] where !unique.contains(tabID) { unique.append(tabID) }
-        let tabs = unique.compactMap { actionableTab(withID: $0, ownerTabID: ownerTabID, in: collection) }
+        let tabs = unique.compactMap { actionableTab(withID: $0, in: collection) }
         return tabs.count == unique.count ? tabs : nil
     }
 

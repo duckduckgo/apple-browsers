@@ -322,7 +322,8 @@ extension OnboardingManager: OnboardingDownloadReasonHandling {
     }
 
     func enrollInDownloadReasonVPNExperimentIfNeeded() {
-        guard tutorialSettings.onboardingFlowType == .default,
+        guard !shouldPresetAIDownloadReasonFromInstall,  // These users skip the Download Screen, so they can't join the experiment.
+              tutorialSettings.onboardingFlowType == .default,
               isIphone,
               isNewUser,
               subscriptionManager.isPurchaseEligibilityKnown,
@@ -406,6 +407,9 @@ extension OnboardingManager: OnboardingFlowManaging {
         OnboardingResumeCheckpointStore.clearAll(in: onboardingResumeStepStore)
 
         tutorialSettings.onboardingFlowType = resolvedFlow
+        tutorialSettings.onboardingSource = onboardingSource
+        // If installing from AppStore Duck.ai CPP preset download reason to Private AI
+        setDownloadReasonFromInstallSourceIfNeeded()
         persistOnboardingPixelContext(flow: resolvedFlow, source: onboardingSource)
     }
 
@@ -433,6 +437,14 @@ extension OnboardingManager: OnboardingFlowManaging {
 
 private extension OnboardingManager {
 
+    /// The download reason preset for Duck.ai CPP installs on iPhone.
+    static let duckAICPPDownloadReason: OnboardingDownloadReason = .privateAIChat
+
+    /// iPhone users who install from CPP are defaulted to Private AI Download reason.
+    var shouldPresetAIDownloadReasonFromInstall: Bool {
+        tutorialSettings.onboardingFlowType == .default && tutorialSettings.onboardingSource == .duckAICPP && isIphone
+    }
+
     var isEnrolledInDownloadReasonVPNExperiment: Bool {
         return downloadReasonVPNExperimentCohort != nil
     }
@@ -457,15 +469,30 @@ private extension OnboardingManager {
 
         sharedPixelsStorage.onboardingFlow = onboardingPixelFlow(for: flow)
         sharedPixelsStorage.onboardingSource = OnboardingPixelParameter.Source(source)
+        // A reason preset from the install is reported like one picked on the Download Screen.
+        sharedPixelsStorage.onboardingDownloadReasonVariant = tutorialSettings.onboardingDownloadReason.flatMap(OnboardingPixelParameter.DownloadReasonVariant.init)
+    }
+
+    func setDownloadReasonFromInstallSourceIfNeeded() {
+        guard shouldPresetAIDownloadReasonFromInstall else { return }
+
+        tutorialSettings.onboardingDownloadReason = Self.duckAICPPDownloadReason
     }
 
     func stepsForCurrentFlow() -> [OnboardingIntroStep] {
         let introStep = OnboardingIntroStep.introDialog(isReturningUser: !isNewUser)
         switch tutorialSettings.onboardingFlowType {
         case .none, .default:
-            // iPhone users see the flow tailored by download reason, iPad users see the standard default flow.
-            let platformSteps = isIphone ? downloadReasonFlowSteps() : iPadFlow
-            return [introStep] + platformSteps
+            return if isIphone && shouldPresetAIDownloadReasonFromInstall {
+                // Duck.ai CPP installs: reason preset, no Download Screen.
+                [introStep] + remainingDefaultFlowSteps(for: Self.duckAICPPDownloadReason)
+            } else if isIphone {
+                // Other iPhone users: flow tailored by download reason.
+                [introStep] + downloadReasonFlowSteps()
+            } else {
+                // iPad: standard default flow.
+                [introStep] + iPadFlow
+            }
         case .duckAI:
             // Duck ai tailored flow for users installing the app from the Duck.ai CPP
             return [introStep] + duckAITailoredFlowSteps()

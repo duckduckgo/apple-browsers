@@ -1127,3 +1127,200 @@ struct OnboardingDownloadReasonFlowTests {
         InMemoryKeyValueStore().keyedStoring()
     }
 }
+
+@Suite("Onboarding - Duck.ai CPP download reason from install source")
+struct OnboardingDuckAICPPDownloadReasonTests {
+
+    private let cppURL = URL(string: "ddgCPP://duckAI")
+    private let expectedCPPSteps = OnboardingStepsHelper.expectedRemainingSteps(for: .privateAIChat)
+
+    // MARK: - Configure
+
+    @Test("iPhone CPP install with the Duck.ai flow flag off stores the source and AI chat reason, and skips the Download Screen", arguments: [true, false])
+    func iPhoneCPPFlagOffStoresReasonAndSkipsDownloadScreen(isReturningUser: Bool) {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sharedPixelStorage = makePixelStore()
+        let sut = makeManager(enabledFlags: [], isIphone: true, isReturningUser: isReturningUser, tutorialSettings: tutorialSettings, sharedPixelsStorage: sharedPixelStorage)
+
+        // WHEN
+        sut.configureOnboardingFlow(from: cppURL)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(tutorialSettings.onboardingSource == .duckAICPP)
+        #expect(tutorialSettings.onboardingDownloadReason == .privateAIChat)
+        #expect(sut.currentDownloadReason == .privateAIChat)
+        #expect(sut.onboardingSteps == [.introDialog(isReturningUser: isReturningUser)] + expectedCPPSteps)
+        #expect(sharedPixelStorage.onboardingSource == .duckAICustomProductPage)
+        #expect(sharedPixelStorage.onboardingFlow == .tailoredByDownloadReason)
+        #expect(sharedPixelStorage.onboardingDownloadReasonVariant == .downloadReasonAIChat)
+    }
+
+    @Test("iPhone CPP install keeps the same steps after a relaunch")
+    func iPhoneCPPKeepsStepsAfterRelaunch() {
+        // GIVEN the flow was configured on first launch
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sharedPixelStorage = makePixelStore()
+        makeManager(enabledFlags: [], isIphone: true, tutorialSettings: tutorialSettings, sharedPixelsStorage: sharedPixelStorage)
+            .configureOnboardingFlow(from: cppURL)
+
+        // WHEN the app relaunches with the same persisted state
+        let relaunched = makeManager(enabledFlags: [], isIphone: true, tutorialSettings: tutorialSettings, sharedPixelsStorage: sharedPixelStorage)
+        relaunched.configureOnboardingFlow(from: nil)
+
+        // THEN
+        #expect(relaunched.onboardingSteps == [.introDialog(isReturningUser: false)] + expectedCPPSteps)
+        #expect(relaunched.currentDownloadReason == .privateAIChat)
+    }
+
+    @Test("iPad CPP install with the Duck.ai flow flag off keeps the iPad flow and stores no reason")
+    func iPadCPPFlagOffKeepsIPadFlow() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sharedPixelStorage = makePixelStore()
+        let sut = makeManager(enabledFlags: [], isIphone: false, tutorialSettings: tutorialSettings, sharedPixelsStorage: sharedPixelStorage)
+
+        // WHEN
+        sut.configureOnboardingFlow(from: cppURL)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(tutorialSettings.onboardingSource == .duckAICPP)
+        #expect(tutorialSettings.onboardingDownloadReason == nil)
+        #expect(sut.onboardingSteps == OnboardingStepsHelper.expectedIPadSteps(isReturningUser: false))
+        #expect(sharedPixelStorage.onboardingSource == .duckAICustomProductPage)
+        #expect(sharedPixelStorage.onboardingFlow == .default)
+        #expect(sharedPixelStorage.onboardingDownloadReasonVariant == nil)
+    }
+
+    @Test(
+        "iPhone organic install with the Duck.ai flow flag off still shows the Download Screen",
+        arguments: [nil, URL(string: "ddgCPP://unknown-flow")]
+    )
+    func iPhoneOrganicFlagOffShowsDownloadScreen(url: URL?) {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sharedPixelStorage = makePixelStore()
+        let sut = makeManager(enabledFlags: [], isIphone: true, tutorialSettings: tutorialSettings, sharedPixelsStorage: sharedPixelStorage)
+
+        // WHEN
+        sut.configureOnboardingFlow(from: url)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(tutorialSettings.onboardingSource == .default)
+        #expect(tutorialSettings.onboardingDownloadReason == nil)
+        #expect(sut.onboardingSteps == [.introDialog(isReturningUser: false), .downloadReasonSelection])
+        #expect(sharedPixelStorage.onboardingDownloadReasonVariant == nil)
+    }
+
+    @Test("iPhone CPP install with the Duck.ai flow flag on keeps the Duck.ai flow")
+    func iPhoneCPPFlagOnKeepsDuckAIFlow() {
+        // GIVEN
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sut = makeManager(enabledFlags: [.onboardingDuckAIFlow], isIphone: true, tutorialSettings: tutorialSettings)
+
+        // WHEN
+        sut.configureOnboardingFlow(from: cppURL)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .duckAI)
+        #expect(tutorialSettings.onboardingSource == .duckAICPP)
+        #expect(tutorialSettings.onboardingDownloadReason == nil)
+        #expect(sut.onboardingSteps == [.introDialog(isReturningUser: false), .aiIntro, .duckAIQuerySelection, .interlude(.duckAI), .addToDockPromo, .setDefaultBrowser, .addressBarPositionSelection])
+    }
+
+    @Test("The Duck.ai flow flag changing after the flow is configured doesn't change the steps")
+    func flagChangeAfterConfigureKeepsSteps() {
+        // GIVEN configured with the flag off
+        let tutorialSettings = MockTutorialSettings(hasSeenOnboarding: false)
+        let sharedPixelStorage = makePixelStore()
+        makeManager(enabledFlags: [], isIphone: true, tutorialSettings: tutorialSettings, sharedPixelsStorage: sharedPixelStorage)
+            .configureOnboardingFlow(from: cppURL)
+
+        // WHEN the flag turns on before the next launch
+        let relaunched = makeManager(enabledFlags: [.onboardingDuckAIFlow], isIphone: true, tutorialSettings: tutorialSettings, sharedPixelsStorage: sharedPixelStorage)
+        relaunched.configureOnboardingFlow(from: cppURL)
+
+        // THEN
+        #expect(tutorialSettings.onboardingFlowType == .default)
+        #expect(relaunched.onboardingSteps == [.introDialog(isReturningUser: false)] + expectedCPPSteps)
+    }
+
+    // MARK: - VPN experiment
+
+    @Test("iPhone CPP installs are never enrolled in the VPN download-reason experiment")
+    func iPhoneCPPIsNotEnrolledInVPNExperiment() {
+        // GIVEN a user who is otherwise eligible
+        let featureFlagger = makeEligibleVPNFeatureFlagger()
+        let sharedPixelStorage = makePixelStore()
+        let sut = makeManager(featureFlagger: featureFlagger, isIphone: true, sharedPixelsStorage: sharedPixelStorage)
+        sut.configureOnboardingFlow(from: cppURL)
+
+        // WHEN
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
+
+        // THEN
+        #expect(featureFlagger.didCallResolveCohort == false)
+        #expect(sharedPixelStorage.onboardingFlow == .tailoredByDownloadReason)
+    }
+
+    @Test("iPhone organic installs are still enrolled in the VPN download-reason experiment when eligible")
+    func iPhoneOrganicIsEnrolledInVPNExperiment() {
+        // GIVEN
+        let featureFlagger = makeEligibleVPNFeatureFlagger()
+        let sharedPixelStorage = makePixelStore()
+        let sut = makeManager(featureFlagger: featureFlagger, isIphone: true, sharedPixelsStorage: sharedPixelStorage)
+        sut.configureOnboardingFlow(from: nil)
+
+        // WHEN
+        sut.enrollInDownloadReasonVPNExperimentIfNeeded()
+
+        // THEN
+        #expect(featureFlagger.didCallResolveCohort)
+        #expect(sharedPixelStorage.onboardingFlow == .tailoredByDownloadReasonVPN)
+    }
+
+    // MARK: - Helpers
+
+    /// The Duck.ai flow flag is off, and the VPN experiment would put the user in treatment if asked.
+    private func makeEligibleVPNFeatureFlagger() -> PrivacyConfig.MockFeatureFlagger {
+        PrivacyConfig.MockFeatureFlagger(
+            featuresStub: [FeatureFlag.onboardingDuckAIFlow.rawValue: false],
+            resolveCohortStub: FeatureFlag.OnboardingVPNDownloadReasonExperimentCohort.treatment,
+            isAlreadyAssigned: false
+        )
+    }
+
+    @discardableResult
+    private func makeManager(
+        enabledFlags: [FeatureFlag] = [],
+        featureFlagger: FeatureFlagger? = nil,
+        isIphone: Bool,
+        isReturningUser: Bool = false,
+        tutorialSettings: MockTutorialSettings = MockTutorialSettings(hasSeenOnboarding: false),
+        sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil
+    ) -> OnboardingManager {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        subscriptionManager.hasResolvedAppStoreProducts = true
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        let pixelStore: any KeyedStoring<OnboardingSharedPixelsKeys> = if let sharedPixelsStorage { sharedPixelsStorage } else { makePixelStore() }
+
+        return OnboardingManager(
+            appDefaults: AppSettingsMock(),
+            featureFlagger: featureFlagger ?? MockFeatureFlagger(enabledFeatureFlags: enabledFlags),
+            variantManager: isReturningUser ? OnboardingManagerVariants.returningUserVariantManagerMock : OnboardingManagerVariants.newUserVariantManagerMock,
+            isIphone: isIphone,
+            tutorialSettings: tutorialSettings,
+            subscriptionManager: subscriptionManager,
+            sharedPixelsStorage: pixelStore,
+            onboardingResumeStepStore: InMemoryKeyValueStore().keyedStoring()
+        )
+    }
+
+    private func makePixelStore() -> any KeyedStoring<OnboardingSharedPixelsKeys> {
+        InMemoryKeyValueStore().keyedStoring()
+    }
+}

@@ -107,13 +107,13 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
 
     private func loadStore() throws {
         let semaphore = DispatchSemaphore(value: 0)
-        var loadError: Error?
+        let loadError = Locked<Error?>(wrappedValue: nil)
         database.loadStore { _, error in
-            loadError = error
+            loadError.wrappedValue = error
             semaphore.signal()
         }
         semaphore.wait()
-        if let loadError { throw loadError }
+        if let loadError = loadError.wrappedValue { throw loadError }
     }
 
     static var defaultLocation: URL {

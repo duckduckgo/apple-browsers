@@ -106,7 +106,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         // Buy subscription
 
         var purchaseTransactionJWS: String?
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID, includeProTier: true) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
         case .success(let payload):
             purchaseTransactionJWS = payload.transactionJWS
         case .failure(let error):
@@ -125,7 +125,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
     func testAppStorePurchaseFailure_authorise() async throws {
         APIMockResponseFactory.mockAuthoriseResponse(destinationMockAPIService: apiService, success: false)
 
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID, includeProTier: true) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
@@ -143,7 +143,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         APIMockResponseFactory.mockAuthoriseResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockCreateAccountResponse(destinationMockAPIService: apiService, success: false)
 
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID, includeProTier: true) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
@@ -162,7 +162,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         APIMockResponseFactory.mockCreateAccountResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockGetAccessTokenResponse(destinationMockAPIService: apiService, success: false)
 
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID, includeProTier: true) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
@@ -182,7 +182,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         APIMockResponseFactory.mockGetAccessTokenResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockGetJWKS(destinationMockAPIService: apiService, success: false)
 
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID, includeProTier: true) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
         case .success:
             XCTFail("Unexpected success")
         case .failure(let error):
@@ -208,7 +208,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         SubscriptionAPIMockResponseFactory.mockConfirmPurchase(destinationMockAPIService: apiService, success: false)
 
         var purchaseTransactionJWS: String?
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID, includeProTier: true) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
         case .success(let payload):
             purchaseTransactionJWS = payload.transactionJWS
         case .failure(let error):
@@ -237,7 +237,7 @@ final class DuckDuckGoSubscriptionIntegrationTests: XCTestCase {
         SubscriptionAPIMockResponseFactory.mockGetTierFeatures(destinationMockAPIService: apiService, success: false, subscriptionIDs: ["ios.subscription.1month"])
 
         var purchaseTransactionJWS: String?
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID, includeProTier: true) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
         case .success(let payload):
             purchaseTransactionJWS = payload.transactionJWS
         case .failure(let error):

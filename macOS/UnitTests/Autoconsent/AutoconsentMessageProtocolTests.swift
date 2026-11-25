@@ -479,12 +479,11 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         )
         preferences.cookiePopupPreference = preference
 
-        let cohort: FeatureFlag.HeuristicActionCohort = heuristicEnabled ? .treatment : .control
         userScript = AutoconsentUserScript(
             config: config,
             management: AutoconsentManagement(),
             preferences: preferences,
-            featureFlagger: MockFeatureFlagger(resolveCohortStub: cohort)
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.heuristicAction.rawValue: heuristicEnabled])
         )
 
         var firedParameters: [String: String]?

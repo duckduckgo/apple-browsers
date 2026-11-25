@@ -32,7 +32,6 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public var currentStorefrontRegion: SubscriptionRegion = .usa
 
     public var subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StoreError>?
-    public var subscriptionTierOptionsIncludeProTierCalled: Bool?
 
     public var syncAppleIDAccountResultError: Error?
 
@@ -45,7 +44,6 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public var updateAvailableProductsCalled: Bool = false
     public var mostRecentTransactionCalled: Bool = false
     public var purchaseSubscriptionCalled: Bool = false
-    public var purchaseSubscriptionIncludeProTier: Bool?
     public var isEligibleForFreeTrialResult: Bool = false
 
     public init() { }
@@ -72,9 +70,8 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
         return hasActiveSubscriptionResult
     }
 
-    public func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<PurchasedTransaction, StorePurchaseManagerError> {
+    public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<PurchasedTransaction, StorePurchaseManagerError> {
         purchaseSubscriptionCalled = true
-        purchaseSubscriptionIncludeProTier = includeProTier
         return purchaseSubscriptionResult!
     }
 
@@ -82,8 +79,7 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
         isEligibleForFreeTrialResult
     }
 
-    public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StoreError> {
-        subscriptionTierOptionsIncludeProTierCalled = includeProTier
+    public func subscriptionTierOptions() async -> Result<SubscriptionTierOptions, StoreError> {
         return subscriptionTierOptionsResult ?? .failure(.tieredProductsEmptyFeatures)
     }
 }

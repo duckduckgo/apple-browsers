@@ -648,6 +648,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// iOS only. Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
     case swipeUpNewChat
+
+    /// New Duck.ai chats start on the default model and effort instead of the last one picked.
+    /// https://app.asana.com/1/137249556945/task/1220520342210072
+    case newChatDefaultModel
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -824,13 +828,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchaseStripe
     case useUnifiedFeedback
     case privacyProOnboardingPromotion
-    case paidAIChat
     case supportsAlternateStripePaymentFlow
     case stripeProductsByPlanCountry
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
-    case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification

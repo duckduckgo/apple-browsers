@@ -188,9 +188,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613117546
     case canScanUrlBasedSyncSetupBarcodes
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617269950
-    case paidAIChat
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
 
@@ -306,9 +303,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203544?focus=true
-    case allowProTierPurchase
 
     /// Withdraw from contract in Subscription Settings for international Stripe subscribers
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220034712739320?focus=true
@@ -727,18 +721,16 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220338615600254?focus=true
     case aiChatLimitExtensionPromo
 
+    /// New Duck.ai chats start on the default model and effort instead of the last one picked.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220871979531854
+    case aiChatNewChatDefaultModel
+
     /// Removes tracking parameters without `URLComponents`, which is slow and memory-hungry on very large URLs.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220580902953934
     case fastTrackingParameterFilter
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
-
-    /// Cohorts for the autoconsent heuristic action experiment
-    public enum HeuristicActionCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
 
     /// Cohorts for the onboarding Chrome extension install experiment
     public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
@@ -866,8 +858,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice), category: .sync)
         case .canScanUrlBasedSyncSetupBarcodes:
             Config(source: .remoteReleasable(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes), category: .sync)
-        case .paidAIChat:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.paidAIChat), category: .subscription)
         case .aiChatPageContext:
             Config(source: .remoteReleasable(AIChatSubfeature.pageContext), category: .duckAI)
         case .aiChatSelectionContext:
@@ -936,8 +926,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration), category: .duckAI)
-        case .allowProTierPurchase:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.allowProTierPurchase), category: .subscription)
         case .stripeInternationalSubscriptionWithdrawal:
             Config(source: .remoteReleasable(PrivacyProSubfeature.stripeInternationalSubscriptionWithdrawal), category: .subscription)
         case .popupBlocking:
@@ -973,7 +961,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:
-            Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
+            Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
         case .heuristicHitTest:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AutoconsentSubfeature.heuristicHitTest), category: .popupBlocking)
         case .popupMutationObserver:
@@ -1175,6 +1163,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreBothDefaultBrowserAndDockCTA))
         case .aiChatLimitExtensionPromo:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), category: .duckAI)
+        case .aiChatNewChatDefaultModel:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.newChatDefaultModel), category: .duckAI)
         case .fastTrackingParameterFilter:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fastTrackingParameterFilter))
         }

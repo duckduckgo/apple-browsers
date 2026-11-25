@@ -67,15 +67,6 @@ public protocol SubscriptionUserScriptNavigationDelegate: AnyObject {
     @MainActor func navigateToSubscriptionPlans(origin: String?, featurePage: String?)
 }
 
-///
-/// Feature flag provider for SubscriptionUserScript
-/// Implemented by apps/BSK to provide feature flag values without creating module dependencies
-///
-public protocol SubscriptionUserScriptFeatureFlagProviding {
-    var usePaidDuckAi: Bool { get }
-    var useProTier: Bool { get }
-}
-
 protocol UserScriptMessagePushing: AnyObject {
     func push(method: String, params: Encodable?, for delegate: Subfeature, into webView: WKWebView)
 }
@@ -91,7 +82,6 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     let platform: DataModel.Platform
     let subscriptionManager: any SubscriptionManager
-    private let featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding
     weak var navigationDelegate: SubscriptionUserScriptNavigationDelegate?
     weak private var webView: WKWebView?
     weak private var broker: UserScriptMessagePushing?
@@ -100,11 +90,9 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     init(platform: DataModel.Platform,
          subscriptionManager: any SubscriptionManager,
-         featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding,
          navigationDelegate: SubscriptionUserScriptNavigationDelegate?) {
         self.platform = platform
         self.subscriptionManager = subscriptionManager
-        self.featureFlagProvider = featureFlagProvider
         self.navigationDelegate = navigationDelegate
 
         setupSubscriptionEventObservers()
@@ -147,8 +135,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     @MainActor
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse {
-        let response = DataModel.GetFeatureConfigurationResponse(usePaidDuckAi: featureFlagProvider.usePaidDuckAi, useProTier: featureFlagProvider.useProTier)
-        return response
+        DataModel.GetFeatureConfigurationResponse()
     }
 
     @MainActor
@@ -302,12 +289,10 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
 
     public convenience init(platform: DataModel.Platform,
                             subscriptionManager: any SubscriptionManager,
-                            featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding,
                             navigationDelegate: SubscriptionUserScriptNavigationDelegate?,
                             debugHost: String?) {
         self.init(handler: SubscriptionUserScriptHandler(platform: platform,
                                                          subscriptionManager: subscriptionManager,
-                                                         featureFlagProvider: featureFlagProvider,
                                                          navigationDelegate: navigationDelegate),
                   debugHost: debugHost)
     }
@@ -367,10 +352,7 @@ extension SubscriptionUserScript {
             }
         }
 
-        struct GetFeatureConfigurationResponse: Encodable {
-            let usePaidDuckAi: Bool
-            let useProTier: Bool
-        }
+        struct GetFeatureConfigurationResponse: Encodable {}
 
         struct GetAuthAccessTokenResponse: Encodable {
             let accessToken: String

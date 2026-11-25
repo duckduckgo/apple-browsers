@@ -6,6 +6,7 @@
         "suffixes": ["daily"],
         "parameters": [
             "appVersion",
+            "channel",
             "wideEventAppName",
             "wideEventAppVersion",
             "wideEventPlatform",

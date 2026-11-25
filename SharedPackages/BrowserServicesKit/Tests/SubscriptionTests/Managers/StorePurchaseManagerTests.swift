@@ -305,7 +305,7 @@ final class StorePurchaseManagerTests: XCTestCase {
     }
 
     // Tiers
-    func testGetAvailableProductsExcludesProTierByDefault() async {
+    func testGetAvailableProductsIncludesProTier() async {
         // Given
         let regularMonthly = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
         let proMonthly = MockSubscriptionProduct(id: "com.test.monthly.pro", isMonthly: true)
@@ -314,23 +314,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // When
-        let products = await sut.getAvailableProducts(includeProTier: false)
-
-        // Then
-        XCTAssertEqual(products.count, 1)
-        XCTAssertEqual(products[0].id, "com.test.monthly")
-    }
-
-    func testGetAvailableProductsIncludesProTierWhenRequested() async {
-        // Given
-        let regularMonthly = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
-        let proMonthly = MockSubscriptionProduct(id: "com.test.monthly.pro", isMonthly: true)
-
-        mockProductFetcher.mockProducts = [regularMonthly, proMonthly]
-        await sut.updateAvailableProducts()
-
-        // When
-        let products = await sut.getAvailableProducts(includeProTier: true)
+        let products = await sut.getAvailableProducts()
 
         // Then
         XCTAssertEqual(products.count, 2)
@@ -344,29 +328,10 @@ final class StorePurchaseManagerTests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // When
-        let regularProducts = await sut.getAvailableProducts(includeProTier: false)
-        let allProducts = await sut.getAvailableProducts(includeProTier: true)
+        let products = await sut.getAvailableProducts()
 
         // Then
-        XCTAssertEqual(regularProducts.count, 0)
-        XCTAssertEqual(allProducts.count, 0)
-    }
-
-    func testGetAvailableProductsHandlesOnlyProTierProducts() async {
-        // Given
-        let proMonthly = MockSubscriptionProduct(id: "com.test.monthly.pro", isMonthly: true)
-        let proYearly = MockSubscriptionProduct(id: "com.test.yearly.pro", isYearly: true)
-
-        mockProductFetcher.mockProducts = [proMonthly, proYearly]
-        await sut.updateAvailableProducts()
-
-        // When
-        let regularProducts = await sut.getAvailableProducts(includeProTier: false)
-        let allProducts = await sut.getAvailableProducts(includeProTier: true)
-
-        // Then
-        XCTAssertEqual(regularProducts.count, 0, "Should filter out all pro products")
-        XCTAssertEqual(allProducts.count, 2, "Should include all pro products")
+        XCTAssertEqual(products.count, 0)
     }
 
     // MARK: - Subscription Tier Options Tests
@@ -377,7 +342,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // When
-        let result = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions()
 
         // Then
         switch result {
@@ -416,7 +381,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         mockCache.tierMapping = ["com.test.monthly": plusFeatures]
 
         // When
-        let result = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions()
 
         // Then
         guard case .success(let tierOptions) = result else {
@@ -490,7 +455,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         ]
 
         // When
-        let result = await sut.subscriptionTierOptions(includeProTier: true)
+        let result = await sut.subscriptionTierOptions()
 
         // Then
         guard case .success(let tierOptions) = result else {
@@ -559,7 +524,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         mockCache.tierMapping = ["com.test.monthly.trial": plusFeatures]
 
         // When
-        let result = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions()
 
         // Then
         guard case .success(let tierOptions) = result else {
@@ -584,38 +549,6 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertTrue(yearlyOption?.offer?.isUserEligible ?? false)
     }
 
-    func testSubscriptionTierOptionsExcludesProTierWhenNotRequested() async {
-        // Given
-        let plusMonthly = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
-        let plusYearly = MockSubscriptionProduct(id: "com.test.yearly", isYearly: true)
-        let proMonthly = MockSubscriptionProduct(id: "com.test.monthly.pro", isMonthly: true)
-        let proYearly = MockSubscriptionProduct(id: "com.test.yearly.pro", isYearly: true)
-
-        mockProductFetcher.mockProducts = [plusMonthly, plusYearly, proMonthly, proYearly]
-        await sut.updateAvailableProducts()
-
-        // Setup mock features
-        let plusFeatures = [TierFeature(product: .networkProtection, name: .plus)]
-        mockCache.tierMapping = ["com.test.monthly": plusFeatures]
-
-        // When
-        let result = await sut.subscriptionTierOptions(includeProTier: false)
-
-        // Then
-        guard case .success(let tierOptions) = result else {
-            XCTFail("Expected success but got failure")
-            return
-        }
-
-        XCTAssertEqual(tierOptions.products.count, 1)
-        XCTAssertEqual(tierOptions.products.first?.tier, .plus)
-
-        // Verify no Pro tier products in options
-        let allOptionIds = tierOptions.products.flatMap { $0.options.map { $0.id } }
-        XCTAssertFalse(allOptionIds.contains("com.test.monthly.pro"))
-        XCTAssertFalse(allOptionIds.contains("com.test.yearly.pro"))
-    }
-
     func testSubscriptionTierOptionsReturnsCorrectPlatform() async {
         // Given
         let monthlyProduct = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
@@ -629,7 +562,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         mockCache.tierMapping = ["com.test.monthly": features]
 
         // When
-        let result = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions()
 
         // Then
         guard case .success(let tierOptions) = result else {
@@ -656,7 +589,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         mockCache.shouldThrowError = SubscriptionEndpointServiceError.invalidRequest
 
         // When
-        let result = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions()
 
         // Then
         switch result {
@@ -679,7 +612,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         mockCache.tierMapping = ["com.test.monthly": []]
 
         // When
-        let result = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions()
 
         // Then
         switch result {
@@ -702,7 +635,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         mockCache.tierMapping = ["com.test.other": [TierFeature(product: .networkProtection, name: .plus)]]
 
         // When
-        let result = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions()
 
         // Then
         switch result {
@@ -732,7 +665,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         ]
 
         // When
-        let result = await sut.subscriptionTierOptions(includeProTier: true)
+        let result = await sut.subscriptionTierOptions()
 
         // Then
         guard case .success(let tierOptions) = result else {

@@ -25,16 +25,14 @@ public final class AppStorePurchaseFlowMock: AppStorePurchaseFlow {
     public var changeTierResult: Result<TransactionJWS, AppStorePurchaseFlowError>?
 
     public var purchaseSubscriptionCalled = false
-    public var purchaseSubscriptionIncludeProTier: Bool?
     public var changeTierCalled = false
     public var changeTierSubscriptionIdentifier: String?
     public var completeSubscriptionExperimentAttribution: PurchaseExperimentAttribution?
 
     public init() { }
 
-    public func purchaseSubscription(with subscriptionIdentifier: String, includeProTier: Bool) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
+    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
         purchaseSubscriptionCalled = true
-        purchaseSubscriptionIncludeProTier = includeProTier
         return purchaseSubscriptionResult!
     }
 

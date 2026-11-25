@@ -555,6 +555,12 @@
                 "type": "string"
             },
             {
+                "key": "model_source",
+                "description": "Where the model of a new chat's first prompt came from: the server default, a pick before sending, a model the chat was opened with (onboarding), or a fallback when the server sent no usable default. Sent only on a new chat's first prompt, with new chats starting on the default.",
+                "type": "string",
+                "enum": ["default", "picked", "onboarding", "fallback"]
+            },
+            {
                 "key": "reasoning_effort",
                 "description": "Reasoning effort at submission time. Sends 'none' when the reasoning picker is hidden (e.g. image generation active, or model has no reasoning picker)",
                 "type": "string",

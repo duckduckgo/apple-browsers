@@ -157,7 +157,7 @@ public protocol StorePurchaseManager {
     /// Returns the available subscription tier options.
     /// - Returns: A `Result<SubscriptionTierOptions, StoreError>` where `.success` contains the available subscription tier plans and pricing,
     ///           and `.failure` contains a `StoreError` if no options are available or cannot be fetched.
-    func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StoreError>
+    func subscriptionTierOptions() async -> Result<SubscriptionTierOptions, StoreError>
 
     var purchasedProductIDs: [String] { get }
     var purchaseQueue: [String] { get }
@@ -176,7 +176,7 @@ public protocol StorePurchaseManager {
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
     func isUserEligibleForFreeTrial() -> Bool
 
-    @MainActor func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<StorePurchaseManager.PurchasedTransaction, StorePurchaseManagerError>
+    @MainActor func purchaseSubscription(with identifier: String, externalID: String) async -> Result<StorePurchaseManager.PurchasedTransaction, StorePurchaseManagerError>
 }
 
 @available(iOS 15.0, *) typealias Transaction = StoreKit.Transaction
@@ -252,24 +252,17 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
         }
     }
 
-    func getAvailableProducts(includeProTier: Bool = false) async -> [any SubscriptionProduct] {
+    func getAvailableProducts() async -> [any SubscriptionProduct] {
         if availableProducts.isEmpty {
             await updateAvailableProducts()
         }
 
         Logger.subscriptionStorePurchaseManager.debug("[Store Purchase Manager] All available products: \(self.availableProducts.map(\.id))")
-        if includeProTier {
-            return availableProducts
-        }
-
-        let nonProTierProducts = availableProducts.filter { !$0.isProTierProduct }
-        Logger.subscriptionStorePurchaseManager.debug("[Store Purchase Manager] All filtered available products: \(nonProTierProducts.map(\.id))")
-
-        return nonProTierProducts
+        return availableProducts
     }
 
-    public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StoreError> {
-        let tierProducts = await getAvailableProducts(includeProTier: includeProTier)
+    public func subscriptionTierOptions() async -> Result<SubscriptionTierOptions, StoreError> {
+        let tierProducts = await getAvailableProducts()
 
         let filteredProducts = monthlyFreeTrialDecider.filteringMonthlyFreeTrialPreference(from: tierProducts)
 
@@ -492,9 +485,9 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     }
 
     @MainActor
-    public func purchaseSubscription(with identifier: String, externalID: String, includeProTier: Bool) async -> Result<PurchasedTransaction, StorePurchaseManagerError> {
+    public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<PurchasedTransaction, StorePurchaseManagerError> {
 
-        guard let product = await getAvailableProducts(includeProTier: includeProTier).first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
+        guard let product = await getAvailableProducts().first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
 
         Logger.subscriptionStorePurchaseManager.log("Purchasing Subscription: \(product.displayName, privacy: .public) (\(externalID, privacy: .public))")
 

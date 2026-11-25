@@ -25,7 +25,8 @@ import PixelKit
 /// Subscribes to MetricKit metric payloads and turns `MXAppResponsivenessMetric`
 /// hang-time histograms into pixels. Shared by iOS and macOS; each platform owns only
 /// the service that registers it with `MXMetricManager` and drives `processPastPayloads`.
-public final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
+/// After initialization, only the serial processing queue uses the injected store and pixel client.
+public final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber, @unchecked Sendable {
 
     private let processor: HangMetricsProcessor
     private let store: KeyValueStoring
@@ -59,9 +60,13 @@ public final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
     // MARK: - MXMetricManagerSubscriber
 
     public func didReceive(_ payloads: [MXMetricPayload]) {
+        process(reports: payloads.compactMap(Self.report(from:)))
+    }
+
+    func process(reports: [HangMetricsReport], completion: (@Sendable () -> Void)? = nil) {
         processingQueue.async { [weak self] in
-            guard let self else { return }
-            self.process(reports: payloads.compactMap(Self.report(from:)))
+            self?.processOnQueue(reports)
+            completion?()
         }
     }
 
@@ -71,13 +76,14 @@ public final class HangMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
     public func processPastPayloads() {
         processingQueue.async { [weak self] in
             guard let self else { return }
-            self.process(reports: MXMetricManager.shared.pastPayloads.compactMap(Self.report(from:)))
+            self.processOnQueue(MXMetricManager.shared.pastPayloads.compactMap(Self.report(from:)))
         }
     }
 
     // MARK: - Report handling
 
-    func process(reports: [HangMetricsReport]) {
+    private func processOnQueue(_ reports: [HangMetricsReport]) {
+        dispatchPrecondition(condition: .onQueue(processingQueue))
         let dataPoints = processor.dataPointsToSendPixelsFor(from: reports,
                                                              currentAppVersion: currentAppVersion,
                                                              now: dateProvider(),

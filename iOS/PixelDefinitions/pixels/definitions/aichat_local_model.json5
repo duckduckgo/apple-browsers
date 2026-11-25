@@ -1,0 +1,101 @@
+{
+    "aichat_local_model_state": {
+        "description": "Daily snapshot of on-device page summaries, sent only while the aiChatLocalModels flag is on. Fired at launch, when the app comes to the foreground and when feature flags update, so someone whose flag turns on mid-session is counted the same day. Shows who has it on, who turned it on but still gets the cloud, and why Apple Intelligence is missing for the rest.",
+        "owners": ["tomasstrba"],
+        "triggers": ["startup", "feature_lifecycle"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "selected",
+                "description": "The model chosen for page summaries: system is Apple Intelligence, cloud is Duck.ai's own models.",
+                "type": "string",
+                "enum": ["system", "cloud"]
+            },
+            {
+                "key": "state",
+                "description": "What Duck.ai is told: ready (turned on and available), not_set_up (available, not turned on) or unsupported (Apple Intelligence isn't available).",
+                "type": "string",
+                "enum": ["ready", "not_set_up", "unsupported"]
+            },
+            {
+                "key": "system_model",
+                "description": "Whether Apple Intelligence can run: available, not_enabled (turned off in Settings), not_ready (still downloading), not_eligible (device can't run it) or unsupported_os (before iOS 26).",
+                "type": "string",
+                "enum": ["available", "not_enabled", "not_ready", "not_eligible", "unsupported_os"]
+            }
+        ]
+    },
+    "aichat_local_model_promo_shown": {
+        "description": "The prompt that asks to turn on on-device page summaries is shown. Duck.ai asks for it when someone who hasn't turned it on asks for a summary. The count copy shows how often Duck.ai asks again after a No.",
+        "owners": ["tomasstrba"],
+        "triggers": ["impression"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "surface",
+                "description": "Which offer: duckai is the prompt Duck.ai asks the app to show.",
+                "type": "string",
+                "enum": ["duckai"]
+            }
+        ]
+    },
+    "aichat_local_model_promo_closed": {
+        "description": "The prompt to turn on on-device page summaries closed without Turn On: No Thanks, a tap outside, or the page under it closing. Turn On sends aichat_local_model_selected instead.",
+        "owners": ["tomasstrba"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "surface",
+                "description": "Which offer: duckai is the prompt Duck.ai asks the app to show.",
+                "type": "string",
+                "enum": ["duckai"]
+            }
+        ]
+    },
+    "aichat_local_model_selected": {
+        "description": "The user changed the model that writes page summaries: turned on-device summaries on, or went back to the cloud.",
+        "owners": ["tomasstrba"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "engine",
+                "description": "The new choice: system is Apple Intelligence, cloud is Duck.ai's own models.",
+                "type": "string",
+                "enum": ["system", "cloud"]
+            },
+            {
+                "key": "source",
+                "description": "Where it was chosen: duckai_promo is Turn On in the prompt Duck.ai asks for, settings is Settings > AI Features.",
+                "type": "string",
+                "enum": ["duckai_promo", "settings"]
+            }
+        ]
+    },
+    "aichat_local_model_run_started": {
+        "description": "Native accepted a local run that Duck.ai asked for. Daily only, so it counts people, not runs: Duck.ai counts runs and their results itself.",
+        "owners": ["tomasstrba"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "engine",
+                "description": "The engine that runs it: system is Apple Intelligence.",
+                "type": "string",
+                "enum": ["system"]
+            },
+            {
+                "key": "task",
+                "description": "The task of the day's first run: summarize or title.",
+                "type": "string",
+                "enum": ["summarize", "title"]
+            }
+        ]
+    }
+}

@@ -229,7 +229,7 @@ struct NewTabPageFavoritesExpansionPixelTests {
     @Test("Redesigned page favorites report autocomplete only while the input is focused", .timeLimit(.minutes(1)))
     func redesignedPageFavoritesReportFocusedState() {
         let sut = makeSUT(isFocussedState: false)
-        let page = RedesignedNewTabPageViewController(blocks: [], favoritesModel: sut)
+        let page = RedesignedNewTabPageViewController(blocks: [], favoritesModel: sut, returnSettings: .makeForTests())
 
         page.setFocusedPose(NewTabPageFocusedPose(inputOffset: -300, modulesOffset: -280, showsModules: true))
         sut.changeExpansion(to: true)
@@ -245,7 +245,7 @@ struct NewTabPageFavoritesExpansionPixelTests {
     @Test("A favorite opened from the focused redesigned page fires the website launch pixel", .timeLimit(.minutes(1)))
     func redesignedPageFocusedFavoriteFiresWebsiteLaunch() {
         let sut = makeSUT(isFocussedState: false)
-        let page = RedesignedNewTabPageViewController(blocks: [], favoritesModel: sut)
+        let page = RedesignedNewTabPageViewController(blocks: [], favoritesModel: sut, returnSettings: .makeForTests())
 
         page.setFocusedPose(NewTabPageFocusedPose(inputOffset: -300, modulesOffset: -280, showsModules: true))
         sut.favoriteSelected(Favorite(id: "", title: "", domain: "", urlObject: URL(string: "https://foo.bar")))

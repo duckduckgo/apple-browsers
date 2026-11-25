@@ -30,6 +30,16 @@ public enum PageContextExtractionOutcome: Equatable {
         case tabEvicted = "tab_evicted"
         /// A document tab (PDF) whose bytes couldn't be read out of the web view.
         case documentUnavailable = "document_unavailable"
+        /// A linked page whose load failed a TLS certificate check.
+        case certificateError = "certificate_error"
+        /// A linked page whose load answered with an HTTP error status.
+        case httpError = "http_error"
+        /// A linked page whose load failed for any other reason.
+        case navigationFailed = "navigation_failed"
+        /// A linked page whose load redirected somewhere extraction may not follow.
+        case redirectBlocked = "redirect_blocked"
+        /// A linked page whose URL extraction can't load.
+        case unsupportedURL = "unsupported_url"
     }
 
     case success
@@ -56,6 +66,8 @@ public enum PageContextExtractionTrigger: String, Equatable {
     case navigation
     case userRequest = "user_request"
     case tabContent = "tab_content"
+    /// "Ask about page" on a link, which loads the linked page in the background to read it.
+    case link
 }
 
 public enum PageContextExtractionLatencyBucket: String, Equatable {

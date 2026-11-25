@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Onboarding
+import DesignResourcesKit
 import DesignResourcesKitIcons
 
 private enum RadioIndicatorMetrics {
@@ -74,7 +75,7 @@ extension OnboardingRebranding {
         }
 
         private var checkboxFillerColor: Color {
-            colorScheme == .light ? .white : Color(baseColor: .gray90)
+            Color(designSystemColor: .accentContentPrimary)
         }
 
         private var foregroundColor: Color {

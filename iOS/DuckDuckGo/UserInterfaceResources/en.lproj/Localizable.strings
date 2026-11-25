@@ -5536,7 +5536,10 @@ Take back control of your personal information with the browser designed for dat
 /* Button that confirms withdrawal from the subscription contract */
 "subscription.withdraw.confirm.button" = "Confirm Withdrawal";
 
-/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+/* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.advanced.duckai" = "advanced Duck.ai models";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
 "subscription.withdraw.confirm.features.message" = "%@ stop working once you confirm.";
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */

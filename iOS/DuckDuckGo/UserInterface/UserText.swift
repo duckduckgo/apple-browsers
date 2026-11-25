@@ -2221,9 +2221,10 @@ public struct UserText {
     static func subscriptionWithdrawConfirmFeaturesMessage(features: String) -> String {
         let localized = NSLocalizedString("subscription.withdraw.confirm.features.message",
                                            value: "%@ stop working once you confirm.",
-                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai.")
+                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.")
         return String(format: localized, features)
     }
+    public static let subscriptionWithdrawConfirmFeatureAdvancedDuckAI = NSLocalizedString("subscription.withdraw.confirm.feature.advanced.duckai", value: "advanced Duck.ai models", comment: "Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models")
     public static let subscriptionWithdrawConfirmButton = NSLocalizedString("subscription.withdraw.confirm.button", value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
     public static let subscriptionWithdrawKeepButton = NSLocalizedString("subscription.withdraw.keep.button", value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")
     public static let subscriptionNotSubscribed = NSLocalizedString("subscription.not.subscribed", value: "Not Subscribed", comment: "Subscription status shown after the user withdrew from the subscription contract")

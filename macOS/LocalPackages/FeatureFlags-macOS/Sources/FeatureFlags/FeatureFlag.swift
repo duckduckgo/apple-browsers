@@ -367,7 +367,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// TEMPORARY (remove after rollout): render SVG favicons with WebKit instead of CoreSVG, which can crash the
     /// app on some filtered SVGs (default-ON kill switch; off reverts to the legacy `NSImage(data:)` decoding).
-    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1220652898192245
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220892327254001
     case faviconWebKitSVGRendering
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true

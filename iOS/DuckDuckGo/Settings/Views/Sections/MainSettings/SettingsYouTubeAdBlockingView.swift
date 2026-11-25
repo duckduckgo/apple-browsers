@@ -62,18 +62,16 @@ struct SettingsYouTubeAdBlockingView: View {
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 if viewModel.isYouTubeAdBlockingRemotelyDisabled {
-                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
+                    Section {
                         remotelyDisabledRow
                             .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                     }
                 } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
-                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
-                            footer: Text(UserText.youTubeAdBlockingExplanation)) {
+                    Section(footer: Text(UserText.youTubeAdBlockingExplanation)) {
                         adBlockingToggleCell
                     }
                 } else {
-                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
-                            footer: Text(footerAttributedString)) {
+                    Section(footer: Text(footerAttributedString)) {
                         adBlockingToggleCell
                     }
                 }

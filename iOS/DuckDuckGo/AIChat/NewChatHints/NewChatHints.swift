@@ -54,7 +54,7 @@ struct NewChatState: Equatable {
     var isIPhone = false
     /// The input is the full-tab Duck.ai input, not the omnibar or the contextual sheet.
     var isFullTabInput = false
-    /// This tab is the one on screen.
+    /// This tab is the one on screen, and the input is bound to its page rather than the previous tab's.
     var isTabSelected = false
     /// The page reported it is ready for a prompt and hasn't hidden its input (voice does).
     var isInputReady = false

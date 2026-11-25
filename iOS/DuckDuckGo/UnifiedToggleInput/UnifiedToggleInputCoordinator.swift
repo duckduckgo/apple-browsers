@@ -127,10 +127,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown {
         didSet {
-            guard oldValue != aiChatStatus else { return }
+            let wasFromEarlierDocument = isAIChatStatusFromEarlierDocument
+            isAIChatStatusFromEarlierDocument = false
+            guard oldValue != aiChatStatus || wasFromEarlierDocument else { return }
             refreshNewChatState()
         }
     }
+    /// The bound page committed a new document that hasn't reported its state yet. Kept apart from `aiChatStatus`,
+    /// which feeds prompt telemetry and must only carry what a page reported.
+    private var isAIChatStatusFromEarlierDocument = false
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
@@ -376,6 +381,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var cancellables = Set<AnyCancellable>()
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
+    /// The tab that was active when `boundUserScript` was bound. A tab switch activates the incoming tab before it
+    /// binds that tab's script, and in between the bound script still belongs to the outgoing tab.
+    private var boundUserScriptTabUID: TabUID?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
     private let lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding?
     private let lastUsedModelCache: NSCache<NSString, NSString> = {
@@ -743,6 +751,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.refreshNewChatHints() }
             .store(in: &cancellables)
+        // The remote config can turn the hints on or off while a blank chat is open.
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshNewChatState() }
+            .store(in: &cancellables)
         wideEventReporter.subscribe(
             aiChatStatus: $aiChatStatus.eraseToAnyPublisher(),
             stopGeneratingTapped: viewController.handler.stopGeneratingButtonTappedPublisher
@@ -773,6 +786,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // A freed script's address can be reused by the next one, so a matching identifier alone doesn't prove it's the same script.
         if boundUserScriptIdentifier == newIdentifier, boundUserScript === userScript {
             boundUserScript = userScript
+            boundUserScriptTabUID = currentTabUID
             userScript.inputBoxHandler = self
             syncChipVisibility(hasExistingChat: hasExistingChat)
             refreshToolsPresentation()
@@ -783,6 +797,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = userScript
         boundUserScriptIdentifier = newIdentifier
+        boundUserScriptTabUID = currentTabUID
         if hadPreviousScript {
             resetSessionState()
         }
@@ -797,6 +812,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
         boundUserScriptIdentifier = nil
+        boundUserScriptTabUID = nil
         isTermsOfServiceShownOnPage = false
         isAIChatPromoVisible = nil
         resetSessionState()
@@ -976,6 +992,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("handleNavigationCommit [\(tabUID, privacy: .public)] didChangeChat=\(didChangeChat, privacy: .public) startsHidden=\(startsWithHiddenInput, privacy: .public) — live tab [\(self.currentTabUID ?? "nil", privacy: .public)]")
         let visibility: AIChatInputBoxVisibility = startsWithHiddenInput ? .hidden : .unknown
         if tabUID == currentTabUID {
+            isAIChatStatusFromEarlierDocument = true
             aiChatInputBoxVisibility = visibility
             isVoiceSessionActive = false
             if didChangeChat {
@@ -1288,9 +1305,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let state = NewChatState(
             isIPhone: isIPhone,
             isFullTabInput: host == .omnibar && isAITabState,
-            isTabSelected: currentTabUID != nil && boundUserScript != nil,
+            isTabSelected: currentTabUID != nil && boundUserScript != nil && boundUserScriptTabUID == currentTabUID,
             // The page reports `ready` once it can take a prompt; it never sends `showChatInput` on a plain load.
-            isInputReady: aiChatStatus == .ready && aiChatInputBoxVisibility != .hidden,
+            isInputReady: aiChatStatus == .ready && !isAIChatStatusFromEarlierDocument && aiChatInputBoxVisibility != .hidden,
             hasChat: hasSubmittedPrompt || url?.duckAIChatID != nil,
             carriesPrompt: url.map(Self.autoSubmitsPrompt) ?? false,
             isVoiceHeld: isVoiceSessionActive || isVoiceRequestedForPage || url?.isDuckAIVoiceMode == true,
@@ -1419,7 +1436,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let terms = "iPhone=\(state.isIPhone) fullTab=\(state.isFullTabInput) selected=\(state.isTabSelected) "
             + "inputReady=\(state.isInputReady) hasChat=\(state.hasChat) carriesPrompt=\(state.carriesPrompt) "
             + "voice=\(state.isVoiceHeld) editing=\(state.isEditing)"
-        Logger.unifiedInputState.debug("[NewChatHints] isGuaranteedNewChat=\(state.isGuaranteedNewChat, privacy: .public) eligible=\(self.isNewChatHintsEligibleUser, privacy: .public) promoVisible=\(promo, privacy: .public) [\(terms, privacy: .public)] [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
+        Logger.unifiedInputState.debug("[NewChatHints] isGuaranteedNewChat=\(state.isGuaranteedNewChat, privacy: .public) promoVisible=\(promo, privacy: .public) [\(terms, privacy: .public)]")
     }
 
     private static func autoSubmitsPrompt(_ url: URL) -> Bool {

@@ -264,7 +264,10 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
             registeredDevice(from: $0, account: account, accountInfoKey: accountInfoKey, thirdPartyMainKey: nil, isUnifiedReadEnabled: true)
         }
         let fallbackIndices = entries.indices.filter {
-            entries[$0].credentialId == SyncCredentialID.thirdParty && mappings[$0].source != .deviceInfo
+            entries[$0].credentialId == SyncCredentialID.thirdParty
+                && mappings[$0].source != .deviceInfo
+                && entries[$0].name != nil
+                && entries[$0].type != nil
         }
         if !fallbackIndices.isEmpty,
            let mainKey = try await auditLogThirdPartyMainKey(for: fallbackIndices.map { entries[$0] },

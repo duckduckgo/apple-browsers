@@ -427,6 +427,43 @@ struct AuditLogEntryDecoderTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Incomplete third-party snapshots do not trigger credential recovery", .timeLimit(.minutes(1)),
+          arguments: [["name"], ["type"], ["name", "type"]], [false, true])
+    func testIncompleteThirdPartySnapshotsSkipCredentialRecovery(missingFields: [String], includesReadableSnapshot: Bool) async throws {
+        let fixture = try makeFixture()
+        let password = Data(repeating: 4, count: 32)
+        let mainKey = ScopedAccessKeyDerivation.mainKey(from: password, userID: account.userId)
+        let codec = JWECompactCodec()
+        let encryptedName = try codec.encryptDirect(payload: Data("Readable browser".utf8), contentEncryptionKey: mainKey,
+                                                     kid: SyncCredentialID.thirdParty)
+        let encryptedType = try codec.encryptDirect(payload: Data("desktop".utf8), contentEncryptionKey: mainKey,
+                                                     kid: SyncCredentialID.thirdParty)
+        let incomplete = RegisteredDeviceEntry(id: "incomplete", name: missingFields.contains("name") ? nil : encryptedName,
+                                                type: missingFields.contains("type") ? nil : encryptedType, info: nil,
+                                                credentialId: SyncCredentialID.thirdParty)
+        let readable = RegisteredDeviceEntry(id: "readable", name: encryptedName, type: encryptedType, info: nil,
+                                              credentialId: SyncCredentialID.thirdParty)
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchAccessCredentialsError = SyncError.unexpectedStatusCode(401)
+        var passwordReads = 0
+        let mapper = makeMapper(scopedAccess: scopedAccess, accountInfoKeys: fixture.keyManager, cachedScopedPassword: {
+            passwordReads += 1
+            return password
+        })
+
+        let result = try await mapper.registeredAuditLogDevices(from: includesReadableSnapshot ? [readable, incomplete] : [incomplete],
+                                                                account: account, accountInfoKey: fixture.key,
+                                                                thirdPartyPasswordRecoveryCache: nil)
+
+        #expect(result.devices.map(\.id) == (includesReadableSnapshot ? ["readable", "incomplete"] : ["incomplete"]))
+        #expect(result.devices.map(\.name) == (includesReadableSnapshot ? ["Readable browser", "Browser"] : ["Browser"]))
+        #expect(result.devices.map(\.type) == (includesReadableSnapshot ? ["desktop", "unknown"] : ["unknown"]))
+        #expect(result.devices.allSatisfy { $0.credentialId == SyncCredentialID.thirdParty })
+        #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+        #expect(passwordReads == (includesReadableSnapshot ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("An audit credential request failure stops the whole page", .timeLimit(.minutes(1)))
     func testAuditCredentialRequestPropagatesUnauthorizedError() async throws {
         let fixture = try makeFixture()

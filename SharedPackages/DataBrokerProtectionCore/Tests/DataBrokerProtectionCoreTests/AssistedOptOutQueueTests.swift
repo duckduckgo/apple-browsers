@@ -31,8 +31,8 @@ struct AssistedOptOutQueueTests {
         let fixture = Fixture(history: interrupted ? .optOutStarted : .optOutRequested, deprecated: true,
                               preferredRunDate: interrupted ? .distantFuture : nil)
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
-        let first = try await queue.assistedOptOuts()
-        let second = try await queue.assistedOptOuts()
+        let first = try await queue.assistedOptOutList().optOuts
+        let second = try await queue.assistedOptOutList().optOuts
         #expect(first == second)
         #expect(first.map(\.state) == [.waiting])
         #expect(fixture.database.optOutEvents.isEmpty)
@@ -42,7 +42,7 @@ struct AssistedOptOutQueueTests {
         #expect(!fixture.database.wasFetchAllDataBrokersCalled)
         #expect(!fixture.database.wasUpdatedPreferredRunDateForOptOutCalled)
         queue.invalidate()
-        _ = try await queue.assistedOptOuts()
+        _ = try await queue.assistedOptOutList().optOuts
         #expect(fixture.database.scopedProfileFetchCount == 2)
     }
 
@@ -53,7 +53,7 @@ struct AssistedOptOutQueueTests {
         let presenter = Presenter()
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
         queue.presenter = presenter
-        #expect(try await queue.assistedOptOuts().map { AssistedOptOutID($0.id)?.extractedProfileId } == [1, 2])
+        #expect(try await queue.assistedOptOutList().optOuts.map { AssistedOptOutID($0.id)?.extractedProfileId } == [1, 2])
         try await queue.start(id: fixture.id)
         let session = try #require(queue.activeSessions.first)
         try await queue.start(id: fixture.id)
@@ -74,12 +74,12 @@ struct AssistedOptOutQueueTests {
         let fixture = Fixture(history: .optOutStarted)
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
         fixture.flagger.isUserAssistanceOn = false
-        #expect(try await queue.assistedOptOuts().isEmpty)
+        #expect(try await queue.assistedOptOutList().optOuts.isEmpty)
         fixture.flagger.isUserAssistanceOn = true
         fixture.database.scopedProfileFetchHandler = { _ in throw DataBrokerProtectionError.jobTimeout }
-        await #expect(throws: DataBrokerProtectionError.self) { try await queue.assistedOptOuts() }
+        await #expect(throws: DataBrokerProtectionError.self) { try await queue.assistedOptOutList().optOuts }
         fixture.database.scopedProfileFetchHandler = nil
-        #expect(try await queue.assistedOptOuts().count == 1)
+        #expect(try await queue.assistedOptOutList().optOuts.count == 1)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -91,7 +91,7 @@ struct AssistedOptOutQueueTests {
         fixture.dependencies.isAuthenticatedUserProvider = { await authentication.check() }
         let oldRead = Task {
             switch operation {
-            case .list: _ = try await queue.assistedOptOuts()
+            case .list: _ = try await queue.assistedOptOutList().optOuts
             case .start: try await queue.start(id: fixture.id)
             }
         }
@@ -184,7 +184,7 @@ struct AssistedOptOutQueueTests {
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
         fixture.setHistory(.optOutRequested, preferredRunDate: .distantFuture)
         queue.invalidate()
-        #expect(try await queue.assistedOptOuts().isEmpty)
+        #expect(try await queue.assistedOptOutList().optOuts.isEmpty)
         fixture.setHistory(.optOutRequested, preferredRunDate: nil)
         queue.invalidate()
         try await queue.start(id: fixture.id)
@@ -216,7 +216,7 @@ struct AssistedOptOutQueueTests {
         fixture.dependencies.isAuthenticatedUserProvider = { false }
         let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
         try await queue.start(id: fixture.id)
-        #expect(try await queue.assistedOptOuts().isEmpty)
+        #expect(try await queue.assistedOptOutList().optOuts.isEmpty)
         #expect(queue.activeSessions.isEmpty)
         #expect(fixture.database.optOutEvents.isEmpty)
         #expect(fixture.database.scopedProfileFetchCount == 0)
@@ -249,6 +249,93 @@ struct AssistedOptOutQueueTests {
         #expect(metrics.outcomes == [.submitted])
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func slotsAreTheLowestRecordIDsUpToTheLimit() {
+        let ids = [5, 2, 4, 1, 3].map { AssistedOptOutID(brokerId: $0 % 2, profileQueryId: 1, extractedProfileId: Int64($0)) }
+        #expect(AssistedOptOutQueue.assistedSlots(among: ids, limit: 3).map(\.extractedProfileId) == [1, 2, 3])
+        #expect(AssistedOptOutQueue.assistedSlots(among: ids, limit: nil).map(\.extractedProfileId) == [1, 2, 3, 4, 5])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func capIsTotalAcrossBrokersAndCountsIgnoreRecordsTheUserRemoved() async throws {
+        let fixture = Fixture()
+        fixture.setSettings(#"{"enabledBrokers":["testbroker.com","otherbroker.com"],"maxAssistedRecords":3}"#)
+        fixture.setRecords([.init(broker: 1, id: 0, history: .matchRemovedByUser),
+                            .init(broker: 1, id: 5), .init(broker: 1, id: 2), .init(broker: 1, id: 4),
+                            .init(broker: 2, id: 1), .init(broker: 2, id: 3)])
+        let list = try await AssistedOptOutQueue(dependencies: fixture.dependencies).assistedOptOutList()
+        #expect(Set(list.optOuts.map { AssistedOptOutID($0.id)?.extractedProfileId }) == [1, 2, 3])
+        #expect(list.assistedLimit == 3)
+        #expect(list.brokers == [.init(url: "otherbroker.com", recordCount: 2), .init(url: "testbroker.com", recordCount: 3)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func finishedRecordsKeepTheirSlotsSoNothingElseIsListed() async throws {
+        let fixture = Fixture()
+        fixture.setRecords([.init(broker: 1, id: 1, removedDate: .distantPast),
+                            .init(broker: 1, id: 2, history: .optOutSubmittedAndAwaitingEmailConfirmation),
+                            .init(broker: 1, id: 3, history: .optOutRequested, preferredRunDate: .distantFuture),
+                            .init(broker: 1, id: 4), .init(broker: 1, id: 5)])
+        let list = try await AssistedOptOutQueue(dependencies: fixture.dependencies).assistedOptOutList()
+        #expect(list.optOuts.isEmpty)
+        #expect(list.brokers == [.init(url: "testbroker.com", recordCount: 5)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func recordsFoundLaterDoNotTakeASlot() async throws {
+        let fixture = Fixture()
+        let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
+        fixture.setRecords([.init(broker: 1, id: 7), .init(broker: 1, id: 8), .init(broker: 1, id: 9)])
+        #expect(try await queue.assistedOptOutList().optOuts.map { AssistedOptOutID($0.id)?.extractedProfileId } == [7, 8, 9])
+        fixture.setRecords([.init(broker: 1, id: 7), .init(broker: 1, id: 8), .init(broker: 1, id: 9),
+                            .init(broker: 1, id: 10), .init(broker: 1, id: 11)])
+        queue.invalidate()
+        #expect(try await queue.assistedOptOutList().optOuts.map { AssistedOptOutID($0.id)?.extractedProfileId } == [7, 8, 9])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func changingTheCapInRemoteConfigTakesEffectWithoutAnInvalidation() async throws {
+        let fixture = Fixture()
+        let queue = AssistedOptOutQueue(dependencies: fixture.dependencies)
+        fixture.setRecords((1...5).map { .init(broker: 1, id: Int64($0)) })
+
+        fixture.setSettings(#"{"enabledBrokers":["testbroker.com"]}"#)
+        let defaultList = try await queue.assistedOptOutList()
+        #expect(defaultList.optOuts.count == 3)
+        #expect(try encodedKeys(defaultList).contains("assistedLimit"))
+
+        fixture.setSettings(#"{"enabledBrokers":["testbroker.com"],"maxAssistedRecords":2}"#)
+        #expect(try await queue.assistedOptOutList().optOuts.map { AssistedOptOutID($0.id)?.extractedProfileId } == [1, 2])
+
+        fixture.setSettings(#"{"enabledBrokers":["testbroker.com"],"maxAssistedRecords":-1}"#)
+        let uncapped = try await queue.assistedOptOutList()
+        #expect(uncapped.optOuts.count == 5)
+        #expect(uncapped.assistedLimit == nil)
+        #expect(try !encodedKeys(uncapped).contains("assistedLimit"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [
+        (#""#, 3), (#","maxAssistedRecords":-1"#, nil), (#","maxAssistedRecords":0"#, 0),
+        (#","maxAssistedRecords":5"#, 5), (#","maxAssistedRecords":-5"#, 3), (#","maxAssistedRecords":"5""#, 3)
+    ] as [(String, Int?)])
+    func remoteCapDecodesToAnOptionalLimit(fragment: String, limit: Int?) throws {
+        let json = #"{"enabledBrokers":["testbroker.com"]"# + fragment + "}"
+        let config = try JSONDecoder().decode(UserAssistanceConfig.self, from: Data(json.utf8))
+        #expect(config.maxAssistedRecords == limit)
+        #expect(config.enabledBrokers == ["testbroker.com"])
+    }
+
+    private func encodedKeys(_ list: AssistedOptOutList) throws -> [String] {
+        let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(list)) as? [String: Any]
+        return object.map { Array($0.keys) } ?? []
+    }
+
     enum SnapshotRead: Sendable { case list, start }
 
     enum Ending: Sendable {
@@ -271,12 +358,12 @@ private struct Fixture {
     let database = MockDatabase()
     let flagger = MockDBPFeatureFlagger(isUserAssistanceOn: true)
     let manager = PrivacyConfigurationManagingMock()
+    let privacyConfig = PrivacyConfigurationMock()
     let id = AssistedOptOutID(brokerId: 1, profileQueryId: 1, extractedProfileId: 1)
 
     init(history: HistoryEvent.EventType = .optOutAwaitingUserAssistance, records: Int = 1, deprecated: Bool = false, preferredRunDate: Date? = .distantPast) {
         dependencies.database = database
         dependencies.featureFlagger = flagger
-        let privacyConfig = PrivacyConfigurationMock()
         privacyConfig.subfeatureSettings = #"{"enabledBrokers":["testbroker.com"]}"#
         manager.privacyConfig = privacyConfig
         dependencies.privacyConfig = manager
@@ -293,6 +380,43 @@ private struct Fixture {
         database.brokerProfileQueryDataToReturn = [.init(dataBroker: broker, profileQuery: profile, scanJobData: .mock, optOutJobData: jobs)]
         database.dataBrokersToReturn = [broker]
         database.optOutToReturn = jobs.first
+    }
+
+    struct Record {
+        let broker: Int64
+        let id: Int64
+        var history: HistoryEvent.EventType = .optOutAwaitingUserAssistance
+        var preferredRunDate: Date? = .distantPast
+        var removedDate: Date?
+    }
+
+    func setSettings(_ json: String) {
+        privacyConfig.subfeatureSettings = json
+    }
+
+    func setRecords(_ records: [Record]) {
+        let profile = ProfileQuery(id: 1, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1980)
+        let brokers = [(1, "testbroker.com"), (2, "otherbroker.com")].map { id, url in
+            DataBroker(id: Int64(id), name: url, url: url,
+                       steps: [Step(type: .scan, actions: []), Step(type: .optOut, actions: [UserAssistAction(id: "assist")])],
+                       version: "1.0", schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
+        }
+        database.dataBrokersToReturn = brokers
+        database.brokerProfileQueryDataToReturn = brokers.map { broker in
+            let jobs = records.filter { $0.broker == broker.id }.map { record in
+                OptOutJobData(brokerId: record.broker, profileQueryId: 1, createdDate: .distantPast,
+                              preferredRunDate: record.preferredRunDate,
+                              historyEvents: [HistoryEvent(extractedProfileId: record.id, brokerId: record.broker, profileQueryId: 1,
+                                                           type: record.history, date: .distantPast)],
+                              attemptCount: 0,
+                              extractedProfile: ExtractedProfile(id: record.id, name: "Jane Doe \(record.id)",
+                                                                 addresses: [AddressCityState(city: "Austin", state: "TX")],
+                                                                 profileUrl: "profile\(record.id)", age: "42",
+                                                                 removedDate: record.removedDate))
+            }
+            return BrokerProfileQueryData(dataBroker: broker, profileQuery: profile, scanJobData: .mock, optOutJobData: jobs)
+        }
+        database.optOutToReturn = database.brokerProfileQueryDataToReturn.first?.optOutJobData.first
     }
 
     func setHistory(_ history: HistoryEvent.EventType, preferredRunDate: Date?) {

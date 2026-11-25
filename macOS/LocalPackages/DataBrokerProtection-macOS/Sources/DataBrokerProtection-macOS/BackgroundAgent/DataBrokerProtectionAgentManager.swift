@@ -689,7 +689,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
         }
         setUpAssistedOptOuts()
         do {
-            return AssistedOptOutList(optOuts: try await assistedOptOutQueue?.assistedOptOuts() ?? [])
+            return try await assistedOptOutQueue?.assistedOptOutList() ?? AssistedOptOutList(optOuts: [])
         } catch {
             Logger.dataBrokerProtection.error("Assisted opt-out list failed")
             return nil

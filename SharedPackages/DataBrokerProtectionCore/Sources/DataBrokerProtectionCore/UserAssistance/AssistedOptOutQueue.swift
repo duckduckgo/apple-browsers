@@ -39,6 +39,12 @@ public final class AssistedOptOutQueue {
         let id: AssistedOptOutID
     }
 
+    private struct Snapshot {
+        let config: UserAssistanceConfig
+        let candidates: [Candidate]
+        let brokers: [AssistedOptOutList.BrokerRecordCount]
+    }
+
     private let dependencies: BrokerProfileJobDependencyProviding
     private let attemptTimeout: TimeInterval
     private let now: () -> Date
@@ -48,7 +54,7 @@ public final class AssistedOptOutQueue {
     private var session: AssistedOptOutSession?
     private var runningTask: Task<Void, Never>?
     private var runningCancellation: AttemptCancellation?
-    private var cache: (config: UserAssistanceConfig, candidates: [Candidate])?
+    private var cache: Snapshot?
 
     public init(dependencies: BrokerProfileJobDependencyProviding,
                 attemptTimeout: TimeInterval = AssistedOptOutQueue.defaultAttemptTimeout,
@@ -76,19 +82,26 @@ public final class AssistedOptOutQueue {
         cancelAttemptNotEnabled()
     }
 
-    public func assistedOptOuts() async throws -> [AssistedOptOut] {
-        guard let candidates = try await availableCandidates() else { return [] }
+    public func assistedOptOutList() async throws -> AssistedOptOutList {
+        guard let snapshot = try await availableSnapshot() else { return AssistedOptOutList(optOuts: []) }
         let live = session.map { [$0.dashboardItem] } ?? []
-        let waiting = candidates.filter { $0.id != session?.id && needsUser($0) }.map {
+        let waiting = snapshot.candidates.filter { $0.id != session?.id && needsUser($0) }.map {
             AssistedOptOut(id: $0.id.description,
                            dataBroker: .init(name: $0.data.dataBroker.name, url: $0.data.dataBroker.url),
                            state: .waiting)
         }
-        return live + waiting
+        return AssistedOptOutList(optOuts: live + waiting, assistedLimit: snapshot.config.maxAssistedRecords, brokers: snapshot.brokers)
+    }
+
+    /// The records that may ever be on the list: the `limit` lowest extracted profile IDs across all brokers.
+    /// Finished records keep their slot, so records found later never take one.
+    public nonisolated static func assistedSlots(among records: [AssistedOptOutID], limit: Int?) -> [AssistedOptOutID] {
+        let ordered = records.sorted { $0.extractedProfileId < $1.extractedProfileId }
+        return Array(ordered.prefix(limit ?? ordered.count))
     }
 
     public func start(id: AssistedOptOutID) async throws {
-        guard let candidates = try await availableCandidates() else { return }
+        guard let candidates = try await availableSnapshot()?.candidates else { return }
         if let session, session.phase != .submitted || session.id == id {
             presenter?.present(session)
             return
@@ -178,35 +191,41 @@ public final class AssistedOptOutQueue {
         }
     }
 
-    private func availableCandidates() async throws -> [Candidate]? {
+    private func availableSnapshot() async throws -> Snapshot? {
         let isAuthenticated = await dependencies.isAuthenticatedUser()
         guard isAuthenticated, !dependencies.isPausedForRevokedSigningKey else {
             cancelAll()
             return nil
         }
         cancelAttemptNotEnabled()
-        return try loadCandidates()
+        return try loadSnapshot()
     }
 
-    private func loadCandidates() throws -> [Candidate] {
+    private func loadSnapshot() throws -> Snapshot {
         let config = config
-        if let cache, cache.config == config { return cache.candidates }
+        if let cache, cache.config == config { return cache }
         let database = dependencies.database
-        let candidates = try config.enabledBrokers.sorted().flatMap { url -> [Candidate] in
+        var records: [Candidate] = []
+        var brokers: [AssistedOptOutList.BrokerRecordCount] = []
+        for url in config.enabledBrokers.sorted() {
             guard let broker = try database.fetchBroker(withURL: url), let brokerID = broker.id,
-                  broker.requiresUserAssistance, !broker.isRemoved, !broker.performsOptOutWithinParent() else { return [] }
-            return try database.fetchBrokerProfileQueryData(forBrokerId: brokerID).flatMap { data in
+                  broker.requiresUserAssistance, !broker.isRemoved, !broker.performsOptOutWithinParent() else { continue }
+            let brokerRecords = try database.fetchBrokerProfileQueryData(forBrokerId: brokerID).flatMap { data in
                 data.optOutJobData.compactMap { job -> Candidate? in
-                    guard job.extractedProfile.removedDate == nil, !job.isRemovedByUser,
-                          let extractedID = job.extractedProfile.id else { return nil }
+                    guard !job.isRemovedByUser, let extractedID = job.extractedProfile.id else { return nil }
                     return Candidate(data: data, job: job,
                                      id: .init(brokerId: job.brokerId, profileQueryId: job.profileQueryId,
                                                extractedProfileId: extractedID))
                 }
             }
+            records += brokerRecords
+            brokers.append(.init(url: broker.url, recordCount: brokerRecords.count))
         }
-        cache = (config, candidates)
-        return candidates
+        let slots = Set(Self.assistedSlots(among: records.map(\.id), limit: config.maxAssistedRecords))
+        let candidates = records.filter { slots.contains($0.id) && $0.job.extractedProfile.removedDate == nil }
+        let snapshot = Snapshot(config: config, candidates: candidates, brokers: brokers)
+        cache = snapshot
+        return snapshot
     }
 
     private func needsUser(_ candidate: Candidate) -> Bool {

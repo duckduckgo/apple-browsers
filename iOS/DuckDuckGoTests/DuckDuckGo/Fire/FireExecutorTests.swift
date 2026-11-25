@@ -443,6 +443,41 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
     }
 
+    func testBurningOneNormalTabRevokesBrowserToolGrantsForAllChats() async {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs, .aiChatBrowserToolRequestAccess])
+        defer { fixture.cleanUp() }
+        mockTabManager.browserToolsService = fixture.service
+        let chatRequests = ["chat", "other-chat"].map { chatID in
+            var params = fixture.params()
+            params["chatId"] = chatID
+            return params
+        }
+
+        fixture.presenter.autoAnswer = .allowForChat
+        for params in chatRequests {
+            let result = await fixture.handler.executeClientTool(params: params, source: fixture.script)
+            XCTAssertEqual(result, fixture.success)
+        }
+        XCTAssertEqual(fixture.presenter.prompts.count, chatRequests.count)
+        XCTAssertTrue(fixture.presenter.prompts.allSatisfy(\.offersAllowForChat))
+
+        fixture.presenter.autoAnswer = .dontAllow
+        for params in chatRequests {
+            let result = await fixture.handler.executeClientTool(params: params, source: fixture.script)
+            XCTAssertEqual(result, fixture.success)
+        }
+
+        let executor = makeFireExecutor()
+        let request = makeFireRequest(options: .tabs, scope: .tab(viewModel: makeTabViewModel()))
+        await executor.burn(request: request, applicationState: .active)
+
+        for params in chatRequests {
+            let result = await fixture.handler.executeClientTool(params: params, source: fixture.script)
+            XCTAssertEqual(result, .failure(callId: "call", error: .denied))
+        }
+        XCTAssertEqual(fixture.presenter.prompts.count, 2 * chatRequests.count)
+    }
+
     func testDirectBurnReleasesBlockAfterSnapshotCleanupEvenIfFeatureIsDisabled() async {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }

@@ -144,11 +144,13 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public var resultTokenContainer: Networking.TokenContainer?
     public var resultCreateAccountTokenContainer: Networking.TokenContainer?
+    public private(set) var getTokenContainerCallCount = 0
     /// The policies passed to `getTokenContainer(policy:)`, in call order.
     public private(set) var getTokenContainerPolicies: [Networking.AuthTokensCachePolicy] = []
     /// When set, `getTokenContainer(policy:)` returns or throws its result instead of using `resultTokenContainer`.
     public var getTokenContainerHandler: ((Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer)?
     public func getTokenContainer(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
+        getTokenContainerCallCount += 1
         getTokenContainerPolicies.append(policy)
         if let getTokenContainerHandler {
             return try await getTokenContainerHandler(policy)
@@ -244,8 +246,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         resultFeatures.contains(feature)
     }
 
+    public private(set) var isFeatureEnabledCallCount = 0
     public func isFeatureEnabled(_ feature: Networking.SubscriptionEntitlement) async throws -> Bool {
-        resultFeatures.contains(feature)
+        isFeatureEnabledCallCount += 1
+        return resultFeatures.contains(feature)
     }
 
     public func getAllEntitlementStatus() async -> EntitlementStatus {
@@ -254,7 +258,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     // MARK: - Subscription Token Provider
 
+    public private(set) var getAccessTokenCallCount = 0
     public func getAccessToken() async throws -> String {
+        getAccessTokenCallCount += 1
         guard let accessToken = resultTokenContainer?.accessToken else {
             throw SubscriptionManagerError.noTokenAvailable
         }

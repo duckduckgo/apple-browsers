@@ -77,6 +77,27 @@ final class UpdatesDebugSettingsTests: XCTestCase {
         XCTAssertNil(debugSettings.forcedUpdatePromptStage)
     }
 
+    func testAppStoreMetadataBaseURL_persistsAndResets() {
+        XCTAssertNil(debugSettings.appStoreMetadataBaseURL)
+
+        debugSettings.appStoreMetadataBaseURL = "http://localhost:8765/"
+        let restoredSettings = UpdatesDebugSettings(persistor: UpdatesDebugSettingsUserDefaultsPersistor(keyValueStore: mockKeyValueStore))
+        XCTAssertEqual(restoredSettings.appStoreMetadataBaseURL, "http://localhost:8765/")
+
+        restoredSettings.reset()
+        XCTAssertNil(debugSettings.appStoreMetadataBaseURL)
+    }
+
+    func testAppStoreMetadataBaseURL_canBeClearedIndependently() {
+        debugSettings.forceUpdateAvailable = true
+        debugSettings.appStoreMetadataBaseURL = "http://localhost:8765/"
+
+        debugSettings.appStoreMetadataBaseURL = nil
+
+        XCTAssertNil(debugSettings.appStoreMetadataBaseURL)
+        XCTAssertTrue(debugSettings.forceUpdateAvailable)
+    }
+
     func testReset() {
         // Given - settings with force update enabled
         debugSettings.forceUpdateAvailable = true

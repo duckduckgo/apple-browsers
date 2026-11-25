@@ -264,95 +264,7 @@ final class AIChatNativePermissionTests: XCTestCase {
         XCTAssertEqual(replacement.prompts.count, 1)
     }
 
-    func testPresenterWaitsForPresentationThenDismissalAndCompletesEachWaiterOnce() throws {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 300, height: 500))
-        let owner = UIViewController()
-        window.rootViewController = owner
-        window.isHidden = false
-        defer { window.isHidden = true }
-        var finishPresentation: (() -> Void)?
-        var finishDismissal: (() -> Void)?
-        var shownAlert: UIAlertController?
-        var dismissals = 0
-        let presenter = AIChatNativePermissionPresenter(surface: { owner }, show: { _, alert, completion in
-            shownAlert = alert
-            finishPresentation = completion
-            return true
-        }, dismiss: { _, animated, completion in
-            XCTAssertFalse(animated)
-            dismissals += 1
-            finishDismissal = completion
-        })
-        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
-        XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in XCTFail("No action selected") })
-        let alert = try XCTUnwrap(shownAlert)
-        XCTAssertTrue(presenter.owns(alert))
-        XCTAssertFalse(presenter.owns(UIViewController()))
-        XCTAssertTrue(presenter.isSurfaceAvailable)
-        let anotherPrompt = ClientToolPermissionPrompt(requestID: "second", callID: "another-call", toolName: "listOpenTabs", targetsOtherTab: false)
-        XCTAssertFalse(presenter.present(anotherPrompt, message: "Permission") { _ in XCTFail("Another prompt must wait") })
-        var completions = 0
-        presenter.withdraw(requestID: "first") { completions += 1 }
-        presenter.withdraw(requestID: "first") { completions += 1 }
-        XCTAssertEqual(dismissals, 0)
-        finishPresentation?()
-        XCTAssertEqual(dismissals, 1)
-        finishPresentation?()
-        presenter.withdrawActive { completions += 1 }
-        XCTAssertEqual(dismissals, 1)
-        XCTAssertEqual(completions, 0)
-        XCTAssertFalse(presenter.present(prompt, message: "Permission") { _ in })
-        finishDismissal?()
-        finishDismissal?()
-        XCTAssertEqual(completions, 3)
-        XCTAssertFalse(presenter.isPresentingPermission)
-        XCTAssertFalse(presenter.owns(alert))
-        XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in })
-        finishPresentation?()
-        presenter.withdrawActive {}
-        finishDismissal?()
-        finishPresentation = nil
-        finishDismissal = nil
-    }
-
-    func testWithdrawnPresenterSurvivesUntilPendingPresentationAndDismissalFinish() {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 300, height: 500))
-        let owner = UIViewController()
-        window.rootViewController = owner
-        window.isHidden = false
-        defer { window.isHidden = true }
-        var finishPresentation: (() -> Void)?
-        var finishDismissal: (() -> Void)?
-        var dismissals = 0
-        var presenter: AIChatNativePermissionPresenter? = AIChatNativePermissionPresenter(surface: { owner }, show: { _, _, completion in
-            finishPresentation = completion
-            return true
-        }, dismiss: { _, animated, completion in
-            XCTAssertFalse(animated)
-            dismissals += 1
-            finishDismissal = completion
-        })
-        weak var retainedPresenter = presenter
-        let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
-        XCTAssertTrue(presenter?.present(prompt, message: "Permission") { _ in XCTFail("No action selected") } == true)
-        var completions = 0
-        presenter?.withdrawActive { completions += 1 }
-        presenter = nil
-        XCTAssertNotNil(retainedPresenter)
-        XCTAssertEqual(dismissals, 0)
-        finishPresentation?()
-        finishPresentation = nil
-        XCTAssertNotNil(retainedPresenter)
-        XCTAssertEqual(dismissals, 1)
-        XCTAssertEqual(completions, 0)
-        finishDismissal?()
-        finishDismissal?()
-        finishDismissal = nil
-        XCTAssertEqual(completions, 1)
-        XCTAssertNil(retainedPresenter)
-    }
-
-    func testFailedPresentationReleasesOccupancyAndParentModalRejectsPrompt() throws {
+    func testParentModalRejectsPromptAndDismissalRestoresSurfaceAvailability() {
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 300, height: 500))
         let parent = PermissionModalOwner()
         let owner = UIViewController()
@@ -362,17 +274,14 @@ final class AIChatNativePermissionTests: XCTestCase {
         owner.didMove(toParent: parent)
         window.isHidden = false
         defer { window.isHidden = true }
-        var attempts = 0
-        let presenter = AIChatNativePermissionPresenter(surface: { owner }, show: { _, _, _ in attempts += 1; return false })
+        let presenter = AIChatToolPermissionPresenter(surface: { .init(owner) })
         let prompt = ClientToolPermissionPrompt(requestID: "first", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
+        XCTAssertTrue(presenter.isSurfaceAvailable)
         parent.modal = UIViewController()
         XCTAssertFalse(presenter.isSurfaceAvailable)
-        XCTAssertFalse(presenter.present(prompt, message: "Permission") { _ in })
-        XCTAssertEqual(attempts, 0)
+        XCTAssertFalse(presenter.present(prompt) { _ in })
         parent.modal = nil
         XCTAssertTrue(presenter.isSurfaceAvailable)
-        XCTAssertFalse(presenter.present(prompt, message: "Permission") { _ in })
-        XCTAssertEqual(attempts, 1)
         XCTAssertFalse(presenter.isPresentingPermission)
         var withdrawn = false
         presenter.withdrawActive { withdrawn = true }
@@ -383,4 +292,122 @@ final class AIChatNativePermissionTests: XCTestCase {
 private final class PermissionModalOwner: UIViewController {
     var modal: UIViewController?
     override var presentedViewController: UIViewController? { modal }
+}
+
+@MainActor
+final class AIChatToolPermissionSelectionTests: XCTestCase {
+    func testDirectToolPromptsApproveOnlyCurrentCall() throws {
+        for toolName in ["readTabContent", "listOpenTabs", "searchHistory", "findInPage"] {
+            let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: toolName, targetsOtherTab: false)
+            let prompt = try XCTUnwrap(AIChatToolPermissionView.Prompt(request), toolName)
+            let selection = AIChatToolPermissionView.Selection(toolNames: prompt.tools.map(\.id), allowsPartialSelection: false)
+
+            XCTAssertEqual(prompt.tools.map(\.id), [toolName])
+            XCTAssertEqual(prompt.approval.decision(for: selection), .allowOnce, toolName)
+        }
+    }
+
+    func testDirectToolPromptsApproveForChatWhenOffered() throws {
+        for toolName in ["readTabContent", "listOpenTabs", "searchHistory", "findInPage"] {
+            let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: toolName,
+                                                     targetsOtherTab: false, offersAllowForChat: true)
+            let prompt = try XCTUnwrap(AIChatToolPermissionView.Prompt(request), toolName)
+            let selection = AIChatToolPermissionView.Selection(toolNames: prompt.tools.map(\.id), allowsPartialSelection: false)
+
+            XCTAssertEqual(prompt.tools.map(\.id), [toolName])
+            XCTAssertEqual(prompt.approval.decision(for: selection), .allowForChat, toolName)
+        }
+    }
+
+    func testAccessPromptsPreserveAccessDecisionForSingleAndMultipleTools() throws {
+        for toolNames in [["readTabContent"], ["readTabContent", "listOpenTabs"]] {
+            let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "requestAccess",
+                                                     targetsOtherTab: false, accessToolNames: toolNames, offersAllowForChat: true)
+            let prompt = try XCTUnwrap(AIChatToolPermissionView.Prompt(request))
+            var selection = AIChatToolPermissionView.Selection(toolNames: prompt.tools.map(\.id), allowsPartialSelection: true)
+
+            XCTAssertEqual(prompt.tools.map(\.id), toolNames)
+            XCTAssertEqual(prompt.approval.decision(for: selection), .allowAccess(excluding: []))
+            selection.toggle("listOpenTabs")
+            let excluded: Set<String> = toolNames.count > 1 ? ["listOpenTabs"] : []
+            XCTAssertEqual(prompt.approval.decision(for: selection), .allowAccess(excluding: excluded))
+        }
+    }
+
+    func testUnsupportedAndTargetedDirectRequestsDoNotUseCustomPrompt() {
+        let unknown = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "unknownTool", targetsOtherTab: false)
+        XCTAssertNil(AIChatToolPermissionView.Prompt(unknown))
+
+        for toolName in ["readTabContent", "listOpenTabs", "searchHistory", "findInPage"] {
+            let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: toolName,
+                                                     targetsOtherTab: false, target: "https://example.com")
+            XCTAssertNil(AIChatToolPermissionView.Prompt(request), toolName)
+        }
+    }
+
+    func testAllRequestedToolsStartSelected() {
+        let toolNames = ["readTabContent", "listOpenTabs", "searchHistory"]
+        let selection = AIChatToolPermissionView.Selection(toolNames: toolNames, allowsPartialSelection: true)
+
+        for toolName in toolNames {
+            XCTAssertTrue(selection.isSelected(toolName))
+            XCTAssertTrue(selection.canToggle(toolName))
+        }
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: []))
+    }
+
+    func testDeselectedToolIsExcludedFromOriginalPromptDecision() throws {
+        let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "requestAccess", targetsOtherTab: false,
+                                                accessToolNames: ["readTabContent", "listOpenTabs", "searchHistory"])
+        var selection = AIChatToolPermissionView.Selection(toolNames: try XCTUnwrap(prompt.accessToolNames), allowsPartialSelection: true)
+
+        selection.toggle("listOpenTabs")
+
+        XCTAssertTrue(selection.isSelected("readTabContent"))
+        XCTAssertFalse(selection.isSelected("listOpenTabs"))
+        XCTAssertTrue(selection.isSelected("searchHistory"))
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: ["listOpenTabs"]))
+    }
+
+    func testLastSelectedToolCannotBeDeselectedAndAnotherToolCanBeReselected() {
+        var selection = AIChatToolPermissionView.Selection(toolNames: ["readTabContent", "listOpenTabs"], allowsPartialSelection: true)
+        selection.toggle("listOpenTabs")
+
+        XCTAssertFalse(selection.canToggle("readTabContent"))
+        XCTAssertTrue(selection.canToggle("listOpenTabs"))
+        selection.toggle("readTabContent")
+        XCTAssertTrue(selection.isSelected("readTabContent"))
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: ["listOpenTabs"]))
+
+        selection.toggle("listOpenTabs")
+
+        XCTAssertTrue(selection.isSelected("listOpenTabs"))
+        XCTAssertTrue(selection.canToggle("readTabContent"))
+        XCTAssertTrue(selection.canToggle("listOpenTabs"))
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: []))
+    }
+
+    func testDisablingPartialSelectionKeepsEveryToolSelected() {
+        let toolNames = ["readTabContent", "listOpenTabs"]
+        var selection = AIChatToolPermissionView.Selection(toolNames: toolNames, allowsPartialSelection: false)
+
+        for toolName in toolNames {
+            XCTAssertFalse(selection.canToggle(toolName))
+            selection.toggle(toolName)
+            XCTAssertTrue(selection.isSelected(toolName))
+        }
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: []))
+    }
+
+    func testSingleToolRemainsSelected() {
+        var selection = AIChatToolPermissionView.Selection(toolNames: ["readTabContent"], allowsPartialSelection: true)
+
+        XCTAssertTrue(selection.isSelected("readTabContent"))
+        XCTAssertFalse(selection.canToggle("readTabContent"))
+        selection.toggle("readTabContent")
+
+        XCTAssertTrue(selection.isSelected("readTabContent"))
+        XCTAssertFalse(selection.canToggle("readTabContent"))
+        XCTAssertEqual(selection.allowDecision, .allowAccess(excluding: []))
+    }
 }

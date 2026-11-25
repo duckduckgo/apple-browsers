@@ -108,8 +108,18 @@ private extension DeclaredAgePrompt {
     }
 
     func refreshIsRequestNeeded() async {
+        // A failed check stores nothing, so the next launch retries.
+        guard let isNeeded = try? await requester.isRequestNeeded() else {
+            return
+        }
+
         // A reinstall wipes the stored date, so it needs no separate signal on iOS.
-        isRequestNeeded = await requester.isRequestNeeded()
+        isRequestNeeded = isNeeded
+
+        guard isNeeded else {
+            requester.markNotRequired()
+            return
+        }
 
         presentIfNeeded()
     }

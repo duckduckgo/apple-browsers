@@ -100,6 +100,26 @@ final class DeclaredAgePromptTests: XCTestCase {
         XCTAssertEqual(service.requestCount, 0)
     }
 
+    func testWhenRequestIsNotRequiredThenTheNextLaunchDoesNotAskApple() async {
+        service.isRequired = false
+        _ = await launchAndWaitForAppleCheck(anchor: viewController)
+
+        let nextLaunchPrompt = makePrompt()
+        await mainQueueDrains()
+
+        XCTAssertEqual(service.isRequestRequiredCount, 1)
+        XCTAssertFalse(nextLaunchPrompt.presentIfNeeded())
+    }
+
+    func testWhenAppleCheckFailsThenTheNextLaunchRetries() async {
+        service.isRequiredError = CancellationError()
+
+        _ = await launchAndWaitForAppleCheck(anchor: viewController)
+        _ = await launchAndWaitForAppleCheck(anchor: viewController)
+
+        XCTAssertEqual(service.isRequestRequiredCount, 2)
+    }
+
     func testWhenRequestFailsThenItIsNotAttemptedAgainDuringTheSameLaunch() async {
         service.requestError = CancellationError()
 
@@ -169,6 +189,7 @@ final class DeclaredAgePromptTests: XCTestCase {
 @MainActor
 private final class DeclaredAgeServiceMock: DeclaredAgeServicing {
     var isRequired = true
+    var isRequiredError: Error?
     var requestError: Error?
     var onIsRequestRequired: (() -> Void)?
     var onRequest: (() -> Void)?
@@ -178,6 +199,9 @@ private final class DeclaredAgeServiceMock: DeclaredAgeServicing {
     func isRequestRequired() async throws -> Bool {
         isRequestRequiredCount += 1
         onIsRequestRequired?()
+        if let isRequiredError {
+            throw isRequiredError
+        }
         return isRequired
     }
 

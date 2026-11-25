@@ -46,6 +46,10 @@ extension DeviceActivityViewModel {
                     }, hasMore: page.hasMore)
                 }
             },
+            checkOnlyThisDeviceSynced: {
+                let devices = try await syncService.fetchDevices()
+                return devices.count == 1 && devices.first?.id == syncService.account?.deviceId
+            },
             // Per-account review dates preserve which activity is highlighted across visits and app restarts.
             loadReviewState: { accountID in
                 do {

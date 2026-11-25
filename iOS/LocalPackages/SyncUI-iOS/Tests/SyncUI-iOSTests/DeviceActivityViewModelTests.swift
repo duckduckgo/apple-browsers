@@ -119,6 +119,72 @@ struct DeviceActivityViewModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Empty history reflects the live single-device check", .timeLimit(.minutes(1)), arguments: [false, true])
+    func emptyHistoryChecksDevices(onlyThisDevice: Bool) async {
+        let model = DeviceActivityViewModel(accountIdentifier: { "account-a" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [], hasMore: false) }
+        }, checkOnlyThisDeviceSynced: { onlyThisDevice })
+
+        await model.loadIfNeeded()
+
+        #expect(model.hasLoaded)
+        #expect(model.isOnlyThisDeviceSynced == onlyThisDevice)
+        #expect(model.error == nil)
+        model.cancelAndClear()
+        #expect(!model.isOnlyThisDeviceSynced)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A failed device check keeps the generic empty state", .timeLimit(.minutes(1)))
+    func failedDeviceCheckKeepsGenericEmptyState() async {
+        let model = DeviceActivityViewModel(accountIdentifier: { "account-a" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [], hasMore: false) }
+        }, checkOnlyThisDeviceSynced: { throw TestFailure.fetch })
+
+        await model.loadIfNeeded()
+
+        #expect(model.hasLoaded)
+        #expect(!model.isOnlyThisDeviceSynced)
+        #expect(model.error == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Existing activity does not request a device check", .timeLimit(.minutes(1)))
+    func existingActivitySkipsDeviceCheck() async {
+        var deviceCheckCount = 0
+        let activity = entry("login", date: Date())
+        let model = DeviceActivityViewModel(accountIdentifier: { "account-a" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [activity], hasMore: false) }
+        }, checkOnlyThisDeviceSynced: {
+            deviceCheckCount += 1
+            return true
+        })
+
+        await model.loadIfNeeded()
+
+        #expect(model.entries == [activity])
+        #expect(deviceCheckCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An account change during the device check discards its result", .timeLimit(.minutes(1)))
+    func accountChangeDuringDeviceCheckDiscardsResult() async {
+        var accountID = "account-a"
+        let model = DeviceActivityViewModel(accountIdentifier: { accountID }, makePageFetcher: {
+            { DeviceActivityPage(entries: [], hasMore: false) }
+        }, checkOnlyThisDeviceSynced: {
+            accountID = "account-b"
+            return true
+        })
+
+        await model.loadIfNeeded()
+
+        #expect(!model.hasLoaded)
+        #expect(!model.isOnlyThisDeviceSynced)
+        #expect(model.error == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Initial fetch seeds all existing activity at the newest timestamp", .timeLimit(.minutes(1)))
     func initialFetchSeedsBaseline() async {
         let store = MemoryReviewStateStore()

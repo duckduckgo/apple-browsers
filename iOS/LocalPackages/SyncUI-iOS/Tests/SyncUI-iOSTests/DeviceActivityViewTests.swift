@@ -26,6 +26,22 @@ import Testing
 struct DeviceActivityViewTests {
 
     @available(iOS 16, macOS 13, *)
+    @Test("Empty activity messages are centered", .timeLimit(.minutes(1)), arguments: [false, true])
+    func emptyActivitySnapshots(onlyThisDevice: Bool) async {
+        let model = DeviceActivityViewModel(accountIdentifier: { "snapshot-account" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [], hasMore: false) }
+        }, checkOnlyThisDeviceSynced: { onlyThisDevice })
+        await model.loadIfNeeded()
+        assertImageSnapshot(
+            matching: NavigationStack {
+                DeviceActivityView(model: model)
+            },
+            size: .screen,
+            testName: "emptyActivitySnapshots\(onlyThisDevice ? "-OnlyThisDevice" : "-Generic")"
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Activity rows keep actions visible and truncate long device names", .timeLimit(.minutes(1)), arguments: [false, true])
     func activityRowSnapshots(isLargeText: Bool) async {
         let date = Date().addingTimeInterval(-3 * 24 * 60 * 60)

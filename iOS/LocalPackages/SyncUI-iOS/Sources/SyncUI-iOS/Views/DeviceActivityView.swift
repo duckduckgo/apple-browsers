@@ -36,6 +36,14 @@ struct DeviceActivityView: View {
     }
 
     var body: some View {
+        if #available(iOS 17.0, *) {
+            activityList.listSectionSpacing(16)
+        } else {
+            activityList
+        }
+    }
+
+    private var activityList: some View {
         List {
             if model.isLoading && model.entries.isEmpty {
                 Section {
@@ -46,7 +54,9 @@ struct DeviceActivityView: View {
                 }
             } else if model.entries.isEmpty && model.hasLoaded && model.error == nil {
                 Section {
-                    Text(UserText.deviceActivityEmpty)
+                    Text(model.isOnlyThisDeviceSynced ? UserText.deviceActivityOnlyThisDevice : UserText.deviceActivityEmpty)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .listRowBackground(Color(designSystemColor: .surfaceTertiary))
@@ -166,7 +176,6 @@ struct DeviceActivityView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, 4)
         .listRowBackground(
             backgroundColor
                 .animation(.easeInOut(duration: 1.0), value: isNewActivity)

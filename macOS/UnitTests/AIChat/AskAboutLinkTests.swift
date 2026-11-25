@@ -318,3 +318,197 @@ struct LinkedPageLoadTests {
         #expect(!LinkedPageContextLoader.isSupported(URL(string: "duck://newtab")!))
     }
 }
+
+// MARK: - Tab page-context slot
+
+@MainActor
+@Suite("Attaching a linked page in the tab")
+struct PageContextLinkedPageTests {
+
+    private let content = PassthroughSubject<Tab.TabContent, Never>()
+    private let loader = ControlledLinkedPageLoader()
+    private let pixels = PixelRecorder()
+    private let pageContext: PageContextTabExtension
+
+    init() {
+        pageContext = Self.makePageContext(content: content, loader: loader, pixels: pixels)
+    }
+
+    private static func makePageContext(content: PassthroughSubject<Tab.TabContent, Never> = .init(),
+                                        loader: LinkedPageContextLoading,
+                                        pixels: PixelRecorder = PixelRecorder()) -> PageContextTabExtension {
+        let privacyConfig = MockPrivacyConfiguration()
+        // Extraction outcomes are measured once the blocklist config is present.
+        privacyConfig.featureSettings = ["aiPageContextBlocklist": ["image": ["contentTypePrefixes": ["image/"]]]]
+        return PageContextTabExtension(scriptsPublisher: Empty<UserScripts, Never>(),
+                                       webViewPublisher: Empty<WKWebView, Never>(),
+                                       contentPublisher: content,
+                                       tabID: "tab",
+                                       featureFlagger: MockFeatureFlagger(),
+                                       privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig),
+                                       extractionPixelHandler: PageContextExtractionPixelHandler(firePixel: { [pixels] in pixels.fired.append($0) }),
+                                       aiChatSessionStore: MockAIChatSessionStore(),
+                                       aiChatMenuConfiguration: MockAIChatConfig(),
+                                       isLoadedInSidebar: false,
+                                       faviconManagement: FaviconManagerMock(),
+                                       linkedPageLoader: loader)
+    }
+
+    private static let page = AIChatPageContextData(title: "Linked", favicon: [], url: "https://example.com/linked",
+                                                    content: "Linked text", truncated: false, fullContentLength: 11)
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A read page is attached and reported as a link extraction success", .timeLimit(.minutes(1)))
+    func successIsReported() async {
+        let attach = pageContext.attachLinkedPage(URL(string: "https://example.com/linked")!)
+        loader.complete(with: .success(Self.page))
+
+        #expect(await attach.value == .success(Self.page))
+        #expect(pixels.names == ["aichat_page_context_extraction_success"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each failure is reported with its reason and trigger link", .timeLimit(.minutes(1)),
+          arguments: [PageContextExtractionOutcome.FailureReason.httpError, .redirectBlocked, .certificateError, .timeout, .emptyContent])
+    func failureIsReported(reason: PageContextExtractionOutcome.FailureReason) async {
+        let attach = pageContext.attachLinkedPage(URL(string: "https://example.com/linked")!)
+        loader.complete(with: .failed(reason))
+
+        #expect(await attach.value == .failed(reason))
+        #expect(pixels.parameters == [["reason": reason.rawValue, "trigger": "link", "latency": "under_1s", "context_type": "markdown"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A linked page the blocklist covers is prevented, not attached", .timeLimit(.minutes(1)))
+    func blocklistedPageIsPrevented() async {
+        let attach = pageContext.attachLinkedPage(URL(string: "https://example.com/photo")!)
+        loader.complete(with: .success(AIChatPageContextData(title: "", favicon: [], url: "https://example.com/photo",
+                                                             content: "x", truncated: false, fullContentLength: 1, mimeType: "image/png")))
+
+        #expect(await attach.value == .prevented("image"))
+        #expect(pixels.parameters == [["category": "image", "reason": "non_attachable", "trigger": "link"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Asking again cancels the first request", .timeLimit(.minutes(1)))
+    func secondRequestCancelsFirst() async {
+        let first = pageContext.attachLinkedPage(URL(string: "https://example.com/one")!)
+        let second = pageContext.attachLinkedPage(URL(string: "https://example.com/two")!)
+        loader.complete(with: .success(Self.page))
+
+        #expect(await first.value == nil)
+        #expect(await second.value == .success(Self.page))
+        #expect(pixels.names == ["aichat_page_context_extraction_success"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Navigating the tab to another document drops the pending link", .timeLimit(.minutes(1)))
+    func navigationCancels() async throws {
+        content.send(.url(URL(string: "https://example.com/start")!, source: .link))
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        let attach = pageContext.attachLinkedPage(URL(string: "https://example.com/linked")!)
+        content.send(.url(URL(string: "https://example.com/elsewhere")!, source: .link))
+        try await Task.sleep(nanoseconds: 300_000_000)
+        pageContext.didCommit(Self.committedNavigation)
+        loader.complete(with: .success(Self.page))
+
+        #expect(await attach.value == nil)
+        #expect(pixels.fired.isEmpty)
+    }
+
+    private static var committedNavigation: Navigation {
+        Navigation(identity: .init(nil), responders: .init(), state: .started, isCurrent: true, isCommitted: true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A same-document URL change keeps the pending link", .timeLimit(.minutes(1)),
+          arguments: ["https://example.com/start#section", "https://example.com/start/pushed"])
+    func sameDocumentChangeKeepsLink(changedURL: String) async throws {
+        content.send(.url(URL(string: "https://example.com/start")!, source: .link))
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        let attach = pageContext.attachLinkedPage(URL(string: "https://example.com/linked")!)
+        content.send(.url(URL(string: changedURL)!, source: .webViewUpdated))
+        try await Task.sleep(nanoseconds: 300_000_000)
+        loader.complete(with: .success(Self.page))
+
+        #expect(await attach.value == .success(Self.page))
+        #expect(pageContext.isLinkedPageInSlot)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Committing a navigation drops the pending link", .timeLimit(.minutes(1)))
+    func commitCancels() async {
+        let attach = pageContext.attachLinkedPage(URL(string: "https://example.com/linked")!)
+        pageContext.didCommit(Self.committedNavigation)
+        loader.complete(with: .success(Self.page))
+
+        #expect(await attach.value == nil)
+        #expect(!pageContext.isLinkedPageInSlot)
+        #expect(pixels.fired.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A link that can't be read gives the slot back", .timeLimit(.minutes(1)),
+          arguments: [LinkedPageContextLoadResult.failed(.httpError), .prevented("pdf")])
+    func failureReleasesSlot(result: LinkedPageContextLoadResult) async {
+        let attach = pageContext.attachLinkedPage(URL(string: "https://example.com/linked")!)
+        loader.complete(with: result)
+
+        #expect(await attach.value == result)
+        #expect(!pageContext.isLinkedPageInSlot)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A link that can't be read leaves Duck.ai's unavailable state for the sidebar, not the tab's page", .timeLimit(.minutes(1)),
+          arguments: [LinkedPageContextLoadResult.failed(.httpError), .prevented("pdf")])
+    func failureDeliversUnavailableState(result: LinkedPageContextLoadResult) async {
+        let attach = pageContext.attachLinkedPage(URL(string: "https://example.com/linked")!)
+        loader.complete(with: result)
+        _ = await attach.value
+
+        #expect(pageContext.isLinkedPageUnavailable)
+        #expect(pageContext.cachedPageContext == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Once the link is attached, a same-document URL change gives the slot back", .timeLimit(.minutes(1)))
+    func sameDocumentChangeAfterAttachReleasesLink() async throws {
+        content.send(.url(URL(string: "https://example.com/start")!, source: .link))
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let attach = pageContext.attachLinkedPage(URL(string: "https://example.com/linked")!)
+        loader.complete(with: .success(Self.page))
+        _ = await attach.value
+        #expect(pageContext.isLinkedPageInSlot)
+
+        content.send(.url(URL(string: "https://example.com/start/pushed")!, source: .webViewUpdated))
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        #expect(!pageContext.isLinkedPageInSlot)
+    }
+}
+
+@MainActor
+private final class ControlledLinkedPageLoader: LinkedPageContextLoading {
+    var sessionReadDomains = Set<String>()
+    private var pending: [CheckedContinuation<LinkedPageContextLoadResult, Never>] = []
+    private var result: LinkedPageContextLoadResult?
+
+    func load(_ url: URL) async -> LinkedPageContextLoadResult {
+        if let result { return result }
+        return await withCheckedContinuation { pending.append($0) }
+    }
+
+    func complete(with result: LinkedPageContextLoadResult) {
+        self.result = result
+        pending.forEach { $0.resume(returning: result) }
+        pending = []
+    }
+}
+
+private final class PixelRecorder {
+    var fired: [AIChatPixel] = []
+    var names: [String] { fired.map(\.name) }
+    var parameters: [[String: String]?] { fired.map(\.parameters) }
+}

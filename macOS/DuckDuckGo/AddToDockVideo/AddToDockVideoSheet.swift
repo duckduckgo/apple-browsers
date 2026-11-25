@@ -26,6 +26,7 @@ import os.log
 import PrivacyConfig
 import SwiftUI
 import DesignResourcesKitIcons
+import SwiftUIExtensions
 
 struct AddToDockVideoSheet: View {
 
@@ -83,15 +84,18 @@ struct AddToDockVideoSheet: View {
                     Button(UserText.cancel) {
                         select(.cancel)
                     }
+                    .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
                     .keyboardShortcut(.cancelAction)
                 }
                 Button(primaryButtonTitle) {
                     select(primaryAction.action)
                 }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
                 .keyboardShortcut(.defaultAction)
             }
         }
         .padding()
+        .background(Color(designSystemColor: .surfaceTertiary))
         .frame(maxWidth: Layout.maxWidth)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear {

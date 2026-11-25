@@ -217,12 +217,32 @@ struct AIChatNewChatUserDefaultSourceTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Before models load, new chats start on the user default", .timeLimit(.minutes(1)))
-    func userDefaultBeforeModelsLoad() {
+    @Test("Before models load, a user default the tier may not include leaves the local tier default", .timeLimit(.minutes(1)))
+    func unverifiedUserDefaultBeforeModelsLoad() {
+        let source = AIChatNewChatDefaultSource()
+        source.userTier = .free
+        source.observeUserDefaultModel(StubUserDefaultModel("gpt-5.6-terra"), receivingUpdatesOn: ImmediateScheduler.shared)
+
+        #expect(source.selectionOrLocalDefaultBeforeModelsLoad == AIChatNewChatSelection(modelId: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none, origin: .fallback))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Before models load, a user default that is the local tier default applies as the user default", .timeLimit(.minutes(1)))
+    func tierDefaultUserDefaultBeforeModelsLoad() {
+        let source = AIChatNewChatDefaultSource()
+        source.userTier = .free
+        source.observeUserDefaultModel(StubUserDefaultModel("gpt-6-luna"), receivingUpdatesOn: ImmediateScheduler.shared)
+
+        #expect(source.selectionOrLocalDefaultBeforeModelsLoad == AIChatNewChatSelection(modelId: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none, origin: .user))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Before models load and while the tier is unknown, a user default doesn't pick a model", .timeLimit(.minutes(1)))
+    func userDefaultBeforeTierAndModelsLoad() {
         let source = AIChatNewChatDefaultSource()
         source.observeUserDefaultModel(StubUserDefaultModel("claude-haiku"), receivingUpdatesOn: ImmediateScheduler.shared)
 
-        #expect(source.selectionOrLocalDefaultBeforeModelsLoad == AIChatNewChatSelection(modelId: "claude-haiku", reasoningEffort: nil, origin: .user))
+        #expect(source.selectionOrLocalDefaultBeforeModelsLoad == nil)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -118392,66 +118392,6 @@
         }
       }
     },
-    "subscription.upsell.popover.plus.features.subtitle" : {
-      "comment" : "Subtitle shown in VPN Upsell popover when there is only one plus feature is listed",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ weitere Premium-Schutzmaßnahmen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "+ more premium protections"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ protecciones prémium adicionales"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ protections Premium supplémentaires"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ altre protezioni premium"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ meer premium beveiligingen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ więcej zabezpieczeń premium"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ proteções premium adicionais"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ другие виды премиум-защиты"
-          }
-        }
-      }
-    },
     "subscription.upsell.popover.plus.features.subtitle.count" : {
       "comment" : "Subtitle shown in VPN Upsell popover when there are multiple plus features listed",
       "extractionState" : "extracted_with_value",

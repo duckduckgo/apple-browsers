@@ -4240,15 +4240,6 @@
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Vyzkoušej to vše zdarma!";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGo má také bezpečnou %1$@, které jsou dostupné v rámci %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "volitelného předplatného";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN a dvě další prémiové ochrany";
-
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Přidat widget";
 
@@ -5165,12 +5156,6 @@
 "settings.subscription.DBP.title" = "Personal Information Removal";
 
 /* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.row" = "Předplatitelé získají naši VPN a službu Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.us" = "Předplatitelé získají naši VPN a služby Personal Information Removal a Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
 "settings.subscription.description.row" = "Předplatitelé získají naši VPN, pokročilé modely umělé inteligence ve funkci Duck.ai a službu Identity Theft Restoration.";
 
 /* Privacy pro description subtitle in settings */
@@ -5199,9 +5184,6 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe.title" = "Zabezpeč si Wi-Fi a chatuj soukromě s pokročilými modely AI";
-
-/* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe.title.no.ai.chat" = "Zabezpeč si Wi-Fi a chraň svou identitu";
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Vyzkoušet zdarma";
@@ -5428,9 +5410,6 @@
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Tvůj tarif se %2$@ změní na %1$@.";
 
-/* Change plan or cancel title */
-"subscription.change.plan" = "Aktualizace nebo zrušení tarifu";
-
 /* Navigation Button for closing subscription view */
 "subscription.close" = "Zavřít";
 
@@ -5653,7 +5632,10 @@
 /* Button that confirms withdrawal from the subscription contract */
 "subscription.withdraw.confirm.button" = "Potvrdit zrušení";
 
-/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+/* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.advanced.duckai" = "pokročilé modely Duck.ai";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
 "subscription.withdraw.confirm.features.message" = "%@ přestanou fungovat, jakmile to potvrdíš.";
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */

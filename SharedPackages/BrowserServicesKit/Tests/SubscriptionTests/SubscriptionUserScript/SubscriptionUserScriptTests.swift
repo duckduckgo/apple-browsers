@@ -35,10 +35,8 @@ final class SubscriptionUserScriptTests: XCTestCase {
 
     func testThatPublicInitializerSetsUpHandlerWithCorrectArguments() throws {
         let subscriptionManager = SubscriptionManagerMock()
-        let featureFlagProvider = MockSubscriptionFeatureFlagProvider()
         userScript = SubscriptionUserScript(platform: .ios,
                                             subscriptionManager: subscriptionManager,
-                                            featureFlagProvider: featureFlagProvider,
                                             navigationDelegate: nil,
                                             debugHost: nil)
         let messageHandler = try XCTUnwrap(userScript.handler as? SubscriptionUserScriptHandler)
@@ -223,9 +221,4 @@ final class SubscriptionUserScriptTests: XCTestCase {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: messageName.rawValue), file: file, line: line)
         _ = try await handler([], WKScriptMessage.mock())
     }
-}
-
-struct MockSubscriptionFeatureFlagProvider: SubscriptionUserScriptFeatureFlagProviding {
-    var usePaidDuckAi: Bool = false
-    var useProTier: Bool = false
 }

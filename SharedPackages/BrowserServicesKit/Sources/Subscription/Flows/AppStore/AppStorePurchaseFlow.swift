@@ -104,8 +104,7 @@ public protocol AppStorePurchaseFlow {
     /// This method checks for existing subscriptions and creates an account if needed.
     /// - Parameters:
     ///   - subscriptionIdentifier: The identifier of the subscription to purchase.
-    ///   - includeProTier: Whether to include Pro tier products when looking up the subscription.
-    func purchaseSubscription(with subscriptionIdentifier: String, includeProTier: Bool) async -> Result<PurchaseResult, AppStorePurchaseFlowError>
+    func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError>
 
     /// Completes the subscription purchase by validating the transaction.
     ///
@@ -150,7 +149,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         self.pendingTransactionHandler = pendingTransactionHandler
     }
 
-    public func purchaseSubscription(with subscriptionIdentifier: String, includeProTier: Bool) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
+    public func purchaseSubscription(with subscriptionIdentifier: String) async -> Result<PurchaseResult, AppStorePurchaseFlowError> {
         Logger.subscriptionAppStorePurchaseFlow.log("Purchasing Subscription")
 
         let subscriptionRestoreWideEventData = SubscriptionRestoreWideEventData(
@@ -201,7 +200,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         }
 
         // Make the purchase
-        switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID, includeProTier: includeProTier) {
+        switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID) {
         case .success(let purchase):
             return .success((transactionJWS: purchase.transactionJWS, isFreeTrial: purchase.isFreeTrial, accountCreationDuration: accountCreationDuration))
         case .failure(let error):
@@ -237,8 +236,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         }
 
         // Make the purchase with the existing account's externalID
-        // Always include Pro tier - tier change UI is only visible when Pro is enabled
-        switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID, includeProTier: true) {
+        switch await storePurchaseManager.purchaseSubscription(with: subscriptionIdentifier, externalID: externalID) {
         case .success(let purchase):
             NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
             return .success(purchase.transactionJWS)

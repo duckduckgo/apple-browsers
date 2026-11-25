@@ -9322,7 +9322,7 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestDataClearingSettings(_ tabSwitcher: TabSwitcherViewController) {
-        tabSwitcher.dismiss(animated: true) {
+        tabSwitcher.dismissForDataClearingSettings {
             self.segueToSettingsDataClearing()
         }
     }

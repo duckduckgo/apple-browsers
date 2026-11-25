@@ -142,9 +142,10 @@ final class SyncService {
             }
 
         sync.initializeIfNeeded()
-        // Sync holds no background task during a background launch, so a sync suspended mid-write to the App Group
-        // can get the app killed (0xdead10cc). `applicationState` reads `.background` here on every launch, before
-        // a scene connects, so suspend unconditionally: `resume()` restarts the queue when the app becomes active.
+        // Sync holds no background task during a background launch, so a sync operation suspended mid-write to the
+        // App Group can get the app killed (0xdead10cc). `applicationState` reads `.background` here on every launch,
+        // before a scene connects, so suspend the queue on every launch: `resume()` restarts it when the app becomes
+        // active. Work DDGSync starts outside the queue, such as the one-off device-info migration, still runs.
         sync.scheduler.cancelSyncAndSuspendSyncQueue()
     }
 

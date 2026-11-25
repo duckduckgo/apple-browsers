@@ -227,7 +227,7 @@ struct Launching: LaunchingHandling {
                                     onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
                                         keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
+        let crashCollectionService = CrashCollectionService()
         let launchTimeMetricsService = LaunchTimeMetricsService()
         let hangMetricsService = HangMetricsService()
         let statisticsService = StatisticsService()
@@ -524,6 +524,7 @@ struct Launching: LaunchingHandling {
                 await dbpService.prepareSecureVaultResourcesAtLaunch()
 #if DEBUG
                 await dbpService.startDebugServerIfRequestedAtLaunch()
+                await dbpService.seedProfileIfRequestedAtLaunch()
 #endif
                 taskContext.finish()
             }

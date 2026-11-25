@@ -311,6 +311,6 @@ final class TabViewControllerFindInPageTests: XCTestCase {
         .init(rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
               sourceProvider: DefaultScriptSourceProvider(dependencies: .makeMock()),
               duckAiNativeStorageHandler: nil,
-              sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()))
+              segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()))
     }
 }

@@ -42,10 +42,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
-    /// Subscription upsell screen at the end of contextual onboarding
-    /// https://app.asana.com/1/137249556945/task/1210565180535541
-    case onboardingSubscriptionUpsell
-
     /// Simplified Fire dialog
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216512684334175
     case fireDialogSimplified
@@ -82,6 +78,10 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
+
+    /// Enables web extensions for internal users, independently of `webExtensions`.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220783984054653
+    case webExtensionsInternal
 
     /// Controls Chrome Web Store update discovery when the extension manager is created.
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
@@ -142,8 +142,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214534686173932
     case adBlockingExtensionEnabledByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688032?focus=true
-    case sponsorBlock
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220206657688032
+    case segmentSkip
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213538183403577
     case forceDarkModeOnWebsites
@@ -386,9 +386,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
-    case crashCollectionLimitCallStackTreeDepth
-
     /// Failsafe flag for whether the free trial conversion wide event is enabled
     case freeTrialConversionWideEvent
 
@@ -401,6 +398,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// Hands a PDF tab to Duck.ai as page context — the document's bytes instead of page markdown.
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1217621296618559
     case aiChatPdfPageContext
+
+    /// "Ask about page" in the context menu of links on DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case aiChatAskAboutSerpPage
+
+    /// "Ask about page" in the context menu of links on any page other than DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case aiChatAskAboutLinkedPage
 
     /// Attaches page context to the sidebar by default, replacing the auto-send setting. A manual
     /// remove lasts across navigation until the user attaches again or reopens the sidebar.
@@ -511,10 +516,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
     case promoQueueCookiePopupsBlockedPromo
 
-    /// Enables the "Update available" promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923084?focus=true
-    case promoQueueUpdateAvailablePromo
-
     /// Enables the VPN toolbar upsell button and dot badge promos in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
     case promoQueueVPNUpsellPromo
@@ -526,14 +527,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the "Sync your autofill data" promo (Passwords & Autofill panel and settings) in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218741?focus=true
     case promoQueueSyncSetupAutofillPromo
-
-    /// Enables the Bookmarks Bar "Sync Bookmarks" button promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598749?focus=true
-    case promoQueueBookmarksBarSyncPromo
-
-    /// Enables the Bookmark Added "Sync Bookmarks Across Devices" button promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
-    case promoQueueBookmarkAddedSyncPromo
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
     case defaultBrowserWinBackPromo
@@ -623,6 +616,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219191518131269
     case syncImprovedPairingFlow
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220822581493341
+    case sendSyncSetupWideEvent
 
     /// Kill switch for the privacy disclosure shown while a file or image attachment is staged in
     /// a Duck.ai input.
@@ -715,6 +711,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
 
+    /// Declared Age Range: age signal request
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220879781552636
+    case declaredAgeRange
+
     /// Shows the Add to Dock instructions video in the App Store build from calls to action that only offer Add to Dock: the menu items, the New Tab Page card, and Default Browser and Dock prompts that only offer Add to Dock.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220563610417806
     case appStoreAddToDockOnlyCTA
@@ -742,12 +742,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the onboarding Chrome extension install experiment
     public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
-    /// Cohorts for the onboarding subscription upsell experiment
-    public enum OnboardingSubscriptionUpsellCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -790,11 +784,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .onboardingSearchOrChat:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingSearchOrChat))
-        case .onboardingSubscriptionUpsell:
-            Config(defaultValue: .disabled,
-                   source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),
-                   cohortType: OnboardingSubscriptionUpsellCohort.self,
-                   category: .subscription)
         case .fireDialogSimplified:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
         case .unknownUsernameCategorization:
@@ -817,6 +806,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensions), category: .webExtensions)
+        case .webExtensionsInternal:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensionsInternal), category: .webExtensions)
         case .webExtensionUpdateDiscovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.updateDiscovery), category: .webExtensions)
         case .webExtensionLightweightReload:
@@ -845,8 +836,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabled), category: .adBlocking)
         case .adBlockingExtensionEnabledByDefault:
             Config(source: .remoteReleasable(AdBlockingExtensionSubfeature.featureEnabledByDefault), category: .adBlocking)
-        case .sponsorBlock:
-            Config(defaultValue: .disabled, source: .remoteReleasable(SponsorBlockPrivacySubfeature.mvpEnabled), category: .adBlocking)
+        case .segmentSkip:
+            Config(defaultValue: .disabled, source: .remoteReleasable(SegmentSkipPrivacySubfeature.mvpEnabled), category: .adBlocking)
         case .forceDarkModeOnWebsites:
             Config(source: .remoteReleasable(ForceDarkModeOnWebsitesSubfeature.featureRollout), category: .webExtensions)
         case .syncSeamlessAccountSwitching:
@@ -989,8 +980,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.popupMutationObserver), category: .popupBlocking)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
-        case .crashCollectionLimitCallStackTreeDepth:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.freeTrialConversionWideEvent))
         case .supportsSyncChatsDeletion:
@@ -999,6 +988,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts), category: .duckAI)
         case .aiChatPdfPageContext:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
+        case .aiChatAskAboutSerpPage:
+            Config(defaultValue: .disabled, source: .remoteReleasable(AIChatSubfeature.askAboutSerpPage), category: .duckAI)
+        case .aiChatAskAboutLinkedPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.askAboutLinkedPage), category: .duckAI)
         case .aiChatPageContextAutoAttach:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pageContextAutoAttach), category: .duckAI)
         case .aiChatOmnibarImageGeneration:
@@ -1061,18 +1054,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
         case .promoQueueCookiePopupsBlockedPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
-        case .promoQueueUpdateAvailablePromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
         case .promoQueueVPNUpsellPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
         case .promoQueueSyncSetupBookmarksPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupBookmarksPromo))
         case .promoQueueSyncSetupAutofillPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupAutofillPromo))
-        case .promoQueueBookmarksBarSyncPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
-        case .promoQueueBookmarkAddedSyncPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
         case .defaultBrowserWinBackPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.defaultBrowserWinBackPromo))
         case .websitesHistoryFirstTimeQuitSurvey:
@@ -1132,6 +1119,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
         case .syncImprovedPairingFlow:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
+        case .sendSyncSetupWideEvent:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncSubfeature.sendSyncSetupWideEvent), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
@@ -1178,6 +1167,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
+        case .declaredAgeRange:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.declaredAgeRange))
         case .appStoreAddToDockOnlyCTA:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreAddToDockOnlyCTA))
         case .appStoreBothDefaultBrowserAndDockCTA:

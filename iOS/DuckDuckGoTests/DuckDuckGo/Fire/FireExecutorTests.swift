@@ -428,7 +428,7 @@ final class FireExecutorTests: XCTestCase {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         mockTabManager.browserToolsService = fixture.service
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
             return XCTFail("Expected automatic authorization")
         }
         let executor = makeFireExecutor()
@@ -512,7 +512,7 @@ final class FireExecutorTests: XCTestCase {
         defer { fixture.cleanUp() }
         mockTabManager.browserToolsService = fixture.service
         mockHistoryCleaner.deleteAIChatResult = .failure(NSError(domain: "test", code: 1))
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
             return XCTFail("Expected automatic authorization")
         }
         let result = await makeFireExecutor().burnChat(chatID: "chat", isFireMode: false)

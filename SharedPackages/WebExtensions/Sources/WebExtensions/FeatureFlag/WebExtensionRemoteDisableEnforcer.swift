@@ -25,7 +25,8 @@ import PrivacyConfig
 /// of the `extensionManagement` Privacy Configuration feature, or that the app disables itself
 /// (`disabledExtensionIDs`), such as an extension whose feature flag is off.
 ///
-/// The configuration's list counts only while `extensionManagement.isLaunchedExtensions` is enabled.
+/// The configuration's list counts only while `isExtensionsEnabled` returns true or
+/// `extensionManagement.isLaunchedExtensions` is enabled.
 /// A pass runs when the enforcer starts, on every Privacy Configuration update or
 /// `disabledExtensionIDsDidChange`, and whenever the loaded extensions change. The last one
 /// covers new installations and the user enabling a listed extension, which is disabled again.
@@ -69,12 +70,12 @@ public final class WebExtensionRemoteDisableEnforcer {
         self.pixelFiring = pixelFiring
     }
 
-    /// The lowercased Chrome Web Store IDs to disable. The configuration's list counts only while extension
-    /// management is launched.
+    /// The lowercased Chrome Web Store IDs to disable. The configuration's list counts only while extensions
+    /// are enabled or extension management is launched.
     public var remotelyDisabledExtensionIDs: Set<String> {
         let config = configurationManager.privacyConfig
         var identifiers = disabledExtensionIDs()
-        if config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) {
+        if isExtensionsEnabled() || config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) {
             identifiers.formUnion(config.settings(for: .extensionManagement)["disabledExtensionIds"] as? [String] ?? [])
         }
         return Set(identifiers.map { $0.lowercased() })

@@ -115,7 +115,7 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
                 fallthrough
             }
             faviconsDebugInspector.handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
-        case .webExtensions where featureFlagger.internalUserDecider.isInternalUser:
+        case .webExtensions where featureFlagger.internalUserDecider.isInternalUser && (featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal)):
             guard #available(macOS 15.4, *) else { fallthrough }
             WebExtensionsInspector(manager: webExtensionManagerProvider() as? WebExtensionManager)
                 .handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)

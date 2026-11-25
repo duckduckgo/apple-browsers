@@ -54,6 +54,7 @@ let package = Package(
         .target(
             name: "VPNAppState",
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]),
 
@@ -100,6 +101,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "PixelKit"),
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -124,6 +126,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "PixelKit"),
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),

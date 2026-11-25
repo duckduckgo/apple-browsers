@@ -37,8 +37,8 @@ enum ContextualOnboardingPathKind: String {
 /// The dialog sequence of one junction path, from its first dialog to its ending.
 /// Paths read the saved progress but never write it.
 protocol ContextualOnboardingPath: AnyObject {
-    /// Whether the browser UI stays locked while this path runs.
-    var isUILocked: Bool { get }
+    /// What the browser UI leaves usable while this path runs.
+    var uiLock: UserInteractionLock { get }
     /// Called when a navigation finishes in `tab`.
     func dialog(for tab: Tab) -> ContextualOnboardingDecision
     /// Called when the user presses "Got it" on `lastDialog`.

@@ -61,7 +61,7 @@ final class LocalModelAccessSettingsViewModel: ObservableObject {
                 if isOn {
                     self.isConfirmingTurnOn = true
                 } else {
-                    self.service.optOut()
+                    self.service.select(.duckAI, source: .settings)
                 }
             }
         )
@@ -75,7 +75,7 @@ final class LocalModelAccessSettingsViewModel: ObservableObject {
 
     func confirmTurnOn() {
         isConfirmingTurnOn = false
-        service.optIn()
+        service.select(.appleIntelligence, source: .settings)
     }
 
     func cancelTurnOn() {

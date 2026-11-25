@@ -33,7 +33,7 @@ class MaliciousSiteDetectorTests: XCTestCase {
         mockAPIClient = MockMaliciousSiteProtectionAPIClient()
         mockDataManager = MockMaliciousSiteProtectionDataManager()
         mockEventMapping = MockEventMapping()
-        detector = MaliciousSiteDetector(apiClient: mockAPIClient, dataManager: mockDataManager, eventMapping: mockEventMapping, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } })
+        detector = MaliciousSiteDetector(apiClient: mockAPIClient, dataManager: mockDataManager, eventMapping: mockEventMapping.makeMapping(), supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } })
     }
 
     override func tearDown() async throws {

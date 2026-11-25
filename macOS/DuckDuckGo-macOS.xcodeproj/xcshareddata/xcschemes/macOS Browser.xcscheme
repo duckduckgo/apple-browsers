@@ -70,6 +70,62 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AIChatTestingUtilities"
+               BuildableName = "AIChatTestingUtilities"
+               BlueprintName = "AIChatTestingUtilities"
+               ReferencedContainer = "container:../SharedPackages/AIChat">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppLauncherTests"
+               BuildableName = "AppLauncherTests"
+               BlueprintName = "AppLauncherTests"
+               ReferencedContainer = "container:LocalPackages/AppLauncher">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FreemiumTests"
+               BuildableName = "FreemiumTests"
+               BlueprintName = "FreemiumTests"
+               ReferencedContainer = "container:LocalPackages/Freemium">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "NetworkQualityMonitorTests"
+               BuildableName = "NetworkQualityMonitorTests"
+               BlueprintName = "NetworkQualityMonitorTests"
+               ReferencedContainer = "container:LocalPackages/NetworkQualityMonitor">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "DataBrokerProtection-macOSTests"
                BuildableName = "DataBrokerProtection-macOSTests"
                BlueprintName = "DataBrokerProtection-macOSTests"

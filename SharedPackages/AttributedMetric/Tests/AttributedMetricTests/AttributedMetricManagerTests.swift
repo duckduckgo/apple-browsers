@@ -740,6 +740,34 @@ final class AttributedMetricManagerTests: XCTestCase {
 
     // MARK: - Subscription Tests
 
+    private final class SubscriptionTaskCompletion: Sendable {
+        let expectation: XCTestExpectation
+
+        init(_ expectation: XCTestExpectation) {
+            self.expectation = expectation
+        }
+
+        deinit {
+            expectation.fulfill()
+        }
+    }
+
+    @TaskLocal private static var subscriptionTaskCompletion: SubscriptionTaskCompletion?
+
+    private func processSubscriptionTrigger(_ trigger: AttributedMetricManager.Trigger, using fixture: TestFixture) async {
+        let submitted = XCTestExpectation(description: "Subscription task submitted its work")
+        let manager = fixture.attributionManager
+        manager.workQueue.sync {
+            // The subscription Task inherits this value and releases it after submitting its callback.
+            Self.$subscriptionTaskCompletion.withValue(SubscriptionTaskCompletion(submitted)) {
+                manager.process(trigger: trigger)
+            }
+        }
+        await fulfillment(of: [submitted], timeout: 30)
+        // The callback and its storage writes must finish before the test advances the clock.
+        manager.workQueue.sync {}
+    }
+
     /// Tests subscription pixel for free trial (length = 0)
     ///
     /// ## Input → Output Mapping
@@ -758,38 +786,11 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - Trigger: .userDidSubscribe calls processSubscriptionDay()
     /// - Async test due to await subscriptionStateProvider.isFreeTrial()
     func testProcessSubscriptionDayFreeTrial() async {
-        let pixelExpectation = XCTestExpectation(description: "Subscription pixel fired")
-        var capturedLength: Int?
-
-        let fixture = createTestFixture(
-            pixelHandler: { pixelName, _, parameters, _, _, _ in
-                switch pixelName {
-                case "attributed_metric_subscribed":
-                    capturedLength = self.extractIntParameter(parameters, key: "month")
-                    if capturedLength == nil {
-                        XCTFail("Missing or invalid length parameter")
-                        return
-                    }
-                    pixelExpectation.fulfill()
-                case "attributed_metric_data_store_error":
-                    break
-                default:
-                    XCTFail("Unexpected pixel fired: \(pixelName)")
-                }
-            },
-            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: true, isActive: true)
-        )
+        let (months, fixture) = await processSubscriptionDay(purchaseIsFreeTrial: nil, providerIsFreeTrial: true)
         defer { fixture.cleanup() }
 
-        // Set install date
-        fixture.installDateProvider.installDate = fixture.timeMachine.now()
-
-        // Test: Process subscription (free trial)
-        fixture.attributionManager.process(trigger: .userDidSubscribe(isFreeTrial: nil))
-
-        await fulfillment(of: [pixelExpectation], timeout: 5.0)
-        XCTAssertEqual(capturedLength, 0, "Should send bucketed month 0 for free trial")
-        XCTAssertTrue(fixture.dataStorage.subscriptionFreeTrialFired, "Should mark free trial as fired")
+        XCTAssertEqual(months, [0])
+        XCTAssertTrue(fixture.dataStorage.subscriptionFreeTrialFired)
     }
 
     /// Tests subscription pixel for paid subscription (length = 1)
@@ -810,69 +811,40 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - Trigger: .userDidSubscribe calls processSubscriptionDay()
     /// - Async test due to await subscriptionStateProvider.isFreeTrial()
     func testProcessSubscriptionDayPaid() async {
-        let pixelExpectation = XCTestExpectation(description: "Subscription pixel fired")
-        var capturedMonth: Int?
-
-        let fixture = createTestFixture(
-            pixelHandler: { pixelName, _, parameters, _, _, _ in
-                switch pixelName {
-                case "attributed_metric_subscribed":
-                    capturedMonth = self.extractIntParameter(parameters, key: "month")
-                    if capturedMonth == nil {
-                        XCTFail("Missing or invalid month parameter")
-                        return
-                    }
-                    pixelExpectation.fulfill()
-                case "attributed_metric_data_store_error":
-                    break
-                default:
-                    XCTFail("Unexpected pixel fired: \(pixelName)")
-                }
-            },
-            subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
-        )
+        let (months, fixture) = await processSubscriptionDay(purchaseIsFreeTrial: nil, providerIsFreeTrial: false)
         defer { fixture.cleanup() }
 
-        // Set install date
-        fixture.installDateProvider.installDate = fixture.timeMachine.now()
-
-        // Test: Process subscription (paid)
-        fixture.attributionManager.process(trigger: .userDidSubscribe(isFreeTrial: nil))
-
-        await fulfillment(of: [pixelExpectation], timeout: 5.0)
-        XCTAssertEqual(capturedMonth, 1, "Should send bucketed month 1 for paid subscription")
-        XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired, "Should mark month 1 as fired")
+        XCTAssertEqual(months, [1])
+        XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired)
     }
 
     /// The trial flag from the purchase wins over `SubscriptionStateProviding.isFreeTrial()`, which can report a trial as paid right after purchase.
     func testProcessSubscriptionDay_purchaseSaysFreeTrial_firesMonth0EvenIfProviderSaysPaid() async {
-        let (month, fixture) = await processSubscriptionDay(purchaseIsFreeTrial: true, providerIsFreeTrial: false)
+        let (months, fixture) = await processSubscriptionDay(purchaseIsFreeTrial: true, providerIsFreeTrial: false)
         defer { fixture.cleanup() }
 
-        XCTAssertEqual(month, 0)
+        XCTAssertEqual(months, [0])
         XCTAssertTrue(fixture.dataStorage.subscriptionFreeTrialFired)
         XCTAssertFalse(fixture.dataStorage.subscriptionMonth1Fired)
     }
 
     func testProcessSubscriptionDay_purchaseSaysPaid_firesMonth1EvenIfProviderSaysFreeTrial() async {
-        let (month, fixture) = await processSubscriptionDay(purchaseIsFreeTrial: false, providerIsFreeTrial: true)
+        let (months, fixture) = await processSubscriptionDay(purchaseIsFreeTrial: false, providerIsFreeTrial: true)
         defer { fixture.cleanup() }
 
-        XCTAssertEqual(month, 1)
+        XCTAssertEqual(months, [1])
         XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired)
         XCTAssertFalse(fixture.dataStorage.subscriptionFreeTrialFired)
     }
 
-    private func processSubscriptionDay(purchaseIsFreeTrial: Bool, providerIsFreeTrial: Bool) async -> (month: Int?, fixture: TestFixture) {
-        let pixelExpectation = XCTestExpectation(description: "Subscription pixel fired")
-        var capturedMonth: Int?
+    private func processSubscriptionDay(purchaseIsFreeTrial: Bool?, providerIsFreeTrial: Bool) async -> (months: [Int?], fixture: TestFixture) {
+        var capturedMonths: [Int?] = []
 
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 switch pixelName {
                 case "attributed_metric_subscribed":
-                    capturedMonth = self.extractIntParameter(parameters, key: "month")
-                    pixelExpectation.fulfill()
+                    capturedMonths.append(self.extractIntParameter(parameters, key: "month"))
                 case "attributed_metric_data_store_error":
                     break
                 default:
@@ -883,10 +855,8 @@ final class AttributedMetricManagerTests: XCTestCase {
         )
         fixture.installDateProvider.installDate = fixture.timeMachine.now()
 
-        fixture.attributionManager.process(trigger: .userDidSubscribe(isFreeTrial: purchaseIsFreeTrial))
-
-        await fulfillment(of: [pixelExpectation], timeout: 5.0)
-        return (capturedMonth, fixture)
+        await processSubscriptionTrigger(.userDidSubscribe(isFreeTrial: purchaseIsFreeTrial), using: fixture)
+        return (capturedMonths, fixture)
     }
 
     /// Tests that processSubscriptionCheck sends month 1 pixel on app start after free trial ends
@@ -907,7 +877,6 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - Trigger: .appDidStart calls processSubscriptionCheck()
     /// - Async test due to await subscriptionStateProvider.isFreeTrial()
     func testProcessSubscriptionCheckMonth1() async {
-        let pixelExpectation = XCTestExpectation(description: "Month 1 subscription pixel fired")
         var capturedMonth: Int?
 
         let fixture = createTestFixture(
@@ -919,7 +888,6 @@ final class AttributedMetricManagerTests: XCTestCase {
                         XCTFail("Missing or invalid length parameter")
                         return
                     }
-                    pixelExpectation.fulfill()
                 case "attributed_metric_data_store_error":
                     break
                 default:
@@ -940,9 +908,8 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.dataStorage.subscriptionFreeTrialFired = true
 
         // Test: Process app start (should trigger processSubscriptionCheck)
-        fixture.attributionManager.process(trigger: .appDidStart)
+        await processSubscriptionTrigger(.appDidStart, using: fixture)
 
-        await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedMonth, 1, "Should send bucketed length 1 for month 1")
     }
 
@@ -964,7 +931,6 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - Trigger: .appDidStart calls processSubscriptionCheck()
     /// - Async test due to await subscriptionStateProvider.isFreeTrial()
     func testProcessSubscriptionCheckMonth2Plus() async {
-        let pixelExpectation = XCTestExpectation(description: "Month 2+ subscription pixel fired")
         var capturedMonth: Int?
 
         let fixture = createTestFixture(
@@ -976,7 +942,6 @@ final class AttributedMetricManagerTests: XCTestCase {
                         XCTFail("Missing or invalid length parameter")
                         return
                     }
-                    pixelExpectation.fulfill()
                 case "attributed_metric_data_store_error":
                     break
                 default:
@@ -1000,17 +965,13 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.dataStorage.subscriptionMonth1Fired = true
 
         // Test: Process app start (should trigger processSubscriptionCheck)
-        fixture.attributionManager.process(trigger: .appDidStart)
+        await processSubscriptionTrigger(.appDidStart, using: fixture)
 
-        await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedMonth, 2, "Should send bucketed length 2 for month 2+")
     }
 
     /// A converted free-trial user must emit month=1 (paid start) once, not on every app launch.
     func testProcessSubscriptionCheck_month1_firesOnceAcrossRestarts() async {
-        let firstFire = XCTestExpectation(description: "month=1 fired")
-        let noSecondFire = XCTestExpectation(description: "month=1 not re-fired")
-        noSecondFire.isInverted = true
         var month1FireCount = 0
 
         let fixture = createTestFixture(
@@ -1018,7 +979,6 @@ final class AttributedMetricManagerTests: XCTestCase {
                 guard pixelName == "attributed_metric_subscribed",
                       self.extractIntParameter(parameters, key: "month") == 1 else { return }
                 month1FireCount += 1
-                if month1FireCount == 1 { firstFire.fulfill() } else { noSecondFire.fulfill() }
             },
             subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
         )
@@ -1029,27 +989,25 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.dataStorage.subscriptionFreeTrialFired = true   // trial pixel sent; user has now converted to paid
 
         // First launch after conversion → month=1 fires once.
-        fixture.attributionManager.process(trigger: .appDidStart)
-        await fulfillment(of: [firstFire], timeout: 5.0)
+        await processSubscriptionTrigger(.appDidStart, using: fixture)
+        XCTAssertEqual(month1FireCount, 1)
+        XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired)
 
         // Next day, another launch → must NOT re-fire month=1.
         fixture.timeMachine.travel(by: .day, value: 1)
-        fixture.attributionManager.process(trigger: .appDidStart)
-        await fulfillment(of: [noSecondFire], timeout: 2.0)
+        await processSubscriptionTrigger(.appDidStart, using: fixture)
 
         XCTAssertEqual(month1FireCount, 1, "month=1 (paid start) must fire once, not on every launch")
     }
 
     /// A converted free-trial user (month=1 already sent) must advance to month=2+, not stay stuck on month=1.
     func testProcessSubscriptionCheck_convertedTrialUser_advancesToMonth2() async {
-        let pixelExpectation = XCTestExpectation(description: "subscription pixel fired")
         var capturedMonth: Int?
 
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 guard pixelName == "attributed_metric_subscribed" else { return }
                 capturedMonth = self.extractIntParameter(parameters, key: "month")
-                pixelExpectation.fulfill()
             },
             subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
         )
@@ -1061,28 +1019,18 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.dataStorage.subscriptionMonth1Fired = true      // ...converted, month=1 already sent
 
         fixture.timeMachine.travel(by: .day, value: 31)         // now active for more than a month
-        fixture.attributionManager.process(trigger: .appDidStart)
+        await processSubscriptionTrigger(.appDidStart, using: fixture)
 
-        await fulfillment(of: [pixelExpectation], timeout: 5.0)
         XCTAssertEqual(capturedMonth, 2, "Converted trial user must advance to month=2+, not re-fire month=1")
     }
 
     func testProcessSubscriptionCheck_month2Plus_firesOncePerMonthNotPerDay() async {
-        let firstMonthFire = XCTestExpectation(description: "month bucket fired for month 2")
-        let noRefireSameMonth = XCTestExpectation(description: "not re-fired within same month")
-        noRefireSameMonth.isInverted = true
-        let nextMonthFire = XCTestExpectation(description: "fired again for month 3")
         var subscribedFireCount = 0
 
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, _, _, _, _ in
                 guard pixelName == "attributed_metric_subscribed" else { return }
                 subscribedFireCount += 1
-                switch subscribedFireCount {
-                case 1: firstMonthFire.fulfill()
-                case 2: nextMonthFire.fulfill()
-                default: noRefireSameMonth.fulfill()
-                }
             },
             subscriptionStateProvider: SubscriptionStateProviderMock(isFreeTrial: false, isActive: true)
         )
@@ -1094,18 +1042,19 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         // Day 31: first launch past one month → fires once.
         fixture.timeMachine.travel(by: .day, value: 31)
-        fixture.attributionManager.process(trigger: .appDidStart)
-        await fulfillment(of: [firstMonthFire], timeout: 5.0)
+        await processSubscriptionTrigger(.appDidStart, using: fixture)
+        XCTAssertEqual(subscribedFireCount, 1)
+        XCTAssertEqual(fixture.dataStorage.subscriptionLastMonthFired, 2)
 
         // Day 32: still the same month bucket → must NOT re-fire.
         fixture.timeMachine.travel(by: .day, value: 1)
-        fixture.attributionManager.process(trigger: .appDidStart)
-        await fulfillment(of: [noRefireSameMonth], timeout: 2.0)
+        await processSubscriptionTrigger(.appDidStart, using: fixture)
+        XCTAssertEqual(subscribedFireCount, 1, "A second launch in month 2 must not fire again")
 
         // Day 57: crosses into month 3 → fires again.
         fixture.timeMachine.travel(by: .day, value: 25)
-        fixture.attributionManager.process(trigger: .appDidStart)
-        await fulfillment(of: [nextMonthFire], timeout: 5.0)
+        await processSubscriptionTrigger(.appDidStart, using: fixture)
+        XCTAssertEqual(fixture.dataStorage.subscriptionLastMonthFired, 3)
 
         XCTAssertEqual(subscribedFireCount, 2, "month=2+ must fire once per month, not once per active day")
     }

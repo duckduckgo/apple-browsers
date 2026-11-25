@@ -137,9 +137,9 @@ struct SubscriptionTokensDebugView: View {
                     Text(lastGetResult).font(.footnote.monospaced()).textSelection(.enabled)
                 }
             } header: {
-                Text("Get Token")
+                Text(verbatim: "Get Token")
             } footer: {
-                Text("Runs SubscriptionManager.getTokenContainer, including recovery and sign-out when the refresh is rejected.")
+                Text(verbatim: "Runs SubscriptionManager.getTokenContainer, including recovery and sign-out when the refresh is rejected.")
             }
             .disabled(model.isGettingToken)
 
@@ -162,7 +162,7 @@ struct SubscriptionTokensDebugView: View {
                     Text(title(for: token.field))
                 } footer: {
                     if !model.canInvalidate {
-                        Text("Invalidating works only on the staging environment.")
+                        Text(verbatim: "Invalidating works only on the staging environment.")
                     }
                 }
             }
@@ -201,11 +201,11 @@ struct SubscriptionTokensDebugView: View {
             row("Refresh token issued", dateText(container.decodedRefreshToken.issuedAtDate))
             row("Refresh token expires", dateText(container.decodedRefreshToken.expirationDate))
         case .missing:
-            Text("Not stored").foregroundColor(.secondary)
+            Text(verbatim: "Not stored").foregroundColor(.secondary)
         case .undecodable:
-            Text("Stored but can't be decoded").foregroundColor(.red)
+            Text(verbatim: "Stored but can't be decoded").foregroundColor(.red)
         case .readFailed(let error):
-            Text("Read failed: \(String(describing: error))").foregroundColor(.red)
+            Text(verbatim: "Read failed: \(String(describing: error))").foregroundColor(.red)
         }
     }
 

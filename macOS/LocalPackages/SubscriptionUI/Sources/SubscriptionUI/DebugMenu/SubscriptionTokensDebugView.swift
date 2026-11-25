@@ -158,7 +158,7 @@ public struct SubscriptionTokensDebugView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text("Tokens").font(.title2.bold())
+                    Text(verbatim: "Tokens").font(.title2.bold())
                     Spacer()
                     Button("Reload") { model.reload() }
                 }
@@ -211,14 +211,14 @@ public struct SubscriptionTokensDebugView: View {
                 } else if let lastGetResult = model.lastGetResult {
                     Text(lastGetResult).font(.footnote.monospaced()).textSelection(.enabled)
                 }
-                Text("Runs SubscriptionManager.getTokenContainer, including recovery and sign-out when the refresh is rejected.")
+                Text(verbatim: "Runs SubscriptionManager.getTokenContainer, including recovery and sign-out when the refresh is rejected.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(4)
         } label: {
-            Text("Get Token").font(.headline)
+            Text(verbatim: "Get Token").font(.headline)
         }
     }
 
@@ -241,7 +241,7 @@ public struct SubscriptionTokensDebugView: View {
                     .disabled(isMissing(token.state))
                 }
                 if !model.canInvalidate {
-                    Text("Invalidating works only on the staging environment.")
+                    Text(verbatim: "Invalidating works only on the staging environment.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -256,7 +256,7 @@ public struct SubscriptionTokensDebugView: View {
     private func vpnExtensionTokenSection(command: String) -> some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 8) {
-                Text("The VPN system extension keeps its own copy of the token in the System keychain. Run this in Terminal to delete it:")
+                Text(verbatim: "The VPN system extension keeps its own copy of the token in the System keychain. Run this in Terminal to delete it:")
                 Text(command)
                     .font(.footnote.monospaced())
                     .textSelection(.enabled)
@@ -266,7 +266,7 @@ public struct SubscriptionTokensDebugView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(4)
         } label: {
-            Text("VPN Extension Token").font(.headline)
+            Text(verbatim: "VPN Extension Token").font(.headline)
         }
     }
 
@@ -279,11 +279,11 @@ public struct SubscriptionTokensDebugView: View {
             row("Refresh token issued", dateText(container.decodedRefreshToken.issuedAtDate))
             row("Refresh token expires", dateText(container.decodedRefreshToken.expirationDate))
         case .missing:
-            Text("Not stored").foregroundColor(.secondary)
+            Text(verbatim: "Not stored").foregroundColor(.secondary)
         case .undecodable:
-            Text("Stored but can't be decoded").foregroundColor(.red)
+            Text(verbatim: "Stored but can't be decoded").foregroundColor(.red)
         case .readFailed(let error):
-            Text("Read failed: \(String(describing: error))").foregroundColor(.red)
+            Text(verbatim: "Read failed: \(String(describing: error))").foregroundColor(.red)
         }
     }
 

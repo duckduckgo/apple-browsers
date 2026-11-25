@@ -42,10 +42,18 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     private let capStore = NewChatHintsCapStore(keyValueStore: MockThrowingKeyValueStore())
     private var hintsSubscription: AnyCancellable?
 
+    private static let defaultAttachmentLimits: AIChatAttachmentLimits = {
+        let tier = AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 5, maxFileSizeMB: 10, maxTotalFileSizeBytes: 50_000_000, maxPagesPerFile: 100),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 10, maxInputCharsWithAttachments: 10_000))
+        return AIChatAttachmentLimits(free: tier, plus: tier, pro: tier)
+    }()
+
     private func makeSUT(isFlagOn: Bool = true,
                          featureFlagger: MockFeatureFlagger? = nil,
                          isReturningUser: Bool = true,
-                         models: [AIChatRemoteModel] = [everyModel]) throws -> UnifiedToggleInputCoordinator {
+                         models: [AIChatRemoteModel] = [everyModel],
+                         attachmentLimits: AIChatAttachmentLimits? = defaultAttachmentLimits) throws -> UnifiedToggleInputCoordinator {
         let storage = DuckAiNativeMemoryStorageHandler()
         if isReturningUser {
             try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.originConversions.rawValue, value: #"["duckai_prompt"]"#)
@@ -57,7 +65,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
             host: .omnibar,
             isToggleEnabled: true,
             duckAiNativeStorageHandler: storage,
-            modelsService: StubHintModelsService(models: models),
+            modelsService: StubHintModelsService(models: models, attachmentLimits: attachmentLimits),
             preferences: HintsTestPreferences(),
             toggleModeStorage: HintsTestToggleModeStorage(),
             stateStore: HintsTestStateStore(),
@@ -321,6 +329,15 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Photo and file hints need attachment limits, as their pickers do", .timeLimit(.minutes(1)))
+    func attachmentHintsNeedLimits() async throws {
+        let sut = try makeSUT(attachmentLimits: nil)
+        try await openBlankChat(sut)
+        try await Task.sleep(nanoseconds: 300_000_000)
+        #expect(sut.newChatHints == [.imageGeneration])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A new chat started in place counts as a new chat, not the one it replaced", .timeLimit(.minutes(1)))
     func newChatInPlaceCountsAgain() async throws {
         let sut = try makeSUT()
@@ -344,7 +361,8 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
 
 private struct StubHintModelsService: AIChatModelsProviding {
     let models: [AIChatRemoteModel]
-    func fetchModels() async throws -> AIChatModelsResponse { AIChatModelsResponse(models: models) }
+    let attachmentLimits: AIChatAttachmentLimits?
+    func fetchModels() async throws -> AIChatModelsResponse { AIChatModelsResponse(models: models, attachmentLimits: attachmentLimits) }
 }
 
 @MainActor

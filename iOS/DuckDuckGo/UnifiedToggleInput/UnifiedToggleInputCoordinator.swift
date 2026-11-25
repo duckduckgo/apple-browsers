@@ -1355,7 +1355,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isPromoClear: true,
             isTypeAtTipHidden: true,
             isDraftEmpty: true,
-            availableHints: NewChatHint.order(forTab: tab).filter { capableModel(for: $0) != nil }
+            availableHints: NewChatHint.order(forTab: tab).filter(canOfferNewChatHint)
         )
         publishNewChatHints(inputs.visibleHints)
     }
@@ -1380,6 +1380,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private func capableModel(for hint: NewChatHint) -> AIChatModel? {
         NewChatHint.capableModel(for: hint, in: modelStore.models, selectedModelID: modelStore.persistedModelId)
+    }
+
+    /// A hint shows only if its tap can act: for photos and files, the picker it opens must accept the model the tap
+    /// moves to. Checked against an empty chat, so it tests the attachment limits, not the room left in this chat.
+    private func canOfferNewChatHint(_ hint: NewChatHint) -> Bool {
+        guard let model = capableModel(for: hint) else { return false }
+        let policy = UTIAttachmentPolicy(attachmentLimits: modelStore.attachmentLimits, attachmentUsage: nil, pendingAttachments: [], model: model)
+        switch hint {
+        case .imageGeneration: return true
+        case .photo: return policy.canAttachImages
+        case .documents: return policy.canAttachFiles && model.supportedFileTypes.contains { UTType(mimeType: $0) != nil }
+        }
     }
 
     /// Runs a hint: moves to a model that can do it if needed, then opens the picker or selects the image tool.

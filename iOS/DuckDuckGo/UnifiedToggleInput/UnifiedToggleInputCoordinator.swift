@@ -1304,7 +1304,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let terms = "iPhone=\(state.isIPhone) fullTab=\(state.isFullTabInput) selected=\(state.isTabSelected) "
             + "inputReady=\(state.isInputReady) hasChat=\(state.hasChat) carriesPrompt=\(state.carriesPrompt) "
             + "voice=\(state.isVoiceHeld) editing=\(state.isEditing)"
-        Logger.unifiedInputState.debug("[NewChatHints] isGuaranteedNewChat=\(state.isGuaranteedNewChat, privacy: .public) eligible=\(self.isNewChatHintsEligibleUser, privacy: .public) promoVisible=\(promo, privacy: .public) [\(terms, privacy: .public)] [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
+        Logger.unifiedInputState.debug("[NewChatHints] isGuaranteedNewChat=\(state.isGuaranteedNewChat, privacy: .public) promoVisible=\(promo, privacy: .public) [\(terms, privacy: .public)]")
     }
 
     private static func autoSubmitsPrompt(_ url: URL) -> Bool {

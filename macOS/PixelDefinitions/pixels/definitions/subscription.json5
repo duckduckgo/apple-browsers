@@ -68,6 +68,7 @@
         "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             "pixelSource",
             {
                 "key": "source",
@@ -84,6 +85,7 @@
         "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             "pixelSource",
             {
                 "key": "source",
@@ -100,6 +102,7 @@
         "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             "pixelSource",
             {
                 "key": "source",
@@ -116,6 +119,7 @@
         "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             "pixelSource",
             {
                 "key": "source",
@@ -857,13 +861,13 @@
         "description": "Fired when user clicks the subscription Next Steps card on the New Tab Page (App Store distribution)",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_direct_privacy-pro_new_tab_page_next_steps_card_clicked": {
         "description": "Fired when user clicks the subscription Next Steps card on the New Tab Page (direct distribution)",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_store_privacy-pro_new_tab_page_next_steps_card_dismissed": {
         "description": "Fired when user dismisses the subscription Next Steps card on the New Tab Page (App Store distribution)",

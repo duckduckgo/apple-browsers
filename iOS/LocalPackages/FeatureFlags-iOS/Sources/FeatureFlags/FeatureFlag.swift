@@ -414,7 +414,7 @@ public enum FeatureFlag: String {
     case unifiedToggleInputKeyboardEdgeSweep
 
     /// Shows chips for what Duck.ai can do above the native input on a blank new chat (iPhone only).
-    /// https://app.asana.com/0/0/1218264470262324/f
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220895031092233
     case newChatHints
     /// Simplifies the Duck.ai prompt box on iPhone: one ⊕ menu holds the attachments and tools, the tools button
     /// and Customize Responses leave the input, and Chats gets a Duck.ai Settings button.

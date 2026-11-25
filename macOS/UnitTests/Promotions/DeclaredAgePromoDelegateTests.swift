@@ -103,6 +103,19 @@ final class DeclaredAgePromoDelegateTests: XCTestCase {
         XCTAssertFalse(sut.isEligible)
     }
 
+    func testWhenRequestIsNotRequiredThenTheNextLaunchDoesNotAskApple() async {
+        service.isRequired = false
+        let firstLaunch = makeSUT()
+        await Task.yield()
+
+        let nextLaunch = makeSUT()
+        await Task.yield()
+
+        XCTAssertEqual(service.isRequestRequiredCount, 1)
+        XCTAssertFalse(firstLaunch.isEligible)
+        XCTAssertFalse(nextLaunch.isEligible)
+    }
+
     func testWhenFlagTurnsOnThenItBecomesEligible() async {
         featureFlagger.enabledFeatureFlags = []
         let sut = makeSUT()

@@ -212,7 +212,7 @@ public final class AssistedOptOutQueue {
                   broker.requiresUserAssistance, !broker.isRemoved, !broker.performsOptOutWithinParent() else { continue }
             let brokerRecords = try database.fetchBrokerProfileQueryData(forBrokerId: brokerID).flatMap { data in
                 data.optOutJobData.compactMap { job -> Candidate? in
-                    guard !job.isRemovedByUser, let extractedID = job.extractedProfile.id else { return nil }
+                    guard job.mayHoldAssistedSlot, let extractedID = job.extractedProfile.id else { return nil }
                     return Candidate(data: data, job: job,
                                      id: .init(brokerId: job.brokerId, profileQueryId: job.profileQueryId,
                                                extractedProfileId: extractedID))
@@ -237,6 +237,15 @@ public final class AssistedOptOutQueue {
         default:
             return candidate.job.preferredRunDate.map { $0 <= now() } ?? true
         }
+    }
+}
+
+private extension OptOutJobData {
+    /// A record the broker dropped before any opt-out started was never the user's to work on, so it frees its slot.
+    var mayHoldAssistedSlot: Bool {
+        guard !isRemovedByUser else { return false }
+        return extractedProfile.removedDate == nil
+            || historyEvents.contains { $0.type == .optOutStarted || $0.isFormSubmittedEvent() }
     }
 }
 

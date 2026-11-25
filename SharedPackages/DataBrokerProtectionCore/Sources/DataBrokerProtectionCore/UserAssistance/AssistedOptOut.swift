@@ -85,7 +85,8 @@ public struct AssistedOptOutList: Codable, Equatable, Sendable {
     public let optOuts: [AssistedOptOut]
     /// How many records the list can ever hold across all brokers. `nil` means no cap.
     public let assistedLimit: Int?
-    /// Records on each assisted broker the user hasn't marked as not them, whether or not they got a slot.
+    /// Records on each assisted broker that may hold a slot, whether or not they got one. Records the user marked as not them,
+    /// and records the broker dropped before any opt-out started, aren't counted.
     public let brokers: [BrokerRecordCount]
 
     public init(optOuts: [AssistedOptOut], assistedLimit: Int? = nil, brokers: [BrokerRecordCount] = []) {

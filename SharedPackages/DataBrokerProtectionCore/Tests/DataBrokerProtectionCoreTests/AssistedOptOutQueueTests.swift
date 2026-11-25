@@ -275,13 +275,35 @@ struct AssistedOptOutQueueTests {
     @Test(.timeLimit(.minutes(1)))
     func finishedRecordsKeepTheirSlotsSoNothingElseIsListed() async throws {
         let fixture = Fixture()
-        fixture.setRecords([.init(broker: 1, id: 1, removedDate: .distantPast),
+        fixture.setRecords([.init(broker: 1, id: 1, history: .optOutRequested, removedDate: .distantPast),
                             .init(broker: 1, id: 2, history: .optOutSubmittedAndAwaitingEmailConfirmation),
                             .init(broker: 1, id: 3, history: .optOutRequested, preferredRunDate: .distantFuture),
                             .init(broker: 1, id: 4), .init(broker: 1, id: 5)])
         let list = try await AssistedOptOutQueue(dependencies: fixture.dependencies).assistedOptOutList()
         #expect(list.optOuts.isEmpty)
         #expect(list.brokers == [.init(url: "testbroker.com", recordCount: 5)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func recordTheBrokerDroppedBeforeAnyOptOutFreesItsSlot() async throws {
+        let fixture = Fixture()
+        fixture.setRecords([.init(broker: 1, id: 1, history: .matchesFound(count: 1), removedDate: .distantPast),
+                            .init(broker: 1, id: 2), .init(broker: 1, id: 3), .init(broker: 1, id: 4)])
+        let list = try await AssistedOptOutQueue(dependencies: fixture.dependencies).assistedOptOutList()
+        #expect(list.optOuts.map { AssistedOptOutID($0.id)?.extractedProfileId } == [2, 3, 4])
+        #expect(list.brokers == [.init(url: "testbroker.com", recordCount: 3)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func recordTheBrokerDroppedAfterAnOptOutStartedKeepsItsSlot() async throws {
+        let fixture = Fixture()
+        fixture.setRecords([.init(broker: 1, id: 1, history: .optOutStarted, removedDate: .distantPast),
+                            .init(broker: 1, id: 2), .init(broker: 1, id: 3), .init(broker: 1, id: 4)])
+        let list = try await AssistedOptOutQueue(dependencies: fixture.dependencies).assistedOptOutList()
+        #expect(list.optOuts.map { AssistedOptOutID($0.id)?.extractedProfileId } == [2, 3])
+        #expect(list.brokers == [.init(url: "testbroker.com", recordCount: 4)])
     }
 
     @available(iOS 16, macOS 13, *)

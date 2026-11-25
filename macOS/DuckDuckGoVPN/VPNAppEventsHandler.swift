@@ -29,6 +29,7 @@ final class VPNAppEventsHandler {
     private let tunnelController: NetworkProtectionTunnelController
     private let settings: VPNSettings
     private let notifications: VPNNotificationsObserver
+    @MainActor private var isRecoveringOnDemandFailure = false
 
     init(tunnelController: NetworkProtectionTunnelController, settings: VPNSettings, notifications: VPNNotificationsObserver) {
         self.tunnelController = tunnelController
@@ -57,35 +58,46 @@ final class VPNAppEventsHandler {
     }
 
     @MainActor
-    func appDidLaunchAtLogin() async {
-        guard let manager = await tunnelController.manager,
-              manager.isOnDemandEnabled,
-              let code = await tunnelController.startupFailureCode(for: manager),
-              code == .startingTunnelWithoutAuthToken || code == .reconnectBlocked else {
-            if await !tunnelController.isConnected && settings.connectOnLogin {
-                await tunnelController.start()
-            }
-            return
+    func handleTunnelAtLaunch(launchedAtLogin: Bool) async {
+        let manager = launchedAtLogin ? await tunnelController.manager : nil
+        tunnelController.onTunnelDisconnect = { [weak self] manager, status in
+            _ = await self?.recoverOnDemandFailure(for: manager, observedStatus: status)
         }
 
+        guard launchedAtLogin else { return }
+        if let manager, await recoverOnDemandFailure(for: manager, observedStatus: manager.connection.status) { return }
+        if await !tunnelController.isConnected && settings.connectOnLogin {
+            await tunnelController.start()
+        }
+    }
+
+    // MARK: - Private code
+
+    @MainActor
+    private func recoverOnDemandFailure(for manager: NETunnelProviderManager, observedStatus: NEVPNStatus) async -> Bool {
+        if isRecoveringOnDemandFailure { return true }
+        guard manager.isOnDemandEnabled else { return false }
+        let code = await tunnelController.startupFailureCode(for: manager, observedStatus: observedStatus)
+        // Both disconnect transitions can report the same failure while the lookup is in flight.
+        if isRecoveringOnDemandFailure || !manager.isOnDemandEnabled { return true }
+        guard code == .startingTunnelWithoutAuthToken || code == .reconnectBlocked else { return false }
+
+        isRecoveringOnDemandFailure = true
+        defer { isRecoveringOnDemandFailure = false }
         do {
-            try await tunnelController.disableOnDemand(tunnelManager: manager)
+            guard try await tunnelController.stopAfterOnDemandFailure(manager) else { return true }
         } catch {
-            Logger.networkProtection.error("Failed to disable VPN On Demand at startup: \(error.localizedDescription, privacy: .public)")
-            return
+            Logger.networkProtection.error("Failed to disable VPN On Demand after a startup failure: \(error.localizedDescription, privacy: .public)")
+            return true
         }
-
-        guard manager.connection.status != .invalid else { return }
-        await tunnelController.stop(tunnelManager: manager, disableOnDemand: false)
 
         if code == .startingTunnelWithoutAuthToken {
             notifications.showEntitlementNotification()
         } else {
             notifications.showConnectionFailureNotification()
         }
+        return true
     }
-
-    // MARK: - Private code
 
     private func restartTunnel() {
         Task {

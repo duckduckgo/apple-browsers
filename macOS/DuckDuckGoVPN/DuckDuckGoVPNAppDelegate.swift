@@ -523,9 +523,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
             setUpSubscriptionMonitoring()
 
-            if launchedOnStartup {
-                await vpnAppEventsHandler.appDidLaunchAtLogin()
-            }
+            await vpnAppEventsHandler.handleTunnelAtLaunch(launchedAtLogin: launchedOnStartup)
         }
     }
 

@@ -22,11 +22,13 @@ import Persistence
 
 enum DeclaredAgeStorageKeys: String, StorageKeyDescribing {
     case lastRequestDate = "declaredAgeLastRequestDate"
+    case requestWasNotRequired = "declaredAgeRequestWasNotRequired"
     case reinstallWasHandled = "declaredAgeReinstallWasHandled"
 }
 
 public struct DeclaredAgeSettings: StoringKeys {
     let lastRequestDate = StorageKey<Date>(DeclaredAgeStorageKeys.lastRequestDate)
+    let requestWasNotRequired = StorageKey<Bool>(DeclaredAgeStorageKeys.requestWasNotRequired)
     let reinstallWasHandled = StorageKey<Bool>(DeclaredAgeStorageKeys.reinstallWasHandled)
 
     public init() {}
@@ -47,7 +49,8 @@ public final class DeclaredAgeRequester {
         self.now = now
     }
 
-    public func isRequestNeeded(isReinstall: Bool = false) async -> Bool {
+    /// Throws when Apple cannot tell, so callers must not mark it as not required.
+    public func isRequestNeeded(isReinstall: Bool = false) async throws -> Bool {
         guard isRequestDue(isReinstall: isReinstall) else {
             Logger.declaredAge.info("Request is not due (isReinstall: \(isReinstall))")
             return false
@@ -59,8 +62,20 @@ public final class DeclaredAgeRequester {
             return isRequired
         } catch {
             Logger.declaredAge.error("Failed to check whether a request is required: \(String(describing: error), privacy: .public)")
-            return false
+            throw error
         }
+    }
+
+    /// Apple's "no" is final, so the check is never made again.
+    public func markNotRequired(isReinstall: Bool = false) {
+        // Already asked or already marked, so there is nothing to record.
+        guard isRequestDue(isReinstall: isReinstall) else {
+            return
+        }
+
+        try? storage.set(true, for: \.requestWasNotRequired)
+        try? storage.set(isReinstall, for: \.reinstallWasHandled)
+        Logger.declaredAge.info("Marked as not required")
     }
 
     public func requestDeclaredAge(isReinstall: Bool = false, in anchor: DeclaredAgeAnchor) async -> Bool {
@@ -73,13 +88,13 @@ public final class DeclaredAgeRequester {
         return true
     }
 
-    /// `isReinstall` stays true on every launch after a reinstall, so it only counts until a request succeeds.
+    /// `isReinstall` stays true on every launch after a reinstall, so it only counts until a request succeeds or isn't required.
     public func isRequestDue(isReinstall: Bool = false) -> Bool {
         if isReinstall && (try? storage.reinstallWasHandled) != true {
             return true
         }
 
-        return (try? storage.lastRequestDate) == nil
+        return (try? storage.lastRequestDate) == nil && (try? storage.requestWasNotRequired) != true
     }
 }
 

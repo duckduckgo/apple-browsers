@@ -105,11 +105,18 @@ private extension DeclaredAgePromoDelegate {
 
     @MainActor
     func refreshIsRequestNeeded() async {
-        let isNeeded = await requester.isRequestNeeded(isReinstall: isReinstall)
+        // A failed check stores nothing, so the next launch retries.
+        guard let isNeeded = try? await requester.isRequestNeeded(isReinstall: isReinstall) else {
+            return
+        }
+
         isRequestNeededSubject.send(isNeeded)
 
-        if isNeeded {
-            notificationCenter.post(name: .declaredAgeBecameEligible, object: nil)
+        guard isNeeded else {
+            requester.markNotRequired(isReinstall: isReinstall)
+            return
         }
+
+        notificationCenter.post(name: .declaredAgeBecameEligible, object: nil)
     }
 }

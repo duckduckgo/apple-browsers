@@ -115,7 +115,7 @@ final class PageTranslationBridgeTests: XCTestCase {
         } catch PageTranslationBridge.Error.busy {
         }
 
-        bridge.cancelPending()
+        bridge.documentDidChange()
         _ = try? await extraction.value
     }
 
@@ -133,7 +133,7 @@ final class PageTranslationBridgeTests: XCTestCase {
         await waitForPush(count: 2)
         XCTAssertEqual(pushes.map(\.method), ["extract", "extract"])
 
-        bridge.cancelPending()
+        bridge.documentDidChange()
         _ = try? await extraction.value
     }
 
@@ -141,7 +141,7 @@ final class PageTranslationBridgeTests: XCTestCase {
         let bridge = makeBridge()
         let abandoned = Task { try await bridge.extract() }
         await waitForPush()
-        bridge.cancelPending()
+        bridge.documentDidChange()
         _ = try? await abandoned.value
 
         let extraction = Task { try await bridge.extract() }
@@ -152,26 +152,6 @@ final class PageTranslationBridgeTests: XCTestCase {
 
         let units = try await extraction.value
         XCTAssertEqual(units, [])
-    }
-
-    func testCancelPendingFailsOnlyThatRequest() async throws {
-        let bridge = makeBridge()
-        let extraction = Task { try await bridge.extract() }
-        await waitForPush()
-
-        bridge.cancelPending()
-
-        do {
-            _ = try await extraction.value
-            XCTFail("Expected cancellation")
-        } catch is CancellationError {
-        }
-
-        let application = Task { try await bridge.apply([], from: "es", to: "en") }
-        await waitForPush(count: 2)
-        try await reply(bridge, "applyResult", ["count": 0])
-        let count = try await application.value
-        XCTAssertEqual(count, 0)
     }
 
     func testReplyWithoutTheRequestIdIsIgnored() async throws {
@@ -186,24 +166,6 @@ final class PageTranslationBridgeTests: XCTestCase {
             XCTFail("Expected timeout")
         } catch PageTranslationBridge.Error.timeout {
         }
-    }
-
-    func testCancelDuringInjectionSendsNothing() async throws {
-        let bridge = makeBridge(suspendingInjection: true)
-        let extraction = Task { try await bridge.extract() }
-        while resumeInjection == nil {
-            await Task.yield()
-        }
-
-        bridge.cancelPending()
-        resumeInjection?.resume()
-
-        do {
-            _ = try await extraction.value
-            XCTFail("Expected cancellation")
-        } catch is CancellationError {
-        }
-        XCTAssertTrue(pushes.isEmpty)
     }
 
     func testMalformedReplyFailsTheRequest() async throws {

@@ -3168,15 +3168,15 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
-    /// The bridge belongs to these user scripts' broker, so new scripts get a new bridge.
+    /// One bridge per tab: rebuilt scripts (a config refresh, protections toggled) keep the page and its bundle, whose
+    /// replies now reach the new scripts' broker, so the same bridge re-registers there and a request in flight carries on.
     private func installPageTranslationBridge(in userScripts: UserScripts) {
-        let bridge = PageTranslationBridge(inject: { [weak webView, weak userScripts] in
-            guard let webView, let userScripts else { return }
+        let bridge = pageTranslationBridge ?? PageTranslationBridge(inject: { [weak self] in
+            guard let self, let webView, let userScripts = self.userScripts else { return }
             _ = try await webView.evaluateJavaScript(try userScripts.pageTranslationSource(), in: nil, contentWorld: .defaultClient)
         })
         bridge.webView = webView
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: bridge)
-        pageTranslationBridge?.cancelPending()
         pageTranslationBridge = bridge
     }
 

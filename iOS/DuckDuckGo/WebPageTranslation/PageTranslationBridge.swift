@@ -91,8 +91,6 @@ final class PageTranslationBridge: NSObject, Subfeature {
     @MainActor private var isRequesting = false
     @MainActor private var pending: (reply: Reply, requestID: String, continuation: CheckedContinuation<Any, Swift.Error>)?
     @MainActor private var timeoutTask: Task<Void, Never>?
-    /// Set by `cancelPending()` while the request is still injecting, before it has a pending reply.
-    @MainActor private var isCancelled = false
     @MainActor private var isInjected = false
     /// Changes with every document, so a request can tell the page changed while it was injecting.
     @MainActor private var document = 0
@@ -135,14 +133,6 @@ final class PageTranslationBridge: NSObject, Subfeature {
         return try Self.decode(ApplyResult.self, from: params).count
     }
 
-    /// Fails the request in progress with `CancellationError`; its reply is ignored if it still comes.
-    @MainActor
-    func cancelPending() {
-        guard isRequesting else { return }
-        isCancelled = true
-        finish(.failure(CancellationError()))
-    }
-
     /// A new document doesn't have the bundle yet.
     @MainActor
     func documentDidChange() {
@@ -156,14 +146,13 @@ final class PageTranslationBridge: NSObject, Subfeature {
     private func request(_ method: String, reply: Reply, params: (String) -> Encodable) async throws -> Any {
         guard !isRequesting else { throw Error.busy }
         isRequesting = true
-        isCancelled = false
         defer { isRequesting = false }
 
         if !isInjected {
             let document = document
             try await inject()
-            // The bundle went into a page that's gone, or the request was cancelled meanwhile.
-            guard document == self.document, !isCancelled else { throw CancellationError() }
+            // The bundle went into a page that's gone.
+            guard document == self.document else { throw CancellationError() }
             isInjected = true
         }
 

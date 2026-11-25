@@ -381,7 +381,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
             tableView.reloadRows(at: [indexPath], with: .automatic)
         }
         toggleFavoriteAction.image = image.withTintColor(.black, renderingMode: .alwaysOriginal)
-        toggleFavoriteAction.backgroundColor = UIColor(baseColor: .yellow60)
+        toggleFavoriteAction.backgroundColor = UIColor(designSystemColor: .statusYellowPrimary)
         toggleFavoriteAction.accessibilityLabel = title
         return UISwipeActionsConfiguration(actions: [toggleFavoriteAction])
     }

@@ -164,7 +164,7 @@ public enum RemoteMessageResponse {
         case navigation
     }
 
-    enum JsonPlaceholder: String, CaseIterable {
+    enum JsonPlaceholder: String, CaseIterable, Sendable {
         case announce = "Announce"
         case ddgAnnounce = "DDGAnnounce"
         case criticalUpdate = "CriticalUpdate"

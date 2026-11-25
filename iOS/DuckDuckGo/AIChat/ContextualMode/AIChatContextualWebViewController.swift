@@ -247,6 +247,10 @@ final class AIChatContextualWebViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        if (parent as? AIChatContextualSheetViewController)?.isChangingSurface == true,
+           browserToolsPermissionPresenter?.preservesPermissionOnSurfaceChange == true {
+            return
+        }
         if browserToolsPermissionPresenter?.isPresentingPermission != true || parent?.isBeingDismissed == true || isMovingFromParent {
             browserToolsWillLeaveScreen()
         }

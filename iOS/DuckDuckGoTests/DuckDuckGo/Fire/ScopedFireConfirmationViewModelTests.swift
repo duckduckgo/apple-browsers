@@ -800,6 +800,21 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertNil(sut.onOpenSettings)
     }
 
+    func testWhenChatsSheetsShowSettingsButtonThenPixelNamesTheirSource() throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.fireSheetSettingsButton]
+        let cases: [(ScopedFireConfirmationViewModel.FireContext, String)] = [
+            (.deleteChats(count: 2, onDelete: { }), "chatHistory"),
+            (.contextualChat(onDelete: { }), "contextualChat")
+        ]
+
+        for (fireContext, expectedSource) in cases {
+            let sut = makeSUT(tabViewModel: nil, fireContext: fireContext, onOpenSettings: { })
+            try XCTUnwrap(sut.onOpenSettings)()
+
+            XCTAssertEqual(pixelFiring.actualFireCalls.last?.pixel.parameters, ["source": expectedSource])
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(tabViewModel: TabViewModel?,

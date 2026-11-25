@@ -98,7 +98,7 @@
     },
 
     "fire_confirmation-settings-tapped": {
-        "description": "Fires when the user taps the settings button on the Fire Button's confirmation sheet, which opens Data Clearing settings.",
+        "description": "Fires when the user taps the settings button on a Fire confirmation sheet, which opens Data Clearing settings.",
         "owners": ["bkunat"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
@@ -107,9 +107,9 @@
             "pixelSource",
             {
                 "key": "source",
-                "description": "Where the Fire Button that opened the sheet is",
+                "description": "Where the Fire button that opened the sheet is: the browser, the tab switcher, the Duck.ai chats list (or its Delete All Chats menu command), or the contextual Duck.ai sheet",
                 "type": "string",
-                "enum": ["browsing", "tabSwitcher"]
+                "enum": ["browsing", "tabSwitcher", "chatHistory", "contextualChat"]
             }
         ]
     },

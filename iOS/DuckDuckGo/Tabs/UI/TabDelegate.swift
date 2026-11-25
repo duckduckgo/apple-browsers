@@ -175,6 +175,8 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestSettingsToSync(_ tab: TabViewController)
 
+    func tabDidRequestSettingsToDataClearing(_ tab: TabViewController)
+
     func tabDidRequestFindInPage(tab: TabViewController)
     func closeFindInPage(tab: TabViewController)
 

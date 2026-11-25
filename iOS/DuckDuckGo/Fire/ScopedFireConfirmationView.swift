@@ -54,13 +54,13 @@ struct ScopedFireConfirmationView: View {
                     .padding(contentPadding)
             }
             .modifier(ScrollBounceBehaviorModifier())
-            closeButton
-                .padding(16)
-            if let onOpenSettings = viewModel.onOpenSettings {
-                settingsButton(action: onOpenSettings)
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 0) {
+                if let onOpenSettings = viewModel.onOpenSettings {
+                    settingsButton(action: onOpenSettings)
+                }
+                closeButton
             }
+            .padding(16)
         }
         .background(Color(designSystemColor: .backgroundTertiary))
     }
@@ -82,11 +82,24 @@ struct ScopedFireConfirmationView: View {
     
     private func settingsButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.settings)
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.options)
         }
-        .buttonStyle(CloseButtonStyle())
+        .buttonStyle(SettingsButtonStyle())
         .accessibilityLabel(UserText.scopedFireConfirmationSettingsButton)
         .accessibilityIdentifier("Fire.Confirmation.Button.Settings")
+    }
+
+    /// `CloseButtonStyle` without the resting circle, so the close button stays first in the hierarchy.
+    private struct SettingsButtonStyle: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                .padding(CloseButtonStyle.Constant.padding)
+                .background(configuration.isPressed ? Color(designSystemColor: .controlsFillTertiary) : .clear)
+                .clipShape(Circle())
+                .padding(CloseButtonStyle.Constant.padding)
+                .contentShape(Circle())
+        }
     }
 
     private var headerSection: some View {

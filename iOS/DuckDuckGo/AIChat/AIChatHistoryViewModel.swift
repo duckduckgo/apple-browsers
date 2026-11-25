@@ -231,6 +231,10 @@ final class AIChatHistoryViewModel: ObservableObject {
         delegate?.viewModelDidRequestChatProtection()
     }
 
+    func openDataClearingSettings() {
+        delegate?.viewModelDidRequestDataClearingSettings()
+    }
+
     func deleteChat(chatId: String) {
         guard let fireExecutor else { return }
         instrumentation.chatDeleted()
@@ -427,6 +431,9 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
 
     /// Dismiss the sheet and open the Duck.ai chat protection page.
     func viewModelDidRequestChatProtection()
+
+    /// Dismiss the sheet and open Settings → Data Clearing.
+    func viewModelDidRequestDataClearingSettings()
 
     /// A chat export finished writing to disk. Present the "Download complete" toast for
     /// `filename` with a "Show" action that dismisses the sheet and opens the in-app

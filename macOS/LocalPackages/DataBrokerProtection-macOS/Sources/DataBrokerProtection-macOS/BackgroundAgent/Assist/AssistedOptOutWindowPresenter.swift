@@ -169,6 +169,8 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
 
     private func makeContentView(loadFavicon: @escaping @MainActor (AssistedOptOut.DataBroker) async -> Data?) -> NSView {
         let content = AssistedOptOutBackgroundView()
+        pageView.wantsLayer = true
+        pageView.layer?.backgroundColor = NSColor.black.cgColor
         let panel = AssistedOptOutHostingView(rootView: AssistedOptOutAppearanceRoot(content: AssistedOptOutStepsPanel(
             session: session,
             close: { [weak self] in self?.window?.performClose(nil) },
@@ -235,7 +237,7 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
         webView.translatesAutoresizingMaskIntoConstraints = false
         pageView.addSubview(webView, positioned: .below, relativeTo: coverView)
         NSLayoutConstraint.activate(pinned(webView, to: pageView))
-        (webView as? UserInputIgnoring)?.ignoresUserInput = ignoresPageInput(in: session.phase)
+        updatePageLockAndDim(of: webView, for: session.phase)
         page.observe(webView)
     }
 
@@ -253,12 +255,13 @@ final class AssistedOptOutWindowController: NSWindowController, NSWindowDelegate
             edgeView.setEdge(.user)
             if let webView = session.webView { window?.makeFirstResponder(webView) }
         }
-        (session.webView as? UserInputIgnoring)?.ignoresUserInput = ignoresPageInput(in: phase)
+        if let webView = session.webView { updatePageLockAndDim(of: webView, for: phase) }
     }
 
-    /// The user can watch but not type or click into the page while DuckDuckGo fills it in.
-    private func ignoresPageInput(in phase: AssistedAttemptPhase) -> Bool {
-        phase == .queued || phase == .agentInControl
+    private func updatePageLockAndDim(of webView: WKWebView, for phase: AssistedAttemptPhase) {
+        let ignoresInput = phase == .queued || phase == .agentInControl
+        (webView as? UserInputIgnoring)?.ignoresUserInput = ignoresInput
+        webView.animator().alphaValue = ignoresInput ? 0.85 : 1
     }
 
     private func styleStatusItem(for phase: AssistedAttemptPhase) {

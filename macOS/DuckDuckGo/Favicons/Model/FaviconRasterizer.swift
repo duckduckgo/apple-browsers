@@ -71,6 +71,9 @@ final class FaviconRasterizer {
     /// When off, `storableImage` and the import helpers keep the legacy decoding, `NSImage(data:)`.
     var isEnabled: Bool { featureFlagger.isFeatureOn(.faviconWebKitSVGRendering) }
 
+    /// Whether PDF favicons are kept on the `NSImage(data:)` path (the temporary `faviconPDFSupport` failsafe flag).
+    var isPDFSupportEnabled: Bool { featureFlagger.isFeatureOn(.faviconPDFSupport) }
+
     nonisolated init(featureFlagger: FeatureFlagger,
                      hardTimeout: TimeInterval = FaviconRasterizer.defaultHardTimeout,
                      idleLifetime: TimeInterval = FaviconRasterizer.defaultIdleLifetime,
@@ -263,6 +266,15 @@ final class FaviconRasterizer {
     """
 }
 
+extension Data {
+
+    /// Returns whether the data is a PDF: the `%PDF-` header is within the first 1024 bytes, as the PDF
+    /// specification and common readers allow.
+    var isPDFData: Bool {
+        prefix(1024).range(of: Data("%PDF-".utf8)) != nil
+    }
+}
+
 /// Favicon data read from another browser's database, to be imported.
 protocol ImportedFaviconDataProviding {
     var imageData: Data { get }
@@ -285,8 +297,22 @@ extension FaviconRasterizer {
         return await renderedImage(from: data)
     }
 
-    private nonisolated func renderedImage(from data: Data) async -> NSImage? {
+    /// Whether the data must be rendered by WebKit: CoreImage can't decode it (SVG) and it isn't a PDF.
+    ///
+    /// PDF is recognized by its header (`Data.isPDFData`) and decoded with `NSImage(data:)`: it doesn't go through
+    /// CoreSVG, and WebKit can't render it as an image. Raster data is decoded as is.
+    nonisolated func shouldRender(_ data: Data) async -> Bool {
         if CIImage(data: data) != nil {
+            return false
+        }
+        if data.isPDFData {
+            return !(await isPDFSupportEnabled)
+        }
+        return true
+    }
+
+    private nonisolated func renderedImage(from data: Data) async -> NSImage? {
+        guard await shouldRender(data) else {
             return NSImage(data: data)
         }
         guard let png = try? await rasterize(data) else { return nil }

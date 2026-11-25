@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import CoreImage
 import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -39,9 +40,24 @@ final class FaviconRasterizerTests: XCTestCase {
         super.tearDown()
     }
 
-    private static func makeRasterizer(enabled: Bool) -> FaviconRasterizer {
-        let featureFlagger = MockFeatureFlagger.enabling(enabled ? [.faviconWebKitSVGRendering] : [])
-        return FaviconRasterizer(featureFlagger: featureFlagger)
+    private static func makeRasterizer(enabled: Bool, pdfSupport: Bool = true) -> FaviconRasterizer {
+        var flags = [FeatureFlag]()
+        if enabled { flags.append(.faviconWebKitSVGRendering) }
+        if pdfSupport { flags.append(.faviconPDFSupport) }
+        return FaviconRasterizer(featureFlagger: MockFeatureFlagger.enabling(flags))
+    }
+
+    /// A one-page PDF (`%PDF-1.x` header), which CoreImage can't decode but `NSImage(data:)` can.
+    private static func pdfData() -> Data {
+        let data = NSMutableData()
+        var box = CGRect(x: 0, y: 0, width: 32, height: 32)
+        guard let consumer = CGDataConsumer(data: data), let context = CGContext(consumer: consumer, mediaBox: &box, nil) else { return Data() }
+        context.beginPDFPage(nil)
+        context.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
+        context.fill(box)
+        context.endPDFPage()
+        context.closePDF()
+        return data as Data
     }
 
     // MARK: - Fixtures
@@ -183,6 +199,62 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertTrue(images.allSatisfy { $0 != nil })
         XCTAssertFalse(images[1]?.representations.contains { $0 is NSBitmapImageRep } ?? true)
         XCTAssertFalse(legacy.hasWebView)
+    }
+
+    // MARK: - PDF
+
+    func testPDFHeaderIsRecognizedWithinTheFirst1024Bytes() {
+        let pdf = Self.pdfData()
+        XCTAssertTrue(pdf.isPDFData)
+        XCTAssertTrue((Data(repeating: 0x20, count: 1000) + pdf).isPDFData)
+        XCTAssertFalse((Data(repeating: 0x20, count: 1100) + pdf).isPDFData)
+        XCTAssertFalse(Data(Self.svg(width: 16, height: 16).utf8).isPDFData)
+        XCTAssertFalse(Data("not an image".utf8).isPDFData)
+        XCTAssertFalse(Data().isPDFData)
+    }
+
+    func testPDFIsDecodedWithNSImageWithoutWebKit() async throws {
+        let pdf = Self.pdfData()
+        XCTAssertNil(CIImage(data: pdf), "The fixture must be data CoreImage can't decode")
+
+        let stored = await rasterizer.storableImage(from: pdf)
+
+        let image = try XCTUnwrap(stored)
+        XCTAssertTrue(image.representations.contains { $0 is NSPDFImageRep })
+        XCTAssertFalse(rasterizer.hasWebView)
+    }
+
+    func testPDFGoesToWebKitAndIsRejectedWhenThePDFFlagIsOff() async {
+        let withoutPDF = Self.makeRasterizer(enabled: true, pdfSupport: false)
+
+        let stored = await withoutPDF.storableImage(from: Self.pdfData())
+
+        XCTAssertNil(stored)
+    }
+
+    func testShouldRenderOnlyDataThatIsNeitherRasterNorPDF() async throws {
+        let svg = Data(Self.svg(width: 16, height: 16).utf8)
+        let raster = try await rasterizer.rasterize(svg)
+
+        let rendersSVG = await rasterizer.shouldRender(svg)
+        let rendersRaster = await rasterizer.shouldRender(raster)
+        let rendersPDF = await rasterizer.shouldRender(Self.pdfData())
+        let withoutPDF = Self.makeRasterizer(enabled: true, pdfSupport: false)
+        let rendersPDFWithoutFlag = await withoutPDF.shouldRender(Self.pdfData())
+
+        XCTAssertTrue(rendersSVG)
+        XCTAssertFalse(rendersRaster)
+        XCTAssertFalse(rendersPDF)
+        XCTAssertTrue(rendersPDFWithoutFlag)
+    }
+
+    func testImportedPDFFaviconIsKept() async throws {
+        let imported = ["https://example.com": [ImportedFavicon(imageData: Self.pdfData())]]
+
+        let faviconsByDocument = await rasterizer.favicons(fromImported: imported)
+
+        let url = try XCTUnwrap(URL(string: "https://example.com"))
+        XCTAssertNotNil(faviconsByDocument[url]?.first?.image)
     }
 
     // MARK: - Failures

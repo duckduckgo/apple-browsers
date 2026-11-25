@@ -370,6 +370,13 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220892327254001
     case faviconWebKitSVGRendering
 
+    /// TEMPORARY failsafe (remove after rollout): with `faviconWebKitSVGRendering` on, favicon data that is a PDF
+    /// (recognized by its `%PDF-` header) is decoded with `NSImage(data:)`, as before, instead of going to WebKit,
+    /// which can't render PDF. Off sends PDFs to WebKit, which rejects them.
+    /// Default-ON kill switch.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220892906613426
+    case faviconPDFSupport
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212901927858518?focus=true
     case aiChatSync
 
@@ -981,6 +988,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconStoringImprovements))
         case .faviconWebKitSVGRendering:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconWebKitSVGRendering))
+        case .faviconPDFSupport:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.faviconPDFSupport))
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:

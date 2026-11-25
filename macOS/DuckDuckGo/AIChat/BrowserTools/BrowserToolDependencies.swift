@@ -38,6 +38,25 @@ extension ListOpenTabsBrowserTool {
         }
     }
 }
+
+extension SwitchToTabBrowserTool {
+    convenience init(windowControllersManager: WindowControllersManagerProtocol) {
+        self.init { targetTabID, context in
+            // A pinned tab can belong to several windows. Select it in the chat's own window.
+            guard let token = context.ownerWindowToken,
+                  let collection = AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token,
+                                                                               in: windowControllersManager),
+                  BrowserToolTargetTab.actionableTab(withID: targetTabID, in: collection) != nil,
+                  let index = collection.indexInAllTabs(where: { $0.uuid == targetTabID }),
+                  let tab = collection.selectTab(at: index) else {
+                return .failure(.notFound)
+            }
+            windowControllersManager.windowController(for: collection)?.window?.makeKeyAndOrderFront(nil)
+            return .success((tab.title ?? "", tab.content.userEditableUrl?.absoluteString ?? ""))
+        }
+    }
+}
+
 extension ReadTabContentBrowserTool {
     convenience init(windowControllersManager: WindowControllersManagerProtocol, reader: BrowserToolPageContentReading) {
         self.init(readPage: pageLoader(windowControllersManager: windowControllersManager, reader: reader))

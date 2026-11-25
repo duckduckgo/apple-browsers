@@ -33,6 +33,21 @@ extension ListOpenTabsBrowserTool {
         }
     }
 }
+
+extension SwitchToTabBrowserTool {
+    convenience init(scopeProvider: @escaping BrowserToolScopeProvider) {
+        self.init { targetTabID, context in
+            guard let scope = scopeProvider(context), scope.accepts(context) else { return .failure(.unavailable) }
+            guard let tab = scope.source.tabsProvider().first(where: { $0.mode == .normal && $0.uid == targetTabID }),
+                  tab.link?.url.isDuckAIURL != true else {
+                return .failure(.notFound)
+            }
+            guard scope.contains(tab), scope.selectTab(tab) else { return .failure(.unavailable) }
+            return .success((tab.link?.displayTitle ?? "", tab.link?.url.absoluteString ?? ""))
+        }
+    }
+}
+
 extension ReadTabContentBrowserTool {
     convenience init(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) {
         self.init(readPage: pageLoader(scopeProvider: scopeProvider, reader: reader))

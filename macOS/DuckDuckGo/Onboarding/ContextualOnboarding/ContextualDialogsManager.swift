@@ -65,7 +65,7 @@ protocol ContextualOnboardingStateUpdater: AnyObject {
 
 /// Starts the contextual onboarding path the user picked on the junction.
 protocol ContextualOnboardingPathStarting: AnyObject {
-    func startPath(_ kind: ContextualOnboardingPathKind)
+    func startPath(_ kind: ContextualOnboardingPathKind, query: String)
 }
 
 /// Locks the browser UI while contextual onboarding needs the user to stay on one tab.
@@ -131,6 +131,9 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             let isCompleted = newValue == .onboardingCompleted
             if isContextualOnboardingCompleted != isCompleted {
                 isContextualOnboardingCompleted = isCompleted
+            }
+            if isCompleted {
+                progress.duckAIPrompt = nil
             }
 
             // If onboarding is restarted, clear all stored dialogs and flags.
@@ -200,6 +203,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
     // Called when the user uses the fire button
     func fireButtonUsed() {
         progress.fireButtonUsedOnce = true
+        progress.duckAIPrompt = nil
         updateUILock()
     }
 
@@ -216,8 +220,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         DispatchQueue.main.async { [weak uiLocker] in uiLocker?.setUILock(lock) }
     }
 
-    /// Called from the junction with the path the user picked.
-    func startPath(_ kind: ContextualOnboardingPathKind) {
+    /// Called from the junction with the path the user picked and the text they sent.
+    func startPath(_ kind: ContextualOnboardingPathKind, query: String) {
         progress.pathKind = kind
         activePath = makePath(kind)
         switch kind {
@@ -227,6 +231,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         case .duckAI:
             // Only Fire used on this path unlocks it, not Delete All History during the welcome flow.
             progress.fireButtonUsedOnce = false
+            progress.duckAIPrompt = query
         }
         updateUILock()
     }

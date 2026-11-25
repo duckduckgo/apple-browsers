@@ -20,14 +20,20 @@ import Foundation
 import PrivacyConfig
 
 public struct UserAssistanceConfig: Decodable, Equatable, Sendable {
+    public static let defaultMaxAssistedRecords = 3
+
     public let enabledBrokers: Set<String>
+    /// How many records across all brokers can ever be on the "Needs you" list. `nil` means no cap.
+    public let maxAssistedRecords: Int?
 
     private enum CodingKeys: String, CodingKey {
         case enabledBrokers
+        case maxAssistedRecords
     }
 
     public init() {
         enabledBrokers = []
+        maxAssistedRecords = Self.defaultMaxAssistedRecords
     }
 
     public init(from decoder: Decoder) throws {
@@ -35,6 +41,17 @@ public struct UserAssistanceConfig: Decodable, Equatable, Sendable {
         let brokers = try container.decodeIfPresent([String].self, forKey: .enabledBrokers) ?? []
         // Brokers must be named one by one, so a "*" entry never turns this on for every broker.
         enabledBrokers = Set(brokers.filter { $0 != "*" })
+        maxAssistedRecords = Self.maxAssistedRecords(fromRemoteValue: try? container.decodeIfPresent(Int.self, forKey: .maxAssistedRecords))
+    }
+
+    /// Remote config sends -1 for no cap. A missing, malformed or other negative value falls back to the default
+    /// rather than lifting the cap or turning the feature off.
+    private static func maxAssistedRecords(fromRemoteValue value: Int?) -> Int? {
+        switch value {
+        case -1: return nil
+        case let limit? where limit >= 0: return limit
+        default: return defaultMaxAssistedRecords
+        }
     }
 
     public init(privacyConfig: PrivacyConfiguration) {

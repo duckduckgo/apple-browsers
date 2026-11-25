@@ -31,6 +31,7 @@ final class DeclaredAgePrompt {
     private let featureFlagger: FeatureFlagger
     private var isRequestNeeded = false
     private var isPresenting = false
+    private var pendingActions: [() -> Void] = []
     private var cancellables = Set<AnyCancellable>()
 
     /// Returns nil while the request has to wait.
@@ -61,8 +62,19 @@ final class DeclaredAgePrompt {
         Task {
             _ = await requester.requestDeclaredAge(in: anchor)
             isPresenting = false
+            performPendingActions()
         }
 
+        return true
+    }
+
+    /// Runs `action` once the request on screen finishes. Returns false, keeping nothing, when none is.
+    func runOnceRequestFinishes(_ action: @escaping () -> Void) -> Bool {
+        guard isPresenting else {
+            return false
+        }
+
+        pendingActions.append(action)
         return true
     }
 }
@@ -86,6 +98,13 @@ private extension DeclaredAgePrompt {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    func performPendingActions() {
+        let actions = pendingActions
+        pendingActions = []
+
+        actions.forEach { $0() }
     }
 
     func refreshIsRequestNeeded() async {

@@ -728,14 +728,25 @@ final class MainCoordinator {
 
     func presentModalPromptIfNeeded() {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
-        _ = runOnceModalPromptCloses(while: { true }, {})
+        _ = runOnceModalPromptCloses {}
     }
 
-    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool {
+    /// Runs `handler` once the launch prompt on screen, or on its way, has closed. Returns `false` when there is none.
+    func runOnceLaunchPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        let runHandler: @MainActor () -> Void = { if shouldWait() { handler() } }
+
+        if runOnceModalPromptCloses(runHandler) {
+            return true
+        }
+
+        return declaredAgePrompt.runOnceRequestFinishes(runHandler)
+    }
+
+    private func runOnceModalPromptCloses(_ handler: @escaping @MainActor () -> Void) -> Bool {
         // Presentation analytics still need the dismissal when the keyboard is disabled or cancelled.
         promoCoordinationService.runOnceModalPromptCloses(while: { true }) { [weak self] in
             self?.controller.recordPendingNewTabPagePresentationIfVisible()
-            if shouldWait() { handler() }
+            handler()
 
             self?.declaredAgePrompt.presentIfNeeded()
         }

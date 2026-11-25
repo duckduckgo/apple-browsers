@@ -1383,8 +1383,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     /// Runs a hint: moves to a model that can do it if needed, then opens the picker or selects the image tool.
+    /// Ignored with the flag off: a tap can land after the flag turns off but before its update clears the row.
     func performNewChatHint(_ hint: NewChatHint) {
-        guard let tab = currentTabUID, let index = newChatHints.firstIndex(of: hint),
+        guard featureFlagger.isFeatureOn(.newChatHints),
+              let tab = currentTabUID, let index = newChatHints.firstIndex(of: hint),
               let model = capableModel(for: hint) else { return }
         newChatHintsUsage.hintTapped(hint, position: index + 1, tab: tab)
         switch hint {

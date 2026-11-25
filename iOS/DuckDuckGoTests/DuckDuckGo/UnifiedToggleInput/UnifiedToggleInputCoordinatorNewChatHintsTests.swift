@@ -43,6 +43,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     private var hintsSubscription: AnyCancellable?
 
     private func makeSUT(isFlagOn: Bool = true,
+                         featureFlagger: MockFeatureFlagger? = nil,
                          isReturningUser: Bool = true,
                          models: [AIChatRemoteModel] = [everyModel]) throws -> UnifiedToggleInputCoordinator {
         let storage = DuckAiNativeMemoryStorageHandler()
@@ -51,7 +52,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         }
         let terms = DuckAiTermsOfServiceStore(keyValueStore: UserDefaults(suiteName: "NewChatHintsCoordinatorTests-\(UUID().uuidString)")!)
         terms.recordAcceptedOnWeb()
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : [])
+        let flagger = featureFlagger ?? MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : [])
         return UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
@@ -283,6 +284,47 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         #expect(fired("aichat_new_chat_shown").count == 1)
         #expect(fired("aichat_new_chat_hints_shown").count == 1)
         #expect(fired("aichat_new_chat_first_prompt_sent").map { $0?["hints_shown"] } == ["true"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turning the flag off while hints show clears the row and ignores a tap", .timeLimit(.minutes(1)))
+    func flagTurnsOff() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.newChatHints])
+        let sut = try makeSUT(featureFlagger: flagger)
+        try await openBlankChat(sut)
+        #expect(sut.newChatHints == tabOrder)
+
+        flagger.enabledFeatureFlags = []
+        // A tap that lands before the flag update reaches the row.
+        sut.performNewChatHint(.imageGeneration)
+        #expect(sut.selectedTool == nil)
+        #expect(fired("aichat_new_chat_hint_tapped").isEmpty)
+
+        flagger.triggerUpdate()
+        try await waitUntil { sut.newChatHints.isEmpty }
+        #expect(sut.newChatHints.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turning the flag on while a blank chat is open shows the row", .timeLimit(.minutes(1)))
+    func flagTurnsOn() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let sut = try makeSUT(featureFlagger: flagger)
+        try await openBlankChat(sut)
+        try await Task.sleep(nanoseconds: 300_000_000)
+        #expect(sut.newChatHints.isEmpty)
+
+        flagger.enabledFeatureFlags = [.newChatHints]
+        flagger.triggerUpdate()
+        try await waitUntil { !sut.newChatHints.isEmpty }
+        #expect(sut.newChatHints == tabOrder)
+    }
+
+    /// Flag updates arrive on the main queue, after the call that sends them.
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        for _ in 0..<50 where !condition() {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
     }
 }
 

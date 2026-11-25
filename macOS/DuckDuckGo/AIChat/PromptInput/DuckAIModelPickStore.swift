@@ -37,11 +37,11 @@ protocol DuckAIModelPickStoring: AnyObject {
     var reasoningEffort: String? { get set }
 }
 
-/// A pick store an input follows through publishers and ends once its prompt is sent, as the New Tab Page does.
+/// A pick store an input follows through publishers and ends on demand, as the New Tab Page does.
 protocol DuckAIPublishingModelPickStoring: DuckAIModelPickStoring {
     var modelIdPublisher: AnyPublisher<String?, Never> { get }
     var reasoningEffortPublisher: AnyPublisher<String?, Never> { get }
-    func promptSent()
+    func endPick()
 }
 
 /// One pick shared by every input and kept across launches.
@@ -77,7 +77,7 @@ final class PersistedModelPickStore: DuckAIPublishingModelPickStoring {
     }
 
     /// The persisted pick is what every new chat starts on, so sending a prompt keeps it.
-    func promptSent() {}
+    func endPick() {}
 }
 
 /// An unsent pick kept in memory only, so it never seeds another input or launch.
@@ -110,7 +110,7 @@ final class InMemoryModelPickStore: DuckAIPublishingModelPickStoring {
         reasoningEffortSubject.eraseToAnyPublisher()
     }
 
-    func promptSent() {
+    func endPick() {
         modelId = nil
         modelShortName = nil
         reasoningEffort = nil

@@ -39,7 +39,7 @@ public final class DataBrokerProtectionWebUIURLSettings: DataBrokerProtectionWeb
 
     public let productionURL = "https://duckduckgo.com/dbp"
     /// Ship review build: the dashboard opens on the dev box until the tester picks another address.
-    public static let shipReviewDefaultURL = "https://euw-dev1.duckduckgo.com/dbp#debug"
+    public static let shipReviewDefaultURL = "https://abuliga.duck.co/dbp#debug"
     private let userDefault: UserDefaults
 
     public var selectedURLType: DataBrokerProtectionWebUIURLType {

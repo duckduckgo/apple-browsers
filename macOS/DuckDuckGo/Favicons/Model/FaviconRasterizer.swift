@@ -17,6 +17,7 @@
 //
 
 import CoreImage
+import DDGError
 import FeatureFlags_macOS
 import Foundation
 import OSLog
@@ -36,7 +37,7 @@ import WebKit
 @MainActor
 final class FaviconRasterizer {
 
-    enum RasterizationError: Error {
+    enum RasterizationError: DDGError {
         case dataTooLarge
         /// The data is neither a PDF nor SVG-like (see `Data.looksLikeSVG`), so it never reaches the web view.
         case unsupportedData
@@ -47,6 +48,30 @@ final class FaviconRasterizer {
         case timedOut
         /// The web view reported that the image didn't load in time, so it may still be busy with it.
         case scriptTimedOut
+
+        static var errorDomain: String { "com.duckduckgo.favicons.rasterization" }
+
+        var errorCode: Int {
+            switch self {
+            case .dataTooLarge: return 1
+            case .unsupportedData: return 2
+            case .invalidResult: return 3
+            case .undecodable: return 4
+            case .timedOut: return 5
+            case .scriptTimedOut: return 6
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .dataTooLarge: return "The favicon data is larger than the limit"
+            case .unsupportedData: return "The favicon data is neither an SVG nor a PDF"
+            case .invalidResult: return "The web view returned no image"
+            case .undecodable: return "The favicon data could not be decoded as an image"
+            case .timedOut: return "The web view did not answer in time"
+            case .scriptTimedOut: return "The image did not load in time"
+            }
+        }
     }
 
     /// The largest input accepted, the same limit the favicon downloader applies.

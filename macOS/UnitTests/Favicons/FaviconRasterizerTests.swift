@@ -373,6 +373,13 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertTrue(rasterizer.hasWebView)
     }
 
+    func testRasterizationErrorsHaveAStableDomainAndUniqueCodes() {
+        let errors: [FaviconRasterizer.RasterizationError] = [.dataTooLarge, .unsupportedData, .invalidResult, .undecodable, .timedOut, .scriptTimedOut]
+
+        XCTAssertEqual(Set(errors.map(\.errorCode)).count, errors.count)
+        XCTAssertTrue(errors.allSatisfy { ($0 as NSError).domain == "com.duckduckgo.favicons.rasterization" })
+    }
+
     func testDataThatIsNeitherPDFNorSVGDoesNotReachTheWebView() async {
         let html = Data("<html><body>Not found</body></html>".utf8)
         do {

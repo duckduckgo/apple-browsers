@@ -184,6 +184,17 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A new chat button ends a voice hold while voice is still open", .timeLimit(.minutes(1)))
+    func newChatEndsVoiceHoldWhileVoiceIsOpen() {
+        let sut = makeSUT()
+        openBlankChat(sut)
+        sut.holdNewChatForVoice()
+        sut.isVoiceSessionActive = true
+        sut.startNewChat()
+        #expect(sut.isGuaranteedNewChat)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("The promo is clear only once the page says so", .timeLimit(.minutes(1)))
     func promoClear() {
         let sut = makeSUT()

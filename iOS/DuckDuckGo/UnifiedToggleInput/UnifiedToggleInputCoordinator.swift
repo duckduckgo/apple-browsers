@@ -2062,11 +2062,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         clearAttachments()
         setText("")
         attachmentUsage = nil
+        // End voice before clearing its hold: closing voice arms the post-close hold.
+        isVoiceSessionActive = false
         isVoiceRequestedForPage = false
         voiceHoldRelease?.cancel()
         voiceHoldRelease = nil
         aiChatInputBoxVisibility = .visible
-        isVoiceSessionActive = false
         refreshNewChatState()
     }
 

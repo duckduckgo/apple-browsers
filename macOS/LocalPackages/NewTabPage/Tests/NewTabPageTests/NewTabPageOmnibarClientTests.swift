@@ -436,6 +436,15 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         XCTAssertNil(configProvider.selectedReasoningEffort)
     }
 
+    @MainActor
+    func testWhenChatIsSubmittedThenConfigProviderIsTold() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.chatSubmittedCallCount, 1)
+    }
+
     // MARK: - reasoning effort (submitChat)
 
     @MainActor

@@ -202,9 +202,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470360367
     case autofillPasswordVariantCategorization
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611178534
-    case paidAIChat
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866609800953
     case canInterceptSyncSetupUrls
 
@@ -293,9 +290,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203542?focus=true
-    case allowProTierPurchase
-
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
     case autofillExtensionSettings
     case canPromoteAutofillExtensionInBrowser
@@ -370,6 +364,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
     case aiChatBrowserTools
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    /// Gates `requestAccess`: one prompt for the browser tools a Duck.ai chat expects to use.
+    case aiChatBrowserToolRequestAccess
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
     case aiChatBrowserToolListOpenTabs
@@ -684,12 +682,20 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
 
+    /// Declared Age Range: age signal request
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220879781552636
+    case declaredAgeRange
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219783104084617?focus=true
     case singleTabBurnOptimization
 
     /// Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219240727858123?focus=true
     case aiChatLimitExtensionPromo
+
+    /// New Duck.ai chats start on the default model and effort instead of the last one picked.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220871979577378
+    case aiChatNewChatDefaultModel
 
     /// Single-tab burn removes the memory cache in the background instead of waiting on every web view.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219780456623039?focus=true
@@ -710,6 +716,10 @@ public enum FeatureFlag: String {
     /// while it holds a lock on a shared App Group database (0xdead10cc).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
     case launchBackgroundTask
+
+    /// Enables hardware keyboard monitoring for telemetry at startup.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220874250279358
+    case hardwareKeyboardMonitoring
 
     /// On-device web page translation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
@@ -915,8 +925,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .autofillPasswordVariantCategorization:
             Config(source: .remoteReleasable(AutofillSubfeature.passwordVariantCategorization))
-        case .paidAIChat:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.paidAIChat))
         case .canInterceptSyncSetupUrls:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canInterceptSyncSetupUrls))
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -979,8 +987,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.onboardingDuckAIQueryTrackersDemoExperiment))
         case .standaloneMigration:
             Config(source: .remoteReleasable(AIChatSubfeature.standaloneMigration))
-        case .allowProTierPurchase:
-            Config(source: .remoteReleasable(PrivacyProSubfeature.allowProTierPurchase))
         case .autofillExtensionSettings:
             Config(source: .remoteReleasable(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -1027,6 +1033,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
+        case .aiChatBrowserToolRequestAccess:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.requestAccess))
         case .aiChatBrowserTools:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled))
         case .aiChatBrowserToolListOpenTabs:
@@ -1213,10 +1221,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativePromptEditing))
         case .pageSignals:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.pageSignals))
+        case .declaredAgeRange:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.declaredAgeRange))
         case .singleTabBurnOptimization:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.singleTabBurnOptimization))
         case .aiChatLimitExtensionPromo:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), supportsLocalOverriding: true)
+        case .aiChatNewChatDefaultModel:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.newChatDefaultModel))
         case .deferredMemoryCacheDelete:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.deferredMemoryCacheDelete))
         case .searchSubmitPageCover:
@@ -1227,6 +1239,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageOnForeground))
         case .launchBackgroundTask:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
+        case .hardwareKeyboardMonitoring:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.hardwareKeyboardMonitoring))
         case .webPageTranslation:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webPageTranslation))
         case .aiChatLocalModels:

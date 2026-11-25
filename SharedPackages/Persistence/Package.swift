@@ -46,6 +46,7 @@ let package = Package(
                 "TestingSupport/README.md"
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -53,7 +54,8 @@ let package = Package(
             name: "PersistenceTests",
             dependencies: [
                 "Persistence",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

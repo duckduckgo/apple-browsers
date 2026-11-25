@@ -31036,6 +31036,30 @@
         }
       }
     },
+    "contextual.onboarding.thats-duck-ai.message" : {
+      "comment" : "Message of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. It invites them to delete that chat with the browser's Fire Button, which clears browsing data. Keep \"Fire Button\" as the app's name for it, and keep the * around it: they make it bold.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Private AI chats you can delete anytime with the *Fire Button*. Give it a try! 🔥"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.thats-duck-ai.title" : {
+      "comment" : "Title of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. \"Duck.ai\" is a product name: keep it as is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That’s Duck.ai!"
+          }
+        }
+      }
+    },
     "contextual.onboarding.try-a-search.message" : {
       "comment" : "Message of a popover on the browser that invites the user to try a search explaining that their searches are anonymous",
       "extractionState" : "extracted_with_value",
@@ -118352,66 +118376,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "А также..."
-          }
-        }
-      }
-    },
-    "subscription.upsell.popover.plus.features.subtitle" : {
-      "comment" : "Subtitle shown in VPN Upsell popover when there is only one plus feature is listed",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ weitere Premium-Schutzmaßnahmen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "+ more premium protections"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ protecciones prémium adicionales"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ protections Premium supplémentaires"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ altre protezioni premium"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ meer premium beveiligingen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ więcej zabezpieczeń premium"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ proteções premium adicionais"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ другие виды премиум-защиты"
           }
         }
       }

@@ -327,14 +327,7 @@ final class AIChatHistoryViewController: UIViewController {
                 self?.enterSelectionMode()
             }
             guard self.isSidebar else {
-                var items: [UIMenuElement] = [selectChats, chatProtection]
-                if self.viewModel.showsDuckAISettingsButton {
-                    items.append(UIAction(title: UserText.actionAIChatSettings,
-                                          image: DesignSystemImages.Glyphs.Size16.aiChatSettings) { [weak self] _ in
-                        self?.viewModel.openDuckAISettings(source: .overflowMenu)
-                    })
-                }
-                completion(items)
+                completion([selectChats, chatProtection])
                 return
             }
             completion([

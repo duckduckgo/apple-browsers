@@ -195,6 +195,28 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A reloaded page is not ready until it reports again, and the input reports no made-up state", .timeLimit(.minutes(1)))
+    func reloadWaitsForTheNewDocument() async {
+        let sut = makeSUT()
+        let page = PageScript()
+        sut.activateForTab("tab-A")
+        sut.bindToTab(page.script)
+        sut.showCollapsed()
+        await page.reportResponseState("ready")
+        #expect(sut.isGuaranteedNewChat)
+        var reported: [AIChatStatusValue] = []
+        let reporting = sut.aiChatStatusPublisher.dropFirst().sink { reported.append($0) }
+
+        page.commitNewDocument(in: sut, tab: "tab-A")
+        #expect(!sut.isGuaranteedNewChat)
+        #expect(reported.isEmpty)
+
+        await page.reportResponseState("ready")
+        #expect(sut.isGuaranteedNewChat)
+        reporting.cancel()
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("The promo is clear only once the page says so", .timeLimit(.minutes(1)))
     func promoClear() {
         let sut = makeSUT()
@@ -226,6 +248,13 @@ private final class PageScript {
 
     func reportResponseState(_ status: String) async {
         _ = await handler.getResponseState(params: ["status": status], message: MockUserScriptMessage(name: "test", body: [:]))
+    }
+
+    /// What the tab does when its web view commits a new document on this page, such as a reload.
+    func commitNewDocument(in input: UnifiedToggleInputCoordinator, tab: TabUID) {
+        script.isAIChatPromoVisible = nil
+        script.aiChatStatusOnPage = nil
+        input.handleNavigationCommit(tabUID: tab, didChangeChat: false)
     }
 }
 

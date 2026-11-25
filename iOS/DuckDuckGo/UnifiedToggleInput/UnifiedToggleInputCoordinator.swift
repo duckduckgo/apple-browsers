@@ -127,10 +127,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     @Published var aiChatStatus: AIChatStatusValue = .unknown {
         didSet {
-            guard oldValue != aiChatStatus else { return }
+            let wasFromEarlierDocument = isAIChatStatusFromEarlierDocument
+            isAIChatStatusFromEarlierDocument = false
+            guard oldValue != aiChatStatus || wasFromEarlierDocument else { return }
             refreshNewChatState()
         }
     }
+    /// The bound page committed a new document that hasn't reported its state yet. Kept apart from `aiChatStatus`,
+    /// which feeds prompt telemetry and must only carry what a page reported.
+    private var isAIChatStatusFromEarlierDocument = false
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
@@ -954,6 +959,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("handleNavigationCommit [\(tabUID, privacy: .public)] didChangeChat=\(didChangeChat, privacy: .public) startsHidden=\(startsWithHiddenInput, privacy: .public) — live tab [\(self.currentTabUID ?? "nil", privacy: .public)]")
         let visibility: AIChatInputBoxVisibility = startsWithHiddenInput ? .hidden : .unknown
         if tabUID == currentTabUID {
+            isAIChatStatusFromEarlierDocument = true
             aiChatInputBoxVisibility = visibility
             isVoiceSessionActive = false
             if didChangeChat {
@@ -1270,7 +1276,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isFullTabInput: host == .omnibar && isAITabState,
             isTabSelected: currentTabUID != nil && boundUserScript != nil,
             // The page reports `ready` once it can take a prompt; it never sends `showChatInput` on a plain load.
-            isInputReady: aiChatStatus == .ready && aiChatInputBoxVisibility != .hidden,
+            isInputReady: aiChatStatus == .ready && !isAIChatStatusFromEarlierDocument && aiChatInputBoxVisibility != .hidden,
             hasChat: hasSubmittedPrompt || url?.duckAIChatID != nil,
             carriesPrompt: url.map(Self.autoSubmitsPrompt) ?? false,
             isVoiceHeld: isVoiceSessionActive || isVoiceRequestedForPage || url?.isDuckAIVoiceMode == true,

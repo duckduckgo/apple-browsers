@@ -22,6 +22,8 @@ import History
 import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
+import AppKit
+import GRDB
 @testable import BrowserServicesKit
 
 class ChromiumDataImporterTests {
@@ -135,6 +137,50 @@ class ChromiumDataImporterTests {
         try FileManager.default.createDirectory(at: profileURL, withIntermediateDirectories: true)
         for file in files {
             FileManager.default.createFile(atPath: profileURL.appendingPathComponent(file).path, contents: Data("data".utf8))
+        }
+        createdProfileURLs.append(profileURL)
+        return profileURL
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if favicons are imported as bitmaps, including SVG ones that crash CoreSVG", .timeLimit(.minutes(1)))
+    @MainActor
+    func whenImportingBookmarks_FaviconsAreHandledAsBitmaps() async throws {
+        let crashingSVG = ##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" filter="url(#f)"><filter id="f"><feOffset/></filter><rect width="64" height="64" filter="url(#f)"/></svg>"##
+        let profileURL = try makeProfileWithFavicons(["https://svg.example": Data(crashingSVG.utf8),
+                                                      "https://broken.example": Data("not an image".utf8)])
+        let faviconManager = FaviconManagerMock()
+        let importer = makeImporter(profileURL: profileURL, faviconManager: faviconManager)
+
+        _ = await importer.importData(types: [.bookmarks])
+
+        let handled = try #require(faviconManager.handledFaviconsByDocumentUrl.first)
+        let svgURL = try #require(URL(string: "https://svg.example"))
+        let brokenURL = try #require(URL(string: "https://broken.example"))
+        let svgFavicon = try #require(handled[svgURL]?.first)
+        let svgImage = try #require(svgFavicon.image)
+        #expect(svgImage.representations.allSatisfy { $0 is NSBitmapImageRep })
+        let brokenFavicon = try #require(handled[brokenURL]?.first)
+        #expect(brokenFavicon.image == nil)
+    }
+
+    private func makeProfileWithFavicons(_ dataByPageURL: [String: Data]) throws -> URL {
+        let profileURL = missingProfileURL
+        try FileManager.default.createDirectory(at: profileURL, withIntermediateDirectories: true)
+        let bookmarks = ChromiumBookmarkStore().resourceURL.appendingPathComponent("Bookmarks")
+        try FileManager.default.copyItem(at: bookmarks, to: profileURL.appendingPathComponent("Bookmarks"))
+
+        let queue = try DatabaseQueue(path: profileURL.appendingPathComponent("Favicons").path)
+        try queue.write { database in
+            try database.execute(sql: "CREATE TABLE favicons (id INTEGER PRIMARY KEY, url TEXT)")
+            try database.execute(sql: "CREATE TABLE favicon_bitmaps (icon_id INTEGER, width INTEGER, image_data BLOB)")
+            try database.execute(sql: "CREATE TABLE icon_mapping (page_url TEXT, icon_id INTEGER)")
+            for (index, entry) in dataByPageURL.enumerated() {
+                let iconID = index + 1
+                try database.execute(sql: "INSERT INTO favicons VALUES (?, ?)", arguments: [iconID, entry.key + "/icon"])
+                try database.execute(sql: "INSERT INTO favicon_bitmaps VALUES (?, 16, ?)", arguments: [iconID, entry.value])
+                try database.execute(sql: "INSERT INTO icon_mapping VALUES (?, ?)", arguments: [entry.key, iconID])
+            }
         }
         createdProfileURLs.append(profileURL)
         return profileURL

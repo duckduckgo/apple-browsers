@@ -154,9 +154,10 @@ final class FaviconManager: FaviconManagement {
 
     private let bookmarkManager: BookmarkManager
     private let faviconDownloader: FaviconDownloader
+    private let faviconRasterizer = FaviconRasterizer()
     private let featureFlagger: FeatureFlagger
 
-    /// SVG favicons rejected in this session because they render fully transparent or are unsafe to render.
+    /// SVG favicons rejected in this session because they render fully transparent.
     @MainActor private var rejectedSVGFaviconURLs = Set<URL>()
 
     @Published private var faviconsLoaded = false
@@ -417,7 +418,7 @@ final class FaviconManager: FaviconManagement {
             } ?? []
         let cachedUrls = Set(cachedFavicons.map(\.url))
 
-        // Transparent SVGs rejected earlier in this session would only be rejected again.
+        // SVGs rejected earlier in this session (transparent) would only be rejected again.
         let nonCachedFavicons = urlsToLinks.filter { url, _ in
             !cachedUrls.contains(url) && !rejectedSVGFaviconURLs.contains(url)
         }.values
@@ -477,7 +478,7 @@ final class FaviconManager: FaviconManagement {
     /// that were rejected because they render fully transparent.
     private func downloadFavicons(_ faviconLinks: [FaviconUserScript.FaviconLink],
                                   webView: WKWebView?) async -> (fetched: [FetchedFavicon], rejectedSVGURLs: Set<URL>) {
-        await withTaskGroup(of: FaviconDownloadResult.self) { [faviconDownloader] group in
+        await withTaskGroup(of: FaviconDownloadResult.self) { [faviconDownloader, faviconRasterizer] group in
             for faviconLink in faviconLinks {
                 let faviconUrl = faviconLink.href
                 group.addTask {
@@ -488,12 +489,11 @@ final class FaviconManager: FaviconManagement {
 
                         try Task.checkCancellation()
 
-                        return .fetched(try Self.decodeFavicon(from: data, link: faviconLink))
+                        return .fetched(try await Self.decodeFavicon(from: data,
+                                                                     link: faviconLink,
+                                                                     rasterizer: faviconRasterizer))
                     } catch FaviconDecodingError.transparentSVG {
                         Logger.favicons.debug("Rejected Favicon from \(faviconUrl.shortDescription): SVG renders fully transparent")
-                        return .rejectedSVG(faviconUrl)
-                    } catch FaviconDecodingError.unsafeSVG {
-                        Logger.favicons.debug("Rejected Favicon from \(faviconUrl.shortDescription): SVG is unsafe to render")
                         return .rejectedSVG(faviconUrl)
                     } catch {
                         Logger.favicons.error("Error downloading Favicon from \(faviconUrl.shortDescription): \(error.localizedDescription)")
@@ -522,8 +522,9 @@ final class FaviconManager: FaviconManagement {
     }
 
     /**
-     * Remembers the given transparent SVG favicon URLs for the rest of the session, so that they aren't downloaded
-     * again on every favicon update, and removes cached copies of them stored before transparent SVGs were rejected.
+     * Remembers the given rejected (transparent) SVG favicon URLs for the rest of the session,
+     * so that they aren't downloaded again on every favicon update, and removes cached copies of them stored
+     * before such SVGs were rejected.
      *
      * After the removal, references that point at these favicons resolve to a cache miss, so the tab shows
      * the placeholder (or the `/favicon.ico` fallback, if available) instead of an invisible favicon.
@@ -542,23 +543,30 @@ final class FaviconManager: FaviconManagement {
         /// (e.g. chatgpt.com: `fill="none"` on the root, overridden by `:root { fill: #000 }`) decodes into
         /// a fully transparent image.
         case transparentSVG
-        /// See `Data.isUnsafeSVG`.
-        case unsafeSVG
     }
 
-    private static func decodeFavicon(from data: Data, link: FaviconUserScript.FaviconLink) throws -> FetchedFavicon {
+    private static func decodeFavicon(from data: Data,
+                                      link: FaviconUserScript.FaviconLink,
+                                      rasterizer: FaviconRasterizer) async throws -> FetchedFavicon {
         // Validate that we got actual image data
         guard !data.isEmpty else {
             throw URLError(.zeroByteResource, userInfo: [NSURLErrorKey: link.href])
         }
-        guard !data.isUnsafeSVG else {
-            throw FaviconDecodingError.unsafeSVG
+
+        var imageData = data
+        var image = NSImage(dataUsingCIImage: data, maxPixelSize: nil)
+        var isRasterizedVector = false
+        if image == nil {
+            // CoreImage can't decode it (SVG): WebKit renders it to a PNG, never CoreSVG, which can crash.
+            imageData = try await rasterizer.rasterize(data)
+            image = NSImage(dataUsingCIImage: imageData, maxPixelSize: nil)
+            isRasterizedVector = true
         }
-        guard let image = NSImage(dataUsingCIImage: data, maxPixelSize: nil) else {
+        guard let image else {
             throw CocoaError(.fileReadCorruptFile, userInfo: [NSURLErrorKey: link.href])
         }
 
-        let fetchedFavicon = FetchedFavicon(link: link, data: data, image: image)
+        let fetchedFavicon = FetchedFavicon(link: link, data: imageData, image: image, isRasterizedVector: isRasterizedVector)
 
         // Treat a transparent SVG as undecodable so that another favicon
         // or the `/favicon.ico` fallback gets picked instead.
@@ -574,10 +582,15 @@ final class FaviconManager: FaviconManagement {
         let link: FaviconUserScript.FaviconLink
         let data: Data
         let image: NSImage
+        /// The data was not a raster image: `data` is the PNG that WebKit rendered from it (see `FaviconRasterizer`).
+        let isRasterizedVector: Bool
 
         var longestSide: CGFloat { max(image.size.width, image.size.height) }
 
         var isSVG: Bool {
+            if isRasterizedVector {
+                return true
+            }
             if let type = link.type?.lowercased(), type.contains("svg") {
                 return true
             }
@@ -586,7 +599,7 @@ final class FaviconManager: FaviconManagement {
 
         /// See `FaviconDecodingError.transparentSVG`.
         var isTransparentSVG: Bool {
-            (isSVG || data.isSVGImageData) && !image.hasVisiblePixels()
+            isSVG && !image.hasVisiblePixels()
         }
     }
 
@@ -654,13 +667,7 @@ extension FaviconManager: Bookmarks.FaviconStoring {
     }
 
     func storeFavicon(_ imageData: Data, with url: URL?, for documentURL: URL) async throws {
-        // SVGs go through `dataUsingCIImage`, which rejects unsafe ones and rasterizes the rest right away.
-        // `NSImage(data:)` would keep a lazy SVG that CoreSVG renders later, while archiving on the Core Data queue.
-        let maxPixelSize = NSImage.maxStoredFaviconPixelSize
-        let decodedImage = imageData.isSVGImageData ? NSImage(dataUsingCIImage: imageData, maxPixelSize: maxPixelSize) : NSImage(data: imageData)
-        guard let image = decodedImage else {
-            return
-        }
+        guard let image = await faviconRasterizer.storableImage(from: imageData) else { return }
 
         await self.awaitFaviconsLoaded()
 
@@ -701,68 +708,17 @@ extension NSImage {
      * aspect ratio preserved) so that both the in-memory image and the archived blob stay small; images
      * already at or below the cap are left untouched (downscale only, never upscale). When `maxPixelSize`
      * is `nil` (downscaling disabled), the image is stored at its original resolution.
+     *
+     * Returns nil for data CoreImage can't decode, notably SVG. `NSImage(data:)` would keep a lazy,
+     * vector-backed representation that CoreSVG renders later, while archiving on the Core Data queue, and
+     * CoreSVG can crash on some SVGs (see `FaviconRasterizer`). Such data is rasterized with WebKit first.
      */
     convenience init?(dataUsingCIImage data: Data, maxPixelSize: CGFloat?) {
-        guard let ciImage = CIImage(data: data) else {
-            guard !data.isUnsafeSVG else { return nil }
-            // CIImage can't decode vector formats (SVG). `NSImage(data:)` would keep a lazy, vector-backed
-            // representation that CoreSVG rasterizes later, during `NSKeyedArchiver` encoding on the Core Data
-            // queue, where a CoreSVG crash can't be contained. Rasterize it here instead.
-            self.init(data: data)
-            Self.rasterizeVectorRepresentations(of: self, maxPixelSize: maxPixelSize)
-            return
-        }
+        guard let ciImage = CIImage(data: data) else { return nil }
 
         let rep = NSImage.bitmapRep(from: ciImage, maxPixelSize: maxPixelSize)
         self.init(size: rep.size)
         addRepresentation(rep)
-    }
-
-    /// Longest side used when rasterizing a vector image that has no downscaling cap.
-    private static let maxVectorRasterizationPixelSize: CGFloat = 256
-
-    /// Replaces the lazy, non-bitmap representations of `image` (e.g. SVG) with a concrete bitmap.
-    ///
-    /// The longest side is the intrinsic one, raised to at least `maxStoredFaviconPixelSize` (a vector scales
-    /// without loss, so a small SVG stays sharp where it's displayed at 64px) and capped at `maxPixelSize`
-    /// (or `maxVectorRasterizationPixelSize` when nil).
-    /// Leaves the image untouched if it is already bitmap-backed or can't be rendered.
-    private static func rasterizeVectorRepresentations(of image: NSImage, maxPixelSize: CGFloat?) {
-        guard !image.representations.isEmpty,
-              !image.representations.contains(where: { $0 is NSBitmapImageRep }) else { return }
-
-        let size = image.size
-        let longestSide = max(size.width, size.height)
-        guard longestSide.isFinite, longestSide > 0 else { return }
-
-        let cap = maxPixelSize ?? maxVectorRasterizationPixelSize
-        let target = min(max(longestSide, maxStoredFaviconPixelSize), cap)
-        let scale = target / longestSide
-        let width = max(1, Int((size.width * scale).rounded()))
-        let height = max(1, Int((size.height * scale).rounded()))
-
-        guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil,
-                                         pixelsWide: width,
-                                         pixelsHigh: height,
-                                         bitsPerSample: 8,
-                                         samplesPerPixel: 4,
-                                         hasAlpha: true,
-                                         isPlanar: false,
-                                         colorSpaceName: .deviceRGB,
-                                         bytesPerRow: 0,
-                                         bitsPerPixel: 0),
-              let context = NSGraphicsContext(bitmapImageRep: rep) else { return }
-
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = context
-        image.draw(in: NSRect(x: 0, y: 0, width: width, height: height))
-        NSGraphicsContext.restoreGraphicsState()
-
-        // Keep points == pixels (1:1), see `bitmapRep(from:maxPixelSize:)`.
-        rep.size = NSSize(width: width, height: height)
-        image.representations.forEach(image.removeRepresentation)
-        image.addRepresentation(rep)
-        image.size = rep.size
     }
 
     /**
@@ -840,50 +796,6 @@ extension NSImage {
 
         // Every 4th byte, starting at index 3, is the alpha component.
         return stride(from: 3, to: pixels.count, by: 4).contains { pixels[$0] > 0 }
-    }
-}
-
-extension Data {
-
-    /// The largest SVG favicon (in bytes) that is scanned and decoded. Real favicons are a few KB; larger SVGs are
-    /// rejected by `isUnsafeSVG` instead of being scanned or rendered.
-    static let maxSVGFaviconSize = 512 * 1024
-
-    /// How many leading bytes are searched for `<svg` by `isSVGImageData`.
-    private static let svgSniffLength = 4096
-
-    /// Returns whether the data is an SVG that must not be rendered: it references filters (`<filter>`,
-    /// `filter="..."` or CSS `filter:`), or it is larger than `maxSVGFaviconSize`.
-    ///
-    /// CoreSVG overflows the stack (`EXC_BAD_ACCESS` in `SVGFilter::draw`) on some filtered SVGs, e.g. when the root
-    /// `<svg>` and a child reference the same filter. The crash can't be caught, so such SVGs must never be rendered.
-    /// Data that isn't an SVG (e.g. a PNG with a `filter` word in its metadata) is never flagged.
-    var isUnsafeSVG: Bool {
-        guard isSVGImageData else { return false }
-        guard count <= Self.maxSVGFaviconSize else { return true }
-        return containsASCIICaseInsensitive("filter")
-    }
-
-    /// Returns whether the data contains the given ASCII text, ignoring case.
-    private func containsASCIICaseInsensitive(_ text: String) -> Bool {
-        let needle = Array(text.lowercased().utf8)
-        return withUnsafeBytes { bytes in
-            guard let first = needle.first, bytes.count >= needle.count else { return false }
-            let lastStart = bytes.count - needle.count
-            for start in 0...lastStart {
-                // `| 0x20` lowercases ASCII letters, and no other byte maps onto a letter of the needle.
-                guard bytes[start] | 0x20 == first else { continue }
-                let matches = needle.indices.allSatisfy { bytes[start + $0] | 0x20 == needle[$0] }
-                if matches { return true }
-            }
-            return false
-        }
-    }
-
-    /// Returns whether the data looks like an SVG document, based on its first bytes.
-    var isSVGImageData: Bool {
-        // Latin-1 decodes any byte sequence, and `<svg` is plain ASCII.
-        String(bytes: prefix(Self.svgSniffLength), encoding: .isoLatin1)?.lowercased().contains("<svg") ?? false
     }
 }
 

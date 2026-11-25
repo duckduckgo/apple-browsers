@@ -1,0 +1,335 @@
+//
+//  FaviconRasterizer.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import CoreImage
+import Foundation
+import OSLog
+import WebKit
+
+/// Rasterizes favicon data that CoreImage can't decode (in practice SVG) to PNG using WebKit.
+///
+/// `NSImage(data:)` renders SVG with CoreSVG, which overflows the stack (an uncatchable crash) on some
+/// filtered SVGs. WebKit renders SVG with its own engine, treats it as an inert image (no scripts, no
+/// external loads), and does it in the web content process, so a rendering failure can't take the app down.
+///
+/// The image is drawn into a canvas by an `<img>` element in a private, non-persistent web view that
+/// shows no page: nothing from a visited page (scripts, Content Security Policy, a busy main thread) takes
+/// part in the rendering, and the page can't observe it. The web view is released after a period of inactivity.
+@MainActor
+final class FaviconRasterizer {
+
+    enum RasterizationError: Error {
+        case dataTooLarge
+        case invalidResult
+        /// WebKit loaded the data and it isn't an image.
+        case undecodable
+        /// The caller gave up waiting for the web view.
+        case timedOut
+        /// The web view reported that the image didn't load in time, so it may still be busy with it.
+        case scriptTimedOut
+    }
+
+    /// The largest input accepted, the same limit the favicon downloader applies.
+    nonisolated static let maxDataSize = 1024 * 1024
+    /// Vector images are rasterized at their intrinsic longest side raised to this value, so a small SVG
+    /// stays sharp where it's displayed at the maximum stored size.
+    nonisolated static let minPixelSize = 64
+    /// ...and capped at this value.
+    nonisolated static let maxPixelSize = 256
+    /// Time the rendering gets in the web view, enforced by the page script.
+    nonisolated static let timeout: TimeInterval = 5
+    /// Time after which the caller stops waiting even if the web view never answers.
+    nonisolated static let defaultHardTimeout: TimeInterval = timeout + 2
+    /// How long the web view (and its web content process) stays alive after the last call.
+    nonisolated static let defaultIdleLifetime: TimeInterval = 30
+
+    /// Settable so tests can shorten them.
+    var hardTimeout: TimeInterval
+    var idleLifetime: TimeInterval
+    var scriptTimeout: TimeInterval
+
+    nonisolated init(hardTimeout: TimeInterval = FaviconRasterizer.defaultHardTimeout,
+                     idleLifetime: TimeInterval = FaviconRasterizer.defaultIdleLifetime,
+                     scriptTimeout: TimeInterval = FaviconRasterizer.timeout) {
+        self.hardTimeout = hardTimeout
+        self.idleLifetime = idleLifetime
+        self.scriptTimeout = scriptTimeout
+    }
+
+    /// Whether a web view (and its web content process) is currently alive.
+    var hasWebView: Bool { webView != nil }
+
+    private var webView: WKWebView?
+    private var activeCalls = 0
+    private var releaseTask: Task<Void, Never>?
+
+    /// Returns PNG data of the image rendered at its intrinsic size, within `minPixelSize...maxPixelSize`.
+    /// Throws if WebKit can't decode the data as an image or doesn't answer in time.
+    ///
+    /// When the web view itself fails (it doesn't answer in time, or its web content process is gone), it is
+    /// discarded so that the next call starts with a fresh one instead of reusing a dead or busy process.
+    func rasterize(_ data: Data) async throws -> Data {
+        guard data.count <= Self.maxDataSize else { throw RasterizationError.dataTooLarge }
+        try Task.checkCancellation()
+
+        let webView = acquireWebView()
+        defer { releaseWebViewWhenIdle() }
+
+        do {
+            return try await withHardTimeout { [self] in
+                try await render(data, in: webView)
+            }
+        } catch {
+            if Self.isWebViewFailure(error) {
+                discardWebView(webView)
+            }
+            throw error
+        }
+    }
+
+    /// Data that isn't an image leaves the web view healthy; a timeout, or anything unexpected, doesn't.
+    private static func isWebViewFailure(_ error: Error) -> Bool {
+        if error is CancellationError {
+            return false
+        }
+        if let error = error as? RasterizationError {
+            return error == .timedOut || error == .scriptTimedOut
+        }
+        let nsError = error as NSError
+        let isScriptException = nsError.domain == WKError.errorDomain
+            && nsError.code == WKError.javaScriptExceptionOccurred.rawValue
+        return !isScriptException
+    }
+
+    /// Only the web view that failed is dropped: a newer one, created by another call, stays.
+    private func discardWebView(_ failedWebView: WKWebView) {
+        guard webView === failedWebView else { return }
+        webView = nil
+    }
+
+    private func acquireWebView() -> WKWebView {
+        releaseTask?.cancel()
+        releaseTask = nil
+        activeCalls += 1
+        if let webView {
+            return webView
+        }
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = .nonPersistent()
+        let newWebView = WKWebView(frame: .zero, configuration: configuration)
+        webView = newWebView
+        return newWebView
+    }
+
+    private func releaseWebViewWhenIdle() {
+        activeCalls -= 1
+        guard activeCalls == 0 else { return }
+        let idleLifetime = self.idleLifetime
+        releaseTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(idleLifetime * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.webView = nil
+        }
+    }
+
+    private func render(_ data: Data, in webView: WKWebView) async throws -> Data {
+        let arguments: [String: Any] = [
+            "base64": data.base64EncodedString(),
+            "minSize": Self.minPixelSize,
+            "maxSize": Self.maxPixelSize,
+            "timeoutMs": Int(scriptTimeout * 1000),
+        ]
+        let result = try await webView.callAsyncJavaScript(Self.script,
+                                                           arguments: arguments,
+                                                           in: nil,
+                                                           contentWorld: .defaultClient)
+        guard let result = result as? [String: Any] else { throw RasterizationError.invalidResult }
+        if let failure = result["error"] as? String {
+            throw failure == "timeout" ? RasterizationError.scriptTimedOut : RasterizationError.undecodable
+        }
+        guard let base64 = result["png"] as? String, let png = Data(base64Encoded: base64), !png.isEmpty else {
+            throw RasterizationError.invalidResult
+        }
+        return png
+    }
+
+    /// `callAsyncJavaScript` can't be cancelled, so the caller is released by whichever of the work, the timer
+    /// and the cancellation of the calling task comes first (a task group would wait for the work).
+    private func withHardTimeout(_ work: @escaping @MainActor () async throws -> Data) async throws -> Data {
+        let outcome = Outcome()
+        let hardTimeout = self.hardTimeout
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+                outcome.timer = Task {
+                    try? await Task.sleep(nanoseconds: UInt64(hardTimeout * 1_000_000_000))
+                    outcome.finish(.failure(RasterizationError.timedOut))
+                }
+                Task {
+                    do {
+                        outcome.finish(.success(try await work()))
+                    } catch {
+                        outcome.finish(.failure(error))
+                    }
+                }
+                outcome.attach(continuation)
+            }
+        } onCancel: {
+            Task { @MainActor in outcome.finish(.failure(CancellationError())) }
+        }
+    }
+
+    /// Delivers the first result to the continuation, once, even when it arrives before the continuation does.
+    @MainActor
+    private final class Outcome {
+        private var continuation: CheckedContinuation<Data, Error>?
+        private var result: Result<Data, Error>?
+        private var isDelivered = false
+        var timer: Task<Void, Never>?
+
+        func attach(_ continuation: CheckedContinuation<Data, Error>) {
+            self.continuation = continuation
+            deliverIfPossible()
+        }
+
+        func finish(_ result: Result<Data, Error>) {
+            guard self.result == nil else { return }
+            self.result = result
+            timer?.cancel()
+            deliverIfPossible()
+        }
+
+        private func deliverIfPossible() {
+            guard !isDelivered, let continuation, let result else { return }
+            isDelivered = true
+            self.continuation = nil
+            continuation.resume(with: result)
+        }
+    }
+
+    /// `<img>` + canvas. The image is loaded from a `data:` URL, which doesn't taint the canvas.
+    private static let script = """
+    const image = new Image();
+    const loaded = new Promise((resolve) => {
+        image.onload = () => resolve('loaded');
+        image.onerror = () => resolve('undecodable');
+    });
+    const timeout = new Promise((resolve) => setTimeout(() => resolve('timeout'), timeoutMs));
+    image.src = 'data:image/svg+xml;base64,' + base64;
+    const outcome = await Promise.race([loaded, timeout]);
+    if (outcome !== 'loaded') {
+        return { error: outcome };
+    }
+
+    let width = image.naturalWidth;
+    let height = image.naturalHeight;
+    if (!width || !height) {
+        width = minSize;
+        height = minSize;
+    }
+    const longestSide = Math.max(width, height);
+    const target = Math.min(Math.max(longestSide, minSize), maxSize);
+    const scale = target / longestSide;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+    return { png: canvas.toDataURL('image/png').split(',')[1] };
+    """
+}
+
+/// Favicon data read from another browser's database, to be imported.
+protocol ImportedFaviconDataProviding {
+    var imageData: Data { get }
+}
+
+extension FaviconRasterizer {
+
+    /// How many imported favicons are decoded at once. Raster data is decoded off the main thread, and
+    /// SVG renders queue up in the single web view, so the limit keeps each render well inside `hardTimeout`.
+    nonisolated static let importConcurrency = 4
+
+    /// Returns an image that is safe to store for the given favicon data.
+    ///
+    /// Raster data is decoded as is, on the calling executor (not the main thread). Data CoreImage can't decode
+    /// (SVG) is rendered by WebKit, because `NSImage(data:)` would keep a lazy SVG that CoreSVG renders later,
+    /// while archiving, and CoreSVG can crash. Returns nil if the data can't be decoded.
+    nonisolated func storableImage(from data: Data) async -> NSImage? {
+        if CIImage(data: data) != nil {
+            return NSImage(data: data)
+        }
+        guard let png = try? await rasterize(data) else { return nil }
+        return NSImage(dataUsingCIImage: png, maxPixelSize: NSImage.maxStoredFaviconPixelSize)
+    }
+
+    /// Builds the favicons to store for each page URL read from another browser's favicon database.
+    nonisolated func favicons<F: ImportedFaviconDataProviding>(fromImported faviconsByPageURL: [String: [F]]) async -> [URL: [Favicon]] {
+        var pages = [(url: URL, datas: [Data])]()
+        for (pageURLString, importedFavicons) in faviconsByPageURL {
+            guard let pageURL = URL(string: pageURLString) else { continue }
+            pages.append((pageURL, importedFavicons.map(\.imageData)))
+        }
+
+        let images = await storableImages(from: pages.flatMap(\.datas))
+
+        var faviconsByDocument = [URL: [Favicon]]()
+        var imageIndex = 0
+        for page in pages {
+            var favicons = [Favicon]()
+            for _ in page.datas {
+                favicons.append(Favicon(identifier: UUID(),
+                                        url: page.url,
+                                        image: images[imageIndex],
+                                        relation: .icon,
+                                        documentUrl: page.url,
+                                        dateCreated: Date()))
+                imageIndex += 1
+            }
+            faviconsByDocument[page.url] = favicons
+        }
+        return faviconsByDocument
+    }
+
+    /// `NSImage` is `Sendable` only from macOS 14. Each image is created by one task and then only handed on.
+    private struct DecodedImage: @unchecked Sendable {
+        let index: Int
+        let image: NSImage?
+    }
+
+    /// Decodes the favicons with at most `importConcurrency` in flight, keeping the order of `datas`.
+    private nonisolated func storableImages(from datas: [Data]) async -> [NSImage?] {
+        await withTaskGroup(of: DecodedImage.self) { group in
+            var images = [NSImage?](repeating: nil, count: datas.count)
+            var nextIndex = 0
+
+            while nextIndex < min(Self.importConcurrency, datas.count) {
+                let index = nextIndex
+                group.addTask { DecodedImage(index: index, image: await self.storableImage(from: datas[index])) }
+                nextIndex += 1
+            }
+            for await decoded in group {
+                images[decoded.index] = decoded.image
+                guard nextIndex < datas.count else { continue }
+                let index = nextIndex
+                group.addTask { DecodedImage(index: index, image: await self.storableImage(from: datas[index])) }
+                nextIndex += 1
+            }
+            return images
+        }
+    }
+}

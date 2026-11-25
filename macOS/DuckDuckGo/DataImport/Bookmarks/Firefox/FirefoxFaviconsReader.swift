@@ -41,15 +41,11 @@ final class FirefoxFaviconsReader {
         var errorType: DataImport.ErrorType { .other }
     }
 
-    final class FirefoxFavicon: FetchableRecord {
+    final class FirefoxFavicon: FetchableRecord, ImportedFaviconDataProviding {
         let pageURL: String
         let iconURL: String
         let size: Int
         let imageData: Data
-
-        var image: NSImage? {
-            NSImage(data: imageData)
-        }
 
         init(row: Row) throws {
             pageURL = try row["page_url"] ?? { throw FetchableRecordError<FirefoxFavicon>(column: 0) }()

@@ -27,6 +27,7 @@ internal class ChromiumDataImporter: DataImporter {
     private let bookmarkImporter: BookmarkImporter
     private let loginImporter: LoginImporter?
     private let faviconManager: FaviconManagement
+    private let faviconRasterizer: FaviconRasterizer
     private let historyReader: ChromiumHistoryReaderProtocol
     private let historyImporter: HistoryImporterProtocol
     private let pixelFiring: PixelFiring?
@@ -40,6 +41,7 @@ internal class ChromiumDataImporter: DataImporter {
         loginImporter: LoginImporter?,
         bookmarkImporter: BookmarkImporter,
         faviconManager: FaviconManagement,
+        faviconRasterizer: FaviconRasterizer = FaviconRasterizer(),
         historyReader: ChromiumHistoryReaderProtocol,
         historyImporter: HistoryImporterProtocol,
         pixelFiring: PixelFiring? = PixelKit.shared
@@ -48,6 +50,7 @@ internal class ChromiumDataImporter: DataImporter {
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.faviconRasterizer = faviconRasterizer
         self.historyReader = historyReader
         self.historyImporter = historyImporter
         self.pixelFiring = pixelFiring
@@ -192,18 +195,7 @@ internal class ChromiumDataImporter: DataImporter {
 
         switch faviconsResult {
         case .success(let faviconsByURL):
-            let faviconsByDocument = faviconsByURL.reduce(into: [URL: [Favicon]]()) { result, pair in
-                guard let pageURL = URL(string: pair.key) else { return }
-                let favicons = pair.value.map {
-                    Favicon(identifier: UUID(),
-                            url: pageURL,
-                            image: $0.image,
-                            relation: .icon,
-                            documentUrl: pageURL,
-                            dateCreated: Date())
-                }
-                result[pageURL] = favicons
-            }
+            let faviconsByDocument = await faviconRasterizer.favicons(fromImported: faviconsByURL)
             await faviconManager.handleFaviconsByDocumentUrl(faviconsByDocument)
             PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .favicons, source: source.pixelSourceParameterName, sourceVersion: sourceVersion), frequency: .dailyAndStandard)
         case .failure(let error):

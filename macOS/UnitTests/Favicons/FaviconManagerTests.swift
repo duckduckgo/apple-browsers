@@ -97,19 +97,28 @@ class FaviconManagerTests: XCTestCase {
 
     // MARK: - storeFavicon
 
+    /// An SVG on which CoreSVG overflows the stack (root `<svg>` and a child reference the same filter).
+    /// It must be rendered by WebKit, which handles it.
     @MainActor
-    func testStoreFaviconRasterizesSafeSVGAndRejectsUnsafeSVG() async throws {
+    func testStoreFaviconRasterizesSVGWithWebKit() async throws {
         let documentURL = try XCTUnwrap("https://example.com".url)
-        let safeSVG = ##"<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect width="180" height="180" fill="#000"/></svg>"##
-        let unsafeSVG = ##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" filter="url(#f)"><filter id="f"><feOffset/></filter><rect width="20" height="20" filter="url(#f)"/></svg>"##
+        let svg = ##"<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" filter="url(#f)"><filter id="f"><feOffset/></filter><rect width="180" height="180" fill="#000" filter="url(#f)"/></svg>"##
 
-        try await faviconManager.storeFavicon(Data(unsafeSVG.utf8), with: nil, for: documentURL)
-        XCTAssertTrue(imageCache.insertCalls.isEmpty)
+        try await faviconManager.storeFavicon(Data(svg.utf8), with: nil, for: documentURL)
 
-        try await faviconManager.storeFavicon(Data(safeSVG.utf8), with: nil, for: documentURL)
         let stored = try XCTUnwrap(imageCache.insertCalls.first?.first?.image)
         XCTAssertTrue(stored.representations.allSatisfy { $0 is NSBitmapImageRep })
         XCTAssertEqual(stored.size, NSSize(width: 64, height: 64))
+        XCTAssertTrue(stored.hasVisiblePixels())
+    }
+
+    @MainActor
+    func testStoreFaviconIgnoresDataThatIsNotAnImage() async throws {
+        let documentURL = try XCTUnwrap("https://example.com".url)
+
+        try await faviconManager.storeFavicon(Data("not an image".utf8), with: nil, for: documentURL)
+
+        XCTAssertTrue(imageCache.insertCalls.isEmpty)
     }
 
     // MARK: - fallBackToSmaller

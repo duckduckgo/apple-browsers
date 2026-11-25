@@ -723,6 +723,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
     case launchBackgroundTask
 
+    /// Enables hardware keyboard monitoring for telemetry at startup.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220874250279358
+    case hardwareKeyboardMonitoring
+
     /// On-device web page translation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
     case webPageTranslation
@@ -1245,6 +1249,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageOnForeground))
         case .launchBackgroundTask:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
+        case .hardwareKeyboardMonitoring:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.hardwareKeyboardMonitoring))
         case .webPageTranslation:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webPageTranslation))
         case .aiChatLocalModels:

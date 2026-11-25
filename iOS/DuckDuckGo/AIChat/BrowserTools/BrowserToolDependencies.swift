@@ -51,6 +51,16 @@ extension FindInPageBrowserTool {
         }
     }
 }
+
+extension SearchHistoryBrowserTool {
+    convenience init(historyManager: HistoryManaging, scopeProvider: @escaping BrowserToolScopeProvider) {
+        self.init { context in
+            guard !Task.isCancelled, let scope = scopeProvider(context), scope.accepts(context) else { return nil }
+            return historyManager.isEnabledByUser ? historyManager.history?.flatMap(\.visits) ?? [] : []
+        }
+    }
+}
+
 private func pageLoader(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) -> BrowserToolPageLoader {
     { tabIDArgument, context in
         guard let scope = scopeProvider(context), scope.accepts(context) else { return .failure(.unavailable) }

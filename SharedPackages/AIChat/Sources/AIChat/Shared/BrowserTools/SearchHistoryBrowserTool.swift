@@ -16,22 +16,21 @@
 //  limitations under the License.
 //
 
-import AIChat
 import Foundation
+import PrivacyConfig
 import History
 
-/// Searches local history by title and URL. Asks first: history is browsing data.
+/// Searches local history by title and URL. Access requires permission because history is browsing data.
 @MainActor
-final class SearchHistoryBrowserTool: BrowserTool {
+public final class SearchHistoryBrowserTool: BrowserTool {
 
     static let defaultLimit = 10
     static let maxLimit = 50
 
-    /// Matches `AIChatBrowserToolsSubfeature.searchHistory`, which is how the catalog gates it.
-    let name = "searchHistory"
-    let permissionMode = BrowserToolPermissionMode.ask
+    public let name = AIChatBrowserToolsSubfeature.searchHistory.rawValue
+    public let permissionMode = BrowserToolPermissionMode.ask
 
-    let inputSchema: JSONValue = [
+    public let inputSchema: JSONValue = [
         "type": "object",
         "properties": [
             "query": [
@@ -44,7 +43,7 @@ final class SearchHistoryBrowserTool: BrowserTool {
             ],
             "endDate": [
                 "type": "string",
-                "description": "Inclusive range end as YYYY-MM-DD or ISO-8601 datetime. Date-only is treated as 23:59:59.9999999 UTC."
+                "description": "Inclusive range end as YYYY-MM-DD or ISO-8601 datetime. Date-only is treated as 23:59:59.999 UTC."
             ],
             "limit": [
                 "type": "integer",
@@ -55,13 +54,13 @@ final class SearchHistoryBrowserTool: BrowserTool {
         ]
     ]
 
-    private let historyCoordinator: HistoryCoordinating
+    private let historyVisits: @MainActor (BrowserToolCallContext) -> [Visit]?
 
-    init(historyCoordinator: HistoryCoordinating) {
-        self.historyCoordinator = historyCoordinator
+    public init(historyVisits: @escaping @MainActor (BrowserToolCallContext) -> [Visit]?) {
+        self.historyVisits = historyVisits
     }
 
-    func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
+    public func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
 
         switch arguments {
@@ -90,7 +89,8 @@ final class SearchHistoryBrowserTool: BrowserTool {
         }
         if let start, let end, start > end { return .failure(.invalidArguments) }
 
-        let results = Self.search(visits: historyCoordinator.allHistoryVisits ?? [], query: query, start: start, end: end, limit: limit)
+        guard let visits = historyVisits(context) else { return .failure(.unavailable) }
+        let results = Self.search(visits: visits, query: query, start: start, end: end, limit: limit)
         return .success(["results": .array(results.map { result in
             [
                 "title": .string(result.title),
@@ -102,14 +102,14 @@ final class SearchHistoryBrowserTool: BrowserTool {
 
     // MARK: - Search
 
-    struct Result: Equatable {
-        let title: String
-        let url: String
-        let visitedAt: Date
+    public struct Result: Equatable {
+        public let title: String
+        public let url: String
+        public let visitedAt: Date
     }
 
     /// Newest first, one row per visit, filtered by term and inclusive date range.
-    static func search(visits: [Visit], query: String?, start: Date?, end: Date?, limit: Int) -> [Result] {
+    public static func search(visits: [Visit], query: String?, start: Date?, end: Date?, limit: Int) -> [Result] {
         let term = query?.trimmingCharacters(in: .whitespacesAndNewlines)
         return visits
             .lazy
@@ -135,8 +135,7 @@ final class SearchHistoryBrowserTool: BrowserTool {
             }
     }
 
-    /// A blank title falls back to host, plus path unless it is just "/".
-    static func displayTitle(title: String?, url: URL) -> String {
+    public static func displayTitle(title: String?, url: URL) -> String {
         let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !trimmed.isEmpty { return trimmed }
         let host = url.host ?? ""
@@ -146,8 +145,8 @@ final class SearchHistoryBrowserTool: BrowserTool {
 
     // MARK: - Dates
 
-    /// `.some(nil)` is "no bound"; `nil` is unparseable. Date-only values are whole UTC days.
-    static func dateBound(from value: JSONValue?, isEnd: Bool) -> Date?? {
+    /// `.some(nil)` means no bound. `nil` means invalid input. Dates without a time use UTC day boundaries.
+    public static func dateBound(from value: JSONValue?, isEnd: Bool) -> Date?? {
         switch value {
         case .none, .some(.null):
             return .some(nil)
@@ -174,7 +173,7 @@ final class SearchHistoryBrowserTool: BrowserTool {
         return formatter
     }()
 
-    static let isoFormatter: ISO8601DateFormatter = {
+    public static let isoFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter
@@ -186,7 +185,7 @@ final class SearchHistoryBrowserTool: BrowserTool {
         return formatter
     }()
 
-    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+    public func clientToolResult(from value: JSONValue) -> BrowserToolResult {
         guard let results = value["results"]?.arrayValue else { return .failure(.unavailable) }
         return .success(["results": .array(results.map { result in
             var fields = result.objectValue ?? [:]
@@ -196,5 +195,5 @@ final class SearchHistoryBrowserTool: BrowserTool {
         })])
     }
 
-    func resultCount(of value: JSONValue) -> Int? { value["results"]?.arrayValue?.count }
+    public func resultCount(of value: JSONValue) -> Int? { value["results"]?.arrayValue?.count }
 }

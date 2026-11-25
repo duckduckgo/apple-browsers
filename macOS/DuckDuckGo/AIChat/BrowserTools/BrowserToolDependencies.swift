@@ -49,6 +49,13 @@ extension FindInPageBrowserTool {
         self.init(readPage: pageLoader(windowControllersManager: windowControllersManager, reader: reader))
     }
 }
+
+extension SearchHistoryBrowserTool {
+    convenience init(historyCoordinator: HistoryCoordinating) {
+        self.init { _ in historyCoordinator.allHistoryVisits ?? [] }
+    }
+}
+
 private func pageLoader(windowControllersManager: WindowControllersManagerProtocol, reader: BrowserToolPageContentReading) -> BrowserToolPageLoader {
     { tabIDArgument, context in
         switch BrowserToolTargetTab.resolve(tabIDArgument: tabIDArgument, context: context, in: windowControllersManager) {

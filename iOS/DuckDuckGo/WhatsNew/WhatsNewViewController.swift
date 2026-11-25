@@ -86,7 +86,7 @@ private extension WhatsNewViewController {
     func resetNavigationBarColorToDefault() {
         let appearance = UINavigationBarAppearance()
         appearance.shadowColor = .clear
-        appearance.backgroundColor = UIColor(singleUseColor: .whatsNewBackground)
+        appearance.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         navigationBar.standardAppearance = appearance
         navigationBar.scrollEdgeAppearance = appearance
         navigationBar.compactAppearance = appearance

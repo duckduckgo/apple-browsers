@@ -330,8 +330,8 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: xF9F9F9, darkColor: x282828)
         case .inputContentSeparator:
             return DynamicColor(lightColor: x1F1F1F.opacity(0.16), darkColor: highlightDecoration.darkColor)
-        case .whatsNewBackground:
-            return DynamicColor(lightColor: .white, darkColor: x282828)
+        case .whatsNewSectionBadgeBackground:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater10, darkColor: RebrandingColor.Pondwater.pondwater90)
         case .duckAIContextualSheetBackground:
             return DynamicColor(lightColor: .white, darkColor: .x161616)
         case .duckAIWebViewBackground:

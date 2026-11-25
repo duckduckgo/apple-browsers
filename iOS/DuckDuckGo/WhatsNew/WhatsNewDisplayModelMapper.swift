@@ -31,6 +31,16 @@ protocol WhatsNewDisplayModelMapping {
     ) -> RemoteMessagingUI.CardsListDisplayModel?
 }
 
+extension RemotePlaceholder {
+    /// The What's New header uses its own artwork for some placeholders, so New Tab Page messages keep theirs.
+    var whatsNewHeaderIcon: String {
+        switch self {
+        case .ddgAnnounce: "WhatsNewDDGAnnouncement"
+        default: rawValue
+        }
+    }
+}
+
 struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
     let imageLoader: RemoteMessagingImageLoading?
@@ -135,7 +145,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
 
         return RemoteMessagingUI.CardsListDisplayModel(
             screenTitle: mainTitleText,
-            icon: placeholder?.rawValue,
+            icon: placeholder?.whatsNewHeaderIcon,
             preloadedHeaderImage: preloadedHeaderImage,
             headerImageUrl: imageUrl,
             loadHeaderImage: loadHeaderImage,

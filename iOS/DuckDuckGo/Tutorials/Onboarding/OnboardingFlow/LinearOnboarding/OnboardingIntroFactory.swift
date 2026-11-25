@@ -95,7 +95,7 @@ private extension OnboardingPersonalizationManager {
             appSettings: AppUserDefaults(),
             serpSettings: serpSettings,
             aiChatSettings: AIChatSettings(),
-            aiModelSettings: OnboardingAIModelAdapter(persistor: AIChatPreferencesPersistor()),
+            aiModelSettings: OnboardingAIModelAdapter(),
             youTubeAdBlocking: OnboardingYouTubeAdBlockingAdapter(
                 keyValueStore: keyValueStore,
                 adBlockingAvailability: adBlockingAvailability

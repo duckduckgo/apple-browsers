@@ -162,8 +162,6 @@ class TabViewController: UIViewController {
     var containerStackView: UIStackView!
     /// Driven by `applyContextualOnboardingTopInset(_:)` to clear the floating chrome.
     var containerStackViewTopConstraint: NSLayoutConstraint?
-    /// Released while the iPad Duck.ai chats sidebar sits beside the chat.
-    var containerStackViewLeadingConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
     var webViewContainerBottomConstraint: NSLayoutConstraint?
@@ -173,6 +171,8 @@ class TabViewController: UIViewController {
     var chatListSidebarContainer: IPadChatListSidebarContainerView?
     /// Set once this tab's `sidebar=open` load has opened the chats sidebar, so later page URL changes don't reopen it.
     var hasOpenedChatListSidebarFromURL = false
+    /// Opened for the iPad chats list, so its empty chat keeps the input down on every visit, as `sidebar=open` does.
+    var isOpenedForChatList = false
     private lazy var firstPaintCover = FirstPaintCover()
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
@@ -183,6 +183,7 @@ class TabViewController: UIViewController {
         didSet {
             // Floating UI reserves the obscured top region while a dialog is up, so relayout on both.
             updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+            updateOuterContainerClippingForFloatingUI()
         }
     }
     var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
@@ -794,7 +795,7 @@ class TabViewController: UIViewController {
                                     featureFlagger: featureFlagger,
                                     userScriptsDependencies: userScriptsDependencies,
                                     // Same app store as ContentBlockingService's instance; instances sync through the store notification.
-                                    sponsorBlockPreferences: SponsorBlockPreferences(store: keyValueStore),
+                                    segmentSkipPreferences: SegmentSkipPreferences(store: keyValueStore),
                                     floatingUIManager: floatingUIManager)
 
         if duckPlayer.settings.nativeUI {
@@ -855,7 +856,7 @@ class TabViewController: UIViewController {
 
     var browserToolsService: AIChatBrowserToolsService?
     private var browserToolsSurfaceVisible = false
-    private var browserToolsPermissionPresenter: AIChatNativePermissionPresenter?
+    private var browserToolsPermissionPresenter: AIChatToolPermissionPresenter?
 
     func browserToolsDidBecomeActive() {
         browserToolsSurfaceVisible = true
@@ -1306,8 +1307,7 @@ class TabViewController: UIViewController {
     }
 
     private func updateWebViewBottomConstraint(for barsVisibilityPercent: CGFloat) {
-        let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
+        if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingLayout {
             if chromeDelegate?.isInMinimalChromeLayout == true {
                 // Minimal chrome: inset follows the bars so the slot is reclaimed when hidden. The
                 // iOS 26 fixed inset is skipped; in landscape it leaves a visible gap once the bar
@@ -1411,14 +1411,8 @@ class TabViewController: UIViewController {
         borderView.isTopVisible = false
         borderView.isBottomVisible = false
 
-        // AI tabs keep the web view full-bleed while native controls float above it.
-        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        let usesFloatingAIChrome = if #available(iOS 26, *) {
-            isUnifiedToggleInputAffectingLayout
-                && floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
-        } else {
-            false
-        }
+        let isUnifiedToggleInputAffectingLayout = self.isUnifiedToggleInputAffectingLayout
+        let usesFloatingAIChrome = self.shouldUseFloatingAIChrome
         var obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
@@ -1430,7 +1424,10 @@ class TabViewController: UIViewController {
         // While a dialog is up the obscured top region offsets the stack instead of the web view, or
         // the page gets pushed down twice. Measured at full chrome visibility so the dialog (and the
         // web view frame) holds still through a bars hide/show instead of resizing every frame.
-        let effectiveContextualOnboardingTopInset = isUnifiedToggleInputAffectingLayout ? 0 : contextualOnboardingTopInset
+        // Floating Duck.ai chrome: the dialog clears the floating chat header, which stays in place on scroll.
+        let effectiveContextualOnboardingTopInset = (isUnifiedToggleInputAffectingLayout && !usesFloatingAIChrome)
+            ? 0
+            : contextualOnboardingTopInset
         applyContextualOnboardingTopInset(effectiveContextualOnboardingTopInset)
         obscuredInsets.top = max(0, obscuredInsets.top - effectiveContextualOnboardingTopInset)
 
@@ -1543,12 +1540,36 @@ class TabViewController: UIViewController {
     private func updateContextualOnboardingLayoutForFloatingUIIfNeeded() {
         // A non-current tab has no chrome to measure; it gets laid out again on re-selection.
         guard floatingUIManager.isFloatingUIEnabled, webView != nil, let chromeDelegate else { return }
-        let inset = daxContextualOnboardingController == nil
-            ? 0
-            : max(0, chromeDelegate.floatingWebViewObscuredInsets(for: 1.0).top)
+        let chromeTopInset = shouldUseFloatingAIChrome
+            ? chromeDelegate.floatingAIChatHeaderObscuredHeight
+            : chromeDelegate.floatingWebViewObscuredInsets(for: 1.0).top
+        let inset = daxContextualOnboardingController == nil ? 0 : max(0, chromeTopInset)
         guard contextualOnboardingTopInset != inset else { return }
         contextualOnboardingTopInset = inset
         applyWebViewLayout(for: lastAppliedBarsVisibilityPercent)
+        if shouldUseFloatingAIChrome, daxContextualOnboardingController != nil {
+            // Settle the header offset now, so the presenter's animation only grows the dialog
+            // from under the floating chat header instead of sliding it in from the top of the screen.
+            view.layoutIfNeeded()
+        }
+    }
+
+    /// AI tab with the unified toggle input: the web view stays full-bleed while native controls float above it.
+    private var isUnifiedToggleInputAffectingLayout: Bool {
+        isAITab && unifiedToggleInputFeature.isAvailable
+    }
+
+    /// AI tab on iOS 26+ with the Liquid Glass Duck.ai chrome: the chat header and input float over a full-bleed web view.
+    private var shouldUseFloatingAIChrome: Bool {
+        guard #available(iOS 26, *) else { return false }
+        return isUnifiedToggleInputAffectingLayout && floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
+    }
+
+    /// Floating UI lets the page draw outside its container so it shows behind the glass chrome.
+    /// While a contextual onboarding dialog sits above the page clip it.
+    private func updateOuterContainerClippingForFloatingUI() {
+        guard floatingUIManager.isFloatingUIEnabled, outerContainer != nil else { return }
+        outerContainer.clipsToBounds = daxContextualOnboardingController != nil
     }
 
     /// Offsets the content stack so the dialog — its first arranged subview — clears the floating
@@ -1738,8 +1759,8 @@ class TabViewController: UIViewController {
         if floatingUIManager.isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
-            outerContainer.clipsToBounds = false
             webViewContainer.clipsToBounds = false
+            updateOuterContainerClippingForFloatingUI()
         }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
@@ -5385,9 +5406,9 @@ extension TabViewController: UserContentControllerDelegate {
         if let browserToolsService, let browserToolScopeFactory,
            let webView, webView.configuration.userContentController === userContentController {
             if browserToolsPermissionPresenter == nil {
-                browserToolsPermissionPresenter = AIChatNativePermissionPresenter { [weak self] in
+                browserToolsPermissionPresenter = AIChatToolPermissionPresenter { [weak self] in
                     guard let self, self.browserToolsSurfaceVisible, self.isTabCurrentlyPresented() else { return nil }
-                    return self
+                    return .init(self)
                 }
             }
             userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel,

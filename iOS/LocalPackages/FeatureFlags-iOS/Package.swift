@@ -53,7 +53,8 @@ let package = Package(
                 "FeatureFlags-iOS",
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

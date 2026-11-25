@@ -39,7 +39,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
     }
 
     func testContractAndUnknownMethods() {
-        let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service })
+        let subfeature = makeSubfeature(serviceProvider: { self.service })
         XCTAssertEqual(subfeature.featureName, "chromeWebstorePatching")
         for method in ["initialSetup", "getCatalogExtensionIds", "getExtensionStatus", "installExtension", "removeExtension"] {
             XCTAssertNotNil(subfeature.handler(forMethodNamed: method))
@@ -48,7 +48,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
     }
 
     func testInitialSetupReportsAvailabilityWithoutAnExtensionIDOrService() async throws {
-        let subfeature = ChromeWebStoreUserScript(serviceProvider: {
+        let subfeature = makeSubfeature(serviceProvider: {
             XCTFail("Setup must not resolve the extension service")
             return nil
         })
@@ -58,7 +58,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
     }
 
     func testInitialSetupRejectsUntrustedOriginsSubframesAndStalePages() async throws {
-        let subfeature = ChromeWebStoreUserScript(serviceProvider: { nil })
+        let subfeature = makeSubfeature(serviceProvider: { nil })
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "initialSetup"))
         for message in [
             message(origin: "http://chromewebstore.google.com/"),
@@ -74,13 +74,36 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
         }
     }
 
+    func testDisabledSetupLeavesThePageUntouched() async throws {
+        let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service })
+        let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "initialSetup"))
+        let response = try dictionary(await handler([String: String](), message()))
+        XCTAssertEqual(response["enabled"] as? Bool, false)
+    }
+
+    func testDisabledSubfeatureCannotReachService() async throws {
+        service.catalogExtensionIDs = [identifier]
+        let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service })
+        let crxUrl = try ChromeWebStoreURL.downloadURL(for: identifier).absoluteString
+        for method in ["getCatalogExtensionIds", "getExtensionStatus", "installExtension", "removeExtension"] {
+            let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: method))
+            do {
+                _ = try await handler(["extensionId": identifier, "crxUrl": crxUrl], message())
+                XCTFail("\(method) accepted while disabled")
+            } catch ChromeWebStoreError.unavailable {}
+        }
+        XCTAssertEqual(service.statusRequests, 0)
+        XCTAssertNil(service.installedIdentifier)
+        XCTAssertNil(service.removedIdentifier)
+    }
+
     func testStatusResponseAndUnavailableService() async throws {
         for status in [ChromeWebStoreStatus.installable, .installed, .unsupported, .unknown] {
             service.currentStatus = status
             let response = try await request("getExtensionStatus")
             XCTAssertEqual(response["status"] as? String, status.rawValue)
         }
-        let subfeature = ChromeWebStoreUserScript(serviceProvider: { nil })
+        let subfeature = makeSubfeature(serviceProvider: { nil })
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getExtensionStatus"))
         let result = try await handler(["extensionId": identifier], message())
         let response = try dictionary(result)
@@ -91,13 +114,13 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
         let otherIdentifier = String(repeating: "b", count: 32)
         for catalog in [[identifier, otherIdentifier], []] {
             service.catalogExtensionIDs = catalog
-            let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service })
+            let subfeature = makeSubfeature(serviceProvider: { self.service })
             let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getCatalogExtensionIds"))
             let response = try dictionary(await handler([String: String](), message()))
             XCTAssertEqual(response["extensionIds"] as? [String], catalog)
         }
 
-        let subfeature = ChromeWebStoreUserScript(serviceProvider: { nil })
+        let subfeature = makeSubfeature(serviceProvider: { nil })
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getCatalogExtensionIds"))
         let response = try dictionary(await handler([String: String](), message()))
         XCTAssertEqual(response["extensionIds"] as? [String], [])
@@ -158,11 +181,17 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
     }
 
     private func request(_ method: String, extra: [String: String] = [:], message: WKScriptMessage? = nil) async throws -> [String: Any] {
-        let subfeature = ChromeWebStoreUserScript(serviceProvider: { self.service })
+        let subfeature = makeSubfeature(serviceProvider: { self.service })
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: method))
         var params = ["extensionId": identifier]
         params.merge(extra) { _, new in new }
         return try dictionary(await handler(params, message ?? self.message()))
+    }
+
+    private func makeSubfeature(serviceProvider: @escaping @MainActor () -> ChromeWebStoreManaging?) -> ChromeWebStoreUserScript {
+        let subfeature = ChromeWebStoreUserScript(serviceProvider: serviceProvider)
+        subfeature.isEnabled = { true }
+        return subfeature
     }
 
     private func dictionary(_ response: Encodable?) throws -> [String: Any] {

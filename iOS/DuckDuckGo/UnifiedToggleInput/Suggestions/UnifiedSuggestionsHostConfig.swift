@@ -31,6 +31,8 @@ struct UnifiedSuggestionsHostConfig {
     let onSelectRow: (String) -> Void
     let onDeleteRow: (String) -> Void
     let onTapAheadRow: (String) -> Void
+    /// Whether the redesigned New Tab Page shows its favorites section, including the empty Add Favorite row.
+    var favoritesSectionVisibilityPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
 }
 
 /// The lazily-attached duck.ai surface for the single-host path. Carries its own source +

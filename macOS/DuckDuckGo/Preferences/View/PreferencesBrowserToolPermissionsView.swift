@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
 
@@ -41,13 +42,19 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
 
     private let catalog: BrowserToolCatalog
     private let permissions: BrowserToolPermissionStoring
+    private let source: BrowserToolsPixel.PermissionSource
+    private let pixelFiring: PixelFiring?
     private var permissionChanges: AnyCancellable?
 
     init(catalog: BrowserToolCatalog = NSApp.delegateTyped.aiChatBrowserToolsService.catalog,
          permissions: BrowserToolPermissionStoring = NSApp.delegateTyped.aiChatBrowserToolsService.permissions,
-         permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager) {
+         permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
+         source: BrowserToolsPixel.PermissionSource = .settings,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.catalog = catalog
         self.permissions = permissions
+        self.source = source
+        self.pixelFiring = pixelFiring
         // Every write, removal and burn, not only prompt answers.
         permissionChanges = permissionManager.persistedPermissionsPublisher
             .dropFirst()
@@ -69,18 +76,29 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     }
 
     func setState(_ state: BrowserToolPermissionState, of row: Row) {
+        let previous = self.state(of: row)
         permissions.setState(state == row.defaultState ? nil : state, forToolNamed: row.name)
         reload()
+        firePermissionChanged(row, from: previous)
     }
 
     func reset(_ row: Row) {
+        let previous = state(of: row)
         permissions.setState(nil, forToolNamed: row.name)
         reload()
+        firePermissionChanged(row, from: previous)
     }
 
     func resetAll() {
         permissions.clearAll()
         reload()
+        pixelFiring?.fire(BrowserToolsPixel.permissionsReset)
+    }
+
+    private func firePermissionChanged(_ row: Row, from previous: BrowserToolPermissionState) {
+        let current = state(of: row)
+        guard current != previous, let tool = BrowserToolsPixel.toolSlugs[row.name] else { return }
+        pixelFiring?.fire(BrowserToolsPixel.permissionChanged(tool: tool, from: previous, to: current, source: source))
     }
 
     var canResetAll: Bool {
@@ -133,7 +151,7 @@ struct BrowserToolPermissionsPanelView: View {
 
     @MainActor
     init(model: BrowserToolPermissionsPreferences? = nil, openSettings: @escaping () -> Void) {
-        let model = model ?? BrowserToolPermissionsPreferences()
+        let model = model ?? BrowserToolPermissionsPreferences(source: .panel)
         _model = StateObject(wrappedValue: model)
         _shownTools = State(initialValue: Set(model.storedStates.keys))
         self.openSettings = openSettings

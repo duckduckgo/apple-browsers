@@ -20,6 +20,7 @@
 import Combine
 import XCTest
 import AIChat
+import PrivacyConfig
 @testable import DuckDuckGo
 @testable import Core
 
@@ -141,6 +142,32 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         sut.openChatProtection()
 
         XCTAssertTrue(delegate.didRequestChatProtection)
+    }
+
+    func testOpenDuckAISettings_notifiesDelegateAndRecordsWhereItWasOpened() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [], instrumentation: instrumentation)
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.openDuckAISettings(source: .headerButton)
+
+        XCTAssertTrue(delegate.didRequestDuckAISettings)
+        XCTAssertEqual(instrumentation.duckAISettingsSources, [.headerButton])
+    }
+
+    func testShowsDuckAISettingsButton_followsSimplifiedPromptBoxFlag() {
+        let flagOn = makeSUT(chats: [], featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [
+            .aiChatHistoryMultiselect, .unifiedToggleInputSimplifiedPromptBox
+        ]))
+        let flagOff = makeSUT(chats: [], featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatHistoryMultiselect]))
+        let redesignOff = makeSUT(chats: [], featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [
+            .unifiedToggleInputSimplifiedPromptBox
+        ]))
+
+        XCTAssertTrue(flagOn.showsDuckAISettingsButton)
+        XCTAssertFalse(flagOff.showsDuckAISettingsButton)
+        XCTAssertFalse(redesignOff.showsDuckAISettingsButton, "The button sits next to the overflow menu, which only the redesign has")
     }
 
     func testChatId_forValidIndexPath_returnsChatId() {
@@ -733,10 +760,12 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         source: AIChatHistorySource = .browserMenu,
         isFireMode: Bool = false,
         mutationQueue: DispatchQueue = .main,
-        instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation()
+        instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation(),
+        featureFlagger: FeatureFlagger? = nil
     ) -> AIChatHistoryViewModel {
         let sut = AIChatHistoryViewModel(
             reader: MockChatHistoryReader(chats: chats),
+            featureFlagger: featureFlagger ?? AppDependencyProvider.shared.featureFlagger,
             fireExecutor: fireExecutor,
             downloader: downloader,
             modelDisplays: modelDisplays,
@@ -787,6 +816,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func viewModelDidExportChats(count: Int) { exportedChatCounts.append(count) }
         func viewModelDidFailExport() { didFailExport = true }
         func viewModelDidRequestChatProtection() { didRequestChatProtection = true }
+        private(set) var didRequestDuckAISettings = false
+        func viewModelDidRequestDuckAISettings() { didRequestDuckAISettings = true }
         func viewModelWillClose() {}
     }
 
@@ -869,6 +900,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var chatProtectionTappedCount = 0
         private(set) var editModeEnteredCount = 0
         private(set) var newChatTappedCount = 0
+        private(set) var duckAISettingsSources: [AIChatHistorySettingsSource] = []
         private(set) var loadFailedErrors: [Error] = []
         private(set) var pinToggleFailedErrors: [Error] = []
         private(set) var downloadFailedErrors: [Error] = []
@@ -889,6 +921,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func chatProtectionTapped() { chatProtectionTappedCount += 1 }
         func editModeEntered() { editModeEnteredCount += 1 }
         func newChatTapped() { newChatTappedCount += 1 }
+        func duckAISettingsTapped(source: AIChatHistorySettingsSource) { duckAISettingsSources.append(source) }
         func loadFailed(error: Error) { loadFailedErrors.append(error) }
         func pinToggleFailed(error: Error) { pinToggleFailedErrors.append(error) }
         func downloadFailed(error: Error) { downloadFailedErrors.append(error) }

@@ -178,7 +178,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore())
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore())
         )
 
         // Subscribe to constraint updates
@@ -208,7 +208,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self,
             floatingUIManager: MockFloatingUIManager(isFloatingUIEnabled: true)
         )
@@ -1060,7 +1060,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1093,7 +1093,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1125,7 +1125,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1331,7 +1331,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore())
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore())
         )
         
         // Store weak reference
@@ -1353,7 +1353,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore())
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore())
         )
         
         // Verify observer is working
@@ -1384,7 +1384,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1407,7 +1407,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1430,7 +1430,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1459,7 +1459,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1485,7 +1485,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1511,7 +1511,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            sponsorBlockPreferences: SponsorBlockPreferences(store: InMemoryKeyValueStore()),
+            segmentSkipPreferences: SegmentSkipPreferences(store: InMemoryKeyValueStore()),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         

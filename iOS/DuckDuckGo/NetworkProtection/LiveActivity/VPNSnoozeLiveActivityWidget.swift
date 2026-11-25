@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import Foundation
 import WidgetKit
 import SwiftUI
@@ -67,12 +68,12 @@ struct VPNSnoozeLiveActivity: Widget {
             } compactTrailing: {
                 if let range {
                     Text(timerInterval: range, pauseTime: range.lowerBound, countsDown: true)
-                        .foregroundStyle(Color(baseColor: .yellow60))
+                        .foregroundStyle(Color(designSystemColor: .statusYellowPrimary))
                         .frame(minWidth: 0, maxWidth: 55)
                         .multilineTextAlignment(.trailing)
                 } else {
                     Text(timerInterval: endDate...Date.distantFuture, countsDown: false)
-                        .foregroundStyle(Color(baseColor: .green60))
+                        .foregroundStyle(Color(designSystemColor: .statusGreen))
                         .frame(minWidth: 0, maxWidth: 55)
                         .multilineTextAlignment(.trailing)
                 }
@@ -120,10 +121,10 @@ private struct VPNSnoozeLiveActivityPrimaryCountdownView: View {
 
                 if let countdownRange {
                     Text(timerInterval: countdownRange, pauseTime: countdownRange.lowerBound, countsDown: true)
-                        .foregroundStyle(Color(baseColor: .yellow60))
+                        .foregroundStyle(Color(designSystemColor: .statusYellowPrimary))
                 } else {
                     Text(timerInterval: snoozeEndDate...Date.distantFuture, countsDown: false)
-                        .foregroundStyle(Color(baseColor: .green60))
+                        .foregroundStyle(Color(designSystemColor: .statusGreen))
                 }
             }
 

@@ -181,11 +181,20 @@ final class AIChatPreferences: ObservableObject {
     @MainActor
     func turnOnLocalModel() async {
         guard await confirmLocalModelTurnOn() else { return }
-        pageSummariesModel = .appleIntelligence
+        selectLocalModel(.appleIntelligence)
     }
 
+    @MainActor
     func turnOffLocalModel() {
-        pageSummariesModel = .duckAI
+        selectLocalModel(.duckAI)
+    }
+
+    /// The service saves the choice and sends the pixel. Setting the property as well keeps the pane
+    /// from waiting for the store's publisher; the store ignores the repeated value.
+    @MainActor
+    private func selectLocalModel(_ model: AIChatPageSummariesModel) {
+        localModelService?.select(model, source: .settings)
+        pageSummariesModel = model
     }
 
     var shouldShowDuckAiSettingsLink: Bool {

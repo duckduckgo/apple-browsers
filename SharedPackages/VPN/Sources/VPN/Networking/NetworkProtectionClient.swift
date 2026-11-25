@@ -213,10 +213,19 @@ final class NetworkProtectionBackendClient: NetworkProtectionClient {
         return decoder
     }()
 
-    private let endpointURL: URL
+    private let resolveEnvironment: () -> VPNSettings.SelectedEnvironment
 
-    init(environment: VPNSettings.SelectedEnvironment = .default) {
-        self.endpointURL = environment.endpointURL
+    private var endpointURL: URL {
+        resolveEnvironment().endpointURL
+    }
+
+    convenience init(environment: VPNSettings.SelectedEnvironment = .default) {
+        self.init(resolveEnvironment: { environment })
+    }
+
+    /// - Parameter resolveEnvironment: Returns the environment of the VPN controller to use. Called for every request.
+    init(resolveEnvironment: @escaping () -> VPNSettings.SelectedEnvironment) {
+        self.resolveEnvironment = resolveEnvironment
     }
 
     public enum GetLocationsError: CustomNSError {

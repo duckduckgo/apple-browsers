@@ -140,6 +140,69 @@ struct AIChatUserScriptHandlerTests {
         #expect(windowControllersManager.showTabCalls == [.settings(pane: .aiChat)])
     }
 
+    // MARK: - Browser tools answer metrics
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A finished answer that used tools fires one pixel per known tool plus any", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAFinishedToolAnswerFiresToolRowsAndAny() async {
+        let params: [String: Any] = [
+            "metricName": "browserToolsAnswerCompleted",
+            "modelTier": "plus",
+            "browserTools": [
+                ["name": "listOpenTabs", "result": "success"],
+                ["name": "searchHistory", "result": "not_allowed"],
+                ["name": "https://example.com", "result": "success"],
+                ["name": "pinTab", "result": "maybe"]
+            ]
+        ]
+
+        _ = await handler.reportMetric(params: params, message: WKScriptMessage.mock())
+
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == Array(repeating: "aichat_tools_answer_completed_macos", count: 3))
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.parameters) == [
+            ["tool": "list_open_tabs", "tool_result": "success", "tools_in_answer": "2", "model_tier": "plus"],
+            ["tool": "search_history", "tool_result": "not_allowed", "tools_in_answer": "2", "model_tier": "plus"],
+            ["tool": "any", "tool_result": "success", "tools_in_answer": "2", "model_tier": "plus"]
+        ])
+        #expect(userScriptErrorEventMapper.events.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A rated answer without tools fires one none pixel with the rating", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatARatedAnswerWithoutToolsFiresNone() async {
+        let params: [String: Any] = ["metricName": "browserToolsAnswerRated", "modelTier": "free", "browserTools": [], "rating": "down"]
+
+        _ = await handler.reportMetric(params: params, message: WKScriptMessage.mock())
+
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == ["aichat_tools_answer_rated_macos"])
+        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["tool": "none", "tools_in_answer": "0", "model_tier": "free", "rating": "down"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A rating other than up or down fires nothing", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAnUnknownRatingFiresNothing() async {
+        let params: [String: Any] = ["metricName": "browserToolsAnswerRated", "modelTier": "free", "browserTools": [], "rating": "sideways"]
+
+        _ = await handler.reportMetric(params: params, message: WKScriptMessage.mock())
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A Fire window fires no answer pixel", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatAFireWindowFiresNoAnswerPixel() async {
+        handler.isFireWindowProvider = { true }
+        let params: [String: Any] = ["metricName": "browserToolsAnswerCompleted", "modelTier": "free", "browserTools": []]
+
+        _ = await handler.reportMetric(params: params, message: WKScriptMessage.mock())
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("A Duck.ai link opens with the link as its source", .timeLimit(.minutes(1)))
     @MainActor
@@ -187,6 +250,48 @@ struct AIChatUserScriptHandlerTests {
         let response = await handler.executeClientTool(params: params, message: WKScriptMessage.mock(), permissionPrompter: nil)
 
         #expect(response as? ExecuteClientToolResponse == .failure(callId: "call-1", error: .invalidArguments))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A call native can't read or for a capability it never shipped fires a protocol error without the raw name",
+          .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatProtocolErrorsFireWithASlugOrUnknown() async {
+        let unreadable: [String: Any] = ["callId": "call-1", "capability": ["name": "searchHistory", "version": 1], "input": [:], "extra": true]
+        let unknownName: [String: Any] = ["callId": "call-2", "capability": ["name": "madeUpTool", "version": 1], "input": [:]]
+        let unknownVersion: [String: Any] = ["callId": "call-3", "capability": ["name": "listOpenTabs", "version": 9], "input": [:]]
+
+        _ = await handler.executeClientTool(params: unreadable, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        let unknownNameResponse = await handler.executeClientTool(params: unknownName, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        _ = await handler.executeClientTool(params: unknownVersion, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        _ = await handler.executeClientTool(params: "not an object", message: WKScriptMessage.mock(), permissionPrompter: nil)
+        let rawName: [String: Any] = ["callId": "call-4", "capability": ["name": "https://example.com", "version": 1], "input": [:]]
+        _ = await handler.executeClientTool(params: rawName, message: WKScriptMessage.mock(), permissionPrompter: nil)
+
+        #expect(unknownNameResponse as? ExecuteClientToolResponse == .failure(callId: "call-2", error: .unavailable))
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == Array(repeating: "aichat_tools_protocol_error_macos", count: 5))
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.parameters) == [
+            ["reason": "invalid_request", "tool": "search_history"],
+            ["reason": "unknown_capability", "tool": "unknown"],
+            ["reason": "unknown_capability", "tool": "list_open_tabs"],
+            ["reason": "invalid_request", "tool": "unknown"],
+            ["reason": "invalid_request", "tool": "unknown"]
+        ])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A known tool and Fire windows fire no protocol error", .timeLimit(.minutes(1)))
+    @MainActor
+    func testThatKnownToolsAndFireWindowsFireNoProtocolError() async {
+        let known: [String: Any] = ["callId": "call-1", "capability": ["name": "searchBookmarks", "version": 1], "input": [:]]
+        let unknown: [String: Any] = ["callId": "call-2", "capability": ["name": "madeUp", "version": 1], "input": [:]]
+
+        _ = await handler.executeClientTool(params: known, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        handler.isFireWindowProvider = { true }
+        _ = await handler.executeClientTool(params: unknown, message: WKScriptMessage.mock(), permissionPrompter: nil)
+        _ = await handler.executeClientTool(params: ["extra": true], message: WKScriptMessage.mock(), permissionPrompter: nil)
+
+        #expect(pixelFiring.actualFireCalls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -1938,6 +2043,22 @@ struct AIChatUserScriptHandlerTests {
     /// result to a local — `WKScriptMessage.mock` holds the web view weakly.
     private func mockWebView(url: String) -> WKWebView {
         SubscriptionTestingUtilities.MockWKWebView(url: URL(string: url)!)
+    }
+
+    // MARK: - First answer
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The first answer from Duck.ai is published", .timeLimit(.minutes(1)))
+    @MainActor
+    func testResponseReceivedPublishes() {
+        var received = 0
+        let cancellable = handler.responseReceivedPublisher.sink { received += 1 }
+
+        _ = handler.responseReceived(params: [:], message: WKScriptMessage.mock())
+
+        withExtendedLifetime(cancellable) {
+            #expect(received == 1)
+        }
     }
 
     // MARK: - Page context added / removed

@@ -210,9 +210,11 @@ extension WebExtensionManager {
         Logger.webExtensions.debug("🔄 Installing embedded extension: \(type.rawValue)")
 
         let identifier = UUID().uuidString
+        installingEmbeddedIdentifiers.insert(identifier)
         cpmBaseURLPolicy.pendingInstallations[identifier] = type
         cpmBaseURLPolicy.pendingOriginIdentifiers[identifier] = cpmOriginIdentifier
         defer {
+            installingEmbeddedIdentifiers.remove(identifier)
             cpmBaseURLPolicy.pendingInstallations[identifier] = nil
             cpmBaseURLPolicy.pendingOriginIdentifiers[identifier] = nil
         }

@@ -21,6 +21,7 @@ import XCTest
 @testable import DuckDuckGo
 import BrowserServicesKit
 import Core
+import FeatureFlags_iOS
 import WebExtensions
 import WebExtensionsTestSupport
 import WebKit
@@ -59,6 +60,98 @@ final class WebExtensionAvailabilityTests: XCTestCase {
 
     func testWebExtensionsAreAvailable() {
         XCTAssertTrue(makeSUT().isAvailable)
+    }
+
+    // MARK: - isAppleSurrogateRedirectionEnabled
+
+    private func makeSurrogateRedirectionSUT(isOSSupported: Bool = true,
+                                             isNativeMessagingSupported: Bool = true) -> WebExtensionAvailability {
+        WebExtensionAvailability(
+            featureFlagger: mockFeatureFlagger,
+            nativeMessagingSupport: NativeMessagingSupport(isSupported: isNativeMessagingSupported),
+            isSurrogateRedirectionOSSupported: isOSSupported,
+            webExtensionManagerProvider: { [mockWebExtensionManager] in mockWebExtensionManager }
+        )
+    }
+
+    @MainActor
+    private func isSurrogateRedirectionEnabled(flags: [FeatureFlag],
+                                               isOSSupported: Bool = true,
+                                               isNativeMessagingSupported: Bool = true,
+                                               isEmbeddedExtensionLoaded: Bool = true) async throws -> Bool {
+        if isEmbeddedExtensionLoaded {
+            try await loadEmbeddedExtension()
+        }
+        mockFeatureFlagger.enabledFeatureFlags = flags
+        return makeSurrogateRedirectionSUT(isOSSupported: isOSSupported,
+                                           isNativeMessagingSupported: isNativeMessagingSupported).isAppleSurrogateRedirectionEnabled
+    }
+
+    @MainActor
+    func testWhenAllConditionsAreMetThenAppleSurrogateRedirectionIsEnabled() async throws {
+        let isEnabled = try await isSurrogateRedirectionEnabled(flags: [.embeddedExtension, .appleSurrogateRedirection])
+        XCTAssertTrue(isEnabled)
+    }
+
+    @MainActor
+    func testWhenOSIsNotSupportedThenAppleSurrogateRedirectionIsDisabled() async throws {
+        let isEnabled = try await isSurrogateRedirectionEnabled(flags: [.embeddedExtension, .appleSurrogateRedirection], isOSSupported: false)
+        XCTAssertFalse(isEnabled)
+    }
+
+    @MainActor
+    func testWhenEmbeddedExtensionIsOffThenAppleSurrogateRedirectionIsDisabled() async throws {
+        let isEnabled = try await isSurrogateRedirectionEnabled(flags: [.appleSurrogateRedirection])
+        XCTAssertFalse(isEnabled)
+    }
+
+    @MainActor
+    func testWhenAppleSurrogateRedirectionFlagIsOffThenItIsDisabled() async throws {
+        let isEnabled = try await isSurrogateRedirectionEnabled(flags: [.embeddedExtension])
+        XCTAssertFalse(isEnabled)
+    }
+
+    @MainActor
+    func testWhenNativeMessagingIsNotSupportedThenAppleSurrogateRedirectionIsDisabled() async throws {
+        let isEnabled = try await isSurrogateRedirectionEnabled(flags: [.embeddedExtension, .appleSurrogateRedirection],
+                                                                isNativeMessagingSupported: false)
+        XCTAssertFalse(isEnabled)
+    }
+
+    // Both flags on but nothing to serve surrogates: C-S-S must keep injecting them.
+    @MainActor
+    func testWhenEmbeddedExtensionIsNotLoadedThenAppleSurrogateRedirectionIsDisabled() async throws {
+        let isEnabled = try await isSurrogateRedirectionEnabled(flags: [.embeddedExtension, .appleSurrogateRedirection],
+                                                                isEmbeddedExtensionLoaded: false)
+        XCTAssertFalse(isEnabled)
+    }
+
+    @MainActor
+    func testWhenOnlyAnotherExtensionIsLoadedThenAppleSurrogateRedirectionIsDisabled() async throws {
+        try await loadExtension(withIdentifier: DuckDuckGoWebExtensionType.darkReader.rawValue)
+        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension, .appleSurrogateRedirection]
+
+        XCTAssertFalse(makeSurrogateRedirectionSUT().isAppleSurrogateRedirectionEnabled)
+    }
+
+    @MainActor
+    func testWhenFlagsAndLoadedExtensionsChangeWhileRunningThenAppleSurrogateRedirectionFollows() async throws {
+        let sut = makeSurrogateRedirectionSUT()
+        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension, .appleSurrogateRedirection]
+        XCTAssertFalse(sut.isAppleSurrogateRedirectionEnabled)
+
+        try await loadEmbeddedExtension()
+        XCTAssertTrue(sut.isAppleSurrogateRedirectionEnabled)
+
+        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension]
+        XCTAssertFalse(sut.isAppleSurrogateRedirectionEnabled)
+
+        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension, .appleSurrogateRedirection]
+        XCTAssertTrue(sut.isAppleSurrogateRedirectionEnabled)
+
+        // The extension is unloaded, e.g. by the remote disable enforcer.
+        mockWebExtensionManager.loadedExtensions = []
+        XCTAssertFalse(sut.isAppleSurrogateRedirectionEnabled)
     }
 
     // MARK: - isAutoconsentExtensionAvailable

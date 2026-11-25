@@ -32,6 +32,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     private let searchTokenProvider: SearchTokenProviding?
     private let autoconsentDelegate: IOSAutoconsentMessageHandlerDelegate
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
+    private let isAppleSurrogateRedirectionEnabled: @MainActor () -> Bool
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -39,7 +40,8 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         searchTokenProvider: SearchTokenProviding? = nil,
-        eventHub: EventHubManaging
+        eventHub: EventHubManaging,
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
@@ -47,6 +49,7 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
         self.searchTokenProvider = searchTokenProvider
         self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
+        self.isAppleSurrogateRedirectionEnabled = isAppleSurrogateRedirectionEnabled
     }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
@@ -56,7 +59,8 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                delegate: autoconsentDelegate
+                delegate: autoconsentDelegate,
+                isAppleSurrogateRedirectionEnabled: isAppleSurrogateRedirectionEnabled
             )]
         case .darkReader:
             guard let provider = darkReaderExcludedDomainsProvider else { return [] }

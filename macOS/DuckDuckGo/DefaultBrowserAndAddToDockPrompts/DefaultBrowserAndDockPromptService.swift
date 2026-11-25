@@ -40,7 +40,9 @@ final class DefaultBrowserAndDockPromptService {
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting,
         uiHosting: @escaping () -> DefaultBrowserAndDockPromptUIHosting?,
         isOnboardingCompletedProvider: @escaping () -> Bool,
-        dockCustomization: DockCustomization
+        dockCustomization: DockCustomization,
+        addToDockVideoFeatureFlagger: FeatureFlagger,
+        addToDockVideoPresenter: AddToDockVideoPresenting
     ) {
 
         var defaultBrowserAndDockPromptDebugStore: DefaultBrowserAndDockPromptDebugStore?
@@ -71,20 +73,24 @@ final class DefaultBrowserAndDockPromptService {
             installDateProvider: defaultBrowserAndDockInstallDateProvider,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
+        let actionPerformer = DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomization,
+                                                                   defaultBrowserProvider: SystemDefaultBrowserProvider(),
+                                                                   featureFlagger: addToDockVideoFeatureFlagger,
+                                                                   videoPresenter: addToDockVideoPresenter)
+        self.actionPerformer = actionPerformer
         coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,
             store: store,
             notificationPresenter: notificationPresenter,
             featureFlagger: featureFlagger,
             isOnboardingCompleted: isOnboardingCompletedProvider,
-            dockCustomization: dockCustomization,
+            actionPerformer: actionPerformer,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier(dockCustomizer: dockCustomization)
         let uiProvider = DefaultBrowserAndDockPromptUIProvider()
         self.uiHosting = uiHosting
         self.uiProvider = uiProvider
-        actionPerformer = DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomization, defaultBrowserProvider: SystemDefaultBrowserProvider())
         dateProvider = defaultBrowserAndDockPromptDateProvider
 
         presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier, uiProvider: uiProvider)

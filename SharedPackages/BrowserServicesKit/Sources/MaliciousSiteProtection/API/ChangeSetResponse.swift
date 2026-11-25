@@ -45,3 +45,5 @@ extension APIClient {
     }
 
 }
+
+extension APIClient.ChangeSetResponse: Sendable where T: Sendable {}

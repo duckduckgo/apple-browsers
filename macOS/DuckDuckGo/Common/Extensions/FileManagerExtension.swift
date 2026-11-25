@@ -72,52 +72,6 @@ extension FileManager {
         }
     }
 
-    func withNonExistentUrl<T>(for desiredURL: URL,
-                               incrementingIndexIfExistsUpTo limit: UInt,
-                               pathExtension: String? = nil,
-                               continueOn shouldContinue: (Error) -> Bool = { ($0 as? CocoaError)?.code == .fileWriteFileExists },
-                               perform operation: (URL) throws -> T) throws -> T {
-
-        var suffix = pathExtension ?? desiredURL.pathExtension
-        if !suffix.hasPrefix(".") {
-            suffix = "." + suffix
-        }
-        if !desiredURL.pathExtension.isEmpty {
-            if !desiredURL.path.hasSuffix(suffix) {
-                suffix = "." + desiredURL.pathExtension
-            }
-        } else {
-            suffix = ""
-        }
-
-        let ownerDirectory = desiredURL.deletingLastPathComponent()
-        let fileNameWithoutExtension = desiredURL.lastPathComponent.dropping(suffix: suffix)
-
-        var index: UInt = 0
-        repeat {
-            let desiredURL: URL = {
-                // Zero means we haven't tried anything yet, so use the suggested name.
-                // Otherwise, simply append the file name with the copy number.
-                guard index > 0 else { return desiredURL }
-                return ownerDirectory.appendingPathComponent("\(fileNameWithoutExtension) \(index)\(suffix)")
-            }()
-
-            if !self.fileExists(atPath: desiredURL.path) {
-                do {
-                    return try operation(desiredURL)
-                } catch {
-                    guard shouldContinue(error) else { throw error }
-                    // This is expected, as moveItem throws an error if the file already exists
-                    index += 1
-                }
-            }
-            index += 1
-        } while index <= limit
-        // If it gets beyond the limit then chances are something else is wrong
-        Logger.general.error("Failed to move file to \(desiredURL.deletingLastPathComponent().path), attempt: \(index)")
-        throw CocoaError(.fileWriteFileExists)
-    }
-
     func directoryExists(atPath path: String) -> Bool {
         var isDirectory: ObjCBool = false
         guard fileExists(atPath: path, isDirectory: &isDirectory) else {

@@ -47,7 +47,7 @@ final class BrokenSiteReporterTests: XCTestCase {
         // test second report, the pixel must have `lastSeenDate` param
         try reporter.report(BrokenSiteReportMocks.report, reportMode: .regular)
 
-        waitForExpectations(timeout: 3)
+        wait(for: [expctation1, expctation2], timeout: 3)
     }
 
     func testReportContainsExperimentData() throws {
@@ -62,7 +62,7 @@ final class BrokenSiteReporterTests: XCTestCase {
 
         try reporter.report(BrokenSiteReportMocks.report, reportMode: .regular)
 
-        waitForExpectations(timeout: 3)
+        wait(for: [expectation], timeout: 3)
     }
 
     func testWhenBreakageDataPresentThenItIsIncludedInParameters() throws {
@@ -76,7 +76,7 @@ final class BrokenSiteReporterTests: XCTestCase {
         }, keyValueStoring: keyValueStore)
 
         try reporter.report(BrokenSiteReportMocks.reportWithBreakageData, reportMode: .regular)
-        waitForExpectations(timeout: 3)
+        wait(for: [expectation], timeout: 3)
     }
 
     func testWhenBreakageDataAbsentThenItIsNotIncludedInParameters() throws {
@@ -89,7 +89,7 @@ final class BrokenSiteReporterTests: XCTestCase {
         }, keyValueStoring: keyValueStore)
 
         try reporter.report(BrokenSiteReportMocks.report, reportMode: .regular)
-        waitForExpectations(timeout: 3)
+        wait(for: [expectation], timeout: 3)
     }
 
     func testWhenWebExtensionFieldsProvidedThenTheyAreIncluded() throws {
@@ -103,7 +103,7 @@ final class BrokenSiteReporterTests: XCTestCase {
         }, keyValueStoring: keyValueStore)
 
         try reporter.report(BrokenSiteReportMocks.reportWithWebExtensions, reportMode: .regular)
-        waitForExpectations(timeout: 3)
+        wait(for: [expectation], timeout: 3)
     }
 
     func testWhenWebExtensionFieldsAbsentThenTheyAreNotIncluded() throws {
@@ -117,7 +117,7 @@ final class BrokenSiteReporterTests: XCTestCase {
         }, keyValueStoring: keyValueStore)
 
         try reporter.report(BrokenSiteReportMocks.report, reportMode: .regular)
-        waitForExpectations(timeout: 3)
+        wait(for: [expectation], timeout: 3)
     }
 
     func testWhenCPMDiagnosticsPresentThenTheyAreIncluded() throws {
@@ -150,7 +150,7 @@ final class BrokenSiteReporterTests: XCTestCase {
             cpmErrors: "multiple_cmps,tab_refreshDashboardState",
             cpmQueueSize: 2,
             cpmConfigVersion: "123")), reportMode: .regular)
-        waitForExpectations(timeout: 3)
+        wait(for: [expectation], timeout: 3)
     }
 
     func testWhenCPMDiagnosticsAbsentThenEmptyValuesAreIncluded() throws {
@@ -169,7 +169,7 @@ final class BrokenSiteReporterTests: XCTestCase {
         }, keyValueStoring: keyValueStore)
 
         try reporter.report(makeReport(cookieConsentInfo: nil), reportMode: .regular)
-        waitForExpectations(timeout: 3)
+        wait(for: [expectation], timeout: 3)
     }
 
     func testWhenReportFlowIsErrorPageThenParameterIsErrorPage() {

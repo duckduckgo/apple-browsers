@@ -124,7 +124,6 @@ final class AIChatContextualSheetViewController: UIViewController {
         static let headerHeight: CGFloat = 44
         static let headerButtonSize: CGFloat = 44
         static let headerHorizontalPadding: CGFloat = 16
-        static let titleSpacing: CGFloat = 4
         static let titleTapHorizontalPadding: CGFloat = 8
         static let contentTopPadding: CGFloat = 8
         static let dimmingAlpha = ContextualSurfaceScrim.alpha
@@ -339,28 +338,11 @@ final class AIChatContextualSheetViewController: UIViewController {
         return menuOpensUpward ? sections.reversed().map(Self.reversingChildren) : sections
     }
 
-    private lazy var titleContainer: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .horizontal
-        stack.alignment = .center
-        stack.spacing = Constants.titleSpacing
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
-
-    /// Wraps `titleContainer` so the header title acts as a tappable element.
+    /// Wraps `titleLabel` so the header title acts as a tappable element.
     private var titleTapControl: HighlightableControl?
 
-    /// The header subview holding the title, i.e. the tap control when present and the bare stack otherwise.
-    private var titleHostView: UIView { titleTapControl ?? titleContainer }
-
-    private lazy var titleIconView: UIImageView = {
-        let icon = usesRedesignedHeader ? DesignSystemImages.Color.Size24.aiChat : DesignSystemImages.Color.Size24.duckAI
-        let imageView = UIImageView(image: icon)
-        imageView.contentMode = .scaleAspectFit
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
-    }()
+    /// The header subview holding the title, i.e. the tap control when present and the bare label otherwise.
+    private var titleHostView: UIView { titleTapControl ?? titleLabel }
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
@@ -368,6 +350,7 @@ final class AIChatContextualSheetViewController: UIViewController {
         label.font = UIFont.daxHeadline()
         label.adjustsFontForContentSizeCategory = true
         label.textColor = UIColor(designSystemColor: .textPrimary)
+        label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
 
@@ -536,7 +519,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Set while a window resize moves the surface between the sheet and the sidebar. The chat carries on, so leaving
     /// one presentation and arriving in the other neither closes nor opens it. Arriving clears it, in `viewDidAppear`.
-    private(set) var isChangingSurface = false
+    @Published private(set) var isChangingSurface = false
 
     func beginSurfaceChange() {
         isChangingSurface = true
@@ -1604,20 +1587,14 @@ private extension AIChatContextualSheetViewController {
         let tapControl = makeTitleTapControl()
         titleTapControl = tapControl
         headerView.addSubview(tapControl)
-        titleContainer.isUserInteractionEnabled = false
-        tapControl.addSubview(titleContainer)
+        titleLabel.isUserInteractionEnabled = false
+        tapControl.addSubview(titleLabel)
         NSLayoutConstraint.activate([
-            titleContainer.leadingAnchor.constraint(equalTo: tapControl.leadingAnchor, constant: Constants.titleTapHorizontalPadding),
-            titleContainer.trailingAnchor.constraint(equalTo: tapControl.trailingAnchor, constant: -Constants.titleTapHorizontalPadding),
-            titleContainer.centerYAnchor.constraint(equalTo: tapControl.centerYAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: tapControl.leadingAnchor, constant: Constants.titleTapHorizontalPadding),
+            titleLabel.trailingAnchor.constraint(equalTo: tapControl.trailingAnchor, constant: -Constants.titleTapHorizontalPadding),
+            titleLabel.centerYAnchor.constraint(equalTo: tapControl.centerYAnchor),
             tapControl.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
         ])
-        titleContainer.addArrangedSubview(titleIconView)
-        NSLayoutConstraint.activate([
-            titleIconView.widthAnchor.constraint(equalToConstant: 24),
-            titleIconView.heightAnchor.constraint(equalToConstant: 24),
-        ])
-        titleContainer.addArrangedSubview(titleLabel)
 
         headerView.addSubview(rightButtonContainer)
         rightButtonContainer.contentView.addSubview(rightButtonStack)

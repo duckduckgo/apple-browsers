@@ -33,5 +33,22 @@
         "triggers": ["scheduled"],
         "suffixes": ["daily"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "other_distribution_installed_macos": {
+        "description": "Daily pixel reporting whether the other distribution of the browser (App Store for DMG builds, DMG for App Store builds) is installed in /Applications",
+        "owners": ["jotaemepereira"],
+        "privacyReview": ["https://app.asana.com/0/0/1220490277131209/f"],
+        "triggers": ["startup"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "installed",
+                "description": "Whether LaunchServices has an app in /Applications with the other distribution's bundle ID or its .debug, .review or .alpha variant",
+                "type": "boolean"
+            }
+        ]
     }
 }

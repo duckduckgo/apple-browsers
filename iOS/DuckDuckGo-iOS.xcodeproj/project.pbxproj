@@ -131,6 +131,7 @@
 		98E564922DE8DE7500E6E75F /* Configuration in Frameworks */ = {isa = PBXBuildFile; productRef = 98E564912DE8DE7500E6E75F /* Configuration */; };
 		98E564942DE8DE7D00E6E75F /* SubscriptionTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 98E564932DE8DE7D00E6E75F /* SubscriptionTestingUtilities */; };
 		98E564962DE8DE8100E6E75F /* Subscription in Frameworks */ = {isa = PBXBuildFile; productRef = 98E564952DE8DE8100E6E75F /* Subscription */; };
+		9C37B55E8694CE00EAC8DF25 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = 005EA9165C9636A4E0BD4261 /* Swifter */; };
 		9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 9D6891E62DAD2DF800819662 /* DataBrokerProtection-iOS */; };
 		9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */ = {isa = PBXBuildFile; productRef = 9F0727872E2F2967005894C8 /* SystemSettingsPiPTutorial */; };
 		9F1551FE3085C2D400DCA82E /* AIChatTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 9F1551FD3085C2D400DCA82E /* AIChatTestingUtilities */; };
@@ -205,7 +206,6 @@
 		F19B98672EAFA799000FF209 /* AttributedMetric in Frameworks */ = {isa = PBXBuildFile; productRef = F19B98662EAFA799000FF209 /* AttributedMetric */; };
 		F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1D43AF92B99C1D300BAB743 /* BareBonesBrowserKit */; };
 		F486D31D2506980E002D07D7 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = F486D31C2506980E002D07D7 /* Swifter */; };
-		9C37B55E8694CE00EAC8DF25 /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = 005EA9165C9636A4E0BD4261 /* Swifter */; };
 		F486D33425069BBB002D07D7 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F486D33325069BBB002D07D7 /* Kingfisher */; };
 		F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3352506A037002D07D7 /* OHHTTPStubs */; };
 		F486D3382506A225002D07D7 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F486D3372506A225002D07D7 /* OHHTTPStubsSwift */; };
@@ -4999,7 +4999,7 @@
 			repositoryURL = "https://github.com/scinfu/SwiftSoup";
 			requirement = {
 				kind = exactVersion;
-				version = 2.14.3;
+				version = 2.14.4;
 			};
 		};
 		F1D43AF82B99C1D300BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */ = {
@@ -5045,6 +5045,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		005EA9165C9636A4E0BD4261 /* Swifter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */;
+			productName = Swifter;
+		};
 		0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 0238E44D29C0FAA100615E30 /* XCRemoteSwiftPackageReference "ios-js-support" */;
@@ -5742,11 +5747,6 @@
 			productName = BareBonesBrowserKit;
 		};
 		F486D31C2506980E002D07D7 /* Swifter */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */;
-			productName = Swifter;
-		};
-		005EA9165C9636A4E0BD4261 /* Swifter */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */;
 			productName = Swifter;

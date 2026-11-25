@@ -96,6 +96,12 @@
         "description": "The Unified Toggle Input surface the pixel was fired from, distinguishing the contextual chat sheet from the Duck.ai tab and the address bar.",
         "enum": ["address_bar", "duck_ai", "contextual_chat"]
     },
+    "simplified_prompt_box": {
+        "key": "simplified_prompt_box",
+        "type": "string",
+        "description": "Temporary, for the unifiedToggleInputSimplifiedPromptBox rollout: on when the iPhone Duck.ai prompt box is the simplified one (one circled-plus menu, no tools button), off otherwise. Always off on iPad. Remove once the rollout's monitoring ends.",
+        "enum": ["on", "off"]
+    },
     "aichat_tab_picker_source": {
         "key": "source",
         "type": "string",

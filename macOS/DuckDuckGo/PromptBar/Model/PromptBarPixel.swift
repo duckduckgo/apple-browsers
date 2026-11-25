@@ -29,8 +29,8 @@ enum PromptBarPixel: PixelKit.Event {
 
     // MARK: - Mirrored from the address bar
 
-    /// Event Trigger: User submits a prompt from the Prompt Bar
-    case submitPrompt
+    /// Event Trigger: User submits a prompt from the Prompt Bar. `newChatModel` is set only while new chats start on the default.
+    case submitPrompt(newChatModel: DuckAINewChatModelPixelParameters?)
 
     /// Event Trigger: User submits a URL from the Prompt Bar
     case submitURL
@@ -251,8 +251,7 @@ enum PromptBarPixel: PixelKit.Event {
 
     var parameters: [String: String]? {
         switch self {
-        case .submitPrompt,
-                .submitURL,
+        case .submitURL,
                 .screenshotRemoved,
                 .fileAttached,
                 .fileRemoved,
@@ -276,6 +275,8 @@ enum PromptBarPixel: PixelKit.Event {
                 .settingsMenuBarIconTurnedOff,
                 .settingsShortcutChanged:
             return nil
+        case .submitPrompt(let newChatModel):
+            return newChatModel?.parameters
         case .imageAttached(let source), .imageRemoved(let source):
             return ["source": source.rawValue]
         case .screenshotTaken(let kind):

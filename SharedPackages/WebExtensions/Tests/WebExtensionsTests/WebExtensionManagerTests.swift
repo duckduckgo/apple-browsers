@@ -112,6 +112,7 @@ final class WebExtensionManagerTests: XCTestCase {
                              isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                              storageProvider: WebExtensionStorageProviding? = nil,
                              now: @escaping () -> Date = Date.init,
+                             scriptletConfiguration: ScriptletConfiguration? = nil,
                              bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
                                  XCTFail("Unexpected bundled extension lookup")
                                  return nil
@@ -130,6 +131,7 @@ final class WebExtensionManagerTests: XCTestCase {
             backgroundLoadRecoveryCooldown: backgroundLoadRecoveryCooldown,
             isApplicationInBackground: isApplicationInBackground,
             isCPMStableBaseURLEnabled: isCPMStableBaseURLEnabled,
+            scriptletConfiguration: scriptletConfiguration,
             bundledExtensionURL: bundledExtensionURL,
             now: now
         )
@@ -1313,13 +1315,18 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenPermissionsAreDisabled_ThenDDGIdentityIsPreservedWithoutBundleLookup() async throws {
-        let manager = makeManager()
+    func testWhenPermissionsAreDisabled_ThenUnbundledManifestDoesNotSetEmbeddedIdentity() async throws {
+        var checkedBundle = false
+        let manager = makeManager(bundledExtensionURL: { _ in
+            checkedBundle = true
+            return nil
+        })
         let sourceURL = try makeTestExtensionDirectory(embeddedType: .embedded)
 
         try await manager.installExtension(from: sourceURL)
 
-        XCTAssertEqual(installedExtensionStoringMock.addedExtension?.embeddedType, .embedded)
+        XCTAssertTrue(checkedBundle)
+        XCTAssertNil(installedExtensionStoringMock.addedExtension?.embeddedType)
     }
 
     @MainActor
@@ -2133,6 +2140,38 @@ final class WebExtensionManagerTests: XCTestCase {
         assertSleptForRemainderBeforeUnloading()
         XCTAssertFalse(installedExtensionStoringMock.installedExtensions.contains { $0.uniqueIdentifier == "old-adblock" },
                        "upgrade should have uninstalled the old extension after the settle window")
+    }
+
+    // MARK: - Scriptlets held until the initial load
+
+    @MainActor
+    func testWhenAdBlockerIsInstalledBeforeInitialLoad_ThenItsScriptletsInstallOnceAfterTheLoad() async throws {
+        let bundledDirectory = try makeTestExtensionDirectory(embeddedType: .adBlockingExtension)
+        let bundledURL = bundledDirectory.appendingPathExtension("zip")
+        createdTestExtensionDirs.append(bundledURL)
+        try FileManager.default.zipItem(at: bundledDirectory, to: bundledURL, shouldKeepParent: false)
+        let scriptlets = [Scriptlet(path: "script.js", relativeCachedPath: "adblock/2.0/script.js")]
+        let provider = MockScriptletProvider()
+        provider.scriptletsMap[.adBlockingExtension] = scriptlets
+        provider.versionMap[.adBlockingExtension] = "2.0"
+        let installer = MockScriptletInstaller()
+        let tracker = MockScriptletStore()
+        storageProvidingMock.mockResolveResult = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let manager = makeManager(scriptletConfiguration: ScriptletConfiguration(provider: provider,
+                                                                                 installationTracker: tracker,
+                                                                                 installer: installer,
+                                                                                 cacheRootDirectory: tracker.cacheRootDirectory),
+                                  bundledExtensionURL: { _ in bundledURL })
+
+        await manager.syncEmbeddedExtensions(enabledTypes: [.adBlockingExtension])
+        XCTAssertNotNil(manager.installedEmbeddedExtension(for: .adBlockingExtension), "precondition: installed before the load")
+        XCTAssertEqual(installer.installCallCount, 0, "scriptlets must wait for the initial load")
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertEqual(installer.installCallCount, 1)
+        XCTAssertEqual(installer.lastInstalledScriptlets, scriptlets)
+        XCTAssertEqual(tracker.installedVersion(for: .adBlockingExtension), "2.0")
     }
 
 #if os(macOS)

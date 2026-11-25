@@ -134,4 +134,50 @@ final class PassKitPreviewHelperTests {
         #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.walletPassPreviewFailed.name)
         #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PassKitPreviewHelper.reasonParameterKey] == "no_data_supplied")
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Fires wallet_pass_preview_failed with parse_error and presents nothing when the file is not a pass", .timeLimit(.minutes(1)))
+    @MainActor
+    func firesParseErrorForInvalidPass() throws {
+        let invalidPass = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".pkpass")
+        try Data("not a wallet pass".utf8).write(to: invalidPass)
+        defer { try? FileManager.default.removeItem(at: invalidPass) }
+        let presenter = PresentationRecordingViewController()
+        let helper = PassKitPreviewHelper(invalidPass,
+                                          viewController: presenter,
+                                          pixelFiring: pixelKitMock)
+
+        helper.preview()
+
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+        #expect(pixelKitMock.actualFireCalls.last?.pixel.name == Pixel.Event.walletPassPreviewFailed.name)
+        #expect(pixelKitMock.actualFireCalls.last?.additionalParameters?[PassKitPreviewHelper.reasonParameterKey] == "parse_error")
+        #expect(presenter.presentedControllers.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Presents nothing when the file is missing", .timeLimit(.minutes(1)))
+    @MainActor
+    func presentsNothingForMissingFile() {
+        let nonExistent = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + ".pkpass")
+        let presenter = PresentationRecordingViewController()
+        let helper = PassKitPreviewHelper(nonExistent,
+                                          viewController: presenter,
+                                          pixelFiring: pixelKitMock)
+
+        helper.preview()
+
+        #expect(presenter.presentedControllers.isEmpty)
+        #expect(pixelKitMock.actualFireCalls.count == 1)
+    }
+}
+
+private final class PresentationRecordingViewController: UIViewController {
+    private(set) var presentedControllers: [UIViewController] = []
+
+    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        presentedControllers.append(viewControllerToPresent)
+    }
 }

@@ -124,6 +124,7 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     @MainActor public func hasHitNativeMessagingLimitation(identifier: String) -> Bool { false }
     @MainActor public func isNativeMessagingAlertSuppressed(identifier: String) -> Bool { false }
     @MainActor public func suppressNativeMessagingAlert(identifier: String) {}
+    @MainActor public func pixelExtension(identifier: String) -> WebExtensionPixelExtension { .other }
     @MainActor public func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     public func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     public func context(for identifier: String) -> WKWebExtensionContext? { nil }

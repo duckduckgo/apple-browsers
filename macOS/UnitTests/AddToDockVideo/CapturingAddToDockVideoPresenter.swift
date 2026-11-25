@@ -22,11 +22,13 @@
 final class CapturingAddToDockVideoPresenter: AddToDockVideoPresenting {
 
     private(set) var presentations: [AddToDockVideoAction.Primary] = []
+    var presentResult = true
     private var completion: ((AddToDockVideoAction) -> Void)?
 
-    func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void) {
+    func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void) -> Bool {
         presentations.append(primaryAction)
         self.completion = completion
+        return presentResult
     }
 
     func complete(with action: AddToDockVideoAction) {

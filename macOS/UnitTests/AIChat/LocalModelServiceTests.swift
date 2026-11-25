@@ -19,6 +19,7 @@
 import AIChat
 import FeatureFlags_macOS
 import Foundation
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
@@ -30,11 +31,28 @@ final class LocalModelServiceTests {
 
     private let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatLocalModels.rawValue: true])
     private let page = RecordingLocalModelPage()
+    private let pixelFiring = PixelKitMock()
 
     private lazy var service = AIChatLocalModelService(featureFlagger: featureFlagger,
                                                        storage: MockAIChatPreferencesStorage(),
                                                        engine: StubLocalModelEngine(),
-                                                       notificationCenter: NotificationCenter())
+                                                       notificationCenter: NotificationCenter(),
+                                                       instrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Local-model pixels end in _macos, without the m_mac_ prefix", .timeLimit(.minutes(1)))
+    func pixelsAreNamedForMacOS() {
+        _ = service
+
+        let state = LocalModelPixelEvent(pixel: .state(selected: .duckAI, state: .notSetUp, availability: .available))
+        #expect(pixelFiring.actualFireCalls == [ExpectedFireCall(pixel: state, frequency: .daily)])
+        #expect(state.name == "aichat_local_model_state_macos")
+        #expect(state.namePrefix == .none)
+        #expect(LocalModelPixelEvent(pixel: .promoShown).name == "aichat_local_model_promo_shown_macos")
+        #expect(LocalModelPixelEvent(pixel: .promoClosed).name == "aichat_local_model_promo_closed_macos")
+        #expect(LocalModelPixelEvent(pixel: .selected(.duckAI, source: .settings)).name == "aichat_local_model_selected_macos")
+        #expect(LocalModelPixelEvent(pixel: .runStarted(engine: .appleIntelligence, task: .summarize)).name == "aichat_local_model_run_started_macos")
+    }
 
     @available(iOS 16, macOS 13, *)
     @Test("The local-models flag turns the feature on and off", .timeLimit(.minutes(1)))

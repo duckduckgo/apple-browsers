@@ -23,6 +23,7 @@ import ConcurrencyExtensions
 import FoundationExtensions
 import Foundation
 import Persistence
+import PixelKit
 import UserScript
 import WebKit
 
@@ -68,14 +69,17 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// Nil uses the app's, which lives on the main actor and so can't be a default argument here.
     private let localModelAccessPrompt: LocalModelAccessAsking?
     private let bonusMessageLog: AIChatBonusMessageLogging?
+    private let pixelFiring: PixelFiring?
 
     init(handler: AIChatUserScriptHandling,
          urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
          browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService,
          localModelService: AIChatLocalModelServing? = Application.appDelegate.localModelService,
          localModelAccessPrompt: LocalModelAccessAsking? = nil,
-         bonusMessageLog: AIChatBonusMessageLogging? = nil) {
+         bonusMessageLog: AIChatBonusMessageLogging? = nil,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.handler = handler
+        self.pixelFiring = pixelFiring
         self.browserTools = browserTools
         self.localModelService = localModelService
         self.localModelAccessPrompt = localModelAccessPrompt
@@ -269,6 +273,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.reportMetric
         case .togglePageContextTelemetry:
             return handler.togglePageContextTelemetry
+        case .responseReceived:
+            return handler.responseReceived
         case .storeMigrationData:
             return handler.storeMigrationData
         case .getMigrationDataByIndex:
@@ -438,6 +444,8 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
         let response = await handler.getAIChatNativeConfigValues(params: params, message: message)
         guard var configValues = response as? AIChatNativeConfigValues else { return response }
         configValues.clientTools = clientToolsConfiguration(for: message)
+        // Only where tools are offered, so Fire windows never send the answer metrics.
+        configValues.supportsBrowserToolsAnswerMetrics = configValues.clientTools != nil
         // The model's state and text reach the page only through `pushToDuckAI`. A page it skips,
         // such as Duck.ai on duckduckgo.com, would wait for a summary that never arrives.
         if !isDuckAIPushDestination(message.messageWebView?.url) {
@@ -455,8 +463,10 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
     @MainActor
     fileprivate func clientToolsConfiguration(for message: UserScriptMessage) -> ClientToolsConfiguration? {
         guard isClientToolsPage(message.messageWebView?.url),
-              handler.isFireWindowProvider?() != true else { return nil }
-        return browserTools?.clientToolsConfiguration
+              handler.isFireWindowProvider?() != true,
+              let configuration = browserTools?.clientToolsConfiguration else { return nil }
+        pixelFiring?.fire(BrowserToolsPixel.enabled, frequency: .daily)
+        return configuration
     }
 
     @MainActor
@@ -477,6 +487,9 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
         guard handler.isFireWindowProvider?() != true,
               let webView, let broker,
               isClientToolsPage(webView.url) else { return }
+        if data.clientTools != nil {
+            pixelFiring?.fire(BrowserToolsPixel.enabled, frequency: .daily)
+        }
         broker.push(method: AIChatUserScriptMessages.clientToolsChanged.rawValue, params: data, for: self, into: webView)
     }
 

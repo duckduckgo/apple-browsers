@@ -56,5 +56,5 @@ struct RedesignedNewTabPageModulesView: View {
 private enum Metrics {
     static let moduleSpacing: CGFloat = 28
     static let horizontalPadding: CGFloat = 16
-    static let bottomPadding: CGFloat = 16
+    static let bottomPadding: CGFloat = 20
 }

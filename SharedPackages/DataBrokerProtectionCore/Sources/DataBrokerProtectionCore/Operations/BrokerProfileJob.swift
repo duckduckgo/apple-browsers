@@ -265,33 +265,17 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     }
 
     private func makeFilteredAndSortedJobData(_ brokerProfileQueriesData: [BrokerProfileQueryData], isFreeScan: Bool) -> [BrokerJobData] {
-        var didFireFreemiumMaintenanceScanSkippedPixel = false
-        return Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
-                                       jobType: jobType,
-                                       priorityDate: priorityDate,
-                                       sortPredicate: jobDependencies.jobSortPredicate)
+        Self.sortedEligibleJobs(brokerProfileQueriesData: brokerProfileQueriesData,
+                                jobType: jobType,
+                                priorityDate: priorityDate,
+                                sortPredicate: jobDependencies.jobSortPredicate)
             .filter { jobData in
                 guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
                     return true
                 }
 
-                let scanType = scanJobData.scanType()
-                didFireFreemiumMaintenanceScanSkippedPixel = fireFreemiumMaintenanceScanSkippedPixelIfNeeded(
-                    for: scanType,
-                    didFirePixel: didFireFreemiumMaintenanceScanSkippedPixel
-                )
-
-                return scanType != .maintenance
+                return scanJobData.scanType() != .maintenance
             }
-    }
-
-    private func fireFreemiumMaintenanceScanSkippedPixelIfNeeded(for scanType: ScanJobData.ScanType, didFirePixel: Bool) -> Bool {
-        guard scanType == .maintenance, !didFirePixel else {
-            return didFirePixel
-        }
-
-        jobDependencies.pixelHandler.fire(.freemiumPIRMaintenanceScanSkipped)
-        return true
     }
 
     private func finish() {

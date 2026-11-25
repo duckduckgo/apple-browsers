@@ -39,6 +39,17 @@ on:
         - production
         - internal
         - both
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
+      user_modes:
+        description: "User mode(s) to run: 'production', 'internal', or 'both'"
+        type: string
+        required: false
+        default: production
   schedule:
     - cron: '0 2 * * 1-5' # 2AM UTC to not clash with macOS tests run at 3AM
   pull_request:
@@ -81,6 +92,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch || github.sha }}
 
       - name: Define user-modes
         id: modes
@@ -90,17 +103,17 @@ jobs:
           INPUT_MODES: ${{ inputs.user_modes }}
           INPUT_COLLECT_XCODE_DIAGNOSTICS: ${{ inputs.collect_xcode_diagnostics }}
         run: |
-          case "$EVENT_NAME" in
-            schedule) modes='["production", "internal"]' ;;
-            workflow_dispatch)
-              case "$INPUT_MODES" in
-                internal) modes='["internal"]' ;;
-                both) modes='["production", "internal"]' ;;
-                *) modes='["production"]' ;;
-              esac
-              ;;
-            *) modes='["production"]' ;;
-          esac
+          if [[ -n "$INPUT_MODES" ]]; then
+            case "$INPUT_MODES" in
+              internal) modes='["internal"]' ;;
+              both) modes='["production", "internal"]' ;;
+              *) modes='["production"]' ;;
+            esac
+          elif [[ "$EVENT_NAME" == schedule ]]; then
+            modes='["production", "internal"]'
+          else
+            modes='["production"]'
+          fi
           echo "run-production=$(jq -r 'index("production") != null' <<< "$modes")" >> "$GITHUB_OUTPUT"
           echo "run-internal=$(jq -r 'index("internal") != null' <<< "$modes")" >> "$GITHUB_OUTPUT"
           diagnostics_mode=never
@@ -196,6 +209,7 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Print macOS version
       run: sw_vers
@@ -309,6 +323,7 @@ jobs:
       ios-version: ${{ needs.build-for-testing.outputs.ios-version }}
       user-mode: production
       build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
+      branch: ${{ inputs.branch }}
       diagnostics-mode: ${{ needs.setup-tests.outputs.diagnostics-mode }}
 
   ui-tests-internal:
@@ -329,6 +344,7 @@ jobs:
       ios-version: ${{ needs.build-for-testing.outputs.ios-version }}
       user-mode: internal
       build-artifact-name: ${{ needs.build-for-testing.outputs.artifact-name }}
+      branch: ${{ inputs.branch }}
       diagnostics-mode: ${{ needs.setup-tests.outputs.diagnostics-mode }}
 
   test-report:
@@ -344,6 +360,8 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v6
+      with:
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Download test reports
       uses: actions/download-artifact@v7

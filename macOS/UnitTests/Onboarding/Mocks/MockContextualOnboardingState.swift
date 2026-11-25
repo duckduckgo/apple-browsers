@@ -18,7 +18,6 @@
 
 import Combine
 import Foundation
-import PrivacyDashboard
 @testable import DuckDuckGo_Privacy_Browser
 
 /// Contextual onboarding state for tests. `dialogTypeForTab` answers `nextDialog` and
@@ -35,7 +34,7 @@ final class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Con
     @Published var isContextualOnboardingCompleted: Bool = true
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
 
-    func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
+    func dialogTypeForTab(_ tab: Tab) -> ContextualDialogType? {
         dialogTypeForTabCallCount += 1
         return nextDialog
     }

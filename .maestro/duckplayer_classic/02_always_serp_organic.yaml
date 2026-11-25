@@ -31,12 +31,9 @@ tags:
 - runFlow: 
     file: shared/load_serp_url.yaml
 
-# Wait for results to load
-- waitForAnimationToEnd
-
 # Tap on video in organic results
-- tapOn: 
-    text: ${output.videoTitle}.*
+- runFlow:
+    file: shared/tap_serp_watch_result.yaml
 
 # Verify Duck Player Classic opens automatically
 - runFlow:

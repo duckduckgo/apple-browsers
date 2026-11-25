@@ -18,6 +18,7 @@
 
 import Foundation
 @_spi(Testing) import Persistence
+import SubscriptionTestingUtilities
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -28,7 +29,7 @@ struct SearchOnboardingPathTests {
 
     let storage = MockContextualDialogStateStoring()
     let pathStorage = MockBlockedTrackerStoring()
-    let experiment = SpyOnboardingSubscriptionUpsellEnrolling()
+    let subscriptionManager = SubscriptionManagerMock.notUpsellEligible()
     let trackerProvider = MockTrackerMessageProvider()
     let progress: ContextualOnboardingProgress
     let sut: SearchOnboardingPath
@@ -37,7 +38,7 @@ struct SearchOnboardingPathTests {
         progress = ContextualOnboardingProgress(storage: storage, settings: InMemoryThrowingKeyValueStore().throwingKeyedStoring())
         sut = SearchOnboardingPath(progress: progress,
                                    storage: pathStorage,
-                                   subscriptionUpsellExperiment: experiment,
+                                   subscriptionManager: subscriptionManager,
                                    trackerMessageProvider: trackerProvider)
     }
 
@@ -46,30 +47,29 @@ struct SearchOnboardingPathTests {
     func choosingDoesNotMarkSeen() async {
         let tab = await Tab(content: .newtab)
 
-        #expect(sut.dialog(for: tab, privacyInfo: nil) == .next(.tryASearch))
+        #expect(sut.dialog(for: tab) == .next(.tryASearch))
         #expect(storage.contextualDialogsSeen.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Once High Five was seen, the ending decides before the tab's own rules", .timeLimit(.minutes(1)))
     func endingDecidesFirst() async {
-        experiment.cohortStub = .treatment
+        subscriptionManager.hasAppStoreProductsAvailable = true
         progress.markSeen(.highFive)
         let tab = await Tab(content: .newtab)
 
-        #expect(sut.dialog(for: tab, privacyInfo: nil) == .next(.subscriptionUpsell))
+        #expect(sut.dialog(for: tab) == .next(.subscriptionUpsell))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Reaching High Five starts the ending, which enrolls once", .timeLimit(.minutes(1)))
+    @Test("Reaching High Five starts the ending", .timeLimit(.minutes(1)))
     func highFiveStartsTheEnding() async {
         progress.markSeen(.tryASearch)
         progress.markSeen(.defaultTrackers)
         progress.markSeen(.tryFireButton)
         let tab = await Tab(content: .newtab)
 
-        #expect(sut.dialog(for: tab, privacyInfo: nil) == .next(.highFive))
-        #expect(experiment.enrollCallCount == 1)
+        #expect(sut.dialog(for: tab) == .next(.highFive))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -79,7 +79,7 @@ struct SearchOnboardingPathTests {
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
         let tab = await Tab(content: .url(try #require(URL(string: "https://example.com")), credential: nil, source: .ui))
 
-        guard case .next(.trackers(_, shouldFollowUp: true)) = sut.dialog(for: tab, privacyInfo: nil) else {
+        guard case .next(.trackers(_, shouldFollowUp: true)) = sut.dialog(for: tab) else {
             Issue.record("Expected the trackers dialog with the Fire follow-up")
             return
         }
@@ -120,13 +120,12 @@ struct SearchOnboardingPathTests {
           ])
     func gotIt(dialog: ContextualDialogType, expected: ContextualOnboardingDecision) {
         #expect(sut.gotItPressed(lastDialog: dialog) == expected)
-        #expect(experiment.enrollCallCount == (dialog == .tryFireButton ? 1 : 0))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Got it on High Five and the upsell is handled by the ending", .timeLimit(.minutes(1)))
     func gotItOnEndingDialogs() {
-        experiment.cohortStub = .treatment
+        subscriptionManager.hasAppStoreProductsAvailable = true
 
         #expect(sut.gotItPressed(lastDialog: .highFive) == .next(.subscriptionUpsell))
         #expect(sut.gotItPressed(lastDialog: .subscriptionUpsell) == .completed)
@@ -135,6 +134,6 @@ struct SearchOnboardingPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("The search path never locks the UI", .timeLimit(.minutes(1)))
     func neverLocks() {
-        #expect(!sut.isUILocked)
+        #expect(sut.uiLock == .unlocked)
     }
 }

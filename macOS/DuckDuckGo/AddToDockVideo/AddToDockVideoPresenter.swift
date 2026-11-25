@@ -39,12 +39,14 @@ enum AddToDockVideoAction: String {
 
 @MainActor
 protocol AddToDockVideoPresenting {
-    func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void)
+    @discardableResult
+    func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void) -> Bool
 }
 
 @MainActor
 extension AddToDockVideoPresenting {
-    func present(primaryAction: AddToDockVideoAction.Primary) {
+    @discardableResult
+    func present(primaryAction: AddToDockVideoAction.Primary) -> Bool {
         present(primaryAction: primaryAction) { _ in }
     }
 }
@@ -59,14 +61,18 @@ final class AddToDockVideoPresenter: AddToDockVideoPresenting {
     }
 
     private let windowProvider: () -> NSWindow?
+    private let newWindowProvider: @MainActor () -> NSWindow?
     private var presentedSheet: PresentedSheet?
 
-    init(windowProvider: @escaping () -> NSWindow? = { NSApp.mainWindow ?? NSApp.keyWindow }) {
+    init(windowProvider: @escaping () -> NSWindow? = { NSApp.mainWindow ?? NSApp.keyWindow },
+         newWindowProvider: @escaping @MainActor () -> NSWindow? = { WindowsManager.openNewWindow() }) {
         self.windowProvider = windowProvider
+        self.newWindowProvider = newWindowProvider
     }
 
-    func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void) {
-        guard presentedSheet?.parentWindow == nil, let parentWindow = windowProvider() else { return }
+    @discardableResult
+    func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void) -> Bool {
+        guard presentedSheet?.parentWindow == nil, let parentWindow = windowProvider() ?? newWindowProvider() else { return false }
 
         let sheetView = AddToDockVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
                                             videoSize: DockPreferencesModel.demoVideoSize,
@@ -83,6 +89,7 @@ final class AddToDockVideoPresenter: AddToDockVideoPresenting {
             guard let self, let sheetWindow, presentedSheet?.sheetWindow === sheetWindow else { return }
             presentedSheet = nil
         }
+        return true
     }
 
     func handle(_ action: AddToDockVideoAction) {

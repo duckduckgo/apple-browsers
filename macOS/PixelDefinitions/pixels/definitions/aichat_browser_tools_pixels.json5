@@ -1,0 +1,438 @@
+{
+    "aichat_tools_call_macos": {
+        "description": "Fired when a Duck.ai browser tool call finishes, whatever its result. Not fired for requestAccess or in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "The tool called",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks"
+                ]
+            },
+            {
+                "key": "result",
+                "description": "The result Duck.ai received. A success over the 512 KB result limit is execution_failed",
+                "enum": ["success", "denied", "cancelled", "unavailable", "not_found", "invalid_arguments", "execution_failed"]
+            },
+            {
+                "key": "permission_path",
+                "description": "What let the call run or stopped it: auto = the tool doesn't ask, always = stored Always allow, chat = allowed for this chat earlier, prompt = the user was asked for this call, never = stored Never allow, none = refused before permission was looked at",
+                "enum": ["auto", "always", "chat", "prompt", "never", "none"]
+            },
+            {
+                "key": "duration",
+                "description": "How long the tool ran, without the wait for permission. Absent when it never ran",
+                "enum": ["lt_100ms", "lt_500ms", "lt_2s", "lt_10s", "gte_10s"]
+            },
+            {
+                "key": "result_count",
+                "description": "How many items a successful list_open_tabs, search_history, search_downloads or search_bookmarks call returned. Absent for other tools and failed calls",
+                "enum": ["0", "1-5", "6-20", "21_plus"]
+            }
+        ]
+    },
+    "aichat_tools_prompt_answered_macos": {
+        "description": "Fired when a Duck.ai browser tool permission prompt for one tool closes, answered or not. requestAccess prompts are not included.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "The tool the prompt asked for",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks"
+                ]
+            },
+            {
+                "key": "answer",
+                "description": "How the prompt closed: allow_once, allow_for_chat, always or never = that button, dismiss = closed without a choice, timeout = unanswered until the 120 s deadline, withdrawn = closed because the call was cancelled or its chat went away",
+                "enum": ["allow_once", "allow_for_chat", "always", "never", "dismiss", "timeout", "withdrawn"]
+            },
+            {
+                "key": "prompt_number_in_chat",
+                "description": "Which single-tool prompt this was in its Duck.ai chat since launch or the last Fire. Sent only while batch access (requestAccess) is on",
+                "enum": ["1", "2", "3", "4_plus"]
+            },
+            {
+                "key": "time_to_answer",
+                "description": "Time from showing the prompt to closing it",
+                "enum": ["lt_2s", "lt_10s", "lt_60s", "gte_60s"]
+            }
+        ]
+    },
+    "aichat_tools_access_requested_macos": {
+        "description": "Fired when a Duck.ai requestAccess call finishes: Duck.ai asked once for the browser tools a chat expects to use. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "requested",
+                "description": "How many tools Duck.ai asked for. Absent when decision is invalid or unavailable",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+            },
+            {
+                "key": "asked",
+                "description": "How many of them the prompt showed: the rest were already allowed, set to Never or unavailable. Absent when decision is invalid or unavailable",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 12
+            },
+            {
+                "key": "removed",
+                "description": "How many shown tools the user took out before allowing. Absent when decision is invalid or unavailable",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 12
+            },
+            {
+                "key": "decision",
+                "description": "allow, dont_allow or dismiss = the user's answer, timeout = unanswered until the 120 s deadline, withdrawn = closed because the call was cancelled or its chat went away, no_prompt = nothing needed asking, invalid = the call could not be read, unavailable = batch access is off",
+                "enum": ["allow", "dont_allow", "dismiss", "timeout", "withdrawn", "no_prompt", "invalid", "unavailable"]
+            }
+        ]
+    },
+    "aichat_tools_access_result_macos": {
+        "description": "Fired once per requested tool when a Duck.ai requestAccess call finishes, after aichat_tools_access_requested_macos. Names this app doesn't know are not sent. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "The tool requested",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks"
+                ]
+            },
+            {
+                "key": "access",
+                "description": "granted = allowed for the chat in this prompt, removed = taken out by the user, denied = the prompt didn't allow it, already_allowed = allowed without asking, never = set to Never, unavailable = not offered or a tool that asks every time",
+                "enum": ["granted", "removed", "denied", "already_allowed", "never", "unavailable"]
+            }
+        ]
+    },
+    "aichat_tools_enabled_macos": {
+        "description": "Fired at most once a day, when Duck.ai is offered browser tools: its page reads the native config, or the offered tools change while it is open. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_protocol_error_macos": {
+        "description": "Fired when Duck.ai sends a browser tool call native cannot read, or one for a capability this app version does not know. A known tool turned off remotely is not an error. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["exception"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "invalid_request = the call could not be read, unknown_capability = the capability name or version is not one this app knows",
+                "enum": ["invalid_request", "unknown_capability"]
+            },
+            {
+                "key": "tool",
+                "description": "The tool the call named, or unknown when it named none this app knows. The raw name is never sent",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks",
+                    "unknown"
+                ]
+            }
+        ]
+    },
+    "aichat_tools_used_macos": {
+        "description": "Fired at most once a day, on the first successful Duck.ai browser tool call of any tool.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_list_open_tabs_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool list_open_tabs.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_read_tab_content_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool read_tab_content.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_search_history_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool search_history.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_find_in_page_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool find_in_page.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_highlight_in_page_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool highlight_in_page.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_switch_to_tab_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool switch_to_tab.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_pin_tab_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool pin_tab.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_open_tab_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool open_tab.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_bookmark_tab_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool bookmark_tab.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_close_tabs_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool close_tabs.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_search_downloads_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool search_downloads.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_used_search_bookmarks_macos": {
+        "description": "Fired at most once a day, on the first successful call of the Duck.ai browser tool search_bookmarks.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_permission_changed_macos": {
+        "description": "Fired when the user changes a Duck.ai browser tool's permission in Settings or in the tab bar panel. Resetting one tool counts as a change to its default. Not fired when the choice stays the same.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "The tool whose permission changed",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks"
+                ]
+            },
+            {
+                "key": "from",
+                "description": "The permission shown before the change",
+                "enum": ["ask", "allow", "deny"]
+            },
+            {
+                "key": "to",
+                "description": "The permission shown after the change",
+                "enum": ["ask", "allow", "deny"]
+            },
+            {
+                "key": "source",
+                "description": "Where the user changed it: settings = the Duck.ai Settings page, panel = the browser tools panel in the tab bar",
+                "enum": ["settings", "panel"]
+            }
+        ]
+    },
+    "aichat_tools_permissions_reset_macos": {
+        "description": "Fired when the user resets every Duck.ai browser tool permission to its default in Settings.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_tools_answer_completed_macos": {
+        "description": "Fired when a Duck.ai answer finishes in a chat where browser tools are offered: one pixel per distinct tool the answer called, plus one with tool=any, or one with tool=none for an answer that called no tool. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "A tool the answer called, or any = one extra row for every answer that called tools, or none = the one row for an answer that called none",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks",
+                    "any",
+                    "none"
+                ]
+            },
+            {
+                "key": "tool_result",
+                "description": "success if any call of the tool succeeded, else not_allowed if any was denied or cancelled, else error. For any, the best result across the answer's tools. Absent for none",
+                "enum": ["success", "not_allowed", "error"]
+            },
+            {
+                "key": "tools_in_answer",
+                "description": "How many distinct known tools the answer called",
+                "enum": ["0", "1", "2", "3", "4_plus"]
+            },
+            {
+                "key": "model_tier",
+                "description": "The lowest subscription tier the answer's model is available to",
+                "enum": ["free", "plus", "pro", "internal", "unknown"]
+            }
+        ]
+    },
+    "aichat_tools_answer_rated_macos": {
+        "description": "Fired when the user presses thumbs up or down on a Duck.ai answer that finished in a chat where browser tools are offered, in the same rows as aichat_tools_answer_completed_macos. Not fired in Fire windows.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "tool",
+                "description": "A tool the answer called, or any = one extra row for every answer that called tools, or none = the one row for an answer that called none",
+                "enum": [
+                    "list_open_tabs",
+                    "read_tab_content",
+                    "search_history",
+                    "find_in_page",
+                    "highlight_in_page",
+                    "switch_to_tab",
+                    "pin_tab",
+                    "open_tab",
+                    "bookmark_tab",
+                    "close_tabs",
+                    "search_downloads",
+                    "search_bookmarks",
+                    "any",
+                    "none"
+                ]
+            },
+            {
+                "key": "tool_result",
+                "description": "success if any call of the tool succeeded, else not_allowed if any was denied or cancelled, else error. For any, the best result across the answer's tools. Absent for none",
+                "enum": ["success", "not_allowed", "error"]
+            },
+            {
+                "key": "tools_in_answer",
+                "description": "How many distinct known tools the answer called",
+                "enum": ["0", "1", "2", "3", "4_plus"]
+            },
+            {
+                "key": "model_tier",
+                "description": "The lowest subscription tier the answer's model is available to",
+                "enum": ["free", "plus", "pro", "internal", "unknown"]
+            },
+            {
+                "key": "rating",
+                "description": "The thumb the user pressed",
+                "enum": ["up", "down"]
+            }
+        ]
+    }
+}

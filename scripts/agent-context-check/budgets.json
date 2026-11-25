@@ -18,8 +18,9 @@
     ".claude/skills/ddg-macos-add-promo/SKILL.md#description": 270,
     ".claude/skills/ddg-sentry-report/SKILL.md": 16240,
     ".claude/skills/ddg-sentry-report/SKILL.md#description": 220,
-    ".claude/skills/verify-ios/SKILL.md": 8800,
-    ".claude/skills/verify-ios/SKILL.md#description": 220,
+    ".agents/skills/verify-ios/SKILL.md": 8800,
+    ".agents/skills/verify-ios/SKILL.md#description": 220,
+    ".agents/skills/verify-macos-browser/SKILL.md": 5700,
     "REVIEW-pixels.md": 6060
   },
   "ignored_references": [

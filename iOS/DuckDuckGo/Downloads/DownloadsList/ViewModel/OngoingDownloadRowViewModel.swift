@@ -27,22 +27,22 @@ class OngoingDownloadRowViewModel: DownloadsListRowViewModel {
     
     private var subscribers: Set<AnyCancellable> = []
     
-    init(download: Download) {
+    init(download: Download, locale: Locale = .autoupdatingCurrent) {
         isTotalSizeKnown = download.totalBytesExpectedToWrite > 0
         super.init(filename: download.filename)
-        subscribeToUpdates(from: download)
+        subscribeToUpdates(from: download, locale: locale)
     }
     
-    private func subscribeToUpdates(from download: Download) {
+    private func subscribeToUpdates(from download: Download, locale: Locale) {
         let totalSize = download.totalBytesExpectedToWrite
         
         download.$totalBytesWritten
             .throttle(for: .milliseconds(1000), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] currentSize in
-                let currentSizeString = DownloadsListRowViewModel.byteCountFormatter.string(fromByteCount: currentSize)
+                let currentSizeString = DownloadsListRowViewModel.formattedByteCount(currentSize, locale: locale)
                 
                 if totalSize > 0 {
-                    let totalSizeString = DownloadsListRowViewModel.byteCountFormatter.string(fromByteCount: totalSize)
+                    let totalSizeString = DownloadsListRowViewModel.formattedByteCount(totalSize, locale: locale)
                     self?.fileSize = UserText.downloadProgressMessage(currentSize: currentSizeString, totalSize: totalSizeString)
                 } else {
                     self?.fileSize = UserText.downloadProgressMessageForUnknownTotalSize(currentSize: currentSizeString)

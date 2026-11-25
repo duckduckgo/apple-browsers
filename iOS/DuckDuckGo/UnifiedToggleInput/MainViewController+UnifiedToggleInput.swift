@@ -70,7 +70,8 @@ extension MainViewController {
         let aiChatPreferences = AIChatPreferencesPersistor()
         let stateStore = UnifiedInputStateStore(
             preferences: aiChatPreferences,
-            toggleModeStorage: toggleModeStorage
+            toggleModeStorage: toggleModeStorage,
+            startsNewChatsOnDefault: featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
         )
         stateStore.observeTabsModel(tabManager.normalTabsModel)
         stateStore.observeTabsModel(tabManager.fireModeTabsModel)
@@ -198,9 +199,12 @@ extension MainViewController {
         }
         if isIPadFullTabChatInput {
             currentTab?.setFullTabChatInputHidden(hidesInputBar)
+            updateIPadChatListButtonPlacement()
             return
         }
-        viewCoordinator.setAITabBottomChromeHidden(hidesInputBar)
+        if viewCoordinator.setAITabBottomChromeHidden(hidesInputBar) {
+            currentTab?.updateWebViewBottomAnchor(for: currentBarsVisibility)
+        }
     }
 
     /// Paints the header + status strip the voice colour while the voice chrome is active. Idempotent.
@@ -871,7 +875,7 @@ extension MainViewController {
             tabURL: tab.url,
             tabLinkURL: tab.link?.url,
             tabIsVoiceModeRequested: tab.isVoiceModeRequested,
-            tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested,
+            tabRequestsDeepLinkSurface: tab.isDuckAIDeepLinkSurfaceRequested || tab.isOpenedForChatList,
             tabRequestsNewChatInput: tab.tabModel.newChatInputRequest != nil,
             coordinatorIsAITabState: coordinator.isAITabState,
             keepsExpandedInputForNewChat: isNewTabTransitionEnabled && coordinator.isAITabExpanded,
@@ -1125,8 +1129,8 @@ extension MainViewController {
     /// screen — reads the coordinator's live display state; the chrome below it still trusts `renderState`.
     func updateUnifiedInputContentVisibility(for coordinator: UnifiedToggleInputCoordinator, renderState: UTIRenderState) {
         if isIPadFullTabChatInput {
-            // iPad keeps its own address bar and tabs bar, which already carry fire and the app menu.
-            coordinator.viewController.setFlankingAccessoriesVisible([])
+            // iPad keeps its own address bar and tabs bar, which already carry fire and the app menu; only Chats can flank.
+            updateIPadChatListButtonPlacement()
             return
         }
         let isOnAITab = currentTab?.isAITab == true
@@ -1218,8 +1222,22 @@ extension MainViewController {
 
     /// Selects presentation only. The content controller and its view stay installed for the session.
     func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
-        unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
-            presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
+        let surface = presentation.redesignedFocusedSurface(isOnAITab: isOnAITab, isOnWebPage: currentTab?.link != nil)
+        let isWebPageSurfaceAvailable = NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable
+        let contentViewController = unifiedToggleInputCoordinator?.contentViewController
+        contentViewController?.redesignedFocusedSurface =
+            surface == .webPage && !isWebPageSurfaceAvailable ? nil : surface
+        let usesRedesignedLayout = contentViewController?.usesRedesignedNewTabPageLayout == true
+        unifiedToggleInputCoordinator?.viewController.setUsesNewTabPageCardBackground(usesRedesignedLayout)
+        viewCoordinator.focusedStateBackground.backgroundColor = usesRedesignedLayout ? .clear : UIColor(designSystemColor: .panel)
+        let contentContainer = viewCoordinator.unifiedInputContentContainer as? MainViewFactory.UnifiedInputContentContainer
+        contentContainer?.passesTouchThrough = usesRedesignedLayout ? { [weak self, weak contentContainer] point in
+            guard let contentContainer, let page = self?.newTabPageViewController as? NewTabPageInputTransitionSource else { return false }
+            return page.focusedModulesContain(point, in: contentContainer)
+        } : nil
+        contentViewController?.onRedesignedSearchModulesVisibilityChange = { [weak self] _ in
+            self?.refreshFocusedNewTabPagePose()
+        }
     }
 
     func installDuckAIKeyboardEdgeSweep() {
@@ -1686,6 +1704,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
     func unifiedToggleInputDidChangeHeight() {
         recomputeNavigationBarContainerHeightIfNeeded()
+        refreshFocusedNewTabPagePose()
     }
 
     func unifiedToggleInputDidRequestFire() {
@@ -1860,16 +1879,19 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     /// Opens the chat in a new tab, so the current one stays reachable.
     func aiChatTabChatHeaderDidTapNewChat() {
+        fireHeaderPlusMenuPixel(.newChat)
         guard let tab = currentTab else { return }
         recordDuckAISessionNewChatCreatedOnCurrentTab()
         openNewChatFromDuckAIPage(tab, source: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {
+        fireHeaderPlusMenuPixel(.newVoiceChat)
         startDuckAIVoiceMode(from: .duckAI, entrySource: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewImage() {
+        fireHeaderPlusMenuPixel(.newImage)
         PixelKit.fire(Pixel.Event.aiChatNewImageTapped, frequency: .dailyAndCount)
         fireAIChatEntryPointPixel(source: .duckAINewChat, opensNewTab: false, hasPrompt: false, chatState: .new)
         reportDuckAISessionCurrentTab()
@@ -1895,12 +1917,14 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewTab() {
+        fireHeaderPlusMenuPixel(.newTab)
         recordUserOpenedTab()
         newTab(reuseExisting: false, allowingKeyboard: true)
     }
 
     /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.
     func aiChatTabChatHeaderDidTapNewSearch() {
+        fireHeaderPlusMenuPixel(.newSearch)
         recordUserOpenedTab()
         recordDuckAISessionPendingExit(.searchStarted)
         newTabTransitions.open {
@@ -1910,6 +1934,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewFireTab() {
+        fireHeaderPlusMenuPixel(.newFireTab)
         recordUserOpenedTab()
         recordDuckAISessionPendingExit(.fireTabOpened)
         newTabTransitions.open {
@@ -1918,6 +1943,12 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
         }
     }
 
+
+    private func fireHeaderPlusMenuPixel(_ item: AIChatHeaderPlusMenuPixel.Item) {
+        let simplifiedPromptBox = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger).isAvailable
+        pixelFiring?.fire(AIChatHeaderPlusMenuPixel.itemSelected(item, simplifiedPromptBox: simplifiedPromptBox),
+                          frequency: .dailyAndCount)
+    }
 
     func aiChatTabChatHeaderPlusMenuWillOpen() {
         duckAIInputFocus.setAside()

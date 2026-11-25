@@ -600,6 +600,42 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testCustomizeResponsesInSettingsIsSentOnlyOnIPhoneWithSimplifiedPromptBox() throws {
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        for isIphone in [true, false] {
+            MockDevicePlatform.isIphone = isIphone
+            for isFlagOn in [false, true] {
+                mockFeatureFlagger.enabledFeatureFlags = isFlagOn ? [.unifiedToggleInputSimplifiedPromptBox] : []
+                aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+                let config = try XCTUnwrap(aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues)
+                let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+
+                let value = json["supportsCustomizeResponsesInSettings"] as? Bool
+                XCTAssertEqual(value, isIphone && isFlagOn ? true : nil, "iPhone: \(isIphone), flag: \(isFlagOn)")
+            }
+        }
+    }
+
+    @MainActor
+    func testCustomizeResponsesInSettingsFollowsTheFlagWhenItChangesWhileTheAppRuns() throws {
+        MockDevicePlatform.isIphone = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        func sentValue() throws -> Bool? {
+            let config = try XCTUnwrap(aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues)
+            let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+            return json["supportsCustomizeResponsesInSettings"] as? Bool
+        }
+
+        mockFeatureFlagger.enabledFeatureFlags = []
+        XCTAssertNil(try sentValue())
+        mockFeatureFlagger.enabledFeatureFlags = [.unifiedToggleInputSimplifiedPromptBox]
+        XCTAssertEqual(try sentValue(), true, "The next config Duck.ai asks for carries the capability")
+        mockFeatureFlagger.enabledFeatureFlags = []
+        XCTAssertNil(try sentValue(), "Turning the flag off takes it out again")
+    }
+
+    @MainActor
     func testAIChatMessagesAreOnlyAcceptedFromHTTPSMainFrame() {
         let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: MockAIChatDebugSettingsForTests())
 

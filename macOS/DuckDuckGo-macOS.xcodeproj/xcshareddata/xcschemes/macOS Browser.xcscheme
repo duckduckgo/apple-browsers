@@ -70,6 +70,62 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AIChatTestingUtilities"
+               BuildableName = "AIChatTestingUtilities"
+               BlueprintName = "AIChatTestingUtilities"
+               ReferencedContainer = "container:../SharedPackages/AIChat">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AppLauncherTests"
+               BuildableName = "AppLauncherTests"
+               BlueprintName = "AppLauncherTests"
+               ReferencedContainer = "container:LocalPackages/AppLauncher">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FreemiumTests"
+               BuildableName = "FreemiumTests"
+               BlueprintName = "FreemiumTests"
+               ReferencedContainer = "container:LocalPackages/Freemium">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "NetworkQualityMonitorTests"
+               BuildableName = "NetworkQualityMonitorTests"
+               BlueprintName = "NetworkQualityMonitorTests"
+               ReferencedContainer = "container:LocalPackages/NetworkQualityMonitor">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "DataBrokerProtection-macOSTests"
                BuildableName = "DataBrokerProtection-macOSTests"
                BlueprintName = "DataBrokerProtection-macOSTests"
@@ -91,6 +147,22 @@
             <ActionContent
                title = "Run Script"
                scriptText = "killall tests-server&#10;# integration tests resources dir&#10;pushd &quot;${METAL_LIBRARY_OUTPUT_DIR}&quot;&#10;&quot;${BUILT_PRODUCTS_DIR}/tests-server&quot; &amp;&#10;popd&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "4B1AD89C25FC27E200261379"
+                     BuildableName = "Integration Tests.xctest"
+                     BlueprintName = "Integration Tests"
+                     ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Copy WebExtensions resource bundle into the framework"
+               scriptText = "# Xcode builds WebExtensions as a framework without its resource bundle.&#10;# The WebExtensions package tests run under xctest and look for the bundle in the framework.&#10;FRAMEWORK=&quot;${BUILT_PRODUCTS_DIR}/PackageFrameworks/WebExtensions.framework&quot;&#10;BUNDLE=&quot;${BUILT_PRODUCTS_DIR}/WebExtensions_WebExtensions.bundle&quot;&#10;if [ -d &quot;${FRAMEWORK}&quot; ] &amp;&amp; [ -d &quot;${BUNDLE}&quot; ]; then&#10;    cp -R &quot;${BUNDLE}&quot; &quot;${FRAMEWORK}/Resources/&quot;&#10;fi&#10;">
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"

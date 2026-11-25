@@ -340,15 +340,19 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     private func askAndUpdateServiceEnvironment(to newServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment) {
         let alert = makeAlert(title: "Are you sure you want to change the environment to \(newServiceEnvironment.description.capitalized)",
                               message: """
-                              Please make sure you have manually removed your current active Subscription and reset all related features.
-                              You may also need to change environment of related features.
+                              You will be signed out of your subscription. The VPN uses the same environment as the subscription.
                               This setting IS persisted between app runs. This action will close the app, do you want to proceed?
                               """,
                               buttonNames: ["Yes", "No"])
         let response = alert.runModal()
         guard case .alertFirstButtonReturn = response else { return }
-        updateServiceEnvironment(newServiceEnvironment)
-        closeTheApp()
+        Task { @MainActor in
+            if newServiceEnvironment != currentEnvironment.serviceEnvironment {
+                await subscriptionManager.signOut(notifyUI: true)
+            }
+            updateServiceEnvironment(newServiceEnvironment)
+            NSApp.perform(#selector(NSApplication.terminate(_:)), with: self, afterDelay: 0)
+        }
     }
 
     // MARK: - Custom base subscription URL

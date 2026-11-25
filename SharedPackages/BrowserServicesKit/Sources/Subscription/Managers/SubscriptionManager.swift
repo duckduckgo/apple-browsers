@@ -75,7 +75,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     func getTierProducts(location: TierProductsLocation, platform: String?) async throws -> GetTierProductsResponse
 
     /// Returns subscription tier options (plans and pricing) for the appropriate platform.
-    func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error>
+    func subscriptionTierOptions() async -> Result<SubscriptionTierOptions, Error>
 
     @available(iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
 
@@ -287,6 +287,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         self.subscriptionEndpointService = subscriptionEndpointService
         self.subscriptionCachingService = subscriptionCachingService
         self.currentEnvironment = subscriptionEnvironment
+        Logger.subscription.log("Subscription manager created, \(subscriptionEnvironment.description, privacy: .public)")
         self.pixelHandler = pixelHandler
         self.tokenRecoveryHandler = tokenRecoveryHandler
         self.isInternalUserEnabled = isInternalUserEnabled
@@ -506,9 +507,9 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         try await subscriptionEndpointService.getTierProducts(location: location, platform: platform)
     }
 
-    public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
+    public func subscriptionTierOptions() async -> Result<SubscriptionTierOptions, Error> {
         let subscription = try? await getSubscription(forceRefresh: false)
-        return await tierOptionsProvider.subscriptionTierOptions(includeProTier: includeProTier, currentSubscription: subscription)
+        return await tierOptionsProvider.subscriptionTierOptions(currentSubscription: subscription)
     }
 
     public func clearSubscriptionCache() {

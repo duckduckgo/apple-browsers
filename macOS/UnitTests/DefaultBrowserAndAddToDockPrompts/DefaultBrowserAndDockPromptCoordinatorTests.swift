@@ -21,6 +21,7 @@ import Combine
 import XCTest
 import BrowserServicesKit
 import FeatureFlags_macOS
+import PrivacyConfig
 @_spi(Testing) import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -71,8 +72,10 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
             notificationPresenter: notificationPresenterMock,
             featureFlagger: MockDefaultBrowserAndDockPromptFeatureFlagger(),
             isOnboardingCompleted: { self.isOnboardingCompleted },
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
+            actionPerformer: DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomizerMock,
+                                                                  defaultBrowserProvider: defaultBrowserProviderMock,
+                                                                  featureFlagger: MockFeatureFlagger(),
+                                                                  videoPresenter: MainActor.assumeIsolated { CapturingAddToDockVideoPresenter() }),
             pixelFiring: pixelKitMock,
             dateProvider: timeTraveller.getDate
         )

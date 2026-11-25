@@ -803,6 +803,34 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(mockSearchExperienceProvider.didStartAIChatDuringOnboarding)
     }
 
+    func testWhenOpenAIChatFromOnboardingIsCalledThenItPassesTheModelPickedInOnboarding() {
+        // GIVEN
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.setAIChatModel(OnboardingAIModel(id: "claude-x", name: "Claude"))
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true), personalizationManager: personalizationManager)
+        var receivedModelId: String?
+        sut.onOpenAIChatFromOnboarding = { _, _, modelId in receivedModelId = modelId }
+
+        // WHEN
+        sut.openAIChatFromOnboarding(prompt: "test", autoSend: true)
+
+        // THEN
+        XCTAssertEqual(receivedModelId, "claude-x")
+    }
+
+    func testWhenOpenAIChatFromOnboardingIsCalledWithoutAPickedModelThenItPassesNoModel() {
+        // GIVEN
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
+        var receivedModelId: String? = "unexpected"
+        sut.onOpenAIChatFromOnboarding = { _, _, modelId in receivedModelId = modelId }
+
+        // WHEN
+        sut.openAIChatFromOnboarding(prompt: "test", autoSend: true)
+
+        // THEN
+        XCTAssertNil(receivedModelId)
+    }
+
     func testWhenSearchFromOnboardingIsCalledThenDidStartAIChatDuringOnboardingRemainsFalse() {
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()

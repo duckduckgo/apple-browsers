@@ -195,11 +195,13 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private func isStepActive(_ step: OnboardingSteps) -> Bool {
         switch step {
         case .welcome, .getStarted, .makeDefaultSingle, .systemSettings, .customize, .addressBarMode:
-            true
+            return true
         case .duckPlayerSingle:
-            false
+            return false
         case .searchOrChat:
-            featureFlagger.isFeatureOn(.onboardingSearchOrChat)
+            // The Duck.ai path's dialogs need the rebranded layout, which needs macOS 13.
+            guard #available(macOS 13, *) else { return false }
+            return featureFlagger.isFeatureOn(.onboardingSearchOrChat)
         }
     }
 
@@ -321,6 +323,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             goToAddressBar()
             return
         }
+        // To do: pixel (path chosen, from mode and source)
         switch query.mode {
         case .search:
             // Before the tab changes, so the results page already gets the search path's dialogs.

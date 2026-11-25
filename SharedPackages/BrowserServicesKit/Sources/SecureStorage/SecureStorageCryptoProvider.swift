@@ -183,14 +183,13 @@ public extension SecureStorageCryptoProvider {
             return nil
         }
 
-        let addQuery: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: self.keychainServiceName as CFString,
-            kSecAttrAccount: self.keychainAccountName as CFString,
-            kSecValueData: base64Data
-        ]
-
-        DispatchQueue.global().async {
+        DispatchQueue.global().async { [keychainServiceName, keychainAccountName] in
+            let addQuery: [CFString: Any] = [
+                kSecClass: kSecClassGenericPassword,
+                kSecAttrService: keychainServiceName as CFString,
+                kSecAttrAccount: keychainAccountName as CFString,
+                kSecValueData: base64Data
+            ]
             SecItemAdd(addQuery as CFDictionary, nil)
         }
 

@@ -50,25 +50,19 @@ public class BookmarkFormFactorFavoritesMigration: BookmarkFormFactorFavoritesMi
                                      containerLocation: dbContainerLocation,
                                      model: oldBookmarksModel)
 
-        var oldFavoritesOrder: [String]?
-
-        var loadError: Error?
+        let order = Locked<Result<[String]?, Error>>(wrappedValue: .success(nil))
         oldDB.loadStore { context, error in
             guard let context = context else {
-                loadError = error
+                if let error { order.wrappedValue = .failure(error) }
                 return
             }
 
             let favs = BookmarkUtils.fetchLegacyFavoritesFolder(context)
             let orderedFavorites = favs?.favorites?.array as? [BookmarkEntity] ?? []
-            oldFavoritesOrder = orderedFavorites.compactMap { $0.uuid }
+            order.wrappedValue = .success(orderedFavorites.compactMap { $0.uuid })
         }
 
-        if let loadError {
-            throw loadError
-        }
-
-        return oldFavoritesOrder
+        return try order.wrappedValue.get()
     }
 
     public static func migrateToFormFactorSpecificFavorites(byCopyingExistingTo folderID: FavoritesFolderID,

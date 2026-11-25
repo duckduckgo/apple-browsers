@@ -19,22 +19,17 @@
 
 import UIKit
 import SwiftUI
+import DesignResourcesKit
 import DuckUI
 import BrowserServicesKit
 import Core
 
 class AutofillListItemTableViewCell: UITableViewCell {
 
-    var theme: Theme? {
-        didSet {
-            updateTheme()
-        }
-    }
-
     private lazy var titleLabel: UILabel = {
         let label = UILabel(frame: CGRect.zero)
         label.font = .preferredFont(forTextStyle: .callout)
-        label.textColor = .label
+        label.textColor = UIColor(designSystemColor: .textPrimary)
         label.lineBreakMode = .byTruncatingMiddle
         return label
     }()
@@ -42,7 +37,7 @@ class AutofillListItemTableViewCell: UITableViewCell {
     private lazy var subtitleLabel: UILabel = {
         let label = UILabel(frame: CGRect.zero)
         label.font = .preferredFont(forTextStyle: .footnote)
-        label.textColor = UIColor(baseColor: .gray50)
+        label.textColor = UIColor(designSystemColor: .textSecondary)
         label.lineBreakMode = .byTruncatingMiddle
         return label
     }()
@@ -92,15 +87,6 @@ class AutofillListItemTableViewCell: UITableViewCell {
     private func installSubviews() {
         contentView.addSubview(contentStackView)
         installConstraints()
-    }
-
-    private func updateTheme() {
-        guard let theme = theme else {
-            return
-        }
-
-        titleLabel.textColor = theme.autofillDefaultTitleTextColor
-        subtitleLabel.textColor = theme.autofillDefaultSubtitleTextColor
     }
 
     private func installConstraints() {

@@ -214,6 +214,11 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
             Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {
+#if DEBUG
+            if capturesDebugSnapshots && shouldContinue {
+                await captureDebugSnapshot(.result, action: actionsHandler?.currentAction())
+            }
+#endif
             Logger.action.debug(loggerContext(), message: "Releasing the web view")
             await webViewHandler?.finish() // If we executed all steps we release the web view
 

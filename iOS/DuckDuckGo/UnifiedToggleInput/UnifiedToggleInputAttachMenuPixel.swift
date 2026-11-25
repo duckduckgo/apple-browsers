@@ -27,11 +27,25 @@ enum UnifiedToggleInputAttachMenuItem: String, CaseIterable {
     case page
     case recentTab = "recent_tab"
     case tabPicker = "tab_picker"
+    /// The tool rows the simplified prompt box folds into the menu.
+    case webSearch = "web_search"
+    case createImage = "create_image"
+}
+
+extension UnifiedToggleInputAttachMenuItem {
+    /// The attach-menu item for a tool row; Customize Responses has no row there.
+    init?(tool: UTIToolsMenu.Item.Identifier) {
+        switch tool {
+        case .webSearch: self = .webSearch
+        case .imageGeneration: self = .createImage
+        case .customizeResponses: return nil
+        }
+    }
 }
 
 enum UnifiedToggleInputAttachMenuPixel: PixelKit.Event {
-    case shown(surface: UnifiedToggleInputPixelSurface)
-    case itemSelected(UnifiedToggleInputAttachMenuItem, surface: UnifiedToggleInputPixelSurface)
+    case shown(surface: UnifiedToggleInputPixelSurface, simplifiedPromptBox: Bool)
+    case itemSelected(UnifiedToggleInputAttachMenuItem, surface: UnifiedToggleInputPixelSurface, simplifiedPromptBox: Bool)
 
     var name: String {
         switch self {
@@ -41,12 +55,19 @@ enum UnifiedToggleInputAttachMenuPixel: PixelKit.Event {
     }
 
     var parameters: [String: String]? {
+        typealias Keys = UnifiedToggleInputCoordinatorPixelHelper
+        var parameters: [String: String]
+        let simplifiedPromptBox: Bool
         switch self {
-        case .shown(let surface):
-            ["surface": surface.rawValue]
-        case .itemSelected(let item, let surface):
-            ["surface": surface.rawValue, "item": item.rawValue]
+        case .shown(let surface, let isSimplified):
+            parameters = ["surface": surface.rawValue]
+            simplifiedPromptBox = isSimplified
+        case .itemSelected(let item, let surface, let isSimplified):
+            parameters = ["surface": surface.rawValue, "item": item.rawValue]
+            simplifiedPromptBox = isSimplified
         }
+        parameters[Keys.simplifiedPromptBoxKey] = Keys.simplifiedPromptBoxValue(simplifiedPromptBox)
+        return parameters
     }
 
     var standardParameters: [PixelKitStandardParameter]? { nil }

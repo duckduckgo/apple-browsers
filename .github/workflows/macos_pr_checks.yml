@@ -10,6 +10,7 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'macOS/**'
+      - 'scripts/check-swift-concurrency-warnings.py'
       - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
@@ -74,6 +75,7 @@ jobs:
         .xcode-version
         SharedPackages/**
         macOS/**
+        scripts/check-swift-concurrency-warnings.py
         scripts/translation-pr-checks/**
 
   shellcheck:
@@ -178,8 +180,6 @@ jobs:
 
     outputs:
       private-api-check-report: ${{ steps.private-api.outputs.report }}
-      commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
-      pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
     - name: Register SSH keys for private repos
@@ -299,7 +299,7 @@ jobs:
           ONLY_ACTIVE_ARCH=${{ matrix.active-arch }} \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          | tee ${{ matrix.flavor }}-build-for-testing-xcodebuild.log \
+          2>&1 | tee ${{ matrix.flavor }}-build-for-testing-xcodebuild.log \
           | sed -e 's/CoreData: error:/CoreData: [notice]:/g' -e 's/Failed to create NSXPCConnection/[notice] NSXPCConnection unavailable/g' \
           | xcbeautify
 
@@ -482,6 +482,10 @@ jobs:
       with:
         pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
 
+    - name: Scan app build for strict concurrency warnings
+      if: ${{ !cancelled() && steps.build-for-testing.outcome == 'success' }}
+      run: python3 ../scripts/check-swift-concurrency-warnings.py ${{ matrix.flavor }}-build-for-testing-xcodebuild.log --package-roots LocalPackages ../SharedPackages
+
     - name: Upload failed build log
       uses: actions/upload-artifact@v6
       if: failure() || cancelled()
@@ -551,13 +555,6 @@ jobs:
           ~/Library/Logs/DiagnosticReports/*.ips
         if-no-files-found: ignore
         retention-days: 7
-
-    - name: Fetch latest commit author and PR reviewers
-      if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
-      id: fetch_commit_author
-      uses: ./.github/actions/fetch-commit-info
-      with:
-        github-token: ${{ github.token }}
 
   private-api:
     name: Private API Report
@@ -892,8 +889,6 @@ jobs:
           action: create-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
-          commit-author: ${{ needs.tests.outputs.commit_author }}
-          pr-reviewers: ${{ needs.tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.APPLE_GH_RO_PAT }}
 
   close-asana-task:

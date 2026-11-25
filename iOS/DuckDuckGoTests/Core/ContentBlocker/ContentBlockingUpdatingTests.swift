@@ -61,7 +61,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     let configManager = PrivacyConfigurationManagerMock()
     let rulesManager = ContentBlockerRulesManagerMock()
     var updating: ContentBlockingUpdating!
-    let sponsorBlockPreferences = SponsorBlockPreferences(store: InMemoryKeyValueStore())
+    let segmentSkipPreferences = SegmentSkipPreferences(store: InMemoryKeyValueStore())
 
     override func setUp() {
         super.setUp()
@@ -75,7 +75,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                           syncErrorHandler: CapturingAdapterErrorHandler(),
                                                                           webExtensionAvailability: nil,
                                                                           aiChatBonusOffer: AIChatBonusOfferDependencies(handler: MockAIChatBonusHandling(), messageLog: AIChatBonusMessageLog())),
-                                           sponsorBlockPreferences: sponsorBlockPreferences)
+                                           segmentSkipPreferences: segmentSkipPreferences)
     }
 
     override static func setUp() {
@@ -157,7 +157,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         assets.send(.init(rulesUpdate: .init(rules: [], changes: [:], completionTokens: []),
                           sourceProvider: makeScriptSourceProvider(),
                           duckAiNativeStorageHandler: nil,
-                          sponsorBlockPreferences: sponsorBlockPreferences))
+                          segmentSkipPreferences: segmentSkipPreferences))
         await fulfillment(of: [installed], timeout: 10)
 
         notifications.post(name: UIApplication.willEnterForegroundNotification, object: nil)
@@ -565,7 +565,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             sitePermissionsEnabled: false,
             geolocationUserScript: geolocationUserScript,
-            sponsorBlockPreferences: sponsorBlockPreferences
+            segmentSkipPreferences: segmentSkipPreferences
         )
         XCTAssertNil(disabledScripts.geolocationUserScript)
         XCTAssertFalse(disabledScripts.userScripts.contains { $0 is GeolocationUserScript })
@@ -576,7 +576,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             sitePermissionsEnabled: true,
             geolocationUserScript: geolocationUserScript,
-            sponsorBlockPreferences: sponsorBlockPreferences
+            segmentSkipPreferences: segmentSkipPreferences
         )
         XCTAssertTrue(enabledScripts.geolocationUserScript === geolocationUserScript)
         XCTAssertTrue(enabledScripts.userScripts.contains { ($0 as? GeolocationUserScript) === geolocationUserScript })
@@ -593,7 +593,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         let nonTabScripts = UserScripts(
             with: sourceProvider,
             featureFlagger: MockFeatureFlagger(),
-            sponsorBlockPreferences: sponsorBlockPreferences
+            segmentSkipPreferences: segmentSkipPreferences
         )
         XCTAssertNil(nonTabScripts.geolocationUserScript)
         XCTAssertFalse(nonTabScripts.userScripts.contains { $0 is GeolocationUserScript })
@@ -623,7 +623,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                 contentSubject.send(.init(rulesUpdate: Self.testUpdate(),
                                           sourceProvider: makeScriptSourceProvider(),
                                           duckAiNativeStorageHandler: nil,
-                                          sponsorBlockPreferences: sponsorBlockPreferences))
+                                          segmentSkipPreferences: segmentSkipPreferences))
             }
             XCTAssertEqual(receivedScripts.count, 2)
             for (media, geolocation) in receivedScripts {

@@ -86,6 +86,75 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
         XCTAssertNil(source.selection(forRowID: "does-not-exist"))
     }
 
+    // MARK: - "Search DuckDuckGo" row word cap
+
+    private func words(_ count: Int, separator: String = " ") -> String {
+        (1...count).map { "word\($0)" }.joined(separator: separator)
+    }
+
+    private func sectionIDs(for query: String, snapshot: DuckAISuggestionsPipeline.Snapshot) -> [String] {
+        DuckAISuggestionsSource.sections(from: snapshot, query: query).map(\.id)
+    }
+
+    func test_searchRow_showsAtFifteenWords_andHidesFromSixteenth_leavingOtherSectionsUnchanged() {
+        let chat = AIChatSuggestion(id: "abc", title: "Hi", isPinned: false, chatId: "c1")
+        let snapshot = DuckAISuggestionsPipeline.Snapshot(
+            chats: [chat], urls: [.website(url: URL(string: "https://swift.org")!)], isPending: false)
+
+        let fifteen = DuckAISuggestionsSource.sections(from: snapshot, query: words(15))
+        let sixteen = DuckAISuggestionsSource.sections(from: snapshot, query: words(16))
+
+        XCTAssertEqual(fifteen.map(\.id), ["chats", "urls", "search"])
+        XCTAssertEqual(sixteen.map(\.id), ["chats", "urls"])
+        XCTAssertEqual(fifteen.first { $0.id == "chats" }, sixteen.first { $0.id == "chats" })
+    }
+
+    func test_searchRow_countsWordsAcrossAnyWhitespace() {
+        let empty = DuckAISuggestionsPipeline.Snapshot(chats: [], urls: [], isPending: false)
+        for separator in ["  ", "\n", "\t", " \n "] {
+            XCTAssertEqual(sectionIDs(for: words(15, separator: separator), snapshot: empty), ["search"], "separator \(separator.debugDescription)")
+            XCTAssertEqual(sectionIDs(for: words(16, separator: separator), snapshot: empty), [], "separator \(separator.debugDescription)")
+        }
+        XCTAssertEqual(sectionIDs(for: "  " + words(15) + " \n", snapshot: empty), ["search"])
+        XCTAssertEqual(sectionIDs(for: "  " + words(16) + " \n", snapshot: empty), [])
+    }
+
+    func test_searchRow_isAbsentForEmptyQuery() {
+        let empty = DuckAISuggestionsPipeline.Snapshot(chats: [], urls: [], isPending: false)
+        XCTAssertEqual(sectionIDs(for: "", snapshot: empty), [])
+    }
+
+    /// With both settings off the fetchers never emit, so only the typed text can move the row.
+    func test_searchRow_followsTypedText_whenFetchersStaySilent() {
+        let chatViewModel = AIChatSuggestionsViewModel()
+        let source = DuckAISuggestionsSource(
+            chatViewModel: chatViewModel,
+            urlLoader: DuckAIURLSuggestionsLoader(dataSource: StubSuggestionLoadingDataSource(), featureFlagger: MockFeatureFlagger()),
+            chatManager: AIChatHistoryManager(suggestionsReader: NilSuggestionsReader(),
+                                              aiChatDeleter: StubAIChatDeleter(),
+                                              viewModel: chatViewModel,
+                                              isFireTab: false),
+            query: { "" },
+            searchSuggestionsEnabled: { false },
+            chatSuggestionsEnabled: { false }
+        )
+        var latest: [SuggestionSection] = []
+        source.sectionsPublisher.sink { latest = $0 }.store(in: &cancellables)
+        let textSubject = PassthroughSubject<String, Never>()
+        source.start(textPublisher: textSubject.eraseToAnyPublisher())
+
+        textSubject.send(words(15))
+        XCTAssertEqual(latest, DuckAISuggestionsSource.sections(
+            from: .init(chats: [], urls: [], isPending: false), query: words(15)))
+        XCTAssertEqual(latest.map(\.id), ["search"])
+
+        textSubject.send(words(16))
+        XCTAssertEqual(latest.map(\.id), [])
+
+        textSubject.send(words(15))
+        XCTAssertEqual(latest.map(\.id), ["search"])
+    }
+
     // MARK: - Search Suggestions gating
 
     func test_urlHits_areSuppressed_whenSearchSuggestionsDisabled() async {

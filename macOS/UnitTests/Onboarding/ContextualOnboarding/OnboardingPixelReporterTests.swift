@@ -267,6 +267,33 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandler.eventsReceived, [.end(.clicked(.dismiss))])
     }
 
+    func test_WhenMeasureSubscriptionUpsellShown_ThenSubscriptionPromoShownEventSent() {
+        reporter.measureDialogShown(dialogType: .subscriptionUpsell)
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.subscriptionPromo(.shown)])
+    }
+
+    func test_WhenMeasureSubscriptionUpsellManuallyDismissed_ThenSubscriptionPromoDismissClickedEventSent() {
+        reporter.measureDialogManuallyDismissed(dialogType: .subscriptionUpsell)
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.subscriptionPromo(.clicked(.dismiss))])
+    }
+
+    func test_WhenMeasureSubscriptionUpsellAccepted_ThenSubscriptionPromoEngageClickedEventSent() {
+        reporter.measureSubscriptionUpsellAccepted()
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.subscriptionPromo(.clicked(.engage))])
+    }
+
+    func test_WhenMeasureSubscriptionUpsellDeclined_ThenSubscriptionPromoDismissClickedEventSent() {
+        reporter.measureSubscriptionUpsellDeclined()
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.subscriptionPromo(.clicked(.dismiss))])
+    }
+
+    func test_WhenSubscriptionUpsellDismissedOrGotItPressed_ThenNoPixelSent() {
+        reporter.measureDialogDismissed(dialogType: .subscriptionUpsell)
+        reporter.measureGotItPressed(dialogType: .subscriptionUpsell)
+        XCTAssertNil(eventSent)
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [])
+    }
+
     // Tab Onboarding Pixel test
     @MainActor
     func test_WhenNavigationDidFinish_ThenReporterMeasureSiteVisitedCalled() {

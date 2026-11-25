@@ -67,7 +67,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
-    let sponsorBlockSubfeature: SponsorBlockSubfeature
+    let segmentSkipSubfeature: SegmentSkipSubfeature
     /// `WebExtensionPageStubUserScript`, typed loosely because the class needs macOS 15.4.
     /// `nil` when web extensions are unavailable or the user is not an internal user.
     let webExtensionPageStubUserScript: UserScript?
@@ -78,15 +78,15 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
-         sponsorBlockPreferences: SponsorBlockPreferences = NSApp.delegateTyped.sponsorBlockPreferences,
-         sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = NSApp.delegateTyped.sponsorBlockSegmentsProvider,
+         segmentSkipPreferences: SegmentSkipPreferences = NSApp.delegateTyped.segmentSkipPreferences,
+         segmentSkipSegmentsProvider: SegmentSkipSegmentsProvider = NSApp.delegateTyped.segmentSkipSegmentsProvider,
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
         let featureFlagger = sourceProvider.featureFlagger
-        sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
-                                                        preferences: sponsorBlockPreferences,
-                                                        isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
+        segmentSkipSubfeature = SegmentSkipSubfeature(segmentsProvider: segmentSkipSegmentsProvider,
+                                                        preferences: segmentSkipPreferences,
+                                                        isFeatureFlagOn: { featureFlagger.isFeatureOn(.segmentSkip) })
         if #available(macOS 15.4, *) {
             chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
                 NSApp.delegateTyped.webExtensionManager?.chromeWebStore
@@ -128,11 +128,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             urlSettings: aiChatDebugURLSettings,
             bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog
         )
-        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionManager,
-            featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
@@ -186,6 +184,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             // Native-only — Duck.ai gates on `supportsBrowserTools` and never reads this key.
             // Windows found injecting it broke the aiChat message bridge, which is shared code.
             let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
+            let disableScriptSurrogateInjection = sourceProvider.webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
@@ -194,7 +193,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                 featureFlagger: sourceProvider.featureFlagger,
                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                 excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData, disableScriptSurrogateInjection: disableScriptSurrogateInjection), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {
@@ -257,7 +256,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         // controller's, so its extension pages get the API stubs from here.
         if #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled {
             webExtensionPageStubUserScript = WebExtensionPageStubUserScript.make(
-                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser,
+                isExtensionManagementAvailable: sourceProvider.webExtensionAvailability?.isExtensionManagementAvailable == true,
                 managerProvider: { NSApp.delegateTyped.webExtensionManager as? WebExtensionManager })
         } else {
             webExtensionPageStubUserScript = nil
@@ -281,7 +280,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: sponsorBlockSubfeature)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: segmentSkipSubfeature)
         if let chromeWebStoreUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: chromeWebStoreUserScript)
         }

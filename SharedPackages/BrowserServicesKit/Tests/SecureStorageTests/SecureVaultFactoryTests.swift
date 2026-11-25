@@ -22,26 +22,25 @@ import GRDB
 import SecureStorage
 import SecureStorageTestsUtils
 
-let MockSecureVaultFactory = SecureVaultFactory<ConcreteMockSecureVault>(
-    makeCryptoProvider: {
-        let provider = MockCryptoProvider()
-        provider._derivedKey = "derived".data(using: .utf8)
-        return provider
-    }, makeKeyStoreProvider: { _ in
-        let provider = MockKeystoreProvider()
-        provider._l1Key = "key".data(using: .utf8)
-        return provider
-    }, makeDatabaseProvider: { key, _ in
-        return try ConcreteMockDatabaseProvider(key: key)
-    }
-)
-
 // MARK: - Tests
 
 final class MockVaultTests: XCTestCase {
 
     func testCreatingMockVaultWithSecureVaultFactory() throws {
-        let vault = try MockSecureVaultFactory.makeVault(reporter: nil)
+        let factory = SecureVaultFactory<ConcreteMockSecureVault>(
+            makeCryptoProvider: {
+                let provider = MockCryptoProvider()
+                provider._derivedKey = "derived".data(using: .utf8)
+                return provider
+            }, makeKeyStoreProvider: { _ in
+                let provider = MockKeystoreProvider()
+                provider._l1Key = "key".data(using: .utf8)
+                return provider
+            }, makeDatabaseProvider: { key, _ in
+                return try ConcreteMockDatabaseProvider(key: key)
+            }
+        )
+        let vault = try factory.makeVault(reporter: nil)
         let storedString = "hello, world!"
 
         try vault.storeSomeData(string: storedString)

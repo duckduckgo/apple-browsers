@@ -22,16 +22,33 @@ import Foundation
 
 class SpyDownloadManager: DownloadManaging {
     var downloadList: Set<Download> = []
-    var downloadsDirectoryFiles: [URL] = []
-    
+    var downloadsDirectory: URL?
+    private var stubbedDownloadsDirectoryFiles: [URL] = []
+
+    var downloadsDirectoryFiles: [URL] {
+        get {
+            guard let downloadsDirectory else { return stubbedDownloadsDirectoryFiles }
+            return (try? FileManager.default.contentsOfDirectory(at: downloadsDirectory,
+                                                                 includingPropertiesForKeys: nil,
+                                                                 options: .skipsHiddenFiles)) ?? []
+        }
+        set {
+            stubbedDownloadsDirectoryFiles = newValue
+        }
+    }
+
     func startMonitoringDownloadsDirectoryChanges() { }
-    
+
     func stopMonitoringDownloadsDirectoryChanges() { }
-    
+
     func markAllDownloadsSeen() { }
-    
-    func cancelDownload(_ download: Download) { }
-    
+
+    private(set) var cancelledDownloads: [Download] = []
+
+    func cancelDownload(_ download: Download) {
+        cancelledDownloads.append(download)
+    }
+
     var cancelAllDownloadsCallCount = 0
     
     func cancelAllDownloads() {

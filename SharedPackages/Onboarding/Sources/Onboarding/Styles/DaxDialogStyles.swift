@@ -84,22 +84,7 @@ public extension OnboardingStyles {
 
         private func foregroundColor(isPressed: Bool, isHovered: Bool) -> Color {
 #if os(iOS)
-            switch (colorScheme, isPressed, isHovered) {
-            case (.light, false, false):
-                return .lightRestBlue
-            case (.dark, false, false):
-                return .darkRestBlue
-            case (.light, false, true):
-                return .lightHoverBlue
-            case (.dark, false, true):
-                return .darkHoverBlue
-            case (.light, true, _):
-                return .lightPressedBlue
-            case (.dark, true, _):
-                return .darkPressedBlue
-            case (_, _, _):
-                return .lightRestBlue
-            }
+            return Color(designSystemColor: isPressed ? .accentTextTertiary : .accentTextPrimary)
 #else
             return Color(designSystemColor: .accentTextPrimary)
 #endif
@@ -137,13 +122,4 @@ public extension OnboardingStyles {
         }
     }
 
-}
-
-extension Color {
-    static let lightRestBlue = Color(baseColor: .blue50)
-    static let darkRestBlue = Color(baseColor: .blue30)
-    static let lightHoverBlue = Color(baseColor: .blue60)
-    static let darkHoverBlue = Color(baseColor: .blue20)
-    static let lightPressedBlue = Color(baseColor: .blue70)
-    static let darkPressedBlue = Color(baseColor: .blue10)
 }

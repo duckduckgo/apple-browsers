@@ -110,4 +110,6 @@ final class SearchBookmarksBrowserTool: BrowserTool {
             }
         }
     }
+
+    func resultCount(of value: JSONValue) -> Int? { value["results"]?.arrayValue?.count }
 }

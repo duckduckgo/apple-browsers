@@ -117,6 +117,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextAddedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
+    var responseReceivedPublisher: AnyPublisher<Void, Never> { get }
     var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
@@ -138,6 +139,7 @@ protocol AIChatUserScriptHandling: AnyObject {
 
     @MainActor func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
+    func responseReceived(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
     func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
@@ -195,6 +197,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let pageContextRemovedPublisher: AnyPublisher<Void, Never>
     public let pageContextAddedPublisher: AnyPublisher<Void, Never>
     public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
+    public let responseReceivedPublisher: AnyPublisher<Void, Never>
     public let syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
@@ -205,6 +208,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
     private let pageContextAddedSubject = PassthroughSubject<Void, Never>()
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
+    private let responseReceivedSubject = PassthroughSubject<Void, Never>()
     private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
     private var syncObserverCancellable: AnyCancellable?
     private var storage: AIChatPreferencesStorage
@@ -324,6 +328,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
         self.pageContextAddedPublisher = pageContextAddedSubject.eraseToAnyPublisher()
         self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
+        self.responseReceivedPublisher = responseReceivedSubject.eraseToAnyPublisher()
         self.syncStatusPublisher = syncStatusSubject.eraseToAnyPublisher()
 
         setUpSyncStatusObserverIfNeeded()
@@ -828,6 +833,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
     }
 
+    func responseReceived(params: Any, message: UserScriptMessage) -> Encodable? {
+        responseReceivedSubject.send()
+        return nil
+    }
+
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let payload: TogglePageContextTelemetry = DecodableHelper.decode(from: params) else {
             return nil
@@ -1322,6 +1332,11 @@ extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
         }
 
         switch metric.metricName {
+        case .browserToolsAnswerCompleted, .browserToolsAnswerRated:
+            if isFireWindowProvider?() != true {
+                BrowserToolsPixel.answerPixels(for: metric).forEach { pixelFiring?.fire($0) }
+            }
+            completion?()
         case .userDidSubmitFirstPrompt:
             notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
             markDuckAIActivatedIfNeeded(metric)
@@ -1448,8 +1463,20 @@ extension AIChatUserScriptHandler {
     ///   use client tools, so the call is `unavailable`.
     @MainActor
     func executeClientTool(params: Any, message: UserScriptMessage, permissionPrompter: (any ClientToolPermissionPrompting)?) async -> Encodable? {
+        let reportsProtocolErrors = isFireWindowProvider?() != true
         guard let request = ExecuteClientToolRequest.parse(rawParams: params) else {
+            if reportsProtocolErrors {
+                let name = ((params as? [String: Any])?["capability"] as? [String: Any])?["name"] as? String
+                pixelFiring?.fire(BrowserToolsPixel.protocolError(.invalidRequest, tool: name))
+            }
             return ExecuteClientToolResponse.invalidRequest(rawParams: params)
+        }
+        // A name or version this app has never shipped; a known tool turned off remotely is not one.
+        guard (ClientToolCapability.browserTools + [.requestAccess]).contains(request.capability) else {
+            if reportsProtocolErrors {
+                pixelFiring?.fire(BrowserToolsPixel.protocolError(.unknownCapability, tool: request.capability.name))
+            }
+            return ExecuteClientToolResponse.failure(callId: request.callId, error: .unavailable)
         }
 
         // Scoped by the owner tab, never the key window, so a backgrounded chat cannot act on another window.
@@ -1466,8 +1493,14 @@ extension AIChatUserScriptHandler {
             isBurner: ownerCollection.isBurner,
             isDetached: message.messageWebView?.window is AIChatFloatingWindow
         )
-        let response = await browserTools.invoker.invokeClientTool(request, context: context, permissionPrompter: permissionPrompter)
-        return response.limitedToResultBytes()
+        let (response, trace) = await browserTools.invoker.invokeClientToolWithTrace(request, context: context, permissionPrompter: permissionPrompter)
+        // Reported after the size limit, so an oversized success counts as the `execution_failed` Duck.ai receives.
+        let limitedResponse = response.limitedToResultBytes()
+        if let trace {
+            BrowserToolsPixelInstrumentation(pixelFiring: pixelFiring)
+                .toolCallDidFinish(tool: request.capability.name, response: limitedResponse, trace: trace)
+        }
+        return limitedResponse
     }
 
     /// The Duck.ai owner tab this message belongs to — the host tab for a sidebar or detached

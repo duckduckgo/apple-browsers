@@ -136,7 +136,6 @@ final class BrowserTabViewController: NSViewController {
 
     private weak var previouslySelectedTab: Tab?
 
-    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     private var presentedContextualOnboardingDialogType: ContextualDialogType?
     private let onboardingPixelReporter: OnboardingPixelReporting
     private lazy var contextualOnboardingScheduler: ContextualOnboardingDialogScheduler = {
@@ -184,7 +183,6 @@ final class BrowserTabViewController: NSViewController {
          onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
          onboardingDialogFactory: ContextualDaxDialogsFactory = ContextualDaxDialogsProvider(fireCoordinator: NSApp.delegateTyped.fireCoordinator),
-         subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: @autoclosure @escaping @MainActor () -> NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
          newTabPageCustomizationModel: NewTabPageCustomBackgroundPublishing = NSApp.delegateTyped.newTabPageCustomizationModel,
@@ -218,7 +216,6 @@ final class BrowserTabViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingDialogTypeProvider = onboardingDialogTypeProvider
         self.onboardingDialogFactory = onboardingDialogFactory
-        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.featureFlagger = featureFlagger
         self.newTabPageActionsManager = newTabPageActionsManager
         self.newTabPageCustomizationModel = newTabPageCustomizationModel
@@ -693,7 +690,6 @@ final class BrowserTabViewController: NSViewController {
     private func abandonContextualOnboardingDialog() {
         if presentedContextualOnboardingDialogType == .subscriptionUpsell,
            onboardingDialogTypeProvider.lastDialog == .subscriptionUpsell {
-            subscriptionUpsellMetrics.report(.upsellDismissed)
             contextualOnboardingScheduler.gotItPressed(displayed: presentedContextualOnboardingDialogType, in: tabViewModel?.tab)
         }
         removeExistingDialog()
@@ -851,7 +847,7 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.layoutSubtreeIfNeeded()
         webViewContainer?.layoutSubtreeIfNeeded()
 
-        if dialogType == .tryFireButton {
+        if dialogType == .tryFireButton || dialogType == .thatsDuckAI {
             delegate?.highlightFireButton()
         } else if case .trackers = dialogType {
             delegate?.highlightPrivacyShield()
@@ -1072,6 +1068,13 @@ final class BrowserTabViewController: NSViewController {
             self.contextualOnboardingScheduler.navigationDidFinish(in: self.tabViewModel?.tab)
         }.store(in: &tabViewModelCancellables)
 
+        tabViewModel?.tab.aiChat?.responseReceivedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.contextualOnboardingScheduler.firstDuckAIAnswerReceived()
+            }
+            .store(in: &tabViewModelCancellables)
+
         // Same-document (SPA) navigations don't emit on webViewDidFinishNavigationPublisher,
         // so reconcile the web content layout for them here too.
         tabViewModel?.tab.webViewDidPerformSameDocumentNavigationPublisher.sink { [weak self] in
@@ -1280,10 +1283,6 @@ final class BrowserTabViewController: NSViewController {
         transientTabContentViewController?.removeCompletely()
         addAndLayoutChild(vc)
         transientTabContentViewController = vc
-    }
-
-    private func requestDisableUI() {
-        (view.window?.windowController as? MainWindowController)?.userInteraction(prevented: true)
     }
 
     private func showTabContent(of tabViewModel: TabViewModel?) {

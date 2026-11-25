@@ -24,6 +24,7 @@ import PrivacyConfig
 import UserScript
 import WebKit
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -68,6 +69,13 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didOpenSettings, "openSettings should be called")
     }
 
+    @MainActor func testResponseReceivedMessageReachesHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.responseReceived.rawValue))
+        _ = try await handler([:], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didReceiveResponse)
+    }
+
     @MainActor func testGetAIChatNativeConfigValues() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))
         let result = try await handler([""], WKScriptMessage.mock())
@@ -78,7 +86,8 @@ final class AIChatUserScriptTests: XCTestCase {
 
     @MainActor func testNativeConfigDispatcherAddsEnabledClientToolsAndPreservesOtherValues() async throws {
         let service = makeBrowserToolsService()
-        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
+        let pixels = PixelKitMock()
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service, pixelFiring: pixels)
         var baseConfig = AIChatNativeConfigValues.defaultValues
         baseConfig.supportsResponseStateReporting = true
         mockHandler.configResponse = baseConfig
@@ -91,16 +100,21 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertEqual(clientTools.protocolVersion, 1)
         XCTAssertEqual(clientTools.capabilities.map(\.name), ["listOpenTabs"])
         XCTAssertEqual(clientTools.capabilities.map(\.version), [1])
+        XCTAssertTrue(config.supportsBrowserToolsAnswerMetrics)
         var remainingConfig = config
         remainingConfig.clientTools = nil
+        remainingConfig.supportsBrowserToolsAnswerMetrics = false
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         XCTAssertEqual(try encoder.encode(remainingConfig), try encoder.encode(baseConfig))
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.name), ["aichat_tools_enabled_macos"])
+        XCTAssertEqual(pixels.actualFireCalls.map(\.frequency), [.daily])
     }
 
     @MainActor func testNativeConfigOmitsClientToolsInFireAndOutsideChat() async throws {
         let service = makeBrowserToolsService()
-        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service)
+        let pixels = PixelKitMock()
+        userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: service, pixelFiring: pixels)
         var baseConfig = AIChatNativeConfigValues.defaultValues
         baseConfig.clientTools = try ClientToolsConfiguration(capabilities: [.listOpenTabs])
         mockHandler.configResponse = baseConfig
@@ -110,15 +124,18 @@ final class AIChatUserScriptTests: XCTestCase {
 
         let fireConfig = try await nativeConfig(from: webView)
         XCTAssertNil(fireConfig.clientTools)
+        XCTAssertFalse(fireConfig.supportsBrowserToolsAnswerMetrics)
 
         mockHandler.isFireWindowProvider = { false }
         webView.documentURL = URL(string: "https://example.com")
         let unrelatedPageConfig = try await nativeConfig(from: webView)
         XCTAssertNil(unrelatedPageConfig.clientTools)
+        XCTAssertFalse(unrelatedPageConfig.supportsBrowserToolsAnswerMetrics)
 
         webView.documentURL = nil
         let missingURLConfig = try await nativeConfig(from: webView)
         XCTAssertNil(missingURLConfig.clientTools)
+        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
     }
 
     @MainActor func testLocalModelIsOfferedOnlyToPagesThatGetItsPushes() async throws {
@@ -346,13 +363,13 @@ final class AIChatUserScriptTests: XCTestCase {
         let tool = try XCTUnwrap(service.catalog.tool(named: "listOpenTabs"))
         service.permissions.setState(.allow, forToolNamed: tool.name)
         let control = await service.clientToolPermissions.authorize(callID: "control", tool: tool, prompter: userScript)
-        guard case .granted(let confirmControl) = control else {
+        guard case .granted(_, let confirmControl) = control else {
             return XCTFail("Stored permission should authorize script source")
         }
         let controlResult = await confirmControl { .success(.null) }
         XCTAssertNotNil(controlResult)
         let authorization = await service.clientToolPermissions.authorize(callID: "cancelled", tool: tool, prompter: userScript)
-        guard case .granted(let confirmExecution) = authorization else {
+        guard case .granted(_, let confirmExecution) = authorization else {
             return XCTFail("Stored permission should authorize script source")
         }
         let additionalSource = ClientToolCancellationSpy()
@@ -722,6 +739,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didGetAIChatSelectionContext = false
     var didSubmitAIChatSelectionContext = false
     var didTogglePageContextTelemetry = false
+    var didReceiveResponse = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     var selectionContextSubject = PassthroughSubject<AIChatSelectionContextData, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
@@ -914,6 +932,13 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         didTogglePageContextTelemetry = true
         return nil
     }
+
+    func responseReceived(params: Any, message: UserScriptMessage) -> Encodable? {
+        didReceiveResponse = true
+        return nil
+    }
+
+    var responseReceivedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
 
     // MARK: - Sync stubs
 

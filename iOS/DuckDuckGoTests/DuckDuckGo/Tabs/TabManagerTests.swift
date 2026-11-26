@@ -1271,6 +1271,67 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(model.currentTab?.uid, owner.uid)
     }
 
+    func testOpenTabAddsAnHTTPAddressToTheOwnersModelInTheBackground() async throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let selected = Tab(uid: "selected", fireTab: false)
+        let fireTab = Tab(uid: "fire", fireTab: true)
+        let normalModel = TabsModel(tabs: [owner, selected], currentIndex: 1, desktop: false)
+        let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)
+        let manager = try makeManager(normalModel, fireModel: fireModel,
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        let tool = OpenTabBrowserTool(scopeProvider: { _ in scope })
+        let context = BrowserToolCallContext(ownerTabID: owner.uid, ownerWindowToken: scope.token, isBurner: false)
+        let address = "http://kyoto.example/wiki/Kyoto?test=manual#History"
+
+        let result = await tool.execute(arguments: ["url": .string(address)], context: context)
+
+        XCTAssertEqual(normalModel.tabs.count, 3)
+        let opened = try XCTUnwrap(normalModel.tabs.first { $0 !== owner && $0 !== selected })
+        XCTAssertEqual(result, .success(["tabId": .string(opened.uid)]))
+        XCTAssertEqual(opened.link?.url.absoluteString, address)
+        XCTAssertTrue(manager.currentTabsModel.currentTab === selected)
+        XCTAssertEqual(fireModel.tabs.map(\.uid), [fireTab.uid])
+    }
+
+    func testOpenTabRejectsAnEarlierScopeForTheSameOwner() async throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let model = TabsModel(tabs: [owner], desktop: false)
+        let manager = try makeManager(model)
+        let previousScope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        let currentScope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        let tool = OpenTabBrowserTool(scopeProvider: { _ in currentScope })
+        let context = BrowserToolCallContext(ownerTabID: owner.uid, ownerWindowToken: previousScope.token, isBurner: false)
+
+        let result = await tool.execute(arguments: ["url": "https://kyoto.example"], context: context)
+
+        XCTAssertTrue(currentScope.isValid)
+        XCTAssertEqual(result, .failure(.unavailable))
+        XCTAssertEqual(model.tabs.map(\.uid), [owner.uid])
+        XCTAssertTrue(manager.currentTabsModel.currentTab === owner)
+    }
+
+    func testOpenTabRejectsANormalScopeWhileViewingFireTabs() async throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let fireTab = Tab(uid: "fire", fireTab: true)
+        let normalModel = TabsModel(tabs: [owner], desktop: false)
+        let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)
+        let manager = try makeManager(normalModel, fireModel: fireModel,
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        let tool = OpenTabBrowserTool(scopeProvider: { _ in scope })
+        let context = BrowserToolCallContext(ownerTabID: owner.uid, ownerWindowToken: scope.token, isBurner: false)
+        manager.setBrowsingMode(.fire, source: .tabSelection)
+        XCTAssertTrue(scope.accepts(context))
+
+        let result = await tool.execute(arguments: ["url": "https://kyoto.example"], context: context)
+
+        XCTAssertEqual(result, .failure(.unavailable))
+        XCTAssertEqual(normalModel.tabs.map(\.uid), [owner.uid])
+        XCTAssertEqual(fireModel.tabs.map(\.uid), [fireTab.uid])
+        XCTAssertEqual(manager.currentBrowsingMode, .fire)
+    }
+
     private func makeAttachmentManager() throws -> (TabManager, [Tab]) {
         let tabs = (0..<3).map {
             Tab(link: Link(title: "Page \($0)", url: URL(string: "https://example.com/\($0)")!))

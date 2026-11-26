@@ -345,6 +345,34 @@ final class AIChatToolPermissionSelectionTests: XCTestCase {
         }
     }
 
+    func testOpenTabPromptIncludesTheFullTargetAndApprovesOnlyOnce() throws {
+        let target = "http://kyoto.example/wiki/Kyoto?test=manual#History"
+        let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "openTab",
+                                                 targetsOtherTab: false, target: target, offersAlways: false)
+        let prompt = try XCTUnwrap(AIChatToolPermissionView.Prompt(request))
+        let selection = AIChatToolPermissionView.Selection(toolNames: prompt.tools.map(\.id), allowsPartialSelection: false)
+
+        XCTAssertEqual(prompt.tools.map(\.id), ["openTab"])
+        XCTAssertEqual(prompt.tools.first?.target, target)
+        XCTAssertEqual(prompt.approval.decision(for: selection), .allowOnce)
+    }
+
+    func testOpenTabPromptRejectsMissingTargetOrChatPermission() {
+        for target: String? in [nil, ""] {
+            let request = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "openTab",
+                                                     targetsOtherTab: false, target: target, offersAlways: false)
+            XCTAssertNil(AIChatToolPermissionView.Prompt(request))
+        }
+        let direct = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "openTab",
+                                                targetsOtherTab: false, target: "https://kyoto.example",
+                                                offersAlways: false, offersAllowForChat: true)
+        let batch = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "requestAccess",
+                                               targetsOtherTab: false, accessToolNames: ["listOpenTabs", "openTab"])
+
+        XCTAssertNil(AIChatToolPermissionView.Prompt(direct))
+        XCTAssertNil(AIChatToolPermissionView.Prompt(batch))
+    }
+
     func testAllRequestedToolsStartSelected() {
         let toolNames = ["readTabContent", "listOpenTabs", "searchHistory"]
         let selection = AIChatToolPermissionView.Selection(toolNames: toolNames, allowsPartialSelection: true)

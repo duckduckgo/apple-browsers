@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import Combine
 import Foundation
 @_spi(Testing) import Persistence
@@ -42,6 +43,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     private let script = makeTestUserScript()
     private let pixels = PixelKitMock()
     private let capStore = NewChatHintsCapStore(keyValueStore: MockThrowingKeyValueStore())
+    private let preferences = HintsTestPreferences()
     private var hintsSubscription: AnyCancellable?
 
     private static let defaultAttachmentLimits: AIChatAttachmentLimits = {
@@ -57,6 +59,8 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
                          models: [AIChatRemoteModel] = [everyModel],
                          attachmentLimits: AIChatAttachmentLimits? = defaultAttachmentLimits,
                          usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+                         userDefaultModelStorage: DuckAiNativeStorageHandling? = nil,
+                         newChatDefault: AIChatNewChatDefault = .unavailable,
                          scheduleInputFocus: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) })
         throws -> UnifiedToggleInputCoordinator {
         let storage = DuckAiNativeMemoryStorageHandler()
@@ -71,11 +75,12 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
             host: .omnibar,
             isToggleEnabled: true,
             duckAiNativeStorageHandler: storage,
-            modelsService: StubHintModelsService(models: models, attachmentLimits: attachmentLimits),
-            preferences: HintsTestPreferences(),
+            modelsService: StubHintModelsService(models: models, attachmentLimits: attachmentLimits, newChatDefault: newChatDefault),
+            preferences: preferences,
             toggleModeStorage: HintsTestToggleModeStorage(),
             stateStore: HintsTestStateStore(),
             usageLimitsStore: usageLimitsStore,
+            userDefaultModelStorage: { _ in userDefaultModelStorage },
             featureFlagger: flagger,
             termsOfServiceStore: terms,
             newChatHintsFeature: feature,
@@ -463,6 +468,63 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         #expect(sut.isInputPaneExpanded)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A picker hint on a model that can't take its attachment switches this chat's model, says so, and leaves the user's pick for new chats",
+          .timeLimit(.minutes(1)), arguments: [NewChatHint.photo, .documents])
+    func pickerHintModelSwitchStaysInThisChat(hint: NewChatHint) async throws {
+        preferences.selectedModelId = Self.textOnlyModel.id
+        let sut = try makeSUT(models: [Self.textOnlyModel, Self.everyModel])
+        let presenter = RecordingPresenter {}
+        sut.attachmentPresentingViewController = presenter
+        try await openBlankChat(sut)
+        try #require(sut.persistedModelId == Self.textOnlyModel.id)
+
+        sut.performNewChatHint(hint)
+        try presenter.cancelPicker()
+
+        #expect(sut.voicePromptSubmissionConfiguration.modelId == Self.everyModel.id)
+        let notice = sut.footerItems.first { $0.id == .modelSwitch }?.message
+        #expect(notice?.title == String(format: UserText.utiCreateImageModelSwitchTitle, "All"))
+        #expect(notice?.subtitle == String(format: hint == .photo ? UserText.aiChatNewChatHintModelSwitchPhotosSubtitle
+                                                                   : UserText.aiChatNewChatHintModelSwitchFilesSubtitle, "Text"))
+        #expect(preferences.selectedModelId == Self.textOnlyModel.id)
+
+        // A new chat in another tab starts on the user's model.
+        sut.deactivateToOmnibar(animateDismiss: false)
+        sut.activateForTab("tab-B")
+        #expect(sut.persistedModelId == Self.textOnlyModel.id)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With new chats on the default model, a picker hint's model switch leaves the user's default model alone",
+          .timeLimit(.minutes(1)))
+    func pickerHintModelSwitchKeepsTheDefaultModel() async throws {
+        let userDefault = DuckAiNativeMemoryStorageHandler()
+        try userDefault.putUserDefaultModel(Self.textOnlyModel.id)
+        let sut = try makeSUT(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.newChatHints, .aiChatNewChatDefaultModel]),
+                              models: [Self.textOnlyModel, Self.everyModel],
+                              userDefaultModelStorage: userDefault,
+                              newChatDefault: .model(id: Self.everyModel.id, reasoningEffort: nil))
+        let presenter = RecordingPresenter {}
+        sut.attachmentPresentingViewController = presenter
+        try await openBlankChat(sut)
+        try #require(sut.persistedModelId == Self.textOnlyModel.id)
+
+        sut.performNewChatHint(.photo)
+        try presenter.cancelPicker()
+
+        #expect(sut.voicePromptSubmissionConfiguration.modelId == Self.everyModel.id)
+        #expect(sut.footerItems.contains { $0.id == .modelSwitch })
+        #expect(try userDefault.getEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue) as? String
+                == "\"\(Self.textOnlyModel.id)\"")
+        #expect(preferences.selectedModelId == nil)
+
+        // A new chat in another tab starts on the user's model.
+        sut.deactivateToOmnibar(animateDismiss: false)
+        sut.activateForTab("tab-B")
+        #expect(sut.persistedModelId == Self.textOnlyModel.id)
+    }
+
     private static let weeklyLimitReached: String = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -483,7 +545,10 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
 private struct StubHintModelsService: AIChatModelsProviding {
     let models: [AIChatRemoteModel]
     let attachmentLimits: AIChatAttachmentLimits?
-    func fetchModels() async throws -> AIChatModelsResponse { AIChatModelsResponse(models: models, attachmentLimits: attachmentLimits) }
+    var newChatDefault: AIChatNewChatDefault = .unavailable
+    func fetchModels() async throws -> AIChatModelsResponse {
+        AIChatModelsResponse(models: models, attachmentLimits: attachmentLimits, newChatDefault: newChatDefault)
+    }
 }
 
 @MainActor

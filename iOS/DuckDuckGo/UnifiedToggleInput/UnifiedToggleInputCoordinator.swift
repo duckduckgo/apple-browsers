@@ -359,6 +359,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isOmnibarSession && inputMode == .aiChat && !hasSubmittedPrompt
     }
 
+    /// The footer cards under the input, in order.
+    var footerItems: [UTIFooterItem] { footerController?.currentMessages ?? [] }
+
     /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.
     private var isTermsOfServiceDisclaimerShown: Bool {
         footerController?.isTermsOfServiceVisible == true
@@ -1422,7 +1425,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .imageGeneration:
             // The Create Image switch shows the "Now using …" notice when it moves the model.
             if !(isUpdatedCreateImageEnabled && canSwitchModelForImageGeneration) {
-                switchModel(to: model)
+                switchModel(to: model, for: .imageCreation)
             }
             selectTool(.imageGeneration, createImageEntryPoint: .newChatHint)
             if isInputPaneExpanded {
@@ -1431,7 +1434,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 showExpanded(inputMode: .aiChat)
             }
         case .documents, .photo:
-            switchModel(to: model)
+            switchModel(to: model, for: hint == .photo ? .imageUpload : .fileUpload)
             // Moving the model can change the page, so only act if this is still the same blank chat.
             guard newChatState.isGuaranteedNewChat, currentTabUID == tab else { return }
             if hint == .documents {
@@ -1454,9 +1457,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
     }
 
-    private func switchModel(to model: AIChatModel) {
+    /// Moves this chat to `model` and says so in the footer, as Create Image does. Not kept as the user's pick, so the
+    /// model new chats start on stays theirs.
+    private func switchModel(to model: AIChatModel, for reason: CreateImageModelSwitchNotice.Reason) {
         guard model.id != modelStore.persistedModelId else { return }
-        modelSelector.updateSelectedModel(model.id)
+        let previousModel = modelStore.selectedModel
+        modelSelector.updateSelectedModel(model.id, persistsSelection: false)
+        guard let previousModel else { return }
+        footerController?.showModelSwitchNotice(CreateImageModelSwitchNotice(previousModel: previousModel, newModel: model, reason: reason))
     }
 
     private func logNewChatHintsState() {
@@ -3276,7 +3284,7 @@ private extension UnifiedToggleInputCoordinator {
         let wasSimplifiedPromptBox = viewController.usesSimplifiedPromptBox
         let presentation = toolsPresentation
         if toolsController.selectedTool != .imageGeneration {
-            footerController?.clearModelSwitchNotice()
+            footerController?.clearModelSwitchNotice(for: .imageCreation)
         }
         viewController.usesSimplifiedPromptBox = usesSimplifiedPromptBox
         if usesSimplifiedPromptBox {

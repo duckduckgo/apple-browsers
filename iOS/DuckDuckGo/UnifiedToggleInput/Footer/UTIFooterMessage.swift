@@ -21,14 +21,23 @@ import AIChat
 import Foundation
 
 struct CreateImageModelSwitchNotice: Equatable {
+    /// What the previous model couldn't do: create images, or read the photos or files a new chat hint opens.
+    enum Reason: Equatable {
+        case imageCreation
+        case imageUpload
+        case fileUpload
+    }
+
     let previousModelShortName: String
     let newModelShortName: String
     let previousModelHasExtraPrivacyProtections: Bool
+    let reason: Reason
 
-    init(previousModel: AIChatModel, newModel: AIChatModel) {
+    init(previousModel: AIChatModel, newModel: AIChatModel, reason: Reason = .imageCreation) {
         previousModelShortName = previousModel.shortName
         newModelShortName = newModel.shortName
         previousModelHasExtraPrivacyProtections = previousModel.provider == .oss
+        self.reason = reason
     }
 }
 

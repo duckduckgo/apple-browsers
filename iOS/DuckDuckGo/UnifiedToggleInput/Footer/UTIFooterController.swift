@@ -155,8 +155,9 @@ final class UTIFooterController {
         applyCurrentState()
     }
 
-    func clearModelSwitchNotice() {
-        guard modelSwitchNotice != nil else { return }
+    /// Clears the model switch notice, or only one given for `reason`.
+    func clearModelSwitchNotice(for reason: CreateImageModelSwitchNotice.Reason? = nil) {
+        guard let notice = modelSwitchNotice, reason == nil || notice.reason == reason else { return }
         modelSwitchNotice = nil
         applyCurrentState()
     }
@@ -191,8 +192,10 @@ final class UTIFooterController {
         case .termsConsent: return
         case .outOfUsage, .attachmentPrivacy, .promptTooLong: return
         case .modelSwitch:
+            if modelSwitchNotice?.reason == .imageCreation {
+                createImagePixelFiring.modelSwitchNoticeDismissed()
+            }
             modelSwitchNotice = nil
-            createImagePixelFiring.modelSwitchNoticeDismissed()
         case .usageWarning:
             measurement.warningDismissed()
             viewModel?.dismiss()

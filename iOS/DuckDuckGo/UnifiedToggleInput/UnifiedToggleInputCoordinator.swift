@@ -2951,6 +2951,7 @@ private extension UnifiedToggleInputCoordinator {
         UnifiedToggleInputVoiceButton(isDuckAIMode: inputMode == .aiChat,
                                       hasSubmittedPrompt: hasSubmittedPrompt,
                                       continuesChatsByVoice: continuesChatsByVoice,
+                                      isCreatingImage: toolsController.selectedTool == .imageGeneration,
                                       availability: voiceInChatAvailability)
     }
 
@@ -2984,6 +2985,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func refreshToolsPresentation() {
+        updateToolbarAIVoiceChat()
         let usesSimplifiedPromptBox = simplifiedPromptBoxFeature.isAvailable
         let wasSimplifiedPromptBox = viewController.usesSimplifiedPromptBox
         let presentation = toolsPresentation
@@ -3303,14 +3305,17 @@ extension UnifiedToggleInputCoordinator {
 extension UnifiedToggleInputVoiceButton {
 
     /// A new chat always offers voice. A chat with messages follows the page: available, unavailable
-    /// with the page's reason for the reasons web explains, and hidden otherwise or until it says.
+    /// with the page's reason for the reasons web explains, and hidden otherwise, until it says, or
+    /// while Create Image is picked.
     init(isDuckAIMode: Bool,
          hasSubmittedPrompt: Bool,
          continuesChatsByVoice: Bool,
+         isCreatingImage: Bool,
          availability: AIChatVoiceInChatAvailability?) {
         guard isDuckAIMode else { self = .hidden; return }
         guard hasSubmittedPrompt else { self = .available; return }
-        guard continuesChatsByVoice else { self = .hidden; return }
+        // The page doesn't know about the native Create Image tool until the prompt is sent.
+        guard continuesChatsByVoice, !isCreatingImage else { self = .hidden; return }
         switch availability {
         case .available:
             self = .available

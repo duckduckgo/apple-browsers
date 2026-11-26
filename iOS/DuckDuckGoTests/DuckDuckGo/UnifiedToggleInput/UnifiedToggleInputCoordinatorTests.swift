@@ -4815,6 +4815,23 @@ extension UnifiedToggleInputCoordinatorTests {
         }
     }
 
+    func testCreateImageHidesVoiceInAChatWithMessagesUntilItIsTurnedOff() {
+        mockPreferences.selectedModelId = "gpt-5"
+        let coordinator = makeVoiceInChatCoordinator()
+        coordinator.modelStore.models = [makeModel(id: "gpt-5", access: true, supportedTools: [.imageGeneration])]
+        let script = makeTestUserScript()
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+        XCTAssertEqual(coordinator.selectedTool, .imageGeneration)
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden)
+
+        coordinator.handleToolsMenuSelection(.imageGeneration)
+        XCTAssertNil(coordinator.selectedTool)
+        XCTAssertEqual(voiceButton(in: coordinator), .available)
+    }
+
     func testFlagOffKeepsTodaysHiddenVoiceButtonInAChatWithMessages() {
         let coordinator = makeVoiceInChatCoordinator(flagOn: false)
         let script = makeTestUserScript()

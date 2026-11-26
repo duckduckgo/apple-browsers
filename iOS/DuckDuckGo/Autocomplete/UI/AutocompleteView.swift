@@ -252,8 +252,10 @@ private struct SuggestionView: View {
                     SuggestionListItem(iconKind: .askDuckAI(highlighted: autocompleteModel.askDuckAIAppearance == .fullColour),
                                        title: UserText.autocompleteAskDuckAITitle,
                                        subtitle: AskDuckAIRowAppearance.subtitle(for: value))
-                    .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
+                    // One element, so the list cell reads the label once instead of once per child.
+                    .accessibilityElement(children: .ignore)
                     .accessibilityLabel(AskDuckAIRowAppearance.accessibilityLabel(query: AskDuckAIRowAppearance.subtitle(for: value)))
+                    .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
                 }
 
             }

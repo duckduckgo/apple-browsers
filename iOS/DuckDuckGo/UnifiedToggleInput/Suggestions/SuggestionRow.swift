@@ -75,6 +75,14 @@ struct SuggestionRow: Identifiable, Equatable {
         self.accessory = accessory
         self.accessibilityID = accessibilityID
     }
+
+    /// The row's SwiftUI identity in the list. The Ask Duck.ai row's `id` carries the query, so it changes on every
+    /// keystroke; giving the redesigned row a stable identity keeps its view alive so the logo can cross-fade as the
+    /// list grows and shrinks. Every other row, and the flag-off Ask row, is identified by `id` as before.
+    var viewID: String {
+        if case .duckAI = icon { return "askDuckAI" }
+        return id
+    }
 }
 
 /// A titled group of rows. Sections with no rows are omitted by producers.

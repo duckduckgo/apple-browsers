@@ -199,6 +199,24 @@ final class SearchSuggestionsSourceTests: XCTestCase {
         XCTAssertEqual(row.accessory, .none)
     }
 
+    func test_askDuckAIRow_whenRedesignOn_keepsOneListIdentityWhileTheQueryChanges() throws {
+        // The logo can only cross-fade if the row's view survives the keystroke that crosses the threshold.
+        let short = try XCTUnwrap(askDuckAIRow(in: SearchSuggestionsSource.sections(
+            from: .appEmpty, query: "wea", showAskAIChat: true, isAskDuckAIRedesignEnabled: true)))
+        let long = try XCTUnwrap(askDuckAIRow(in: SearchSuggestionsSource.sections(
+            from: .appEmpty, query: "weather tomorrow", showAskAIChat: true, isAskDuckAIRedesignEnabled: true)))
+
+        XCTAssertNotEqual(short.id, long.id)
+        XCTAssertEqual(short.viewID, long.viewID)
+    }
+
+    func test_askDuckAIRow_whenRedesignOff_isIdentifiedByItsIDAsToday() throws {
+        let row = try XCTUnwrap(askDuckAIRow(in: SearchSuggestionsSource.sections(
+            from: .appEmpty, query: "weather", showAskAIChat: true, isAskDuckAIRedesignEnabled: false)))
+
+        XCTAssertEqual(row.viewID, row.id)
+    }
+
     func test_askDuckAIRow_whenRedesignOn_logoFollowsSearchSuggestionCount() throws {
         let threshold = AskDuckAIRowAppearance.highlightThreshold
         func icon(phraseCount: Int) throws -> SuggestionRowIcon {

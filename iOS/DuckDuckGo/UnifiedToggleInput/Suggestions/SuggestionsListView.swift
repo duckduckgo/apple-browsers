@@ -84,14 +84,14 @@ struct SuggestionsListView: View {
             // Keep the keyboard-/pointer-highlighted row scrolled into view.
             .onReceive(viewModel.$selectedRowID) { id in
                 guard let id else { return }
-                withAnimation { proxy.scrollTo(id) }
+                withAnimation { proxy.scrollTo(viewModel.viewID(forRowID: id)) }
             }
         }
     }
 
     @ViewBuilder
     private func rows(for section: SuggestionSection) -> some View {
-        ForEach(section.rows) { row in
+        ForEach(section.rows, id: \.viewID) { row in
             Button {
                 viewModel.selectRow(id: row.id)
             } label: {
@@ -181,10 +181,10 @@ private struct SuggestionsSectionCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(section.rows) { row in
+            ForEach(section.rows, id: \.viewID) { row in
                 SuggestionRowButton(viewModel: viewModel, row: row, isAddressBarAtBottom: isAddressBarAtBottom,
                                     restingBackground: usesCardSurface ? nil : Color(designSystemColor: .surface))
-                    .id(row.id)
+                    .id(row.viewID)
                     .overlay(alignment: .bottom) {
                         if row.id != section.rows.last?.id {
                             Color(uiColor: .separator)
@@ -365,7 +365,7 @@ private struct SuggestionsCardListView: View {
             }
             .onReceive(viewModel.$selectedRowID) { id in
                 guard let id else { return }
-                withAnimation { proxy.scrollTo(id) }
+                withAnimation { proxy.scrollTo(viewModel.viewID(forRowID: id)) }
             }
         }
     }
@@ -382,5 +382,12 @@ private struct AskDuckAIRowAccessibilityLabel: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+private extension SuggestionsListViewModel {
+    /// Scroll target for a selected row: rows are identified in the list by `viewID`, not `id`.
+    func viewID(forRowID id: String) -> String {
+        sections.lazy.flatMap(\.rows).first { $0.id == id }?.viewID ?? id
     }
 }

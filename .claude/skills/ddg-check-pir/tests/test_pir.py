@@ -429,6 +429,21 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result["launch"]["launchProfile"]["source"], dict(inline={"onboardingCompleted": False}))
         self.assertIn(pir.shlex.join(["--launch-profile", inline]), result["rerun"])
 
+    def test_rejected_launch_profile_is_inconclusive_with_profile_and_line_in_evidence(self):
+        failed = 'LAUNCH_PROFILE_FAILED Unknown key "featureFlag.x".'
+        self.launch_error = f"The app did not apply its launch profile: {failed}"
+        original = self.Runtime.__init__
+
+        def init(runtime, *args, **kwargs):
+            original(runtime, *args, **kwargs)
+            runtime.launch_profile, runtime.launch_profile_result = {"featureFlag.x": True}, failed
+        self.Runtime.__init__ = init
+        result = self.execute("--launch-profile", '{"featureFlag.x": true}')
+        self.assertEqual(result["status"], "inconclusive", result)
+        self.assertIn(failed, result["reason"])
+        recorded = json.loads((Path(result["evidence"]) / "result.json").read_text())["launchProfile"]
+        self.assertEqual(recorded, dict(source=dict(inline={"featureFlag.x": True}), merged={"featureFlag.x": True}, result=failed))
+
     def test_launch_profile_is_ios_only_and_validated_before_launch(self):
         evidence = str(self.directory / "evidence")
         for argv, message in ((["run", "--platform", "macos", "--config", "/absent.json"], "only to iOS"),

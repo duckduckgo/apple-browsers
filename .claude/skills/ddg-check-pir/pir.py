@@ -725,6 +725,9 @@ def execute(args, runtime_factory=None):
     except Exception as error:
         context.result.update(status="inconclusive", reason=f"{type(error).__name__}: {error}")
     finally:
+        if "launch" not in context.result and getattr(runtime, "launch_profile", None):
+            context.result["launchProfile"] = dict(source=launch_profile_source, merged=runtime.launch_profile,
+                                                   result=getattr(runtime, "launch_profile_result", None))
         try:
             if args.command == "run" and client and client.last_run is not None:
                 try:

@@ -262,7 +262,7 @@ class MainViewController: UIViewController {
     /// The unlocked page can take focus during that time; iOS shows the keyboard once the app is active.
     private var isFinishingAppLockUnlock = false
     /// Set while the page was drawn focused ahead of the app-open keyboard flow, which then confirms or retracts it.
-    private var hasStagedNewTabPageFocus = false
+    private(set) var hasStagedNewTabPageFocus = false
     private var appLockUnlockCancellables = Set<AnyCancellable>()
 
     private var isAppOpenKeyboardWindowVisible: Bool {
@@ -2611,6 +2611,12 @@ class MainViewController: UIViewController {
         stageFocusedNewTabPageInputBeforeAppOpen(coordinator: coordinator)
     }
 
+    /// A page staged before its window existed was measured without one, so it is re-measured before the first frame.
+    func reconcileStagedNewTabPageFocusAfterWindowAttach() {
+        guard hasStagedNewTabPageFocus else { return }
+        refreshFocusedNewTabPagePose(animated: false)
+    }
+
     /// The app-open keyboard flow decided against focus, so the staged layout goes back to resting without a transition.
     func retractStagedNewTabPageFocus() {
         guard hasStagedNewTabPageFocus else { return }
@@ -3405,6 +3411,7 @@ class MainViewController: UIViewController {
                 return
             }
             hasStagedNewTabPageFocus = false
+            recomputeNavigationBarContainerHeightIfNeeded()
             recordPendingNewTabPagePresentationIfVisible()
             if onNewTabPage, isNewTabPageVisible {
                 newTabPageSessionInstrumentation.keyboardRaisedOnArrival()

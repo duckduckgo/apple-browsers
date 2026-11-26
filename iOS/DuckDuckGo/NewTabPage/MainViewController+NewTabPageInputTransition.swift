@@ -171,7 +171,7 @@ extension MainViewController {
             completion: finish)
     }
 
-    func refreshFocusedNewTabPagePose() {
+    func refreshFocusedNewTabPagePose(animated: Bool = true) {
         guard let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource,
               let currentPose = transitionSource.focusedPose,
               let coordinator = unifiedToggleInputCoordinator else { return }
@@ -179,7 +179,7 @@ extension MainViewController {
         let pose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource, ignoresFocusedScroll: true)
             ?? poseKeepingOffsets(of: currentPose, coordinator: coordinator)
         guard pose != currentPose else { return }
-        guard !UIAccessibility.isReduceMotionEnabled else {
+        guard animated, !UIAccessibility.isReduceMotionEnabled else {
             transitionSource.setFocusedPose(pose)
             return
         }

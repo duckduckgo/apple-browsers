@@ -388,8 +388,9 @@ extension MainViewController {
     }
 
     func recomputeNavigationBarContainerHeightIfNeeded() {
+        // A staged session is measured before the window exists and re-measures transiently once it does; confirming reconciles.
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isInputEditing else {
+              coordinator.isInputEditing, !hasStagedNewTabPageFocus else {
             return
         }
         if isIPadFullTabChatInput {

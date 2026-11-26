@@ -71,6 +71,7 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
     var showKeyboardOnLaunchCalled = false
     var showKeyboardOnNewTabPageCreatedCallCount = 0
+    var appOpenKeyboardDeclinedCallCount = 0
     var lastBackgroundDate: Date?
     var isAfterIdleReturn = false
     var hasCompletedAuthentication = true
@@ -84,6 +85,10 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
     func showKeyboardOnNewTabPageCreated() {
         showKeyboardOnNewTabPageCreatedCallCount += 1
+    }
+
+    func appOpenKeyboardDeclined() {
+        appOpenKeyboardDeclinedCallCount += 1
     }
 
 }
@@ -402,6 +407,7 @@ final class LaunchActionHandlerTests {
         #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 1)
         #expect(idleReturnDelegate.lastIsFirstForeground == false)
     }
 

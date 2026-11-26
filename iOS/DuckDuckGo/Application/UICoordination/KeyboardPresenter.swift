@@ -27,6 +27,7 @@ protocol KeyboardPresenting {
 
     func showKeyboardOnLaunch(lastBackgroundDate: Date?, hasCompletedAuthentication: Bool, isAfterIdleReturn: Bool)
     func showKeyboardOnNewTabPageCreated()
+    func appOpenKeyboardDeclined()
 
 }
 
@@ -39,6 +40,7 @@ protocol AppOpenKeyboardHandling: AnyObject {
     var presentedViewController: UIViewController? { get }
     func closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: UIViewController?, completion: @escaping () -> Void)
     func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void)
+    func retractStagedNewTabPageFocus()
 }
 
 /// Keyboard behavior on New Tab Pages: an NTP shows the keyboard when New Tab is on, unless the user
@@ -70,6 +72,17 @@ struct NewTabPageKeyboardPolicy {
     /// A swipe preserves the page's previous focus without counting as a new keyboard landing.
     func shouldRestoreInputFocusOnTabSwipe(on tab: Tab) -> Bool {
         tab.isHomeTab && tab.wasInputFocusedBeforeTabSwitch
+    }
+
+    /// Whether an inline New Tab Page is certain enough to take focus at app open to draw its focused layout
+    /// before the app-open keyboard flow runs. Launch actions and automatic clearing are decided later,
+    /// and clearing re-attaches the page, so they opt out.
+    func presentsFocusedLayoutBeforeAppOpen(hasInlineInput: Bool,
+                                            isHeldForOnboarding: Bool,
+                                            isBlockedByDialog: Bool,
+                                            isAutoClearEnabled: Bool,
+                                            hasLaunchAction: Bool) -> Bool {
+        hasInlineInput && onNewTab && !isHeldForOnboarding && !isBlockedByDialog && !isAutoClearEnabled && !hasLaunchAction
     }
 
     /// After Fire, New Tab decides unless onboarding is still running. A burned Duck.ai chat reopens
@@ -125,7 +138,10 @@ final class KeyboardPresenter: KeyboardPresenting {
         scheduleKeyboardWhenWindowVisible(requestID: requestID,
                                           isAfterIdleReturn: isAfterIdleReturn,
                                           screenLeftOpen: screenLeftOpen) { [self] in
-            guard isAppOpen else { return }
+            guard isAppOpen else {
+                mainViewController.retractStagedNewTabPageFocus()
+                return
+            }
             scheduleKeyboardFocus(requestID: requestID, onAppLaunch: onAppLaunch)
         }
     }
@@ -148,6 +164,11 @@ final class KeyboardPresenter: KeyboardPresenting {
         } else {
             waitForWindow()
         }
+    }
+
+    /// A launch decided this open raises no keyboard, so a page drawn focused ahead of it goes back to resting.
+    func appOpenKeyboardDeclined() {
+        mainViewController.retractStagedNewTabPageFocus()
     }
 
     /// Each foreground has its own presenter, so a launch task that outlives it can't raise the keyboard on a later one.

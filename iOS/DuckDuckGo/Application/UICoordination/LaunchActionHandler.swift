@@ -155,7 +155,7 @@ final class LaunchActionHandler: LaunchActionHandling {
                     case .openedNewTab:
                         keyboardPresenter.showKeyboardOnNewTabPageCreated()
                     case .suppressed:
-                        break
+                        keyboardPresenter.appOpenKeyboardDeclined()
                     }
                 }
                 if drewNewTabPage {

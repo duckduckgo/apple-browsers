@@ -283,7 +283,10 @@ struct Launching: LaunchingHandling {
                                                             idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                             aiChatBonusStateProvider: aiChatBonusService,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
-        let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
+        let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+                                                      featureFlagger: featureFlagger,
+                                                      onboardingVPNExperimentMetrics: .live,
+                                                      notificationCenter: .default)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
@@ -437,7 +440,8 @@ struct Launching: LaunchingHandling {
         let vpnService = VPNService(mainCoordinator: mainCoordinator,
                                     notificationServiceManager: notificationServiceManager,
                                     onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
-                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
+                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore),
+                                    onboardingVPNExperimentMetrics: .live)
         let aiChatService = AIChatService(
             aiChatSettings: aiChatSettings,
             aiChatBonusService: aiChatBonusService,

@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "macos-authv2-token-refresh",
-            "version": "3.0"
+            "version": "4.0"
         },
         "feature": {
             "name": "authv2-token-refresh",
@@ -51,8 +51,18 @@
                     },
                     "recovery_outcome": {
                         "type": "string",
-                        "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed.",
+                        "description": "Outcome of invalid-token recovery for this refresh, with its meaning from before the backup token: succeeded when any recovery yielded a valid token (see recovery_method), failed when the App Store restore ran and didn't, not_attempted when it didn't run and nothing recovered the token. The backup restore is reported in backup_outcome.",
                         "enum": ["not_attempted", "succeeded", "failed"]
+                    },
+                    "recovery_method": {
+                        "type": "string",
+                        "description": "How the token was recovered when recovery_outcome is succeeded: from the backup token or by the App Store restore. Absent when another process had already stored a new token or the user changed the session.",
+                        "enum": ["backup", "app_store"]
+                    },
+                    "backup_outcome": {
+                        "type": "string",
+                        "description": "Outcome of the backup token restore when the recovery path was reached: succeeded, not_attempted when no backup restore ran, rejected when the backup can never restore the session, failed for a temporary or unknown failure, or session_changed when the user signed out, signed in or switched account during the restore.",
+                        "enum": ["succeeded", "not_attempted", "rejected", "failed", "session_changed"]
                     },
                     "signed_out": {
                         "type": "boolean",

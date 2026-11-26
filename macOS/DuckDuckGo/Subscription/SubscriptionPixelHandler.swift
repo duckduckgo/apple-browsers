@@ -59,25 +59,35 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             pixelKit?.fire(SubscriptionPixel.subscriptionAutomaticSignOut(data, source, error), frequency: .dailyAndCount)
         case .invalidRefreshTokenSignedOut:
             pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
-        case .invalidRefreshTokenRecovered:
-            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
+        case .invalidRefreshTokenRecovered(let method):
+            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered(method), frequency: .dailyAndCount)
         case .purchaseSuccessAfterPendingTransaction:
             pixelKit?.fire(SubscriptionPixel.subscriptionPurchaseSuccessAfterPendingTransaction(source), frequency: .dailyAndCount)
         case .pendingTransactionApproved:
             pixelKit?.fire(SubscriptionPixel.subscriptionPendingTransactionApproved(source), frequency: .dailyAndCount)
+        case .backupRestored(let trigger):
+            pixelKit?.fire(SubscriptionBackupTokenPixel.restored(trigger), frequency: .dailyAndCount)
+        case .backupRestoreFailed(let trigger, let reason, let error):
+            pixelKit?.fire(SubscriptionBackupTokenPixel.restoreFailed(trigger, reason, error), frequency: .dailyAndCount)
+        case .backupRenewed:
+            pixelKit?.fire(SubscriptionBackupTokenPixel.renewed, frequency: .standard)
+        case .backupRenewalFailed(let error):
+            pixelKit?.fire(SubscriptionBackupTokenPixel.renewalFailed(error), frequency: .dailyAndCount)
+        case .backupKeychainError(let action, let operation, let error):
+            pixelKit?.fire(SubscriptionBackupTokenPixel.keychainError(action, operation, error), frequency: .dailyAndCount)
         }
     }
 
     public func handle(pixel: Subscription.KeychainManager.Pixel) {
         switch pixel {
         case .deallocatedWithBacklog:
-            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDeallocatedWithBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDeallocatedWithBacklog(source, tokenType: pixel.tokenType), frequency: .dailyAndCount)
         case .dataAddedToTheBacklog:
-            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataAddedToTheBacklog(source, tokenType: pixel.tokenType), frequency: .dailyAndCount)
         case .dataWroteFromBacklog:
-            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataWroteFromBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerDataWroteFromBacklog(source, tokenType: pixel.tokenType), frequency: .dailyAndCount)
         case .failedToWriteDataFromBacklog:
-            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerFailedToWriteDataFromBacklog(source), frequency: .dailyAndCount)
+            pixelKit?.fire(SubscriptionPixel.subscriptionKeychainManagerFailedToWriteDataFromBacklog(source, tokenType: pixel.tokenType), frequency: .dailyAndCount)
         }
     }
 }

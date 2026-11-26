@@ -24,7 +24,18 @@ import WideEvent
 public protocol AuthV2TokenRefreshInstrumenting: AnyObject {
     var eventMapping: EventMapping<OAuthClientRefreshEvent> { get }
 
-    func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome, error: Error?, signedOut: Bool)
+    /// Completes the refresh flow that reached the invalid-token recovery.
+    /// - Parameters:
+    ///   - outcome: The recovery outcome.
+    ///   - method: How the token was recovered, when a recovery strategy recovered it.
+    ///   - backupOutcome: The outcome of the backup restore.
+    ///   - error: The recovery error, used when `outcome` is `.failed`.
+    ///   - signedOut: Whether the refresh ended with the user signed out.
+    func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome,
+                                      method: TokenRecoveryMethod?,
+                                      backupOutcome: BackupRecoveryOutcome,
+                                      error: Error?,
+                                      signedOut: Bool)
 }
 
 public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting {
@@ -53,13 +64,19 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
         }
     }
 
-    public func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome, error: Error?, signedOut: Bool) {
+    public func completeInvalidTokenRecovery(outcome: TokenRecoveryOutcome,
+                                             method: TokenRecoveryMethod?,
+                                             backupOutcome: BackupRecoveryOutcome,
+                                             error: Error?,
+                                             signedOut: Bool) {
         guard isFeatureEnabled(),
               let data = newestPendingRecoveryFlow() else {
             return
         }
 
         data.recoveryOutcome = outcome
+        data.recoveryMethod = method
+        data.backupOutcome = backupOutcome
         data.signedOut = signedOut
 
         switch outcome {
@@ -80,9 +97,9 @@ public final class DefaultAuthV2TokenRefreshInstrumentation: AuthV2TokenRefreshI
             completeFailure(data)
 
         case .notAttempted:
-            // No restore ran (no handler, or the platform can't restore), so the recovery latency
-            // measured from invalid-token detection would be meaningless - drop it. Keep the
-            // original invalid-token error/failing step that the flow already carries.
+            // The App Store restore didn't run (no handler, or the platform can't restore). As before
+            // the backup token existed, drop the recovery latency and keep the original invalid-token
+            // error/failing step that the flow already carries; `backupOutcome` reports any backup restore.
             data.recoveryDuration = nil
             completeFailure(data)
         }

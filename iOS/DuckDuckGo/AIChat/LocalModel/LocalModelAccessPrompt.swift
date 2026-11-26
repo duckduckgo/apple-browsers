@@ -31,6 +31,7 @@ final class LocalModelAccessPrompt: LocalModelAccessAsking {
     private let instrumentation: AIChatLocalModelInstrumentation
     private weak var controller: UIViewController?
     private var answer: AIChatLocalModelAccessReply.Result?
+    private var isInstallPrompt = false
     private var waiting: [CheckedContinuation<AIChatLocalModelAccessReply.Result, Never>] = []
 
     init(instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
@@ -43,7 +44,12 @@ final class LocalModelAccessPrompt: LocalModelAccessAsking {
             // A second request while the card is up, from a double tap or another tab, gets the same answer.
             guard waiting.count == 1 else { return }
             if show(in: window, request: request) {
-                instrumentation.fire(.promoShown)
+                // The pixels only know Apple Intelligence so far, so an Install card would count as its offer.
+                if case .install = request {
+                    isInstallPrompt = true
+                } else {
+                    instrumentation.fire(.promoShown)
+                }
             } else {
                 finish(.declined)
             }
@@ -62,7 +68,7 @@ final class LocalModelAccessPrompt: LocalModelAccessAsking {
         let controller = LocalModelAccessPromptHostingController(rootView: card) { [weak self] in
             guard let self else { return }
             let result = self.answer ?? .declined
-            if result == .declined {
+            if result == .declined, !self.isInstallPrompt {
                 self.instrumentation.fire(.promoClosed)
             }
             self.finish(result)
@@ -83,6 +89,7 @@ final class LocalModelAccessPrompt: LocalModelAccessAsking {
         let waiting = self.waiting
         self.waiting = []
         answer = nil
+        isInstallPrompt = false
         for continuation in waiting {
             continuation.resume(returning: result)
         }

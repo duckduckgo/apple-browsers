@@ -22,6 +22,7 @@ import Combine
 import Foundation
 @_spi(Testing) import PixelKit
 import Testing
+import UIKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -215,6 +216,30 @@ final class LocalModelAccessSettingsViewModelTests {
 
         #expect(answer == .declined)
         #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only the Apple Intelligence card counts as its offer; the Install card sends no promo pixels",
+          .timeLimit(.minutes(1)),
+          arguments: [AIChatLocalModelAccessRequest.connect(AIChatLocalModelInfo(id: "apple", name: "Apple Intelligence")),
+                      .install(AIChatLocalModelSpec.gemma4E2B.info, bytes: AIChatLocalModelSpec.gemma4E2B.bytes)])
+    func promoPixelsOnlyForAppleIntelligence(request: AIChatLocalModelAccessRequest) async {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        let prompt = LocalModelAccessPrompt(instrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
+
+        let answer = Task { await prompt.ask(in: window, request: request) }
+        await waitUntil { window.rootViewController?.presentedViewController != nil }
+        // Closing the card any other way than its buttons declines.
+        window.rootViewController?.dismiss(animated: false)
+
+        #expect(await answer.value == .declined)
+        let expected = request == .connect(AIChatLocalModelInfo(id: "apple", name: "Apple Intelligence"))
+            ? ["aichat_local_model_promo_shown", "aichat_local_model_promo_closed"]
+            : []
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == expected)
     }
 
     // MARK: - Pixels

@@ -532,17 +532,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     private func statusBarRow(in hostView: UIView) -> StatusBarRow? {
 #if DDG_HAS_DUO_LAYOUT_SDK
-        if #available(iOS 27.1, *), let window = hostView.window, hostView.traitCollection.userInterfaceIdiom == .phone,
-           hostView.bounds.width > hostView.bounds.height,
-           !window.reservedRegions(kind: .division, options: .includeInactive).isEmpty {
-
-            let height = max(navigationBar.intrinsicContentSize.height, Metrics.estimatedNavBarHeight)
-            let region = UIView.LayoutRegion.bar(onEdge: UIRectEdge.top, extent: height)
-            let availableFrame = hostView.bounds.inset(by: hostView.edgeInsets(for: region))
-            guard !availableFrame.isEmpty,
-                  availableFrame.midY < hostView.bounds.minY + hostView.safeAreaInsets.top else { return nil }
-
-            let guide = hostView.layoutGuide(for: region)
+        let height = max(navigationBar.intrinsicContentSize.height, Metrics.estimatedNavBarHeight)
+        if #available(iOS 27.1, *), let (guide, availableFrame) = DuoLayout.horizontalStatusBarRow(in: hostView, height: height) {
             let fold = hostView.reservedRegions(kind: .division)
                 .reduce(CGRect.null) { $0.union($1.frame.intersection(availableFrame)) }
             guard !fold.isNull else { return StatusBarRow(guide: guide) }

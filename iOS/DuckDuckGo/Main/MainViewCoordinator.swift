@@ -115,6 +115,10 @@ class MainViewCoordinator {
     var isAITabCollapsedBarFloatingOffsetEnabled: () -> Bool = { false }
     private(set) var isWebInputEditing = false
     private(set) var isInMinimalChromeLayout = false
+    private(set) var addressBarStatusRow: UILayoutGuide?
+    private(set) var foldedAddressFieldPlacement: DefaultOmniBarView.FoldedAddressFieldPlacement?
+    private var addressBarStatusRowConstraints: [NSLayoutConstraint] = []
+    private var navigationBarTopBelowStatusRow: NSLayoutConstraint?
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
         isNavBarContainerBottomKeyboardBased
@@ -266,6 +270,8 @@ class MainViewCoordinator {
     class Constraints {
 
         var navigationBarContainerTop: NSLayoutConstraint!
+        var navigationBarContainerLeading: NSLayoutConstraint!
+        var navigationBarContainerTrailing: NSLayoutConstraint!
         var navigationBarContainerBottom: NSLayoutConstraint!
         var navigationBarContainerBottomSafeAreaFloor: NSLayoutConstraint?
         var navigationBarContainerHeight: NSLayoutConstraint!
@@ -333,6 +339,44 @@ class MainViewCoordinator {
         activating.constant = deactivating.constant
         activating.isActive = true
         return activating
+    }
+
+    func setAddressBarStatusRow(_ guide: UILayoutGuide?, fieldPlacement: DefaultOmniBarView.FoldedAddressFieldPlacement? = nil) {
+        if foldedAddressFieldPlacement != fieldPlacement {
+            foldedAddressFieldPlacement = fieldPlacement
+            for case let cell as OmniBarCell in navigationBarCollectionView.visibleCells {
+                cell.setFoldedAddressFieldPlacement(fieldPlacement)
+            }
+        }
+        guard addressBarStatusRow !== guide else { return }
+        let previousTop = constraints.navigationBarContainerTop!
+        let wasActive = previousTop.isActive
+        previousTop.isActive = false
+        NSLayoutConstraint.deactivate(addressBarStatusRowConstraints)
+
+        let defaultHorizontalConstraints = [constraints.navigationBarContainerLeading!, constraints.navigationBarContainerTrailing!]
+        if let guide {
+            if addressBarStatusRow == nil {
+                navigationBarTopBelowStatusRow = previousTop
+            }
+            NSLayoutConstraint.deactivate(defaultHorizontalConstraints)
+            addressBarStatusRowConstraints = [
+                navigationBarContainer.leadingAnchor.constraint(equalTo: guide.leadingAnchor),
+                navigationBarContainer.trailingAnchor.constraint(equalTo: guide.trailingAnchor),
+            ]
+            NSLayoutConstraint.activate(addressBarStatusRowConstraints)
+            constraints.navigationBarContainerTop = navigationBarContainer.centerYAnchor.constraint(equalTo: guide.centerYAnchor)
+        } else if let navigationBarTopBelowStatusRow {
+            NSLayoutConstraint.activate(defaultHorizontalConstraints)
+            constraints.navigationBarContainerTop = navigationBarTopBelowStatusRow
+            addressBarStatusRowConstraints = []
+            self.navigationBarTopBelowStatusRow = nil
+        }
+        constraints.navigationBarContainerTop.constant = previousTop.constant
+        constraints.navigationBarContainerTop.isActive = wasActive
+        // Adjacent tabs can draw outside the collection while paging. Keep them out of the status area.
+        navigationBarCollectionView.clipsToBounds = guide != nil
+        addressBarStatusRow = guide
     }
 
     /// The pose for an omnibar hosted in the nav container. The collection view's alpha belongs to
@@ -522,6 +566,7 @@ class MainViewCoordinator {
     }
 
     func setAddressBarTopActive(_ active: Bool) {
+        if !active { setAddressBarStatusRow(nil) }
         constraints.navigationBarContainerTop.isActive = active
         constraints.progressBarTop?.isActive = active
         constraints.topSlideContainerBottomToNavigationBarBottom.isActive = active
@@ -586,6 +631,7 @@ class MainViewCoordinator {
 
     @MainActor
     func showUnifiedToggleInputOmnibar(expandedHeight: CGFloat) {
+        setAddressBarStatusRow(nil)
         // Re-focus supersedes dismiss: drop any snapshot, but don't restore NTP under the new focus.
         stopInFlightOmnibarDismiss(runningInterruptCleanup: false)
         removeOmnibarDismissContentSnapshot()

@@ -2125,7 +2125,7 @@ class MainViewController: UIViewController {
     /// The bar's stable resting rect (in `view` coordinates) that the floating domain capsule morphs
     /// from/to. Size is the visible glass field so the capsule and address bar occupy the same pixels
     /// at hand-off; position is computed from layout metrics so it stays put while the bar slides away.
-    private func floatingBarExpandedFrame() -> CGRect {
+    private func floatingBarExpandedFrame(usingDuoStatusRow: Bool = true) -> CGRect {
         if appSettings.currentAddressBarPosition.isBottom, viewCoordinator.isOmnibarInToolbar {
             let capsuleFrame = viewCoordinator.toolbar.restingCapsuleFrame(in: view)
             if !capsuleFrame.isEmpty {
@@ -2135,6 +2135,13 @@ class MainViewController: UIViewController {
 
         let barView = viewCoordinator.omniBar.barView
         let fieldSize = barView.restingSearchFieldSize
+        if usingDuoStatusRow, appSettings.currentAddressBarPosition == .top,
+           let row = viewCoordinator.addressBarStatusRow?.layoutFrame, !row.isEmpty {
+            let fieldCenter = barView.convert(barView.searchContainer.bounds, from: barView.searchContainer).midX
+            let offset = fieldCenter - barView.bounds.midX
+            return CGRect(x: row.midX + offset - fieldSize.width / 2, y: row.midY - fieldSize.height / 2,
+                          width: fieldSize.width, height: fieldSize.height)
+        }
         let centerX = view.bounds.midX
         let centerY: CGFloat
         switch appSettings.currentAddressBarPosition {
@@ -4366,6 +4373,12 @@ class MainViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updateDuoAddressBarStatusRow()
+        // A restored tab can attach its scroll-edge effect before the Duo's window traits are available.
+        if scrollEdgeInteractions.contains(where: { $0.view === viewCoordinator.statusBackground }),
+           DuoLayout.hasVerticalBarOrHinge(in: view) {
+            updateScrollInteractionIfNeeded()
+        }
         viewCoordinator.updateAIChatHeaderTopInset()
         let centersOnNewTabPage = isNewTabPageVisible
         unifiedToggleInputCoordinator?.viewController.updateNewTabPageHorizontalLayout(centersOnNewTabPage)
@@ -4396,6 +4409,38 @@ class MainViewController: UIViewController {
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
         bringFindInPageToFrontIfNeeded()
         updateDelegateFindViewportIfNeeded()
+    }
+
+    private func updateDuoAddressBarStatusRow() {
+#if DDG_HAS_DUO_LAYOUT_SDK
+        guard #available(iOS 27.1, *), isFloatingUIEnabled, appSettings.currentAddressBarPosition == .top,
+              currentTab?.isAITab == false, !isNewTabPageVisible, !omniBar.isTextFieldEditing,
+              !viewCoordinator.isUnifiedToggleInputVisible, viewCoordinator.constraints.navigationBarContainerTop.isActive,
+              let row = DuoLayout.horizontalStatusBarRow(in: view, height: DuoLayout.horizontalStatusBarExtent),
+              row.frame.width >= 600 else {
+            viewCoordinator.setAddressBarStatusRow(nil)
+            return
+        }
+
+        let fold = view.reservedRegions(kind: .division).reduce(CGRect.null) { $0.union($1.frame.intersection(row.frame)) }
+        guard !fold.isNull else {
+            viewCoordinator.setAddressBarStatusRow(row.guide)
+            return
+        }
+
+        let leftWidth = fold.minX - row.frame.minX
+        let rightWidth = row.frame.maxX - fold.maxX
+        // The wider pane must fit the address field and a button group. The other pane holds the remaining group.
+        guard max(leftWidth, rightWidth) >= 380, min(leftWidth, rightWidth) >= 200 else {
+            viewCoordinator.setAddressBarStatusRow(nil)
+            return
+        }
+        let foldClearance: CGFloat = 8
+        let fieldPlacement: DefaultOmniBarView.FoldedAddressFieldPlacement = leftWidth >= rightWidth
+            ? .leftOfFold(maxX: leftWidth - foldClearance)
+            : .rightOfFold(minX: fold.maxX - row.frame.minX + foldClearance)
+        viewCoordinator.setAddressBarStatusRow(row.guide, fieldPlacement: fieldPlacement)
+#endif
     }
 
     override func viewSafeAreaInsetsDidChange() {
@@ -6255,7 +6300,8 @@ extension MainViewController: BrowserChromeDelegate {
         return floatingDomainCapsuleController.obscuredHeightFromTop(
             barsVisibilityPercent: barsVisibilityPercent,
             safeAreaInsets: view.safeAreaInsets,
-            expandedFrame: floatingBarExpandedFrame(),
+            // Keep the webpage's existing clearance when the browser controls share the status row.
+            expandedFrame: floatingBarExpandedFrame(usingDuoStatusRow: false),
             reduceMotion: UIAccessibility.isReduceMotionEnabled)
             + FloatingDomainCapsuleController.fixedElementClearance
     }
@@ -7277,7 +7323,8 @@ extension MainViewController: OmniBarDelegate {
             // The split bottom pill is slid by a container transform. A scroll-edge interaction
             // on it makes UIGlassEffect move independently of the icons.
         } else {
-            if currentTab?.isAITab == false {
+            // Keep the page clear across the top edge behind the Duo's compact status indicators.
+            if currentTab?.isAITab == false, !DuoLayout.hasVerticalBarOrHinge(in: view) {
                 attach(to: viewCoordinator.statusBackground, onEdge: .top)
             }
             attach(to: floatingDomainCapsuleController.button, onEdge: .bottom)

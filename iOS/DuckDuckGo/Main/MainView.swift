@@ -49,6 +49,24 @@ enum DuoLayout {
         return false
     }
 
+#if DDG_HAS_DUO_LAYOUT_SDK
+    // The standard horizontal bar extent. Use the explicit form for the iOS 27.1 SDK.
+    static let horizontalStatusBarExtent: CGFloat = 48
+
+    @available(iOS 27.1, *)
+    @MainActor
+    static func horizontalStatusBarRow(in view: UIView, height: CGFloat) -> (guide: UILayoutGuide, frame: CGRect)? {
+        guard let window = view.window, view.traitCollection.userInterfaceIdiom == .phone,
+              view.bounds.width > view.bounds.height,
+              !window.reservedRegions(kind: .division, options: .includeInactive).isEmpty else { return nil }
+
+        let region = UIView.LayoutRegion.bar(onEdge: UIRectEdge.top, extent: height)
+        let frame = view.bounds.inset(by: view.edgeInsets(for: region))
+        guard !frame.isEmpty, frame.midY < view.bounds.minY + view.safeAreaInsets.top else { return nil }
+        return (view.layoutGuide(for: region), frame)
+    }
+#endif
+
     @MainActor
     static func centeredContentFrame(_ safeFrame: CGRect, in view: UIView) -> CGRect {
         guard let window = closedWindow(for: view) else { return safeFrame }
@@ -276,6 +294,12 @@ extension MainViewFactory {
 
         var hitTestInsets = UIEdgeInsets.zero
         var allowsOverflowHitTesting = false
+        var onLayout: (() -> Void)?
+
+        override func layoutSubviews() {
+            onLayout?()
+            super.layoutSubviews()
+        }
 
         override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
             if bounds.inset(by: hitTestInsets).contains(point) {
@@ -659,6 +683,8 @@ extension MainViewFactory {
             coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
         }
         coordinator.constraints.navigationBarContainerBottom = container.constrainView(toolbar, by: .bottom, to: .top)
+        coordinator.constraints.navigationBarContainerLeading = container.constrainView(superview, by: .leading)
+        coordinator.constraints.navigationBarContainerTrailing = container.constrainView(superview, by: .trailing)
         let barHeight = coordinator.omniBar.barView.expectedHeight
         coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: barHeight, relatedBy: .equal)
         coordinator.constraints.navigationBarContainerMinHeight = container.constrainAttribute(.height, to: barHeight, relatedBy: .greaterThanOrEqual)
@@ -667,8 +693,8 @@ extension MainViewFactory {
 
         NSLayoutConstraint.activate([
             coordinator.constraints.navigationBarContainerTop,
-            container.constrainView(superview, by: .leading),
-            container.constrainView(superview, by: .trailing),
+            coordinator.constraints.navigationBarContainerLeading,
+            coordinator.constraints.navigationBarContainerTrailing,
             coordinator.constraints.navigationBarContainerHeight,
             navigationBarCollectionView.constrainAttribute(.height, to: barHeight),
             navigationBarCollectionView.constrainView(container, by: .top),

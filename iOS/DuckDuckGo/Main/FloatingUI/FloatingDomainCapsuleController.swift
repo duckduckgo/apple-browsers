@@ -273,14 +273,16 @@ final class FloatingDomainCapsuleController {
 
     private func restFrame(addressBarPosition: AddressBarPosition, domain: String? = nil, expandedFrame: CGRect, in view: UIView) -> CGRect {
         let capsuleHeight = self.capsuleHeight
-        let capsuleWidth = min(labelWidth(for: domain) + 24, max(0, view.bounds.width - 32))
+        let centerX = addressBarPosition == .top && !expandedFrame.isEmpty ? expandedFrame.midX : view.bounds.midX
+        let maximumWidth = centerX == view.bounds.midX ? max(0, view.bounds.width - 32) : expandedFrame.width
+        let capsuleWidth = min(labelWidth(for: domain) + 24, maximumWidth)
         let restCenterY = Self.restCenterY(
             addressBarPosition: addressBarPosition,
             expandedFrame: expandedFrame,
             boundsMaxY: view.bounds.maxY,
             safeAreaInsets: view.safeAreaInsets,
             capsuleHeight: capsuleHeight)
-        return CGRect(x: view.bounds.midX - capsuleWidth / 2,
+        return CGRect(x: centerX - capsuleWidth / 2,
                       y: restCenterY - capsuleHeight / 2,
                       width: capsuleWidth,
                       height: capsuleHeight)
@@ -298,7 +300,7 @@ final class FloatingDomainCapsuleController {
         let width = rest.width + (expandedFrame.width - rest.width) * morphP
         let height = rest.height + (expandedFrame.height - rest.height) * morphP
         let centerY = rest.midY + (expandedFrame.midY - rest.midY) * morphP
-        applyGeometry(frame: CGRect(x: view.bounds.midX - width / 2, y: centerY - height / 2, width: width, height: height),
+        applyGeometry(frame: CGRect(x: rest.midX - width / 2, y: centerY - height / 2, width: width, height: height),
                       cornerRadius: nil,
                       addressBarPosition: addressBarPosition)
     }

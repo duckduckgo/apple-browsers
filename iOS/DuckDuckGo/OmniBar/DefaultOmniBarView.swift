@@ -81,6 +81,15 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private lazy var stackViewTrailingToView = stackView.trailingAnchor.constraint(equalTo: trailingAnchor)
     private lazy var viewCenteredSearchArea = searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor)
     private lazy var safeAreaCenteredSearchArea = searchAreaContainerView.centerXAnchor.constraint(equalTo: safeAreaLayoutGuide.centerXAnchor)
+    private lazy var searchAreaLeftOfFold = [
+        searchAreaContainerView.leftAnchor.constraint(equalTo: searchAreaAlignmentView.leftAnchor),
+        searchAreaContainerView.rightAnchor.constraint(lessThanOrEqualTo: leftAnchor),
+    ]
+    private lazy var searchAreaRightOfFold = [
+        searchAreaContainerView.leftAnchor.constraint(greaterThanOrEqualTo: leftAnchor),
+        searchAreaContainerView.rightAnchor.constraint(equalTo: searchAreaAlignmentView.rightAnchor),
+    ]
+    private var searchAreaHorizontalConstraints: [NSLayoutConstraint] = []
     private var compactSearchAreaAlignmentConstraints: [NSLayoutConstraint] = []
 
     let fieldContainerLayoutGuide = UILayoutGuide()
@@ -219,6 +228,19 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private(set) var layoutMode: OmniBarLayoutMode = .compact
 
+    enum FoldedAddressFieldPlacement: Equatable {
+        case leftOfFold(maxX: CGFloat)
+        case rightOfFold(minX: CGFloat)
+    }
+
+    var foldedAddressFieldPlacement: FoldedAddressFieldPlacement? {
+        didSet {
+            if foldedAddressFieldPlacement != oldValue {
+                updateHorizontalLayout()
+            }
+        }
+    }
+
     var isExpandedPhoneLayout = false {
         didSet {
             updateVerticalSpacing()
@@ -291,11 +313,22 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         }
 
         let usesSafeAreaCenter = hasVerticalBar && !usesViewEdges
-        let centerConstraint = usesSafeAreaCenter ? safeAreaCenteredSearchArea : viewCenteredSearchArea
-        if !centerConstraint.isActive {
-            let previousConstraint = usesSafeAreaCenter ? viewCenteredSearchArea : safeAreaCenteredSearchArea
-            previousConstraint.isActive = false
-            centerConstraint.isActive = true
+        let placement = safeAreaManagedByContainer && layoutMode == .expandedPhone ? foldedAddressFieldPlacement : nil
+        let fieldConstraints: [NSLayoutConstraint]
+        switch placement {
+        case .leftOfFold(let maxX):
+            searchAreaLeftOfFold[1].constant = maxX
+            fieldConstraints = searchAreaLeftOfFold
+        case .rightOfFold(let minX):
+            searchAreaRightOfFold[0].constant = minX
+            fieldConstraints = searchAreaRightOfFold
+        case nil:
+            fieldConstraints = [usesSafeAreaCenter ? safeAreaCenteredSearchArea : viewCenteredSearchArea]
+        }
+        if searchAreaHorizontalConstraints != fieldConstraints {
+            NSLayoutConstraint.deactivate(searchAreaHorizontalConstraints)
+            NSLayoutConstraint.activate(fieldConstraints)
+            searchAreaHorizontalConstraints = fieldConstraints
         }
 
         let isExpandedPhone = layoutMode == .expandedPhone
@@ -1242,6 +1275,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
             searchAreaPreferredHeightConstraint = height
         }
 
+        searchAreaHorizontalConstraints = [viewCenteredSearchArea]
         NSLayoutConstraint.activate([
             leadingConstraint,
             trailingConstraint,

@@ -326,6 +326,7 @@ class SwipeTabsCoordinator: NSObject {
         collectionView.backgroundColor = .clear
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.showsVerticalScrollIndicator = false
+        collectionView.onLayout = { [weak self] in self?.updateLayoutForWidthChange() }
 
         updateLayout()
     }
@@ -414,6 +415,16 @@ class SwipeTabsCoordinator: NSObject {
 
         collectionView.reloadData()
         collectionView.layoutIfNeeded()
+    }
+
+    private func updateLayoutForWidthChange() {
+        let width = collectionView.bounds.width
+        guard width > 0, let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout,
+              layout.itemSize.width != width else { return }
+        updateLayout()
+        if state.isIdle, tabsModel != nil {
+            scrollToCurrent()
+        }
     }
 
     private func updateLayout() {
@@ -1639,6 +1650,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.controller = controller
         }
 
+        cell.setFoldedAddressFieldPlacement(coordinator.foldedAddressFieldPlacement)
         cell.setNeedsUpdateConstraints()
 
         return cell
@@ -1651,6 +1663,10 @@ class OmniBarCell: UICollectionViewCell {
     weak var coordinator: MainViewCoordinator?
     var controller: OmniBarViewController?
     var isFloatingUIEnabledProvider: (() -> Bool)?
+
+    func setFoldedAddressFieldPlacement(_ placement: DefaultOmniBarView.FoldedAddressFieldPlacement?) {
+        (omniBar?.barView as? DefaultOmniBarView)?.foldedAddressFieldPlacement = placement
+    }
 
     override var safeAreaInsets: UIEdgeInsets {
         guard let collectionView = superview as? UICollectionView else {

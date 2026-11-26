@@ -728,7 +728,18 @@ class SettingsUINavigationController: UINavigationController {
     /// Whether a subscription was acquired while the subscription flow was presented
     private var didAcquireSubscription = false
     private var subscriptionChangeObserver: Any?
-    private var usesTrailingDuoSheetPlacement = false
+
+#if DDG_HAS_DUO_LAYOUT_SDK
+    @available(iOS 27.1, *)
+    override var childForPreferredVerticalBarBehavior: UIViewController? {
+        dismissesModalOnSubscriptionBailout ? super.childForPreferredVerticalBarBehavior : nil
+    }
+
+    @available(iOS 27.1, *)
+    override var preferredVerticalBarBehavior: UIVerticalBarBehavior {
+        dismissesModalOnSubscriptionBailout ? super.preferredVerticalBarBehavior : .disabled
+    }
+#endif
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -753,18 +764,21 @@ class SettingsUINavigationController: UINavigationController {
 #if DDG_HAS_DUO_LAYOUT_SDK
         guard #available(iOS 27.1, *), let window, !dismissesModalOnSubscriptionBailout else { return }
 
-        let usesTrailingPlacement = window.traitCollection.userInterfaceIdiom == .phone
+        let isInnerLandscape = window.traitCollection.userInterfaceIdiom == .phone
             && window.bounds.width > window.bounds.height
             && !window.reservedRegions(kind: .division, options: .includeInactive).isEmpty
-        guard usesTrailingPlacement != usesTrailingDuoSheetPlacement else { return }
 
-        if usesTrailingPlacement, presentingViewController == nil, modalPresentationStyle == .automatic {
+        if isInnerLandscape, presentingViewController == nil, modalPresentationStyle == .automatic {
             modalPresentationStyle = .formSheet
         }
         guard let sheet = sheetPresentationController else { return }
 
-        usesTrailingDuoSheetPlacement = usesTrailingPlacement
-        sheet.preferredPlacement = usesTrailingPlacement ? .trailing : .automatic
+        // Only move the sheet to one side when the active hinge divides the display into left and right panes.
+        let hasVerticalFold = isInnerLandscape && window.reservedRegions(kind: .division).contains { $0.frame.height > $0.frame.width }
+        let placement: UISheetPresentationController.Placement = hasVerticalFold ? .trailing : .automatic
+        if sheet.preferredPlacement != placement {
+            sheet.preferredPlacement = placement
+        }
 #endif
     }
 

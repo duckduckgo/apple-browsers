@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", revision: "ff7ceedd0316bd9ed95916379acde73be54460a4"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", revision: "49b75d0ac00c7934ddc6dadd2e788b909567889d"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),

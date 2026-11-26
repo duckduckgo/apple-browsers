@@ -54,6 +54,7 @@ import SitePermissions
 import WebExtensions
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
+import WebPageTranslation
 
 enum WebViewPreviewSnapshotGeometry {
 
@@ -871,6 +872,9 @@ class TabViewController: UIViewController {
         if let script = userScripts?.aiChatUserScript { browserToolsService?.sourceWillDisappear(script) }
     }
 
+    var pageTranslationOfferProvider: PageTranslationOfferProvider?
+    private lazy var translationBannerPresenter = TranslationBannerPresenter(appSettings: appSettings)
+    private var pageTranslationBridge: PageTranslationBridge?
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -1186,6 +1190,7 @@ class TabViewController: UIViewController {
         duckAISwipeNewChat?.cancel()
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
+        translationBannerPresenter.dismiss(animated: false)
 
         unregisterFromResignActive()
         unregisterFromKeyboardNotifications()
@@ -1300,9 +1305,15 @@ class TabViewController: UIViewController {
     private func applyWebViewLayout(for barsVisibilityPercent: CGFloat, forceFloatingUIInsets: Bool = false) {
         if floatingUIManager.isFloatingUIEnabled {
             updateWebViewLayoutForFloatingUI(for: barsVisibilityPercent, forceInsets: forceFloatingUIInsets)
+            if translationBannerPresenter.isPresented {
+                translationBannerPresenter.chromeInsets = chromeDelegate?.floatingWebViewObscuredInsets(for: 0) ?? .zero
+            }
         } else {
             updateWebViewBottomConstraint(for: barsVisibilityPercent)
             updateWebViewLayoutForClassicUI(for: barsVisibilityPercent)
+        }
+        if translationBannerPresenter.isPresented {
+            translationBannerPresenter.followAddressBar()
         }
     }
 
@@ -3014,6 +3025,7 @@ extension TabViewController: WKNavigationDelegate {
             browserToolsService?.ownerDidNavigate(tabID: tabModel.uid, url: webView.url)
             firstPaintCover.didCommit(navigation)
             signpostSearchCommit(url: webView.url)
+            pageTranslationBridge?.documentDidChange()
         }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
@@ -3122,6 +3134,74 @@ extension TabViewController: WKNavigationDelegate {
             return nil
         }
         return PageContextAttachabilityPolicy(settings: blocklist)
+    }
+
+    /// Detects the page's language once per page load and shows the translation banner when it applies.
+    private func offerTranslationIfNeeded(in webView: WKWebView) {
+        guard let provider = pageTranslationOfferProvider, provider.isEnabled,
+              webView === self.webView, !isError,
+              let url = webView.url,
+              PageTranslationOfferProvider.isEligible(url),
+              lastMainFramePageContextMIMEType(for: url) != "application/pdf" else {
+            return
+        }
+
+        Task { [weak self, weak webView] in
+            guard let webView, let offer = await provider.bannerOffer(in: webView) else { return }
+            self?.showTranslationBanner(offer)
+        }
+    }
+
+    /// One prompt at a time, and only on the tab the user is looking at.
+    private func showTranslationBanner(_ offer: TranslationOffer) {
+        guard view.window != nil,
+              delegate?.tabIsShowingOtherPrompt(self) != true,
+              let addressBar = chromeDelegate?.addressBarChromeView,
+              addressBar.window === view.window else {
+            return
+        }
+        if floatingUIManager.isFloatingUIEnabled, let chromeDelegate {
+            translationBannerPresenter.chromeInsets = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
+        }
+        translationBannerPresenter.present(offer, in: self, nextTo: addressBar) { [weak self] in
+            self?.translatePage()
+        }
+    }
+
+    /// One bridge per tab: rebuilt scripts (a config refresh, protections toggled) keep the page and its bundle, whose
+    /// replies now reach the new scripts' broker, so the same bridge re-registers there and a request in flight carries on.
+    private func installPageTranslationBridge(in userScripts: UserScripts) {
+        let bridge = pageTranslationBridge ?? PageTranslationBridge(inject: { [weak self] in
+            guard let self, let webView, let userScripts = self.userScripts else { return }
+            _ = try await webView.evaluateJavaScript(try userScripts.pageTranslationSource(), in: nil, contentWorld: .defaultClient)
+        })
+        bridge.webView = webView
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: bridge)
+        pageTranslationBridge = bridge
+    }
+
+    // TODO: - Translate the extracted units (next task); for now, check extraction from the isolated world works.
+    private func translatePage() {
+        guard let bridge = pageTranslationBridge else { return }
+        Task {
+            do {
+                let units = try await bridge.extract()
+                
+                // TODO: - Replace debug logs below by actual translation.
+                Logger.webPageTranslation.info("Page translation: extracted \(units.count, privacy: .public) units")
+                // Page text stays private: Xcode's console shows it, Console.app redacts it.
+                let sample = units.filter(\.isVisible) + units.filter { !$0.isVisible }.prefix(50)
+                for unit in sample {
+                    Logger.webPageTranslation.debug("""
+                        Page translation unit \(unit.id, privacy: .public) \
+                        html: \(unit.html, privacy: .public) visible: \(unit.isVisible, privacy: .public) \
+                        text: \(String(unit.text.prefix(120)), privacy: .private)
+                        """)
+                }
+            } catch {
+                Logger.webPageTranslation.error("Page translation failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.
@@ -3237,6 +3317,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         if webView === self.webView {
             firstPaintCover.didStartNavigation(navigation)
+            translationBannerPresenter.dismiss(animated: false)
         }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
@@ -3319,6 +3400,7 @@ extension TabViewController: WKNavigationDelegate {
                                               to: webView)
         }
         updateFloatingPageBackgroundColor(in: webView)
+        offerTranslationIfNeeded(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
@@ -5441,6 +5523,8 @@ extension TabViewController: UserContentControllerDelegate {
         siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: siteLoadingPerformanceSubfeature!)
 
+        installPageTranslationBridge(in: userScripts)
+
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         
         cachedMapper = nil
@@ -6565,6 +6649,12 @@ extension TabViewController: Navigatable {
 extension TabViewController: DuckPlayerHosting {
     var contentBottomConstraint: NSLayoutConstraint? {
         return webViewBottomAnchorConstraint
+    }
+
+    /// Read from the pill itself: its visibility notification also fires when no pill exists.
+    var isDuckPlayerPillVisible: Bool {
+        let duckPlayer = duckPlayerNavigationHandler.duckPlayer as? DuckPlayer
+        return (duckPlayer?.nativeUIPresenter as? DuckPlayerNativeUIPresenter)?.containerViewModel?.sheetVisible == true
     }
     
     var floatingBottomChromeObscuredHeight: CGFloat {

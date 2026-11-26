@@ -5881,6 +5881,15 @@ Take back control of your personal information with the browser designed for dat
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Privacy Protection enabled for %@";
 
+/* Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to */
+"translation.banner.subtitle" = "%1$@ to %2$@";
+
+/* Title of the banner offering to translate a web page that is in another language */
+"translation.banner.title" = "Translate this page?";
+
+/* Button in the translation banner that translates the current web page */
+"translation.banner.translate" = "Translate";
+
 /* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
 "vcard.add-contact.parse-failure" = "Unable to add contact. Try opening the contact file from Downloads instead.";
 

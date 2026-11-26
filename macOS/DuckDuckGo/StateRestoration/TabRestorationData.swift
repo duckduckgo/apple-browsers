@@ -57,6 +57,7 @@ final class TabRestorationData: NSObject, NSSecureCoding {
     private enum ExtensionCodingKeys {
         static let visitedDomains = "visitedDomains"
         static let tabSnapshotIdentifier = "TabSnapshotIdentifier"
+        static let linkedPageDomains = "linkedPageDomains"
     }
 
     // MARK: - Stored Properties
@@ -74,6 +75,9 @@ final class TabRestorationData: NSObject, NSSecureCoding {
 
     /// Pass-through from TabSnapshotExtension (coding key: "TabSnapshotIdentifier").
     let tabSnapshotIdentifier: String?
+
+    /// Pass-through from PageContextTabExtension: hosts "Ask about page" read with the tab's session, so Fire still burns them.
+    let linkedPageDomains: [String]?
 
     // MARK: - NSSecureCoding
 
@@ -109,6 +113,8 @@ final class TabRestorationData: NSObject, NSSecureCoding {
                                                       forKey: ExtensionCodingKeys.visitedDomains) as? [URL]
         self.tabSnapshotIdentifier = decoder.decodeObject(of: NSString.self,
                                                           forKey: ExtensionCodingKeys.tabSnapshotIdentifier) as? String
+        self.linkedPageDomains = decoder.decodeObject(of: [NSArray.self, NSString.self],
+                                                      forKey: ExtensionCodingKeys.linkedPageDomains) as? [String]
 
         super.init()
     }
@@ -121,7 +127,8 @@ final class TabRestorationData: NSObject, NSSecureCoding {
          interactionStateData: Data?,
          lastSelectedAt: Date?,
          localHistoryIDs: [URL]?,
-         tabSnapshotIdentifier: String?) {
+         tabSnapshotIdentifier: String?,
+         linkedPageDomains: [String]? = nil) {
 
         self.uuid = uuid
         self.content = content
@@ -131,6 +138,7 @@ final class TabRestorationData: NSObject, NSSecureCoding {
         self.lastSelectedAt = lastSelectedAt
         self.localHistoryIDs = localHistoryIDs
         self.tabSnapshotIdentifier = tabSnapshotIdentifier
+        self.linkedPageDomains = linkedPageDomains
         super.init()
     }
 
@@ -156,6 +164,9 @@ final class TabRestorationData: NSObject, NSSecureCoding {
         }
         if let tabSnapshotIdentifier {
             coder.encode(tabSnapshotIdentifier, forKey: ExtensionCodingKeys.tabSnapshotIdentifier)
+        }
+        if let linkedPageDomains, !linkedPageDomains.isEmpty {
+            coder.encode(linkedPageDomains, forKey: ExtensionCodingKeys.linkedPageDomains)
         }
     }
 

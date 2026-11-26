@@ -721,18 +721,15 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220874250279358
     case hardwareKeyboardMonitoring
 
-    /// On-device web page translation.
+    /// On-device web page translation. Gated by the top-level `pageTranslation` feature, which also gates
+    /// the C-S-S `pageTranslation` script, so one config entry controls both.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
-    case webPageTranslation
+    case pageTranslation
 
     /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
     /// Internal-only for the first version.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220647281509936
     case aiChatLocalModels
-
-    /// Pins the redesigned New Tab Page's input to the top while the rest of the page scrolls.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220697284449900
-    case newTabPageStickyInput
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1241,12 +1238,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         case .hardwareKeyboardMonitoring:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.hardwareKeyboardMonitoring))
-        case .webPageTranslation:
-            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webPageTranslation))
+        case .pageTranslation:
+            Config(defaultValue: .disabled, source: .remoteReleasable(PageTranslationSubfeature.featureEnabled))
         case .aiChatLocalModels:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels))
-        case .newTabPageStickyInput:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageStickyInput))
         }
     }
 

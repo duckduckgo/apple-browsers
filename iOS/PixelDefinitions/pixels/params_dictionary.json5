@@ -646,8 +646,8 @@
     "onboardingEventType": {
         "key": "event",
         "type": "string",
-        "description": "Event type to classify what happened at each onboarding step",
-        "enum": ["shown", "clicked", "confirmed"]
+        "description": "Event type to classify what happened at each onboarding step. failed: something went wrong on the step, with the reason in value",
+        "enum": ["shown", "clicked", "confirmed", "failed"]
     },
     "onboardingClickedValue": {
         "key": "value",
@@ -677,7 +677,7 @@
         "key": "flow",
         "type": "string",
         "description": "Version of the onboarding flow the user entered",
-        "enum": ["default", "duckai", "tailored_by_download_reason"]
+        "enum": ["default", "duckai", "tailored_by_download_reason", "tailored_by_download_reason_vpn"]
     },
     "onboardingVariantSearchExperience": {
         "key": "variant_search_experience",
@@ -689,7 +689,13 @@
         "key": "variant_download_reason",
         "type": "string",
         "description": "Variant of the onboarding flow the user selected on the download-reason screen",
-        "enum": ["download_reason_search", "download_reason_ai-chat", "download_reason_no-ai", "download_reason_ad-blocking"]
+        "enum": [
+            "download_reason_search",
+            "download_reason_ai-chat",
+            "download_reason_no-ai",
+            "download_reason_ad-blocking",
+            "download_reason_vpn"
+        ]
     },
     "tabCount": {
         "key": "tab_count",

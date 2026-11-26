@@ -153,6 +153,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private let featureFlagger: FeatureFlagger
     private let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
     private let clearAppSwitcherSnapshots: @MainActor () async -> Void
+    private let pageTranslationOfferProvider: PageTranslationOfferProvider?
     private let tabTerminationErrorPageDetector: any TabTerminationErrorPageDetecting
     private let tabEvictionSettings: TabEvictionSettings
     private let applicationState: @MainActor () -> UIApplication.State
@@ -281,6 +282,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
          tabTerminationErrorPageDetector: (any TabTerminationErrorPageDetecting)? = nil,
          applicationState: (@MainActor () -> UIApplication.State)? = nil,
          isPad: Bool? = nil,
+         pageTranslationOfferProvider: PageTranslationOfferProvider? = nil,
          clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {
              await AppSwitcherSnapshotCleaner().clearSnapshots()
          }
@@ -306,6 +308,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.isSitePermissionsEnabled = sitePermissionsEnabled
         self.clearAppSwitcherSnapshots = clearAppSwitcherSnapshots
+        self.pageTranslationOfferProvider = pageTranslationOfferProvider
         self.tabEvictionSettings = TabEvictionSettings(privacyConfigurationManager: privacyConfigurationManager)
         self.tabTerminationErrorPageDetector = tabTerminationErrorPageDetector ?? TabTerminationErrorPageDetector(
             privacyConfigurationManager: privacyConfigurationManager)
@@ -508,6 +511,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                                   self?.sitePermissionsDependencies
                                                               })
         controller.browserToolsService = browserToolsService
+        controller.pageTranslationOfferProvider = pageTranslationOfferProvider
         controller.browserToolScopeFactory = { [weak self, weak tab] in
             guard let self, let tab else { return nil }
             return self.makeBrowserToolScope(for: tab)
@@ -666,6 +670,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                                                   self?.sitePermissionsDependencies
                                                               })
         controller.browserToolsService = browserToolsService
+        controller.pageTranslationOfferProvider = pageTranslationOfferProvider
         let owner = controller.tabModel
         controller.browserToolScopeFactory = { [weak self, weak owner] in
             guard let self, let owner else { return nil }

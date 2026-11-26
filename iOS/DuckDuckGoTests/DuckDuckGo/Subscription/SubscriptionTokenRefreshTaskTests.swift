@@ -245,16 +245,22 @@ struct SubscriptionTokenRefreshTaskTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Sign-in schedules the task for the new session", .timeLimit(.minutes(1)))
+    @Test("No token schedules nothing; a sign-in afterwards schedules the task for the new session", .timeLimit(.minutes(1)))
     func signInSchedules() async throws {
         let now = issuedAt.addingTimeInterval(.hours(1))
         let fixture = makeFixture(flagOn: true, token: nil, now: now)
         fixture.refreshTask.register()
 
+        await fixture.refreshTask.refreshAndSchedule().value
+        #expect(fixture.scheduler.events == [.cancel])
+        #expect(fixture.scheduler.submittedRequests.isEmpty)
+
         fixture.provider.token = token(issuedAt: issuedAt)
         fixture.notificationCenter.post(name: .accountDidSignIn, object: nil)
 
-        try await waitUntil { fixture.scheduler.events == [.submit(issuedAt.addingTimeInterval(.days(15)))] }
+        try await waitUntil { fixture.scheduler.events == [.cancel, .submit(issuedAt.addingTimeInterval(.days(15)))] }
+        #expect(fixture.debugSettings.lastRun?.trigger == .signIn)
+        #expect(!fixture.provider.requestedPolicies.contains(.localForceRefresh))
     }
 
     // MARK: - Run record

@@ -27,6 +27,7 @@ final class MockAttributionRulesProvider: AdClickAttributionRulesProviding {
         static let globalAttributionRulesListName = "global"
     }
 
+    @MainActor
     init() async {
         globalAttributionRules = await ContentBlockingRulesHelper().makeFakeRules(name: Constants.globalAttributionRulesListName,
                                                                                   tdsEtag: "tdsEtag",
@@ -60,6 +61,7 @@ final class MockAdClickAttributionLogicDelegate: AdClickAttributionLogicDelegate
 
 // swiftlint:disable weak_delegate
 // swiftlint:disable single_test_class
+@MainActor
 final class AdClickAttributionLogicTests: XCTestCase {
 
     static let tld = TLD()
@@ -220,6 +222,7 @@ final class AdClickAttributionLogicTests: XCTestCase {
     }
 }
 
+@MainActor
 final class AdClickAttributionLogicHelper {
 
     static let tld = TLD()
@@ -260,6 +263,7 @@ final class AdClickAttributionLogicHelper {
     }
 }
 
+@MainActor
 final class AdClickAttributionLogicTimeoutTests: XCTestCase {
 
     func testWhenAttributionIsActiveThenTotalTimeoutApplies() async {
@@ -436,6 +440,7 @@ final class AdClickAttributionLogicTimeoutTests: XCTestCase {
 
 }
 
+@MainActor
 final class AdClickAttributionLogicStateInheritingTests: XCTestCase {
 
     static let tld = TLD()
@@ -491,6 +496,7 @@ final class AdClickAttributionLogicStateInheritingTests: XCTestCase {
 
 }
 
+@MainActor
 final class AdClickAttributionLogicConfigUpdateTests: XCTestCase {
 
     static let tld = TLD()

@@ -992,8 +992,9 @@ class RemoteMessagingStoreTests: XCTestCase {
     func testWhenRecordRemoteMessageImpressionConcurrentlyThenEachOperationIsSerialized() async throws {
         let remoteMessage = try await saveProcessedResultFetchRemoteMessage()
 
-        async let firstResult = store.recordRemoteMessageImpression(withID: remoteMessage.id)
-        async let secondResult = store.recordRemoteMessageImpression(withID: remoteMessage.id)
+        let recorder = ConcurrentImpressionRecorder(store: try XCTUnwrap(store))
+        async let firstResult = recorder.record(id: remoteMessage.id)
+        async let secondResult = recorder.record(id: remoteMessage.id)
         let results = await [firstResult, secondResult]
 
         XCTAssertEqual(results.compactMap { result in
@@ -1018,8 +1019,9 @@ class RemoteMessagingStoreTests: XCTestCase {
             try context.save()
         }
 
-        async let firstResult = store.recordRemoteMessageImpression(withID: "impression-cap-race")
-        async let secondResult = store.recordRemoteMessageImpression(withID: "impression-cap-race")
+        let recorder = ConcurrentImpressionRecorder(store: try XCTUnwrap(store))
+        async let firstResult = recorder.record(id: "impression-cap-race")
+        async let secondResult = recorder.record(id: "impression-cap-race")
         let results = await [firstResult, secondResult]
 
         XCTAssertEqual(results.filter { if case .recorded = $0 { return true }; return false }.count, 1)
@@ -1152,4 +1154,14 @@ private final class MockRemoteMessagingSurveyActionMapper: RemoteMessagingSurvey
         return url
     }
 
+}
+
+// These two tests keep availability fixed for both calls. The store serializes impression
+// updates on its private Core Data context. Expose only that operation to the child tasks.
+private struct ConcurrentImpressionRecorder: @unchecked Sendable {
+    let store: RemoteMessagingStore
+
+    func record(id: String) async -> RemoteMessageImpressionResult {
+        await store.recordRemoteMessageImpression(withID: id)
+    }
 }

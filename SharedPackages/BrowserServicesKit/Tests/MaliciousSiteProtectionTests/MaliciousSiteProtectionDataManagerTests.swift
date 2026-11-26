@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import XCTest
 
@@ -494,7 +495,7 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
                 case .hashPrefixSet: Constants.hashPrefixesFileName
                 }
             },
-            eventMapping: eventMapping
+            eventMapping: eventMapping.makeMapping()
         )
     }
 
@@ -559,21 +560,22 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
 
 }
 
-class MockMaliciousSiteProtectionFileStore: MaliciousSiteProtection.FileStoring {
+final class MockMaliciousSiteProtectionFileStore: MaliciousSiteProtection.FileStoring, @unchecked Sendable {
+    private let lock = NSLock()
 
     private var data: [String: Data] = [:]
 
-    var writeSuccess: Bool = true
+    @Locked var writeSuccess = true
 
     func write(data: Data, to filename: String) throws {
         if writeSuccess {
-            self.data[filename] = data
+            lock.withLock { self.data[filename] = data }
         } else {
             throw NSError(domain: "com.au.duckduckgo.MockMaliciousSiteProtectionFileStore", code: 0, userInfo: nil)
         }
     }
 
     func read(from filename: String) -> Data? {
-        return data[filename]
+        lock.withLock { data[filename] }
     }
 }

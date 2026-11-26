@@ -64,6 +64,10 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: RebrandingColor.Pollen.pollen60, darkColor: Color(0xFFCC00))
         case .defaultBrowserAndDockPromptStatusUnavailable:
             return DynamicColor(staticColor: RebrandingColor.GrayScale.gray40)
+
+        /// Duck.ai
+        case .duckAIWebViewBackground:
+            return DynamicColor(lightHex: 0xFFFFFF, darkHex: 0x111111)
         }
     }
 }

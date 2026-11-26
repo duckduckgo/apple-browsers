@@ -90,7 +90,7 @@ class EmailManagerTests: XCTestCase {
         }
 
         try emailManager.signOut()
-        waitForExpectations(timeout: 1.0, handler: nil)
+        wait(for: [expect], timeout: 1.0)
     }
 
     func testWhenRequestSignedInStatusThenReturnsCorrectStatus() {
@@ -143,9 +143,8 @@ class EmailManagerTests: XCTestCase {
             events.append(.getAliasCallbackCalled)
         }
 
-        waitForExpectations(timeout: 1.0) { _ in
-            XCTAssertEqual(events, expectedEvents)
-        }
+        wait(for: [expect], timeout: 1.0)
+        XCTAssertEqual(events, expectedEvents)
     }
 
     func testWhenCallingGetAliasEmailWithNoAliasStoredThenAliasFetchedAndNewAliasFetched() {
@@ -179,9 +178,8 @@ class EmailManagerTests: XCTestCase {
             events.append(.getAliasCallbackCalled)
         }
 
-        waitForExpectations(timeout: 1.0) { _ in
-            XCTAssertEqual(events, expectedEvents)
-        }
+        wait(for: [expect], timeout: 1.0)
+        XCTAssertEqual(events, expectedEvents)
     }
 
     func testWhenCallingGetAliasWhenSignedOutThenNoAliasReturned() {
@@ -205,9 +203,8 @@ class EmailManagerTests: XCTestCase {
             expect.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0) { _ in
-            XCTAssertEqual(events, expectedEvents)
-        }
+        wait(for: [expect], timeout: 1.0)
+        XCTAssertEqual(events, expectedEvents)
     }
 
     func testWhenStoreTokenThenRequestForAliasMade() {
@@ -230,9 +227,8 @@ class EmailManagerTests: XCTestCase {
 
         emailManager.autofillUserScript(userScript, didRequestStoreToken: "token", username: "username", cohort: "internal_beta")
 
-        waitForExpectations(timeout: 1.0) { _ in
-            XCTAssertEqual(events, expectedEvents)
-        }
+        wait(for: [expect], timeout: 1.0)
+        XCTAssertEqual(events, expectedEvents)
     }
 
     func testWhenRequestingUsernameAndAliasThenTheyAreReturned() {
@@ -258,9 +254,8 @@ class EmailManagerTests: XCTestCase {
             XCTAssertEqual(alias, "testAlias2")
         }
 
-        waitForExpectations(timeout: 1.0) { _ in
-            XCTAssertEqual(events, expectedEvents)
-        }
+        wait(for: [expect], timeout: 1.0)
+        XCTAssertEqual(events, expectedEvents)
     }
 
     func testWhenRequestingUserDataThenTheyAreReturned() {
@@ -288,9 +283,8 @@ class EmailManagerTests: XCTestCase {
             XCTAssertEqual(alias, "testAlias2")
         }
 
-        waitForExpectations(timeout: 1.0) { _ in
-            XCTAssertEqual(events, expectedEvents)
-        }
+        wait(for: [expect], timeout: 1.0)
+        XCTAssertEqual(events, expectedEvents)
     }
 
     private func storageForGetAliasTest(signedIn: Bool,

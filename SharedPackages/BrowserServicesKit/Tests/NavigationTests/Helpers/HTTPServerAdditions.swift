@@ -148,7 +148,7 @@ open class SafeHttpServer {
 
     public var notFoundHandler: ((HttpRequest) -> HttpResponse)?
 
-    public var middleware = [(HttpRequest) -> HttpResponse?]()
+    public var middleware = [@Sendable (HttpRequest) -> HttpResponse?]()
 
     public typealias MethodRoute = HttpServer.MethodRoute
 

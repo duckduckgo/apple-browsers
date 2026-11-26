@@ -259,6 +259,7 @@ public extension DesignSystemImages {
             public static var feedback: DesignSystemImage { .init(resource: .feedback16) }
             public static var feedbackAlert: DesignSystemImage { .init(resource: .feedbackAlert16) }
             public static var feedbackBlank: DesignSystemImage { .init(resource: .feedbackBlank16) }
+            public static var file: DesignSystemImage { .init(resource: .file16) }
             public static var findInPage: DesignSystemImage { .init(resource: .findInPage16) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch16) }
             public static var findSearchGradientColor: DesignSystemImage { .init(resource: .findSearchGradientColor16) }
@@ -666,6 +667,7 @@ public extension DesignSystemImages {
             public static var textSelect: DesignSystemImage { .init(resource: .textSelect24) }
             public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
             public static var timer: DesignSystemImage { .init(resource: .timer24) }
+            public static var translate: DesignSystemImage { .init(resource: .translate24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }
             public static var unpin: DesignSystemImage { .init(resource: .unpin24) }

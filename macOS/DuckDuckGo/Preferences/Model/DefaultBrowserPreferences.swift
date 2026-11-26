@@ -22,6 +22,7 @@ import FoundationExtensions
 import Foundation
 import SwiftUI
 import PixelKit
+import os.log
 
 // Notification for any default browser prompt presentation
 extension Notification.Name {
@@ -29,7 +30,6 @@ extension Notification.Name {
 }
 
 protocol DefaultBrowserProvider {
-    var bundleIdentifier: String { get }
     var defaultBrowserURL: URL? { get }
     var isDefault: Bool { get }
     func presentDefaultBrowserPrompt() throws
@@ -38,16 +38,14 @@ protocol DefaultBrowserProvider {
 
 struct SystemDefaultBrowserProvider: DefaultBrowserProvider {
 
-    enum SystemDefaultBrowserProviderError: Error {
-        case unableToSetDefaultURLHandler
-    }
-
-    let bundleIdentifier: String
+    private let bundleIdentifier: String
+    private let applicationURL: URL
 
     var defaultBrowserURL: URL? {
         return NSWorkspace.shared.urlForApplication(toOpen: URL(string: "http://")!)
     }
 
+    /// Launch Services stores the default browser by bundle ID, so compare against the copy it resolves that ID to.
     var isDefault: Bool {
         guard let defaultBrowserURL = defaultBrowserURL,
               let ddgBrowserURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier)
@@ -58,18 +56,18 @@ struct SystemDefaultBrowserProvider: DefaultBrowserProvider {
         return ddgBrowserURL == defaultBrowserURL
     }
 
-    init(bundleIdentifier: String = AppVersion.shared.identifier) {
-        var bundleID = bundleIdentifier
-        #if DEBUG
-        bundleID = bundleID.dropping(suffix: ".debug")
-        #endif
+    init(bundleIdentifier: String = AppVersion.shared.identifier, applicationURL: URL = Bundle.main.bundleURL) {
         self.bundleIdentifier = bundleIdentifier
+        self.applicationURL = applicationURL
     }
 
     func presentDefaultBrowserPrompt() throws {
-        let result = LSSetDefaultHandlerForURLScheme("http" as CFString, bundleIdentifier as CFString)
-        if result != 0 {
-            throw SystemDefaultBrowserProviderError.unableToSetDefaultURLHandler
+        NSWorkspace.shared.setDefaultApplication(at: applicationURL, toOpenURLsWithScheme: "http") { error in
+            guard let error, !error.isUserCancellation else { return }
+            Logger.general.error("Failed to set default browser: \(error.localizedDescription, privacy: .public)")
+            DispatchQueue.main.async {
+                openSystemPreferences()
+            }
         }
         NotificationCenter.default.post(name: .defaultBrowserPromptPresented, object: nil)
     }
@@ -79,6 +77,17 @@ struct SystemDefaultBrowserProvider: DefaultBrowserProvider {
         // in the form of "x-apple.systempreferences:com.apple.preference" but it doesn't support
         // opening the Appearance prefpane directly.
         NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Library/PreferencePanes/Appearance.prefPane"))
+    }
+}
+
+private extension Error {
+    /// Declining the system prompt reports a generic Cocoa error that wraps `userCanceledErr`.
+    var isUserCancellation: Bool {
+        let error = self as NSError
+        if error.domain == NSOSStatusErrorDomain && error.code == userCanceledErr {
+            return true
+        }
+        return (error.userInfo[NSUnderlyingErrorKey] as? Error)?.isUserCancellation ?? false
     }
 }
 

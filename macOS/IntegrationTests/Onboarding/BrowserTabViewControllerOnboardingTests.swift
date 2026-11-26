@@ -35,7 +35,6 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockDefaultBrowserProvider: DefaultBrowserProvider {
-    var bundleIdentifier: String = "test"
     var defaultBrowserURL: URL?
     var isDefault: Bool = false
 

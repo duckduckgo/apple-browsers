@@ -29,7 +29,6 @@ class CapturingDefaultBrowserProvider: DefaultBrowserProvider {
     var openSystemPreferencesCalled = false
     var throwError = false
 
-    var bundleIdentifier: String = ""
     var isDefault: Bool = false
 
     func presentDefaultBrowserPrompt() throws {

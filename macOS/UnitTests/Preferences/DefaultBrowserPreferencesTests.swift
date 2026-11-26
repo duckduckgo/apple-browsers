@@ -25,7 +25,6 @@ final class DefaultBrowserProviderMock: DefaultBrowserProvider {
         case generic
     }
 
-    var bundleIdentifier: String = "com.duckduckgo.DefaultBrowserPreferencesTests"
     var defaultBrowserURL: URL?
     var isDefault: Bool = false
     var wasPresentDefaultBrowserPromptCalled = false

@@ -42,6 +42,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          onboardingKeyValueStore: ThrowingKeyValueStoring?,
          meetsPIRLocaleRequirement: @escaping () -> Bool,
+         onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
          onRequestDuckAIChat: ((String?) -> Bool)? = nil) {
 
         self.userScript = userScript
@@ -59,6 +60,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
                                               dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
                                               onboardingKeyValueStore: onboardingKeyValueStore,
                                               meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+                                              onFlowEvent: onFlowEvent,
                                               onRequestDuckAIChat: onRequestDuckAIChat)
         self.restore = SubscriptionRestoreViewModel(userScript: userScript,
                                                     subFeature: subFeature)

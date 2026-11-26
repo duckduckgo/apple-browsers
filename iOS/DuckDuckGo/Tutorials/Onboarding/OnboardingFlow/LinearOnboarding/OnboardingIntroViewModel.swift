@@ -346,6 +346,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     /// - Parameter transition: Runs the step change, e.g. inside the view's content transition.
     func tryVPNAction(transition: @escaping (_ advance: @escaping () -> Void) -> Void = { $0() }) {
         guard currentIntroStep == .tryVPN else { return }
+        pixelReporter.measureTryVPNAction()
         guard let onTryVPNFromOnboarding else {
             makeNextViewState()
             return
@@ -364,14 +365,29 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     func skipTryVPNAction() {
         guard currentIntroStep == .tryVPN else { return }
+        pixelReporter.measureSkipTryVPNAction()
         // They declined the offer, so don't wait on a pending subscription check.
         tryVPNFollowUpProvider.cancelVPNAccessCheck()
         makeNextViewState()
     }
 
-    /// "Next" or "Skip" on the step after Try VPN.
-    func tryVPNFollowUpContinueAction() {
+    /// "Next" (the VPN is on) or "Skip" (it's off) on the Turn on VPN step after Try VPN.
+    func vpnActivationContinueAction(isVPNOn: Bool) {
         guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureVPNActivationContinue(isVPNOn: isVPNOn)
+        makeNextViewState()
+    }
+
+    /// Turning on the VPN failed on the Turn on VPN step after Try VPN.
+    func vpnActivationFailedAction(reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) {
+        guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureVPNActivationFailed(reason)
+    }
+
+    /// The button on the "If you change your mind" step after Try VPN.
+    func subscriptionReminderContinueAction() {
+        guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureSubscriptionReminderContinue()
         makeNextViewState()
     }
 
@@ -760,8 +776,12 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureKeepDuckAIImpression()
         case .adBlockingDialog:
             pixelReporter.measureAdBlockingImpression()
-        case .tryVPNDialog, .vpnActivationDialog, .subscriptionReminderDialog:
-            break
+        case .tryVPNDialog:
+            pixelReporter.measureTryVPNImpression()
+        case .vpnActivationDialog:
+            pixelReporter.measureVPNActivationImpression()
+        case .subscriptionReminderDialog:
+            pixelReporter.measureSubscriptionReminderImpression()
         }
     }
 

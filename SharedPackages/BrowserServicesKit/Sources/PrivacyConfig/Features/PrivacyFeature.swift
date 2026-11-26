@@ -94,6 +94,7 @@ public enum PrivacyFeature: String {
     case adBlockingExtension
     case eventHub
     case aiChatBrowserTools
+    case pageTranslation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -1123,6 +1124,13 @@ public enum DaxEasterEggPermanentLogoSubfeature: String, PrivacySubfeature {
 public enum PageContextSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .pageContext }
 
+    case featureEnabled
+}
+
+public enum PageTranslationSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .pageTranslation }
+
+    /// On-device web page translation (iOS).
     case featureEnabled
 }
 

@@ -17,7 +17,6 @@
 //
 
 import Combine
-import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 import Subscription

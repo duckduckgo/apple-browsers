@@ -18,7 +18,6 @@
 
 import Combine
 import Foundation
-import PrivacyConfig
 
 /// Promo delegate that shows the notification dot on the VPN upsell toolbar button.
 final class VPNUpsellDotBadgePromoDelegate: InternalPromoDelegate {

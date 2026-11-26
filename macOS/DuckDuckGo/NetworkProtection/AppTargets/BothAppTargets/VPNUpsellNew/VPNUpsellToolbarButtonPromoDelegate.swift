@@ -19,7 +19,6 @@
 import Combine
 import Foundation
 import PixelKit
-import PrivacyConfig
 import Subscription
 
 /// Promo delegate that shows the VPN upsell button in the toolbar.

@@ -18,7 +18,6 @@
 
 import Combine
 import Foundation
-import PrivacyConfig
 
 /// Mechanics shared by the VPN upsell Promo Queue delegates: the eligibility pipeline and a suspend-until-resolved show lifecycle.
 ///

@@ -132,6 +132,8 @@ protocol DefaultBrowserAndDockPrompt {
     ///
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType?
 
+    func promptDisplayed(_ prompt: DefaultBrowserAndDockPromptPresentationType)
+
     /// Called when the prompt CTA is clicked.
     /// - Parameter prompt: The type of prompt the user interacted with.
     func confirmAction(for prompt: DefaultBrowserAndDockPromptPresentationType)
@@ -270,21 +272,33 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         case .active(.popover):
             setPopoverSeen()
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: evaluatePromptEligibility))
-            rolloutMonitor?.promptShown(evaluatePromptEligibility, promptID: "popover")
         case .active(.banner):
             // We set the banner show occurrences only when the user interact with the banner.
             // We cannot increment the number of banners shown here because this returns a value every time the browser is focused.
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: evaluatePromptEligibility, numberOfBannersShown: formattedNumberOfBannersShown(value: store.bannerShownOccurrences + 1)), frequency: .uniqueByNameAndParameters)
-            rolloutMonitor?.promptShown(evaluatePromptEligibility, promptID: "banner-\(store.bannerShownOccurrences + 1)")
         case .inactive:
             setInactiveUserModalSeen()
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.inactiveUserModalImpression(type: evaluatePromptEligibility))
-            rolloutMonitor?.promptShown(evaluatePromptEligibility, promptID: "inactive-modal")
         case .none:
             break
         }
 
         return prompt
+    }
+
+    func promptDisplayed(_ prompt: DefaultBrowserAndDockPromptPresentationType) {
+        guard let promptType = evaluatePromptEligibility else { return }
+
+        let promptID: String
+        switch prompt {
+        case .active(.popover):
+            promptID = "popover"
+        case .active(.banner):
+            promptID = "banner-\(store.bannerShownOccurrences + 1)"
+        case .inactive:
+            promptID = "inactive-modal"
+        }
+        rolloutMonitor?.promptShown(promptType, promptID: promptID)
     }
 
     /// **USER CLICKED PRIMARY BUTTON** (e.g., "Make Default Browser", "Add to Dock")

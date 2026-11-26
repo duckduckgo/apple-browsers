@@ -1273,7 +1273,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
 
     // MARK: - App Store Dock rollout monitor tests
 
-    func testGetPromptTypeReportsShownPromptToRolloutMonitor() {
+    func testPromptDisplayedReportsShownPromptToRolloutMonitor() {
         let expected: [(DefaultBrowserAndDockPromptPresentationType, String)] = [
             (.active(.popover), "popover"),
             (.active(.banner), "banner-3"),
@@ -1284,22 +1284,20 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
             storeMock.bannerShownOccurrences = 2
             let actionPerformer = MockDefaultBrowserAndDockActionPerformer()
             actionPerformer.pendingPromptType = .bothDefaultBrowserAndDockPrompt
-            promptTypeDeciderMock.promptTypeToReturn = prompt
             let sut = makeSUT(actionPerformer: actionPerformer)
 
-            _ = sut.getPromptType()
+            sut.promptDisplayed(prompt)
 
             XCTAssertEqual(rolloutMonitorMock.shownPrompts, [.init(type: .bothDefaultBrowserAndDockPrompt, promptID: promptID)], "prompt: \(prompt)")
         }
     }
 
-    func testGetPromptTypeDoesNotReportToRolloutMonitorWhenNoPrompt() {
+    func testPromptDisplayedDoesNotReportToRolloutMonitorWhenNotEligible() {
         let actionPerformer = MockDefaultBrowserAndDockActionPerformer()
-        actionPerformer.pendingPromptType = .setAsDefaultPrompt
-        promptTypeDeciderMock.promptTypeToReturn = nil
+        actionPerformer.pendingPromptType = nil
         let sut = makeSUT(actionPerformer: actionPerformer)
 
-        _ = sut.getPromptType()
+        sut.promptDisplayed(.active(.popover))
 
         XCTAssertTrue(rolloutMonitorMock.shownPrompts.isEmpty)
     }

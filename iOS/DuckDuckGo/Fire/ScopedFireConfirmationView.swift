@@ -89,7 +89,7 @@ struct ScopedFireConfirmationView: View {
         .accessibilityIdentifier("Fire.Confirmation.Button.Settings")
     }
 
-    /// 44pt touch target like default iOS buttons. On iOS 26+ the close button adopts the native glass look;
+    /// 44pt circle like default iOS buttons. On iOS 26+ the close button adopts the native glass look;
     /// earlier versions keep the filled circle. The settings button has no resting background so close stays first in the hierarchy.
     private struct ToolbarButtonStyle: ButtonStyle {
         let isClose: Bool
@@ -97,7 +97,6 @@ struct ScopedFireConfirmationView: View {
 
         func makeBody(configuration: Configuration) -> some View {
             background(for: configuration)
-                .padding(Constants.toolbarButtonOuterPadding)
                 .contentShape(Circle())
         }
 
@@ -225,8 +224,7 @@ private extension ScopedFireConfirmationView {
         static let headerSectionPaddingNoAnimation: EdgeInsets = .init(top: 36, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96
         static let closeButtonPadding: CGFloat = 8
-        static let toolbarButtonSize: CGFloat = 36
-        static let toolbarButtonOuterPadding: CGFloat = 4
+        static let toolbarButtonSize: CGFloat = 44
         static let toolbarButtonSpacing: CGFloat = 10
         static let animationDelay: Double = 0.5
     }

@@ -124,6 +124,12 @@ public enum SingleUseColor {
     case spinnerStart
     case spinnerFinal
 
+    case defaultBrowserAndDockPromptBackground
+    case defaultBrowserAndDockPromptChartRowBackground
+    case defaultBrowserAndDockPromptStatusAvailable
+    case defaultBrowserAndDockPromptStatusPartiallyAvailable
+    case defaultBrowserAndDockPromptStatusUnavailable
+
     /// Duck.ai web view background color (#FFFFFF light / #111111 dark)
     case duckAIWebViewBackground
 

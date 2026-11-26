@@ -26,17 +26,10 @@ public final class AIChatLocalRunQueue {
 
     public typealias ChunkHandler = @MainActor (AIChatLocalRunChunk) -> Void
 
-    /// A class, so a run that's already writing follows its page to a new owner.
-    private final class Job {
+    private struct Job {
         let request: AIChatLocalRunRequest
-        var ownerID: ObjectIdentifier
-        var onChunk: ChunkHandler
-
-        init(request: AIChatLocalRunRequest, ownerID: ObjectIdentifier, onChunk: @escaping ChunkHandler) {
-            self.request = request
-            self.ownerID = ownerID
-            self.onChunk = onChunk
-        }
+        let ownerID: ObjectIdentifier
+        let onChunk: ChunkHandler
     }
 
     private let engine: AIChatLocalModelEngine
@@ -86,16 +79,6 @@ public final class AIChatLocalRunQueue {
         running?.task.cancel()
     }
 
-    /// Gives the owner's runs, running and waiting, to a new owner that still serves the same page,
-    /// so the page keeps getting their chunks and can still cancel them.
-    public func reassign(ownerID: ObjectIdentifier, to newOwnerID: ObjectIdentifier, onChunk: @escaping ChunkHandler) {
-        let jobs = pending + [running?.job].compactMap { $0 }
-        for job in jobs where job.ownerID == ownerID {
-            job.ownerID = newOwnerID
-            job.onChunk = onChunk
-        }
-    }
-
     /// Drops every run the page asked for, without telling it: the page is gone.
     public func cancelAll(ownerID: ObjectIdentifier) {
         pending.removeAll { $0.ownerID == ownerID }
@@ -117,7 +100,7 @@ public final class AIChatLocalRunQueue {
     }
 
     private func execute(_ job: Job) async {
-        var emitter = ChunkEmitter(requestId: job.request.requestId) { job.onChunk($0) }
+        var emitter = ChunkEmitter(requestId: job.request.requestId, onChunk: job.onChunk)
         let start = now()
         var lastSent = start
         var firstWordAt: TimeInterval?

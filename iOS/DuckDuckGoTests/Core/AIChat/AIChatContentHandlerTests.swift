@@ -680,17 +680,6 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(previous.cancelPendingTabContextSubmissionCallCount, 0)
     }
 
-    func testReplacingUserScriptHandsLocalRunsToTheNewScript() {
-        let previous = MockAIChatUserScript()
-        let replacement = MockAIChatUserScript()
-        let webView = WKWebView()
-        handler.setup(with: previous, webView: webView, displayMode: .contextual)
-
-        handler.setup(with: replacement, webView: webView, displayMode: .contextual)
-
-        XCTAssertTrue(previous.localRunsReplacement as? MockAIChatUserScript === replacement)
-    }
-
     func testCancellationIsForwardedToUserScript() {
         let script = MockAIChatUserScript()
         handler.setup(with: script, webView: WKWebView(), displayMode: .contextual)
@@ -1129,7 +1118,6 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitStartChatActionCallCount = 0
     var cancelPendingTabContextSubmissionCallCount = 0
     var cleanUpForReplacementCallCount = 0
-    var localRunsReplacement: AIChatUserScriptProviding?
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
     var submitOpenChatProtectionActionCallCount = 0
@@ -1210,10 +1198,6 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     func cleanUpForReplacement() {
         cleanUpForReplacementCallCount += 1
-    }
-
-    func handOverLocalRuns(to replacement: AIChatUserScriptProviding) {
-        localRunsReplacement = replacement
     }
 
     func submitOpenSettingsAction() {

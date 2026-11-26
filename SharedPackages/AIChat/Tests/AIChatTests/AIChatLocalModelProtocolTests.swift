@@ -78,6 +78,18 @@ struct AIChatLocalModelProtocolTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A state push carries the setup error only when there is one", .timeLimit(.minutes(1)))
+    func statePushCarriesSetupErrorOnlyWhenSet() throws {
+        let plain = try jsonObject(AIChatLocalModelStateUpdate(state: .downloading))
+        #expect(plain["state"] as? String == "downloading")
+        #expect(plain["errorCode"] == nil)
+
+        let failed = try jsonObject(AIChatLocalModelStateUpdate(state: .notSetUp, errorCode: .diskFull))
+        #expect(failed["state"] as? String == "not_set_up")
+        #expect(failed["errorCode"] as? String == "disk_full")
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Native config values leave out localModel unless it's set", .timeLimit(.minutes(1)))
     func nativeConfigCarriesLocalModelOnlyWhenSet() throws {
         var config = AIChatNativeConfigValues.defaultValues

@@ -182,7 +182,7 @@ final class AIChatHistoryViewModel: ObservableObject {
 
     func icon(forRowAt indexPath: IndexPath) -> UIImage? {
         guard let chat = chat(at: indexPath) else { return nil }
-        return Self.icon(for: chat)
+        return Self.icon(for: chat, showsVoiceGlyph: !featureFlagger.isFeatureOn(.aiChatVoiceInExistingChat))
     }
 
     // MARK: - Row identity
@@ -402,7 +402,8 @@ final class AIChatHistoryViewModel: ObservableObject {
         return pool[indexPath.row]
     }
 
-    private static func icon(for chat: DuckAiChat) -> UIImage {
+    /// Once voice can continue any chat, a voice chat is just a chat, so `showsVoiceGlyph` is off with that flag.
+    private static func icon(for chat: DuckAiChat, showsVoiceGlyph: Bool) -> UIImage {
         let image: UIImage
         // Pinned rows show the standard pin regardless of chat type; non-pinned rows use their
         // type glyph. Switch on `chat.chatType` rather than `AIChatSuggestion.kind(forModel:)` so
@@ -415,7 +416,7 @@ final class AIChatHistoryViewModel: ObservableObject {
             case .discussion:
                 image = DesignSystemImages.Glyphs.Size24.chat
             case .voice:
-                image = DesignSystemImages.Glyphs.Size24.voice
+                image = showsVoiceGlyph ? DesignSystemImages.Glyphs.Size24.voice : DesignSystemImages.Glyphs.Size24.chat
             case .imageGeneration:
                 image = DesignSystemImages.Glyphs.Size24.images
             }

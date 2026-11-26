@@ -25,8 +25,10 @@ import PrivacyConfig
 
 extension SyncPairingURL {
 
-    init?(addressBarQuery: String, featureFlagger: FeatureFlagger, useUnifiedLogic: Bool) {
+    init?(addressBarQuery: String, syncService: DDGSyncing, featureFlagger: FeatureFlagger, useUnifiedLogic: Bool) {
         guard featureFlagger.isFeatureOn(.syncPairingUrl),
+              syncService.featureFlags.contains(.connectFlows),
+              syncService.authState != .inactive || syncService.featureFlags.contains(.accountCreation),
               let url = URL(trimmedAddressBarString: addressBarQuery.trimmingCharacters(in: .whitespacesAndNewlines), useUnifiedLogic: useUnifiedLogic) else {
             return nil
         }

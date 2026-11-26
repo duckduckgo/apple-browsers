@@ -132,7 +132,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     enum LegacyView {
         case addToDock,
              sync(PairingInfo?),
-             syncWithAnotherDevice,
+             syncPairing,
              autofill,
              appIcon,
              unprotectedSites,
@@ -205,7 +205,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     @MainActor
-    func syncSettings(source: String? = nil, pairingInfo: PairingInfo?) -> SyncSettingsViewController {
+    func syncSettings(source: String? = nil, pairingInfo: PairingInfo?, startsPairingOnFirstAppearance: Bool = false) -> SyncSettingsViewController {
         return SyncSettingsViewController(syncService: self.syncService,
                                           syncBookmarksAdapter: self.syncDataProviders.bookmarksAdapter,
                                           syncCredentialsAdapter: self.syncDataProviders.credentialsAdapter,
@@ -214,6 +214,7 @@ class SettingsLegacyViewProvider: ObservableObject {
                                           syncPausedStateManager: self.syncPausedStateManager,
                                           source: source,
                                           pairingInfo: pairingInfo,
+                                          startsPairingOnFirstAppearance: startsPairingOnFirstAppearance,
                                           syncAutoRestoreHandler: syncAutoRestoreHandler)
     }
 

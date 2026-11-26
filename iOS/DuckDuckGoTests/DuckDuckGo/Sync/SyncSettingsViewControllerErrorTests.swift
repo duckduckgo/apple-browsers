@@ -86,20 +86,20 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
-    func testScannerLaunchAuthenticatesOnceForActiveAndInactiveSync() async {
+    func testPairingLaunchAuthenticatesOnceForActiveAndInactiveSync() async {
         for state in [SyncAuthState.active, .inactive] {
             ddgSyncing.authState = state
-            let controller = ScannerLaunchSyncSettingsViewController(
+            let controller = PairingLaunchSyncSettingsViewController(
                 syncService: ddgSyncing,
                 syncBookmarksAdapter: syncBookmarksAdapter,
                 syncCredentialsAdapter: syncCredentialsAdapter,
                 syncCreditCardsAdapter: syncCreditCardsAdapter,
                 appSettings: AppSettingsMock(),
                 syncPausedStateManager: errorHandler,
+                startsPairingOnFirstAppearance: true,
                 featureFlagger: featureFlagger,
                 syncAutoRestoreHandler: syncAutoRestoreHandler,
                 syncPromoStorage: MockKeyValueStore().keyedStoring())
-            controller.showsScannerOnFirstAppearance = true
             let authentication = expectation(description: "Authenticates before scanner presentation")
             authentication.assertForOverFulfill = true
             controller.onAuthenticate = { authentication.fulfill() }
@@ -1381,7 +1381,7 @@ private final class SpySyncSettingsViewController: SyncSettingsViewController {
 }
 
 @MainActor
-private final class ScannerLaunchSyncSettingsViewController: SyncSettingsViewController {
+private final class PairingLaunchSyncSettingsViewController: SyncSettingsViewController {
     var authenticationCount = 0
     var onAuthenticate: (() -> Void)?
 

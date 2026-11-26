@@ -30,7 +30,7 @@ final class SyncPairingURLSubmissionTests: XCTestCase {
             for (host, destination) in [("duck.com", SyncPairingURL.duckCom), ("duck.ai", .duckAI)] {
                 for input in [host + "/pair", " " + host + "/PAIR/ ", "http://www." + host + "/pair",
                               "https://" + host + "/pair?", host + "/pair#code2=untrusted", host + "/pair?code2=untrusted"] {
-                    XCTAssertEqual(SyncPairingURL(addressBarQuery: input, featureFlagger: flagger, useUnifiedLogic: useUnifiedLogic),
+                    XCTAssertEqual(SyncPairingURL(addressBarQuery: input, syncService: MockDDGSyncing(), featureFlagger: flagger, useUnifiedLogic: useUnifiedLogic),
                                    destination, input)
                 }
             }
@@ -41,8 +41,32 @@ final class SyncPairingURLSubmissionTests: XCTestCase {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
         for enabled in [false, true, false, true] {
             flagger.enabledFeatureFlags = enabled ? [.syncPairingUrl] : []
-            XCTAssertEqual(SyncPairingURL(addressBarQuery: "duck.ai/pair#code2=untrusted", featureFlagger: flagger, useUnifiedLogic: false),
+            XCTAssertEqual(SyncPairingURL(addressBarQuery: "duck.ai/pair#code2=untrusted", syncService: MockDDGSyncing(), featureFlagger: flagger, useUnifiedLogic: false),
                            enabled ? .duckAI : nil)
+        }
+    }
+
+    func testPairingAvailabilityChangesWhetherAddressBarURLsAreIntercepted() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.syncPairingUrl])
+        let syncService = MockDDGSyncing()
+        let availability: [(SyncFeatureFlags, Bool, Bool)] = [
+            (.unavailable, false, false),
+            (.level0ShowSync, false, false),
+            (.level1AllowDataSyncing, false, false),
+            (.level2AllowSetupFlows, true, false),
+            (.all, true, true),
+            (.unavailable, false, false)
+        ]
+        for (flags, interceptsActive, interceptsInactive) in availability {
+            syncService.featureFlags = flags
+            for (state, intercepts) in [(SyncAuthState.active, interceptsActive), (.inactive, interceptsInactive)] {
+                syncService.authState = state
+                for (host, destination) in [("duck.com", SyncPairingURL.duckCom), ("duck.ai", .duckAI)] {
+                    XCTAssertEqual(SyncPairingURL(addressBarQuery: host + "/pair", syncService: syncService,
+                                                 featureFlagger: flagger, useUnifiedLogic: false),
+                                   intercepts ? destination : nil, "\(host), \(state), \(flags)")
+                }
+            }
         }
     }
 
@@ -50,7 +74,7 @@ final class SyncPairingURLSubmissionTests: XCTestCase {
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.syncPairingUrl])
         for input in ["sync my bookmarks", "duck.com/pair/extra", "duck.ai/pair/extra", "duckduckgo.com/pair",
                       "https://duckduckgo.com/sync/pairing/#&code2=legacy", "https://duck.com.evil.com/pair"] {
-            XCTAssertNil(SyncPairingURL(addressBarQuery: input, featureFlagger: flagger, useUnifiedLogic: false), input)
+            XCTAssertNil(SyncPairingURL(addressBarQuery: input, syncService: MockDDGSyncing(), featureFlagger: flagger, useUnifiedLogic: false), input)
         }
     }
 }

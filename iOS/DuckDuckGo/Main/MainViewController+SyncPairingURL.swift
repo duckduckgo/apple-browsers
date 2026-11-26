@@ -23,14 +23,14 @@ extension MainViewController {
 
     func shouldOpenSyncPairing(for query: String) -> Bool {
         guard suggestionTrayController?.hasKeyboardSelectedSuggestion != true else { return false }
-        return SyncPairingURL(addressBarQuery: query, featureFlagger: featureFlagger,
+        return SyncPairingURL(addressBarQuery: query, syncService: syncService, featureFlagger: featureFlagger,
                               useUnifiedLogic: isUnifiedURLPredictionEnabled) != nil
     }
 
     func openSyncPairingIfNeeded(for query: String) -> Bool {
         guard shouldOpenSyncPairing(for: query) else { return false }
         dismissOmniBar(animated: false)
-        segueToSettingsSync(showScanner: true)
+        segueToSettingsSyncPairing()
         return true
     }
 }

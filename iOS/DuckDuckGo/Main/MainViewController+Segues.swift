@@ -445,19 +445,25 @@ extension MainViewController {
                                    syncAutoRestoreHandler: syncAutoRestoreHandler)
     }
 
-    func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil, showScanner: Bool = false) {
-        Logger.lifecycle.debug(#function)
-        hideAllHighlightsIfNeeded()
-
-        let launchSync: (SettingsViewModel) -> Void = { settingsViewModel in
-            if showScanner {
-                settingsViewModel.presentLegacyView(.syncWithAnotherDevice, animated: false)
-            } else if let source {
+    func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
+        segueToSettingsSync { settingsViewModel in
+            if let source {
                 settingsViewModel.shouldPresentSyncViewWithSource(source, animated: false)
             } else {
                 settingsViewModel.presentLegacyView(.sync(pairingInfo), animated: false)
             }
         }
+    }
+
+    func segueToSettingsSyncPairing() {
+        segueToSettingsSync { settingsViewModel in
+            settingsViewModel.presentLegacyView(.syncPairing, animated: false)
+        }
+    }
+
+    private func segueToSettingsSync(launchSync: @escaping (SettingsViewModel) -> Void) {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
 
         if let navigationController = presentedViewController as? UINavigationController,
            navigationController.viewControllers.first is SettingsHostingController {

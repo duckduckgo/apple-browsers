@@ -1887,9 +1887,12 @@ class MainViewController: UIViewController {
         refreshMenuAlertState(animated: true)
     }
 
+    private var shouldShowMenuAlert: Bool {
+        AppDependencyProvider.shared.downloadManager.hasDownloadsNeedingAttention || currentTab?.isPageTranslated == true
+    }
+
     private func refreshMenuAlertState(animated: Bool) {
-        let isVisible = AppDependencyProvider.shared.downloadManager.hasDownloadsNeedingAttention
-            || currentTab?.isPageTranslated == true
+        let isVisible = shouldShowMenuAlert
         let shouldAnimate = animated && isMenuAlertVisible != isVisible
         isMenuAlertVisible = isVisible
 
@@ -2783,6 +2786,7 @@ class MainViewController: UIViewController {
         // without this the user lands on NTP with no visible bars.
         viewCoordinator.hideAITabChrome()
         reconcileToolbarVisibilityForCurrentTab()
+        refreshMenuAlertState(animated: false)
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
@@ -8132,7 +8136,8 @@ extension MainViewController: NewTabPageControllerDelegate {
 extension MainViewController: TabDelegate {
 
     func tabDidChangePageTranslationState(_ tab: TabViewController) {
-        guard tab === currentTab else { return }
+        // Refreshing the button cancels its site permission animation, so only when the dot changes.
+        guard tab === currentTab, shouldShowMenuAlert != isMenuAlertVisible else { return }
         refreshMenuAlertState(animated: true)
     }
 

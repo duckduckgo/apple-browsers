@@ -365,10 +365,11 @@ final class FireDialogViewModel: ObservableObject {
     }
 
     var shouldShowChatHistoryToggle: Bool {
+        // The onboarding dialog always offers to delete the chat, whatever the scope, the selected tab or the chats listed.
+        if mode == .duckAIOnboarding { return true }
         let isPresentedOnAIChatTab = tabCollectionViewModel?.selectedTab?.url?.isDuckAIURL ?? false
         // Only hide chats toggle when no chats in the new dialog, so default this to `true` when the flag is off.
-        // The onboarding dialog always offers to delete chats: the list can be empty while the chat is still stored.
-        let hasChats = mode == .duckAIOnboarding || (featureFlagger.isFeatureOn(.fireDialogSimplified) ? chats.count > 0 : true)
+        let hasChats = featureFlagger.isFeatureOn(.fireDialogSimplified) ? chats.count > 0 : true
         return aiChatHistoryCleaner.shouldDisplayCleanAIChatHistoryOption
             && mode.shouldShowChatHistoryToggle(featureFlagger)
             && (clearingOption.shouldShowChatHistoryToggle || isPresentedOnAIChatTab)
@@ -617,7 +618,9 @@ final class FireDialogViewModel: ObservableObject {
     /// This uses the same sources of truth as the confirmed result, so that the button is never
     /// disabled while confirming would still delete something.
     var isDeleteEnabled: Bool {
-        shouldCloseTabsAndWindows
+        // The onboarding dialog always closes the tab, so only the chats can enable it.
+        if mode == .duckAIOnboarding { return includeChatHistory }
+        return shouldCloseTabsAndWindows
         || (shouldDeleteHistory && hasHistoryItemsInScope)
         || (includeCookiesAndSiteData && hasCookiesAndSiteDataInScope)
         || includeChatHistory

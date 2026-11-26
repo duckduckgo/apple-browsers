@@ -76,16 +76,6 @@ final class PageTranslationOfferProvider {
         }
     }
 
-    /// The offer to show as a banner; nil when there's none, or when the tab left the page while detecting.
-    /// - Parameter isSamePage: whether the tab is still on the page detection started on. A URL change within the
-    ///   page, such as `replaceState`, doesn't leave it.
-    func bannerOffer(in webView: WKWebView, isSamePage: () -> Bool) async -> TranslationOffer? {
-        guard case .banner(let offer) = await decision(in: webView), isSamePage() else {
-            return nil
-        }
-        return offer
-    }
-
     /// nil when translation is off or there's no manifest yet; otherwise the offer rules' decision.
     func decision(forSample sample: String) async -> TranslationOfferDecision? {
         guard isEnabled else {

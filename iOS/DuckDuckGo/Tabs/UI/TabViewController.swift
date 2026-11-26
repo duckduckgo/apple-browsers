@@ -3172,8 +3172,10 @@ extension TabViewController: WKNavigationDelegate {
 
         let pageLoad = pageLoads
         Task { [weak self, weak webView] in
-            guard let webView, let offer = await provider.bannerOffer(in: webView, isSamePage: { self?.pageLoads == pageLoad }) else { return }
-            self?.showTranslationBanner(offer)
+            // Dropped if another page started loading while detecting; a URL change within the page, such as replaceState, keeps it.
+            guard let webView, case .banner(let offer) = await provider.decision(in: webView),
+                  let self, pageLoads == pageLoad else { return }
+            showTranslationBanner(offer)
         }
     }
 

@@ -2585,8 +2585,19 @@ class MainViewController: UIViewController {
         attachHomeScreen(isNewTab: true, allowingKeyboard: false, openedAfterIdle: true)
     }
 
+    /// A return that will focus the page it lands on stages the focused layout before its first frame.
+    func prepareFocusedNewTabPageForWarmReturnIfNeeded(lastBackgroundDate: Date?,
+                                                       hasCompletedAuthentication: Bool,
+                                                       drewIdleReturnPage: Bool,
+                                                       hasLaunchAction: Bool) {
+        guard NewTabPageKeyboardPolicy.focusesOnReturn(lastBackgroundDate: lastBackgroundDate,
+                                                       hasCompletedAuthentication: hasCompletedAuthentication,
+                                                       drewIdleReturnPage: drewIdleReturnPage) else { return }
+        stageFocusedNewTabPageBeforeAppOpenIfAllowed(hasLaunchAction: hasLaunchAction)
+    }
+
     /// Draws the focused layout ahead of the app-open keyboard flow, so the first frame is not the resting layout.
-    private func stageFocusedNewTabPageBeforeAppOpenIfAllowed(hasLaunchAction: Bool) {
+    func stageFocusedNewTabPageBeforeAppOpenIfAllowed(hasLaunchAction: Bool) {
         guard tabManager.currentTabsModel.currentTab?.isHomeTab == true,
               presentedViewController == nil,
               let coordinator = unifiedToggleInputCoordinator, !coordinator.isOmnibarSession,

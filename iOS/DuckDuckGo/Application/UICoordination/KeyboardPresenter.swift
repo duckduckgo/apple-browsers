@@ -59,6 +59,16 @@ struct NewTabPageKeyboardPolicy {
         return now.timeIntervalSince(lastBackgroundDate) > appOpenBackgroundThreshold
     }
 
+    /// A return focuses its page when it counts as an app open, or when it drew the idle return page,
+    /// which takes New Tab behavior without the app-open time threshold.
+    static func focusesOnReturn(lastBackgroundDate: Date?,
+                                hasCompletedAuthentication: Bool,
+                                drewIdleReturnPage: Bool,
+                                now: Date = Date()) -> Bool {
+        drewIdleReturnPage
+            || isAppOpen(lastBackgroundDate: lastBackgroundDate, hasCompletedAuthentication: hasCompletedAuthentication, now: now)
+    }
+
     /// New Tab alone decides on an NTP; App Launch keeps its meaning for other tabs.
     func showsKeyboardOnAppOpen(onNewTabPage: Bool) -> Bool {
         onNewTabPage ? onNewTab : onAppLaunch

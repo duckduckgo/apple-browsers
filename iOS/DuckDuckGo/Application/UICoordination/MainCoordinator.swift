@@ -1021,6 +1021,8 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.openNewTabPageAfterIdleReturn()
+            // The keyboard flow always focuses a page created here, so it needn't draw resting first.
+            self.controller.stageFocusedNewTabPageBeforeAppOpenIfAllowed(hasLaunchAction: false)
             completion(.openedNewTab)
         }
     }

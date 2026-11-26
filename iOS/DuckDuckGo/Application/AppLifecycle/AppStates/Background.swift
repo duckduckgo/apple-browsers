@@ -121,6 +121,11 @@ extension Background {
         }
         sceneDependencies.autoClearService.resume()
         services.systemSettingsPiPTutorialService.resume()
+        mainCoordinator.controller.prepareFocusedNewTabPageForWarmReturnIfNeeded(
+            lastBackgroundDate: (try? lastBackgroundDateStorage.lastBackgroundDate) ?? nil,
+            hasCompletedAuthentication: sceneDependencies.authenticationService.hasCompletedAuthentication,
+            drewIdleReturnPage: background.drewIdleReturnNewTabPage,
+            hasLaunchAction: actionToHandle != nil)
         return background
     }
 

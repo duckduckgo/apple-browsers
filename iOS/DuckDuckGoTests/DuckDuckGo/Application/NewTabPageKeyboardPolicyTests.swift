@@ -55,6 +55,38 @@ struct NewTabPageKeyboardPolicyTests {
         #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate, now: now) == isAppOpen)
     }
 
+    struct FocusesOnReturnCase: Sendable {
+        let name: String
+        let secondsInBackground: TimeInterval?
+        let hasCompletedAuthentication: Bool
+        let drewIdleReturnPage: Bool
+        let focuses: Bool
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "A return focuses when it is an app open or drew the idle return page",
+        .timeLimit(.minutes(1)),
+        arguments: [
+            FocusesOnReturnCase(name: "long return", secondsInBackground: 60, hasCompletedAuthentication: true, drewIdleReturnPage: false, focuses: true),
+            FocusesOnReturnCase(name: "short return", secondsInBackground: 5, hasCompletedAuthentication: true, drewIdleReturnPage: false, focuses: false),
+            FocusesOnReturnCase(name: "short return that drew the idle page", secondsInBackground: 5, hasCompletedAuthentication: true, drewIdleReturnPage: true, focuses: true),
+            FocusesOnReturnCase(name: "short return before App Lock was unlocked", secondsInBackground: 5, hasCompletedAuthentication: false, drewIdleReturnPage: false, focuses: true),
+            FocusesOnReturnCase(name: "no recorded background date", secondsInBackground: nil, hasCompletedAuthentication: true, drewIdleReturnPage: false, focuses: true)
+        ]
+    )
+    func whenReturningThenFocusFollowsAppOpenOrIdleReturnPage(testCase: FocusesOnReturnCase) {
+        let now = Date()
+        let lastBackgroundDate = testCase.secondsInBackground.map { now.addingTimeInterval(-$0) }
+
+        let focuses = NewTabPageKeyboardPolicy.focusesOnReturn(lastBackgroundDate: lastBackgroundDate,
+                                                               hasCompletedAuthentication: testCase.hasCompletedAuthentication,
+                                                               drewIdleReturnPage: testCase.drewIdleReturnPage,
+                                                               now: now)
+
+        #expect(focuses == testCase.focuses, "\(testCase.name)")
+    }
+
     struct AfterFireCase: Sendable {
         let onNewTab: Bool
         let onDuckAITab: Bool

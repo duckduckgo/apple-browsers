@@ -53,7 +53,8 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
                          featureFlagger: MockFeatureFlagger? = nil,
                          isReturningUser: Bool = true,
                          models: [AIChatRemoteModel] = [everyModel],
-                         attachmentLimits: AIChatAttachmentLimits? = defaultAttachmentLimits) throws -> UnifiedToggleInputCoordinator {
+                         attachmentLimits: AIChatAttachmentLimits? = defaultAttachmentLimits,
+                         usageLimitsStore: DuckAiUsageLimitsStore? = nil) throws -> UnifiedToggleInputCoordinator {
         let storage = DuckAiNativeMemoryStorageHandler()
         if isReturningUser {
             try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.originConversions.rawValue, value: #"["duckai_prompt"]"#)
@@ -69,6 +70,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
             preferences: HintsTestPreferences(),
             toggleModeStorage: HintsTestToggleModeStorage(),
             stateStore: HintsTestStateStore(),
+            usageLimitsStore: usageLimitsStore,
             featureFlagger: flagger,
             termsOfServiceStore: terms,
             devicePlatform: IPhone.self,
@@ -389,6 +391,36 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         ]])
         #expect(capStore.ignoredChats == 1)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the usage limit reached the hints hide and a tap does nothing, but the new chat still counts",
+          .timeLimit(.minutes(1)))
+    func usageLimitHidesHints() async throws {
+        let limits = DuckAiNativeMemoryStorageHandler()
+        try limits.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: Self.weeklyLimitReached)
+        let sut = try makeSUT(usageLimitsStore: DuckAiUsageLimitsStore(
+            storageHandler: limits,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.utiDuckAIWarnings]),
+            dismissalStore: InMemoryDuckAiUsageWarningDismissalStore()))
+        try await openBlankChat(sut)
+        try await Task.sleep(nanoseconds: 300_000_000)
+        try #require(sut.viewController.isInputBlockedByUsageLimit)
+
+        #expect(sut.newChatHints.isEmpty)
+        sut.performNewChatHint(.imageGeneration)
+        #expect(sut.selectedTool == nil)
+        #expect(fired("aichat_new_chat_hint_tapped").isEmpty)
+        #expect(fired("aichat_new_chat_shown").count == 1)
+    }
+
+    private static let weeklyLimitReached: String = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let resetsAt = formatter.string(from: Date().addingTimeInterval(172_800))
+        return """
+        {"notice":{"id":"weeklyReached","window":"weekly","percentUsed":100,"resetsAt":"\(resetsAt)","reached":true}}
+        """
+    }()
 
     /// Flag updates arrive on the main queue, after the call that sends them.
     private func waitUntil(_ condition: () -> Bool) async throws {

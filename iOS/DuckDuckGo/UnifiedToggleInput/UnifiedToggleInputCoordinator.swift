@@ -1347,8 +1347,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             publishNewChatHints([])
             return
         }
-        // The cheap terms first: eligibility reads native storage.
-        guard isAIChatPromoClear, !isTypeAtTipShown, isDraftEmpty else {
+        // The cheap terms first: eligibility reads native storage. A spent usage limit disables the toolbar's
+        // image and tools buttons, so it hides the hints they stand in for.
+        guard isAIChatPromoClear, !isTypeAtTipShown, isDraftEmpty, !viewController.isInputBlockedByUsageLimit else {
             publishNewChatHints([])
             return
         }
@@ -1521,6 +1522,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         footerController?.onInputBlockChanged = { [weak self] blocked in
             self?.viewController.isInputBlockedByUsageLimit = blocked
             self?.tabMentionController?.refresh()
+            self?.refreshNewChatState()
         }
         footerController?.onTermsOfServiceVisibilityChanged = { [weak self] isVisible in
             guard let self else { return }

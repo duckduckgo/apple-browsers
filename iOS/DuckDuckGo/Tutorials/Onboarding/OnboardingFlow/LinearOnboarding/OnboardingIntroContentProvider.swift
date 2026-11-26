@@ -553,8 +553,10 @@ extension OnboardingIntroContentProvider {
     var subscriptionReminderContent: OnboardingSubscriptionReminderContent {
         OnboardingSubscriptionReminderContent(
             title: UserText.Onboarding.SubscriptionReminder.title,
-            message: (try? AttributedString(markdown: UserText.Onboarding.SubscriptionReminder.message))
-                ?? AttributedString(UserText.Onboarding.SubscriptionReminder.message),
+            message: (try? AttributedString(
+                markdown: UserText.Onboarding.SubscriptionReminder.message,
+                options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+            )) ?? AttributedString(UserText.Onboarding.SubscriptionReminder.message),
             cta: UserText.Onboarding.SubscriptionReminder.cta,
             daxAnimation: .wingLeft
         )

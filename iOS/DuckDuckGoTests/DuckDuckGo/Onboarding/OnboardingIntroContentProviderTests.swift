@@ -588,7 +588,7 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @available(iOS 16, macOS 13, *)
-        @Test("Check subscription reminder content bolds the Settings path", .timeLimit(.minutes(1)))
+        @Test("Check subscription reminder content bolds the Settings path on its own line", .timeLimit(.minutes(1)))
         func checkSubscriptionReminderContent() {
             // GIVEN
             let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
@@ -598,7 +598,7 @@ struct OnboardingIntroContentProviderTests {
 
             // THEN
             #expect(result.title == UserText.Onboarding.SubscriptionReminder.title)
-            #expect(String(result.message.characters) == "Add the subscription anytime in Settings > DuckDuckGo Subscription.")
+            #expect(String(result.message.characters) == "Add the subscription anytime in\nSettings > DuckDuckGo Subscription.")
             let boldText = result.message.runs
                 .filter { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
                 .map { String(result.message[$0.range].characters) }

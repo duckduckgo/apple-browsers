@@ -237,6 +237,29 @@ struct AIChatLlamaEngineTests {
         #expect(runtime.loadCount == 2)
     }
 
+    /// iOS refuses GPU work from an app in the background, which ends a run with `decodeFailed`.
+    @available(iOS 16, macOS 13, *)
+    @Test("A failed GPU step mid-answer ends the run as unknown, frees the model, and the next run loads it again", .timeLimit(.minutes(1)))
+    func failedGPUStepFreesTheModel() async throws {
+        let engine = makeEngine()
+        runtime.model.output = ["The mallard"]
+        runtime.model.generateError = .decodeFailed(-3)
+
+        var texts: [String] = []
+        let error = await #expect(throws: AIChatLocalModelEngineError.self) {
+            for try await event in engine.run(request) {
+                if case .text(let text) = event { texts.append(text) }
+            }
+        }
+        #expect(texts == ["The mallard"])
+        #expect(error?.code == .unknown)
+        #expect(!engine.isModelLoaded)
+
+        runtime.model.generateError = nil
+        _ = try await collect(engine.run(request))
+        #expect(runtime.loadCount == 2)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("prepare opens llama.cpp without loading a model", .timeLimit(.minutes(1)))
     func prepareOpensTheLibrary() {
@@ -305,6 +328,8 @@ private final class FakeLoadedLlamaModel: AIChatLlamaLoadedModel, @unchecked Sen
     var contextSize = 8_192
     var output: [String] = ["Hello"]
     var waitsForStop = false
+    /// Thrown after `output` is written, like a GPU step failing partway through an answer.
+    var generateError: LlamaRuntimeError?
 
     var tokenizeCalls: [TokenizeCall] { lock.locked { _tokenizeCalls } }
     var lastPrompt: [LlamaToken] { lock.locked { _lastPrompt } }
@@ -339,6 +364,7 @@ private final class FakeLoadedLlamaModel: AIChatLlamaLoadedModel, @unchecked Sen
             throw CancellationError()
         }
         output.forEach(onText)
+        if let generateError { throw generateError }
         return output.count
     }
 

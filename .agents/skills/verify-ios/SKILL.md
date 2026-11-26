@@ -53,16 +53,9 @@ $V --device iphone setup && $V --device ipad setup   # this worktree's own simul
 $V build                                              # app (3–20 min) + runner (~20 s); rebuild the app after app changes
 ```
 
-Each proof deletes its simulator when it ends (pass, fail, cancel, or its session stopped), so the next proof starts on
-a new device. `setup`, `launch`, exploring and `prove --keep` leave the simulator booted: when you are done with it,
-run `$V cleanup --all --delete-sims`. `prove`, `launch` and `build` recreate a missing simulator (about 30 s). Builds
-live in the worktree under `DerivedData/verify-ios/` (gitignored, about 9 GB): removing the worktree removes them, and
-`$V cleanup --builds` removes them sooner once you are done proving.
-
-Every command first reaps simulators left behind by any worktree: ones whose worktree no longer exists, and ones
-nobody used for `VERIFY_IOS_IDLE_HOURS` (default 2; `0` turns this off). It never touches a simulator whose device lock
-a running command holds, or one whose name doesn't start with `verify-ios-`. What it deleted is printed to stderr and
-listed under `reaped`. This is a backstop, not a reason to skip `cleanup`.
+A proof deletes its simulator when it ends; `setup`, `launch`, exploring and `--keep` leave it booted. `prove`,
+`launch` and `build` recreate it (~30 s). Builds live in the worktree's gitignored `DerivedData/verify-ios/`
+(`cleanup --builds`). Each command first reaps orphaned or idle (2 h) simulators: see `reap.py`.
 
 `build` targets a concrete simulator: a `generic/platform=iOS Simulator` build fails in the WebKit-workaround phase.
 One app build serves both devices. `build` records a fingerprint of the source it built from (HEAD plus every
@@ -254,8 +247,7 @@ $V doctor                                  # read-only: simulator, build identit
 $V cleanup [--all] [--shutdown] [--delete-sims] [--builds]
 ```
 
-**When you are done exploring, or with a `prove --keep` simulator, run `$V cleanup --all --delete-sims`.** Otherwise
-the simulator stays booted (2.5–3.5 GB on disk, plus memory and CPU) until a later command reaps it as idle.
+**Done exploring or with a `--keep` simulator: run `$V cleanup --all --delete-sims`**.
 
 After a proof has deleted the simulator, `launch` creates a new one before the other commands work again.
 
@@ -275,16 +267,13 @@ and fails if the running binary is not this worktree's build.
 - A pass needs a passing check, no failing check, and the app in the foreground at the end.
 - Telemetry counts only after `mark()`, from a stream that is checked to be alive.
 - Isolation: per-worktree simulators (`verify-ios-<key>-iphone|ipad`, iPhone 17 Pro / iPad Pro 11-inch (M5),
-  iOS 27.0), found by name and deleted by the proof that used them, by `cleanup --delete-sims`, or by the reaper once
-  their worktree is gone or they sat idle; builds in the worktree's gitignored
+  iOS 27.0), found by name and deleted by the proof that used them; builds in the worktree's gitignored
   `DerivedData/verify-ios/`; ports, state and evidence under `~/.ddg-verify-ios/<worktree>-<hash>/`
   (`VERIFY_IOS_HOME` overrides the root), since evidence must outlive the worktree. The runner answers only to this worktree's token. Every command that changes a device holds its lock for its
   whole duration; `build` and the shared fixture server need both locks.
 - Cleanup signals only processes whose recorded identity (pid + start time + command) still matches, checked again
   right before each signal; survivors stay recorded and are reported. It deletes only this worktree's simulators,
-  never evidence, and builds only with `--builds`. The reaper deletes only `verify-ios-` simulators whose device lock
-  is free, and with an orphan's simulators its state folder, keeping that folder's evidence. Simulator runtimes and
-  device support files are never deleted.
+  never evidence. Simulator runtimes are never deleted.
 
 After changing the runner, the driver or the library, run both test suites:
 

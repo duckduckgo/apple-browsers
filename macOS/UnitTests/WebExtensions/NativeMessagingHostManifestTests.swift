@@ -241,6 +241,45 @@ final class NativeMessagingHostManifestTests: XCTestCase {
         XCTAssertTrue(paths[firstSystemIndex...].allSatisfy { $0.hasPrefix("/Library/") })
     }
 
+    // MARK: - Hosts directory
+
+    func testWhenUserHostsDirectoryIsReadThenItIsOurOwnUserLevelDirectory() throws {
+        let userLibrary = try XCTUnwrap(FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first)
+        let expected = userLibrary.appendingPathComponent("Application Support/DuckDuckGo/NativeMessagingHosts")
+
+        XCTAssertEqual(NativeMessagingHostManifestLocator.userHostsDirectory, expected)
+        XCTAssertEqual(NativeMessagingHostManifestLocator.searchDirectories.first, expected)
+    }
+
+    func testWhenHostsDirectoryIsMissingThenItIsCreatedWithItsParents() {
+        let hostsDirectory = directories[0].appendingPathComponent("Application Support/DuckDuckGo/NativeMessagingHosts")
+
+        NativeMessagingHostManifestLocator.createHostsDirectoryIfNeeded(at: hostsDirectory)
+
+        var isDirectory: ObjCBool = false
+        XCTAssertTrue(FileManager.default.fileExists(atPath: hostsDirectory.path, isDirectory: &isDirectory))
+        XCTAssertTrue(isDirectory.boolValue)
+    }
+
+    func testWhenHostsDirectoryExistsThenItsContentsAreKept() throws {
+        let manifestURL = directories[0].appendingPathComponent("com.example.host.json")
+        try Data("{}".utf8).write(to: manifestURL)
+
+        NativeMessagingHostManifestLocator.createHostsDirectoryIfNeeded(at: directories[0])
+
+        XCTAssertEqual(try Data(contentsOf: manifestURL), Data("{}".utf8))
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenHandlerIsCreatedThenItCreatesTheHostsDirectory() {
+        let hostsDirectory = directories[0].appendingPathComponent("DuckDuckGo/NativeMessagingHosts")
+
+        _ = NativeMessagingHandler(hostsDirectory: hostsDirectory)
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: hostsDirectory.path))
+    }
+
     // MARK: - Helpers
 
     private func assertInvalidName(_ name: String, searchDirectories: [URL], file: StaticString = #filePath, line: UInt = #line) {

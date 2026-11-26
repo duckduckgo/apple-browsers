@@ -919,6 +919,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         return true
     }
 
+    public func waitForBackupRenewal() async {
+        await oAuthClient.waitForBackupRenewal()
+    }
+
     public func restoreMissingTokenIfPossible() async {
         guard await restoreMissingToken() != nil else { return }
         _ = try? await getSubscription(forceRefresh: true)

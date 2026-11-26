@@ -111,35 +111,40 @@ final class SubscriptionTokenRefreshTask {
     }
 
     /// Runs the keep-alive for a launched background task, schedules the next one and completes `task`.
-    /// When the task expires first, the refresh is cancelled and the task is scheduled again after the keep-alive's retry interval.
+    /// When the task expires first, the refresh is cancelled and the task is scheduled again after the retry interval.
+    /// Whichever of the run and the expiration finishes first claims the task: only it schedules, records, fires the pixel and completes it.
     @discardableResult
     func handle(_ task: BGTaskInterface) -> Task<Void, Never> {
         Logger.subscriptionTokenKeepAlive.log("Run started, trigger: \(SubscriptionTokenRefreshRun.Trigger.backgroundTask.rawValue, privacy: .public)")
-        let completion = TaskCompletion(task: task)
+        let claim = TaskClaim(task: task)
 
         let work = Task { [keepAlive] in
             let outcome = await keepAlive.refreshIfNeeded()
-            guard !Task.isCancelled else {
+            guard claim.claim() else {
                 Logger.subscriptionTokenKeepAlive.log("Background run finished after expiring, outcome \(outcome.description, privacy: .public) discarded")
                 return
             }
             let nextCheck = schedule(after: outcome)
             record(trigger: .backgroundTask, outcome: outcome, nextCheck: nextCheck)
             if case .failed = outcome {
-                completion.complete(success: false)
+                claim.complete(success: false)
             } else {
-                completion.complete(success: true)
+                claim.complete(success: true)
             }
         }
 
         task.expirationHandler = { [weak self] in
-            Logger.subscriptionTokenKeepAlive.error("Background task expired before the run finished")
             work.cancel()
+            guard claim.claim() else {
+                Logger.subscriptionTokenKeepAlive.log("Background task expired as the run was finishing; the run completes it")
+                return
+            }
+            Logger.subscriptionTokenKeepAlive.error("Background task expired before the run finished")
             if let self {
                 self.submit(earliestBeginDate: self.now().addingTimeInterval(self.retryInterval()))
                 self.pixelFiring?.fire(SubscriptionTokenRefreshPixel.run(trigger: .backgroundTask, result: .expired), frequency: .standard)
             }
-            completion.complete(success: false)
+            claim.complete(success: false)
         }
         return work
     }
@@ -185,24 +190,29 @@ final class SubscriptionTokenRefreshTask {
     }
 }
 
-/// Completes a background task once, whichever of the work and the expiration handler finishes first.
-private final class TaskCompletion: @unchecked Sendable {
+/// Decides which of a background run and its expiration handles the task. The first to claim it schedules, reports and completes it.
+private final class TaskClaim: @unchecked Sendable {
     private let task: BGTaskInterface
     private let lock = NSLock()
-    private var isCompleted = false
+    private var isClaimed = false
 
     init(task: BGTaskInterface) {
         self.task = task
     }
 
-    func complete(success: Bool) {
+    /// Claims the task.
+    /// - Returns: True for the first caller only.
+    func claim() -> Bool {
         lock.lock()
-        let shouldComplete = !isCompleted
-        isCompleted = true
-        lock.unlock()
-        if shouldComplete {
-            Logger.subscriptionTokenKeepAlive.log("Background task completed, success: \(success, privacy: .public)")
-            task.setTaskCompleted(success: success)
-        }
+        defer { lock.unlock() }
+        guard !isClaimed else { return false }
+        isClaimed = true
+        return true
+    }
+
+    /// Completes the task. Call only after a successful `claim()`.
+    func complete(success: Bool) {
+        Logger.subscriptionTokenKeepAlive.log("Background task completed, success: \(success, privacy: .public)")
+        task.setTaskCompleted(success: success)
     }
 }

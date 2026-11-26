@@ -146,6 +146,12 @@ public class MockOAuthClient: OAuthClient {
     public private(set) var restoreFromBackupCalls: [RestoreFromBackupCall] = []
     /// Called at the start of every `restoreFromBackup` call, before `restoreFromBackupResponse` is returned.
     public var onRestoreFromBackup: (() -> Void)?
+    /// The number of `waitForBackupRenewal` calls.
+    public private(set) var waitForBackupRenewalCallCount = 0
+    public func waitForBackupRenewal() async {
+        waitForBackupRenewalCallCount += 1
+    }
+
     public func restoreFromBackup(expectedExternalID: String?) async throws -> Networking.TokenContainer {
         restoreFromBackupCalls.append(RestoreFromBackupCall(expectedExternalID: expectedExternalID))
         onRestoreFromBackup?()

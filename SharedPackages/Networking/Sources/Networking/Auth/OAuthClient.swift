@@ -180,6 +180,10 @@ public protocol OAuthClient {
     ///   A current token container deleted by another process doesn't stop the restore.
     ///   After `OAuthClientError.invalidTokenRequest` or `.unknownAccount` the backup is deleted; after any other refresh error it is kept.
     func restoreFromBackup(expectedExternalID: String?) async throws -> TokenContainer
+
+    /// Returns once the backup renewal a refresh started has finished, or right away when none is running.
+    /// A refresh renews the backup in the background and returns before the renewal completes.
+    func waitForBackupRenewal() async
 }
 
 public extension OAuthClient {
@@ -586,8 +590,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
-    /// Waits for the background backup renewal, if one is running.
-    func waitForBackupRenewal() async {
+    public func waitForBackupRenewal() async {
         await backupRenewalTask?.value
     }
 

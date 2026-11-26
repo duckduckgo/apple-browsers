@@ -149,6 +149,41 @@ struct SubscriptionTokenKeepAliveTests {
         #expect(outcome.nextCheckDate == nil)
     }
 
+    // MARK: - Backup renewal
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A refresh returns only after the backup renewal it started has finished", .timeLimit(.minutes(1)))
+    func refreshWaitsForBackupRenewal() async {
+        let now = issuedAt.addingTimeInterval(.days(15))
+        let provider = FakeTokenProvider(token: token(issuedAt: issuedAt))
+        provider.refreshedToken = token(issuedAt: now)
+        let renewal = RenewalGate()
+        provider.backupRenewal = { await renewal.run() }
+        let keepAlive = makeKeepAlive(provider: provider, flag: FlagState(isOn: true), now: now)
+
+        let run = Task { await keepAlive.refreshIfNeeded() }
+        await renewal.waitUntilStarted()
+        #expect(await renewal.finished == false)
+        await renewal.finish()
+
+        #expect(await run.value == .refreshed(nextRefresh: now.addingTimeInterval(.days(15))))
+        #expect(await renewal.finished)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Checks that don't refresh don't wait for a backup renewal", .timeLimit(.minutes(1)))
+    func noRefreshNoBackupWait() async {
+        let provider = FakeTokenProvider(token: token(issuedAt: issuedAt))
+        let keepAlive = makeKeepAlive(provider: provider, flag: FlagState(isOn: true), now: issuedAt.addingTimeInterval(.days(1)))
+
+        #expect(await keepAlive.refreshIfNeeded() == .notDue(nextRefresh: issuedAt.addingTimeInterval(.days(15))))
+        provider.refreshError = URLError(.notConnectedToInternet)
+        provider.token = token(issuedAt: issuedAt.addingTimeInterval(-.days(20)))
+        _ = await keepAlive.refreshIfNeeded()
+
+        #expect(provider.backupRenewalWaits == 0)
+    }
+
     // MARK: - Intervals
 
     @available(iOS 16, macOS 13, *)
@@ -275,6 +310,28 @@ private final class FlagState: @unchecked Sendable {
     init(isOn: Bool) { self.isOn = isOn }
 }
 
+/// A backup renewal that runs until `finish()` is called.
+private actor RenewalGate {
+    private(set) var started = false
+    private(set) var finished = false
+    private var finishContinuation: CheckedContinuation<Void, Never>?
+
+    func run() async {
+        started = true
+        await withCheckedContinuation { finishContinuation = $0 }
+        finished = true
+    }
+
+    func waitUntilStarted() async {
+        while !started { await Task.yield() }
+    }
+
+    func finish() {
+        finishContinuation?.resume()
+        finishContinuation = nil
+    }
+}
+
 /// Mutable intervals read through the keep-alive's interval closures.
 private final class Intervals: @unchecked Sendable {
     var maxAge: TimeInterval
@@ -293,8 +350,10 @@ private final class FakeTokenProvider: SubscriptionTokenRefreshing, @unchecked S
     var stateOverride: LocalSubscriptionTokenState?
     var localReadError: Error?
     var onForceRefresh: (() -> Void)?
+    var backupRenewal: (() async -> Void)?
     private(set) var requestedPolicies: [AuthTokensCachePolicy] = []
     private(set) var stateReads = 0
+    private(set) var backupRenewalWaits = 0
 
     init(token: TokenContainer?) {
         self.token = token
@@ -316,5 +375,10 @@ private final class FakeTokenProvider: SubscriptionTokenRefreshing, @unchecked S
         }
         guard let token else { throw SubscriptionManagerError.noTokenAvailable }
         return token
+    }
+
+    func waitForBackupRenewal() async {
+        backupRenewalWaits += 1
+        await backupRenewal?()
     }
 }

@@ -248,6 +248,66 @@ struct SubscriptionTokenRefreshTaskTests {
         #expect(fixture.scheduler.events == [.submit(now.addingTimeInterval(.hours(6)))])
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A background refresh completes the task only after the backup renewal it started has finished", .timeLimit(.minutes(1)))
+    func backgroundWaitsForBackupRenewal() async {
+        let now = issuedAt.addingTimeInterval(.days(15))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+        fixture.provider.refreshedToken = token(issuedAt: now)
+        let gate = Gate()
+        fixture.provider.backupRenewal = { await gate.wait() }
+        let task = FakeBGTask(identifier: identifier)
+
+        let work = fixture.refreshTask.handle(task)
+        await fixture.provider.waitForBackupRenewalToStart()
+        #expect(task.completions.isEmpty)
+        #expect(fixture.scheduler.events.isEmpty)
+
+        await gate.open()
+        await work.value
+        #expect(task.completions == [true])
+        #expect(fixture.scheduler.events == [.submit(now.addingTimeInterval(.days(15)))])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Expiring after the run claimed the task changes nothing: one schedule, one pixel, one completion", .timeLimit(.minutes(1)))
+    func expirationAfterRunClaimed() async {
+        let now = issuedAt.addingTimeInterval(.days(15))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+        fixture.provider.refreshedToken = token(issuedAt: now)
+        let task = FakeBGTask(identifier: identifier)
+
+        await fixture.refreshTask.handle(task).value
+        task.expirationHandler?()
+
+        #expect(task.completions == [true])
+        #expect(fixture.scheduler.events == [.submit(now.addingTimeInterval(.days(15)))])
+        #expect(fixture.pixels.actualFireCalls == [pixel(.backgroundTask, .refreshed)])
+        #expect(fixture.debugSettings.lastRun?.outcome == "refreshed")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A run finishing after the task expired is discarded: no second schedule, record, pixel or completion", .timeLimit(.minutes(1)))
+    func runAfterExpirationDiscarded() async {
+        let now = issuedAt.addingTimeInterval(.days(16))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+        fixture.provider.refreshedToken = token(issuedAt: now)
+        let gate = Gate()
+        fixture.provider.backupRenewal = { await gate.wait() }
+        let task = FakeBGTask(identifier: identifier)
+
+        let work = fixture.refreshTask.handle(task)
+        await fixture.provider.waitForBackupRenewalToStart()
+        task.expirationHandler?()
+        await gate.open()
+        await work.value
+
+        #expect(task.completions == [false])
+        #expect(fixture.scheduler.events == [.submit(now.addingTimeInterval(.hours(6)))])
+        #expect(fixture.pixels.actualFireCalls == [pixel(.backgroundTask, .expired)])
+        #expect(fixture.debugSettings.lastRun == nil)
+    }
+
     // MARK: - Session changes
 
     @available(iOS 16, macOS 13, *)
@@ -548,7 +608,9 @@ private final class FakeTokenProvider: SubscriptionTokenRefreshing, @unchecked S
     var refreshedToken: TokenContainer?
     var refreshError: Error?
     var beforeForceRefresh: (() async -> Void)?
+    var backupRenewal: (() async -> Void)?
     var stateOverride: LocalSubscriptionTokenState?
+    private var backupRenewalStarted = false
     private(set) var requestedPolicies: [AuthTokensCachePolicy] = []
     private var forceRefreshStarted = false
 
@@ -571,6 +633,17 @@ private final class FakeTokenProvider: SubscriptionTokenRefreshing, @unchecked S
         }
         guard let token else { throw SubscriptionManagerError.noTokenAvailable }
         return token
+    }
+
+    func waitForBackupRenewal() async {
+        backupRenewalStarted = true
+        await backupRenewal?()
+    }
+
+    func waitForBackupRenewalToStart() async {
+        while !backupRenewalStarted {
+            await Task.yield()
+        }
     }
 
     func waitForForceRefresh() async {

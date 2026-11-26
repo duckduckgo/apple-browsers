@@ -30,6 +30,9 @@ public protocol SubscriptionTokenRefreshing {
     /// Returns the token container according to `policy`. See `SubscriptionManager.getTokenContainer(policy:)`.
     @discardableResult
     func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer
+
+    /// Returns once the backup renewal a refresh started has finished, or right away when none is running.
+    func waitForBackupRenewal() async
 }
 
 /// Refreshes the current token container once its refresh token reaches a maximum age, so that a session the app doesn't use
@@ -107,6 +110,7 @@ public struct SubscriptionTokenKeepAlive {
 
     /// Refreshes the current token container when its refresh token is at least `maxRefreshTokenAge` old.
     /// The refresh goes through `getTokenContainer(policy: .localForceRefresh)`, so its failures are handled as for any other refresh.
+    /// After a refresh, it returns only once the backup renewal the refresh started has finished, so a background task can stay alive for it.
     /// - Returns: What happened, and when to check again.
     public func refreshIfNeeded() async -> Outcome {
         guard isEnabled() else {
@@ -158,6 +162,8 @@ public struct SubscriptionTokenKeepAlive {
             let newIssuedAt = refreshed.decodedRefreshToken.issuedAtDate
             let nextRefresh = newIssuedAt.addingTimeInterval(maxAge)
             Logger.subscriptionTokenKeepAlive.log("Token refreshed: new refresh token issued \(newIssuedAt, privacy: .public), expires \(refreshed.decodedRefreshToken.expirationDate, privacy: .public), next refresh due \(nextRefresh, privacy: .public)")
+            await tokenProvider.waitForBackupRenewal()
+            Logger.subscriptionTokenKeepAlive.log("Backup renewal finished, if one ran")
             return .refreshed(nextRefresh: nextRefresh)
         } catch SubscriptionManagerError.noTokenAvailable {
             Logger.subscriptionTokenKeepAlive.log("Check ended: the session ended during the refresh")

@@ -53,11 +53,14 @@ final class DeclaredAgePromoDelegateTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeSUT() -> DeclaredAgePromoDelegate {
+    private func makeSUT(isSparkleBuild: Bool = false) -> DeclaredAgePromoDelegate {
         let requester = DeclaredAgeRequester(service: service, storage: storage)
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isSparkleBuild = isSparkleBuild
         return DeclaredAgePromoDelegate(requester: requester,
                                         reinstallUserDetection: reinstallUserDetection,
                                         featureFlagger: featureFlagger,
+                                        buildType: buildType,
                                         windowProvider: { self.window })
     }
 
@@ -87,6 +90,32 @@ final class DeclaredAgePromoDelegateTests: XCTestCase {
 
         let sut = makeSUT()
         // Lets a wrongly started Apple check run before asserting.
+        await Task.yield()
+
+        XCTAssertFalse(sut.isEligible)
+        XCTAssertEqual(service.isRequestRequiredCount, 0)
+    }
+
+    func testWhenSparkleBuildAndOnlyAppStoreFlagIsOnThenItIsNotEligible() async {
+        featureFlagger.enabledFeatureFlags = [.declaredAgeRange]
+
+        let sut = makeSUT(isSparkleBuild: true)
+        await Task.yield()
+
+        XCTAssertFalse(sut.isEligible)
+        XCTAssertEqual(service.isRequestRequiredCount, 0)
+    }
+
+    func testWhenSparkleBuildAndSparkleFlagIsOnThenItBecomesEligible() async {
+        featureFlagger.enabledFeatureFlags = [.declaredAgeRangeSparkle]
+
+        await eligibility(of: makeSUT(isSparkleBuild: true), becomes: true)
+    }
+
+    func testWhenAppStoreBuildAndOnlySparkleFlagIsOnThenItIsNotEligible() async {
+        featureFlagger.enabledFeatureFlags = [.declaredAgeRangeSparkle]
+
+        let sut = makeSUT()
         await Task.yield()
 
         XCTAssertFalse(sut.isEligible)

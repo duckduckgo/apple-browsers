@@ -29,3 +29,10 @@ struct UTIDismissSnapshot: Equatable {
 
     static let empty = UTIDismissSnapshot(text: "", placeholderMode: .search)
 }
+
+/// Where an inline dismiss lands.
+enum UTIDismissDestination: Equatable {
+    case omnibar(UTIDismissSnapshot)
+    /// The resting card shows the input's own empty state, so nothing is painted over it.
+    case newTabPageRestingCard
+}

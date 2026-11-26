@@ -307,6 +307,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var isInputEditing: Bool { stateMachine.isInputEditing }
     var isActive: Bool { stateMachine.isActive }
 
+    var restingSurface: UTIRestingSurface { stateMachine.restingSurface }
+    var isParkedOnNewTabPage: Bool { stateMachine.isParkedOnNewTabPage }
+
+    var onWillActivateFromOmnibar: (() -> Void)?
+
+    var onNewTabPageRestingModePicked: ((TextEntryMode) -> Void)?
+
     private var isOmnibarNewAIChatPrompt: Bool {
         isOmnibarSession && inputMode == .aiChat && !hasSubmittedPrompt
     }
@@ -859,8 +866,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
         isVoiceSessionActive = state.isVoiceSessionActive
         isModelPickerForcedVisible = state.isModelPickerForcedVisible
-        setText(state.text)
-        syncInputModeFromExternalSource(state.toggleMode)
+        if !isParkedOnNewTabPage {
+            setText(state.text)
+            syncInputModeFromExternalSource(state.toggleMode)
+        }
 
         attachmentsRetainedForDismiss = nil
         attachmentController.replaceAllAttachments(with: state.attachments)
@@ -1357,6 +1366,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                              allowsInactiveFocus: Bool = false,
                              isFocusRequestValid: @escaping () -> Bool = { true },
                              onFocus: ((Bool) -> Void)? = nil) {
+        // Tools picked on the resting card carry into the session.
+        let keepsToolsSelection = isParkedOnNewTabPage
+        onWillActivateFromOmnibar?()
         restoreAttachmentsRetainedForDismiss()
         let tabAttachmentDraftText = browserTabAttachmentDraftText()
         keyboardMonitor.arm(awaiting: cardPosition == .top)
@@ -1372,7 +1384,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isInputVisibleForKeyboard = true
         hasSubmittedPrompt = false
         viewController.handler.resetInteractionState()
-        resetToolsSelection()
+        if keepsToolsSelection {
+            refreshToolsPresentation()
+        } else {
+            resetToolsSelection()
+        }
         modelSelector.updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] omnibar session starting mode=\(String(describing: self.inputMode), privacy: .public)")
@@ -1894,6 +1910,57 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isToggleEnabled: isToggleEnabled,
             floatingReturnKeyState: makeFloatingReturnKeyState()
         )
+    }
+
+    func parkOnNewTabPage(inputMode requestedMode: TextEntryMode) {
+        guard stateMachine.parkOnNewTabPage() else { return }
+        if !currentText.isEmpty {
+            setText("")
+        }
+        setInitialInputMode(effectiveInputMode(for: isToggleEnabled ? requestedMode : .search))
+        cardPosition = .top
+        refreshNewTabPageRestingCard()
+        fetchModels()
+    }
+
+    func refreshNewTabPageRestingCard() {
+        guard isParkedOnNewTabPage else { return }
+        viewController.apply(computeRenderState().viewConfig, animated: false)
+        applyToolbarPresentation()
+        refreshFooterSuppression()
+        footerController?.refresh()
+    }
+
+    func beginReturnToNewTabPage(inputMode restingMode: TextEntryMode) {
+        stateMachine.beginReturnToNewTabPage()
+        setInitialInputMode(effectiveInputMode(for: isToggleEnabled ? restingMode : .search))
+    }
+
+    /// Call inside the travel animation.
+    func applyRenderStateForReturnTravel() {
+        viewController.apply(computeRenderState().viewConfig, animated: false)
+        viewController.view.layoutIfNeeded()
+    }
+
+    func abandonReturnToNewTabPage() {
+        guard restingSurface == .returningToNewTabPage else { return }
+        stateMachine.moveToChrome()
+        viewController.apply(computeRenderState().viewConfig, animated: false)
+    }
+
+    func unparkFromNewTabPage() {
+        let previousSurface = restingSurface
+        stateMachine.moveToChrome()
+        switch previousSurface {
+        case .chrome:
+            return
+        case .newTabPage:
+            guard !isActive else { return }
+        case .returningToNewTabPage:
+            break
+        }
+        viewController.apply(computeRenderState().viewConfig, animated: false)
+        applyToolbarPresentation()
     }
 
     /// Whether the toggle row appears in the UTI and the swipe-between-modes gesture is active.
@@ -2630,6 +2697,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
+        if isParkedOnNewTabPage {
+            // No suggestions show at rest, and the host starts editing right away,
+            // so an animated switch in the page would only play before the card leaves.
+            updateInputMode(mode, animated: false)
+            onNewTabPageRestingModePicked?(inputMode)
+            return
+        }
         contentViewController.performInputModeChange(to: mode, onResizeStarted: { [weak vc] in
             guard let vc else { return }
             if vc.isInputExpanded {
@@ -2717,7 +2791,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             pixelReporter.reportBackButtonPressed()
         }
         // Visual-only snap to the omnibar destination; then route through the shared dismiss handler.
-        vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
+        applyDismissSnapshotIfLandingOnOmnibar(vc)
         contentViewController.onDismissRequested?()
     }
 
@@ -2731,10 +2805,19 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         let isUnmodifiedPrefill = omnibarPrefilledText.map { !$0.isEmpty && currentText == $0 } ?? false
         let prefilledText = isUnmodifiedPrefill ? "" : currentText
         // Defer to the dismiss completion — its side-effects clobber the in-flight UTI mid-collapse otherwise.
-        vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
+        applyDismissSnapshotIfLandingOnOmnibar(vc)
         onAnimatedDismissToOmnibar?({ [weak self] in
             self?.delegate?.unifiedToggleInputDidRequestAIChat(prefilledText: prefilledText)
         })
+    }
+
+    private func applyDismissSnapshotIfLandingOnOmnibar(_ vc: UnifiedToggleInputViewController) {
+        switch delegate?.unifiedToggleInputDismissDestination() ?? .omnibar(.empty) {
+        case .omnibar(let snapshot):
+            vc.applyDismissSnapshot(snapshot)
+        case .newTabPageRestingCard:
+            break
+        }
     }
 
     func unifiedToggleInputVCDidTapFire(_ vc: UnifiedToggleInputViewController) {
@@ -2997,7 +3080,7 @@ private extension UnifiedToggleInputCoordinator {
 
     private var toolsPresentation: UTIToolsController.Presentation {
         toolsController.presentation(
-            isActive: isActive,
+            isActive: isActive || isParkedOnNewTabPage,
             modelStore: modelStore,
             canShowCustomizeResponses: canShowCustomizeResponsesMenuItem && !simplifiedPromptBoxFeature.isAvailable,
             createImagePolicy: createImageMenuPolicy

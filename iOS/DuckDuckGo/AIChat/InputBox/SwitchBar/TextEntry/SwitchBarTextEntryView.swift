@@ -262,6 +262,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     var onTextInputActivated: (() -> Void)?
+    var shouldBeginTextInput: (() -> Bool)?
     var onTextInputFocusChanged: ((Bool) -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
 
@@ -1214,6 +1215,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updateTextViewHeight()
     }
 
+    func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
+        shouldBeginTextInput?() ?? true
+    }
+
     func textViewDidBeginEditing(_ textView: UITextView) {
         onTextInputActivated?()
         onTextInputFocusChanged?(true)
@@ -1280,6 +1285,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 }
 
 extension SwitchBarTextEntryView: UITextFieldDelegate {
+
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        shouldBeginTextInput?() ?? true
+    }
 
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         !isInputFrozen

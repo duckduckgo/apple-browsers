@@ -121,40 +121,6 @@ struct RedesignedNewTabPageFocusedMessagesTests {
     }
 }
 
-struct RestingSearchCardHandoffTests {
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Top input keeps the resting card until the cards swap", .timeLimit(.minutes(1)))
-    func topInputFadesRestingCardAfterSwap() {
-        let handoff = RestingSearchCardHandoff(cardPosition: .top)
-        let timing = handoff.showFadeTiming(transitionDuration: 0.4)
-
-        #expect(handoff == .staysUnderTravellingCard)
-        #expect(timing.delay == NewTabPageInputPresentation.inlineInputCardSwapDuration)
-        #expect(abs(timing.delay + timing.duration - 0.4) < 0.0001)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Bottom input swaps the resting card for the travelling focused card at the start", .timeLimit(.minutes(1)))
-    func bottomInputSwapsRestingCardWithFocusedCard() {
-        let handoff = RestingSearchCardHandoff(cardPosition: .bottom)
-        let timing = handoff.showFadeTiming(transitionDuration: 0.4)
-
-        #expect(handoff == .swapsWithFocusedCard)
-        #expect(timing.delay == 0)
-        #expect(timing.duration == NewTabPageInputPresentation.inlineInputCardSwapDuration)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A transition shorter than the swap never gets a negative fade", .timeLimit(.minutes(1)))
-    func zeroDurationTransitionHasNoNegativeFade() {
-        let timing = RestingSearchCardHandoff.staysUnderTravellingCard.showFadeTiming(transitionDuration: 0)
-
-        #expect(timing.delay == 0)
-        #expect(timing.duration == 0)
-    }
-}
-
 struct RedesignedNewTabPageAccessibilityReachTests {
 
     private static let pose = NewTabPageFocusedPose(inputOffset: -300, modulesOffset: -280, showsModules: true)

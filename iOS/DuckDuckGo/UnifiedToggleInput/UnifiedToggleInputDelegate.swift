@@ -41,8 +41,8 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidRequestFire()
     func unifiedToggleInputDidRequestAppMenu()
     func unifiedToggleInputDidRequestAppMenuLongPress()
-    /// Destination state the UTI should snap to at the start of an inline-dismiss animation.
-    func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot
+    /// Where an inline dismiss lands, read at the start of its animation.
+    func unifiedToggleInputDismissDestination() -> UTIDismissDestination
     func unifiedToggleInputDidTapClearText()
     func unifiedToggleInputDidTapToActivate()
     /// Edit mode entered/exited — the host applies the surrounding chrome (transcript whiteout,
@@ -67,7 +67,7 @@ extension UnifiedToggleInputDelegate {
     }
     func unifiedToggleInputDidSubmitPromptToBoundChat() {}
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {}
-    func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot { .empty }
+    func unifiedToggleInputDismissDestination() -> UTIDismissDestination { .omnibar(.empty) }
     func unifiedToggleInputDidTapClearText() {}
     func unifiedToggleInputDidTapToActivate() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {}

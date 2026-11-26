@@ -429,6 +429,7 @@ private extension MainViewController {
     }
 
     func applyBottomOmnibarAnchor(_ state: UnifiedToggleInputDisplayState.OmnibarState) {
+        guard !isBottomInputHeldForTravel else { return }
         switch state {
         case .active:
             viewCoordinator.restoreNavBarToKeyboardForOmnibarActive()

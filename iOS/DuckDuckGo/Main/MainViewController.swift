@@ -203,13 +203,10 @@ class MainViewController: UIViewController {
                                                            remoteMessagingPixelReporter: remoteMessagingPixelReporter,
                                                            appSettings: appSettings,
                                                            aiChatSettings: aiChatSettings,
-                                                           aiChatAddressBarExperience: aiChatAddressBarExperience,
                                                            subscriptionManager: subscriptionManager,
                                                            internalUserCommands: internalUserCommands,
                                                            floatingUIManager: floatingUIManager,
                                                            redesignFeature: NewTabPageRedesignFeature(featureFlagger: featureFlagger),
-                                                           toggleModeStorage: toggleModeStorage,
-                                                           voiceSearchHelper: voiceSearchHelper,
                                                            daxGreetingProvider: daxGreetingService,
                                                            daxGreetingChanges: (daxGreetingActivity?.changes ?? Empty().eraseToAnyPublisher())
                                                                .merge(with: daxGreetingService.debugChanges)
@@ -1713,6 +1710,8 @@ class MainViewController: UIViewController {
     private var isKeyboardOverlappingContent = false
     private var didSendGestureDismissPixel: Bool = false
     var latestKeyboardFrame: CGRect = .zero
+    var lastShownKeyboardHeight: CGFloat = 0
+    var bottomInputHoldKeyboardObserver: NSObjectProtocol?
     /// The full on-screen keyboard was up, not just the bar iPadOS shows above a hardware keyboard.
     private var isOnScreenKeyboardShown = false
     private static let onScreenKeyboardMinimumHeight: CGFloat = 150
@@ -1852,7 +1851,7 @@ class MainViewController: UIViewController {
         guard isInMinimalChromeLayout, isStandardBottomOmnibar else { return false }
         let pinToBottom = !isKeyboardOwnedByOmnibar
         // Already right? Skip work.
-        guard viewCoordinator.isNavigationBarContainerBottomKeyboardBased == pinToBottom else { return pinToBottom }
+        guard viewCoordinator.navigationBarContainerBottomAnchor != (pinToBottom ? .screenBottom : .keyboard) else { return pinToBottom }
         viewCoordinator.updateMinimalChromeBottomAnchor(pinnedToScreenBottom: pinToBottom)
         if pinToBottom {
             // Bar dropped to the screen bottom: clear the keyboard-driven layout left from omnibar editing.
@@ -2306,6 +2305,9 @@ class MainViewController: UIViewController {
             }
         }
         latestKeyboardFrame = keyboardFrame
+        if keyboardFrame.height > 0 {
+            lastShownKeyboardHeight = keyboardFrame.height
+        }
         var keyboardHeight = keyboardFrame.size.height
 
         let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
@@ -2327,7 +2329,7 @@ class MainViewController: UIViewController {
         let isAITabCollapsed = coordinator?.isAITabCollapsed == true
         let isBottomExpandedUTIKeyboardAnchored = coordinator?.isInputEditing == true
             && coordinator?.cardPosition == .bottom
-            && viewCoordinator.isNavigationBarContainerBottomKeyboardBased
+            && viewCoordinator.navigationBarContainerBottomAnchor.fixesContainerAtInputHeight
 
         // Keep the field's cap current as the keyboard reframes; the eased recompute owns it during rotation.
         if !isUTIRotating {
@@ -2872,6 +2874,7 @@ class MainViewController: UIViewController {
 
         addToContentContainer(controller: controller)
         viewCoordinator.logoContainer.isHidden = true
+        refreshUnifiedToggleInputPlacement()
         updateAddressBarSuppressionForNewTabPage()
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
@@ -2989,6 +2992,10 @@ class MainViewController: UIViewController {
         newTabPagePresentation.cancel()
         isAfterIdlePresentationPending = false
         let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
+        if hadInlineSearchInput {
+            releaseAnyBottomInputHold()
+            placeUnifiedToggleInputInChrome()
+        }
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
@@ -3732,7 +3739,9 @@ class MainViewController: UIViewController {
     /// Home tabs consult the setting + app-wide last-used; existing tabs derive from URL.
     func initialOmnibarToggleMode(for tab: Tab) -> TextEntryMode {
         let resolved: TextEntryMode
-        if tab.isHomeTab {
+        if tab.isHomeTab, tab === tabManager.currentTabsModel.currentTab, let pickedMode = redesignedNewTabPage?.selectedInputMode {
+            resolved = pickedMode
+        } else if tab.isHomeTab {
             resolved = aiChatSettings.defaultOmnibarMode
                 .resolvedTextEntryMode { self.toggleModeStorage.restore() }
         } else {
@@ -3749,9 +3758,8 @@ class MainViewController: UIViewController {
 
     func returnSessionTogglePosition(focused: Bool) -> ReturnSessionWideEventData.TogglePosition? {
         guard let tab = tabManager.currentTabsModel.currentTab else { return nil }
-        // The resting NTP draws its own toggle.
-        if !focused, tab.isHomeTab, let page = newTabPageViewController, page.hasInlineSearchInput {
-            return page.inlineToggleMode.map(ReturnSessionWideEventData.TogglePosition.init)
+        if !focused, tab.isHomeTab, let coordinator = unifiedToggleInputCoordinator, coordinator.isParkedOnNewTabPage {
+            return coordinator.isToggleVisible ? ReturnSessionWideEventData.TogglePosition(coordinator.inputMode) : nil
         }
         return .onScreen(mode: liveToggleMode ?? initialOmnibarToggleMode(for: tab),
                          isToggleEnabled: isReturnSessionToggleEnabled,

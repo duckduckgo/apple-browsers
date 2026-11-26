@@ -43,13 +43,10 @@ struct NewTabPageBuilder {
     let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
     let appSettings: AppSettings
     let aiChatSettings: AIChatSettingsProvider
-    let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     let subscriptionManager: any SubscriptionManager
     let internalUserCommands: URLBasedDebugCommands
     let floatingUIManager: FloatingUIManaging
     let redesignFeature: NewTabPageRedesignFeatureProviding
-    let toggleModeStorage: ToggleModeStoring
-    let voiceSearchHelper: VoiceSearchHelperProtocol
     let daxGreetingProvider: DaxGreetingProviding
     let daxGreetingChanges: AnyPublisher<Void, Never>
     let returnSettings: NewTabPageReturnSettings
@@ -77,28 +74,6 @@ struct NewTabPageBuilder {
                                           daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
-        let searchInputModel = NewTabPageSearchInputModel(readSettings: { [aiChatSettings, aiChatAddressBarExperience, toggleModeStorage, voiceSearchHelper] in
-            NewTabPageSearchInputModel.Settings(
-                isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                isAIChatShortcutEnabled: aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton,
-                isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
-                // Must match the address bar's home-tab mode resolution.
-                defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
-        })
-        let usesLiquidGlass = floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
-        let searchInputView = NewTabPageSearchInputView(
-            model: searchInputModel,
-            onActivate: { textEntryMode in
-                newTabPage?.beginSearch(textEntryMode: textEntryMode)
-            },
-            onVoiceSearch: { textEntryMode in
-                newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
-            },
-            usesLiquidGlass: usesLiquidGlass,
-            aiChatMenu: {
-                newTabPage?.duckAIMenu()
-            })
-
         let pageModel = NewTabPageViewModel(fireTab: false)
         pageModel.openedAfterIdle = openedAfterIdle
         let messagesModel = NewTabPageMessagesModel(
@@ -139,7 +114,7 @@ struct NewTabPageBuilder {
             NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView(
                 model: NewTabPageWelcomeModel(greetingProvider: daxGreetingProvider,
                                              contextChanges: daxGreetingChanges))),
-            NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
+            NewTabPageInputSlotBlock(),
             NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(
                 favoritesModel: favoritesModel,
                 onAddFavorite: {
@@ -150,7 +125,7 @@ struct NewTabPageBuilder {
                                   rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
             NewTabPageSwiftUIBlock(id: .messages,
                                   rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel))
-        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel,
+        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel,
            returnSettings: returnSettings,
            onboardingCoordinator: NewTabPageOnboardingCoordinator(newTabDialogFactory: daxDialogFactory,
                                                                   daxDialogsManager: daxDialogsManager,

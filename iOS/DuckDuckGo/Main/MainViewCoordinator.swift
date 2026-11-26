@@ -20,6 +20,29 @@
 import DesignResourcesKit
 import UIKit
 
+/// Which edge the navigation bar container's bottom follows.
+enum NavigationBarContainerBottomAnchor: Equatable {
+    case toolbar
+    case keyboard
+    case screenBottom
+    /// A fixed distance above the screen bottom while the input travels, owned by one transition.
+    case transition(BottomInputTransition)
+
+    /// Keyboard layout keeps the container at the input's own height: on the keyboard, or held in its place.
+    var fixesContainerAtInputHeight: Bool {
+        switch self {
+        case .keyboard, .transition: return true
+        case .toolbar, .screenBottom: return false
+        }
+    }
+}
+
+/// The transition that holds the bottom input in place.
+enum BottomInputTransition: Equatable {
+    case focus
+    case dismiss
+}
+
 class MainViewCoordinator {
 
     enum Constants {
@@ -108,7 +131,7 @@ class MainViewCoordinator {
     private var statusBackgroundPresentationBeforeOmnibarEditing: StatusBackgroundPresentation?
     private var voiceModeBackgroundColor: UIColor?
     private(set) var isNavigationChromeHidden = false
-    private var isNavBarContainerBottomKeyboardBased = false
+    private(set) var navigationBarContainerBottomAnchor: NavigationBarContainerBottomAnchor = .toolbar
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
     private var isDuckAIAndInputLiquidGlassEnabled = false
@@ -117,7 +140,7 @@ class MainViewCoordinator {
     private(set) var isInMinimalChromeLayout = false
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
-        isNavBarContainerBottomKeyboardBased
+        navigationBarContainerBottomAnchor == .keyboard
     }
 
     var isUnifiedToggleInputVisible: Bool {
@@ -719,9 +742,6 @@ class MainViewCoordinator {
             case .omnibar:
                 self?.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
             case .inlineInput:
-                UIView.animateOnOwnTiming(duration: NewTabPageInputPresentation.inlineInputCardSwapDuration, options: .curveEaseOut) {
-                    self?.unifiedToggleInputContainer.alpha = 0
-                }
                 if self?.isFloatingUIEnabled == true {
                     self?.focusedStateBackground.alpha = 0
                 }
@@ -1106,7 +1126,18 @@ class MainViewCoordinator {
         safeAreaFloor.isActive = true
         constraints.navigationBarContainerBottomSafeAreaFloor = safeAreaFloor
 
-        isNavBarContainerBottomKeyboardBased = true
+        navigationBarContainerBottomAnchor = .keyboard
+    }
+
+    /// Holds the navigation bar container a fixed distance above the screen bottom, so a keyboard animation cannot move it.
+    func holdNavBarContainerBottom(distanceFromScreenBottom distance: CGFloat, for transition: BottomInputTransition) {
+        constraints.navigationBarContainerBottom.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor?.isActive = false
+        constraints.navigationBarContainerBottomSafeAreaFloor = nil
+        constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
+            .constraint(equalTo: superview.bottomAnchor, constant: -distance)
+        constraints.navigationBarContainerBottom.isActive = true
+        navigationBarContainerBottomAnchor = .transition(transition)
     }
 
     // MARK: - Private Helpers
@@ -1219,7 +1250,7 @@ class MainViewCoordinator {
             .constraint(equalTo: toolbar.topAnchor)
         constraints.navigationBarContainerBottom.constant = 0
         constraints.navigationBarContainerBottom.isActive = active
-        isNavBarContainerBottomKeyboardBased = false
+        navigationBarContainerBottomAnchor = .toolbar
     }
 
     /// Minimal chrome bottom bar setup. Expandable height. Pin to screen bottom or to keyboard.
@@ -1248,14 +1279,14 @@ class MainViewCoordinator {
             constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
                 .constraint(equalTo: superview.bottomAnchor)
             constraints.navigationBarContainerBottom.isActive = true
-            isNavBarContainerBottomKeyboardBased = false
+            navigationBarContainerBottomAnchor = .screenBottom
         } else {
             // Ride on top of keyboard for omnibar editing.
             constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
                 .constraint(equalTo: superview.keyboardLayoutGuide.topAnchor)
             constraints.navigationBarContainerBottom.priority = .defaultHigh
             constraints.navigationBarContainerBottom.isActive = true
-            isNavBarContainerBottomKeyboardBased = true
+            navigationBarContainerBottomAnchor = .keyboard
 
             // Do not go past screen edge.
             let limit = navigationBarContainer.bottomAnchor
@@ -1276,7 +1307,7 @@ class MainViewCoordinator {
         constraints.navigationBarContainerBottom = navigationBarContainer.bottomAnchor
             .constraint(equalTo: toolbar.topAnchor)
         constraints.navigationBarContainerBottom.isActive = addressBarPosition.isBottom
-        isNavBarContainerBottomKeyboardBased = false
+        navigationBarContainerBottomAnchor = .toolbar
 
         constraints.navigationBarContainerHeight.isActive = true
     }

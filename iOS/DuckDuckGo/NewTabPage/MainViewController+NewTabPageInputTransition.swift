@@ -23,6 +23,8 @@ extension MainViewController {
 
     func showInlineNewTabPageInput(coordinator: UnifiedToggleInputCoordinator, height: CGFloat, pendingHeight: CGFloat?) {
         let showsFocusedSurfaceDirectly = isPerformingOnboardingInputHandoff || isPresentingNewTabInputDirectly
+        // A focus that interrupts a dismiss takes the input over from that dismiss's hold.
+        releaseAnyBottomInputHold()
         coordinator.contentViewController.refreshSuggestionsCaches()
         coordinator.viewController.omnibarPillWindowFrame = nil
         coordinator.cacheOmnibarPlaceholderWindowX(nil, windowSize: view.window?.bounds.size)
@@ -47,6 +49,9 @@ extension MainViewController {
         if let pendingHeight {
             viewCoordinator.constraints.navigationBarContainerHeight.constant = pendingHeight
         }
+        if !showsFocusedSurfaceDirectly {
+            holdBottomInputAtPredictedKeyboardTop(coordinator: coordinator)
+        }
         coordinator.viewController.setTextHorizontalShift(0)
         view.layoutIfNeeded()
         coordinator.pushContentInsets()
@@ -61,10 +66,7 @@ extension MainViewController {
         if !showsFocusedSurfaceDirectly, !UIAccessibility.isReduceMotionEnabled, let focusedPose {
             inputContainer.transform = focusedPose.focusedInputRestingTransform
         }
-        inputContainer.alpha = 0
-        let restingInput = transitionSource?.searchInputView
-        let restingCardHandoff = RestingSearchCardHandoff(cardPosition: coordinator.cardPosition)
-        restingInput?.alpha = 1
+        inputContainer.alpha = 1
 
         let contentOffset = UIAccessibility.isReduceMotionEnabled ? 0 : InlineNTPTransitionMetrics.contentTravel
         contentContainer.transform = CGAffineTransform(translationX: 0, y: contentOffset)
@@ -72,33 +74,95 @@ extension MainViewController {
             isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         let animations = { [weak self] in
             inputContainer.transform = .identity
-            UIView.animateOnOwnTiming(duration: NewTabPageInputPresentation.inlineInputCardSwapDuration, options: .curveEaseOut) {
-                inputContainer.alpha = 1
-            }
             self?.viewCoordinator.focusedStateBackground.alpha = 1
             contentContainer.alpha = 1
             contentContainer.transform = .identity
             transitionSource?.setFocusedPose(focusedPose)
-            restingCardHandoff.fadeOutWhileShowing(restingInput, transitionDuration: duration)
         }
         if showsFocusedSurfaceDirectly {
             // Automatic new-tab focus and onboarding handoffs must not fade through resting modules.
             // Stage the opaque focused pose synchronously.
             UIView.performWithoutAnimation(animations)
-            restingInput?.alpha = 0
             transitionSource?.settleFocusedPose()
             refreshFloatingToolbarBackdrop()
             return
         }
         let animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut, animations: animations)
         animator.addCompletion { [weak self] position in
-            restingInput?.alpha = 0
             if position == .end {
                 transitionSource?.settleFocusedPose()
             }
+            self?.releaseBottomInputHoldWhenKeyboardShows()
             self?.refreshFloatingToolbarBackdrop()
         }
         animator.startAnimation()
+    }
+
+    private func holdBottomInputAtPredictedKeyboardTop(coordinator: UnifiedToggleInputCoordinator) {
+        // The keyboard starts rising only once focus lands, after the travel has started. Following it would carry
+        // the card toward the toolbar first and then up.
+        guard coordinator.cardPosition.isBottom, !isInMinimalChromeLayout, lastShownKeyboardHeight > 0,
+              !UIAccessibility.isReduceMotionEnabled else { return }
+        holdBottomInput(distanceFromScreenBottom: lastShownKeyboardHeight, for: .focus)
+    }
+
+    var isBottomInputHeldForTravel: Bool {
+        if case .transition = viewCoordinator.navigationBarContainerBottomAnchor { return true }
+        return false
+    }
+
+    private func holdBottomInput(distanceFromScreenBottom distance: CGFloat, for transition: BottomInputTransition) {
+        removeBottomInputHoldKeyboardObserver()
+        viewCoordinator.holdNavBarContainerBottom(distanceFromScreenBottom: distance, for: transition)
+    }
+
+    private func releaseBottomInputHoldWhenKeyboardShows() {
+        guard viewCoordinator.navigationBarContainerBottomAnchor == .transition(.focus) else { return }
+        guard !keyboardShowing else {
+            releaseBottomInputHold(heldBy: .focus)
+            return
+        }
+        removeBottomInputHoldKeyboardObserver()
+        bottomInputHoldKeyboardObserver = NotificationCenter.default.addObserver(
+            forName: UIResponder.keyboardDidShowNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.releaseBottomInputHold(heldBy: .focus)
+        }
+    }
+
+    /// Releases only while `transition` still owns the hold.
+    private func releaseBottomInputHold(heldBy transition: BottomInputTransition) {
+        if transition == .focus {
+            removeBottomInputHoldKeyboardObserver()
+        }
+        guard viewCoordinator.navigationBarContainerBottomAnchor == .transition(transition) else { return }
+        restoreBottomInputAnchorAfterHold()
+    }
+
+    func releaseAnyBottomInputHold() {
+        removeBottomInputHoldKeyboardObserver()
+        guard isBottomInputHeldForTravel else { return }
+        restoreBottomInputAnchorAfterHold()
+    }
+
+    private func restoreBottomInputAnchorAfterHold() {
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession else {
+            viewCoordinator.restoreNavBarToKeyboardForOmnibarActive()
+            return
+        }
+        let state: UnifiedToggleInputDisplayState.OmnibarState = coordinator.isOmnibarEditing ? .active : .inactive
+        // The visibility pass skips the anchor while the hold stands, and for a card already moved to the top.
+        switch state {
+        case .active:
+            viewCoordinator.restoreNavBarToKeyboardForOmnibarActive()
+        case .inactive:
+            viewCoordinator.restoreNavBarToToolbarForOmnibarInactive()
+        }
+        applyBottomOmnibarVisibility(state)
+    }
+
+    private func removeBottomInputHoldKeyboardObserver() {
+        bottomInputHoldKeyboardObserver.map(NotificationCenter.default.removeObserver)
+        bottomInputHoldKeyboardObserver = nil
     }
 
     func dismissInlineNewTabPageInput(coordinator: UnifiedToggleInputCoordinator,
@@ -106,14 +170,21 @@ extension MainViewController {
                                       completion: (() -> Void)? = nil) {
         let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
         let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
-        let source = transitionSource?.searchInputView
         let measuredPose = measureFocusedPose(coordinator: coordinator, transitionSource: transitionSource)
         let restingTransform = measuredPose?.focusedInputRestingTransform ?? .identity
         let contentContainer: UIView = viewCoordinator.unifiedInputContentContainer
         let contentOffset = UIAccessibility.isReduceMotionEnabled ? 0 : InlineNTPTransitionMetrics.contentTravel
+        // The coordinator may already have reset its card position for the dismiss, so the bar position decides.
+        if animated, viewCoordinator.addressBarPosition.isBottom, !isInMinimalChromeLayout {
+            // Resigning drops the keyboard; the card travels to the slot from where it is now instead of falling with it.
+            holdBottomInput(distanceFromScreenBottom: view.bounds.maxY - viewCoordinator.navigationBarContainer.frame.maxY,
+                            for: .dismiss)
+        }
+        let restingMode = tabManager.currentTabsModel.currentTab.map { initialOmnibarToggleMode(for: $0) } ?? coordinator.inputMode
         let finish: () -> Void = { [weak self] in
             inputContainer.transform = .identity
             contentContainer.transform = .identity
+            self?.releaseBottomInputHold(heldBy: .dismiss)
             self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
         }
         guard animated && !UIAccessibility.isReduceMotionEnabled else {
@@ -140,14 +211,15 @@ extension MainViewController {
             UIView.performWithoutAnimation { transitionSource?.setFocusedPose(measuredPose) }
         }
         let focusedPose = transitionSource?.focusedPose
-        // The resting card carries the dismiss travel, as the focused card fades out at the start.
-        source?.alpha = 1
+        coordinator.beginReturnToNewTabPage(inputMode: restingMode)
 
         viewCoordinator.hideUnifiedToggleInputOmnibar(
             transition: .inlineInput,
             contentSnapshot: focusedSnapshot,
-            additionalAnimations: {
+            additionalAnimations: { [weak self, weak coordinator] in
                 inputContainer.transform = restingTransform
+                coordinator?.applyRenderStateForReturnTravel()
+                self?.resizeNewTabPageInputSlotForReturn()
                 outgoingContent.transform = CGAffineTransform(translationX: 0, y: contentOffset)
                 transitionSource?.setFocusedPose(nil)
             },
@@ -155,13 +227,15 @@ extension MainViewController {
                 outgoingContent.alpha = 0
             },
             interruptCleanup: { [weak self, weak coordinator] in
+                self?.releaseBottomInputHold(heldBy: .dismiss)
+                coordinator?.abandonReturnToNewTabPage()
+                coordinator?.viewController.recommitCardCornerRadius()
                 inputContainer.transform = .identity
                 contentContainer.transform = .identity
                 coordinator?.clearText()
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
                 self?.viewCoordinator.focusedStateBackground.alpha = 1
-                source?.alpha = 0
                 transitionSource?.setFocusedPose(focusedPose)
                 transitionSource?.settleFocusedPose()
             },
@@ -218,45 +292,18 @@ extension MainViewController {
         guard let restingFrame else { return nil }
         let inputContainer: UIView = viewCoordinator.unifiedToggleInputContainer
         let focusedFrame = inputContainer.untransformedFrame(of: coordinator.viewController.inputCardFrame(in: inputContainer), in: view)
-        return NewTabPageFocusedPose(restingInputFrame: restingFrame,
-                                     focusedInputFrame: focusedFrame,
-                                     cardPosition: coordinator.cardPosition,
-                                     safeAreaTop: view.safeAreaInsets.top,
-                                     bottomInputHeight: coordinator.editingHeight(),
-                                     showsModules: coordinator.contentViewController.isShowingRedesignedSearchModules)
+        var pose = NewTabPageFocusedPose(restingInputFrame: restingFrame,
+                                         focusedInputFrame: focusedFrame,
+                                         cardPosition: coordinator.cardPosition,
+                                         safeAreaTop: view.safeAreaInsets.top,
+                                         bottomInputHeight: coordinator.editingHeight(),
+                                         showsModules: coordinator.contentViewController.isShowingRedesignedSearchModules)
+        // The same input view travels between the chrome and the slot, top pinned in both, and its height changes with the
+        // mode. Aligning its top keeps it landing on the slot whatever height it had when the slot was measured.
+        let focusedInputViewFrame = inputContainer.untransformedFrame(of: inputContainer.bounds, in: view)
+        pose.inputOffset = focusedInputViewFrame.minY - restingFrame.minY
+        return pose
     }
-}
-
-enum RestingSearchCardHandoff: Equatable {
-    case staysUnderTravellingCard
-    case swapsWithFocusedCard
-
-    init(cardPosition: UnifiedToggleInputCardPosition) {
-        self = cardPosition.isBottom ? .swapsWithFocusedCard : .staysUnderTravellingCard
-    }
-
-    func showFadeTiming(transitionDuration: TimeInterval) -> (delay: TimeInterval, duration: TimeInterval) {
-        let swapDuration = min(NewTabPageInputPresentation.inlineInputCardSwapDuration, transitionDuration)
-        switch self {
-        case .swapsWithFocusedCard:
-            // The bottom focused card is measured before the keyboard rises, so a travelling resting card would
-            // drift away from it. The focused card carries the travel instead.
-            return (0, swapDuration)
-        case .staysUnderTravellingCard:
-            return (swapDuration, transitionDuration - swapDuration)
-        }
-    }
-
-    func fadeOutWhileShowing(_ restingInput: UIView?, transitionDuration: TimeInterval) {
-        let timing = showFadeTiming(transitionDuration: transitionDuration)
-        UIView.animateOnOwnTiming(duration: timing.duration, delay: timing.delay, options: .curveEaseInOut) {
-            restingInput?.alpha = 0
-        }
-    }
-}
-
-extension NewTabPageInputPresentation {
-    static let inlineInputCardSwapDuration: TimeInterval = 0.1
 }
 
 private enum InlineNTPTransitionMetrics {

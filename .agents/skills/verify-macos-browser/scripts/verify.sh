@@ -300,7 +300,7 @@ build)
     rm -rf "$build_lock"
     # The app counts as a production build (LetsMove, real pixels, no AutomationServer) when AppKitExtensions misses
     # DEBUG. Read from the compile commands, so only a build that compiled it can tell.
-    if grep -E -- '-module-name AppKitExtensions ' "$RUN_DIR/build.log" | grep -qv -- '-DDEBUG'; then
+    if grep -E -- '/swiftc .*-module-name AppKitExtensions ' "$RUN_DIR/build.log" | grep -qv -- '-DDEBUG'; then
         echo "PACKAGES NOT DEBUG: AppKitExtensions compiled without DEBUG (manifest evaluated without SPM_FORCE_DEBUG=1)."
         echo "  Build into a DerivedData only verify.sh uses: remove $DERIVED_DATA and build again."
         exit 2

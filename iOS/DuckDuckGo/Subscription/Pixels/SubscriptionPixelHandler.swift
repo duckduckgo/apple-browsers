@@ -46,16 +46,16 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             pixelKit?.fire(SubscriptionPixel.subscriptionActive, frequency: .legacyDaily)
         case .osDistributionActiveSubscription:
             pixelKit?.fireOSDistributionPixel(metric: .activeSubscriptions)
-        case .getTokensError(let policy, let error, let clockSkew):
-            pixelKit?.fire(SubscriptionPixel.subscriptionAuthV2GetTokensError(policy, source, error, clockSkew), frequency: .dailyAndCount)
+        case .getTokensError(let policy, let error):
+            pixelKit?.fire(SubscriptionPixel.subscriptionAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
         case .automaticSignOut(let data, let error):
             pixelKit?.fire(SubscriptionAutomaticSignOutPixel.automaticSignOut(data, source, error), frequency: .dailyAndCount)
         case .invalidRefreshTokenSignedOut:
             pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
-        case .invalidRefreshTokenRecovered(let method, let clockSkew):
-            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered(method, clockSkew), frequency: .dailyAndCount)
-        case .invalidRefreshTokenRecoveryDeferred(let clockSkew):
-            pixelKit?.fire(SubscriptionTokenRecoveryPixel.deferred(clockSkew), frequency: .dailyAndCount)
+        case .invalidRefreshTokenRecovered(let method):
+            pixelKit?.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered(method), frequency: .dailyAndCount)
+        case .invalidRefreshTokenRecoveryDeferred:
+            pixelKit?.fire(SubscriptionTokenRecoveryPixel.deferred, frequency: .dailyAndCount)
         case .purchaseSuccessAfterPendingTransaction:
             pixelKit?.fire(SubscriptionPixel.subscriptionPurchaseSuccessAfterPendingTransaction(source), frequency: .dailyAndCount)
         case .pendingTransactionApproved:

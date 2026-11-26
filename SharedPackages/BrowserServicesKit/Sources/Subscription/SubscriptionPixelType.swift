@@ -23,16 +23,13 @@ public enum SubscriptionPixelType: Equatable {
     case invalidRefreshToken
     case subscriptionIsActive
     case osDistributionActiveSubscription
-    /// Getting the token container with the policy failed with the error, with the last measured clock skew, or nil when none was measured.
-    case getTokensError(AuthTokensCachePolicy, Error, ClockSkew?)
+    case getTokensError(AuthTokensCachePolicy, Error)
     case automaticSignOut(SubscriptionAutomaticSignOutPixelData, Error)
     case invalidRefreshTokenSignedOut
-    /// The invalid current token was recovered, by the method of the strategy that recovered it, with the last measured clock skew, or nil
-    /// when none was measured.
-    case invalidRefreshTokenRecovered(TokenRecoveryMethod?, ClockSkew?)
-    /// The refresh was rejected again right after a successful recovery, so the recovery was deferred and the token kept, with the last
-    /// measured clock skew, or nil when none was measured.
-    case invalidRefreshTokenRecoveryDeferred(ClockSkew?)
+    /// The invalid current token was recovered, by the method of the strategy that recovered it.
+    case invalidRefreshTokenRecovered(TokenRecoveryMethod?)
+    /// The refresh was rejected again right after a successful recovery, so the recovery was deferred and the token kept.
+    case invalidRefreshTokenRecoveryDeferred
     case purchaseSuccessAfterPendingTransaction
     case pendingTransactionApproved
     /// The backup restored the token container, in a recovery with the associated trigger.
@@ -53,6 +50,7 @@ public enum SubscriptionPixelType: Equatable {
             (.subscriptionIsActive, .subscriptionIsActive),
             (.osDistributionActiveSubscription, .osDistributionActiveSubscription),
             (.invalidRefreshTokenSignedOut, .invalidRefreshTokenSignedOut),
+            (.invalidRefreshTokenRecoveryDeferred, .invalidRefreshTokenRecoveryDeferred),
             (.getTokensError, .getTokensError),
             (.purchaseSuccessAfterPendingTransaction, .purchaseSuccessAfterPendingTransaction),
             (.pendingTransactionApproved, .pendingTransactionApproved),
@@ -61,10 +59,8 @@ public enum SubscriptionPixelType: Equatable {
             return true
         case let (.automaticSignOut(lhsData, _), .automaticSignOut(rhsData, _)):
             return lhsData == rhsData
-        case let (.invalidRefreshTokenRecovered(lhsMethod, lhsSkew), .invalidRefreshTokenRecovered(rhsMethod, rhsSkew)):
-            return lhsMethod == rhsMethod && lhsSkew == rhsSkew
-        case let (.invalidRefreshTokenRecoveryDeferred(lhsSkew), .invalidRefreshTokenRecoveryDeferred(rhsSkew)):
-            return lhsSkew == rhsSkew
+        case let (.invalidRefreshTokenRecovered(lhsMethod), .invalidRefreshTokenRecovered(rhsMethod)):
+            return lhsMethod == rhsMethod
         case let (.backupRestored(lhsTrigger), .backupRestored(rhsTrigger)):
             return lhsTrigger == rhsTrigger
         case let (.backupRestoreFailed(lhsTrigger, lhsReason, _), .backupRestoreFailed(rhsTrigger, rhsReason, _)):

@@ -115,10 +115,10 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
     func testGetTokensErrorPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
         let error = OAuthClientError.invalidTokenRequest(.reused)
-        handler.handle(pixel: .getTokensError(.localValid, error, .aheadOver1Day))
+        handler.handle(pixel: .getTokensError(.localValid, error))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionAuthV2GetTokensError(.localValid, subscriptionSource, error, .aheadOver1Day).name,
+            baseName: SubscriptionPixel.subscriptionAuthV2GetTokensError(.localValid, subscriptionSource, error).name,
             expectedParameters: [
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0",
@@ -127,8 +127,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
                 PixelKit.Parameters.underlyingErrorDomain: OAuthRequest.TokenStatus.errorDomain,
                 PixelKit.Parameters.errorDomain: OAuthClientError.errorDomain,
                 "source": subscriptionSource.description,
-                "policycache": AuthTokensCachePolicy.localValid.description,
-                "clock_skew": "ahead_over_1d"
+                "policycache": AuthTokensCachePolicy.localValid.description
             ]
         )
     }
@@ -171,27 +170,12 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testInvalidRefreshTokenRecoveredPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .invalidRefreshTokenRecovered(.backup, .ahead1HourTo1Day))
+        handler.handle(pixel: .invalidRefreshTokenRecovered(.backup))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered(.backup, .ahead1HourTo1Day).name,
+            baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered(.backup).name,
             expectedParameters: [
                 "recovery_method": "backup",
-                "clock_skew": "ahead_1h_1d",
-                PixelKit.Parameters.pixelSource: pixelSource,
-                PixelKit.Parameters.appVersion: "1.0.0"
-            ]
-        )
-    }
-
-    func testInvalidRefreshTokenRecoveredPixel_WithoutMethodOrSkew_SendsUnknownSkewOnly() {
-        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .invalidRefreshTokenRecovered(nil, nil))
-
-        assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered(nil, nil).name,
-            expectedParameters: [
-                "clock_skew": "unknown",
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0"
             ]
@@ -200,12 +184,11 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testInvalidRefreshTokenRecoveryDeferredPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .invalidRefreshTokenRecoveryDeferred(.behindOver1Day))
+        handler.handle(pixel: .invalidRefreshTokenRecoveryDeferred)
 
         assertDailyAndCountPixel(
             baseName: "subscription_auth-recovery_deferred_macos",
             expectedParameters: [
-                "clock_skew": "behind_over_1d",
                 PixelKit.Parameters.appVersion: "1.0.0"
             ]
         )

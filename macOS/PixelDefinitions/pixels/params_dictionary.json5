@@ -2,12 +2,6 @@
 // In your pixel definitions, you can reference these params by their key
 // See TEMPLATE.json for an example
 {
-    "subscriptionClockSkew": {
-        "key": "clock_skew",
-        "type": "string",
-        "description": "How far the device clock is from the auth server's, measured from the Date header of the last auth server response: within_5m, or how far ahead or behind; unknown when no response was measured since launch",
-        "enum": ["within_5m", "ahead_5m_1h", "ahead_1h_1d", "ahead_over_1d", "behind_5m_1h", "behind_1h_1d", "behind_over_1d", "unknown"]
-    },
     "appVersion": {
         "key": "appVersion",
         "type": "string",

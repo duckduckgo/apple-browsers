@@ -46,18 +46,9 @@ struct UTIFooterMessageMapper {
     static let privacyTermsURL = URL(string: "https://duckduckgo.com/duckai/privacy-terms")!
 
     func message(for notice: CreateImageModelSwitchNotice) -> UTIFooterMessage {
-        let isPrivate = notice.previousModelHasExtraPrivacyProtections
-        let subtitleFormat: String
-        switch notice.reason {
-        case .imageCreation:
-            subtitleFormat = isPrivate ? UserText.utiCreateImageModelSwitchPrivacyPreservingSubtitle : UserText.utiCreateImageModelSwitchSubtitle
-        case .imageUpload:
-            subtitleFormat = isPrivate ? UserText.aiChatNewChatHintModelSwitchPhotosPrivacyPreservingSubtitle
-                                       : UserText.aiChatNewChatHintModelSwitchPhotosSubtitle
-        case .fileUpload:
-            subtitleFormat = isPrivate ? UserText.aiChatNewChatHintModelSwitchFilesPrivacyPreservingSubtitle
-                                       : UserText.aiChatNewChatHintModelSwitchFilesSubtitle
-        }
+        let subtitleFormat = notice.previousModelHasExtraPrivacyProtections
+            ? UserText.utiCreateImageModelSwitchPrivacyPreservingSubtitle
+            : UserText.utiCreateImageModelSwitchSubtitle
 
         return UTIFooterMessage(
             icon: .modelSwitch,

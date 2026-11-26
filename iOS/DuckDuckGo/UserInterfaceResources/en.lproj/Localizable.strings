@@ -493,18 +493,6 @@
 /* Suggestion chip above the Duck.ai input on a new chat. Tapping it selects the image generation tool. */
 "aichat.new-chat-hint.image-generation" = "Create an image";
 
-/* Subtitle of the Duck.ai input footer card shown after tapping the Summarize a PDF suggestion switched away from a model that supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.new-chat-hint.model-switch.files.privacy-preserving.subtitle" = "%@ can't read files. Zero Provider Visibility won't apply until you switch back.";
-
-/* Subtitle of the Duck.ai input footer card shown after tapping the Summarize a PDF suggestion switched the model. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.new-chat-hint.model-switch.files.subtitle" = "%@ doesn't support files.";
-
-/* Subtitle of the Duck.ai input footer card shown after tapping the Ask about photos suggestion switched away from a model that supports Zero Provider Visibility. %@ is that model's short name, such as 'Gemma' */
-"aichat.new-chat-hint.model-switch.photos.privacy-preserving.subtitle" = "%@ can't read images. Zero Provider Visibility won't apply until you switch back.";
-
-/* Subtitle of the Duck.ai input footer card shown after tapping the Ask about photos suggestion switched the model. %@ is the short name of the model the user had selected before, such as 'Mistral' */
-"aichat.new-chat-hint.model-switch.photos.subtitle" = "%@ doesn't support images.";
-
 /* Suggestion chip above the Duck.ai input on a new chat. Tapping it opens the photo library so the user can ask about a photo. */
 "aichat.new-chat-hint.photo" = "Ask about photos";
 

@@ -469,7 +469,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A picker hint on a model that can't take its attachment switches this chat's model, says so, and leaves the user's pick for new chats",
+    @Test("A picker hint on a model that can't take its attachment switches this chat's model silently and leaves the user's pick for new chats",
           .timeLimit(.minutes(1)), arguments: [NewChatHint.photo, .documents])
     func pickerHintModelSwitchStaysInThisChat(hint: NewChatHint) async throws {
         preferences.selectedModelId = Self.textOnlyModel.id
@@ -483,10 +483,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         try presenter.cancelPicker()
 
         #expect(sut.voicePromptSubmissionConfiguration.modelId == Self.everyModel.id)
-        let notice = sut.footerItems.first { $0.id == .modelSwitch }?.message
-        #expect(notice?.title == String(format: UserText.utiCreateImageModelSwitchTitle, "All"))
-        #expect(notice?.subtitle == String(format: hint == .photo ? UserText.aiChatNewChatHintModelSwitchPhotosSubtitle
-                                                                   : UserText.aiChatNewChatHintModelSwitchFilesSubtitle, "Text"))
+        #expect(!sut.footerItems.contains { $0.id == .modelSwitch })
         #expect(preferences.selectedModelId == Self.textOnlyModel.id)
 
         // A new chat in another tab starts on the user's model.
@@ -496,7 +493,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("With new chats on the default model, a picker hint's model switch leaves the user's default model alone",
+    @Test("With new chats on the default model, a picker hint switches this chat's model silently and leaves the user's default model alone",
           .timeLimit(.minutes(1)))
     func pickerHintModelSwitchKeepsTheDefaultModel() async throws {
         let userDefault = DuckAiNativeMemoryStorageHandler()
@@ -514,7 +511,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         try presenter.cancelPicker()
 
         #expect(sut.voicePromptSubmissionConfiguration.modelId == Self.everyModel.id)
-        #expect(sut.footerItems.contains { $0.id == .modelSwitch })
+        #expect(!sut.footerItems.contains { $0.id == .modelSwitch })
         #expect(try userDefault.getEntry(key: DuckAiNativeStorageReservedEntryKeys.defaultDuckaiModel.rawValue) as? String
                 == "\"\(Self.textOnlyModel.id)\"")
         #expect(preferences.selectedModelId == nil)

@@ -36,7 +36,7 @@ class BrowsingMenuEntryViewCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(image: UIImage, label: String, accessibilityLabel: String?, showNotificationDot: Bool = false, customDotColor: UIColor? = nil) {
+    func configure(image: UIImage, label: String, accessibilityLabel: String?, showNotificationDot: Bool = false, customDotColor: UIColor? = nil, isEnabled: Bool = true) {
         entryImage.image = image
         entryLabel.setAttributedTextString(label)
         entryLabel.accessibilityLabel = accessibilityLabel
@@ -49,6 +49,14 @@ class BrowsingMenuEntryViewCell: UITableViewCell {
         backgroundColor = theme.browsingMenuBackgroundColor
         setHighlightedStateBackgroundColor(theme.browsingMenuHighlightColor)
         
+        entryLabel.isEnabled = isEnabled
+        entryImage.tintAdjustmentMode = isEnabled ? .automatic : .dimmed
+        if isEnabled {
+            accessibilityTraits.remove(.notEnabled)
+        } else {
+            accessibilityTraits.insert(.notEnabled)
+        }
+
         notificationDot.isHidden = !showNotificationDot
         notificationDot.layer.cornerRadius = 4
         if let customDotColor {

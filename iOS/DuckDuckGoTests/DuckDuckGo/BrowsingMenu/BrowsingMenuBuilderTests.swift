@@ -112,7 +112,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
                 ]
                 for (menu, origin) in legacyMenus {
                     let entry = try XCTUnwrap(menu.first { $0.name == UserText.actionVPN })
-                    guard case .regular(_, _, _, _, _, _, _, _, _, let action) = entry else {
+                    guard case .regular(_, _, _, _, _, _, _, _, _, _, let action) = entry else {
                         return XCTFail("Expected a VPN menu action")
                     }
                     actions.append((origin, action))
@@ -266,6 +266,23 @@ final class BrowsingMenuBuilderTests: XCTestCase {
 
             XCTAssertEqual(model.sections.first?.items.map(\.name), [MockBrowsingMenuEntryBuilder.translateName])
         }
+    }
+
+    func testSheetEntryKeepsTheDisabledState() {
+        XCTAssertEqual(BrowsingMenuModel.Entry(.regular(name: "Off", image: UIImage(), isEnabled: false) {})?.isEnabled, false)
+        XCTAssertEqual(BrowsingMenuModel.Entry(.regular(name: "On", image: UIImage()) {})?.isEnabled, true)
+    }
+
+    func testPopoverMenuDoesNotSelectADisabledEntry() {
+        let menu = BrowsingMenuViewController(headerEntries: [],
+                                              menuEntries: [.regular(name: "Off", image: UIImage(), isEnabled: false) {},
+                                                            .regular(name: "On", image: UIImage()) {}],
+                                              daxDialogsManager: MockDaxDialogsManager(),
+                                              appSettings: AppSettingsMock())
+        let tableView = UITableView()
+
+        XCTAssertNil(menu.tableView(tableView, willSelectRowAt: IndexPath(row: 0, section: 0)))
+        XCTAssertEqual(menu.tableView(tableView, willSelectRowAt: IndexPath(row: 1, section: 0)), IndexPath(row: 1, section: 0))
     }
 
     func testWebsiteMenuOmitsTranslateWhenEntryIsUnavailable() throws {
@@ -823,7 +840,7 @@ private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {
 private extension BrowsingMenuEntry {
 
     var name: String? {
-        guard case let .regular(name, _, _, _, _, _, _, _, _, _) = self else { return nil }
+        guard case let .regular(name, _, _, _, _, _, _, _, _, _, _) = self else { return nil }
         return name
     }
 

@@ -231,6 +231,7 @@ struct BrowsingMenuSheetView: View {
                     MenuRowButton(entryData: item, isHighlighted: isHighlighted) {
                         select(item)
                     }
+                    .disabled(!item.isEnabled)
                     .listRowBackground(Color.rowBackgroundColor)
                 }
             }
@@ -256,6 +257,7 @@ extension BrowsingMenuModel {
         let action: () -> Void
         let tag: Tag?
         let accessibilityIdentifier: String?
+        var isEnabled: Bool = true
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(id)
@@ -307,6 +309,7 @@ extension BrowsingMenuModel.Entry {
             detailBadge,
             entryTag,
             identifier,
+            isEnabled,
             action):
             let detail: Detail? = if let detailBadge {
                 .badge(detailBadge)
@@ -325,6 +328,7 @@ extension BrowsingMenuModel.Entry {
                 action: action,
                 tag: tag ?? entryTag,
                 accessibilityIdentifier: identifier,
+                isEnabled: isEnabled,
             )
         }
     }

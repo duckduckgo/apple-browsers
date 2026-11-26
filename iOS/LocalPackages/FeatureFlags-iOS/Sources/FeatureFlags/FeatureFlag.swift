@@ -410,6 +410,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
     case unifiedToggleInputKeyboardEdgeSweep
 
+    /// Shows chips for what Duck.ai can do above the native input on a blank new chat (iPhone only).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220895031092233
+    case newChatHints
     /// Simplifies the Duck.ai prompt box on iPhone: one ⊕ menu holds the attachments and tools, the tools button
     /// and Customize Responses leave the input, and Chats gets a Duck.ai Settings button.
     /// https://app.asana.com/0/0/1220262271015348/f
@@ -1063,6 +1066,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputPastedText))
         case .unifiedToggleInputKeyboardEdgeSweep:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputKeyboardEdgeSweep))
+        case .newChatHints:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.newChatHints))
         case .unifiedToggleInputSimplifiedPromptBox:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputSimplifiedPromptBox))
         case .aiChatAttachmentPrivacyIPad:

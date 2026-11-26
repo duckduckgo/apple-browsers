@@ -3061,6 +3061,10 @@ extension TabViewController: WKNavigationDelegate {
 
         url = webView.url
 
+        // Before any of the new page's scripts run: its load messages can arrive after its first promo report.
+        userScripts?.aiChatUserScript.isAIChatPromoVisible = nil
+        userScripts?.aiChatUserScript.aiChatStatusOnPage = nil
+
         if isAITab {
             delegate?.tab(self, didCommitDuckAINavigationChangingChat: didChangeDuckAIChat)
         }

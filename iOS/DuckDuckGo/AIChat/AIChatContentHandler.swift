@@ -40,6 +40,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     @MainActor func willHandOff(_ payload: AIChatPayload)
     /// Whether the page holds a handed-off prompt behind its own Terms of Service card.
     @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
+    @MainActor var isAIChatPromoVisible: Bool? { get set }
+    @MainActor var aiChatStatusOnPage: AIChatStatusValue? { get set }
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
@@ -307,6 +309,8 @@ final class AIChatContentHandler: AIChatContentHandling {
     @MainActor
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
         let replacedTermsOfServiceState = self.userScript?.isTermsOfServiceShownOnPage
+        let replacedPromoVisibility = self.userScript?.isAIChatPromoVisible
+        let replacedStatus = self.userScript?.aiChatStatusOnPage
         self.userScript?.cleanUpForReplacement()
         self.userScript = userScript
         self.userScript?.delegate = self
@@ -327,6 +331,12 @@ final class AIChatContentHandler: AIChatContentHandling {
         // Rebuilt user scripts replace this one under a page that already took its handoff and won't ask again.
         if let replacedTermsOfServiceState {
             userScript.isTermsOfServiceShownOnPage = replacedTermsOfServiceState
+        }
+        if let replacedPromoVisibility {
+            userScript.isAIChatPromoVisible = replacedPromoVisibility
+        }
+        if let replacedStatus {
+            userScript.aiChatStatusOnPage = replacedStatus
         }
         if let unannouncedHandoff {
             announceHandoff(unannouncedHandoff)

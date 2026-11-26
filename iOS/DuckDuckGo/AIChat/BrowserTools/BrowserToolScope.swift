@@ -31,18 +31,21 @@ final class BrowserToolScope {
     let source: MultiTabAttachmentSource
     let selectedTabID: () -> String?
     let selectTab: (Tab) -> Bool
+    let openTab: (@MainActor (URL) -> String?)?
     private weak var owner: Tab?
     private var isRevoked = false
     let revocations = PassthroughSubject<Void, Never>()
 
     init(owner: Tab, source: MultiTabAttachmentSource, selectedTabID: @escaping () -> String?,
-         selectTab: @escaping (Tab) -> Bool = { _ in false }) {
+         selectTab: @escaping (Tab) -> Bool = { _ in false },
+         openTab: (@MainActor (URL) -> String?)? = nil) {
         self.owner = owner
         self.ownerTabID = owner.uid
         self.isBurner = owner.mode == .fire
         self.source = source
         self.selectedTabID = selectedTabID
         self.selectTab = selectTab
+        self.openTab = openTab
     }
 
     var isValid: Bool {

@@ -57,6 +57,29 @@ extension SwitchToTabBrowserTool {
     }
 }
 
+extension OpenTabBrowserTool {
+    convenience init(windowControllersManager: WindowControllersManagerProtocol) {
+        self.init { url, context in
+            guard let collection = Self.targetCollection(for: context, in: windowControllersManager) else { return nil }
+
+            let tab = Tab(content: .url(url, credential: nil, source: .link), shouldLoadInBackground: true, burnerMode: collection.burnerMode)
+            collection.insertOrAppend(tab: tab, selected: false)
+            guard collection.indexInAllTabs(of: tab) != nil else { return nil }
+            return tab.uuid
+        }
+    }
+
+    private static func targetCollection(for context: BrowserToolCallContext, in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
+        if context.isDetached,
+           let collection = windowControllersManager.lastKeyMainWindowController(where: { !$0.mainViewController.isBurner })?
+            .mainViewController.tabCollectionViewModel {
+            return collection
+        }
+        guard let token = context.ownerWindowToken else { return nil }
+        return AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token, in: windowControllersManager)
+    }
+}
+
 extension ReadTabContentBrowserTool {
     convenience init(windowControllersManager: WindowControllersManagerProtocol, reader: BrowserToolPageContentReading) {
         self.init(readPage: pageLoader(windowControllersManager: windowControllersManager, reader: reader))

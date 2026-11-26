@@ -31,6 +31,9 @@ public protocol BrowserTool: AnyObject {
     /// A tool that changes the browser: it prompts on every call, a stored Always is ignored, and `requestAccess` never grants it.
     var asksEveryTime: Bool { get }
 
+    /// A missing permission target means the supplied arguments are invalid.
+    var requiresPermissionTarget: Bool { get }
+
     var inputSchema: JSONValue { get }
 
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
@@ -50,6 +53,7 @@ public protocol BrowserTool: AnyObject {
 
 public extension BrowserTool {
     var asksEveryTime: Bool { false }
+    var requiresPermissionTarget: Bool { false }
     func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
     func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { nil }
     func resultCount(of value: JSONValue) -> Int? { nil }

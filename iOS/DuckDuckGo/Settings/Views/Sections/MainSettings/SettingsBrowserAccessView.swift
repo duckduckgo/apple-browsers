@@ -249,6 +249,10 @@ private struct BrowserAccessTool {
         .init(capability: .switchToTab,
               title: UserText.settingsBrowserAccessSwitchToTab,
               detail: UserText.settingsBrowserAccessSwitchToTabDetail,
-              icon: Icons.arrowCircleRight)
+              icon: Icons.arrowCircleRight),
+        .init(capability: .openTab,
+              title: UserText.settingsBrowserAccessOpenTab,
+              detail: UserText.settingsBrowserAccessOpenTabDetail,
+              icon: DesignSystemImages.Glyphs.Size24.tabNew)
     ]
 }

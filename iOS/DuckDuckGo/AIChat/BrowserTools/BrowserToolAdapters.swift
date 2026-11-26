@@ -51,6 +51,15 @@ extension SwitchToTabBrowserTool {
     }
 }
 
+extension OpenTabBrowserTool {
+    convenience init(scopeProvider: @escaping BrowserToolScopeProvider) {
+        self.init { url, context in
+            guard let scope = scopeProvider(context), scope.accepts(context) else { return nil }
+            return scope.openTab?(url)
+        }
+    }
+}
+
 extension ReadTabContentBrowserTool {
     convenience init(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) {
         self.init(readPage: pageLoader(scopeProvider: scopeProvider, reader: reader))

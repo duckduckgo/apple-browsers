@@ -65,7 +65,8 @@ final class AIChatBrowserToolsService {
         .readTabContent,
         .searchHistory,
         .findInPage,
-        .searchBookmarks
+        .searchBookmarks,
+        .openTab
     ]
 
     init(featureFlagger: any FeatureFlagger,
@@ -111,6 +112,7 @@ final class AIChatBrowserToolsService {
                 return self.scope(for: context)
             })
         }
+        tools.append(OpenTabBrowserTool(scopeProvider: scopeProvider))
         return tools
     }
 }
@@ -487,8 +489,10 @@ private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
             .aiChatBrowserToolFindInPage
         case .searchBookmarks:
             .aiChatBrowserToolSearchBookmarks
+        case .openTab:
+            .aiChatBrowserToolOpenTab
         case .featureEnabled, .highlightInPage,
-             .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .requestAccess:
+             .pinTab, .closeTabs, .bookmarkTab, .searchDownloads, .requestAccess:
             nil
         }
     }

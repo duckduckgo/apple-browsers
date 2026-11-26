@@ -386,6 +386,16 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                   let mainController = self.delegate as? MainViewController else { return false }
             mainController.selectTab(target)
             return self.currentTabsModel.currentTab === target
+        }, openTab: { [weak self, weak owner] url in
+            guard let self, let owner, owner.mode == .normal, self.currentBrowsingMode == .normal else { return nil }
+            let ownerModel = self.tabsModel(for: owner.mode)
+            guard ownerModel.indexOf(tab: owner) != nil else { return nil }
+
+            let controller = self.add(url: url, inBackground: true, inheritedAttribution: nil, in: ownerModel)
+            let tab = controller.tabModel
+            guard ownerModel.indexOf(tab: tab) != nil else { return nil }
+            (self.delegate as? MainViewController)?.refreshTabsAfterBrowserToolOpen()
+            return tab.uid
         })
     }
 

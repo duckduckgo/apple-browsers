@@ -68,8 +68,11 @@ public final class BrowserToolInvoker {
         guard Self.isAcceptedInput(request.input, for: tool) else {
             return .failure(callId: request.callId, error: .invalidArguments)
         }
-        let targetsOtherTab = request.input["tabId"]?.stringValue.map { $0 != context.ownerTabID } ?? false
         let target = tool.permissionTarget(arguments: request.input, context: context)
+        guard !tool.requiresPermissionTarget || target != nil else {
+            return .failure(callId: request.callId, error: .invalidArguments)
+        }
+        let targetsOtherTab = request.input["tabId"]?.stringValue.map { $0 != context.ownerTabID } ?? false
         let authorization = await clientToolPermissions.authorize(callID: request.callId, tool: tool, targetsOtherTab: targetsOtherTab,
                                                                   target: target,
                                                                   chatID: catalog.offersRequestAccess ? request.chatId : nil, accessToolNames: nil,

@@ -3729,6 +3729,13 @@ class MainViewController: UIViewController {
         tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel)
     }
 
+    func refreshTabsAfterBrowserToolOpen() {
+        guard isViewLoaded else { return }
+        refreshTabIcon()
+        tabsBarController?.backgroundTabAdded()
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel)
+    }
+
     /// Home tabs consult the setting + app-wide last-used; existing tabs derive from URL.
     func initialOmnibarToggleMode(for tab: Tab) -> TextEntryMode {
         let resolved: TextEntryMode

@@ -20,7 +20,6 @@
 import AIChat
 import DesignResourcesKit
 import DesignResourcesKitIcons
-import PrivacyConfig
 import SwiftUI
 import UIKit
 
@@ -32,15 +31,18 @@ struct AIChatToolPermissionView: View {
         let name: String
         let title: String
         let detail: String
+        let target: String?
         let icon: UIImage
         let rowIcon: UIImage
         let accessibilityName: String
 
-        init?(name: String, targetsOtherTab: Bool = false, offersAllowForChat: Bool = false) {
+        init?(name: String, targetsOtherTab: Bool = false, offersAllowForChat: Bool = false, target: String? = nil) {
             typealias Icons = DesignSystemImages.Glyphs.Size16
+            guard let kind = AIChatToolPermissionPresenter.ToolKind(name: name),
+                  kind == .openTab || target == nil else { return nil }
             id = name
             let copy: Copy.ToolText
-            switch AIChatBrowserToolsSubfeature(rawValue: name) {
+            switch kind {
             case .readTabContent:
                 copy = Copy.tabContent(targetsOtherTab: targetsOtherTab, offersAllowForChat: offersAllowForChat)
                 icon = Icons.tabContent
@@ -65,12 +67,16 @@ struct AIChatToolPermissionView: View {
                 copy = Copy.switchToTab
                 icon = Icons.arrowCircleRight
                 rowIcon = icon
-            default:
-                return nil
+            case .openTab:
+                guard let target, !target.isEmpty, !offersAllowForChat else { return nil }
+                copy = Copy.openTab
+                icon = DesignSystemImages.Glyphs.Size24.tabNew
+                rowIcon = icon
             }
             self.name = copy.name
             title = copy.title
             detail = copy.detail
+            self.target = target
             accessibilityName = copy.accessibilityName ?? copy.name
         }
 
@@ -80,6 +86,7 @@ struct AIChatToolPermissionView: View {
             name = tool.name
             title = tool.title
             detail = "\(tool.detail) \(tool.detail)"
+            target = tool.target
             icon = tool.icon
             rowIcon = tool.rowIcon
             accessibilityName = tool.accessibilityName
@@ -116,9 +123,8 @@ struct AIChatToolPermissionView: View {
             if let toolNames = prompt.accessToolNames {
                 self.init(accessToolNames: toolNames)
             } else {
-                guard prompt.target == nil,
-                      let tool = Tool(name: prompt.toolName, targetsOtherTab: prompt.targetsOtherTab,
-                                      offersAllowForChat: prompt.offersAllowForChat) else { return nil }
+                guard let tool = Tool(name: prompt.toolName, targetsOtherTab: prompt.targetsOtherTab,
+                                      offersAllowForChat: prompt.offersAllowForChat, target: prompt.target) else { return nil }
                 self.init(tools: [tool], approval: prompt.offersAllowForChat ? .chat : .once)
             }
         }
@@ -286,6 +292,12 @@ struct AIChatToolPermissionView: View {
                 Text(singleTool?.detail ?? Copy.multipleToolsDetail)
                     .font(.subheadline)
                     .foregroundStyle(Color(designSystemColor: .textSecondary))
+                if let target = singleTool?.target {
+                    Text(verbatim: target)
+                        .font(.subheadline)
+                        .foregroundStyle(Color(designSystemColor: .textPrimary))
+                        .lineLimit(nil)
+                }
             }
             .padding(.horizontal, 12)
         }
@@ -484,6 +496,14 @@ private extension AIChatToolPermissionView {
             )
         }
 
+        static var openTab: ToolText {
+            ToolText(
+                name: UserText.settingsBrowserAccessOpenTab,
+                title: UserText.browserToolPermissionTitleOpenTab,
+                detail: UserText.browserToolPermissionDetailOpenTab
+            )
+        }
+
         static func findInPage(targetsOtherTab: Bool, offersAllowForChat: Bool) -> ToolText {
             if offersAllowForChat {
                 return ToolText(
@@ -517,6 +537,8 @@ private struct PermissionBadge: View {
             if let toolIcon {
                 Image(uiImage: toolIcon)
                     .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 16, height: 16)
                     .foregroundStyle(Color(designSystemColor: .accentContentPrimary))
                     .frame(width: 32, height: 32)
                     .background(Color(designSystemColor: .accentPrimary), in: RoundedRectangle(cornerRadius: 9))

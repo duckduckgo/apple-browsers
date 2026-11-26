@@ -20,7 +20,6 @@
 import AIChat
 import UIKit
 
-/// The row of hint chips above the Duck.ai input. It scrolls sideways when the chips don't fit.
 final class NewChatHintsView: UIView {
 
     enum Metrics {

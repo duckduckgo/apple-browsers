@@ -23,7 +23,6 @@ import UIKit
 
 extension NewChatHint {
 
-    /// The value pixels report for this hint, shared with Android.
     var pixelValue: String {
         switch self {
         case .documents: return "documents"
@@ -48,7 +47,6 @@ extension NewChatHint {
         }
     }
 
-    /// Whether `model` can do what the hint offers.
     func isSupported(by model: AIChatModel) -> Bool {
         switch self {
         case .documents: return model.supportsFileUpload
@@ -64,7 +62,6 @@ extension NewChatHint {
         return capable.first { $0.id == selectedModelID } ?? capable.first
     }
 
-    /// Every hint, best first: the order Android's taps per new chat ranked (image generation, then photos, then
-    /// files). Fixed rather than shuffled, so the most used hint sits in the first slot, which is always on screen.
+    /// Best first: the first slot is always on screen.
     static let displayOrder: [NewChatHint] = [.imageGeneration, .photo, .documents]
 }

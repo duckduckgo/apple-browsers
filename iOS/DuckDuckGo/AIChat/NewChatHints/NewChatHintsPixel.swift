@@ -20,10 +20,8 @@
 import AIChat
 import PixelKit
 
-/// New chat hint pixels, named and shaped like Android's so the two platforms read as one funnel.
 enum NewChatHintsPixel: PixelKit.Event {
 
-    /// What the first prompt of a new chat carried.
     struct FirstPrompt: Equatable {
         var hasImageAttachment = false
         var hasFileAttachment = false

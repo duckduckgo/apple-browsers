@@ -28,7 +28,7 @@ final class NewChatHintsPresenter {
         static let cardSpacing: CGFloat = 10
     }
 
-    /// The chip row. Tab swipes move it with the input.
+    /// Tab swipes move it with the input.
     let row = NewChatHintsView()
     private var cancellable: AnyCancellable?
 

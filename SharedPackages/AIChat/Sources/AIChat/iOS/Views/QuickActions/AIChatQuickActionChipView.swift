@@ -51,7 +51,6 @@ public final class AIChatQuickActionChipView: UIView {
         static let glassIconLabelSpacing: CGFloat = 8
         static let glassTrailingPadding: CGFloat = 14
 
-        // Outlined glass, per the new chat suggestions design.
         static let outlinedFontSize: CGFloat = 15
         static let outlinedIconSize: CGFloat = 24
         static let outlinedHorizontalPadding: CGFloat = 8
@@ -262,7 +261,7 @@ private extension AIChatQuickActionChipView {
     }
 
     /// Dark glass carries more tint: it sits over darker content, so the same value would barely read.
-    /// The outlined chips use plain glass, like the app's toolbar buttons; their hairline ring separates them.
+    /// The outlined chips use plain glass; their hairline ring separates them.
     var glassTintAlpha: CGFloat {
         guard backgroundStyle != .outlinedGlass else { return 0 }
         return traitCollection.userInterfaceStyle == .dark

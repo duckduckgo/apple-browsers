@@ -192,7 +192,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published private(set) var newChatHints: [NewChatHint] = []
     private let newChatHintsUsage: NewChatHintsUsage
 
-    /// What this input knows about the chat on screen. Hints show only on a guaranteed new chat.
     @Published private(set) var newChatState = NewChatState.none
     var isGuaranteedNewChat: Bool { newChatState.isGuaranteedNewChat }
     private let newChatHintsEligibility: NewChatHintsEligibility
@@ -1409,7 +1408,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    /// Runs a hint: moves to a model that can do it if needed, then opens the picker or selects the image tool.
     /// Ignored with the flag off: a tap can land after the flag turns off but before its update clears the row.
     func performNewChatHint(_ hint: NewChatHint) {
         guard newChatHintsFeature.isEnabled,

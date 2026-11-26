@@ -37,7 +37,6 @@ final class UTIFooterController {
     /// The disclaimer on screen means the next Ask tap accepts the terms.
     var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
     var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
-    /// The messages on screen changed.
     var onMessagesChanged: (() -> Void)?
 
     private let termsOfServiceStore: DuckAiTermsOfServiceStore?

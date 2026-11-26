@@ -1073,9 +1073,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    /// Kill switch for the VPN toolbar upsell button and dot badge promos.
-    case vpnUpsellPromo
-
     /// Kill switch for the "Sync your bookmarks" promo.
     case syncSetupBookmarksPromo
 

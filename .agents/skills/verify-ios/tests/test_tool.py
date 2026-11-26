@@ -230,6 +230,11 @@ class LaunchProfileTests(unittest.TestCase):
 
     def test_no_flags_means_no_profile(self):   # an empty object is an unknown key to the app
         self.assertIsNone(device.launch_profile({}))
+        self.assertIsNone(device.launch_profile({}, {}))
+
+    def test_proof_profile_is_sent_with_the_flags(self):
+        profile = json.loads(device.launch_profile({"a": True}, {"settings": {"theme": "dark"}, "tabs": ["https://example.com"]}))
+        self.assertEqual(profile, {"featureFlags": {"a": True}, "settings": {"theme": "dark"}, "tabs": ["https://example.com"]})
 
     def test_newest_result_line_is_read_from_the_log(self):
         log = ("2026-11-25 14:49:20.1 Df DuckDuckGo[1:2] [com.duckduckgo.mobile.ios:LaunchProfile] LAUNCH_PROFILE_APPLIED keys=a\n"
@@ -266,11 +271,19 @@ class PreflightTests(unittest.TestCase):
             "flag the app won't override": ('"""x"""\nFLAGS = {"duckPlayer": True}\ndef run(ios): pass\n', "local overrides"),
             "language without a locale": ('"""x"""\nLANGUAGE = {"language": "fr"}\ndef run(ios): pass\n', "LANGUAGE"),
             "language as a string": ('"""x"""\nLANGUAGE = "fr"\ndef run(ios): pass\n', "LANGUAGE"),
+            "profile as a list": ('"""x"""\nPROFILE = ["tabs"]\ndef run(ios): pass\n', "PROFILE"),
+            "flags in the profile": ('"""x"""\nPROFILE = {"featureFlags": {"a": True}}\ndef run(ios): pass\n', "FLAGS"),
+            "flattened flag in the profile": ('"""x"""\nPROFILE = {"featureFlags.a": True}\ndef run(ios): pass\n', "FLAGS"),
+            "internal user in the profile": ('"""x"""\nPROFILE = {"internalUser": True}\ndef run(ios): pass\n', "internalUser"),
         }
         for name, (body, expected) in cases.items():
             with self.subTest(name):
                 _, problems = harness.load(self.write(body))
                 self.assertTrue(any(expected in p for p in problems), problems)
+
+    def test_profile_is_accepted(self):
+        _, problems = harness.load(self.write('"""x"""\nPROFILE = {"settings": {"theme": "dark"}}\ndef run(ios): pass\n'))
+        self.assertEqual(problems, [])
 
     def test_language_override_is_accepted(self):
         _, problems = harness.load(self.write('"""x"""\nLANGUAGE = {"language": "fr", "locale": "fr_FR"}\ndef run(ios): pass\n'))
@@ -425,9 +438,10 @@ class FakeDevice:
         self.language = dict(language or env.LANGUAGE)
         return dict(build=dict(runningSha="a" * 64), flags=flags, language=self.language)
 
-    def reset(self, flags=None, language=None):
+    def reset(self, flags=None, language=None, profile=None):
         if getattr(self, "fail_reset", False):
             raise env.Failed("AutomationServer never reported /contentBlockerReady true")
+        self.reset_profile = profile
         return self.launch(flags, language)
 
     def foreground(self):
@@ -622,6 +636,21 @@ class HarnessTests(unittest.TestCase):
             self.assertTrue(FakeVideo.made[0].stopped, f"the recording was left running after {status}")
             self.assertEqual(r["video"], "recording.mp4")
             self.assertTrue(os.path.isfile(os.path.join(r["evidence"], "recording.mp4")))
+
+    def test_proof_profile_reaches_the_fresh_install(self):
+        profile = {"settings": {"theme": "dark"}}
+        mod = type("Proof", (), {"run": staticmethod(lambda ios: (ios.reset(), ios.check("ok", True)))})
+        r = harness._run_device(mod, "iphone", tempfile.mkdtemp(dir=TMP), keep=False, flags={}, device_obj=self.fake,
+                                profile=profile)
+        self.assertEqual(r["status"], "pass", r)
+        self.assertEqual(self.fake.reset_profile, profile)
+
+    def test_profile_never_applied_is_an_error_not_a_pass(self):
+        mod = type("Proof", (), {"run": staticmethod(lambda ios: ios.check("ok", True))})   # no reset
+        r = harness._run_device(mod, "iphone", tempfile.mkdtemp(dir=TMP), keep=False, flags={}, device_obj=self.fake,
+                                profile={"settings": {"theme": "dark"}})
+        self.assertEqual(r["status"], "error", r)
+        self.assertIn("PROFILE was never applied", r["reason"])
 
     def test_recording_failure_is_an_evidence_problem_not_a_failed_proof(self):
         FakeVideo.fail_start = True

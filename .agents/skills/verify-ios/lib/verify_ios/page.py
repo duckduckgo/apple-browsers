@@ -170,6 +170,8 @@ def proof_page(mod, m, results, attempt):
                                        for d, s in m["simulators"].items()),
                f"Evidence: {_e(m['evidenceKind'])}",
                "Pinned flags: " + (", ".join(f"<code>{_e(k)}={_e(v)}</code>" for k, v in m["flags"].items()) or "(none)")]
+    if m.get("profile"):
+        details.append(f"Launch profile: <code>{_e(json.dumps(m['profile'], sort_keys=True))}</code>")
     details += [f"Capture conditions, {_e(d)}: " + _e(", ".join(f"{k} {v}" for k, v in (c or {}).items() if k != "window"))
                 for d, c in m["capture"].items() if c]
     details += [f"Rerun: <code>{_e(m['rerun'])}</code>",

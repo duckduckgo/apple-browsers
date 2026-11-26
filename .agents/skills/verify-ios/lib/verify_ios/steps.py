@@ -42,7 +42,7 @@ def tap_first_present(ios, locators, timeout=1.5):
 # ---------------------------------------------------------------- session and pages
 def fresh_start(ios):
     """Known state: reinstalled app, onboarding skipped, pinned flags, default capture conditions (light, default text
-    size, portrait, live status bar), one blank tab, address bar not focused.
+    size, portrait, live status bar), one blank tab (or the proof's PROFILE), address bar not focused.
     (A fresh tab sometimes opens with the bar focused and sometimes not; this always leaves it unfocused.)"""
     ios.reset()
     ios.default_capture_conditions()

@@ -81,8 +81,9 @@ from verify_ios import steps
 
 DEVICES = ["iphone", "ipad"]   # default: both
 LIVE = []                      # live services it depends on, e.g. ["duck.ai"]; empty = local fixture / app only
-FLAGS = {}                     # remote feature flags to pin for this proof (env.PINNED_FLAGS are always pinned)
-# LANGUAGE = {"language": "fr", "locale": "fr_FR"}   # only to test localization; default en-US (env.LANGUAGE)
+FLAGS = {}                     # remote feature flags to pin for this proof
+# PROFILE = {"tabs": [url]}     # launch profile keys for fresh_start
+# LANGUAGE = {"language": "fr", "locale": "fr_FR"}   # only to test localization
 
 def run(ios):
     steps.fresh_start(ios)                         # reinstall + launch: one blank tab, address bar not focused

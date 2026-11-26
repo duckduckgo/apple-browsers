@@ -609,6 +609,8 @@
             "funnel_duckai_ios__disclaimerbanner",
             "funnel_duckai_ios__voicechatlimit",
             "funnel_duckai_ios__voicechatdurationlimit",
+            "funnel_duckai_ios__switchmodel",
+            "funnel_duckai_ios__unknown",
             "funnel_applaunch_ios_winback",
             "funnel_appsettings_ios_winback",
             "funnel_alert_ios__subscriptionvpnrevoked",

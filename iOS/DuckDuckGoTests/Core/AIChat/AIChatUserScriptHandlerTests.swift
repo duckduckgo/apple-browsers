@@ -2888,6 +2888,35 @@ extension AIChatUserScriptHandlerTests {
             XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["origin": testCase.origin], testCase.metricName)
         }
     }
+
+    func testWhenFrontendReportsModalClickWithSourceThenModalPixelFiresWithThatOrigin() async {
+        // Given
+        let testCases: [(metricName: String, pixelName: String)] = [
+            ("userDidClickSubscribeOnSubscribeModal", "aichat_subscription-funnel_subscribe-modal_subscribe_click"),
+            ("userDidClickUpgradeOnUpgradeToProModal", "aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click")
+        ]
+
+        // The injected mapper turns a decode failure into an observable event rather than a silent drop
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(aiChatUserScriptErrorEventMapper: mockUserScriptErrorEventMapper)
+        let forwardingHandler = MetricForwardingHandler(
+            pixelMetricHandler: AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: pixelKitMock)
+        )
+        aiChatUserScriptHandler.setMetricReportingHandler(forwardingHandler)
+
+        for testCase in testCases {
+            let countBefore = pixelKitMock.actualFireCalls.count
+
+            // When
+            _ = await aiChatUserScriptHandler.reportMetric(params: ["metricName": testCase.metricName, "source": "pluslimit"],
+                                                           message: MockUserScriptMessage(name: "test", body: [:]))
+
+            // Then
+            XCTAssertTrue(mockUserScriptErrorEventMapper.events.isEmpty, "\(testCase.metricName) failed to decode")
+            XCTAssertEqual(pixelKitMock.actualFireCalls.count, countBefore + 1, testCase.metricName)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, testCase.pixelName, testCase.metricName)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["origin": "funnel_duckai_ios__pluslimit"], testCase.metricName)
+        }
+    }
 }
 
 private final class MockAIChatInputBox: AIChatInputBoxHandling {

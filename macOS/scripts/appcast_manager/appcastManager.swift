@@ -21,6 +21,10 @@ let appcastFilePath = specificDir.appendingPathComponent("appcast2.xml")
 let backupAppcastFilePath = "\(tmpDir)/appcast.xml.backup"
 let backupFileURL = URL(fileURLWithPath: backupAppcastFilePath)
 let lastBigSurBuildVersion = "736" // 1.193.1 – last build shipped with minimumSystemVersion 11.4 (Big Sur)
+let sparkleNamespace = "http://www.andymatuschak.org/xml-namespaces/sparkle"
+// Same options that generate_appcast uses, so that rewriting the appcast keeps its formatting
+let appcastReadOptions: XMLNode.Options = [.nodeLoadExternalEntitiesNever, .nodePreserveCDATA, .nodePreserveWhitespace]
+let appcastWriteOptions: XMLNode.Options = [.nodeCompactEmptyElement, .nodePrettyPrint]
 
 // MARK: - Arguments
 
@@ -794,7 +798,6 @@ func removeVersionFromAppcast(_ version: String, appcastContent: String) -> Stri
         return nil
     }
 
-    let sparkleNS = "http://www.andymatuschak.org/xml-namespaces/sparkle"
     guard let items = try? xmlDoc.nodes(forXPath: "//item") else {
         print("❌ Failed to query items in appcast XML.")
         return nil
@@ -803,7 +806,7 @@ func removeVersionFromAppcast(_ version: String, appcastContent: String) -> Stri
     var found = false
     for item in items {
         guard let itemElement = item as? XMLElement else { continue }
-        let versionElements = itemElement.elements(forLocalName: "version", uri: sparkleNS)
+        let versionElements = itemElement.elements(forLocalName: "version", uri: sparkleNamespace)
         if let versionElement = versionElements.first, versionElement.stringValue == version {
             itemElement.detach()
             found = true
@@ -873,6 +876,11 @@ func runGenerateAppcast(with versionNumber: String, channel: String? = nil, roll
 
     print("✅ generate_appcast command executed successfully.")
 
+    guard restoreSignaturesOfExistingArchives(originalAppcastURL: backupFileURL, appcastURL: appcastFilePath),
+          verifyAllEnclosuresAreSigned(in: appcastFilePath) else {
+        exit(1)
+    }
+
     // Verify presense of old builds
     if !verifyAppcastContainsBuild(lastBigSurBuildVersion, in: appcastFilePath) {
         print("❌ Error: Appcast does not contain the build (\(lastBigSurBuildVersion)).")
@@ -928,6 +936,98 @@ func moveFiles(from sourceDir: URL, to destinationDir: URL) {
 
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     return String(data: data, encoding: .utf8) ?? ""
+}
+
+// MARK: - Preserving signatures of existing archives
+
+/// `generate_appcast` signs again every archive and delta that it keeps in the feed, using the current private key.
+/// After a signing key rotation, archives built with the previous public key lose their signature,
+/// and their deltas get a signature that their apps reject.
+/// Existing archives don't change, so their original signatures stay valid: copy them back from the original appcast.
+/// Ed25519 signatures are deterministic, so without a key rotation this changes nothing.
+func restoreSignaturesOfExistingArchives(originalAppcastURL: URL, appcastURL: URL) -> Bool {
+    guard let originalDoc = try? XMLDocument(contentsOf: originalAppcastURL, options: appcastReadOptions),
+          let doc = try? XMLDocument(contentsOf: appcastURL, options: appcastReadOptions) else {
+        print("❌ Failed to parse appcast XML.")
+        return false
+    }
+
+    var originalEnclosures: [String: (length: String?, signature: String)] = [:]
+    for enclosure in enclosures(in: originalDoc) {
+        guard let url = enclosure.attribute(forName: "url")?.stringValue, let signature = enclosure.edSignature else {
+            continue
+        }
+        originalEnclosures[url] = (enclosure.attribute(forName: "length")?.stringValue, signature)
+    }
+
+    var restoredURLs: [String] = []
+    for enclosure in enclosures(in: doc) {
+        guard let url = enclosure.attribute(forName: "url")?.stringValue,
+              let original = originalEnclosures[url],
+              original.length == enclosure.attribute(forName: "length")?.stringValue,
+              original.signature != enclosure.edSignature else {
+            continue
+        }
+        enclosure.edSignature = original.signature
+        restoredURLs.append(url)
+    }
+
+    guard !restoredURLs.isEmpty else {
+        return true
+    }
+
+    // A signed appcast would need signing again after the change, which this tool doesn't support
+    if let content = readAppcastContent(from: appcastURL), content.contains("sparkle-signatures:") {
+        print("❌ Signatures of existing archives need restoring, but the appcast is signed.")
+        return false
+    }
+
+    do {
+        try doc.xmlData(options: appcastWriteOptions).write(to: appcastURL)
+    } catch {
+        print("❌ Failed to write the appcast with restored signatures: \(error)")
+        return false
+    }
+    for url in restoredURLs {
+        print("♻️  Restored original signature for \(url)")
+    }
+    return true
+}
+
+func verifyAllEnclosuresAreSigned(in appcastURL: URL) -> Bool {
+    guard let doc = try? XMLDocument(contentsOf: appcastURL, options: appcastReadOptions) else {
+        print("❌ Failed to parse appcast XML.")
+        return false
+    }
+
+    let unsignedURLs = enclosures(in: doc)
+        .filter { ($0.edSignature ?? "").isEmpty }
+        .map { $0.attribute(forName: "url")?.stringValue ?? "<missing url>" }
+
+    for url in unsignedURLs {
+        print("❌ Missing EdDSA signature for \(url)")
+    }
+    return unsignedURLs.isEmpty
+}
+
+/// Update enclosures and delta update enclosures.
+func enclosures(in doc: XMLDocument) -> [XMLElement] {
+    ((try? doc.nodes(forXPath: "//enclosure")) ?? []).compactMap { $0 as? XMLElement }
+}
+
+extension XMLElement {
+    var edSignature: String? {
+        get {
+            attribute(forLocalName: "edSignature", uri: sparkleNamespace)?.stringValue
+        }
+        set {
+            if let attribute = attribute(forLocalName: "edSignature", uri: sparkleNamespace) {
+                attribute.stringValue = newValue
+            } else if let newValue, let attribute = XMLNode.attribute(withName: "sparkle:edSignature", uri: sparkleNamespace, stringValue: newValue) as? XMLNode {
+                addAttribute(attribute)
+            }
+        }
+    }
 }
 
 // - MARK: - Ensuring old builds remain in the appcast

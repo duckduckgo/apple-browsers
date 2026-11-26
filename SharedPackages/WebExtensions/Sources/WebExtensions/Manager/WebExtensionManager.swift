@@ -99,6 +99,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public var chromeWebStore: ChromeWebStoreManaging?
     /// Disables extensions that remote configuration lists. `nil` until the host starts enforcement.
     public var remoteDisableEnforcer: WebExtensionRemoteDisableEnforcer?
+    /// Tells the embedded extension when the user's allowlist changes. See `installUserAllowlistNotifier`.
+    var userAllowlistNotifier: UserAllowlistChangeNotifier?
+    /// Subscription events waiting for the embedded extension to pull them. See `sendSubscriptionEvent`.
+    let subscriptionEventOutbox = WebExtensionEventOutbox()
     let controller: WKWebExtensionController
     public var eventsListener: WebExtensionEventsListening { listener }
     private let listener = WebExtensionEventsListener()
@@ -1316,6 +1320,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let knownIdentifiers = Set(installationStore.installedExtensions.map(\.uniqueIdentifier))
         storageProvider.cleanupOrphanedExtensions(keeping: knownIdentifiers)
 
+        await scriptletCoordinator?.initialLoadDidFinish()
         for ext in installationStore.installedExtensions {
             if let type = ext.embeddedType {
                 await scriptletCoordinator?.onExtensionEnabled(for: type)

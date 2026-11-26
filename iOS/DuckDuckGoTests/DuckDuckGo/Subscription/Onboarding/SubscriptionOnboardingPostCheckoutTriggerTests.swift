@@ -25,6 +25,8 @@ import FeatureFlags_iOS
 import Persistence
 import Subscription
 import SubscriptionTestingUtilities
+import WebKit
+import BrowserServicesKitTestsUtils
 @_spi(Testing) import WideEvent
 @testable import DuckDuckGo
 
@@ -282,8 +284,8 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
     func test_setupTransactionObserver_appStoreTransactionCompleted_runsOnboardingEnrollment() async {
         let featureFlagger = PrivacyConfig.MockFeatureFlagger(resolveCohortStub: FeatureFlag.SubscriptionOnboardingFreeTrialsNov2026Cohort.treatment,
                                                               isAlreadyAssigned: false)
-        let subFeature = makeSubscriptionFeature()
-        let sut = makeViewModel(subFeature: subFeature, featureFlagger: featureFlagger)
+        let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock())
+        let sut = makeViewModel(subFeature: subFeature, featureFlagger: featureFlagger, onFlowEvent: nil)
 
         await sut.setupTransactionObserver()
         subFeature.onAppStoreTransactionCompleted?(true)
@@ -291,19 +293,134 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
         XCTAssertTrue(featureFlagger.didCallAssignedCohort)
     }
 
+    @MainActor
+    func test_restoreAppstoreTransaction_restoreSucceeds_reportsRestoreTapAndRestore() async {
+        let restoreFlow = AppStoreRestoreFlowMock()
+        restoreFlow.restoreAccountFromPastPurchaseResult = .success("transactionJWS")
+        let restored = expectation(description: "subscriptionRestored reported")
+        var events: [SubscriptionFlowEvent] = []
+        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow),
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { event in
+                                    events.append(event)
+                                    if event == .subscriptionRestored { restored.fulfill() }
+                                })
+
+        sut.restoreAppstoreTransaction()
+
+        await fulfillment(of: [restored], timeout: 1.0)
+        XCTAssertEqual(events, [.subscriptionFoundRestoreTapped, .subscriptionRestored])
+    }
+
+    @MainActor
+    func test_restoreAppstoreTransaction_restoreFails_reportsOnlyRestoreTap() async {
+        let restoreFlow = AppStoreRestoreFlowMock()
+        restoreFlow.restoreAccountFromPastPurchaseResult = .failure(.missingAccountOrTransactions)
+        let restored = expectation(description: "subscriptionRestored reported")
+        restored.isInverted = true
+        var events: [SubscriptionFlowEvent] = []
+        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: restoreFlow),
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { event in
+                                    events.append(event)
+                                    if event == .subscriptionRestored { restored.fulfill() }
+                                })
+
+        sut.restoreAppstoreTransaction()
+
+        await fulfillment(of: [restored], timeout: 1.0)
+        XCTAssertEqual(events, [.subscriptionFoundRestoreTapped])
+    }
+
+    @MainActor
+    func test_subscriptionFoundCancelled_reportsCancel() {
+        var events: [SubscriptionFlowEvent] = []
+        let sut = makeViewModel(subFeature: makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock()),
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { events.append($0) })
+
+        sut.subscriptionFoundCancelled()
+
+        XCTAssertEqual(events, [.subscriptionFoundCancelled])
+    }
+
+    @MainActor
+    func test_purchaseFails_reportsPurchaseFailed() async {
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.purchaseFailed(NSError(domain: "test", code: 1)))
+        let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock(), purchaseFlow: purchaseFlow)
+        let reported = expectation(description: "onFlowEvent called")
+        var events: [SubscriptionFlowEvent] = []
+        let sut = makeViewModel(subFeature: subFeature,
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { events.append($0); reported.fulfill() })
+        await sut.setupTransactionObserver()
+
+        // The message holds the web view weakly, and a cancelled or completed purchase writes to it.
+        let webView = makePurchaseWebView()
+        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage(webView: webView))
+
+        await fulfillment(of: [reported], timeout: 1.0)
+        withExtendedLifetime(webView) {}
+        XCTAssertEqual(events, [.purchaseFailed])
+    }
+
+    @MainActor
+    func test_purchaseFindsExistingSubscription_reportsSubscriptionFound() async {
+        let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock(), hasActiveSubscription: true)
+        let reported = expectation(description: "onFlowEvent called")
+        var events: [SubscriptionFlowEvent] = []
+        let sut = makeViewModel(subFeature: subFeature,
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { events.append($0); reported.fulfill() })
+        await sut.setupTransactionObserver()
+
+        // The message holds the web view weakly, and a cancelled or completed purchase writes to it.
+        let webView = makePurchaseWebView()
+        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage(webView: webView))
+
+        await fulfillment(of: [reported], timeout: 1.0)
+        withExtendedLifetime(webView) {}
+        XCTAssertEqual(events, [.subscriptionFound])
+    }
+
+    @MainActor
+    func test_purchaseCancelled_reportsNothing() async {
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.purchaseSubscriptionResult = .failure(.cancelledByUser)
+        let subFeature = makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock(), purchaseFlow: purchaseFlow)
+        let reported = expectation(description: "onFlowEvent called")
+        reported.isInverted = true
+        let sut = makeViewModel(subFeature: subFeature,
+                                featureFlagger: PrivacyConfig.MockFeatureFlagger(),
+                                onFlowEvent: { _ in reported.fulfill() })
+        await sut.setupTransactionObserver()
+
+        // The message holds the web view weakly, and a cancelled or completed purchase writes to it.
+        let webView = makePurchaseWebView()
+        _ = await subFeature.subscriptionSelected(params: ["id": "yearly"], original: makePurchaseMessage(webView: webView))
+
+        await fulfillment(of: [reported], timeout: 1.0)
+        withExtendedLifetime(webView) {}
+    }
+
     // MARK: - Helper
 
     @MainActor
-    private func makeSubscriptionFeature() -> DefaultSubscriptionPagesUseSubscriptionFeature {
+    private func makeSubscriptionFeature(restoreFlow: AppStoreRestoreFlowMock,
+                                         purchaseFlow: AppStorePurchaseFlowMock = AppStorePurchaseFlowMock(),
+                                         hasActiveSubscription: Bool = false) -> DefaultSubscriptionPagesUseSubscriptionFeature {
         let subscriptionManager = SubscriptionManagerMock()
-        let purchaseFlow = AppStorePurchaseFlowMock()
+        let storePurchaseManager = StorePurchaseManagerMock()
+        storePurchaseManager.hasActiveSubscriptionResult = hasActiveSubscription
+        subscriptionManager.resultStorePurchaseManager = storePurchaseManager
         let wideEvent = WideEventMock()
         return DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: subscriptionManager,
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true),
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: purchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            appStoreRestoreFlow: restoreFlow,
             subscriptionDataReporter: nil,
             internalUserDecider: PrivacyConfig.MockInternalUserDecider(isInternalUser: false),
             wideEvent: wideEvent,
@@ -317,8 +434,19 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
     }
 
     @MainActor
+    private func makePurchaseWebView() -> MockURLWebView {
+        MockURLWebView(url: URL(string: "https://duckduckgo.com/subscriptions")!)
+    }
+
+    @MainActor
+    private func makePurchaseMessage(webView: WKWebView) -> WKScriptMessage {
+        WKScriptMessage.mock(name: "subscriptionSelected", body: "", webView: webView)
+    }
+
+    @MainActor
     private func makeViewModel(subFeature: DefaultSubscriptionPagesUseSubscriptionFeature,
-                               featureFlagger: FeatureFlagger) -> SubscriptionFlowViewModel {
+                               featureFlagger: FeatureFlagger,
+                               onFlowEvent: ((SubscriptionFlowEvent) -> Void)?) -> SubscriptionFlowViewModel {
         SubscriptionFlowViewModel(initialURL: URL(string: "https://duckduckgo.com/subscriptions")!,
                                   flowType: .firstPurchase,
                                   userScript: SubscriptionPagesUserScript(),
@@ -329,7 +457,8 @@ final class SubscriptionFlowViewModelOnboardingHookTests: XCTestCase {
                                   wideEvent: WideEventMock(),
                                   dataBrokerProtectionViewControllerProvider: nil,
                                   onboardingKeyValueStore: InMemoryOnboardingStore(),
-                                  meetsPIRLocaleRequirement: { false })
+                                  meetsPIRLocaleRequirement: { false },
+                                  onFlowEvent: onFlowEvent)
     }
 }
 

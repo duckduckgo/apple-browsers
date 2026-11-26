@@ -32,7 +32,7 @@ struct TranslationModelsDebugView: View {
     var body: some View {
         List {
             if !viewModel.isAvailable {
-                Text(verbatim: "Web page translation is off. Turn on webPageTranslation in Feature Flags and relaunch.")
+                Text(verbatim: "Web page translation is off. Turn on pageTranslation in Feature Flags and relaunch.")
             } else if viewModel.rows.isEmpty {
                 Text(verbatim: "No manifest. Tap Refresh.")
             } else {

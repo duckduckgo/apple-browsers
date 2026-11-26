@@ -18,12 +18,12 @@
 
 import Foundation
 
-public enum MessageTrigger: String, Codable {
+public enum MessageTrigger: String, Codable, Sendable {
     case afterIdle = "after_idle"
 }
 
 /// Controls which messages are returned based on their `displayConditions.trigger` value.
-public enum TriggerFilter: Equatable {
+public enum TriggerFilter: Equatable, Sendable {
     /// Matches every message regardless of trigger (used by prefetch and cleanup paths).
     case any
     /// Matches only messages that have no trigger (i.e. `displayConditions` is nil or its `trigger` is nil).
@@ -40,7 +40,7 @@ public enum TriggerFilter: Equatable {
     }
 }
 
-public struct DisplayConditions: Codable, Equatable {
+public struct DisplayConditions: Codable, Equatable, Sendable {
     public let trigger: MessageTrigger?
     public let dismissAfterDaysShown: Int?
     public let maxImpressions: Int?
@@ -52,7 +52,7 @@ public struct DisplayConditions: Codable, Equatable {
     }
 }
 
-public struct RemoteMessageModel: Equatable, Codable {
+public struct RemoteMessageModel: Equatable, Codable, Sendable {
 
     public let id: String
     /// Specify the surface area where the message will be displayed. E.g. new tab page, dedicated tab or modal.
@@ -192,7 +192,7 @@ public struct RemoteMessageModel: Equatable, Codable {
     }
 }
 
-public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable {
+public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable, Sendable {
     public var rawValue: Int16
 
     public init(rawValue: Int16) {
@@ -211,7 +211,7 @@ public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable 
     public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab, .tabBar]
 }
 
-public enum RemoteMessageModelType: Codable, Equatable {
+public enum RemoteMessageModelType: Codable, Equatable, Sendable {
     case small(titleText: String,
                descriptionText: String)
     case medium(titleText: String,
@@ -300,7 +300,7 @@ extension RemoteMessageModelType.ListItem.ListItemType {
 
 public extension RemoteMessageModelType {
 
-    struct ListItem: Codable, Equatable {
+    struct ListItem: Codable, Equatable, Sendable {
         public let id: String
         public let type: ListItemType
         public let matchingRules: [Int]
@@ -317,7 +317,7 @@ public extension RemoteMessageModelType {
 
 public extension RemoteMessageModelType.ListItem {
 
-    enum ListItemType: Codable, Equatable {
+    enum ListItemType: Codable, Equatable, Sendable {
         /// Represents a featured two-line card with an icon, title, description, and optional action with title.
         /// - Parameters:
         ///   - titleText: The main title of the card (required, translatable)
@@ -355,7 +355,7 @@ public extension RemoteMessageModelType.ListItem {
 
 }
 
-public enum NavigationTarget: String, Codable, Equatable {
+public enum NavigationTarget: String, Codable, Equatable, Sendable {
     case duckAISettings = "duckai.settings"
     case settings
     case settingsGeneral = "settings.general"
@@ -367,7 +367,7 @@ public enum NavigationTarget: String, Codable, Equatable {
     case softwareUpdate
 }
 
-public enum RemoteAction: Codable, Equatable {
+public enum RemoteAction: Codable, Equatable, Sendable {
     case share(value: String, title: String?)
     /// Used to open a URL from a browser tab.
     case url(value: String)
@@ -379,7 +379,7 @@ public enum RemoteAction: Codable, Equatable {
     case navigation(value: NavigationTarget)
 }
 
-public enum RemotePlaceholder: String, Codable, CaseIterable {
+public enum RemotePlaceholder: String, Codable, CaseIterable, Sendable {
     case announce = "RemoteMessageAnnouncement"
     case ddgAnnounce = "RemoteMessageDDGAnnouncement"
     case criticalUpdate = "RemoteMessageCriticalAppUpdate"

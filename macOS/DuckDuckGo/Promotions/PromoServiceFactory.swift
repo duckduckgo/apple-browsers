@@ -60,7 +60,6 @@ struct PromoServiceFactory {
 
     @MainActor
     static func makeAllPromos(dependencies: PromoDependencies) -> [Promo] {
-        // Position is priority, so the optional `browserUpdated` promo is listed in place rather than inserted by index.
         let orderedPromos: [Promo?] = [
             declaredAge(dependencies: dependencies),
             sessionRestore(coordinator: dependencies.sessionRestoreCoordinator),

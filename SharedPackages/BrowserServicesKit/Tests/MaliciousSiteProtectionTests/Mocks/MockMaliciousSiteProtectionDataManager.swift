@@ -22,7 +22,8 @@ import Foundation
 
 actor MockMaliciousSiteProtectionDataManager: MaliciousSiteProtection.DataManaging {
 
-    @Published var store = [MaliciousSiteProtection.DataManager.StoredDataType: Any]()
+    private var subscriptions = Set<AnyCancellable>()
+    @Published private var store = [MaliciousSiteProtection.DataManager.StoredDataType: Any]()
 
     private(set) var bytesToReturn: Int = 1024
 
@@ -32,10 +33,16 @@ actor MockMaliciousSiteProtectionDataManager: MaliciousSiteProtection.DataManagi
         self.storeDatasetSuccess = storeDatasetSuccess
     }
 
-    func publisher<DataKey>(for key: DataKey) -> AnyPublisher<DataKey.DataSet, Never> where DataKey: MaliciousSiteProtection.MaliciousSiteDataKey {
+    func observeChanges<DataKey: MaliciousSiteDataKey>(for key: DataKey, onChange: @escaping @Sendable (DataKey.DataSet) -> Void) {
         $store.map { $0[key.dataType] as? DataKey.DataSet ?? .init(revision: 0, items: []) }
             .removeDuplicates()
-            .eraseToAnyPublisher()
+            .dropFirst()
+            .sink(receiveValue: onChange)
+            .store(in: &subscriptions)
+    }
+
+    func observeWrites(_ onWrite: @escaping @Sendable () -> Void) {
+        $store.dropFirst().sink { _ in onWrite() }.store(in: &subscriptions)
     }
 
     public func dataSet<DataKey>(for key: DataKey) -> DataKey.DataSet where DataKey: MaliciousSiteProtection.MaliciousSiteDataKey {

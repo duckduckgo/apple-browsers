@@ -101,6 +101,32 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
         .userDidClickVoiceChatDurationLimitModalSubscribeButton: (.aiChatSubscriptionFunnelClick, .duckAIVoiceChatDurationLimit)
     ]
 
+    /// Clicks on the subscribe / upgrade-to-Pro modal that the entry points above open. The origin comes
+    /// from the metric's `source`, the entry point that opened the modal.
+    static let modalMetricToPixelMap: [AIChatMetricName: (SubscriptionFunnelOrigin) -> AIChatSubscriptionModalPixel] = [
+        .userDidClickSubscribeOnSubscribeModal: AIChatSubscriptionModalPixel.subscribeModalSubscribeClick,
+        .userDidClickUpgradeOnUpgradeToProModal: AIChatSubscriptionModalPixel.upgradeToProModalUpgradeClick
+    ]
+
+    /// The frontend's `source` slugs for the entry points that open the modal. Allow-listed so an
+    /// unrecognised slug never reaches the pixel's `origin`; a click with no recognised source fires nothing.
+    static let modalSourceToOrigin: [String: SubscriptionFunnelOrigin] = [
+        "activatesubscription": .duckAIActivateSubscription,
+        "aisidebar": .duckAIAiSidebar,
+        "disclaimerbanner": .duckAIDisclaimerBanner,
+        "freelabel": .duckAIFreeLabel,
+        "freelimit": .duckAIFreeLimit,
+        "imagegenerationlimit": .duckAIImageGenerationLimit,
+        "modelpicker": .duckAIModelPicker,
+        "pluslimit": .duckAIPlusLimit,
+        "promotioncard": .duckAIPromotionCard,
+        "reasoningdropdown": .duckAIReasoningPicker,
+        "switchmodel": .duckAISwitchModel,
+        "voicechatdurationlimit": .duckAIVoiceChatDurationLimit,
+        "voicechatlimit": .duckAIVoiceChatLimit,
+        "unknown": .duckAIUnknown
+    ]
+
     // MARK: - Initialization
 
     init(timeElapsedInMinutes: Int? = nil,
@@ -151,6 +177,12 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
             pixelFiring?.fire(funnelPixel.event,
                               options: .parameters([AttributionParameter.origin: funnelPixel.origin.rawValue]))
             return
+        }
+
+        if let makePixel = Self.modalMetricToPixelMap[metric.metricName],
+           let source = metric.source,
+           let origin = Self.modalSourceToOrigin[source] {
+            pixelFiring?.fire(makePixel(origin), frequency: .standard)
         }
     }
 

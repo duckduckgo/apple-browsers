@@ -188,6 +188,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
     let isSitePermissionsEnabled: Bool
+    @MainActor var browserToolsService: AIChatBrowserToolsService?
     @MainActor private var sitePermissionsStore: SitePermissionsStore?
     @MainActor private var sitePermissionsFavicons: SitePermissionsFaviconStore?
     @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
@@ -225,11 +226,6 @@ final class SettingsViewModel: ObservableObject {
     // When true, indicates the AI Features settings was opened from the SERP settings button
     // This affects UI: shows Done button and hides Search Assist link
     var openedFromSERPSettingsButton: Bool = false
-
-    // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
-    var isPaidAIChatEnabled: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat)
-    }
 
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)

@@ -45,6 +45,11 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     /// (sub-label + toggle state) is re-pushed to open New Tab Pages.
     var onCustomizeResponsesChanged: () -> Void = {}
 
+    /// Resolves the submit pixel's model parameters from the sent model and effort; `nil` leaves them out.
+    var newChatModelPixelParameters: (_ sentModelId: String?,
+                                      _ sentReasoningEffort: String?,
+                                      _ isImageGeneration: Bool) -> DuckAINewChatModelPixelParameters? = { _, _, _ in nil }
+
     /// Retains the Customize Responses modal host while it is presented over the NTP window.
     private var customizeResponsesModal: CustomizeResponsesModalController?
 
@@ -174,7 +179,9 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                     files: [NewTabPage.NewTabPageDataModel.OmnibarPromptFile]?,
                     textPasted: [NewTabPage.NewTabPageDataModel.OmnibarPromptPastedText]?,
                     aiTermsAccepted: Bool) {
-        firePixel(NewTabPagePixel.promptSubmitted(hasPastedText: textPasted?.isEmpty == false))
+        let isImageGeneration = mode == AIChatNativePrompt.imageGenerationMode || toolChoice?.contains(AIChatRAGTool.imageGeneration.rawValue) == true
+        firePixel(NewTabPagePixel.promptSubmitted(hasPastedText: textPasted?.isEmpty == false,
+                                                  newChatModel: newChatModelPixelParameters(modelId, reasoningEffort, isImageGeneration)))
 
         // The NTP sends `aiTermsAccepted` only for an Ask click with its disclaimer on screen.
         termsOfServiceDisclaimer.acceptIfShown(aiTermsAccepted)
@@ -183,7 +190,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             PixelKit.fire(AIChatPixel.aiChatNtpSubmitWithImage(imageCount: images.count), frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
 
-        if mode == AIChatNativePrompt.imageGenerationMode || toolChoice?.contains(AIChatRAGTool.imageGeneration.rawValue) == true {
+        if isImageGeneration {
             PixelKit.fire(AIChatPixel.aiChatNtpImageGenerationSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         } else if mode == AIChatNativePrompt.voiceMode {
             PixelKit.fire(AIChatPixel.aiChatNewVoiceChatOmnibarNtp, frequency: .dailyAndStandard, includeAppVersionParameter: true)

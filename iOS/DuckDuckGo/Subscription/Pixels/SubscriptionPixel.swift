@@ -76,16 +76,16 @@ enum SubscriptionPixel: PixelKit.Event {
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
-    case subscriptionInvalidRefreshTokenRecovered
+    case subscriptionInvalidRefreshTokenRecovered(TokenRecoveryMethod?)
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
     // Pending Transaction
     case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
     case subscriptionPendingTransactionApproved(SubscriptionPixelHandler.Source)
     // KeychainManager
-    case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source)
-    case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source)
-    case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source)
-    case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source)
+    case subscriptionKeychainManagerDataAddedToTheBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
+    case subscriptionKeychainManagerDeallocatedWithBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
+    case subscriptionKeychainManagerDataWroteFromBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
+    case subscriptionKeychainManagerFailedToWriteDataFromBacklog(SubscriptionPixelHandler.Source, tokenType: SubscriptionKeychainTokenType?)
     // VPN Subscription Funnel Entry Points
     case subscriptionVPNToolbarImpression(isSubscriptionActive: Bool?)
     case subscriptionVPNToolbarClick(isSubscriptionActive: Bool?)
@@ -176,6 +176,7 @@ enum SubscriptionPixel: PixelKit.Event {
     private struct SubscriptionPixelsDefaults {
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
+        static let tokenTypeKey = "token_type"
         static let platformKey = "platform"
         static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
         static let entryPointKey = "entry_point"
@@ -184,6 +185,7 @@ enum SubscriptionPixel: PixelKit.Event {
         static let entryKey = "entry"
         static let freeTrialKey = "free_trial"
         static let daysSincePurchaseKey = "days_since_purchase"
+        static let recoveryMethodKey = "recovery_method"
         static let notificationsPermissionKey = "notifications_permission"
     }
 
@@ -198,12 +200,17 @@ enum SubscriptionPixel: PixelKit.Event {
         switch self {
         case .subscriptionInvalidRefreshTokenDetected(let source),
                 .subscriptionPurchaseSuccessAfterPendingTransaction(let source),
-                .subscriptionPendingTransactionApproved(let source),
-                .subscriptionKeychainManagerDataAddedToTheBacklog(let source),
-                .subscriptionKeychainManagerDeallocatedWithBacklog(let source),
-                .subscriptionKeychainManagerDataWroteFromBacklog(let source),
-                .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
+                .subscriptionPendingTransactionApproved(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+        case .subscriptionKeychainManagerDataAddedToTheBacklog(let source, let tokenType),
+                .subscriptionKeychainManagerDeallocatedWithBacklog(let source, let tokenType),
+                .subscriptionKeychainManagerDataWroteFromBacklog(let source, let tokenType),
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source, let tokenType):
+            var parameters = [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+            parameters[SubscriptionPixelsDefaults.tokenTypeKey] = tokenType?.rawValue
+            return parameters
+        case .subscriptionInvalidRefreshTokenRecovered(let method):
+            return method.map { [SubscriptionPixelsDefaults.recoveryMethodKey: $0.rawValue] }
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]
@@ -277,6 +284,51 @@ enum SubscriptionPixel: PixelKit.Event {
             return [.pixelSource]
         }
     }
+}
+
+/// The AuthV2 backup token pixels: restores from the backup, its renewal and its keychain item.
+enum SubscriptionBackupTokenPixel: PixelKit.Event {
+    /// The backup restored the session, in a recovery with the associated trigger.
+    case restored(TokenRecoveryTrigger)
+    /// A backup restore was tried, in a recovery with the associated trigger, and failed or was discarded.
+    case restoreFailed(TokenRecoveryTrigger, BackupRestoreFailureReason, Error)
+    /// A new backup was stored after a refresh.
+    case renewed
+    /// Renewing the backup failed.
+    case renewalFailed(Error)
+    /// Reading, writing or deleting the backup's keychain item failed, during the client action given, or nil when the keychain storage
+    /// found the problem on its own.
+    case keychainError(TokenBackupAction?, TokenBackupStorageOperation, Error)
+
+    private static let triggerKey = "trigger"
+    private static let reasonKey = "reason"
+    private static let actionKey = "action"
+    private static let operationKey = "operation"
+
+    var name: String {
+        switch self {
+        case .restored: return "subscription_auth-backup_restored"
+        case .restoreFailed: return "subscription_auth-backup_restore_failed"
+        case .renewed: return "subscription_auth-backup_renewed"
+        case .renewalFailed: return "subscription_auth-backup_renewal_failed"
+        case .keychainError: return "subscription_auth-backup_keychain_error"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .restored(let trigger):
+            return [Self.triggerKey: trigger.rawValue]
+        case .restoreFailed(let trigger, let reason, _):
+            return [Self.triggerKey: trigger.rawValue, Self.reasonKey: reason.rawValue]
+        case .keychainError(let action, let operation, _):
+            return [Self.actionKey: action?.rawValue ?? "none", Self.operationKey: operation.rawValue]
+        case .renewed, .renewalFailed:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }
 
 // This is a separate definition in order to get the correct platform and form factor suffixes, which the subscription pixels above do not have.

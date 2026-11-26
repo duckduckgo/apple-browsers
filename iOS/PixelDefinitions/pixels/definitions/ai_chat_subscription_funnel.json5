@@ -51,5 +51,67 @@
                 ]
             }
         ]
+    },
+    // https://app.asana.com/1/137249556945/task/1217475599862970
+    "aichat_subscription-funnel_subscribe-modal_subscribe_click": {
+        "description": "Fires when the Duck.ai web frontend reports that the user tapped the subscribe button in the subscribe modal (`userDidClickSubscribeOnSubscribeModal`). Doesn't fire when the frontend sends no recognised entry point.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Duck.ai subscription entry point that opened the modal.",
+                "type": "string",
+                "enum": [
+                    "funnel_duckai_ios__activatesubscription",
+                    "funnel_duckai_ios__aisidebar",
+                    "funnel_duckai_ios__disclaimerbanner",
+                    "funnel_duckai_ios__freelabel",
+                    "funnel_duckai_ios__freelimit",
+                    "funnel_duckai_ios__imagegenerationlimit",
+                    "funnel_duckai_ios__modelpicker",
+                    "funnel_duckai_ios__pluslimit",
+                    "funnel_duckai_ios__promotioncard",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    "funnel_duckai_ios__switchmodel",
+                    "funnel_duckai_ios__voicechatdurationlimit",
+                    "funnel_duckai_ios__voicechatlimit",
+                    "funnel_duckai_ios__unknown"
+                ]
+            }
+        ]
+    },
+    // https://app.asana.com/1/137249556945/task/1217475599862970
+    "aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click": {
+        "description": "Fires when the Duck.ai web frontend reports that the user tapped the upgrade button in the upgrade-to-Pro modal (`userDidClickUpgradeOnUpgradeToProModal`). Doesn't fire when the frontend sends no recognised entry point.",
+        "owners": ["jozsef-vesza"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "description": "Duck.ai subscription entry point that opened the modal.",
+                "type": "string",
+                "enum": [
+                    "funnel_duckai_ios__activatesubscription",
+                    "funnel_duckai_ios__aisidebar",
+                    "funnel_duckai_ios__disclaimerbanner",
+                    "funnel_duckai_ios__freelabel",
+                    "funnel_duckai_ios__freelimit",
+                    "funnel_duckai_ios__imagegenerationlimit",
+                    "funnel_duckai_ios__modelpicker",
+                    "funnel_duckai_ios__pluslimit",
+                    "funnel_duckai_ios__promotioncard",
+                    "funnel_duckai_ios__reasoningdropdown",
+                    "funnel_duckai_ios__switchmodel",
+                    "funnel_duckai_ios__voicechatdurationlimit",
+                    "funnel_duckai_ios__voicechatlimit",
+                    "funnel_duckai_ios__unknown"
+                ]
+            }
+        ]
     }
 }

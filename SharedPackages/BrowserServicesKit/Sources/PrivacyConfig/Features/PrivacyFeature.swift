@@ -94,6 +94,7 @@ public enum PrivacyFeature: String {
     case adBlockingExtension
     case eventHub
     case aiChatBrowserTools
+    case pageTranslation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -424,6 +425,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
     case unifiedToggleInputKeyboardEdgeSweep
 
+    /// Shows chips for what Duck.ai can do above the native input on a blank new chat (iPhone).
+    /// https://app.asana.com/0/0/1218264470262324/f
+    case newChatHints
     /// Simplifies the Duck.ai prompt box on iPhone: one ⊕ menu holds the attachments and tools, the tools button
     /// and Customize Responses leave the input, and Chats gets a Duck.ai Settings button.
     /// https://app.asana.com/0/0/1220262271015348/f
@@ -648,6 +652,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// iOS only. Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
     case swipeUpNewChat
+
+    /// New Duck.ai chats start on the default model and effort instead of the last one picked.
+    /// https://app.asana.com/1/137249556945/task/1220520342210072
+    case newChatDefaultModel
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -824,13 +832,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchaseStripe
     case useUnifiedFeedback
     case privacyProOnboardingPromotion
-    case paidAIChat
     case supportsAlternateStripePaymentFlow
     case stripeProductsByPlanCountry
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
-    case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
@@ -858,6 +864,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// iOS onboarding experiment that adds VPN as a download reason.
     case onboardingVPNDownloadReasonExperiment
+
+    /// Gates the AuthV2 backup token: when off, the main apps neither create, renew nor restore from it.
+    /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1219771272198496
+    /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1219810901971905
+    case authBackupToken
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -1065,12 +1076,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    /// Kill switch for the Cookie Pop-ups Blocked promo.
-    case cookiePopupsBlockedPromo
-
-    /// Kill switch for the VPN toolbar upsell button and dot badge promos.
-    case vpnUpsellPromo
-
     /// Kill switch for the "Sync your bookmarks" promo.
     case syncSetupBookmarksPromo
 
@@ -1121,6 +1126,13 @@ public enum DaxEasterEggPermanentLogoSubfeature: String, PrivacySubfeature {
 public enum PageContextSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .pageContext }
 
+    case featureEnabled
+}
+
+public enum PageTranslationSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .pageTranslation }
+
+    /// On-device web page translation (iOS).
     case featureEnabled
 }
 

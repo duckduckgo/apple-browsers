@@ -422,6 +422,32 @@ final class AIChatTabExtensionTests: XCTestCase {
         XCTAssertEqual(pixelFiring.actualFireCalls.map(\.frequency), [.dailyAndCount])
     }
 
+    // MARK: - Script replacement
+
+    /// Content-blocking updates replace the script while a local summary runs. Its output reaches the
+    /// page through the script that has the page's web view, so the new one needs it straight away.
+    func testWhenScriptsAreReplacedThenTheNewScriptGetsTheWebViewStraightAway() {
+        let webViews = PassthroughSubject<WKWebView, Never>()
+        tabExtension = AIChatTabExtension(scriptsPublisher: scripts,
+                                          webViewPublisher: webViews,
+                                          contentPublisher: content,
+                                          isLoadedInSidebar: false,
+                                          isTabBurner: false,
+                                          featureDiscovery: MockFeatureDiscovery(),
+                                          featureFlagger: MockFeatureFlagger(),
+                                          duckAiNativeStorageHandler: nil,
+                                          burnerDuckAiStorageRegistry: nil,
+                                          preferencesStorage: preferencesStorage,
+                                          pixelFiring: pixelFiring)
+        let webView = WKWebView()
+        webViews.send(webView)
+        let userScript = AIChatUserScript(handler: MockAIChatUserScriptHandler(), urlSettings: AIChatMockDebugSettings())
+
+        scripts.send(MockAIChatScriptsProvider(aiChatUserScript: userScript))
+
+        XCTAssertTrue(userScript.webView === webView)
+    }
+
     // MARK: - Chat source fallback
 
     func testThatTheChatGetsTheDirectNavigationAsItsFallbackSource() {
@@ -598,7 +624,7 @@ final class AIChatTabExtensionMock: TabExtension, AIChatProtocol {
     func setAIChatNativeHandoffData(payload: AIChatPayload) {}
     func setAIChatRestorationData(_ data: AIChatRestorationData?) {}
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {}
-    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {}
+    func submitAIChatPageContext(_ pageContext: PageContextResponse) {}
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {}
     func requestOpenSettings() {}
     func noteAddressBarSuggestionNavigation(to url: URL) {}

@@ -555,6 +555,12 @@
                 "type": "string"
             },
             {
+                "key": "model_source",
+                "description": "Where the model of a new chat's first prompt came from: the server default, a pick before sending, a model the chat was opened with (onboarding), the user's default model from Duck.ai settings (user_default), the default the chat fell back to because the user's default model can't be used, e.g. unknown, not on their plan, or over the usage limit (user_default_unavailable), or a fallback when the server sent no usable default. Sent only on a new chat's first prompt, with new chats starting on the default.",
+                "type": "string",
+                "enum": ["default", "picked", "onboarding", "fallback", "user_default", "user_default_unavailable"]
+            },
+            {
                 "key": "reasoning_effort",
                 "description": "Reasoning effort at submission time. Sends 'none' when the reasoning picker is hidden (e.g. image generation active, or model has no reasoning picker)",
                 "type": "string",

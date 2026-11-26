@@ -429,7 +429,11 @@ public class DDGSync: DDGSyncing {
 
     public func pendingLoginEvents() throws -> [SyncLoginEvent] {
         guard dependencies.syncFeatureFlags.isLoginAuditLogEnabled(), let account else { return [] }
-        return try auditLogPoller?.pendingEvents(for: account.userId) ?? []
+        let events = try auditLogPoller?.pendingEvents(for: account.userId) ?? []
+        guard !events.isEmpty, let reviewedThrough = try auditLogReviewState(for: account.userId)?.reviewedThrough else {
+            return events
+        }
+        return events.filter { $0.occurredAt > reviewedThrough }
     }
 
     public func dismissPendingLoginEvents(withIDs ids: Set<String>) throws {
@@ -459,7 +463,13 @@ public class DDGSync: DDGSyncing {
             return true
         }
         if didSave, let date = reviewState.reviewedThrough {
-            try auditLogPoller?.removeReviewedEvents(through: date, for: accountID)
+            do {
+                try auditLogPoller?.removeReviewedEvents(through: date, for: accountID)
+            } catch {
+                // The review date was saved, so refresh pending activity even if pruning failed.
+                pendingActivityDidChange.send()
+                throw error
+            }
         }
     }
 

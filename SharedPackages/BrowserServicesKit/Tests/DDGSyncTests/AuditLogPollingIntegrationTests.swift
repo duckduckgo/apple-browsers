@@ -104,6 +104,43 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         XCTAssertNil(try store.object(forKey: cursorKey))
     }
 
+    func testPendingActivityExcludesReviewedEventsWhenPruningFails() async throws {
+        let date = Date(timeIntervalSince1970: 100)
+        let reviewed = SyncLoginEvent(id: "reviewed", occurredAt: date, deviceName: "First")
+        let later = SyncLoginEvent(id: "later", occurredAt: date.addingTimeInterval(1), deviceName: "Second")
+        let checkpoint = AuditLogCheckpoint(cursor: "start", pendingEvents: [reviewed, later])
+        let original = try JSONEncoder().encode(checkpoint)
+        try store.set(original, forKey: cursorKey)
+        let service = makeService()
+        XCTAssertEqual(try service.pendingLoginEvents(), [reviewed, later])
+
+        let initial = expectation(description: "Both logins are pending")
+        let updated = expectation(description: "Pending activity excludes the reviewed login")
+        let subscription = service.pendingLoginEventsPublisher.removeDuplicates().sink { events in
+            if events == [reviewed, later] {
+                initial.fulfill()
+            } else if events == [later] {
+                updated.fulfill()
+            }
+        }
+        defer { subscription.cancel() }
+        await fulfillment(of: [initial], timeout: 1)
+
+        let expectedError = NSError(domain: "storage", code: 1)
+        store.onWillSet = { [cursorKey] key, _ in
+            if key == cursorKey { throw expectedError }
+        }
+        let state = SyncAuditLogReviewState(reviewedThrough: date, isInitialized: true)
+        XCTAssertThrowsError(try service.setAuditLogReviewState(state, for: SyncAccount.mock.userId)) { error in
+            XCTAssertEqual(error as NSError, expectedError)
+        }
+
+        XCTAssertEqual(try service.auditLogReviewState(for: SyncAccount.mock.userId), state)
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? Data, original)
+        XCTAssertEqual(try service.pendingLoginEvents(), [later])
+        await fulfillment(of: [updated], timeout: 1)
+    }
+
     func testPendingActivityIsAccountScopedAndSurvivesServiceRecreation() throws {
         let event = SyncLoginEvent(id: "event", occurredAt: Date(), deviceName: "Private name")
         try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: "start", pendingEvents: [event])), forKey: cursorKey)
@@ -241,7 +278,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         XCTAssertTrue(completed)
         XCTAssertEqual(try service.auditLogReviewState(for: accountID),
                        SyncAuditLogReviewState(reviewedThrough: date, isInitialized: true))
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "initial")
+        XCTAssertEqual(try storedCursor(), "initial")
     }
 
     func testUnavailableReviewStatePreservesRecordAndPreventsSavingCursor() async throws {
@@ -279,7 +316,7 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         let completed = try await service.pollAuditLog()
 
         XCTAssertTrue(completed)
-        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "head")
+        XCTAssertEqual(try storedCursor(), "head")
         XCTAssertNil(try service.auditLogReviewState(for: SyncAccount.mock.userId))
     }
 

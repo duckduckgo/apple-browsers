@@ -413,6 +413,26 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         #expect(fired("aichat_new_chat_shown").count == 1)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Switching the input to Search hides the hints and a tap does nothing; back to Duck.ai shows them",
+          .timeLimit(.minutes(1)))
+    func searchModeHidesHints() async throws {
+        let sut = try makeSUT()
+        try await openBlankChat(sut)
+        #expect(sut.newChatHints == tabOrder)
+
+        sut.updateInputMode(.search, animated: false)
+        try #require(sut.inputMode == .search)
+        #expect(sut.newChatHints.isEmpty)
+        sut.performNewChatHint(.imageGeneration)
+        #expect(sut.selectedTool == nil)
+        #expect(fired("aichat_new_chat_hint_tapped").isEmpty)
+
+        sut.updateInputMode(.aiChat, animated: false)
+        #expect(sut.newChatHints == tabOrder)
+        #expect(fired("aichat_new_chat_shown").count == 1)
+    }
+
     private static let weeklyLimitReached: String = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

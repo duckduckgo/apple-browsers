@@ -236,7 +236,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         get { textModel.omnibarPrefilledText }
         set { textModel.omnibarPrefilledText = newValue }
     }
-    private(set) var inputMode: TextEntryMode = .aiChat
+    private(set) var inputMode: TextEntryMode = .aiChat {
+        didSet {
+            guard oldValue != inputMode else { return }
+            refreshNewChatState()
+        }
+    }
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
     private let featureDiscovery: FeatureDiscovery
@@ -1348,8 +1353,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             return
         }
         // The cheap terms first: eligibility reads native storage. A spent usage limit disables the toolbar's
-        // image and tools buttons, so it hides the hints they stand in for.
-        guard isAIChatPromoClear, !isTypeAtTipShown, isDraftEmpty, !viewController.isInputBlockedByUsageLimit else {
+        // image and tools buttons, so it hides the hints they stand in for; Search mode can't use them either.
+        guard isAIChatPromoClear, !isTypeAtTipShown, isDraftEmpty,
+              !viewController.isInputBlockedByUsageLimit, inputMode == .aiChat else {
             publishNewChatHints([])
             return
         }

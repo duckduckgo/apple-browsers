@@ -624,7 +624,7 @@ final class AIChatTabExtensionMock: TabExtension, AIChatProtocol {
     func setAIChatNativeHandoffData(payload: AIChatPayload) {}
     func setAIChatRestorationData(_ data: AIChatRestorationData?) {}
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {}
-    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {}
+    func submitAIChatPageContext(_ pageContext: PageContextResponse) {}
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {}
     func requestOpenSettings() {}
     func noteAddressBarSuggestionNavigation(to url: URL) {}

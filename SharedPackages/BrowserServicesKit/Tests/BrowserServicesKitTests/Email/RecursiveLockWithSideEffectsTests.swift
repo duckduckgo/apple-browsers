@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import XCTest
 @testable import BrowserServicesKit
 
@@ -28,57 +29,57 @@ class RecursiveLockWithSideEffectsTests: XCTestCase {
         let thread1Done = expectation(description: "Thread 1 done")
         let thread2Done = expectation(description: "Thread 2 done")
 
-        var thread1SideEffectCalled = false
-        var thread2SideEffectCalled = false
-        var sharedValue = 0
+        let thread1SideEffectCalled = Locked(wrappedValue: false)
+        let thread2SideEffectCalled = Locked(wrappedValue: false)
+        let sharedValue = Locked(wrappedValue: 0)
 
         // Thread 1 - Takes lock first and holds it
         DispatchQueue.global().async {
             XCTAssertFalse(lock.isLocked)
             lock.withLock {
                 thread1Started.fulfill()
-                self.wait(for: [thread2Started], timeout: 1)
+                XCTAssertEqual(XCTWaiter.wait(for: [thread2Started], timeout: 1), .completed)
 
                 lock.dispatchSideEffect {
-                    thread1SideEffectCalled = true
+                    thread1SideEffectCalled.wrappedValue = true
                 }
 
-                sharedValue = 42
+                sharedValue.wrappedValue = 42
                 Thread.sleep(forTimeInterval: 0.1) // Hold lock to ensure thread 2 has to wait
 
-                XCTAssertEqual(sharedValue, 42)
-                XCTAssertFalse(thread1SideEffectCalled)
-                XCTAssertFalse(thread2SideEffectCalled)
+                XCTAssertEqual(sharedValue.wrappedValue, 42)
+                XCTAssertFalse(thread1SideEffectCalled.wrappedValue)
+                XCTAssertFalse(thread2SideEffectCalled.wrappedValue)
             }
-            XCTAssertTrue(thread1SideEffectCalled)
+            XCTAssertTrue(thread1SideEffectCalled.wrappedValue)
             thread1Done.fulfill()
         }
 
         // Thread 2 - Has to wait for lock
         DispatchQueue.global().async {
-            self.wait(for: [thread1Started], timeout: 1)
+            XCTAssertEqual(XCTWaiter.wait(for: [thread1Started], timeout: 1), .completed)
             thread2Started.fulfill()
             XCTAssertFalse(lock.isLocked)
             lock.withLock {
-                XCTAssertEqual(sharedValue, 42)
+                XCTAssertEqual(sharedValue.wrappedValue, 42)
                 lock.dispatchSideEffect {
-                    thread2SideEffectCalled = true
+                    thread2SideEffectCalled.wrappedValue = true
                 }
 
-                sharedValue = 99
+                sharedValue.wrappedValue = 99
 
-                XCTAssertEqual(sharedValue, 99)
-                XCTAssertFalse(thread2SideEffectCalled)
+                XCTAssertEqual(sharedValue.wrappedValue, 99)
+                XCTAssertFalse(thread2SideEffectCalled.wrappedValue)
             }
 
-            XCTAssertTrue(thread2SideEffectCalled)
+            XCTAssertTrue(thread2SideEffectCalled.wrappedValue)
             thread2Done.fulfill()
         }
 
         wait(for: [thread1Done, thread2Done], timeout: 1.0)
-        XCTAssertEqual(sharedValue, 99)
-        XCTAssertTrue(thread1SideEffectCalled)
-        XCTAssertTrue(thread2SideEffectCalled)
+        XCTAssertEqual(sharedValue.wrappedValue, 99)
+        XCTAssertTrue(thread1SideEffectCalled.wrappedValue)
+        XCTAssertTrue(thread2SideEffectCalled.wrappedValue)
     }
 
     func testWhenRecursiveLockIsUnlocked_sideEffectsExecuted() {

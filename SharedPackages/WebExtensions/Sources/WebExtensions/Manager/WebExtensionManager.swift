@@ -1316,6 +1316,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         let knownIdentifiers = Set(installationStore.installedExtensions.map(\.uniqueIdentifier))
         storageProvider.cleanupOrphanedExtensions(keeping: knownIdentifiers)
 
+        await scriptletCoordinator?.initialLoadDidFinish()
         for ext in installationStore.installedExtensions {
             if let type = ext.embeddedType {
                 await scriptletCoordinator?.onExtensionEnabled(for: type)

@@ -23,8 +23,6 @@ import Onboarding
 import Subscription
 import Common
 import FoundationExtensions
-import PrivacyConfig
-import FeatureFlags_iOS
 
 typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & SubscriptionPromotionCoordinating
 
@@ -63,22 +61,19 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProviding {
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
     private let onboardingFlowProvider: OnboardingFlowProviding & OnboardingDownloadReasonHandling
-    private let featureFlagger: FeatureFlagger
 
     init(
         delegate: OnboardingNavigationDelegate?,
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
         onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper(),
-        onboardingFlowProvider: OnboardingFlowProviding & OnboardingDownloadReasonHandling = OnboardingManager(),
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
+        onboardingFlowProvider: OnboardingFlowProviding & OnboardingDownloadReasonHandling = OnboardingManager()
     ) {
         self.delegate = delegate
         self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
         self.onboardingFlowProvider = onboardingFlowProvider
-        self.featureFlagger = featureFlagger
     }
 
     @ViewBuilder
@@ -277,16 +272,6 @@ private extension NewTabDaxDialogFactory {
             return AttributedString(fullText)
         }
 
-        func createSubscriptionPromoMessageDeprecated() -> AttributedString {
-            let fullText = String(
-                format: UserText.SubscriptionPromotionOnboarding.Promo.messageFormatDeprecated,
-                UserText.SubscriptionPromotionOnboarding.Promo.vpnAndTwoMoreBold,
-                UserText.SubscriptionPromotionOnboarding.Promo.optionalSubscriptionBoldDeprecated
-            )
-
-            return AttributedString(fullText)
-        }
-
         // If Duck.ai CPP flow or Private AI Chat Download reason show AI-flavored message and redirect to AI-flavored page of the Subscription flow
         let isAIFlowFlavored: Bool = onboardingFlowProvider.currentOnboardingFlow == .duckAI || onboardingFlowProvider.currentDownloadReason == .privateAIChat
 
@@ -296,11 +281,7 @@ private extension NewTabDaxDialogFactory {
         let message = if isAIFlowFlavored {
             AttributedString(UserText.Onboarding.DuckAICPP.Contextual.subscriptionMessage.preventWidows())
         } else {
-            if featureFlagger.isFeatureOn(.paidAIChat){
-                createSubscriptionPromoMessage()
-            } else {
-                createSubscriptionPromoMessageDeprecated()
-            }
+            createSubscriptionPromoMessage()
         }
 
         let dismissText = UserText.SubscriptionPromotionOnboarding.Buttons.Rebranding.skip

@@ -30,7 +30,7 @@ public class ContentBlockerRulesIdentifier: Equatable, Codable {
         return name + tdsEtag + tempListId + allowListId + unprotectedSitesHash
     }
 
-    public struct Difference: OptionSet, CustomDebugStringConvertible {
+    public struct Difference: OptionSet, CustomDebugStringConvertible, Sendable {
         public let rawValue: Int
 
         public init(rawValue: Int) {

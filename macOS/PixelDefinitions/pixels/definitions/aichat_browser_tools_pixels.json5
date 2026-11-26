@@ -75,8 +75,8 @@
             },
             {
                 "key": "answer",
-                "description": "How the prompt closed: allow_once, allow_for_chat, always or never = that button, dismiss = closed without a choice, timeout = unanswered until the 120 s deadline, withdrawn = closed because the call was cancelled or its chat went away",
-                "enum": ["allow_once", "allow_for_chat", "always", "never", "dismiss", "timeout", "withdrawn"]
+                "description": "How the prompt closed: allow_once, allow_for_chat, always or dont_allow = that button (dont_allow refuses this call and remembers nothing), never = the debug panel's Never, dismiss = closed without a choice, timeout = unanswered until the 120 s deadline, withdrawn = closed because the call was cancelled or its chat went away",
+                "enum": ["allow_once", "allow_for_chat", "always", "never", "dont_allow", "dismiss", "timeout", "withdrawn"]
             },
             {
                 "key": "prompt_number_in_chat",

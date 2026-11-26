@@ -381,7 +381,7 @@ var defaultHeaders: [String: String] = {
     class DefaultHeadersRetreiverNavigationDelegate: NSObject, WKNavigationDelegate {
         var headers: [String: String]?
 
-        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
             self.headers = navigationAction.request.allHTTPHeaderFields
             decisionHandler(.cancel)
         }
@@ -952,7 +952,7 @@ class NavigationDelegateProxy: NSObject, WKNavigationDelegate {
     var nextNavigationActionShouldBeUserInitiated: Bool = false
 
     @MainActor
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences, decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void) {
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences, decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy, WKWebpagePreferences) -> Void) {
         if nextNavigationActionShouldBeUserInitiated {
             navigationAction._isUserInitiated = true
             nextNavigationActionShouldBeUserInitiated = false

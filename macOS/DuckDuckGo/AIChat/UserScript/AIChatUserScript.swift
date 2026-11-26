@@ -166,11 +166,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker?.push(method: AIChatUserScriptMessages.submitAIChatNativePrompt.rawValue, params: prompt, for: self, into: webView)
     }
 
-    private func submitAIChatPageContext(_ pageContextData: AIChatPageContextData?) {
+    private func submitAIChatPageContext(_ response: PageContextResponse) {
         guard let webView else {
             return
         }
-        let response = PageContextResponse(pageContext: pageContextData)
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
     }
 

@@ -102,7 +102,7 @@ extension TabViewController {
         
         var entries = [BrowsingMenuEntry]()
 
-        if let translateEntry = makeTranslateEntry() {
+        if let translateEntry = buildTranslateEntry(useSmallIcon: true) {
             entries.append(translateEntry)
             entries.append(.separator)
         }
@@ -1256,11 +1256,15 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
 
     func makeTranslateEntry() -> BrowsingMenuEntry? {
+        buildTranslateEntry(useSmallIcon: false)
+    }
+
+    private func buildTranslateEntry(useSmallIcon: Bool) -> BrowsingMenuEntry? {
         guard pageTranslationOfferProvider?.isEnabled == true, let offer = pageTranslationOffer?.offer else { return nil }
         let state = pageTranslationState
         let content = TranslateMenuRow.content(for: offer, state: state, locale: .current)
         return BrowsingMenuEntry.regular(name: content.name,
-                                         image: DesignSystemImages.Glyphs.Size24.translate) { [weak self] in
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.translate : DesignSystemImages.Glyphs.Size24.translate) { [weak self] in
             switch state {
             case .idle:
                 self?.translatePageFromMenu(offer)

@@ -27,6 +27,7 @@ public typealias DeclaredAgeAnchor = UIViewController
 
 @MainActor
 public protocol DeclaredAgeServicing {
+    /// Throws when the OS cannot tell, so callers must not treat it as not required.
     func isRequestRequired() async throws -> Bool
     /// Returns false when the OS cannot show the prompt, so callers must not treat it as asked.
     func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws -> Bool
@@ -41,7 +42,7 @@ public extension DeclaredAgeServicing {
         if #available(iOS 26.2, macOS 26.2, *) {
             return try await AgeRangeService.shared.isEligibleForAgeFeatures
         }
-        return false
+        throw CocoaError(.featureUnsupported)
     }
 }
 

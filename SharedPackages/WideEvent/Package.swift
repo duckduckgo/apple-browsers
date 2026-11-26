@@ -21,8 +21,8 @@
 import PackageDescription
 import Foundation
 
-// Xcode maps the app's CI configuration to release for Swift packages. The macOS CI workflows
-// set this flag so the wide event validation log sees the same DEBUG condition as the app target.
+// Xcode maps the macOS app's CI configuration to release for Swift packages. Builds that set this flag
+// (CI workflows, verify-macos-browser) keep the DEBUG-only wide event validation log.
 let forceDebug = ProcessInfo.processInfo.environment["SPM_FORCE_DEBUG"] == "1"
 
 let package = Package(

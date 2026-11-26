@@ -653,6 +653,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// New Duck.ai chats start on the default model and effort instead of the last one picked.
     /// https://app.asana.com/1/137249556945/task/1220520342210072
     case newChatDefaultModel
+
+    /// iOS only. The voice button in a Duck.ai chat with messages continues that chat by voice.
+    /// https://app.asana.com/0/0/1217878433324673/f
+    case voiceInExistingChat
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool

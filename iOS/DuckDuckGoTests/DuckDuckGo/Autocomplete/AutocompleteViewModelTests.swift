@@ -23,8 +23,11 @@ import Suggestions
 
 final class AutocompleteViewModelTests: XCTestCase {
 
-    private func makeViewModel(showAskAIChat: Bool = false) -> (AutocompleteViewModel, MockAutocompleteViewModelDelegate) {
-        let vm = AutocompleteViewModel(isAddressBarAtBottom: false, showAskAIChat: showAskAIChat)
+    private func makeViewModel(showAskAIChat: Bool = false,
+                               isAskDuckAIRedesignEnabled: Bool = false) -> (AutocompleteViewModel, MockAutocompleteViewModelDelegate) {
+        let vm = AutocompleteViewModel(isAddressBarAtBottom: false,
+                                       showAskAIChat: showAskAIChat,
+                                       isAskDuckAIRedesignEnabled: isAskDuckAIRedesignEnabled)
         let delegate = MockAutocompleteViewModelDelegate()
         vm.delegate = delegate
         return (vm, delegate)
@@ -195,6 +198,47 @@ final class AutocompleteViewModelTests: XCTestCase {
         vm.nextSelection()
         
         XCTAssertEqual(vm.selection, aiChat)
+    }
+
+    // MARK: - Ask Duck.ai row appearance
+
+    private func phrases(_ count: Int) -> [Suggestion] {
+        (0..<count).map { .phrase(phrase: "query \($0)") }
+    }
+
+    func testUpdateSuggestions_WhenRedesignOff_KeepsLegacyAppearanceEvenWithFewSearchSuggestions() {
+        let (vm, _) = makeViewModel(showAskAIChat: true, isAskDuckAIRedesignEnabled: false)
+        vm.query = "what are the best running shoes"
+
+        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: []))
+
+        XCTAssertEqual(vm.askDuckAIAppearance, .legacy)
+        XCTAssertEqual(vm.aiChatSuggestions.map(\.suggestion), [.askAIChat(value: "what are the best running shoes")])
+    }
+
+    func testUpdateSuggestions_WhenRedesignOn_AppearanceFollowsTheCurrentList() {
+        let (vm, _) = makeViewModel(showAskAIChat: true, isAskDuckAIRedesignEnabled: true)
+        vm.query = "running shoes"
+
+        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: phrases(3), localSuggestions: []))
+        XCTAssertEqual(vm.askDuckAIAppearance, .oneColour)
+
+        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: phrases(2), localSuggestions: []))
+        XCTAssertEqual(vm.askDuckAIAppearance, .fullColour)
+
+        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: phrases(5), localSuggestions: []))
+        XCTAssertEqual(vm.askDuckAIAppearance, .oneColour)
+    }
+
+    func testUpdateSuggestions_WhenRedesignOn_EmptyResultWithFallbackRowIsFullColourAndRowIsUnchanged() {
+        let (vm, _) = makeViewModel(showAskAIChat: true, isAskDuckAIRedesignEnabled: true)
+        vm.query = "what are the best running shoes for flat feet?"
+
+        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: [], localSuggestions: []))
+
+        XCTAssertEqual(vm.topHits.map(\.suggestion), [.phrase(phrase: "what are the best running shoes for flat feet?")])
+        XCTAssertEqual(vm.askDuckAIAppearance, .fullColour)
+        XCTAssertEqual(vm.aiChatSuggestions.map(\.suggestion), [.askAIChat(value: "what are the best running shoes for flat feet?")])
     }
 }
 

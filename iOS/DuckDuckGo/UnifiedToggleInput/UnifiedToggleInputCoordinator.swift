@@ -1427,17 +1427,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    /// Read before the submit clears the draft and marks the chat as started.
-    private func reportNewChatPromptSubmitted() {
+    /// Call from every path that sends a prompt, before it marks the chat as started.
+    /// `prompt` is what was sent: a voice or suggestion prompt leaves the draft's attachments and tool behind.
+    private func reportNewChatPromptSubmitted(_ prompt: NewChatHintsPixel.FirstPrompt) {
         guard let tab = currentTabUID else { return }
         let state = newChatState
-        let attachments = viewController.currentAttachments
         newChatHintsUsage.promptSubmitted(
             tab: tab,
             isNewChat: state.isFullTabInput && !state.hasChat && !state.carriesPrompt,
-            prompt: .init(hasImageAttachment: attachments.contains(where: \.isImage),
-                          hasFileAttachment: attachments.contains(where: \.isFile),
-                          selectedTool: toolsController.selectedTool)
+            prompt: prompt
         )
     }
 
@@ -2064,6 +2062,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             toolsSelected: false,
             attachmentsSelected: false
         )
+        reportNewChatPromptSubmitted(.init())
         markActiveChatPromptSubmitted()
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
@@ -2079,6 +2078,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.aiChat.debug("[TermsOfService] External prompt submission: acceptance not recorded, termsAccepted=false")
         inputOutcomeMeasurement.record(.promptSubmitted(.other))
         let configuration = promptSubmissionConfiguration
+        reportNewChatPromptSubmitted(.init())
         markActiveChatPromptSubmitted()
         return (configuration.modelId, configuration.reasoningEffort)
     }
@@ -2774,7 +2774,11 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
-        reportNewChatPromptSubmitted()
+        // Read before the submit clears the draft.
+        let draftAttachments = viewController.currentAttachments
+        reportNewChatPromptSubmitted(.init(hasImageAttachment: draftAttachments.contains(where: \.isImage),
+                                           hasFileAttachment: draftAttachments.contains(where: \.isFile),
+                                           selectedTool: toolsController.selectedTool))
         inputOutcomeMeasurement.record(DuckAiInputOutcome(trigger: trigger))
         let termsAccepted = acceptTermsOfServiceIfAskTapped(trigger)
         footerController?.recordPromptSubmitted()

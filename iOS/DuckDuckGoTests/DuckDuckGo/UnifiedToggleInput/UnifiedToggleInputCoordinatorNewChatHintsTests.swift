@@ -351,6 +351,42 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         #expect(fired("aichat_new_chat_first_prompt_sent").map { $0?["hints_shown"] } == ["false"])
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A spoken first prompt reports the first prompt once, without the draft's tool", .timeLimit(.minutes(1)))
+    func voiceFirstPrompt() async throws {
+        let sut = try makeSUT()
+        try await openBlankChat(sut)
+        sut.newChatHintsDidAppear(sut.newChatHints)
+        // Voice sends neither the selected tool nor attachments.
+        sut.selectTool(.imageGeneration)
+
+        sut.submitVoicePrompt("prompt")
+        submitPrompt(sut)
+
+        #expect(fired("aichat_new_chat_first_prompt_sent") == [[
+            "newchathints_enabled": "true", "hints_shown": "true", "hint_tapped": "none",
+            "has_image_attachment": "false", "has_file_attachment": "false", "selected_tool": "none",
+        ]])
+        #expect(capStore.ignoredChats == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A first prompt sent from outside the input, like an Ask Duck.ai suggestion, reports once", .timeLimit(.minutes(1)))
+    func externalFirstPrompt() async throws {
+        let sut = try makeSUT()
+        try await openBlankChat(sut)
+        sut.newChatHintsDidAppear(sut.newChatHints)
+
+        _ = sut.prepareExternalPromptSubmission()
+        _ = sut.prepareExternalPromptSubmission()
+
+        #expect(fired("aichat_new_chat_first_prompt_sent") == [[
+            "newchathints_enabled": "true", "hints_shown": "true", "hint_tapped": "none",
+            "has_image_attachment": "false", "has_file_attachment": "false", "selected_tool": "none",
+        ]])
+        #expect(capStore.ignoredChats == 1)
+    }
+
     /// Flag updates arrive on the main queue, after the call that sends them.
     private func waitUntil(_ condition: () -> Bool) async throws {
         for _ in 0..<50 where !condition() {

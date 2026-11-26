@@ -113,6 +113,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     var needsPreservedAccountCleanupBeforeServerOperation = false
     var autoRestorePromptSource: AutoRestorePromptSource?
     private var hasHandledFirstAppearance = false
+    var showsScannerOnFirstAppearance = false
 
     var onConfirmAndDeleteAllData: (() -> Void)?
 
@@ -357,7 +358,11 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
 
         if !hasHandledFirstAppearance {
             hasHandledFirstAppearance = true
-            startSyncWithAnotherDeviceFromPromoIfNecessary()
+            if showsScannerOnFirstAppearance {
+                viewModel.beginPairingFlow()
+            } else {
+                startSyncWithAnotherDeviceFromPromoIfNecessary()
+            }
         }
     }
 

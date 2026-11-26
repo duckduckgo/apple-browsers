@@ -1797,6 +1797,10 @@ extension SettingsViewModel {
             presentViewController(legacyViewProvider.addToDock, modal: true)
         case .sync(let pairingInfo):
             pushViewController(legacyViewProvider.syncSettings(source: state.syncSource, pairingInfo: pairingInfo), animated: animated)
+        case .syncWithAnotherDevice:
+            let controller = legacyViewProvider.syncSettings(pairingInfo: nil)
+            controller.showsScannerOnFirstAppearance = true
+            pushViewController(controller, animated: animated)
         case .appIcon: pushViewController(legacyViewProvider.appIconSettings(onChange: { [weak self] appIcon in
             self?.state.appIcon = appIcon
         }))

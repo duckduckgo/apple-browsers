@@ -132,6 +132,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     enum LegacyView {
         case addToDock,
              sync(PairingInfo?),
+             syncWithAnotherDevice,
              autofill,
              appIcon,
              unprotectedSites,

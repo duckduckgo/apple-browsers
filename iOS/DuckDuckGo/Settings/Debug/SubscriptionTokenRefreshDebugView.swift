@@ -137,9 +137,9 @@ struct SubscriptionTokenRefreshDebugView: View {
                 row("Overrides apply", viewModel.isInternalUser ? "Yes (internal user)" : "No (not an internal user)")
                 row("Pending background task", pendingTaskText)
             } header: {
-                Text("Status")
+                Text(verbatim: "Status")
             } footer: {
-                Text("The flag is authBackgroundTokenRefresh. While it is off, a run does nothing and cancels the background task.")
+                Text(verbatim: "The flag is authBackgroundTokenRefresh. While it is off, a run does nothing and cancels the background task.")
             }
 
             Section {
@@ -149,35 +149,39 @@ struct SubscriptionTokenRefreshDebugView: View {
                     row("Outcome", lastRun.outcome)
                     row("Next check", lastRun.nextCheck.map(format) ?? "None, task cancelled")
                 } else {
-                    Text("No run recorded yet")
+                    Text(verbatim: "No run recorded yet")
                         .foregroundColor(.secondary)
                 }
             } header: {
-                Text("Last run")
+                Text(verbatim: "Last run")
             }
 
             Section {
-                Picker("Refresh token age", selection: $viewModel.maxRefreshTokenAge) {
+                Picker(selection: $viewModel.maxRefreshTokenAge) {
                     ForEach(SubscriptionTokenRefreshDebugViewModel.maxRefreshTokenAgePresets) { preset in
-                        Text(preset.title).tag(preset.value)
+                        Text(verbatim: preset.title).tag(preset.value)
                     }
+                } label: {
+                    Text(verbatim: "Refresh token age")
                 }
-                Picker("Retry after failure", selection: $viewModel.retryInterval) {
+                Picker(selection: $viewModel.retryInterval) {
                     ForEach(SubscriptionTokenRefreshDebugViewModel.retryIntervalPresets) { preset in
-                        Text(preset.title).tag(preset.value)
+                        Text(verbatim: preset.title).tag(preset.value)
                     }
+                } label: {
+                    Text(verbatim: "Retry after failure")
                 }
             } header: {
-                Text("Intervals")
+                Text(verbatim: "Intervals")
             } footer: {
-                Text("The token is refreshed once its refresh token is this old. Changes apply from the next run.")
+                Text(verbatim: "The token is refreshed once its refresh token is this old. Changes apply from the next run.")
             }
 
             Section {
-                Button("Run now") { viewModel.runNow() }
-                Button("Reset to defaults", role: .destructive) { viewModel.resetToDefaults() }
+                Button { viewModel.runNow() } label: { Text(verbatim: "Run now") }
+                Button(role: .destructive) { viewModel.resetToDefaults() } label: { Text(verbatim: "Reset to defaults") }
             } footer: {
-                Text("""
+                Text(verbatim: """
                 To watch it work: set the refresh token age to 2 minutes, then send the app to the background and wait. \
                 Bringing the app back refreshes the token if it is due, and every run reschedules the background task. \
                 iOS decides when the background task actually runs, usually while the device is charging, on Wi-Fi and idle. \
@@ -187,7 +191,7 @@ struct SubscriptionTokenRefreshDebugView: View {
                 """)
             }
         }
-        .navigationTitle("Background Token Refresh")
+        .navigationTitle(Text(verbatim: "Background Token Refresh"))
         .task { await viewModel.reload() }
         .refreshable { await viewModel.reload() }
     }
@@ -202,9 +206,9 @@ struct SubscriptionTokenRefreshDebugView: View {
 
     private func row(_ title: String, _ value: String) -> some View {
         HStack {
-            Text(title)
+            Text(verbatim: title)
             Spacer()
-            Text(value)
+            Text(verbatim: value)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.trailing)
         }

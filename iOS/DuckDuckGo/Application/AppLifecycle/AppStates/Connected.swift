@@ -159,9 +159,6 @@ struct Connected: ConnectedHandling {
         // Before the window shows, so the first frame is this screen.
         mainCoordinator.start(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         sceneDependencies.authenticationService.suspend()
-        if appDependencies.featureFlagger.isFeatureOn(.idleReturnLaunchWaitProtection) {
-            sceneDependencies.autoClearService.coverLaunchClear()
-        }
         window.makeKeyAndVisible()
         window.accessibilityIdentifier = "Browser.Window.Main"
     }

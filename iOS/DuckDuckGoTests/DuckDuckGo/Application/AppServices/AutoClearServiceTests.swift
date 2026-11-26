@@ -154,19 +154,6 @@ final class AutoClearServiceTests {
         #expect(mockAutoClear.startClearingTimerCalled)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("coverLaunchClear() shows the blank snapshot only when clearing is enabled", .timeLimit(.minutes(1)), arguments: [true, false])
-    func coverLaunchClear(isClearingEnabled: Bool) {
-        mockAutoClear.isClearingEnabledValue = isClearingEnabled
-        let autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                                overlayWindowManager: mockOverlayWindowManager,
-                                                aiChatSyncCleaner: mockAIChatSyncCleaner)
-
-        autoClearService.coverLaunchClear()
-
-        #expect(mockOverlayWindowManager.displayBlankSnapshotWindowCalled == isClearingEnabled)
-    }
-
     @Test("waitForDataCleared() should remove non-authentication overlay")
     func waitForDataCleared() async {
         // Given

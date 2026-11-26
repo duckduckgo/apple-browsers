@@ -62,7 +62,7 @@ enum AskDuckAIRowAppearance: Equatable {
 }
 
 /// The Duck.ai logo on the redesigned Ask Duck.ai row. The one-colour logo follows `tint`;
-/// the full-colour logo keeps its own colours. Only the icon animates when the highlight changes.
+/// the full-colour logo keeps its own colours. Only the logos' opacity animates when the highlight changes.
 /// A keyboard- or pointer-selected row uses the standard selected look, so it shows the one-colour logo, switching
 /// at once like the row's background does.
 struct AskDuckAIRowIcon: View {
@@ -71,11 +71,25 @@ struct AskDuckAIRowIcon: View {
     let isSelected: Bool
     let tint: Color
 
-    private var showsFullColour: Bool { isHighlighted && !isSelected }
-
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// Opacity of the full-colour logo. Held as state and changed in its own transaction, so the fade never picks up
+    /// the row moving when the list above it relayouts in the same update (an `.animation(_:value:)` here would
+    /// animate that move too and slide the logo in from the row's old position).
+    @State private var fullColourOpacity: Double
+
     private static let size: CGFloat = 24
+
+    init(isHighlighted: Bool, isSelected: Bool, tint: Color) {
+        self.isHighlighted = isHighlighted
+        self.isSelected = isSelected
+        self.tint = tint
+        _fullColourOpacity = State(initialValue: Self.fullColourOpacity(isHighlighted: isHighlighted, isSelected: isSelected))
+    }
+
+    private static func fullColourOpacity(isHighlighted: Bool, isSelected: Bool) -> Double {
+        isHighlighted && !isSelected ? 1 : 0
+    }
 
     var body: some View {
         ZStack {
@@ -83,14 +97,24 @@ struct AskDuckAIRowIcon: View {
                 .resizable()
                 .frame(width: Self.size, height: Self.size)
                 .tintIfAvailable(tint)
-                .opacity(showsFullColour ? 0 : 1)
+                .opacity(1 - fullColourOpacity)
 
             Image(uiImage: DesignSystemImages.Color.Size24.duckAI)
                 .renderingMode(.original)
                 .resizable()
                 .frame(width: Self.size, height: Self.size)
-                .opacity(showsFullColour ? 1 : 0)
+                .opacity(fullColourOpacity)
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: AskDuckAIRowAppearance.iconFadeDuration), value: isHighlighted)
+        .onChange(of: isHighlighted) { isHighlighted in
+            let target = Self.fullColourOpacity(isHighlighted: isHighlighted, isSelected: isSelected)
+            if reduceMotion {
+                fullColourOpacity = target
+            } else {
+                withAnimation(.easeOut(duration: AskDuckAIRowAppearance.iconFadeDuration)) { fullColourOpacity = target }
+            }
+        }
+        .onChange(of: isSelected) { isSelected in
+            fullColourOpacity = Self.fullColourOpacity(isHighlighted: isHighlighted, isSelected: isSelected)
+        }
     }
 }

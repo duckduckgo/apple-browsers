@@ -31,10 +31,11 @@ protocol AppStoreDockRolloutMonitoring: AnyObject {
 
 final class AppStoreDockRolloutMonitor: AppStoreDockRolloutMonitoring {
 
+    static let dockCheckDelay: TimeInterval = .days(7)
+
     private let store: AppStoreDockRolloutStoring
     private let dockCustomization: DockCustomization
     private let dateProvider: () -> Date
-    private let checkDelay: TimeInterval
     private let pixelFiring: PixelFiring?
 
     /// The arm of the prompt on screen, kept from when it was shown: a user who adds the app to the
@@ -46,12 +47,10 @@ final class AppStoreDockRolloutMonitor: AppStoreDockRolloutMonitoring {
          dockCustomization: DockCustomization,
          notificationCenter: NotificationCenter = .default,
          dateProvider: @escaping () -> Date = Date.init,
-         checkDelay: TimeInterval = 7 * 24 * 60 * 60,
          pixelFiring: PixelFiring? = PixelKit.shared) {
         self.store = store
         self.dockCustomization = dockCustomization
         self.dateProvider = dateProvider
-        self.checkDelay = checkDelay
         self.pixelFiring = pixelFiring
 
         appActiveCancellable = notificationCenter.publisher(for: NSApplication.didBecomeActiveNotification)
@@ -98,7 +97,7 @@ final class AppStoreDockRolloutMonitor: AppStoreDockRolloutMonitoring {
 
     private func checkDockStatusIfDue() {
         guard let pending = store.pendingCheck,
-              dateProvider() >= pending.shownDate.addingTimeInterval(checkDelay) else { return }
+              dateProvider() >= pending.shownDate.addingTimeInterval(Self.dockCheckDelay) else { return }
 
         store.pendingCheck = nil
         fire(dockCustomization.isAddedToDock ? .inDockAfterSevenDays(pending.arm) : .notInDockAfterSevenDays(pending.arm))

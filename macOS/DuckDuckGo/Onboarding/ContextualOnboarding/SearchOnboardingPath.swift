@@ -82,9 +82,11 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
     }
 
     func dialog(for tab: Tab) -> ContextualOnboardingDecision {
-        // 1. Once the final dialog was seen, the ending decides (upsell or completed).
+        // 1. After Try Duck.ai opened Duck.ai, the upsell waits for a page that isn't Duck.ai.
+        if progress.hasSeen(.tryDuckAI), !progress.hasSeen(.subscriptionUpsell), tab.url?.isDuckAIURL == true { return .none }
+        // 2. Once the final dialog was seen, the ending decides (upsell or completed).
         if case .decided(let decision) = ending.decisionForNextDialog() { return decision }
-        // 2. Otherwise pick today's dialog for this tab, without writing anything.
+        // 3. Otherwise pick today's dialog for this tab, without writing anything.
         let dialog: ContextualDialogType?
         switch tab.content {
         case .newtab:

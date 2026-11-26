@@ -74,6 +74,18 @@ struct SearchOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("After Try Duck.ai, the upsell waits for a page that isn't Duck.ai", .timeLimit(.minutes(1)))
+    func upsellWaitsForAPageThatIsNotDuckAI() async throws {
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        progress.markSeen(.tryDuckAI)
+        let duckAITab = await Tab(content: .aiChat(try #require(URL(string: "https://duck.ai/chat"))))
+        let newTab = await Tab(content: .newtab)
+
+        #expect(sut.dialog(for: duckAITab) == .none)
+        #expect(sut.dialog(for: newTab) == .next(.subscriptionUpsell))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Only people who kept Duck.ai in the address bar end with Try Duck.ai", .timeLimit(.minutes(1)),
           arguments: [(true, true, ContextualDialogType.tryDuckAI),
                       (false, true, .highFive),

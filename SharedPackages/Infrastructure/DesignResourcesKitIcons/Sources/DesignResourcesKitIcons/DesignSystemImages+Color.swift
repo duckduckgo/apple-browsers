@@ -219,6 +219,7 @@ public extension DesignSystemImages {
             public static var siri: DesignSystemImage { .init(resource: .siriColor24) }
             public static var subscription: DesignSystemImage { .init(resource: .privacyProColor24) }
             public static var sync: DesignSystemImage { .init(resource: .syncColor24) }
+            public static var translate: DesignSystemImage { .init(resource: .translateColor24) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayerColor24) }
             public static var videoPlayerBlocked: DesignSystemImage { .init(resource: .videoPlayerBlockedColor24) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor24) }
@@ -236,6 +237,7 @@ public extension DesignSystemImages {
             public static var fileCSV: DesignSystemImage { .init(resource: .fileCsv56) }
             public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag56) }
             public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop56) }
+            public static var translate: DesignSystemImage { .init(resource: .translate56) }
         }
 
         public enum Size72 {
@@ -258,6 +260,7 @@ public extension DesignSystemImages {
             public static var passwordsAppFeature: DesignSystemImage { .init(resource: .passwordsApp96) }
             public static var passwordsKeychainFeature: DesignSystemImage { .init(resource: .passwordsKeychainFeature96) }
             public static var syncPasswordsDesktop: DesignSystemImage { .init(resource: .desktopSyncPasswords96) }
+            public static var translate: DesignSystemImage { .init(resource: .translate96) }
             public static var youtubeClean: DesignSystemImage { .init(resource: .youTubeClean96) }
         }
 

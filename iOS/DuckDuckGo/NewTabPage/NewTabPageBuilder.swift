@@ -52,6 +52,7 @@ struct NewTabPageBuilder {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let daxGreetingProvider: DaxGreetingProviding
     let daxGreetingChanges: AnyPublisher<Void, Never>
+    let returnSettings: NewTabPageReturnSettings
 
     /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
@@ -150,7 +151,7 @@ struct NewTabPageBuilder {
             NewTabPageSwiftUIBlock(id: .messages,
                                   rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel))
         ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel,
-           isStickyInputEnabled: redesignFeature.isStickyInputEnabled,
+           returnSettings: returnSettings,
            onboardingCoordinator: NewTabPageOnboardingCoordinator(newTabDialogFactory: daxDialogFactory,
                                                                   daxDialogsManager: daxDialogsManager,
                                                                   onboardingFlowProvider: onboardingFlowProvider,

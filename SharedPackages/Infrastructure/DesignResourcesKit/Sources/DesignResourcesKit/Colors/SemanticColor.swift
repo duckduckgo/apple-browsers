@@ -50,6 +50,7 @@ public enum DesignSystemColor {
     case textSecondary
     case textTertiary
     case accentTextPrimary
+    case accentTextTertiary
     case textSelectionFill
     case textPlaceholder
 
@@ -86,6 +87,11 @@ public enum DesignSystemColor {
     // Alert
     case alertGreen
     case alertYellow
+
+    // Status
+    case statusGreen
+    case statusRed
+    case statusYellowPrimary
 
     // Shield
     case shieldPrivacy

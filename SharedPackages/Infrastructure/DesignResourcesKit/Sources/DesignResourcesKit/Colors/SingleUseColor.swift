@@ -25,6 +25,18 @@ public enum SingleUseColor {
     case fireModeAccent
 
 #if os(iOS)
+    /// Background of a selected (copied) row in the Autofill login details list.
+    case autofillSelectedRowBackground
+
+    /// Fixed screen background for the Sync pairing screens, which are always presented in dark appearance.
+    case syncScreenBackground
+
+    /// Shadow for the purchase-progress card, preserving its light and dark appearance across palettes.
+    case purchaseProgressShadow
+
+    /// Fixed background for rasterized fallback favicons, independent of appearance and palette.
+    case fallbackFaviconBackground
+
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground

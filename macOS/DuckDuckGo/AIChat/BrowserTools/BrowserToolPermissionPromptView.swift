@@ -148,7 +148,7 @@ struct BrowserToolPermissionPromptView: View {
                     if prompt.offersAlways {
                         decisionButton(UserText.permissionCenterAlwaysAllow, .always, id: "alwaysAllow")
                     }
-                    decisionButton(UserText.permissionCenterNeverAllow, .never, id: "neverAllow")
+                    decisionButton(UserText.browserToolAccessDontAllow, .dontAllow, id: "dontAllow")
                 }
             }
         }

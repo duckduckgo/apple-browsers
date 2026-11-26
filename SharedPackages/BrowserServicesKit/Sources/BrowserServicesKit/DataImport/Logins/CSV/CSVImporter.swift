@@ -23,7 +23,7 @@ import SecureStorage
 
 final public class CSVImporter: DataImporter {
 
-    public struct ColumnPositions {
+    public struct ColumnPositions: Sendable {
 
         private enum Regex {
             // should end with "login" or "username"

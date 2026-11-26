@@ -23,7 +23,7 @@ public enum PrivacyConfigurationFeatureState: Equatable {
     case disabled(PrivacyConfigurationFeatureDisabledReason)
 }
 
-public enum PrivacyConfigurationFeatureDisabledReason: Equatable {
+public enum PrivacyConfigurationFeatureDisabledReason: Equatable, Sendable {
     case featureMissing
     case disabledInConfig
     case appVersionNotSupported

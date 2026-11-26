@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import PixelKit
 import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -91,5 +92,32 @@ struct PageContextExtractionPixelHandlerTests {
         #expect(pixel?.parameters?["reason"] == "non_attachable")
         #expect(pixel?.parameters?["trigger"] == "tab_content")
         #expect(pixel?.parameters?["context_type"] == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a failed linked-page load reports its reason with trigger link",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (PageContextExtractionOutcome.FailureReason.certificateError, "certificate_error"),
+            (.httpError, "http_error"),
+            (.navigationFailed, "navigation_failed"),
+            (.redirectBlocked, "redirect_blocked"),
+            (.unsupportedURL, "unsupported_url"),
+          ])
+    func linkedPageFailureReportsReasonAndLinkTrigger(reason: PageContextExtractionOutcome.FailureReason, expected: String) {
+        let pixel = capture(.failure(reason), trigger: .link)
+        #expect(pixel?.name == "aichat_page_context_extraction_failed")
+        #expect(pixel?.parameters?["reason"] == expected)
+        #expect(pixel?.parameters?["trigger"] == "link")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Ask about page on a link sends its link type, with no legacy name prefix", .timeLimit(.minutes(1)))
+    func linkAskAboutPagePixelNameAndParameters() {
+        let serp = AIChatPixel.aiChatLinkAskAboutPage(linkType: .serp)
+        #expect(serp.name == "aichat_link_ask_about_page_macos")
+        #expect(serp.namePrefix == .none)
+        #expect(serp.parameters == ["link_type": "serp"])
+        #expect(AIChatPixel.aiChatLinkAskAboutPage(linkType: .other).parameters == ["link_type": "other"])
     }
 }

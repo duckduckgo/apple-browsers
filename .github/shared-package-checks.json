@@ -3,6 +3,8 @@
   {"path": "AutomationServer", "testTargets": ["AutomationServerTests"]},
   {"path": "Common", "macosTestOnly": true},
   {"path": "DDGError"},
+  {"path": "DebugServer", "testTargets": ["DebugServerTests"]},
+  {"path": "HangMetrics", "testTargets": ["HangMetricsTests"]},
   {"path": "ICSParser"},
   {"path": "LocalModels"},
   {"path": "Infrastructure/DesignResourcesKit"},
@@ -21,7 +23,7 @@
     ]
   },
   {"path": "Networking", "macosTestOnly": true},
-  {"path": "Persistence", "macosTestOnly": true},
+  {"path": "Persistence", "testTargets": ["PersistenceTests"]},
   {"path": "PixelKit", "macosTestOnly": true},
   {"path": "ScreenTimeDataCleaner", "buildOnly": true, "warningSources": ["Sources"]},
   {"path": "SERPInstallOrigin", "testTargets": ["SERPInstallOriginTests"]},

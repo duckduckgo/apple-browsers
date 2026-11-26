@@ -26,11 +26,13 @@ extension AIChatLocalModelService {
     convenience init(featureFlagger: FeatureFlagger,
                      storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
                      engine: AIChatLocalModelEngine = AppleFoundationModelEngine(),
-                     notificationCenter: NotificationCenter = .default) {
+                     notificationCenter: NotificationCenter = .default,
+                     instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
         self.init(isFeatureFlagOn: { featureFlagger.isFeatureOn(.aiChatLocalModels) },
                   featureFlagUpdates: featureFlagger.updatesPublisher,
                   storage: storage,
                   engine: engine,
-                  notificationCenter: notificationCenter)
+                  notificationCenter: notificationCenter,
+                  instrumentation: instrumentation)
     }
 }

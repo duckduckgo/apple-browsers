@@ -25,11 +25,11 @@ import UserScript
 class UserScriptTests: XCTestCase {
 
     class TestUserScript: NSObject, UserScript {
-        var val: String
-        var source: String
-        var injectionTime: WKUserScriptInjectionTime
-        var forMainFrameOnly: Bool
-        var messageNames: [String]
+        nonisolated let val: String
+        nonisolated let source: String
+        nonisolated let injectionTime: WKUserScriptInjectionTime
+        nonisolated let forMainFrameOnly: Bool
+        nonisolated let messageNames: [String]
 
         init(val: String, injectionTime: WKUserScriptInjectionTime, forMainFrameOnly: Bool, messageNames: [String]) throws {
             self.val = val

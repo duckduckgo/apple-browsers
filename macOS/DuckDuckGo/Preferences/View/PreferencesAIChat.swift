@@ -219,7 +219,7 @@ extension Preferences {
                         LocalModelAccessRow(modelName: model.localModelName,
                                             isOn: model.isLocalModelOn,
                                             turnOn: { Task { await model.turnOnLocalModel() } },
-                                            turnOff: model.turnOffLocalModel)
+                                            turnOff: { model.turnOffLocalModel() })
                     }
                 }
 

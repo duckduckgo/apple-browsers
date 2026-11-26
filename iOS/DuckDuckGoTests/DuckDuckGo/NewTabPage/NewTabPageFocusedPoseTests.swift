@@ -99,7 +99,7 @@ struct RedesignedNewTabPageFocusedMessagesTests {
     @available(iOS 16, macOS 13, *)
     @Test("The message surface is re-checked when the focused pose shows or hides the modules", .timeLimit(.minutes(1)))
     func surfaceChangesWhenModulesVisibilityChanges() {
-        let page = RedesignedNewTabPageViewController(blocks: [])
+        let page = RedesignedNewTabPageViewController(blocks: [], returnSettings: .makeForTests())
         let counter = NotificationCounter()
         let observer = NotificationCenter.default.addObserver(forName: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange,
                                                               object: page,

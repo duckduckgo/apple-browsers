@@ -28,16 +28,23 @@ import UIKit
 @MainActor
 final class LocalModelAccessPrompt: LocalModelAccessAsking {
 
+    private let instrumentation: AIChatLocalModelInstrumentation
     private weak var controller: UIViewController?
     private var answer: AIChatLocalModelAccessReply.Result?
     private var waiting: [CheckedContinuation<AIChatLocalModelAccessReply.Result, Never>] = []
+
+    init(instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
+        self.instrumentation = instrumentation
+    }
 
     func ask(in window: UIWindow?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
         await withCheckedContinuation { continuation in
             waiting.append(continuation)
             // A second request while the card is up, from a double tap or another tab, gets the same answer.
             guard waiting.count == 1 else { return }
-            if !show(in: window, modelName: modelName) {
+            if show(in: window, modelName: modelName) {
+                instrumentation.fire(.promoShown)
+            } else {
                 finish(.declined)
             }
         }
@@ -54,7 +61,11 @@ final class LocalModelAccessPrompt: LocalModelAccessAsking {
                                               onAnswer: { [weak self] answer in self?.close(with: answer) })
         let controller = LocalModelAccessPromptHostingController(rootView: card) { [weak self] in
             guard let self else { return }
-            self.finish(self.answer ?? .declined)
+            let result = self.answer ?? .declined
+            if result == .declined {
+                self.instrumentation.fire(.promoClosed)
+            }
+            self.finish(result)
         }
         self.controller = controller
         presenter.present(controller, animated: true)

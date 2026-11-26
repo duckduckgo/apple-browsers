@@ -45,11 +45,11 @@ public class KeyValueFileStore: ThrowingKeyValueStoring {
         self.name = name
         self.writeOptions = writeOptions
 
-        try Self.ensureSingleAccessTo(fileURL: fileURL)
+        try Self.openedFiles.claim(fileURL, owner: ObjectIdentifier(self))
     }
 
     deinit {
-        Self.relinquish(fileURL: fileURL)
+        Self.openedFiles.release(fileURL, owner: ObjectIdentifier(self))
     }
 
     public var fileURL: URL {
@@ -142,31 +142,33 @@ public class KeyValueFileStore: ThrowingKeyValueStoring {
         self.internalRepresentation = dictionary
     }
 
-    static private let globalLock = NSLock()
-    static private var openedFiles: Set<URL> = []
+    // Each process can open a file once. The lock covers both the lookup and insertion.
+    private final class OpenFiles: @unchecked Sendable {
+        private let lock = NSLock()
+        private var owners: [URL: ObjectIdentifier] = [:]
 
-    static private func ensureSingleAccessTo(fileURL: URL) throws {
-        globalLock.lock()
-        defer {
-            globalLock.unlock()
+        func claim(_ url: URL, owner: ObjectIdentifier) throws {
+            try lock.withLock {
+                guard owners[url] == nil else { throw Error.fileAlreadyInUse }
+                owners[url] = owner
+            }
         }
 
-        guard !openedFiles.contains(fileURL) else {
-            throw Error.fileAlreadyInUse
+        func release(_ url: URL, owner: ObjectIdentifier? = nil) {
+            lock.withLock {
+                // A failed initializer or an explicitly relinquished store can deinitialize later.
+                guard owner == nil || owners[url] == owner else { return }
+                owners[url] = nil
+            }
         }
-
-        openedFiles.insert(fileURL)
     }
+
+    private static let openedFiles = OpenFiles()
 
     // Call this to relinquish hold on a file used by an instance of a file store.
     // Use this only if you are sure that subsequent instantiation of KeyValueFileStore won't result in concurrent file modifications.
     static public func relinquish(fileURL: URL) {
-        globalLock.lock()
-        defer {
-            globalLock.unlock()
-        }
-
-        openedFiles.remove(fileURL)
+        openedFiles.release(fileURL)
     }
 }
 

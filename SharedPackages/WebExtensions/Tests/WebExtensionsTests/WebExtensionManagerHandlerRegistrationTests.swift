@@ -101,12 +101,12 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
 
         let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
         XCTAssertEqual(installed.embeddedType, .embedded)
-        XCTAssertEqual(messageRouter.registeredHandlers.count, 1)
+        XCTAssertEqual(messageRouter.providedHandlerCount, 1)
         XCTAssertTrue(manager.installingEmbeddedIdentifiers.isEmpty)
 
         try await manager.reloadExtension(identifier: installed.uniqueIdentifier)
 
-        XCTAssertEqual(messageRouter.registeredHandlers.count, 2)
+        XCTAssertEqual(messageRouter.providedHandlerCount, 2)
         XCTAssertEqual(handlerProvider.lastIdentifier, installed.uniqueIdentifier)
     }
 
@@ -125,7 +125,8 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
         try await manager.installExtension(from: sourceURL)
 
         XCTAssertTrue(handlerProvider.makeHandlersCalled)
-        XCTAssertEqual(messageRouter.registeredHandlers.count, 1)
+        XCTAssertEqual(messageRouter.providedHandlerCount, 1)
+        XCTAssertEqual(messageRouter.subscriptionEventsHandlerCount, 1)
     }
 
     @MainActor
@@ -221,12 +222,12 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
 
         let installed = try XCTUnwrap(manager.installedEmbeddedExtension(for: .embedded))
         XCTAssertNotNil(manager.context(for: installed.uniqueIdentifier))
-        XCTAssertEqual(messageRouter.registeredHandlers.count, 1)
+        XCTAssertEqual(messageRouter.providedHandlerCount, 1)
         XCTAssertTrue(manager.installingEmbeddedIdentifiers.isEmpty)
 
         try await manager.reloadExtension(identifier: installed.uniqueIdentifier)
 
-        XCTAssertEqual(messageRouter.registeredHandlers.count, 2)
+        XCTAssertEqual(messageRouter.providedHandlerCount, 2)
     }
 #endif
 
@@ -339,6 +340,15 @@ final class TestMessageRouter: WebExtensionMessageRouting {
     func registerHandler(_ handler: WebExtensionMessageHandler, for extensionIdentifier: String) {
         registerHandlerCalled = true
         registeredHandlers.append((handler, extensionIdentifier))
+    }
+
+    /// Handlers made by `TestHandlerProvider`, leaving out the ones the manager registers itself.
+    var providedHandlerCount: Int {
+        registeredHandlers.filter { $0.handler is TestMessageHandler }.count
+    }
+
+    var subscriptionEventsHandlerCount: Int {
+        registeredHandlers.filter { $0.handler is SubscriptionEventsWebExtensionMessageHandler }.count
     }
 
     func unregisterHandlers(for extensionIdentifier: String) {

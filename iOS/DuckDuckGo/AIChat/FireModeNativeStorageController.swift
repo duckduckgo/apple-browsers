@@ -40,10 +40,11 @@ import FeatureFlags_iOS
 /// Support; see `DuckAiNativeStorageContainerMigration`.
 ///
 /// Conforms to `DuckAiNativeStorageHandling` and `DuckAiNativeChatsObserving` so
-/// the chat-history sheet can observe Fire chats. Consumers don't need to know
-/// about rotation; only `FireExecutor` calls `syncWithCurrentFireModeID()` on
-/// the concrete type.
-final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving {
+/// the chat-history sheet can observe Fire chats, and to `DuckAiNativeEntriesObserving`
+/// so reserved entries, including ones read through from normal storage, can be followed.
+/// Consumers don't need to know about rotation; only `FireExecutor` calls
+/// `syncWithCurrentFireModeID()` on the concrete type.
+final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving, DuckAiNativeEntriesObserving {
 
     private enum Constants {
         static let fireModeDirectoryName = "DuckAiNativeStorage-fireMode"
@@ -65,7 +66,9 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
 
     private let baseDirectoryURL: URL
     private let dataStoreIDManager: DataStoreIDManaging
-    private let consentSeedSource: DuckAiNativeStorageHandling?
+    private let readThrough: DuckAiNativeEntriesReadThrough?
+    private let seedEntryUpdates: AnyPublisher<DuckAiNativeStorageReservedEntryKeys, Never>
+    private let reservedEntryUpdatesSubject = PassthroughSubject<DuckAiNativeStorageReservedEntryKeys, Never>()
     private let pixelFiring: DuckAiNativeStoragePixelFiring
     private let keyStoreAccessGroup: String
 
@@ -113,7 +116,8 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
 
         self.baseDirectoryURL = baseDirectoryURL
         self.dataStoreIDManager = dataStoreIDManager
-        self.consentSeedSource = consentSeedSource
+        self.readThrough = consentSeedSource.map(DuckAiNativeEntriesReadThrough.init(seedSource:))
+        self.seedEntryUpdates = consentSeedSource.map(DuckAiNativeEntriesReadThrough.seedEntryUpdates(from:)) ?? Empty().eraseToAnyPublisher()
         self.pixelFiring = pixelFiring
         self.keyStoreAccessGroup = appConfigurationGroupName
 
@@ -138,10 +142,17 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
     /// than initiating its own rotation (which would advance the ID twice).
     /// Falls back to clearing the existing store in place if opening a new one fails.
     func syncWithCurrentFireModeID() {
+        guard replaceStoreForCurrentFireModeID() else { return }
+        readThrough?.allEntriesDeleted()
+        announceAllReservedEntries()
+    }
+
+    /// `false` when the ID hasn't moved; otherwise the store is empty afterwards.
+    private func replaceStoreForCurrentFireModeID() -> Bool {
         lock.lock()
         defer { lock.unlock() }
         let currentID = dataStoreIDManager.currentFireModeID
-        guard currentID != openedID else { return }
+        guard currentID != openedID else { return false }
         let previousID = openedID
         guard let new = Self.makeHandler(in: baseDirectoryURL,
                                          id: currentID,
@@ -151,7 +162,7 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
             try? _inner.deleteAllChats()
             try? _inner.deleteAllFiles()
             try? _inner.deleteAllEntries()
-            return
+            return true
         }
         _inner = new
         openedID = currentID
@@ -161,6 +172,7 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
             try? FileManager.default.removeItem(at: url)
             dataStoreIDManager.removePendingRemovalFireModeID(previousID)
         }
+        return true
     }
 
     // MARK: - Helpers
@@ -202,34 +214,39 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
 
     // MARK: - DuckAiNativeStorageHandling forwarding
 
-    func putEntry(key: String, value: Any) throws { try inner.putEntry(key: key, value: value) }
+    func putEntry(key: String, value: Any) throws {
+        try inner.putEntry(key: key, value: value)
+        announceIfReserved(key)
+    }
 
-    /// Reads through to `consentSeedSource` for the small consent allow-list when the
-    /// fire-mode store doesn't have the key — keeps the user from being re-prompted
-    /// after `replaceAllEntries` or a fresh fire-mode UUID rotation.
+    /// Reads consent and settings through from normal storage when the fire-mode store doesn't
+    /// have them, so they survive `replaceAllEntries` and a fresh fire-mode UUID rotation.
     func getEntry(key: String) throws -> Any? {
         if let value = try inner.getEntry(key: key) { return value }
-        guard let consentSeedSource,
-              DuckAiNativeStorageConsent.entryKeys.contains(key) else {
-            return nil
-        }
-        return try? consentSeedSource.getEntry(key: key)
+        return readThrough?.seedEntry(forKey: key)
     }
 
     func getAllEntries() throws -> [String: Any] {
-        var entries = try inner.getAllEntries()
-        guard let consentSeedSource else { return entries }
-        for key in DuckAiNativeStorageConsent.entryKeys where entries[key] == nil {
-            if let value = try? consentSeedSource.getEntry(key: key) {
-                entries[key] = value
-            }
-        }
-        return entries
+        let entries = try inner.getAllEntries()
+        return readThrough?.entries(fillingIn: entries) ?? entries
     }
 
-    func deleteEntry(key: String) throws { try inner.deleteEntry(key: key) }
-    func deleteAllEntries() throws { try inner.deleteAllEntries() }
-    func replaceAllEntries(_ entries: [String: Any]) throws { try inner.replaceAllEntries(entries) }
+    func deleteEntry(key: String) throws {
+        try inner.deleteEntry(key: key)
+        readThrough?.entryDeleted(key: key)
+        announceIfReserved(key)
+    }
+
+    func deleteAllEntries() throws {
+        try inner.deleteAllEntries()
+        readThrough?.allEntriesDeleted()
+        announceAllReservedEntries()
+    }
+
+    func replaceAllEntries(_ entries: [String: Any]) throws {
+        try inner.replaceAllEntries(entries)
+        announceAllReservedEntries()
+    }
 
     func putChat(chatId: String, data: Data) throws { try inner.putChat(chatId: chatId, data: data) }
     func putChats(_ chats: [DuckAiChatRecord]) throws { try inner.putChats(chats) }
@@ -258,4 +275,19 @@ final class FireModeNativeStorageController: DuckAiNativeStorageHandling, DuckAi
     func markMigrationDone(key: String) throws { try inner.markMigrationDone(key: key) }
 
     var setupSucceeded: Bool? { inner.setupSucceeded }
+
+    // MARK: - DuckAiNativeEntriesObserving
+
+    var reservedEntryUpdatesPublisher: AnyPublisher<DuckAiNativeStorageReservedEntryKeys, Never> {
+        reservedEntryUpdatesSubject.merge(with: seedEntryUpdates).eraseToAnyPublisher()
+    }
+
+    private func announceIfReserved(_ key: String) {
+        guard let reserved = DuckAiNativeStorageReservedEntryKeys(rawValue: key) else { return }
+        reservedEntryUpdatesSubject.send(reserved)
+    }
+
+    private func announceAllReservedEntries() {
+        DuckAiNativeStorageReservedEntryKeys.allCases.forEach(reservedEntryUpdatesSubject.send)
+    }
 }

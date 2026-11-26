@@ -51,6 +51,7 @@ class Device:
         self.web_port, self.runner_port = env.ports(device)
         self.token = env.token()
         os.environ["AUTOMATION_TOKEN"] = self.token
+        env.touch(device)   # keeps an explored or kept simulator from being reaped as idle while it's in use
         self.web = Web(self.web_port, self.token)
         self._driver = None
         self._udid = None

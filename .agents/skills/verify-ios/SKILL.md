@@ -53,10 +53,9 @@ $V --device iphone setup && $V --device ipad setup   # this worktree's own simul
 $V build                                              # app (3–20 min) + runner (~20 s); rebuild the app after app changes
 ```
 
-Each proof deletes its simulator when it ends (pass, fail or cancel), so the next proof starts on a new device and
-nothing is left on the Mac. `prove`, `launch` and `build` recreate a missing simulator (about 30 s); `prove --keep`
-keeps it to look at after a failure. Builds live in the worktree under `DerivedData/verify-ios/` (gitignored), so
-removing the worktree removes them.
+A proof deletes its simulator when it ends; `setup`, `launch`, exploring and `--keep` leave it booted. `prove`,
+`launch` and `build` recreate it (~30 s). Builds live in the worktree's gitignored `DerivedData/verify-ios/`
+(`cleanup --builds`). Each command first reaps orphaned or idle (2 h) simulators: see `reap.py`.
 
 `build` targets a concrete simulator: a `generic/platform=iOS Simulator` build fails in the WebKit-workaround phase.
 One app build serves both devices. `build` records a fingerprint of the source it built from (HEAD plus every
@@ -246,8 +245,10 @@ $V tap|long-press|type|key|swipe|alert …   # same actions and refusals as proo
 $V web url | eval '<js>' | navigate <url>
 $V capture screenshot --name step
 $V doctor                                  # read-only: simulator, build identity, runner, web channel
-$V cleanup [--all] [--shutdown] [--delete-sims]   # --delete-sims when you are done exploring
+$V cleanup [--all] [--shutdown] [--delete-sims] [--builds]
 ```
+
+**Done exploring or with a `--keep` simulator: run `$V cleanup --all --delete-sims`**.
 
 After a proof has deleted the simulator, `launch` creates a new one before the other commands work again.
 
@@ -273,7 +274,7 @@ and fails if the running binary is not this worktree's build.
   whole duration; `build` and the shared fixture server need both locks.
 - Cleanup signals only processes whose recorded identity (pid + start time + command) still matches, checked again
   right before each signal; survivors stay recorded and are reported. It deletes only this worktree's simulators,
-  never evidence or builds.
+  never evidence. Simulator runtimes are never deleted.
 
 After changing the runner, the driver or the library, run both test suites:
 

@@ -260,6 +260,8 @@ final class MainWindowController: NSWindowController {
         moveTabBarView(toTitlebarView: true)
     }
 
+    private var deferredWindowButtonsVisibilityWorkItem: DispatchWorkItem?
+
     private var trafficLightsAlphaCancellables = [AnyCancellable]()
     private func subscribeToTrafficLightsAlpha() {
         guard let window else {
@@ -426,6 +428,7 @@ extension MainWindowController: NSWindowDelegate {
               keyWindow.isInHierarchy(of: mainWindow) else { return }
 
         mainViewController.windowDidBecomeKey()
+        mainWindow.forceWindowButtonsVisibleInFullScreen()
         lastWindowDidBecomeKeyTimestamp = CACurrentMediaTime()
         if !mainWindow.isPopUpWindow {
             Application.appDelegate.windowControllersManager.didChangeKeyWindowController.send(self)
@@ -463,6 +466,30 @@ extension MainWindowController: NSWindowDelegate {
         }
 
         fullscreenController.resetFullscreenExitFlag()
+
+        deferredWindowButtonsVisibilityWorkItem?.cancel()
+        deferredWindowButtonsVisibilityWorkItem = nil
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        window?.forceWindowButtonsVisibleInFullScreen()
+    }
+
+    /// AppKit may hide the window buttons again right after entering full screen,
+    /// so repeat the fix once more on the next main queue pass.
+    private func forceWindowButtonsVisibleAfterEnteringFullScreen(_ window: NSWindow) {
+        guard #available(macOS 27, *) else { return }
+
+        window.forceWindowButtonsVisibleInFullScreen()
+#if DEBUG
+        window.dumpWindowButtonsViewHierarchy()
+#endif
+        deferredWindowButtonsVisibilityWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak window] in
+            window?.forceWindowButtonsVisibleInFullScreen()
+        }
+        deferredWindowButtonsVisibilityWorkItem = workItem
+        DispatchQueue.main.async(execute: workItem)
     }
 
     private func hideTabBarAndBookmarksBar() {
@@ -502,6 +529,8 @@ extension MainWindowController: NSWindowDelegate {
         if AppVersion.isLiquidGlassSupported {
             applyThemeStyle()
         }
+
+        forceWindowButtonsVisibleAfterEnteringFullScreen(window)
 
         // Detect split screen vs regular fullscreen mode
         if window.isApproximatelyHalfScreenWide {
@@ -723,4 +752,52 @@ extension NSWindow {
     var isFullScreen: Bool {
         return self.styleMask.contains(.fullScreen) && self.isMiniaturized == false
     }
+
+    /// On macOS 27 and later the window buttons stay clickable in full screen but aren't drawn,
+    /// because a view above them ends up hidden or transparent. This unhides the buttons and every
+    /// ancestor up to (but not including) the root view of the window that hosts them, without
+    /// relying on private view class names. Does nothing outside full screen or on earlier macOS.
+    func forceWindowButtonsVisibleInFullScreen() {
+        guard #available(macOS 27, *), styleMask.contains(.fullScreen) else { return }
+
+        let buttons = [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton].compactMap { standardWindowButton($0) }
+        for button in buttons {
+            button.isHidden = false
+            button.alphaValue = 1
+        }
+
+        guard let closeButton = standardWindowButton(.closeButton) else { return }
+        // A view without a superview is the root (frame) view of its window; leave it alone.
+        var ancestor = closeButton.superview
+        while let view = ancestor, let parent = view.superview {
+            view.isHidden = false
+            view.alphaValue = 1
+            ancestor = parent
+        }
+
+        // In full screen the buttons may live in a separate titlebar window.
+        if let buttonsWindow = closeButton.window, buttonsWindow !== self {
+            buttonsWindow.alphaValue = 1
+        }
+    }
+
+#if DEBUG
+    /// Logs the close button's ancestor chain to help debug window button visibility in full screen.
+    func dumpWindowButtonsViewHierarchy() {
+        guard let closeButton = standardWindowButton(.closeButton) else {
+            Logger.general.debug("Window buttons: no close button")
+            return
+        }
+        let windowClassName = closeButton.window?.className ?? "no window"
+        let isInThisWindow = closeButton.window === self
+        Logger.general.debug("Window buttons: close button in \(windowClassName, privacy: .public), this window: \(isInThisWindow)")
+        for view in sequence(first: closeButton as NSView, next: \.superview) {
+            let className = view.className
+            let isHidden = view.isHidden
+            let alpha = Double(view.alphaValue)
+            let frame = NSStringFromRect(view.frame)
+            Logger.general.debug("Window buttons: \(className, privacy: .public) hidden: \(isHidden) alpha: \(alpha) frame: \(frame, privacy: .public)")
+        }
+    }
+#endif
 }

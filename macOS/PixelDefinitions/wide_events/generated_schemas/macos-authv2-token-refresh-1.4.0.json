@@ -44,7 +44,11 @@
                         "com.duckduckgo.mobile.ios.vpn.agent.network-extension.alpha"
                     ]
                 },
-                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "dev_mode": {
+                    "type": "boolean",
+                    "description": "Whether the event came from a non-production build (debug, alpha, review or experimental). Only included when true, and only in the POST payload."
+                }
             }
         },
         "global": {

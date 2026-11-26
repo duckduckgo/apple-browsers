@@ -320,9 +320,13 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
         defer { try? handle.close() }
         var hasher = SHA256()
-        while let chunk = try? handle.read(upToCount: 1_048_576), !chunk.isEmpty {
+        // Each chunk is autoreleased. Without a pool per read, the whole file stays in memory until the end:
+        // 2.7 GB for Gemma 4 E2B, which would get the app ended on iOS.
+        while autoreleasepool(invoking: { () -> Bool in
+            guard let chunk = try? handle.read(upToCount: 1_048_576), !chunk.isEmpty else { return false }
             hasher.update(data: chunk)
-        }
+            return true
+        }) {}
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 

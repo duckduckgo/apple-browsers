@@ -84,6 +84,10 @@ struct PageTranslationSessionTests {
         private(set) var stoppedListening = false
         private(set) var isDownloadHeld = false
 
+        func isInstalled(_ pairID: String) -> Bool {
+            downloadProgress.isEmpty && downloadError == nil && !holdsDownload
+        }
+
         func prepare(_ pairID: String) -> AsyncThrowingStream<Double, Error> {
             AsyncThrowingStream { continuation in
                 guard !downloadProgress.isEmpty || downloadError != nil || holdsDownload else {
@@ -115,7 +119,7 @@ struct PageTranslationSessionTests {
     private let bridge = FakeBridge()
     private let translator = FakeTranslator()
     private let progress = ProgressSpy()
-    private let offer = TranslationOffer(source: "fr", target: "en", pairID: "fr-en-base")
+    private let offer = TranslationOffer(source: "fr", target: "en", pairID: "fr-en-base", downloadBytes: 0)
 
     private func makeSession(characterLimit: @escaping () -> Int = { 2000 }) -> PageTranslationSession {
         PageTranslationSession(bridge: bridge, translator: translator, batchCharacterLimit: characterLimit, progress: progress)

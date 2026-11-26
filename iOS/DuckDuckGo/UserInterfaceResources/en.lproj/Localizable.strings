@@ -5890,6 +5890,21 @@ Take back control of your personal information with the browser designed for dat
 /* Button in the translation banner that translates the current web page */
 "translation.banner.translate" = "Translate";
 
+/* Accessibility label of the button that closes the translation download sheet without downloading */
+"translation.download-sheet.close" = "Close";
+
+/* Button in the translation sheet that downloads the language pack and translates the current web page */
+"translation.download-sheet.download" = "Download and Translate";
+
+/* Explains the language pack download in the translation sheet. %@ is the page's language, e.g. Spanish */
+"translation.download-sheet.message" = "This one-time download lets you translate %@ pages privately on your device.";
+
+/* Size of the language pack download in the translation sheet. %@ is a formatted file size, e.g. 23 MB */
+"translation.download-sheet.size" = "Download size: %@";
+
+/* Title of the sheet asking to download what's needed to translate pages in a language on the device, e.g. Download Spanish language pack?. %@ is the page's language */
+"translation.download-sheet.title" = "Download %@ language pack?";
+
 /* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
 "vcard.add-contact.parse-failure" = "Unable to add contact. Try opening the contact file from Downloads instead.";
 

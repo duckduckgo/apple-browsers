@@ -28,6 +28,7 @@ public protocol PageTranslationBridging: AnyObject {
 }
 
 public protocol PageTranslating: Sendable {
+    func isInstalled(_ pairID: String) -> Bool
     /// Makes the pair ready to translate, reporting download progress from 0 to 1; only 1 when it's installed.
     func prepare(_ pairID: String) -> AsyncThrowingStream<Double, Error>
     func translate(_ units: [PageTranslationUnit], pairID: String) async throws -> [PageTranslationUpdate]

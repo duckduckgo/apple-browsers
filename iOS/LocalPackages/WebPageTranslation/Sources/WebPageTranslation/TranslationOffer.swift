@@ -25,11 +25,14 @@ public struct TranslationOffer: Equatable, Sendable {
     public let target: String
     /// The manifest key of the pair, which names the model to load.
     public let pairID: String
+    /// The pair's download size, shown before downloading it.
+    public let downloadBytes: Int64
 
-    public init(source: String, target: String, pairID: String) {
+    public init(source: String, target: String, pairID: String, downloadBytes: Int64) {
         self.source = source
         self.target = target
         self.pairID = pairID
+        self.downloadBytes = downloadBytes
     }
 }
 
@@ -68,7 +71,8 @@ extension TranslationManifest {
         // Return first match, since device languages are ordered by preference
         for target in targets where target != source {
             if let (pairID, pair) = pair(from: source, to: target) {
-                let offer = TranslationOffer(source: pair.sourceLanguage, target: pair.targetLanguage, pairID: pairID)
+                let offer = TranslationOffer(source: pair.sourceLanguage, target: pair.targetLanguage, pairID: pairID,
+                                             downloadBytes: pair.totalBytes)
                 // The user reads the page's language, just not as their first: offer it in the menu. Otherwise, show the banner.
                 return targets.contains(source) ? .menuOnly(offer) : .banner(offer)
             }

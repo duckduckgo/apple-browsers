@@ -52,6 +52,10 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightHex: 0x000000, lightOpacity: 0.42, darkHex: 0xffffff, darkOpacity: 0.6)
         case .spinnerFinal:
             return DynamicColor(lightColor: .green60, darkColor: .green30)
+
+        /// Duck.ai
+        case .duckAIWebViewBackground:
+            return DynamicColor(lightHex: 0xFFFFFF, darkHex: 0x111111)
         }
     }
 }

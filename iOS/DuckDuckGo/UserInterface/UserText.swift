@@ -2220,9 +2220,10 @@ public struct UserText {
     static func subscriptionWithdrawConfirmFeaturesMessage(features: String) -> String {
         let localized = NSLocalizedString("subscription.withdraw.confirm.features.message",
                                            value: "%@ stop working once you confirm.",
-                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai.")
+                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.")
         return String(format: localized, features)
     }
+    public static let subscriptionWithdrawConfirmFeatureAdvancedDuckAI = NSLocalizedString("subscription.withdraw.confirm.feature.advanced.duckai", value: "advanced Duck.ai models", comment: "Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models")
     public static let subscriptionWithdrawConfirmButton = NSLocalizedString("subscription.withdraw.confirm.button", value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
     public static let subscriptionWithdrawKeepButton = NSLocalizedString("subscription.withdraw.keep.button", value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")
     public static let subscriptionNotSubscribed = NSLocalizedString("subscription.not.subscribed", value: "Not Subscribed", comment: "Subscription status shown after the user withdrew from the subscription contract")
@@ -2916,7 +2917,7 @@ public struct UserText {
             public static let chatWithAI = NSLocalizedString("onboarding.downloadReason.chatWithAI", value: "Chat with AI\nprivately", comment: "Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let removeAI = NSLocalizedString("onboarding.downloadReason.removeAI", value: "Disable\nAI features", comment: "Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let blockAds = NSLocalizedString("onboarding.downloadReason.blockAds", value: "Block ads\nand pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation.")
-            public static let vpn = NotLocalizedString("onboarding.downloadReason.vpn", value: "VPN-protect my connection", comment: "Label for the option to set up the app to protect the user's connection with a VPN.")
+            public static let vpn = NotLocalizedString("onboarding.downloadReason.vpn", value: "Protect connection with VPN", comment: "Label for the option to set up the app to protect the user's connection with a VPN.")
 
             /// Single-line labels for the list layout (VPN experiment treatment).
             public enum List {
@@ -2931,13 +2932,13 @@ public struct UserText {
         public enum TryVPN {
             public static let title = NotLocalizedString("onboarding.tryVPN.title", value: "Try our VPN free for 7 days", comment: "Title of the onboarding screen offering a VPN free trial to users who chose VPN as their download reason.")
             public static let message = NotLocalizedString("onboarding.tryVPN.message", value: "The VPN is part of an optional DuckDuckGo paid subscription.", comment: "Message of the onboarding screen offering a VPN free trial.")
-            public static let footer = NotLocalizedString("onboarding.tryVPN.footer", value: "The subscription also includes personal information removal, identity theft restoration and additional AI models with higher usage", comment: "Small print on the onboarding screen offering a VPN free trial, listing the other subscription features.")
+            public static let footer = NotLocalizedString("onboarding.tryVPN.footer", value: "Our subscription also includes Personal Information Removal, Identity Theft Restoration, and more AI models with higher limits in Duck.ai.", comment: "Small print on the onboarding screen offering a VPN free trial, listing the other subscription features.")
             public static let cta = NotLocalizedString("onboarding.tryVPN.cta", value: "Try for Free", comment: "Button on the onboarding screen to start the VPN free trial.")
         }
 
         public enum SubscriptionReminder {
-            public static let title = NotLocalizedString("onboarding.subscriptionReminder.title", value: "If you change your mind…", comment: "Title of the onboarding screen shown to users who chose VPN as their download reason but didn't subscribe.")
-            public static let message = NotLocalizedString("onboarding.subscriptionReminder.message", value: "Add the subscription anytime in **Settings > Subscription**", comment: "Message of the onboarding screen telling users where to subscribe later. The text between ** is shown in bold.")
+            public static let title = NotLocalizedString("onboarding.subscriptionReminder.title", value: "If you change your mind", comment: "Title of the onboarding screen shown to users who chose VPN as their download reason but didn't subscribe.")
+            public static let message = NotLocalizedString("onboarding.subscriptionReminder.message", value: "Add the subscription anytime in **Settings > DuckDuckGo Subscription**.", comment: "Message of the onboarding screen telling users where to subscribe later. The text between ** is shown in bold.")
             public static let cta = NotLocalizedString("onboarding.subscriptionReminder.cta", value: "Next", comment: "Button to continue to the next onboarding screen.")
         }
 
@@ -3007,8 +3008,9 @@ public struct UserText {
             public static let cta = NSLocalizedString("onboarding.browsers.cta", value: "Choose Your Browser", comment: "Button to change the default browser")
 
             public static let titleGenericDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-generic", value: "You’re in the right place!\nProtections activated.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation.")
+            public static let titleVPNDownloadReasonExperiment = NotLocalizedString("onboarding.downloadReason.comparison.title-vpn", value: "You’re in the right place!\nVPN protections available.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose VPN as their download reason. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let titleNoAIDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-no-ai", value: "You’re in the right place!\nAI features disabled.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation.")
-            public static let vpnSubscriptionFooter = NotLocalizedString("onboarding.downloadReason.comparison.vpn.footer", value: "VPN is included with a paid DuckDuckGo subscription.", comment: "Note below the onboarding browser comparison chart for users who chose VPN as their download reason.")
+            public static let vpnSubscriptionFooter = NotLocalizedString("onboarding.downloadReason.comparison.vpn.footer", value: "VPN available with a paid subscription.", comment: "Note below the onboarding browser comparison chart for users who chose VPN as their download reason.")
             public static let titleNoAdsDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-no-ads", value: "You’re in the right place!\nAd Blocking activated.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation.")
         }
 
@@ -3524,6 +3526,14 @@ public struct UserText {
     // MARK: - vCard Contact Links
     public static let vcardAddContactParseFailure = NSLocalizedString("vcard.add-contact.parse-failure", value: "Unable to add contact. Try opening the contact file from Downloads instead.", comment: "Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content)")
     public static let vcardContactAdded = NSLocalizedString("vcard.contact-added", value: "Contact added", comment: "Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts")
+
+    // MARK: - Web Page Translation
+    public static let translationBannerTitle = NSLocalizedString("translation.banner.title", value: "Translate this page?", comment: "Title of the banner offering to translate a web page that is in another language")
+    public static let translationBannerTranslateButton = NSLocalizedString("translation.banner.translate", value: "Translate", comment: "Button in the translation banner that translates the current web page")
+
+    public static func translationBannerSubtitle(source: String, target: String) -> String {
+        String(format: NSLocalizedString("translation.banner.subtitle", value: "%1$@ to %2$@", comment: "Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to"), source, target)
+    }
 
     // MARK: - OmniBar Long Press Menu
     public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")

@@ -6,6 +6,7 @@
   {"path": "DebugServer", "testTargets": ["DebugServerTests"]},
   {"path": "HangMetrics", "testTargets": ["HangMetricsTests"]},
   {"path": "ICSParser"},
+  {"path": "LlamaRuntime"},
   {"path": "LocalModels"},
   {"path": "Infrastructure/DesignResourcesKit"},
   {

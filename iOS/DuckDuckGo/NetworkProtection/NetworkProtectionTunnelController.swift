@@ -352,6 +352,16 @@ final class NetworkProtectionTunnelController: VPNConnectionContextProvidingTunn
         }
     }
 
+    /// Whether the VPN tunnel is up. Unlike `isConnected`, `false` while it's still connecting or reasserting.
+    var isTunnelUp: Bool {
+        get async {
+            guard let tunnelManager = await self.tunnelManager else {
+                return false
+            }
+            return tunnelManager.connection.status == .connected
+        }
+    }
+
     private func startWithError(suppressNotificationAuthorizationRequest: Bool = false) async throws {
         let tunnelManager: NETunnelProviderManager
 

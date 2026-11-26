@@ -251,6 +251,10 @@ protocol TabDelegate: AnyObject {
     func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool)
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool)
+
+    /// Whether a prompt such as a notification banner, find in page, the Duck Player pill or a Dax dialog is already on screen,
+    /// so the tab skips its own.
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool
 }
 
 extension TabDelegate {
@@ -286,5 +290,7 @@ extension TabDelegate {
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
 
     func searchToken(for tab: TabViewController) -> String? { nil }
+
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool { false }
 
 }

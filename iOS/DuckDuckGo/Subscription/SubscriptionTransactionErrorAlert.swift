@@ -50,32 +50,58 @@ enum SubscriptionTransactionErrorAlert {
         }
     }
 
+    /// The label of the button that closes the alert. From onboarding there's no Settings screen to go back to.
+    static func dismissButtonTitle(for messageType: MessageType, isPresentedFromOnboarding: Bool) -> String {
+        switch messageType {
+        case .activeSubscription:
+            return UserText.subscriptionFoundCancel
+        case .appStore:
+            return UserText.actionOK
+        case .backend, .general:
+            return isPresentedFromOnboarding ? UserText.actionOK : UserText.subscriptionBackendErrorButton
+        }
+    }
+
     /// Builds the Alert for the given message type. Caller provides dismiss and optional restore actions.
     static func alert(
         for messageType: MessageType,
+        isPresentedFromOnboarding: Bool = false,
         onDismiss: @escaping () -> Void,
         onRestore: (() -> Void)? = nil
     ) -> Alert {
+        let dismissTitle = Text(dismissButtonTitle(for: messageType, isPresentedFromOnboarding: isPresentedFromOnboarding))
         switch messageType {
         case .activeSubscription:
             return Alert(
                 title: Text(UserText.subscriptionFoundTitle),
                 message: Text(UserText.subscriptionFoundText),
-                primaryButton: .cancel(Text(UserText.subscriptionFoundCancel), action: onDismiss),
+                primaryButton: .cancel(dismissTitle, action: onDismiss),
                 secondaryButton: .default(Text(UserText.subscriptionFoundRestore), action: onRestore ?? onDismiss)
             )
         case .appStore:
             return Alert(
                 title: Text(UserText.subscriptionAppStoreErrorTitle),
                 message: Text(UserText.subscriptionAppStoreErrorMessage),
-                dismissButton: .cancel(Text(UserText.actionOK), action: onDismiss)
+                dismissButton: .cancel(dismissTitle, action: onDismiss)
             )
         case .backend, .general:
             return Alert(
                 title: Text(UserText.subscriptionBackendErrorTitle),
                 message: Text(UserText.subscriptionBackendErrorMessage),
-                dismissButton: .cancel(Text(UserText.subscriptionBackendErrorButton), action: onDismiss)
+                dismissButton: .cancel(dismissTitle, action: onDismiss)
             )
         }
+    }
+}
+
+private struct IsPaywallPresentedFromOnboardingKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Whether the paywall was presented from the onboarding flow, as opposed to Settings or a promo.
+    var isPaywallPresentedFromOnboarding: Bool {
+        get { self[IsPaywallPresentedFromOnboardingKey.self] }
+        set { self[IsPaywallPresentedFromOnboardingKey.self] = newValue }
     }
 }

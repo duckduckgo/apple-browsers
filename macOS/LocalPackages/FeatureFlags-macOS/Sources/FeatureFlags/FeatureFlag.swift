@@ -639,9 +639,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219360966399299?focus=true
     case aiChatDragPromptBar
 
-    /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
-    /// Internal-only for the first version.
-    /// https://app.asana.com/1/137249556945/task/1219665121531469
+    /// Offers on-device page summaries and lets Duck.ai run them locally: Apple Intelligence where it's available,
+    /// otherwise a downloadable model run by llama.cpp. Internal-only for the first version.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220647281509936
     case aiChatLocalModels
 
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
@@ -731,12 +731,6 @@ public enum FeatureFlag: String, CaseIterable {
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
-
-    /// Cohorts for the autoconsent heuristic action experiment
-    public enum HeuristicActionCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
 
     /// Cohorts for the onboarding Chrome extension install experiment
     public enum OnboardingChromeExtensionCohort: String, FeatureFlagCohortDescribing {
@@ -967,7 +961,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSync:
             Config(source: .remoteReleasable(SyncSubfeature.aiChatSync))
         case .heuristicAction:
-            Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
+            Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction))
         case .heuristicHitTest:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AutoconsentSubfeature.heuristicHitTest), category: .popupBlocking)
         case .popupMutationObserver:

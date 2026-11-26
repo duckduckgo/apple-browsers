@@ -35,6 +35,8 @@ enum SuggestionRowIcon: Equatable {
     case pin
     /// Double speech-bubble glyph for the "View all chats" row.
     case chats
+    /// Duck.ai logo on the redesigned Ask Duck.ai row: one colour, or full colour when highlighted.
+    case duckAI(highlighted: Bool)
 }
 
 /// One row in the unified UTI suggestions list. Pure data — carries no actions.

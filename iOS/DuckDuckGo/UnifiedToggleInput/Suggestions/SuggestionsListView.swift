@@ -104,6 +104,7 @@ struct SuggestionsListView: View {
                     onFire: { frame in viewModel.fireDeleteRow(id: row.id, sourceRect: frame) })
             }
             .accessibilityIdentifier(row.accessibilityID)
+            .modifier(AskDuckAIRowAccessibilityLabel(row: row))
             .listRowInsets(rowInsets(for: row))
             .listRowBackground(rowBackground(for: row))
             .modifier(SeparatorTrailingToContentModifier())
@@ -237,6 +238,7 @@ private struct SuggestionRowButton: View {
         }
         .buttonStyle(SuggestionRowButtonStyle(isSelected: row.id == viewModel.selectedRowID, restingBackground: restingBackground))
         .accessibilityIdentifier(row.accessibilityID)
+        .modifier(AskDuckAIRowAccessibilityLabel(row: row))
         .onHover { isHovering in
             if isHovering { viewModel.selectedRowID = row.id }
         }
@@ -365,6 +367,20 @@ private struct SuggestionsCardListView: View {
                 guard let id else { return }
                 withAnimation { proxy.scrollTo(id) }
             }
+        }
+    }
+}
+
+/// Reads the redesigned Ask Duck.ai row as "Ask Duck.ai, <query>"; every other row keeps its default label.
+private struct AskDuckAIRowAccessibilityLabel: ViewModifier {
+    let row: SuggestionRow
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if case .duckAI = row.icon, let query = row.subtitle {
+            content.accessibilityLabel(AskDuckAIRowAppearance.accessibilityLabel(query: query))
+        } else {
+            content
         }
     }
 }

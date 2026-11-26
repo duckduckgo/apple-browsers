@@ -565,7 +565,8 @@ class SuggestionTrayViewController: UIViewController {
         let querySubject = CurrentValueSubject<String, Never>("")
         let source = SearchSuggestionsSource(loader: loader,
                                              query: { querySubject.value },
-                                             aiChatSettings: aiChatSettings)
+                                             aiChatSettings: aiChatSettings,
+                                             featureFlagger: featureFlagger)
         popoverSearchSource = source
         popoverSearchLoader = loader
 

@@ -54,10 +54,7 @@ struct SuggestionRowView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Image(uiImage: row.icon.glyph)
-                .resizable()
-                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .tintIfAvailable(iconColor)
+            icon
 
             VStack(alignment: .leading, spacing: 0) {
                 Group {
@@ -96,6 +93,18 @@ struct SuggestionRowView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        if case .duckAI(let isHighlighted) = row.icon {
+            AskDuckAIRowIcon(isHighlighted: isHighlighted, tint: iconColor)
+        } else {
+            Image(uiImage: row.icon.glyph)
+                .resizable()
+                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                .tintIfAvailable(iconColor)
+        }
     }
 
     @ViewBuilder

@@ -89,32 +89,21 @@ epoch_of_pid() { on_target 'date -j -f "%a %b %d %T %Y" "$(ps -o lstart= -p "$1"
 WINDOW_JS='function run(argv) { ObjC.import("CoreGraphics"); var l = ObjC.castRefToObject($.CGWindowListCopyWindowInfo($.kCGWindowListOptionOnScreenOnly, 0)); var n = 0; for (var i = 0; i < l.count; i++) { var w = l.objectAtIndex(i); if (w.objectForKey("kCGWindowOwnerPID").intValue == parseInt(argv[0]) && w.objectForKey("kCGWindowLayer").intValue == 0) n++; } return n; }'
 window_count() { on_target 'osascript -l JavaScript -e "$1" "$2" 2>/dev/null || echo 0' "$WINDOW_JS" "$1"; }
 
-# DerivedData for a checkout: Xcode's folder for its workspace (newest if several), else the runner's
-# <checkout>/.build/DerivedData if it exists. Prints nothing when neither exists.
-derived_data_of() {
-    local workspace="$1/DuckDuckGo.xcworkspace" d best="" newest=0 mtime
-    for d in "$HOME"/Library/Developer/Xcode/DerivedData/*/; do
-        [[ "$(/usr/libexec/PlistBuddy -c 'Print :WorkspacePath' "$d/info.plist" 2>/dev/null)" == "$workspace" ]] || continue
-        mtime=$(stat -f %m "$d")
-        (( mtime > newest )) && { newest=$mtime; best=${d%/}; }
-    done
-    [[ -z "$best" && -d "$1/.build/DerivedData" ]] && best="$1/.build/DerivedData"
-    printf '%s' "$best"
-}
-
-# Which DerivedData to build into, and why: $VERIFY_DERIVED_DATA, this checkout's, the main checkout's
-# (a worktree shares it, so its first build is incremental), else a new one where the runner puts it.
+# Which DerivedData to build into, and why: $VERIFY_DERIVED_DATA, else <checkout>/.build/DerivedData-verify: this
+# checkout's if it exists (a --base worktree has its own), else the main checkout's (worktrees share it, so a
+# worktree's first build is incremental). Never Xcode's or another build's: a DerivedData keeps the package manifests
+# as first evaluated, so one built without SPM_FORCE_DEBUG=1 (Xcode, a Debug build) keeps AppKitExtensions without
+# DEBUG. Only verify.sh builds into this one, always with the flag.
 resolve_derived_data() {
-    local worktree=$1 main dd
+    local worktree=$1 main dd=".build/DerivedData-verify"
     if [[ -n "${VERIFY_DERIVED_DATA:-}" ]]; then echo "$VERIFY_DERIVED_DATA	VERIFY_DERIVED_DATA"; return; fi
-    dd=$(derived_data_of "$worktree")
-    if [[ -n "$dd" ]]; then echo "$dd	this checkout"; return; fi
+    if [[ -d "$worktree/$dd" ]]; then echo "$worktree/$dd	this checkout"; return; fi
     main=$(git -C "$worktree" worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')
     if [[ -n "$main" && "$main" != "$worktree" ]]; then
-        dd=$(derived_data_of "$main")
-        if [[ -n "$dd" ]]; then echo "$dd	main checkout $main"; return; fi
+        if [[ -d "$main/$dd" ]]; then echo "$main/$dd	main checkout $main"; return; fi
+        echo "$main/$dd	new in the main checkout (first build is a full build)"; return
     fi
-    echo "$worktree/.build/DerivedData	new (first build is a full build)"
+    echo "$worktree/$dd	new (first build is a full build)"
 }
 
 build_ax() {
@@ -309,6 +298,13 @@ build)
     fi
     build_end=$(date +%s)
     rm -rf "$build_lock"
+    # The app counts as a production build (LetsMove, real pixels, no AutomationServer) when AppKitExtensions misses
+    # DEBUG. Read from the compile commands, so only a build that compiled it can tell.
+    if grep -E -- '-module-name AppKitExtensions ' "$RUN_DIR/build.log" | grep -qv -- '-DDEBUG'; then
+        echo "PACKAGES NOT DEBUG: AppKitExtensions compiled without DEBUG (manifest evaluated without SPM_FORCE_DEBUG=1)."
+        echo "  Build into a DerivedData only verify.sh uses: remove $DERIVED_DATA and build again."
+        exit 2
+    fi
     app="$DERIVED_DATA/Build/Products/$CONFIGURATION/$APP_NAME.app"
     exe="$app/Contents/MacOS/$APP_NAME"
     [[ -x "$exe" ]] || { echo "BUILD PRODUCT MISSING: $exe"; exit 2; }

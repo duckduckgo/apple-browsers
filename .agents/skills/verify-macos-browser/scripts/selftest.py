@@ -35,6 +35,7 @@ FIX = {
     "build is current": {
         "signing certificate": f"{SIGNING_DOC} (the Developer ID certificate and the CI profiles from match)",
         "match Direct": f"{SIGNING_DOC} (the Developer ID certificate and the CI profiles from match)",
+        "PACKAGES NOT DEBUG": f"remove the DerivedData named and rerun ({SIGNING_DOC})",
         "BROKEN BUILD PRODUCT": "remove the app target's assetcatalog_output under DerivedData's Build/Intermediates.noindex, rerun",
         "": "fix the first error in host/build.log; after switching branches, 'has no member' for code that is there is a "
             "stale module: move DerivedData aside and rerun",
@@ -210,7 +211,8 @@ class Run:
         def build():
             code, out = self.sh("host", "build", harness.ROOT, "--no-launch")
             if code:
-                return _last(out) if "BROKEN BUILD PRODUCT" not in out else out[out.index("BROKEN"):].splitlines()[0]
+                marker = next((m for m in ("BROKEN BUILD PRODUCT", "PACKAGES NOT DEBUG") if m in out), None)
+                return out[out.index(marker):].splitlines()[0] if marker else _last(out)
             with open(os.path.join(self.folder, "host", "build.json")) as f:
                 self.info["app"] = json.load(f)["app"]
             self.info["derived_data"] = re.search(r"^DerivedData: (.*)$", out, re.M)[1]

@@ -195,7 +195,10 @@ copied to a VM with `tar` over ssh), so Gatekeeper doesn't assess it.
   (`isDebugBuild`: pixel dry run, AutomationServer, staging services) and WideEvent (the validation log) keep
   `DEBUG`. Other packages' `#if DEBUG` code isn't compiled: `callingSymbol()` in Common, the 2-minute privacy
   configuration refresh (30 minutes here), pixels' `test=1` (dry run, so none are sent).
-- Debug and CI don't share build products: the first CI build in a DerivedData is a full build.
+- The flag reaches a package only when Xcode evaluates its manifest, and a DerivedData keeps manifests as first
+  evaluated. So `build` uses its own `.build/DerivedData-verify` (the main checkout's, shared by worktrees), never
+  Xcode's, and its first build is a full build. A build that compiles AppKitExtensions without `DEBUG` stops with
+  `PACKAGES NOT DEBUG`: remove that DerivedData. Don't point `VERIFY_DERIVED_DATA` at one Xcode uses.
 
 ## Stop and ask the user
 

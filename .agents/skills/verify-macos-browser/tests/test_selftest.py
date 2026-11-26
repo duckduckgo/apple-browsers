@@ -70,6 +70,14 @@ class FixTests(unittest.TestCase):
             self.assertIn("SKILL.md, Signing", selftest.fix_for("build is current", why), why)
         self.assertIn("SKILL.md, Signing", selftest.fix_for("build signed with Developer ID", "x"))
 
+    def test_a_build_whose_packages_miss_debug_names_that_failure(self):
+        run = selftest.Run("/tmp/20261119-120000-selftest-abcd")
+        run.sh = lambda *a, **k: (2, "DerivedData: /dd (this checkout)\\nPACKAGES NOT DEBUG: AppKitExtensions compiled "
+                                     "without DEBUG (x).\\n  Build into a DerivedData only verify.sh uses: remove /dd\\n")
+        why = dict(run.host_steps())["build is current"]()
+        self.assertTrue(why.startswith("PACKAGES NOT DEBUG"), why)
+        self.assertIn("remove the DerivedData", selftest.fix_for("build is current", why))
+
     def test_every_proof_step_shares_the_proof_fix(self):
         self.assertEqual(selftest.fix_for("prove must_fail.py", "FAIL: …"), selftest.FIX["proof"])
 

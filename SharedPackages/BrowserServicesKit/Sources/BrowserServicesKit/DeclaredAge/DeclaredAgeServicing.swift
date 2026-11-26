@@ -36,7 +36,6 @@ public protocol DeclaredAgeServicing {
 public extension DeclaredAgeServicing {
 
     func isRequestRequired() async throws -> Bool {
-        return true
         if #available(iOS 26.4, macOS 26.4, *) {
             return try await !AgeRangeService.shared.requiredRegulatoryFeatures.isEmpty
         }

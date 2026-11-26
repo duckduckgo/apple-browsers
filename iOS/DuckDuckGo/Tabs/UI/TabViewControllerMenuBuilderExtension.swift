@@ -1265,6 +1265,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         let content = TranslateMenuRow.content(for: offer, state: state, locale: .current)
         return BrowsingMenuEntry.regular(name: content.name,
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.translate : DesignSystemImages.Glyphs.Size24.translate,
+                                         showNotificationDot: content.showsDot,
                                          isEnabled: content.isEnabled) { [weak self] in
             switch state {
             case .idle:

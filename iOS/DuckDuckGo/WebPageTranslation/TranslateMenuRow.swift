@@ -20,23 +20,25 @@
 import Foundation
 import WebPageTranslation
 
-/// What the browsing menu's translate row says, and whether it can be tapped, for the page's translation state.
+/// What the browsing menu's translate row says, whether it can be tapped and whether it repeats the menu button's dot,
+/// for the page's translation state.
 enum TranslateMenuRow {
 
     struct Content: Equatable {
         let name: String
         let isEnabled: Bool
+        let showsDot: Bool
     }
 
     static func content(for offer: TranslationOffer, state: PageTranslationSession.State, locale: Locale) -> Content {
         switch state {
         case .idle:
             let language = locale.localizedString(forLanguageCode: offer.target) ?? offer.target
-            return Content(name: UserText.translationMenuTranslate(language: language), isEnabled: true)
+            return Content(name: UserText.translationMenuTranslate(language: language), isEnabled: true, showsDot: false)
         case .translating:
-            return Content(name: UserText.translationMenuTranslating, isEnabled: false)
+            return Content(name: UserText.translationMenuTranslating, isEnabled: false, showsDot: false)
         case .partiallyTranslated, .fullyTranslated:
-            return Content(name: UserText.translationMenuShowOriginal, isEnabled: true)
+            return Content(name: UserText.translationMenuShowOriginal, isEnabled: true, showsDot: true)
         }
     }
 }

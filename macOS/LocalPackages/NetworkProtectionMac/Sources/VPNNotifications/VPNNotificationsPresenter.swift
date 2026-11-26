@@ -154,6 +154,12 @@ public final class VPNNotificationsPresenter: NSObject, VPNNotificationsPresenti
         showNotification(.expiredEntitlement, content)
     }
 
+    public func showSignedOutNotification() {
+        let content = notificationContent(title: UserText.vpnSignedOutNotificationTitle,
+                                          subtitle: UserText.vpnSignedOutNotificationBody)
+        showNotification(.signedOut, content)
+    }
+
     public func showSnoozingNotification(duration: TimeInterval) {
         assertionFailure("macOS does not support VPN snooze")
     }
@@ -192,6 +198,7 @@ public enum VPNNotificationIdentifier: String {
     case connected = "ddg-vpn.notification.connected"
     case superseded = "ddg-vpn.notification.superseded"
     case expiredEntitlement = "ddg-vpn.notification.expired-entitlement"
+    case signedOut = "ddg-vpn.notification.signed-out"
     case test = "ddg-vpn.notification.test"
     case debug = "ddg-vpn.notification.debug"
     case strictRoutingReminder = "ddg-vpn.notification.strict-routing-reminder"

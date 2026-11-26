@@ -47,7 +47,7 @@ struct ResponsiveSearchFieldView: View {
             RoundedRectangle(cornerRadius: 16)
                 .renderAwareBackgroundFill()
                 .frame(minHeight: fieldHeight, maxHeight: fieldHeight)
-                .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
+                .designSystemShadow(.searchField)
                 .makeAccentable()
 
             HStack(spacing: 0) {

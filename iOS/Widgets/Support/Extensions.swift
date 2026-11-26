@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import SwiftUI
 import WidgetKit
 
@@ -59,7 +60,7 @@ extension View {
     @ViewBuilder
     func iOS26TileShadow() -> some View {
         if #available(iOSApplicationExtension 26.0, *) {
-            self.shadow(color: Color(designSystemColor: .shadowSecondary), radius: 12, x: 0, y: 8)
+            self.designSystemShadow(.searchField)
         } else {
             self
         }

@@ -723,26 +723,6 @@ class MainViewController: UIViewController {
 
     let onboardingManager: OnboardingManaging
     
-    private var searchTokenExperiment: SearchTokenExperiment {
-        SearchTokenExperiment(featureFlagger: featureFlagger, statisticsStore: statisticsStore)
-    }
-
-    private lazy var searchTokenFetcher: SearchTokenFetcher = {
-        let settings = SearchTokenExperimentSettings(privacyConfigurationManager: privacyConfigurationManager)
-        return SearchTokenFetcher(requester: SearchTokenRequest(tokenURL: .searchToken),
-                                  ttlProvider: { settings.tokenTTL },
-                                  windowProvider: { settings.refreshWindow },
-                                  onFetchResult: { result in
-            PixelKit.fire(SearchTokenPixel.fetch(result: result.rawValue), frequency: .dailyAndCount)
-        }, onTokenRefreshed: { [weak self] in
-            // Fired from the fetcher's background context; the refresh is MainActor + iOS 18.4-only.
-            Task { @MainActor in
-                guard #available(iOS 18.4, *) else { return }
-                self?.webExtensionManager?.performSearchTokenRefresh()
-            }
-        })
-    }()
-
     /// Whether the ad-blocking rollout's Duck Player default (disable) should be applied at onboarding
     /// completion. It runs only when the rollout is active *and* the user didn't set Duck Player
     /// themselves during onboarding — the download-reason Block Ads flow includes a Duck
@@ -1093,7 +1073,8 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
         viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
@@ -1308,7 +1289,8 @@ class MainViewController: UIViewController {
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization,
-                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                      duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -3123,7 +3105,6 @@ class MainViewController: UIViewController {
             tabs: tabManager.allTabsModel.tabs,
             browsingMode: tabManager.currentBrowsingMode.pixelParamValue)
         skipSERPFlow = true
-        warmSearchTokenIfEligible()
 
         /// Dismiss any keyboard restored by WKWebView when returning to foreground
         /// with the tab switcher visible. The tab switcher uses .overCurrentContext so
@@ -4913,7 +4894,9 @@ class MainViewController: UIViewController {
     private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
         let subscriptionFlowViewController = makeSubscriptionFlowViewController(
             redirectURLComponents: redirectURLComponents,
-            includesPostPurchaseOnboarding: true
+            includesPostPurchaseOnboarding: true,
+            subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
+            onFlowEvent: nil
         )
 
         let presenter = topMostPresentedViewController() ?? self
@@ -4928,9 +4911,16 @@ class MainViewController: UIViewController {
         presenter.present(navigationController, animated: true)
     }
 
-    /// - Parameter includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    /// - Parameters:
+    ///   - includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    ///   - subscriptionExperimentAttributionProvider: The experiments sent with a purchase made in this flow.
+    ///   - onFlowEvent: Called with what happens in this flow. A restore still reports if the flow was closed meanwhile.
+    ///   - isPresentedFromOnboarding: Whether the onboarding flow presents the paywall, so its error alerts don't point back to Settings.
     private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
-                                                    includesPostPurchaseOnboarding: Bool) -> UIViewController {
+                                                    includesPostPurchaseOnboarding: Bool,
+                                                    subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding,
+                                                    onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
+                                                    isPresentedFromOnboarding: Bool = false) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
             privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -4955,8 +4945,10 @@ class MainViewController: UIViewController {
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
+            subscriptionExperimentAttributionProvider: subscriptionExperimentAttributionProvider,
+            onFlowEvent: onFlowEvent,
             onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
-        ))
+        ).environment(\.isPaywallPresentedFromOnboarding, isPresentedFromOnboarding))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController
     }
@@ -5672,8 +5664,11 @@ class MainViewController: UIViewController {
 
     private func updateAIChatSelectedModel(for request: AIChatOpeningRequest) {
         guard request.shouldPresent, let modelID = request.modelID else { return }
-        // The model picked in onboarding applies to the onboarding chat only, so new chats don't start on it.
-        unifiedToggleInputCoordinator?.updateSelectedModel(modelID, persistsSelection: request.source != .onboarding)
+        unifiedToggleInputCoordinator?.updateSelectedModel(modelID, origin: openingModelOrigin(of: request.source))
+    }
+
+    private func openingModelOrigin(of source: AIChatEntryPointSource) -> UTIOpeningModelOrigin {
+        source == .onboarding ? .onboarding : .user
     }
 
     /// Tags the tab about to load Duck.ai with its door, any address-bar hand-over and the native prompt flow.
@@ -5885,6 +5880,12 @@ extension MainViewController: BrowserChromeDelegate {
 
     var omniBar: any OmniBar {
         viewCoordinator.omniBar
+    }
+
+    var addressBarChromeView: UIView {
+        let barView = omniBar.barView
+        guard let toolbar = viewCoordinator.toolbar, barView.isDescendant(of: toolbar) else { return barView }
+        return toolbar.capsuleView
     }
 
     func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
@@ -7546,21 +7547,6 @@ extension MainViewController: OmniBarDelegate {
         // Omnibar got focus. Lift minimal chrome bar above keyboard.
         dismissFloatingContextualInputIfPresented()
         refreshMinimalChromeBottomAnchor()
-        warmSearchTokenIfEligible()
-    }
-
-    /// Proactively warms the search token for enrolled treatment users when the search input begins editing.
-    /// Called from every "editing began" entry point. Safe to over-call:
-    /// the fetcher's refresh-ahead window coalesces redundant triggers.
-    func warmSearchTokenIfEligible() {
-        guard searchTokenExperiment.cohort == .treatment else { return }
-        // The token is UA-bound. Warm it with the UA the SERP navigation will use: the tab's desktop
-        // state resolved through the same `agent(forUrl:isDesktop:)` the WebView applies. With no current
-        // tab (e.g. an empty new tab) fall back to the same default a new tab uses (`Tab.init` sets
-        // `desktop = isLargeWidth`, Tab.swift:156) so iPad, which navigates desktop, requests a desktop token.
-        let isDesktop = currentTab?.tabModel.isDesktop ?? AppWidthObserver.shared.isLargeWidth
-        let userAgent = DefaultUserAgentManager.shared.userAgent(isDesktop: isDesktop, url: .ddg)
-        Task { await searchTokenFetcher.fetchIfNeeded(userAgent: userAgent) }
     }
 
     func onDidEndEditing() {
@@ -8140,6 +8126,11 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool {
+        notificationView != nil || findInPageView?.isHidden == false || tab.isDuckPlayerPillVisible
+            || tab.daxContextualOnboardingController != nil
+    }
+
     func tabDidLoadPageForAppRatingPrompt(_ tab: TabViewController) {
         promoCoordinationService?.registerAppRatingPromptUsage()
     }
@@ -8159,16 +8150,6 @@ extension MainViewController: TabDelegate {
 
     /// Far longer than any real search, short enough to keep the URL well inside server limits.
     private static let maxSelectionSearchQueryLength = 500
-
-    func searchToken(for tab: TabViewController) -> String? {
-        if let token = searchTokenFetcher.retrieveToken() {
-            return token
-        } else {
-            // No live token for this SERP nav — warm now so a follow-up request finds one.
-            warmSearchTokenIfEligible()
-            return nil
-        }
-    }
 
     var isEmailProtectionSignedIn: Bool {
         emailManager.isSignedIn
@@ -9979,7 +9960,15 @@ extension MainViewController: OnboardingDelegate {
         // The onboarding continues with its own VPN setup, so skip the subscription onboarding after purchase.
         let paywall = makeSubscriptionFlowViewController(
             redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue),
-            includesPostPurchaseOnboarding: false
+            includesPostPurchaseOnboarding: false,
+            subscriptionExperimentAttributionProvider: PaywallEntryExperimentAttributionProvider(
+                wrapping: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
+                entry: PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry
+            ),
+            onFlowEvent: { [weak self] event in
+                self?.contextualOnboardingPixelReporter.measureTryVPNPaywallEvent(event)
+            },
+            isPresentedFromOnboarding: true
         )
         let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)
         navigationController.onDismiss = onDismiss
@@ -10013,15 +10002,6 @@ extension MainViewController: OnboardingDelegate {
     func onboardingCompleted(controller: UIViewController) {
         markOnboardingSeen()
         daxDialogsManager.checkTimeLimit()
-
-        // Enrol new users into the Search Token experiment. Must run here (post-onboarding) so we only
-        // enrol new users; enrollIfEligible function additionally excludes returning users (reinstallers).
-        searchTokenExperiment.enrollIfEligible()
-        // The launch-time embedded-extension sync ran before enrollment (cohort was still nil), so
-        // resync now — otherwise a treatment user's first session never loads the search-token extension.
-        if #available(iOS 18.4, *) {
-            webExtensionLifecycleCoordinator?.sync()
-        }
 
         appSettings.applyAdBlockingRolloutDuckPlayerDefaultsIfNeeded(rolloutActive: shouldApplyAdBlockingRolloutDuckPlayerDefault)
 
@@ -10753,13 +10733,6 @@ extension MainViewController {
         guard let scope = currentDuckAIWideEventFlowScope else { return }
         duckAIWideEventInstrumentation.frontendSubmissionAcknowledged(scope: scope)
     }
-}
-
-// MARK: - SearchTokenProviding
-
-@available(iOS 18.4, *)
-extension MainViewController: SearchTokenProviding {
-    func currentToken() -> String? { searchTokenFetcher.retrieveToken() }
 }
 
 /// What `loadUrlInNewTab` was asked to show, kept together while it waits for a data clear or a transition.

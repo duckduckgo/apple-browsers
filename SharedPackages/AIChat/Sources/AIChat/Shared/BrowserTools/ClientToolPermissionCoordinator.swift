@@ -49,7 +49,7 @@ public struct ClientToolPermissionPrompt: Equatable, Sendable {
     public var offersAllowForChat = false
 }
 
-/// Allow once · Always · Never, or the prompt closed without a choice. A prompt left unanswered until
+/// Allow once · Always · Don't Allow, or the prompt closed without a choice. A prompt left unanswered until
 /// the deadline is denied for that call, as Duck.ai asks again after `cancelled`.
 public enum ClientToolPermissionDecision: Equatable, Sendable {
     case allowOnce
@@ -258,11 +258,12 @@ public final class ClientToolPermissionCoordinator: ClientToolPermissionCoordina
         default: decision
         }
         let answer: BrowserToolPromptAnswer = switch decision {
-        // `allowAccess` and `dontAllow` are offered only by `requestAccess` prompts.
+        // `allowAccess` is offered only by `requestAccess` prompts.
         case .allowOnce, .allowAccess: .allowOnce
         case .allowForChat: .allowForChat
         case .always: .always
-        case .never, .dontAllow: .never
+        case .never: .never
+        case .dontAllow: .dontAllow
         case .dismiss: .dismiss
         }
         closePrompt(entry, answer: answer)

@@ -337,7 +337,8 @@ extension Tab {
     }
 
     var localHistoryDomains: Set<String> {
-        var localHistoryDomains = Set<String>()
+        // "Ask about page" on a link reads pages with the tab's session but records no visit.
+        var localHistoryDomains = self.pageContext?.linkedPageDomains ?? []
         for visit in localHistory {
             if let host = visit.historyEntry?.url.host {
                 localHistoryDomains.insert(host)

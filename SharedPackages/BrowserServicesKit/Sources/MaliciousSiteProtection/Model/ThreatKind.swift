@@ -18,7 +18,7 @@
 
 import Foundation
 
-public enum ThreatKind: String, CaseIterable, Codable, CustomStringConvertible {
+public enum ThreatKind: String, CaseIterable, Codable, CustomStringConvertible, Sendable {
     public var description: String { rawValue }
 
     case phishing

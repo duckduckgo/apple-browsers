@@ -223,6 +223,10 @@ final class MainCoordinator {
             await appSwitcherSnapshotCleaner.clearSnapshots()
         }
         WebContentFreezeMonitor.reportFreezeEndedWithApp(featureFlagger: featureFlagger)
+        let translationOfferProvider = Self.makeTranslationOfferProvider(translationModels: translationModels,
+                                                                         featureFlagger: featureFlagger,
+                                                                         privacyConfig: privacyConfigurationManager)
+
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
@@ -263,6 +267,7 @@ final class MainCoordinator {
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
                                 eventHub: eventHub,
+                                pageTranslationOfferProvider: translationOfferProvider,
                                 clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         // Start before any tab saves a decision, so each saved site keeps its favicon.
         _ = tabManager.sitePermissionsFavicons
@@ -479,7 +484,6 @@ final class MainCoordinator {
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
-            searchTokenProvider: controller,
             scriptletConfiguration: makeScriptletConfiguration(),
             eventHub: eventHub,
             isAppleSurrogateRedirectionEnabled: { [webExtensionAvailability] in
@@ -487,6 +491,7 @@ final class MainCoordinator {
             }
         )
         self.webExtensionManager = webExtensionManager
+        webExtensionManager.installUserAllowlistNotifier(privacyConfigurationManager: privacyConfigurationManager)
 
         let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -627,12 +632,6 @@ final class MainCoordinator {
         if controller.adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
         }
-        let searchTokenCohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort
-        // The search-token extension pulls its token over native messaging,
-        // so skipping this extension builds without that support (Alpha)
-        if searchTokenCohort == .treatment, nativeMessagingSupport.isSupported {
-            enabledTypes.insert(.searchToken)
-        }
         return enabledTypes
     }
 
@@ -688,6 +687,21 @@ final class MainCoordinator {
                         featureFlagger: featureFlagger,
                         memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: false) }),
                         fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
+    }
+
+    /// One detector shared by every tab, so detection never sets up TranslateKit per page.
+    private static func makeTranslationOfferProvider(translationModels: TranslationModels?,
+                                                     featureFlagger: FeatureFlagger,
+                                                     privacyConfig: PrivacyConfigurationManaging) -> PageTranslationOfferProvider? {
+        guard let translationModels else {
+            return nil
+        }
+        let capability = WebPageTranslationCapability.create(featureFlagger: featureFlagger)
+        let settings = WebPageTranslationSettings(privacyConfigurationManager: privacyConfig)
+        return PageTranslationOfferProvider(detector: PageLanguageDetector(),
+                                            manifest: { translationModels.manifest },
+                                            capability: capability,
+                                            settings: settings)
     }
 
     // MARK: - Public API

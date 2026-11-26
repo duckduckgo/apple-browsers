@@ -14,6 +14,10 @@ inputs:
   test-outcome:
     description: Outcome of the preceding test step. The crash injector only runs when this is 'failure'.
     required: true
+  report-retries:
+    description: List tests that passed on retry and set the passed-on-retry output.
+    required: false
+    default: 'false'
   working-directory:
     description: Directory to run the steps in. Composite actions do not inherit the caller's defaults.run.working-directory, so this must be passed explicitly.
     required: true
@@ -25,6 +29,11 @@ inputs:
     description: Directory containing .ips crash reports.
     required: false
     default: ~/Library/Logs/DiagnosticReports
+
+outputs:
+  passed-on-retry:
+    description: Whether the JUnit report contains a failed test that passed on retry.
+    value: ${{ steps.render.outputs.passed-on-retry }}
 
 runs:
   using: composite
@@ -44,6 +53,7 @@ runs:
           --crash-reports-dir "${{ inputs.crash-reports-dir }}"
 
     - name: Render test report
+      id: render
       if: always()
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -51,12 +61,15 @@ runs:
         junit="${{ inputs.junit-path }}"
         if [[ -f "$junit" ]]; then
           crash_details="${junit%.xml}-crash-details.json"
-          crash_details_arg=()
+          report_args=()
           if [[ -f "$crash_details" ]]; then
-            crash_details_arg=(--crash-details-json "$crash_details")
+            report_args+=(--crash-details-json "$crash_details")
+          fi
+          if [[ "${{ inputs.report-retries }}" == "true" ]]; then
+            report_args+=(--report-retries)
           fi
           "${GITHUB_WORKSPACE}/scripts/render-test-report.py" \
             --junit "$junit" \
             --title "${{ inputs.title }}" \
-            "${crash_details_arg[@]}"
+            "${report_args[@]}"
         fi

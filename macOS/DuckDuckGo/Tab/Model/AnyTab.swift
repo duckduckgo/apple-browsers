@@ -152,7 +152,7 @@ enum AnyTab: Identifiable {
         case .loaded(let tab):
             tab.localHistoryDomains
         case .unloaded(let unloaded):
-            Set(unloaded.localHistoryIDs?.compactMap(\.host) ?? [])
+            Set((unloaded.localHistoryIDs?.compactMap(\.host) ?? []) + (unloaded.linkedPageDomains ?? []))
         }
     }
 

@@ -55,6 +55,7 @@ final class SwitchToTabBrowserTool: BrowserTool {
         guard let token = context.ownerWindowToken,
               let collection = AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token,
                                                                            in: windowControllersManager),
+              BrowserToolTargetTab.actionableTab(withID: targetTabID, in: collection) != nil,
               let index = collection.indexInAllTabs(where: { $0.uuid == targetTabID }),
               let tab = collection.selectTab(at: index) else {
             return .failure(.notFound)

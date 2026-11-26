@@ -259,6 +259,7 @@ public extension DesignSystemImages {
             public static var feedback: DesignSystemImage { .init(resource: .feedback16) }
             public static var feedbackAlert: DesignSystemImage { .init(resource: .feedbackAlert16) }
             public static var feedbackBlank: DesignSystemImage { .init(resource: .feedbackBlank16) }
+            public static var file: DesignSystemImage { .init(resource: .file16) }
             public static var findInPage: DesignSystemImage { .init(resource: .findInPage16) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch16) }
             public static var findSearchGradientColor: DesignSystemImage { .init(resource: .findSearchGradientColor16) }
@@ -531,6 +532,7 @@ public extension DesignSystemImages {
             public static var covid: DesignSystemImage { .init(resource: .covid24) }
             public static var creditCard: DesignSystemImage { .init(resource: .creditCard24) }
             public static var crossRecolorable: DesignSystemImage { .init(resource: .crossRecolorable24) }
+            public static var crossSolid: DesignSystemImage { .init(resource: .crossSolid24) }
             public static var crossSolidSmall: DesignSystemImage { .init(resource: .crossSolidSmall24) }
             public static var cut: DesignSystemImage { .init(resource: .cut24) }
             public static var deviceAll: DesignSystemImage { .init(resource: .deviceAll24) }
@@ -646,6 +648,7 @@ public extension DesignSystemImages {
             public static var sheetOpen: DesignSystemImage { .init(resource: .sheetOpen24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
+            public static var stopSolid: DesignSystemImage { .init(resource: .stopSolid24) }
             public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }
@@ -664,6 +667,7 @@ public extension DesignSystemImages {
             public static var textSelect: DesignSystemImage { .init(resource: .textSelect24) }
             public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
             public static var timer: DesignSystemImage { .init(resource: .timer24) }
+            public static var translate: DesignSystemImage { .init(resource: .translate24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }
             public static var unpin: DesignSystemImage { .init(resource: .unpin24) }

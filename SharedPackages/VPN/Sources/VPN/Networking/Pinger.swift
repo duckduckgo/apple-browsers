@@ -290,7 +290,7 @@ extension Pinger {
         let seq = self.nextSeq()
         sentIndices.insert(Int(seq))
 
-        Logger.networkProtection.log("PING \(self.ip.debugDescription): \(MemoryLayout<ICMP>.size) data bytes")
+        Logger.networkProtectionPinger.debug("PING \(self.ip.debugDescription): \(MemoryLayout<ICMP>.size) data bytes")
         // form ICMP packet with id, icmp_seq, timestamp and checksum
         let icmp = ICMP(id: id, index: seq)
 
@@ -353,7 +353,7 @@ extension Pinger {
                     return self.ip
                 }()
                 let r = PingResult(ip: srcIp, bytesCount: bytesCount, seq: Int(response.index), ttl: Int(ip.ip_ttl), time: end - icmp.timestamp)
-                Logger.networkProtection.log("\(r.bytesCount) bytes from \(r.ip.debugDescription): icmp_seq=\(r.seq) ttl=\(r.ttl) time=\(r.time * 1000) ms")
+                Logger.networkProtectionPinger.debug("\(r.bytesCount) bytes from \(r.ip.debugDescription): icmp_seq=\(r.seq) ttl=\(r.ttl) time=\(r.time * 1000) ms")
 
                 return .success(r)
 

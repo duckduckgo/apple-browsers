@@ -22,6 +22,20 @@ def parse_locator(s):
     return {"sel": sel}
 
 
+def launch_profile(flags, profile=None):
+    """The app's -launchProfile JSON: a proof's PROFILE plus the pinned flags, or None when there is nothing to set."""
+    body = dict(profile or {})
+    if flags:
+        body["featureFlags"] = dict(sorted(flags.items()))
+    return json.dumps(body, sort_keys=True) if body else None
+
+
+def launch_profile_line(log):
+    """The newest LAUNCH_PROFILE_ result in the app's log, or None."""
+    lines = [line[line.index("LAUNCH_PROFILE_"):].strip() for line in log.splitlines() if "LAUNCH_PROFILE_" in line]
+    return lines[-1] if lines else None
+
+
 def native(locator):
     loc = parse_locator(locator)
     if "web" in loc:
@@ -37,6 +51,7 @@ class Device:
         self.web_port, self.runner_port = env.ports(device)
         self.token = env.token()
         os.environ["AUTOMATION_TOKEN"] = self.token
+        env.touch(device)   # keeps an explored or kept simulator from being reaped as idle while it's in use
         self.web = Web(self.web_port, self.token)
         self._driver = None
         self._udid = None
@@ -190,12 +205,13 @@ class Device:
         except (IndexError, ValueError):
             return dict(ok=False, reason=(p.stdout[-200:] + p.stderr[-200:]).strip())
 
-    def launch(self, fresh=False, flags=None, language=None):
+    def launch(self, fresh=False, flags=None, language=None, profile=None):
         """Install this worktree's build if it changed, start the runner, launch, and wait for a real ready signal.
 
         `flags` pins remote feature flags for this launch ({"newTabPageRedesign": True}) on top of env.PINNED_FLAGS, so
         a proof never depends on what the live privacy configuration currently says. `language` ({"language": "fr",
-        "locale": "fr_FR"}) replaces env.LANGUAGE, the en-US the text locators assume.
+        "locale": "fr_FR"}) replaces env.LANGUAGE, the en-US the text locators assume. `profile` is a proof's PROFILE:
+        more launch profile keys (settings, tabs, Duck.ai options), for a fresh install.
         """
         t0 = time.time()
         flags = {**env.PINNED_FLAGS, **(flags or {})}
@@ -212,21 +228,39 @@ class Device:
         problem = env.flag_problem(flags)
         if problem:
             raise Failed(problem)
-        # The app applies -ff. overrides only for internal users or in UI-test mode (AppDependencyProvider's
-        # allowOverrides). UI-test mode is the narrower switch: it doesn't turn on internal-only features.
+        # The app applies flag overrides only for internal users or in UI-test mode (AppDependencyProvider's
+        # allowOverrides). UI-test mode is the narrower switch: it doesn't turn on internal-only features, so the
+        # profile leaves out "internalUser". The -ff. arguments repeat the flags for builds from before launch
+        # profiles, such as an older base of `prove --base`, which ignore -launchProfile.
         args = ["isRunningUITests", "-AppleLanguages", f"({language['language']})", "-AppleLocale", language["locale"]]
+        launch_args = launch_profile(flags, profile)
+        if launch_args:
+            args += ["-launchProfile", launch_args]
         args += [a for name, on in sorted(flags.items()) for a in (f"-ff.{name}", "true" if on else "false")]
+        since = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() - 1))
         self.driver.launch({"AUTOMATION_TOKEN": self.token}, args)
         self.language = dict(language)
         if self.web.wait_ready(60) is None:
             raise Failed(f"AutomationServer on [::1]:{self.web_port} never reported /contentBlockerReady true")
+        profile_result = self.launch_profile_line(since) if launch_args else None
+        if profile_result and not profile_result.startswith("LAUNCH_PROFILE_APPLIED"):
+            raise Failed(f"the app rejected the launch profile: {profile_result}", profile=launch_args)
+        if profile and not profile_result:   # the -ff. fallback covers flags only
+            raise Failed("this build ignored -launchProfile, so PROFILE can't be applied: it needs a build with launch "
+                         "profiles", profile=launch_args)
         self.driver.wait({"id": "searchEntry"}, "exists", 20)
         ident = self.identity()
         if not ident.get("ok"):
             raise Failed("running app is not this worktree's build", build=ident)
         return dict(device=self.device, udid=self.udid, bundleId=BUNDLE, build=ident, driver=self.driver.name, flags=flags,
-                    language=language, ports=dict(web=self.web_port, runner=self.runner_port), readyMs=int((time.time() - t0) * 1000),
-                    runnerStarted=bool(started))
+                    launchProfile=profile_result, language=language, ports=dict(web=self.web_port, runner=self.runner_port),
+                    readyMs=int((time.time() - t0) * 1000), runnerStarted=bool(started))
+
+    def launch_profile_line(self, since):
+        """The app's LAUNCH_PROFILE_ line logged since `since`, or None (a build from before launch profiles)."""
+        p = run(["xcrun", "simctl", "spawn", self.udid, "log", "show", "--start", since, "--style", "compact",
+                 "--predicate", f'subsystem == "{BUNDLE}" AND category == "LaunchProfile"'], timeout=60)
+        return launch_profile_line(p.stdout)
 
     # capture conditions -----------------------------------------------------------
     def ui(self, option, value=None):
@@ -259,9 +293,10 @@ class Device:
         from .driver import APP_FOREGROUND
         return self.driver.state() == APP_FOREGROUND
 
-    def reset(self, flags=None, language=None):
-        """Known state: reinstall (clears app data, per-site permissions and pixel frequency state), launch, one blank tab."""
-        return self.launch(fresh=True, flags=flags, language=language)
+    def reset(self, flags=None, language=None, profile=None):
+        """Known state: reinstall (clears app data, per-site permissions and pixel frequency state), launch, one blank tab,
+        or the proof's PROFILE."""
+        return self.launch(fresh=True, flags=flags, language=language, profile=profile)
 
     def terminate(self):
         self.driver.terminate()

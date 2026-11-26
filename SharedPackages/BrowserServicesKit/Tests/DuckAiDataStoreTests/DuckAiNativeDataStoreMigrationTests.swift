@@ -50,6 +50,32 @@ final class DuckAiNativeDataStoreMigrationTests: XCTestCase {
         super.tearDown()
     }
 
+    func testSetupCompletionReportsSuccessAndPublishesState() throws {
+        let completed = expectation(description: "Database opened")
+        let store = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key) { result in
+            if case .failure(let error) = result { XCTFail("Unexpected setup error: \(error)") }
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 5)
+        XCTAssertEqual(store.setupSucceeded, true)
+        XCTAssertTrue(try store.getAllChats().isEmpty)
+    }
+
+    func testSetupCompletionReportsFailureAndDatabaseOperationsThrow() throws {
+        // A directory at the database path cannot be opened as a SQLite file.
+        try FileManager.default.createDirectory(at: databaseURL, withIntermediateDirectories: true)
+        let completed = expectation(description: "Database open failed")
+        let store = try DuckAiNativeDataStore(databaseURL: databaseURL, filesDirectoryURL: filesDirectory, key: key) { result in
+            if case .success = result { XCTFail("Expected database setup to fail") }
+            completed.fulfill()
+        }
+
+        wait(for: [completed], timeout: 5)
+        XCTAssertEqual(store.setupSucceeded, false)
+        XCTAssertThrowsError(try store.getAllChats())
+    }
+
     // MARK: - Orphaned File Cleanup
 
     func testWhenUnencryptedDbExistsThenOrphanedFilesAreDeletedOnInit() throws {

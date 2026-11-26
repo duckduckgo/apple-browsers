@@ -247,6 +247,10 @@ final class AIChatContextualWebViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        if (parent as? AIChatContextualSheetViewController)?.isChangingSurface == true,
+           browserToolsPermissionPresenter?.preservesPermissionOnSurfaceChange == true {
+            return
+        }
         if browserToolsPermissionPresenter?.isPresentingPermission != true || parent?.isBeingDismissed == true || isMovingFromParent {
             browserToolsWillLeaveScreen()
         }
@@ -683,6 +687,8 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         guard webView === self.webView else { return }
         browserToolsScript?.browserToolsDocumentDidCommit()
+        aiChatUserScript?.isAIChatPromoVisible = nil
+        aiChatUserScript?.aiChatStatusOnPage = nil
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {

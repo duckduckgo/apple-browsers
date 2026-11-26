@@ -65,7 +65,8 @@ final class AIChatSettings: AIChatSettingsProvider {
     private let notificationCenter: NotificationCenter
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: (any PixelKitFiring)?
-    
+    private let userSettings: AIChatUserSettingsStore
+
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
@@ -78,6 +79,7 @@ final class AIChatSettings: AIChatSettingsProvider {
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
+        self.userSettings = AIChatUserSettingsStore(keyValueStore: keyValueStore, notificationCenter: notificationCenter)
 
         migrateAddressBarSettingIfNeeded()
     }
@@ -222,47 +224,19 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     func enableAIChat(enable: Bool) {
-        keyValueStore.set(enable, forKey: .isAIChatEnabledKey)
-        triggerSettingsChangedNotification()
-
-        if enable {
-            PixelKit.fire(Pixel.Event.aiChatSettingsEnabled, frequency: .dailyAndCount)
-        } else {
-            PixelKit.fire(Pixel.Event.aiChatSettingsDisabled, frequency: .dailyAndCount)
-        }
+        userSettings.set(.duckAI, isOn: enable)
     }
 
     func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
-        keyValueStore.set(enable, forKey: .showAIChatBrowsingMenuKey)
-        triggerSettingsChangedNotification()
-
-        if enable {
-            PixelKit.fire(Pixel.Event.aiChatSettingsBrowserMenuTurnedOn, frequency: .dailyAndCount)
-        } else {
-            PixelKit.fire(Pixel.Event.aiChatSettingsBrowserMenuTurnedOff, frequency: .dailyAndCount)
-        }
+        userSettings.set(.browsingMenu, isOn: enable)
     }
 
     func enableAIChatAddressBarUserSettings(enable: Bool) {
-        keyValueStore.set(enable, forKey: .showAIChatAddressBarKey)
-        triggerSettingsChangedNotification()
-
-        if enable {
-            PixelKit.fire(Pixel.Event.aiChatSettingsAddressBarTurnedOn, frequency: .dailyAndCount)
-        } else {
-            PixelKit.fire(Pixel.Event.aiChatSettingsAddressBarTurnedOff, frequency: .dailyAndCount)
-        }
+        userSettings.set(.addressBar, isOn: enable)
     }
 
     func enableAIChatSearchInputUserSettings(enable: Bool) {
-        keyValueStore.set(enable, forKey: .showAIChatExperimentalSearchInputKey)
-        triggerSettingsChangedNotification()
-
-        if enable {
-            PixelKit.fire(Pixel.Event.aiChatSettingsSearchInputTurnedOn, frequency: .dailyAndCount)
-        } else {
-            PixelKit.fire(Pixel.Event.aiChatSettingsSearchInputTurnedOff, frequency: .dailyAndCount)
-        }
+        userSettings.set(.searchInput, isOn: enable)
     }
 
     /// Removes the user's selection for the AI Chat experimental search input toggle,
@@ -273,24 +247,11 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {
-        keyValueStore.set(enable, forKey: .showAIChatVoiceSearchKey)
-        triggerSettingsChangedNotification()
-
-        if enable {
-            PixelKit.fire(Pixel.Event.aiChatSettingsVoiceTurnedOn, frequency: .dailyAndCount)
-        } else {
-            PixelKit.fire(Pixel.Event.aiChatSettingsVoiceTurnedOff, frequency: .dailyAndCount)
-        }
+        userSettings.set(.voiceSearch, isOn: enable)
     }
 
     func enableAIChatTabSwitcherUserSettings(enable: Bool) {
-        keyValueStore.set(enable, forKey: .showAIChatTabSwitcherKey)
-        triggerSettingsChangedNotification()
-        if enable {
-            PixelKit.fire(Pixel.Event.aiChatSettingsTabManagerTurnedOn, frequency: .dailyAndCount)
-        } else {
-            PixelKit.fire(Pixel.Event.aiChatSettingsTabManagerTurnedOff, frequency: .dailyAndCount)
-        }
+        userSettings.set(.tabSwitcher, isOn: enable)
     }
 
     func enableAIChatTabBarUserSettings(enable: Bool) {
@@ -326,25 +287,11 @@ final class AIChatSettings: AIChatSettingsProvider {
     }
 
     func enableChatSuggestions(enable: Bool) {
-        keyValueStore.set(enable, forKey: .showChatSuggestionsKey)
-        triggerSettingsChangedNotification()
-
-        if enable {
-            PixelKit.fire(Pixel.Event.aiChatSettingsChatSuggestionsTurnedOn, frequency: .dailyAndCount)
-        } else {
-            PixelKit.fire(Pixel.Event.aiChatSettingsChatSuggestionsTurnedOff, frequency: .dailyAndCount)
-        }
+        userSettings.set(.chatSuggestions, isOn: enable)
     }
     
     func enableAutomaticContextAttachment(enable: Bool) {
-        keyValueStore.set(enable, forKey: .isAIChatAutomaticContextAttachmentEnabledKey)
-        triggerSettingsChangedNotification()
-
-        if enable {
-            PixelKit.fire(Pixel.Event.aiChatSettingsAutoContextEnabled, frequency: .dailyAndCount)
-        } else {
-            PixelKit.fire(Pixel.Event.aiChatSettingsAutoContextDisabled, frequency: .dailyAndCount)
-        }
+        userSettings.set(.automaticContextAttachment, isOn: enable)
     }
 
     func enableKeyboardAnimation(enable: Bool) {
@@ -362,11 +309,7 @@ final class AIChatSettings: AIChatSettingsProvider {
             return
         }
 
-        keyValueStore.set(mode.rawValue, forKey: .defaultOmnibarModeKey)
-        triggerSettingsChangedNotification()
-        PixelKit.fire(Pixel.Event.aiChatSettingsDefaultTogglePositionChanged,
-                      frequency: .dailyAndCount,
-                      options: .parameters(["value": mode.rawValue]))
+        userSettings.setDefaultOmnibarMode(mode)
     }
 
     // MARK: - Private
@@ -393,8 +336,7 @@ extension AIChatSettings: AIChatPageSummariesModelStoring {
             (keyValueStore.object(forKey: .pageSummariesModelKey) as? String).flatMap(AIChatPageSummariesModel.init(rawValue:)) ?? .duckAI
         }
         set {
-            keyValueStore.set(newValue.rawValue, forKey: .pageSummariesModelKey)
-            triggerSettingsChangedNotification()
+            userSettings.setPageSummariesModel(newValue)
         }
     }
 
@@ -404,6 +346,89 @@ extension AIChatSettings: AIChatPageSummariesModelStoring {
             .compactMap { [weak self] _ in self?.pageSummariesModel }
             .prepend(pageSummariesModel)
             .eraseToAnyPublisher()
+    }
+}
+
+/// The Duck.ai options a user turns on or off in Settings: saves the choice, posts `.aiChatSettingsChanged` and sends its pixel.
+/// Needs no app service, so a launch profile can write through it before the app's services start.
+struct AIChatUserSettingsStore {
+
+    enum Toggle: CaseIterable {
+        case duckAI, browsingMenu, addressBar, searchInput, voiceSearch, tabSwitcher, chatSuggestions, automaticContextAttachment
+    }
+
+    private let keyValueStore: KeyValueStoring
+    private let notificationCenter: NotificationCenter
+    /// Resolved at fire time, so a store made before `PixelKit.setUp` still sends pixels. Return nil to send none.
+    private let pixelFiring: () -> (any PixelKitFiring)?
+
+    init(keyValueStore: KeyValueStoring,
+         notificationCenter: NotificationCenter = .default,
+         pixelFiring: @escaping () -> (any PixelKitFiring)? = { PixelKit.shared }) {
+        self.keyValueStore = keyValueStore
+        self.notificationCenter = notificationCenter
+        self.pixelFiring = pixelFiring
+    }
+
+    func set(_ toggle: Toggle, isOn: Bool) {
+        keyValueStore.set(isOn, forKey: toggle.storageKey)
+        notificationCenter.post(name: .aiChatSettingsChanged, object: nil)
+        pixelFiring()?.fire(isOn ? toggle.turnedOnPixel : toggle.turnedOffPixel, frequency: .dailyAndCount)
+    }
+
+    func setDefaultOmnibarMode(_ mode: DefaultOmnibarMode) {
+        keyValueStore.set(mode.rawValue, forKey: .defaultOmnibarModeKey)
+        notificationCenter.post(name: .aiChatSettingsChanged, object: nil)
+        pixelFiring()?.fire(Pixel.Event.aiChatSettingsDefaultTogglePositionChanged,
+                            frequency: .dailyAndCount,
+                            options: .parameters(["value": mode.rawValue]))
+    }
+
+    func setPageSummariesModel(_ model: AIChatPageSummariesModel) {
+        keyValueStore.set(model.rawValue, forKey: .pageSummariesModelKey)
+        notificationCenter.post(name: .aiChatSettingsChanged, object: nil)
+    }
+}
+
+private extension AIChatUserSettingsStore.Toggle {
+
+    var storageKey: String {
+        switch self {
+        case .duckAI: return .isAIChatEnabledKey
+        case .browsingMenu: return .showAIChatBrowsingMenuKey
+        case .addressBar: return .showAIChatAddressBarKey
+        case .searchInput: return .showAIChatExperimentalSearchInputKey
+        case .voiceSearch: return .showAIChatVoiceSearchKey
+        case .tabSwitcher: return .showAIChatTabSwitcherKey
+        case .chatSuggestions: return .showChatSuggestionsKey
+        case .automaticContextAttachment: return .isAIChatAutomaticContextAttachmentEnabledKey
+        }
+    }
+
+    var turnedOnPixel: Pixel.Event {
+        switch self {
+        case .duckAI: return .aiChatSettingsEnabled
+        case .browsingMenu: return .aiChatSettingsBrowserMenuTurnedOn
+        case .addressBar: return .aiChatSettingsAddressBarTurnedOn
+        case .searchInput: return .aiChatSettingsSearchInputTurnedOn
+        case .voiceSearch: return .aiChatSettingsVoiceTurnedOn
+        case .tabSwitcher: return .aiChatSettingsTabManagerTurnedOn
+        case .chatSuggestions: return .aiChatSettingsChatSuggestionsTurnedOn
+        case .automaticContextAttachment: return .aiChatSettingsAutoContextEnabled
+        }
+    }
+
+    var turnedOffPixel: Pixel.Event {
+        switch self {
+        case .duckAI: return .aiChatSettingsDisabled
+        case .browsingMenu: return .aiChatSettingsBrowserMenuTurnedOff
+        case .addressBar: return .aiChatSettingsAddressBarTurnedOff
+        case .searchInput: return .aiChatSettingsSearchInputTurnedOff
+        case .voiceSearch: return .aiChatSettingsVoiceTurnedOff
+        case .tabSwitcher: return .aiChatSettingsTabManagerTurnedOff
+        case .chatSuggestions: return .aiChatSettingsChatSuggestionsTurnedOff
+        case .automaticContextAttachment: return .aiChatSettingsAutoContextDisabled
+        }
     }
 }
 

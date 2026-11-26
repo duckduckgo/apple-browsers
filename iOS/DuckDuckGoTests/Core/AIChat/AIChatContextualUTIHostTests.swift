@@ -281,6 +281,29 @@ final class AIChatContextualUTIHostTests: XCTestCase {
         XCTAssertNil(sut.attachedContextURL)
     }
 
+    /// A quick action submits at once, before the new chat's document commits. The input then binds to the page the
+    /// sheet still shows, and it must not take on the old chat's state: a stop button and a promo the new chat never showed.
+    func test_newChatSubmittedBeforeItsDocumentCommits_doesNotHandTheOldChatsStateToTheInput() async {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [])
+        defer { fixture.cleanUp() }
+        makeSUT(start: .expandedPreSubmit)
+        let userScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
+        sut.bindToUserScript(userScript)
+        sut.unifiedToggleInputDidSubmitPrompt("first", modelId: nil, tools: nil, reasoningEffort: nil,
+                                              attachments: .none, termsAccepted: false)
+        fixture.handler.isAIChatPromoVisible = true
+        _ = await fixture.handler.getResponseState(params: ["status": "streaming"], message: MockUserScriptMessage(name: "test", body: [:]))
+        XCTAssertEqual(userScript.inputBoxHandler?.aiChatStatus, .streaming)
+
+        sut.prepareForNewChat()
+        sut.unifiedToggleInputDidSubmitPrompt("quick action", modelId: nil, tools: nil, reasoningEffort: nil,
+                                              attachments: .none, termsAccepted: false)
+
+        XCTAssertNotNil(userScript.inputBoxHandler, "the first prompt of the new chat binds the input")
+        XCTAssertNotEqual(userScript.inputBoxHandler?.aiChatStatus, .streaming)
+        XCTAssertNil(userScript.inputBoxHandler?.isAIChatPromoVisible)
+    }
+
     func test_autoAttachOn_didCommitURLChangeAlone_doesNotFireAttachCallback() {
         autoAttachEnabled = true
         var didRequestAttach = false

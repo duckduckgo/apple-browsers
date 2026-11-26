@@ -422,7 +422,7 @@ struct ClientToolPromptInstrumentationTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
-        (ClientToolPermissionDecision.allowOnce, BrowserToolPromptAnswer.allowOnce), (.always, .always), (.never, .never), (.dismiss, .dismiss)
+        (ClientToolPermissionDecision.allowOnce, BrowserToolPromptAnswer.allowOnce), (.always, .always), (.never, .never), (.dontAllow, .dontAllow), (.dismiss, .dismiss)
     ])
     func anAnsweredPromptReportsItsAnswerAndTimeWithoutAChatNumber(decision: ClientToolPermissionDecision,
                                                                    answer: BrowserToolPromptAnswer) async throws {

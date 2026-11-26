@@ -215,7 +215,11 @@ public final class PixelKit {
         (session ?? source ?? "default").replacingOccurrences(of: "/", with: "-")
     }
     private let dateGenerator: () -> Date
-    public private(set) static var shared: PixelKit?
+    private static let sharedInstance = Locked<PixelKit?>(wrappedValue: nil)
+    public private(set) static var shared: PixelKit? {
+        get { sharedInstance.wrappedValue }
+        set { sharedInstance.wrappedValue = newValue }
+    }
     private let appVersion: String
     private let defaultHeaders: [String: String]
     private let fireRequest: FireRequest

@@ -153,7 +153,8 @@ enum NewTabPagePixel: PixelKit.Event {
     // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
     case searchSubmitted
     /// `hasPastedText`: the prompt carried pasted-text chips (`has_pasted_text`, as on iOS).
-    case promptSubmitted(hasPastedText: Bool)
+    /// `newChatModel`: set only while new chats start on the default.
+    case promptSubmitted(hasPastedText: Bool, newChatModel: DuckAINewChatModelPixelParameters?)
     case omnibarModeChanged(mode: OmnibarMode)
     case omnibarHidden
     case omnibarShown
@@ -232,10 +233,8 @@ enum NewTabPagePixel: PixelKit.Event {
             return [
                 "mode": mode.rawValue
             ]
-        case .promptSubmitted(let hasPastedText):
-            return [
-                "has_pasted_text": String(hasPastedText)
-            ]
+        case .promptSubmitted(let hasPastedText, let newChatModel):
+            return ["has_pasted_text": String(hasPastedText)].merging(newChatModel?.parameters ?? [:]) { current, _ in current }
         case .newTabPageLoadingTime(let duration):
             // "loadingTime" is reported in **milliseconds**
             return [

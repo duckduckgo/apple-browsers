@@ -76,11 +76,27 @@ public final class KeychainManager: KeychainManaging {
 
     // MARK: - Types
 
+    /// Backlog events, each about the keychain item stored under `key`.
     public enum Pixel: Equatable {
-        case deallocatedWithBacklog
-        case dataAddedToTheBacklog
-        case dataWroteFromBacklog
-        case failedToWriteDataFromBacklog
+        /// The manager was deallocated while the item was still queued, so it was never written.
+        case deallocatedWithBacklog(key: String)
+        /// A write failed because the keychain was unavailable, so the item was queued.
+        case dataAddedToTheBacklog(key: String)
+        /// A backlog retry wrote the queued item.
+        case dataWroteFromBacklog(key: String)
+        /// A backlog retry failed to write the queued item with a permanent error.
+        case failedToWriteDataFromBacklog(key: String)
+
+        /// The key of the keychain item the event is about.
+        public var key: String {
+            switch self {
+            case .deallocatedWithBacklog(let key),
+                    .dataAddedToTheBacklog(let key),
+                    .dataWroteFromBacklog(let key),
+                    .failedToWriteDataFromBacklog(let key):
+                return key
+            }
+        }
     }
     public typealias KeychainAttributes = [CFString: Any]
 
@@ -134,7 +150,9 @@ public final class KeychainManager: KeychainManaging {
         backlogRetryWorkItem?.cancel()
         cancellables.removeAll()
         if !writingBacklog.isEmpty {
-            self.pixelHandler.handle(pixel: .deallocatedWithBacklog)
+            for key in writingBacklog.keys.sorted() {
+                self.pixelHandler.handle(pixel: .deallocatedWithBacklog(key: key))
+            }
             Logger.keychainManager.error("Deallocating with \(self.writingBacklog.count, privacy: .public) unprocessed backlog items")
         }
     }
@@ -220,7 +238,7 @@ public final class KeychainManager: KeychainManaging {
     private func addToWritingBacklog(_ data: Data, forKey key: String, isBacklogRetry: Bool) {
         writingBacklog[key] = data
         if !isBacklogRetry {
-            pixelHandler.handle(pixel: .dataAddedToTheBacklog)
+            pixelHandler.handle(pixel: .dataAddedToTheBacklog(key: key))
         }
         scheduleBacklogRetryIfNeeded()
     }
@@ -382,15 +400,15 @@ public final class KeychainManager: KeychainManaging {
         Logger.keychainManager.log("Processing writing backlog with \(self.writingBacklog.count, privacy: .public) items")
 
         let backlogCopy = writingBacklog
-        var processedSuccessfully = 0
+        var writtenKeys: [String] = []
         var stillPending = 0
-        var failed = 0
+        var failedKeys: [String] = []
 
-        for (key, data) in backlogCopy {
+        for (key, data) in backlogCopy.sorted(by: { $0.key < $1.key }) {
             do {
                 switch try internalStore(data: data, forKey: key, isBacklogRetry: true) {
                 case .written:
-                    processedSuccessfully += 1
+                    writtenKeys.append(key)
                     Logger.keychainManager.log("Successfully processed backlog item for key: \(key, privacy: .public)")
                 case .requeued:
                     // Still unavailable: internalStore already re-added it to the backlog. Not a
@@ -399,7 +417,7 @@ public final class KeychainManager: KeychainManaging {
                     stillPending += 1
                 }
             } catch {
-                failed += 1
+                failedKeys.append(key)
                 Logger.keychainManager.error("Failed to process backlog item for key \(key, privacy: .public): \(error, privacy: .public)")
             }
         }
@@ -408,14 +426,18 @@ public final class KeychainManager: KeychainManaging {
             Logger.keychainManager.log("\(stillPending, privacy: .public) backlog items still unavailable, left queued")
         }
 
-        if processedSuccessfully > 0 {
-            Logger.keychainManager.log("Successfully processed \(processedSuccessfully, privacy: .public) backlog items")
-            self.pixelHandler.handle(pixel: .dataWroteFromBacklog)
+        if !writtenKeys.isEmpty {
+            Logger.keychainManager.log("Successfully processed \(writtenKeys.count, privacy: .public) backlog items")
+            for key in writtenKeys {
+                self.pixelHandler.handle(pixel: .dataWroteFromBacklog(key: key))
+            }
         }
 
-        if failed > 0 {
-            Logger.keychainManager.error("Failed to process \(failed, privacy: .public) backlog items")
-            self.pixelHandler.handle(pixel: .failedToWriteDataFromBacklog)
+        if !failedKeys.isEmpty {
+            Logger.keychainManager.error("Failed to process \(failedKeys.count, privacy: .public) backlog items")
+            for key in failedKeys {
+                self.pixelHandler.handle(pixel: .failedToWriteDataFromBacklog(key: key))
+            }
         }
     }
 }

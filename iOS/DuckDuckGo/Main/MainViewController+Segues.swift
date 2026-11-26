@@ -585,6 +585,7 @@ extension MainViewController {
                                                   adBlockingAvailability: adBlockingAvailability,
                                                   sitePermissionsEnabled: tabManager.isSitePermissionsEnabled)
 
+        settingsViewModel.browserToolsService = tabManager.browserToolsService
         settingsViewModel.configureSitePermissions(
             store: tabManager.sitePermissionsStore,
             favicons: tabManager.sitePermissionsFavicons,

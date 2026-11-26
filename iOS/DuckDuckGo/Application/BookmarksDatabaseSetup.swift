@@ -91,12 +91,10 @@ struct BookmarksDatabaseSetup {
             throw BookmarksDatabaseError.couldNotGetFavoritesOrder(error)
         }
 
-        var migrationHappened = false
-        var loadError: Error?
-        var migrationError: Error?
+        let migration = Locked<Swift.Result<Bool, Error>>(wrappedValue: .success(false))
         bookmarksDatabase.loadStore { context, error in
             guard let context = context, error == nil else {
-                loadError = error
+                if let error { migration.wrappedValue = .failure(BookmarksDatabaseError.couldNotPrepareDatabase(error)) }
                 return
             }
 
@@ -104,9 +102,9 @@ struct BookmarksDatabaseSetup {
             let isMissingStructure = !validator.validateInitialState(context: context, validationError: .bookmarksStructureLost)
             do {
                 try self.migrateFromLegacyCoreDataStorageIfNeeded(context)
-                migrationHappened = try self.migrateToFormFactorSpecificFavorites(context, oldFavoritesOrder)
+                migration.wrappedValue = .success(try self.migrateToFormFactorSpecificFavorites(context, oldFavoritesOrder))
             } catch {
-                migrationError = error
+                migration.wrappedValue = .failure(error)
                 return
             }
 
@@ -119,11 +117,7 @@ struct BookmarksDatabaseSetup {
             // Also bump the int passed to the assert function below.
         }
 
-        if let loadError {
-            throw BookmarksDatabaseError.couldNotPrepareDatabase(loadError)
-        } else if let migrationError {
-            throw migrationError
-        }
+        let migrationHappened = try migration.wrappedValue.get()
 
         // Perform post-setup validation
         let contextForValidation = bookmarksDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)

@@ -800,6 +800,18 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertNil(sut.onOpenSettings)
     }
 
+    func testWhenFireOnboardingDialogIsShowingThenSheetHasNoSettingsButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.fireSheetSettingsButton]
+        let daxDialogsManager = MockDaxDialogsManager()
+        daxDialogsManager.isShowingFireDialog = true
+
+        let sut = makeSUT(tabViewModel: createTabViewModel(),
+                          fireContext: .default(daxDialogsManager: daxDialogsManager),
+                          onOpenSettings: { })
+
+        XCTAssertNil(sut.onOpenSettings)
+    }
+
     func testWhenChatsSheetsShowSettingsButtonThenPixelNamesTheirSource() throws {
         mockFeatureFlagger.enabledFeatureFlags = [.fireSheetSettingsButton]
         let cases: [(ScopedFireConfirmationViewModel.FireContext, String)] = [

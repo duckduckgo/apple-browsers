@@ -166,6 +166,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     /// The settings button's pixel `source`, or `nil` for sheets that never show it (onboarding, single-tab and per-item confirmations).
     private static func settingsPixelSource(fireContext: FireContext, source: FireRequest.Source) -> String? {
         switch fireContext {
+        // Leaving onboarding for Settings would skip both onboarding outcome pixels.
+        case .default(let daxDialogsManager) where daxDialogsManager.isShowingFireDialog: return nil
         case .default: return source.rawValue
         case .deleteChats: return "chatHistory"
         case .contextualChat: return "contextualChat"

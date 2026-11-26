@@ -42,7 +42,8 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
 
     /// - Parameters:
     ///   - keychainManager: Reads and writes the keychain item.
-    ///   - userDefaults: Stores whether a token is expected to be found, used to report unexpected misses.
+    ///   - userDefaults: Stores whether a token is expected to be found, used to report unexpected misses, and whether the stored
+    ///     item's decode failure was already reported.
     ///   - field: The keychain item this storage reads and writes.
     ///   - errorEventsHandler: Receives keychain access errors, including a missing token that was expected.
     public init(keychainManager: any KeychainManaging,
@@ -81,20 +82,24 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
     }
 
     public func getTokenContainer() throws -> TokenContainer? {
+        guard case .found(let tokenContainer) = try readTokenContainer() else { return nil }
+        return tokenContainer
+    }
+
+    public func readTokenContainer() throws -> TokenContainerReadResult {
         do {
             guard let data = try keychainManager.retrieveData(forKey: field.keyValue) else {
                 Logger.subscriptionKeychain.log("Token container not found: \(self.field.rawValue, privacy: .public)")
                 verifyTokenNotFoundExpectation()
-                return nil
+                return .missing
             }
-            let result: TokenContainer? = CodableHelper.decode(jsonData: data)
-            if result == nil {
+            guard let result: TokenContainer = CodableHelper.decode(jsonData: data) else {
                 Logger.subscriptionKeychain.error("Failed to decode the token container: \(self.field.rawValue, privacy: .public)")
-                verifyTokenNotFoundExpectation()
+                reportDecodeFailureOnce()
+                return .undecodable
             }
-            return result
+            return .found(result)
         } catch {
-            verifyTokenNotFoundExpectation()
             if let error = error as? AccountKeychainAccessError {
                 errorEventsHandler(AccountKeychainAccessType.getAuthToken, error)
             } else {
@@ -107,6 +112,7 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
 
     public func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
         tokenExpected = tokenContainer != nil
+        decodeFailureReported = false
 
         do {
             guard let tokenContainer else {
@@ -133,12 +139,27 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
         }
     }
 
+    /// Reports `expectedTokenNotFound` when the keychain confirms no item is stored while a token was expected,
+    /// then stops expecting one until the next save. Read errors and undecodable items don't count as missing.
     private func verifyTokenNotFoundExpectation() {
         if tokenExpected {
             Logger.subscriptionKeychain.error("Expected token container not found: \(self.field.rawValue, privacy: .public)")
             errorEventsHandler(AccountKeychainAccessType.getAuthToken, AccountKeychainAccessError.expectedTokenNotFound)
             tokenExpected = false
         }
+    }
+
+    /// Reports `failedToDecodeKeychainData` the first time the stored item can't be decoded, then not again until the next save.
+    private func reportDecodeFailureOnce() {
+        guard !decodeFailureReported else { return }
+        decodeFailureReported = true
+        errorEventsHandler(AccountKeychainAccessType.getAuthToken, AccountKeychainAccessError.failedToDecodeKeychainData)
+    }
+
+    private var decodeFailureReportedKey: String { field.keyValue + ".decodeFailureReported" }
+    private var decodeFailureReported: Bool {
+        get { userDefaults.bool(forKey: decodeFailureReportedKey) }
+        set { userDefaults.set(newValue, forKey: decodeFailureReportedKey) }
     }
 
     private var tokenExpectedKey: String { field.keyValue + ".expected" }

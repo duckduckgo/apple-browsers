@@ -760,6 +760,50 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertNil(try backupStorage.getTokenContainer())
     }
 
+    func testRestore_undecodableBackup_throwsUndecodableDeletesIt_andTheNextRefreshRenewsIt() async throws {
+        let backupStorage = UndecodableBackupStorage()
+        let client = makeClient(backupStorage: backupStorage)
+
+        do {
+            _ = try await client.restoreFromBackup(expectedExternalID: nil)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, .undecodable)
+        }
+        XCTAssertEqual(try backupStorage.readTokenContainer(), .missing)
+        XCTAssertEqual(mockOAuthService.refreshAccessTokenCallCount, 0)
+
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await refresher.setTestingDecodedTokenContainers([newPrimary, newBackup])
+        _ = try await client.getTokens(policy: .localForceRefresh)
+        await client.waitForBackupRenewal()
+
+        XCTAssertEqual(try backupStorage.readTokenContainer(), .found(newBackup))
+    }
+
+    func testOffOn_undecodableBackupKeptWhileOff_isDeletedByTheFirstRestoreOnceOn() async throws {
+        let backupStorage = UndecodableBackupStorage()
+        var isEnabled = false
+        let client = makeClient(backupStorage: backupStorage, isBackupEnabled: { isEnabled })
+
+        do {
+            _ = try await client.restoreFromBackup(expectedExternalID: nil)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, .unavailable)
+        }
+        XCTAssertEqual(try backupStorage.readTokenContainer(), .undecodable)
+
+        isEnabled = true
+        do {
+            _ = try await client.restoreFromBackup(expectedExternalID: nil)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, .undecodable)
+        }
+        XCTAssertEqual(try backupStorage.readTokenContainer(), .missing)
+    }
+
     func testRestore_transientRefreshError_keepsBackup() async throws {
         let stored = OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR")
         try backupStorage.saveTokenContainer(stored)
@@ -1114,6 +1158,24 @@ private final class SideEffectForkRefresher: TokenRefreshing, @unchecked Sendabl
 }
 
 /// Holds one token container; deleting it always fails.
+/// Holds an item that can't be decoded until a token container is saved or the item is deleted.
+private final class UndecodableBackupStorage: AuthTokenStoring, @unchecked Sendable {
+    private var stored: TokenContainerReadResult = .undecodable
+
+    func getTokenContainer() throws -> TokenContainer? {
+        guard case .found(let tokenContainer) = stored else { return nil }
+        return tokenContainer
+    }
+
+    func readTokenContainer() throws -> TokenContainerReadResult {
+        stored
+    }
+
+    func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        stored = tokenContainer.map(TokenContainerReadResult.found) ?? .missing
+    }
+}
+
 private final class DeleteFailingTokenStorage: AuthTokenStoring {
     private(set) var stored: TokenContainer?
 

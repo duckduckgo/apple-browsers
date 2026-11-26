@@ -91,16 +91,27 @@ struct TokenBackupStore {
     /// - Parameter expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
     /// - Returns: The stored backup token container.
     /// - Throws: `TokenBackupError.unavailable` when no backup is stored, `TokenBackupError.readFailed` when reading it fails,
-    ///   otherwise the reason the backup was rejected. A rejected backup is deleted; one that is missing or can't be read is left as it is.
+    ///   `TokenBackupError.undecodable` when the stored item can't be decoded, otherwise the reason the backup was rejected.
+    ///   An undecodable or rejected backup is deleted; one that is missing or can't be read is left as it is.
     func usableBackup(expectedExternalID: String?) throws(TokenBackupError) -> TokenContainer {
-        let stored: TokenContainer?
+        let stored: TokenContainerReadResult
         do {
-            stored = try storage.getTokenContainer()
+            stored = try storage.readTokenContainer()
         } catch {
             Logger.OAuthClient.error("Failed to read the backup token: \(String(describing: error), privacy: .public)")
             throw .readFailed(underlying: error)
         }
-        guard let backup = stored else { throw .unavailable }
+        let backup: TokenContainer
+        switch stored {
+        case .found(let tokenContainer):
+            backup = tokenContainer
+        case .missing:
+            throw .unavailable
+        case .undecodable:
+            Logger.OAuthClient.log("Backup token can't be decoded, deleting it")
+            remove()
+            throw .undecodable
+        }
 
         let rejection: TokenBackupError?
         if let expectedExternalID, backup.decodedAccessToken.externalID != expectedExternalID {

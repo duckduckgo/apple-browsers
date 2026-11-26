@@ -25,7 +25,8 @@ public enum SubscriptionPixelType: Equatable {
     case getTokensError(AuthTokensCachePolicy, Error)
     case automaticSignOut(SubscriptionAutomaticSignOutPixelData, Error)
     case invalidRefreshTokenSignedOut
-    case invalidRefreshTokenRecovered
+    /// The invalid current token was recovered, by the method of the strategy that recovered it.
+    case invalidRefreshTokenRecovered(TokenRecoveryMethod?)
     case purchaseSuccessAfterPendingTransaction
     case pendingTransactionApproved
 
@@ -35,13 +36,14 @@ public enum SubscriptionPixelType: Equatable {
             (.subscriptionIsActive, .subscriptionIsActive),
             (.osDistributionActiveSubscription, .osDistributionActiveSubscription),
             (.invalidRefreshTokenSignedOut, .invalidRefreshTokenSignedOut),
-            (.invalidRefreshTokenRecovered, .invalidRefreshTokenRecovered),
             (.getTokensError, .getTokensError),
             (.purchaseSuccessAfterPendingTransaction, .purchaseSuccessAfterPendingTransaction),
             (.pendingTransactionApproved, .pendingTransactionApproved):
             return true
         case let (.automaticSignOut(lhsData, _), .automaticSignOut(rhsData, _)):
             return lhsData == rhsData
+        case let (.invalidRefreshTokenRecovered(lhsMethod), .invalidRefreshTokenRecovered(rhsMethod)):
+            return lhsMethod == rhsMethod
         default:
             return false
         }

@@ -55,8 +55,19 @@ public enum TokenRecoveryResult {
     case failed(Error)
 }
 
+/// How a token recovery strategy gets the current token container back.
+public enum TokenRecoveryMethod: String, Codable, CaseIterable {
+    /// Restoring from the backup token container.
+    case backup
+    /// Restoring the subscription from the last App Store purchase.
+    case appStore = "app_store"
+}
+
 /// One way of getting a valid current token container back.
 public protocol TokenRecoveryStrategy {
+    /// How this strategy recovers the token container.
+    var method: TokenRecoveryMethod { get }
+
     /// Attempts the recovery. On success a valid current token container is stored.
     /// - Parameter context: The state the recovery starts from.
     /// - Returns: The outcome of the recovery.

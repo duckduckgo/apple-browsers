@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import BrowserServicesKit
 import Foundation
 import Persistence
@@ -34,6 +35,7 @@ extension PromoServiceFactory {
         let delegate = DeclaredAgePromoDelegate(requester: requester,
                                                 reinstallUserDetection: reinstallUserDetection,
                                                 featureFlagger: dependencies.featureFlagger,
+                                                buildType: StandardApplicationBuildType(),
                                                 windowProvider: { windowControllersManager.lastKeyMainWindowController?.window })
 
         return InternalPromo(id: "declared-age",

@@ -506,10 +506,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 
-    /// Enables the Cookie Pop-ups Blocked promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
-    case promoQueueCookiePopupsBlockedPromo
-
     /// Enables the "Sync your bookmarks" promo (Bookmarks panel and Manage Bookmarks) in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218734?focus=true
     case promoQueueSyncSetupBookmarksPromo
@@ -635,9 +631,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219360966399299?focus=true
     case aiChatDragPromptBar
 
-    /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
-    /// Internal-only for the first version.
-    /// https://app.asana.com/1/137249556945/task/1219665121531469
+    /// Offers on-device page summaries and lets Duck.ai run them locally: Apple Intelligence where it's available,
+    /// otherwise a downloadable model run by llama.cpp. Internal-only for the first version.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220647281509936
     case aiChatLocalModels
 
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
@@ -1036,8 +1032,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .promoQueueCookiePopupsBlockedPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
         case .promoQueueSyncSetupBookmarksPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupBookmarksPromo))
         case .promoQueueSyncSetupAutofillPromo:

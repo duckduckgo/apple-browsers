@@ -1068,9 +1068,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    /// Kill switch for the Cookie Pop-ups Blocked promo.
-    case cookiePopupsBlockedPromo
-
     /// Kill switch for the "Sync your bookmarks" promo.
     case syncSetupBookmarksPromo
 

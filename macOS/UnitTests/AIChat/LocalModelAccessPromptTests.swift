@@ -44,7 +44,7 @@ final class LocalModelAccessPromptTests {
     @available(iOS 16, macOS 13, *)
     @Test("A page outside a window gets No Thanks, and no offer is counted", .timeLimit(.minutes(1)))
     func noWindowCountsNoOffer() async {
-        let answer = await makePrompt().ask(from: nil, modelName: "Apple Intelligence")
+        let answer = await makePrompt().ask(from: nil, request: .connect(AIChatLocalModelInfo(id: "apple", name: "Apple Intelligence")))
 
         #expect(answer == .declined)
         #expect(pixelFiring.actualFireCalls.isEmpty)
@@ -58,7 +58,7 @@ final class LocalModelAccessPromptTests {
         window.isReleasedWhenClosed = false
         window.contentView = webView
 
-        let answer = await makePrompt().ask(from: webView, modelName: "Apple Intelligence")
+        let answer = await makePrompt().ask(from: webView, request: .connect(AIChatLocalModelInfo(id: "apple", name: "Apple Intelligence")))
 
         #expect(answer == .declined)
         #expect(pixelFiring.actualFireCalls.isEmpty)

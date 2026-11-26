@@ -44,6 +44,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     private let pixels = PixelKitMock()
     private let capStore = NewChatHintsCapStore(keyValueStore: MockThrowingKeyValueStore())
     private let preferences = HintsTestPreferences()
+    private let stateStore = HintsTestStateStore()
     private var hintsSubscription: AnyCancellable?
 
     private static let defaultAttachmentLimits: AIChatAttachmentLimits = {
@@ -78,7 +79,8 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
             modelsService: StubHintModelsService(models: models, attachmentLimits: attachmentLimits, newChatDefault: newChatDefault),
             preferences: preferences,
             toggleModeStorage: HintsTestToggleModeStorage(),
-            stateStore: HintsTestStateStore(),
+            stateStore: stateStore,
+            updatedCreateImageFeature: UpdatedCreateImageFeature(featureFlagger: flagger),
             usageLimitsStore: usageLimitsStore,
             userDefaultModelStorage: { _ in userDefaultModelStorage },
             featureFlagger: flagger,
@@ -542,6 +544,60 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         #expect(sut.persistedModelId == Self.textOnlyModel.id)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("The Create an image hint moves this chat to an image model without making it the model new chats start on",
+          .timeLimit(.minutes(1)), arguments: [false, true])
+    func createImageHintModelSwitchStaysInThisChat(isUpdatedCreateImageOn: Bool) async throws {
+        preferences.selectedModelId = Self.textOnlyModel.id
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: isUpdatedCreateImageOn ? [.newChatHints, .updatedCreateImage] : [.newChatHints])
+        let sut = try makeSUT(featureFlagger: flagger,
+                              models: [Self.textOnlyModel, Self.everyModel])
+        try await openBlankChat(sut)
+        try #require(sut.persistedModelId == Self.textOnlyModel.id)
+
+        sut.performNewChatHint(.imageGeneration)
+
+        #expect(sut.voicePromptSubmissionConfiguration.modelId == Self.everyModel.id)
+        #expect(preferences.selectedModelId == Self.textOnlyModel.id)
+        #expect(!stateStore.lastUsedModelIDs.contains(Self.everyModel.id))
+
+        // A new chat in another tab starts on the user's model.
+        sut.deactivateToOmnibar(animateDismiss: false)
+        sut.activateForTab("tab-B")
+        #expect(sut.persistedModelId == Self.textOnlyModel.id)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("After a picker hint moves the model, a later choice in the same chat keeps the user's model for new chats, and a new chat goes back to it",
+          .timeLimit(.minutes(1)))
+    func pickerHintModelEndsWithTheChat() async throws {
+        preferences.selectedModelId = Self.textOnlyModel.id
+        let sut = try makeSUT(models: [Self.textOnlyModel, Self.everyModel])
+        let presenter = RecordingPresenter {}
+        sut.attachmentPresentingViewController = presenter
+        try await openBlankChat(sut)
+
+        sut.performNewChatHint(.photo)
+        try presenter.cancelPicker()
+        try #require(sut.persistedModelId == Self.everyModel.id)
+        sut.clearSelectedTool()
+
+        #expect(!stateStore.lastUsedModelIDs.contains(Self.everyModel.id))
+        #expect(sut.persistedModelId == Self.everyModel.id)
+
+        // Switching tabs and back keeps this chat on the hint's model.
+        sut.deactivateToOmnibar(animateDismiss: false)
+        sut.activateForTab("tab-B")
+        sut.deactivateToOmnibar(animateDismiss: false)
+        sut.activateForTab("tab-A")
+        #expect(sut.persistedModelId == Self.everyModel.id)
+
+        // A different chat in the same tab starts on the user's model.
+        sut.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+        #expect(sut.persistedModelId == Self.textOnlyModel.id)
+        #expect(preferences.selectedModelId == Self.textOnlyModel.id)
+    }
+
     private static let weeklyLimitReached: String = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -571,11 +627,20 @@ private struct StubHintModelsService: AIChatModelsProviding {
 @MainActor
 private final class HintsTestStateStore: UnifiedInputStateStoring {
     private var states: [TabUID: TabInputState] = [:]
-    let lastUsed = LastUsedInputDefaults(toggleMode: .aiChat, selectedModelID: nil, selectedReasoningMode: nil, selectedTool: nil)
+    /// The models the last-used defaults took, in order; like the real store, only a new chat's choice is taken.
+    private(set) var lastUsedModelIDs: [String] = []
+    var lastUsed: LastUsedInputDefaults {
+        LastUsedInputDefaults(toggleMode: .aiChat, selectedModelID: lastUsedModelIDs.last, selectedReasoningMode: nil, selectedTool: nil)
+    }
 
-    func state(for uid: TabUID) -> TabInputState { states[uid] ?? TabInputState(toggleMode: .aiChat) }
+    func state(for uid: TabUID) -> TabInputState {
+        states[uid] ?? TabInputState(toggleMode: .aiChat, selectedModelID: lastUsed.selectedModelID)
+    }
     func update(_ state: TabInputState, for uid: TabUID) { states[uid] = state }
-    func recordUserChoice(_ state: TabInputState, for uid: TabUID, isNewChatContext: Bool) { states[uid] = state }
+    func recordUserChoice(_ state: TabInputState, for uid: TabUID, isNewChatContext: Bool) {
+        states[uid] = state
+        if isNewChatContext, let model = state.selectedModelID { lastUsedModelIDs.append(model) }
+    }
     func commitToggleMode(_ mode: TextEntryMode) {}
     func remove(for uid: TabUID) { states.removeValue(forKey: uid) }
 }

@@ -71,7 +71,13 @@ final class UTIModelStore {
     private var modelsFetchTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
-    private var liveModelId: String?
+    /// The tab's own pick.
+    private var userModelId: String?
+    /// A model this chat moved to without the user picking it, such as for a new chat hint. It wins over the
+    /// user's pick until the chat changes, and is never saved or kept as their pick.
+    private(set) var chatOnlyModelId: String?
+
+    private var liveModelId: String? { chatOnlyModelId ?? userModelId }
 
     var onModelsUpdated: (() -> Void)?
 
@@ -117,7 +123,11 @@ final class UTIModelStore {
     }
 
     var persistedModelId: String? {
-        if let resolved = resolve(modelId: liveModelId) { return resolved }
+        persistedModelId(live: liveModelId)
+    }
+
+    private func persistedModelId(live modelId: String?) -> String? {
+        if let resolved = resolve(modelId: modelId) { return resolved }
         if let resolved = resolve(modelId: newChatModelId) { return resolved }
         return firstAccessibleModelId
     }
@@ -165,14 +175,12 @@ final class UTIModelStore {
         UTIModelSelection(modelID: liveModelId, reasoningMode: pickStore.reasoningMode)
     }
 
-    /// The model and reasoning mode the input shows, with any default filled in.
-    var shownSelection: UTIModelSelection {
-        UTIModelSelection(modelID: persistedModelId, reasoningMode: selectedReasoningMode)
-    }
-
-    /// What a tab keeps of a new chat's selection.
-    var newChatSelectionKeptOnTab: UTIModelSelection {
-        pickStore.newChatSelectionKeptOnTab(ownPick: liveSelection, shown: shownSelection)
+    /// What a tab keeps as the user's pick, and what the last-used defaults copy: without a chat-only model.
+    func selectionKeptOnTab(isNewChat: Bool) -> UTIModelSelection {
+        let shown = UTIModelSelection(modelID: persistedModelId(live: userModelId), reasoningMode: selectedReasoningMode)
+        guard isNewChat else { return shown }
+        return pickStore.newChatSelectionKeptOnTab(ownPick: UTIModelSelection(modelID: userModelId, reasoningMode: pickStore.reasoningMode),
+                                                   shown: shown)
     }
 
     /// The pick a different chat on this tab starts on; `nil` keeps the current one.
@@ -309,7 +317,8 @@ final class UTIModelStore {
     }
 
     func updateSelectedModel(_ modelId: String, isNewChatContext: Bool) {
-        liveModelId = modelId
+        userModelId = modelId
+        chatOnlyModelId = nil
         if isNewChatContext {
             pickStore.saveNewChatModel(id: modelId, shortName: models.first(where: { $0.id == modelId })?.shortName)
         }
@@ -330,9 +339,21 @@ final class UTIModelStore {
         pickStore.reasoningMode = mode
     }
 
-    func applyPersistedSelection(modelID: String?, reasoningMode: AIChatReasoningMode?) {
-        liveModelId = modelID
+    func applyPersistedSelection(modelID: String?, reasoningMode: AIChatReasoningMode?, chatOnlyModelID: String? = nil) {
+        userModelId = modelID
+        chatOnlyModelId = chatOnlyModelID
         pickStore.reasoningMode = reasoningMode
+    }
+
+    /// Moves this chat to `modelId` without making it the user's pick: new chats keep starting on theirs.
+    func switchModelForThisChat(_ modelId: String) {
+        chatOnlyModelId = modelId
+        clearStaleReasoningModeIfNeeded()
+    }
+
+    /// A different chat goes back to the user's pick.
+    func endChatOnlyModel() {
+        chatOnlyModelId = nil
     }
 
     static func resolveModels(from remoteModels: [AIChatRemoteModel], userTier: AIChatUserTier) -> [AIChatModel] {
@@ -380,8 +401,11 @@ final class UTIModelStore {
     func clearStaleModelSelectionIfNeeded() {
         guard !models.isEmpty else { return }
 
-        if let id = liveModelId, !models.contains(where: { $0.id == id && $0.entityHasAccess }) {
-            liveModelId = nil
+        if let id = userModelId, !models.contains(where: { $0.id == id && $0.entityHasAccess }) {
+            userModelId = nil
+        }
+        if let id = chatOnlyModelId, !models.contains(where: { $0.id == id && $0.entityHasAccess }) {
+            chatOnlyModelId = nil
         }
 
         if let newChatModelId = pickStore.newChatModelId,

@@ -964,7 +964,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // wrote that leaked value back into this tab's stored state.
         modelStore.applyPersistedSelection(
             modelID: state.selectedModelID,
-            reasoningMode: state.selectedReasoningMode
+            reasoningMode: state.selectedReasoningMode,
+            chatOnlyModelID: state.chatOnlyModelID
         )
         handleModelsUpdated()
         modelSelector.updateReasoningPicker()
@@ -984,6 +985,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             toggleMode: inputMode,
             attachments: attachmentsRetainedForDismiss ?? viewController.currentAttachments,
             selectedModelID: modelSelectionForTabState.modelID,
+            chatOnlyModelID: modelStore.chatOnlyModelId,
             selectedReasoningMode: modelSelectionForTabState.reasoningMode,
             selectedTool: toolsController.selectedTool,
             aiChatInputBoxVisibility: aiChatInputBoxVisibility,
@@ -993,7 +995,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private var modelSelectionForTabState: UTIModelSelection {
-        isNewChatContext ? modelStore.newChatSelectionKeptOnTab : modelStore.shownSelection
+        modelStore.selectionKeptOnTab(isNewChat: isNewChatContext)
     }
 
     /// A committed navigation replaces the tab's FE document: FE-asserted visibility/voice state
@@ -1018,6 +1020,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updated.isVoiceSessionActive = false
         if didChangeChat {
             updated.clearDraft()
+            updated.chatOnlyModelID = nil
             let isCurrentTab = tabUID == currentTabUID
             if let pick = modelStore.pickForNewChat(openedWithModelId: isCurrentTab ? openingChatModelId : nil) {
                 updated.startNewChat(on: pick)
@@ -1032,7 +1035,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// A different chat starts on the model it was opened with, else the default; an existing chat's own model is restored after this.
     private func resetModelSelectionForNewChat() {
-        guard let pick = modelStore.pickForNewChat(openedWithModelId: openingChatModelId) else { return }
+        let hadChatOnlyModel = modelStore.chatOnlyModelId != nil
+        modelStore.endChatOnlyModel()
+        guard let pick = modelStore.pickForNewChat(openedWithModelId: openingChatModelId) else {
+            if hadChatOnlyModel { handleModelsUpdated() }
+            return
+        }
         modelStore.applyPersistedSelection(modelID: pick.modelID, reasoningMode: pick.reasoningMode)
         handleModelsUpdated()
         Logger.unifiedInputState.debug("chat changed — model selection reset to '\(self.openingChatModelId ?? "new-chat default", privacy: .public)'")
@@ -1463,7 +1471,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// theirs.
     private func switchModel(to model: AIChatModel) {
         guard model.id != modelStore.persistedModelId else { return }
-        modelSelector.updateSelectedModel(model.id, persistsSelection: false)
+        modelSelector.switchModelForThisChat(model.id)
     }
 
     private func logNewChatHintsState() {
@@ -2666,7 +2674,14 @@ extension UnifiedToggleInputCoordinator {
             modelStore: modelStore,
             canSwitchModel: canSwitchModelForImageGeneration,
             entryPoint: entryPoint,
-            applyModel: { modelSelector.updateSelectedModel($0) }
+            applyModel: { modelId in
+                // A hint moves this chat only, like the photo and file hints.
+                if entryPoint == .newChatHint {
+                    modelSelector.switchModelForThisChat(modelId)
+                } else {
+                    modelSelector.updateSelectedModel(modelId)
+                }
+            }
         )
         showModelSwitchNoticeIfNeeded(notice)
     }

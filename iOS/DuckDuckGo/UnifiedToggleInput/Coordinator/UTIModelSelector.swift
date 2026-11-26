@@ -144,6 +144,12 @@ final class UTIModelSelector {
         }
     }
 
+    /// Moves this chat to `modelId` without a notice, leaving the model new chats start on as the user's.
+    func switchModelForThisChat(_ modelId: String) {
+        modelStore.switchModelForThisChat(modelId)
+        callbacks.onModelsUpdated()
+    }
+
     @discardableResult
     private func routeGatedModelSelection(_ model: AIChatModel) -> Bool {
         guard let requiredPublicTier = model.lowestPublicAccessTier else {

@@ -238,7 +238,11 @@ private struct BrowserAccessTool {
         .init(capability: .searchHistory,
               title: UserText.settingsBrowserAccessSearchHistory,
               detail: UserText.settingsBrowserAccessSearchHistoryDetail,
-              icon: Icons.history)
+              icon: Icons.history),
+        .init(capability: .searchBookmarks,
+              title: UserText.settingsBrowserAccessSearchBookmarks,
+              detail: UserText.settingsBrowserAccessSearchBookmarksDetail,
+              icon: Icons.bookmarks)
     ]
 
     static let canDo: [Self] = [

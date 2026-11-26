@@ -24,8 +24,8 @@ import Foundation
 @MainActor
 final class BookmarkTabBrowserTool: BrowserTool {
 
-    static let maxFolderDepth = 10
-    static let maxFolderNameLength = 256
+    static let maxFolderDepth = BrowserToolBookmarkFolder.maxDepth
+    static let maxFolderNameLength = BrowserToolBookmarkFolder.maxNameLength
 
     let name = "bookmarkTab"
     let permissionMode = BrowserToolPermissionMode.ask
@@ -75,7 +75,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
 
     private func bookmark(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
-        guard let folderPath = Self.folderPath(from: arguments) else { return .failure(.invalidArguments) }
+        guard let folderPath = BrowserToolBookmarkFolder.folderPath(from: arguments) else { return .failure(.invalidArguments) }
 
         let tab: AnyTab
         switch BrowserToolTargetTab.resolve(tabIDArgument: arguments?["tabId"], context: context, in: windowControllersManager) {
@@ -165,15 +165,5 @@ final class BookmarkTabBrowserTool: BrowserTool {
         entities.contains { entity in
             entity.id == folderID || (entity as? BookmarkFolder).map { contains(folderID, in: $0.children) } == true
         }
-    }
-
-    static func folderPath(from arguments: JSONValue?) -> [String]? {
-        guard let value = arguments?["folder"], value != .null else { return [] }
-        guard let values = value.arrayValue, (1...maxFolderDepth).contains(values.count) else { return nil }
-        let names = values.compactMap { value -> String? in
-            guard let name = value.stringValue, (1...maxFolderNameLength).contains(name.unicodeScalars.count) else { return nil }
-            return name
-        }
-        return names.count == values.count ? names : nil
     }
 }

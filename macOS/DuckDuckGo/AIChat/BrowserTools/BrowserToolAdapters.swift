@@ -88,3 +88,18 @@ private func pageLoader(windowControllersManager: WindowControllersManagerProtoc
         }
     }
 }
+
+extension SearchBookmarksBrowserTool {
+    convenience init(bookmarkManager: BookmarkManager) {
+        self.init { search, _ in
+            guard let list = bookmarkManager.list else { return nil }
+            return search.matches(in: list.topLevelEntities) { entity in
+                guard let folder = entity as? BookmarkFolder else { return nil }
+                return (folder.title, { folder.children })
+            } bookmark: { entity in
+                guard let bookmark = entity as? Bookmark, let url = bookmark.urlObject, url.isHttpOrHttps else { return nil }
+                return (bookmark.title, url)
+            }
+        }
+    }
+}

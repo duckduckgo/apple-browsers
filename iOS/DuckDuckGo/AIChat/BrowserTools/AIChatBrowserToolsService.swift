@@ -55,6 +55,7 @@ final class AIChatBrowserToolsService {
         })
     let permissions: BrowserToolSitePermissions
     let clientToolPermissions: ClientToolPermissionCoordinator
+    private let bookmarksDatabase: CoreDataDatabase?
     private let historyManager: HistoryManaging
     private let configuration: AIChatBrowserToolsConfiguration
 
@@ -63,14 +64,17 @@ final class AIChatBrowserToolsService {
         .switchToTab,
         .readTabContent,
         .searchHistory,
-        .findInPage
+        .findInPage,
+        .searchBookmarks
     ]
 
     init(featureFlagger: any FeatureFlagger,
          historyManager: HistoryManaging,
+         bookmarksDatabase: CoreDataDatabase? = nil,
          scopeProvider: BrowserToolScopeProvider? = nil,
          sitePermissionsStore: SitePermissionsStore? = nil,
          capabilities: [ClientToolCapability]? = nil) {
+        self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
         configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
         injectedScopeProvider = scopeProvider
@@ -94,13 +98,20 @@ final class AIChatBrowserToolsService {
             self?.scope(for: context)
         }
         let reader = BrowserToolPageContentReader()
-        return [
+        var tools: [any BrowserTool] = [
             ListOpenTabsBrowserTool(scopeProvider: scopeProvider),
             SwitchToTabBrowserTool(scopeProvider: scopeProvider),
             ReadTabContentBrowserTool(scopeProvider: scopeProvider, reader: reader),
             SearchHistoryBrowserTool(historyManager: historyManager, scopeProvider: scopeProvider),
             FindInPageBrowserTool(scopeProvider: scopeProvider, reader: reader)
         ]
+        if let bookmarksDatabase {
+            tools.append(SearchBookmarksBrowserTool(bookmarksDatabase: bookmarksDatabase) { [weak self] context in
+                guard let self, self.configuration.isToolEnabled(named: ClientToolCapability.searchBookmarks.name) else { return nil }
+                return self.scope(for: context)
+            })
+        }
+        return tools
     }
 }
 
@@ -474,8 +485,10 @@ private final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
             .aiChatBrowserToolSearchHistory
         case .findInPage:
             .aiChatBrowserToolFindInPage
+        case .searchBookmarks:
+            .aiChatBrowserToolSearchBookmarks
         case .featureEnabled, .highlightInPage,
-             .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .searchBookmarks, .requestAccess:
+             .pinTab, .openTab, .closeTabs, .bookmarkTab, .searchDownloads, .requestAccess:
             nil
         }
     }

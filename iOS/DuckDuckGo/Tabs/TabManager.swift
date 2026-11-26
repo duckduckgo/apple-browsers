@@ -191,6 +191,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor private(set) lazy var browserToolsService = AIChatBrowserToolsService(
         featureFlagger: featureFlagger,
         historyManager: historyManager,
+        bookmarksDatabase: bookmarksDatabase,
         sitePermissionsStore: sitePermissionsStore
     )
 

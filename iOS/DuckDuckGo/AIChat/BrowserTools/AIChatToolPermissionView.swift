@@ -49,6 +49,10 @@ struct AIChatToolPermissionView: View {
                 copy = Copy.browsingHistory
                 icon = Icons.history
                 rowIcon = icon
+            case .searchBookmarks:
+                copy = Copy.bookmarks
+                icon = Icons.bookmarks
+                rowIcon = icon
             case .listOpenTabs:
                 copy = Copy.openTabs
                 icon = Icons.windowsAndTabs
@@ -453,6 +457,14 @@ private extension AIChatToolPermissionView {
                 title: String(localized: "Allow Duck.ai to search your browsing history?"),
                 detail: String(localized: "It will see sites you’ve visited, including before this chat."),
                 accessibilityName: String(localized: "Search Browsing History")
+            )
+        }
+
+        static var bookmarks: ToolText {
+            ToolText(
+                name: UserText.settingsBrowserAccessSearchBookmarks,
+                title: UserText.browserToolPermissionTitleSearchBookmarks,
+                detail: UserText.browserToolPermissionDetailSearchBookmarks
             )
         }
 

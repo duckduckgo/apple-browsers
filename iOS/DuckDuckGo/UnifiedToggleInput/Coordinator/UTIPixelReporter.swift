@@ -150,6 +150,10 @@ final class UTIPixelReporter {
         }
     }
 
+    func reportVoiceInChatUnavailableTapped(reason: AIChatVoiceInChatAvailability.Reason) {
+        firing.fire(AIChatVoiceInChatPixel.unavailableTapped(reason: reason), frequency: .dailyAndCount)
+    }
+
     // MARK: - Attachments
 
     func reportAttachmentPrivacy(_ action: AttachmentPrivacyPixel.Action, kind: AttachmentPrivacyPixel.Kind) {

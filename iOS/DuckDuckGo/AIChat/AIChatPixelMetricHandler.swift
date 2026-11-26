@@ -179,6 +179,8 @@ enum VoiceEntryPointSource: String {
     case addressBar = "address_bar"
     /// "New voice chat" on a Duck.ai page.
     case duckAI = "duck_ai"
+    /// The chat input's voice button in a Duck.ai chat with messages, continuing that chat.
+    case duckAIChat = "duck_ai_chat"
     case menuBar = "menu_bar"
     case controlCenter = "widget.controlcenter"
     case lockscreenComplication = "widget.lockscreen.complication"

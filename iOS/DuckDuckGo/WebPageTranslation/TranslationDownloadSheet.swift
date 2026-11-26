@@ -58,7 +58,9 @@ enum TranslationDownloadSheet {
             } else {
                 sheet.detents = [.medium()]
             }
-            sheet.preferredCornerRadius = SheetMetrics.cornerRadius
+            if #unavailable(iOS 26) {
+                sheet.preferredCornerRadius = SheetMetrics.cornerRadius
+            }
         }
         return controller
     }

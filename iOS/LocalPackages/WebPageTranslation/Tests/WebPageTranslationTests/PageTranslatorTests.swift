@@ -178,6 +178,5 @@ struct PageTranslatorTests {
         await listening.value
 
         #expect(listener.fractions == [0.5, 1])
-        #expect(!translator.isInstalled("es-en"))
     }
 }

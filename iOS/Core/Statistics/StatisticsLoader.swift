@@ -40,6 +40,7 @@ public class StatisticsLoader {
     private let fireSearchExperimentPixels: () -> Void
     private let fireAppRetentionExperimentPixels: () -> Void
     private let fireNewAIPromptExperimentPixels: () -> Void
+    private let fireSearchOnlyExperimentPixels: () -> Void
     private let fireOSDistributionPixel: (OSDistributionPixel.Metric) -> Void
     private let pixelFiring: (any PixelKitFiring)?
     private var isDuckAIRetentionRequestInProgress = false
@@ -48,12 +49,21 @@ public class StatisticsLoader {
     init(statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          returnUserMeasurement: ReturnUserMeasurement = KeychainReturnUserMeasurement(),
          usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
-         fireAppRetentionExperimentPixels: @escaping () -> Void = PixelKit.fireAppRetentionExperimentPixels,
+         fireAppRetentionExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireAppRetentionExperimentPixels()
+            OnboardingVPNDownloadReasonExperimentMetrics.live.fireAppUseMetrics()
+         },
          fireSearchExperimentPixels: @escaping () -> Void = {
             PixelKit.fireSearchExperimentPixels()
-            StatisticsLoader.fireOnboardingByDownloadReasonSearchExperimentPixels()
+            OnboardingVPNDownloadReasonExperimentMetrics.live.fireSearchMetrics()
          },
-         fireNewAIPromptExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIPromptExperimentPixels,
+         fireNewAIPromptExperimentPixels: @escaping () -> Void = {
+            PixelKit.fireNewAIPromptExperimentPixels()
+            OnboardingVPNDownloadReasonExperimentMetrics.live.fireAIPromptMetrics()
+         },
+         fireSearchOnlyExperimentPixels: @escaping () -> Void = {
+            OnboardingVPNDownloadReasonExperimentMetrics.live.fireSearchOnlyMetrics()
+         },
          fireOSDistributionPixel: @escaping (OSDistributionPixel.Metric) -> Void = PixelKit.fireOSDistributionPixel(metric:),
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad) {
@@ -63,25 +73,10 @@ public class StatisticsLoader {
         self.fireSearchExperimentPixels = fireSearchExperimentPixels
         self.fireAppRetentionExperimentPixels = fireAppRetentionExperimentPixels
         self.fireNewAIPromptExperimentPixels = fireNewAIPromptExperimentPixels
+        self.fireSearchOnlyExperimentPixels = fireSearchOnlyExperimentPixels
         self.fireOSDistributionPixel = fireOSDistributionPixel
         self.pixelFiring = pixelFiring
         self.isPad = isPad
-    }
-
-    // Per-download-reason d5-7 search retention for the onboarding VPN download-reason experiment.
-    // No-op for users who haven't selected a reason or aren't enrolled (fireExperimentPixelIfThresholdReached guards both).
-    // Each reason's pixel token needs a matching `download_reason_search_retention_*` metric in native_experiments.json5.
-    static func fireOnboardingByDownloadReasonSearchExperimentPixels() {
-        guard let pixelToken = OnboardingDownloadReasonStore.currentPixelToken() else { return }
-        let metric = "download_reason_search_retention_\(pixelToken)"
-        for threshold in [1, 4, 6, 11, 21, 30] {
-            PixelKit.fireExperimentPixelIfThresholdReached(
-                for: PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue,
-                metric: metric,
-                conversionWindowDays: 5...7,
-                threshold: threshold
-            )
-        }
     }
 
     public func load(shouldRefreshAtb: Bool = true, completion: @escaping Completion = {}) {
@@ -152,7 +147,14 @@ public class StatisticsLoader {
         })
     }
 
+    /// Refreshes search retention for a search. Duck.ai prompts go through `refreshRetentionAtbOnDuckAIPromptSubmission`.
     public func refreshSearchRetentionAtb(completion: @escaping Completion = {}) {
+        fireSearchOnlyExperimentPixels()
+        refreshSearchAndPromptRetentionAtb(completion: completion)
+    }
+
+    /// Search retention counts searches and Duck.ai prompts together.
+    private func refreshSearchAndPromptRetentionAtb(completion: @escaping Completion) {
         fireSearchExperimentPixels()
         fireOSDistributionPixel(.searches)
 
@@ -221,9 +223,9 @@ public class StatisticsLoader {
             group.enter()
             group.enter()
 
-            // The refreshSearchRetentionAtb call below fires the `.searches` OS-distribution pixel
+            // The refreshSearchAndPromptRetentionAtb call below fires the `.searches` OS-distribution pixel
             // for a Duck.ai prompt, so Duck.ai usage is included in our search + AI-query traffic count.
-            self.refreshSearchRetentionAtb {
+            self.refreshSearchAndPromptRetentionAtb {
                 group.leave()
             }
 

@@ -101,6 +101,7 @@ public struct NavigationAction {
         self.mainFrameNavigation = mainFrameNavigation
     }
 
+    @MainActor
     internal init(webView: WKWebView, navigationAction: WKNavigationAction, currentHistoryItemIdentity: HistoryItemIdentity?, redirectHistory: [NavigationAction]?, navigationType: NavigationType? = nil, mainFrameNavigation: Navigation?) {
         // In this cruel reality the source frame IS Nullable for developer-initiated load events, this would mean we‘re targeting the main frame
         var sourceFrame = (navigationAction.safeSourceFrame ?? navigationAction.targetFrame).map(FrameInfo.init) ?? .mainFrame(for: webView)
@@ -174,11 +175,13 @@ public struct NavigationAction {
 #endif
     }
 
+    @MainActor
     internal static func sessionRestoreNavigation(webView: WKWebView, mainFrameNavigation: Navigation?) -> Self {
         assert(webView.backForwardList.currentItem == nil)
         return self.init(request: URLRequest(url: webView.url ?? .empty), navigationType: .sessionRestoration, currentHistoryItemIdentity: nil, redirectHistory: nil, isUserInitiated: false, sourceFrame: .mainFrame(for: webView), targetFrame: .mainFrame(for: webView), shouldDownload: false, mainFrameNavigation: mainFrameNavigation)
     }
 
+    @MainActor
     internal static func alternateHtmlLoadNavigation(webView: WKWebView, mainFrameNavigation: Navigation?) -> Self {
         return self.init(request: URLRequest(url: webView.url ?? .empty), navigationType: .alternateHtmlLoad, currentHistoryItemIdentity: nil, redirectHistory: nil, isUserInitiated: false, sourceFrame: .mainFrame(for: webView), targetFrame: .mainFrame(for: webView), shouldDownload: false, mainFrameNavigation: mainFrameNavigation)
     }
@@ -241,6 +244,7 @@ public struct NavigationPreferences: Equatable {
         self.javaScriptEnabledValue = javaScriptEnabled
     }
 
+    @MainActor
     internal init(userAgent: String?, preferences: WKWebpagePreferences) {
         self.contentMode = preferences.preferredContentMode
         self.javaScriptEnabledValue = preferences.allowsContentJavaScript
@@ -256,6 +260,7 @@ public struct NavigationPreferences: Equatable {
 #endif
     }
 
+    @MainActor
     internal func applying(to preferences: WKWebpagePreferences) -> WKWebpagePreferences {
         preferences.preferredContentMode = contentMode
         preferences.allowsContentJavaScript = javaScriptEnabled

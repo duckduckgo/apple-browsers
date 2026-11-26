@@ -220,7 +220,6 @@ extension PromoServiceFactoryTests {
             syncBookmarksAdapter: nil,
             pinningManager: MockPinningManager(),
             cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 keyValueStore: InMemoryThrowingKeyValueStore(),
                 windowControllersManager: windowControllersManager,
                 cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
@@ -249,12 +248,10 @@ extension PromoServiceFactoryTests {
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
             quitSurveyPromoObserver: QuitSurveyPromoObserver(),
             vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
             ),
             vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
             ),

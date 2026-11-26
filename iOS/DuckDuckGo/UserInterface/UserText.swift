@@ -1600,6 +1600,8 @@ public struct UserText {
     static let networkProtectionConnectionInterruptedNotificationBody = NSLocalizedString("network.protection.interrupted.notification.body", value: "DuckDuckGo VPN was interrupted. Attempting to reconnect now...", comment: "The body of the notification shown when VPN connection is interrupted")
     static let networkProtectionConnectionFailureNotificationBody = NSLocalizedString("network.protection.failure.notification.body", value: "DuckDuckGo VPN failed to connect. Please try again later.", comment: "The body of the notification shown when VPN fails to reconnect")
     static let networkProtectionEntitlementExpiredNotificationBody = NSLocalizedString("network.protection.entitlement.expired.notification.body", value: "VPN disconnected due to expired subscription. Subscribe to DuckDuckGo to reconnect the VPN.", comment: "The body of the notification when Privacy Pro subscription expired")
+    static let networkProtectionSignedOutNotificationTitle = NSLocalizedString("network.protection.signed.out.notification.title", value: "DuckDuckGo VPN disconnected", comment: "The title of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
+    static let networkProtectionSignedOutNotificationBody = NSLocalizedString("network.protection.signed.out.notification.body", value: "Open DuckDuckGo to restore VPN connection.", comment: "The body of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
 
     static func networkProtectionSnoozedNotificationBody(duration: String) -> String {
         let localized = NSLocalizedString(
@@ -2917,7 +2919,7 @@ public struct UserText {
             public static let chatWithAI = NSLocalizedString("onboarding.downloadReason.chatWithAI", value: "Chat with AI\nprivately", comment: "Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let removeAI = NSLocalizedString("onboarding.downloadReason.removeAI", value: "Disable\nAI features", comment: "Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let blockAds = NSLocalizedString("onboarding.downloadReason.blockAds", value: "Block ads\nand pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation.")
-            public static let vpn = NotLocalizedString("onboarding.downloadReason.vpn", value: "VPN-protect my connection", comment: "Label for the option to set up the app to protect the user's connection with a VPN.")
+            public static let vpn = NotLocalizedString("onboarding.downloadReason.vpn", value: "Protect connection with VPN", comment: "Label for the option to set up the app to protect the user's connection with a VPN.")
 
             /// Single-line labels for the list layout (VPN experiment treatment).
             public enum List {
@@ -2932,13 +2934,13 @@ public struct UserText {
         public enum TryVPN {
             public static let title = NotLocalizedString("onboarding.tryVPN.title", value: "Try our VPN free for 7 days", comment: "Title of the onboarding screen offering a VPN free trial to users who chose VPN as their download reason.")
             public static let message = NotLocalizedString("onboarding.tryVPN.message", value: "The VPN is part of an optional DuckDuckGo paid subscription.", comment: "Message of the onboarding screen offering a VPN free trial.")
-            public static let footer = NotLocalizedString("onboarding.tryVPN.footer", value: "The subscription also includes personal information removal, identity theft restoration and additional AI models with higher usage", comment: "Small print on the onboarding screen offering a VPN free trial, listing the other subscription features.")
+            public static let footer = NotLocalizedString("onboarding.tryVPN.footer", value: "Our subscription also includes Personal Information Removal, Identity Theft Restoration, and more AI models with higher limits in Duck.ai.", comment: "Small print on the onboarding screen offering a VPN free trial, listing the other subscription features.")
             public static let cta = NotLocalizedString("onboarding.tryVPN.cta", value: "Try for Free", comment: "Button on the onboarding screen to start the VPN free trial.")
         }
 
         public enum SubscriptionReminder {
-            public static let title = NotLocalizedString("onboarding.subscriptionReminder.title", value: "If you change your mind…", comment: "Title of the onboarding screen shown to users who chose VPN as their download reason but didn't subscribe.")
-            public static let message = NotLocalizedString("onboarding.subscriptionReminder.message", value: "Add the subscription anytime in **Settings > Subscription**", comment: "Message of the onboarding screen telling users where to subscribe later. The text between ** is shown in bold.")
+            public static let title = NotLocalizedString("onboarding.subscriptionReminder.title", value: "If you change your mind", comment: "Title of the onboarding screen shown to users who chose VPN as their download reason but didn't subscribe.")
+            public static let message = NotLocalizedString("onboarding.subscriptionReminder.message", value: "Add the subscription anytime in **Settings > DuckDuckGo Subscription**.", comment: "Message of the onboarding screen telling users where to subscribe later. The text between ** is shown in bold.")
             public static let cta = NotLocalizedString("onboarding.subscriptionReminder.cta", value: "Next", comment: "Button to continue to the next onboarding screen.")
         }
 
@@ -3008,8 +3010,9 @@ public struct UserText {
             public static let cta = NSLocalizedString("onboarding.browsers.cta", value: "Choose Your Browser", comment: "Button to change the default browser")
 
             public static let titleGenericDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-generic", value: "You’re in the right place!\nProtections activated.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation.")
+            public static let titleVPNDownloadReasonExperiment = NotLocalizedString("onboarding.downloadReason.comparison.title-vpn", value: "You’re in the right place!\nVPN protections available.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose VPN as their download reason. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let titleNoAIDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-no-ai", value: "You’re in the right place!\nAI features disabled.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation.")
-            public static let vpnSubscriptionFooter = NotLocalizedString("onboarding.downloadReason.comparison.vpn.footer", value: "VPN is included with a paid DuckDuckGo subscription.", comment: "Note below the onboarding browser comparison chart for users who chose VPN as their download reason.")
+            public static let vpnSubscriptionFooter = NotLocalizedString("onboarding.downloadReason.comparison.vpn.footer", value: "VPN available with a paid subscription.", comment: "Note below the onboarding browser comparison chart for users who chose VPN as their download reason.")
             public static let titleNoAdsDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-no-ads", value: "You’re in the right place!\nAd Blocking activated.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation.")
         }
 

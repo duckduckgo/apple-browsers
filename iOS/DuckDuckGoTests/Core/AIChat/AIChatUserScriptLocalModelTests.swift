@@ -107,27 +107,41 @@ final class AIChatUserScriptLocalModelTests: XCTestCase {
         XCTAssertEqual(prompt.askedModelNames, [service.model.name])
     }
 
-    func testRunsEndWhenTheScriptGoesAway() async {
+    func testRunsAreThePagesNotTheScripts() {
+        let script = makeScript()
+        script.webView = webView
+
+        XCTAssertTrue(script.localModelPage === webView)
+    }
+
+    func testClosingThePageEndsItsRuns() async {
         var script: AIChatUserScript? = makeScript()
-        let ownerID = ObjectIdentifier(script!)
+        script?.webView = webView
+        let pageID = ObjectIdentifier(webView)
         let cancelled = expectation(description: "Runs cancelled")
         service.onCancelRuns = { id in
-            if id == ownerID { cancelled.fulfill() }
+            if id == pageID { cancelled.fulfill() }
         }
 
+        // The web view goes first when its tab closes.
+        script?.webView = nil
         script = nil
 
         await fulfillment(of: [cancelled], timeout: 1)
     }
 
-    func testReplacedScriptHandsItsRunsToTheReplacement() {
-        let old = makeScript()
-        let replacement = makeScript()
+    /// Content-blocking updates replace the script while the page stays open.
+    func testReplacedScriptLeavesThePagesRunsGoing() async throws {
+        var cancelledIDs: [ObjectIdentifier] = []
+        service.onCancelRuns = { cancelledIDs.append($0) }
+        var script: AIChatUserScript? = makeScript()
+        script?.webView = webView
 
-        old.handOverLocalRuns(to: replacement)
+        script?.cleanUpForReplacement()
+        script = nil
+        try await Task.sleep(nanoseconds: 50_000_000)
 
-        XCTAssertEqual(service.movedRuns.map(\.from), [ObjectIdentifier(old)])
-        XCTAssertEqual(service.movedRuns.map(\.to), [ObjectIdentifier(replacement)])
+        XCTAssertEqual(cancelledIDs, [])
     }
 }
 
@@ -142,7 +156,6 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
     var configToReturn: AIChatLocalModelConfig?
     var onCancelRuns: ((ObjectIdentifier) -> Void)?
     private(set) var startedRequestIds: [String] = []
-    private(set) var movedRuns: [(from: ObjectIdentifier, to: ObjectIdentifier)] = []
 
     func config() -> AIChatLocalModelConfig? { configToReturn }
     func register(_ pusher: AIChatLocalModelPushing) {}
@@ -154,16 +167,12 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
 
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
 
-    func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing) {
-        movedRuns.append((ObjectIdentifier(pusher), ObjectIdentifier(replacement)))
-    }
-
     func cancelRuns(ownerID: ObjectIdentifier) {
         onCancelRuns?(ownerID)
     }
 
-    func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
-        await ask()
+    func requestAccess(ask: @MainActor (AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
+        await ask(.connect(model))
     }
 }
 

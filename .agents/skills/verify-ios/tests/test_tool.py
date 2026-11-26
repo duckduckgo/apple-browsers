@@ -223,6 +223,22 @@ class LocatorTests(unittest.TestCase):
         self.assertEqual(parse_locator("web:css=#token"), {"web": "css", "value": "#token"})
 
 
+class LaunchProfileTests(unittest.TestCase):
+    def test_profile_pins_the_flags_without_internal_user(self):
+        profile = json.loads(device.launch_profile({"b": False, "a": True}))
+        self.assertEqual(profile, {"featureFlags": {"a": True, "b": False}})
+
+    def test_no_flags_means_no_profile(self):   # an empty object is an unknown key to the app
+        self.assertIsNone(device.launch_profile({}))
+
+    def test_newest_result_line_is_read_from_the_log(self):
+        log = ("2026-11-25 14:49:20.1 Df DuckDuckGo[1:2] [com.duckduckgo.mobile.ios:LaunchProfile] LAUNCH_PROFILE_APPLIED keys=a\n"
+               "2026-11-25 14:49:26.6 E  DuckDuckGo[3:4] [com.duckduckgo.mobile.ios:LaunchProfile] "
+               'LAUNCH_PROFILE_FAILED Unknown key "featureFlags.x".\n')
+        self.assertEqual(device.launch_profile_line(log), 'LAUNCH_PROFILE_FAILED Unknown key "featureFlags.x".')
+        self.assertIsNone(device.launch_profile_line("Timestamp Ty Process[PID:TID]\n"))
+
+
 class PreflightTests(unittest.TestCase):
     def write(self, body):
         f = tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, dir=TMP)

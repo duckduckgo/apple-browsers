@@ -152,6 +152,9 @@ final class AIChatTabExtension {
         }.store(in: &cancellables)
 
         scriptsPublisher.sink { [weak self] scripts in
+            // A local run's output goes to the script that serves its page, found by the web view.
+            // Waiting for the task below leaves a gap with no such script, and a chunk sent then is lost.
+            scripts.aiChatUserScript?.webView = self?.webView
             Task { @MainActor in
                 self?.replaceAIChatUserScript(with: scripts.aiChatUserScript)
                 self?.aiChatUserScript?.webView = self?.webView

@@ -52,6 +52,22 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightHex: 0x000000, lightOpacity: 0.42, darkHex: 0xffffff, darkOpacity: 0.6)
         case .spinnerFinal:
             return DynamicColor(lightColor: .green60, darkColor: .green30)
+
+        /// Default Browser and Dock Prompt
+        case .defaultBrowserAndDockPromptBackground:
+            return DynamicColor(lightHex: 0xFFFFFF, darkHex: 0x011D34)
+        case .defaultBrowserAndDockPromptChartRowBackground:
+            return DynamicColor(lightHex: 0xA1CFF7, lightOpacity: 0.16, darkHex: 0xA1CFF7, darkOpacity: 0.12)
+        case .defaultBrowserAndDockPromptStatusAvailable:
+            return DynamicColor(lightColor: RebrandingColor.Green.green50, darkColor: RebrandingColor.Lilypad.lilypad30)
+        case .defaultBrowserAndDockPromptStatusPartiallyAvailable:
+            return DynamicColor(lightColor: RebrandingColor.Pollen.pollen60, darkColor: Color(0xFFCC00))
+        case .defaultBrowserAndDockPromptStatusUnavailable:
+            return DynamicColor(staticColor: RebrandingColor.GrayScale.gray40)
+
+        /// Duck.ai
+        case .duckAIWebViewBackground:
+            return DynamicColor(lightHex: 0xFFFFFF, darkHex: 0x111111)
         }
     }
 }

@@ -18,7 +18,6 @@
 
 import Combine
 import Foundation
-import PrivacyConfig
 
 /// Promo delegate that shows the notification dot on the VPN upsell toolbar button.
 final class VPNUpsellDotBadgePromoDelegate: InternalPromoDelegate {
@@ -27,11 +26,10 @@ final class VPNUpsellDotBadgePromoDelegate: InternalPromoDelegate {
     private let persistor: VPNUpsellUserDefaultsPersisting
     private let dateProvider: () -> Date
 
-    init(featureFlagger: FeatureFlagger,
-         visibilityManager: VPNUpsellVisibilityManager,
+    init(visibilityManager: VPNUpsellVisibilityManager,
          persistor: VPNUpsellUserDefaultsPersisting,
          dateProvider: @escaping () -> Date = Date.init) {
-        self.session = VPNUpsellPromoSession(featureFlagger: featureFlagger, visibilityManager: visibilityManager)
+        self.session = VPNUpsellPromoSession(visibilityManager: visibilityManager)
         self.persistor = persistor
         self.dateProvider = dateProvider
     }

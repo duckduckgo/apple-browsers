@@ -1073,7 +1073,8 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
         viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
@@ -1288,7 +1289,8 @@ class MainViewController: UIViewController {
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization,
-                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                      duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -4892,7 +4894,9 @@ class MainViewController: UIViewController {
     private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
         let subscriptionFlowViewController = makeSubscriptionFlowViewController(
             redirectURLComponents: redirectURLComponents,
-            includesPostPurchaseOnboarding: true
+            includesPostPurchaseOnboarding: true,
+            subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
+            onFlowEvent: nil
         )
 
         let presenter = topMostPresentedViewController() ?? self
@@ -4907,9 +4911,16 @@ class MainViewController: UIViewController {
         presenter.present(navigationController, animated: true)
     }
 
-    /// - Parameter includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    /// - Parameters:
+    ///   - includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    ///   - subscriptionExperimentAttributionProvider: The experiments sent with a purchase made in this flow.
+    ///   - onFlowEvent: Called with what happens in this flow. A restore still reports if the flow was closed meanwhile.
+    ///   - isPresentedFromOnboarding: Whether the onboarding flow presents the paywall, so its error alerts don't point back to Settings.
     private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
-                                                    includesPostPurchaseOnboarding: Bool) -> UIViewController {
+                                                    includesPostPurchaseOnboarding: Bool,
+                                                    subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding,
+                                                    onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
+                                                    isPresentedFromOnboarding: Bool = false) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
             privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -4934,8 +4945,10 @@ class MainViewController: UIViewController {
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
+            subscriptionExperimentAttributionProvider: subscriptionExperimentAttributionProvider,
+            onFlowEvent: onFlowEvent,
             onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
-        ))
+        ).environment(\.isPaywallPresentedFromOnboarding, isPresentedFromOnboarding))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController
     }
@@ -9947,7 +9960,15 @@ extension MainViewController: OnboardingDelegate {
         // The onboarding continues with its own VPN setup, so skip the subscription onboarding after purchase.
         let paywall = makeSubscriptionFlowViewController(
             redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue),
-            includesPostPurchaseOnboarding: false
+            includesPostPurchaseOnboarding: false,
+            subscriptionExperimentAttributionProvider: PaywallEntryExperimentAttributionProvider(
+                wrapping: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
+                entry: PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry
+            ),
+            onFlowEvent: { [weak self] event in
+                self?.contextualOnboardingPixelReporter.measureTryVPNPaywallEvent(event)
+            },
+            isPresentedFromOnboarding: true
         )
         let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)
         navigationController.onDismiss = onDismiss

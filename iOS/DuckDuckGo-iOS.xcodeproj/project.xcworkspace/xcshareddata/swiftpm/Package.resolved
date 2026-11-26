@@ -276,8 +276,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/translate-kit",
       "state" : {
-        "revision" : "06dde3379a8c3e038432ee7106b6c9c7450e74fb",
-        "version" : "0.4.0"
+        "revision" : "d5fb0ee895e26a0469c2fcb9fb43e31dc4d6bcf4",
+        "version" : "0.4.2"
       }
     },
     {

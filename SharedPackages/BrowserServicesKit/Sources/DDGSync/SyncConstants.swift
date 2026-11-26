@@ -16,22 +16,22 @@
 //  limitations under the License.
 //
 
-public enum SyncSetupRole {
+public enum SyncSetupRole: Sendable {
     case receiver(SyncSetupSource, SyncCodeSource)
     case sharer
 }
 
-public enum SyncSetupCodeVersion: String {
+public enum SyncSetupCodeVersion: String, Sendable {
     case v1
     case v2
 }
 
-public enum PairingV2JoinStatus: Equatable {
+public enum PairingV2JoinStatus: Equatable, Sendable {
     case waiting
     case unknown
 }
 
-public struct PairingV2JoinReport: Equatable {
+public struct PairingV2JoinReport: Equatable, Sendable {
     public let hostHasAccount: Bool
     public let hostKind: PairingV2DeviceKind
     public let joinerHasAccount: Bool
@@ -50,14 +50,14 @@ public struct PairingV2JoinReport: Equatable {
     }
 }
 
-public enum SyncSetupSource: String {
+public enum SyncSetupSource: String, Sendable {
     case recovery
     case exchange
     case connect
     case unknown
 }
 
-public enum SyncCodeSource: String {
+public enum SyncCodeSource: String, Sendable {
     case qrCode
     case pastedCode
     case deepLink

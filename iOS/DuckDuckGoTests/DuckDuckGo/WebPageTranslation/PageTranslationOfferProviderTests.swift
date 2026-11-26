@@ -82,6 +82,29 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         XCTAssertNil(offer)
     }
 
+    func testNoOfferOnASiteInTheFeatureExceptions() async throws {
+        let manager = MockPrivacyConfigurationManager()
+        manager.privacyConfig = try WebPageTranslationSettingsTests.config(settings: "{}", exceptions: ["example.fr"])
+        let provider = try makeProvider(settings: WebPageTranslationSettings(privacyConfigurationManager: manager))
+
+        let exceptedPage = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!])
+        let exceptedDecision = await provider.decision(in: exceptedPage)
+        XCTAssertNil(exceptedDecision)
+        let otherPage = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.org/")!])
+        let otherDecision = await provider.decision(in: otherPage)
+        XCTAssertEqual(otherDecision, .banner(TranslationOffer(source: "fr", target: "en")))
+    }
+
+    func testOffersWhenTheFlagIsOnButTheConfigHasNoPageTranslationEntry() async throws {
+        let manager = MockPrivacyConfigurationManager()
+        manager.privacyConfig = try WebPageTranslationSettingsTests.config(settings: nil)
+        let provider = try makeProvider(settings: WebPageTranslationSettings(privacyConfigurationManager: manager))
+
+        let page = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!])
+        let decision = await provider.decision(in: page)
+        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en")))
+    }
+
     func testEligibility() {
         XCTAssertTrue(PageTranslationOfferProvider.isEligible(URL(string: "https://example.fr/article")!))
         XCTAssertTrue(PageTranslationOfferProvider.isEligible(URL(string: "http://example.fr/")!))
@@ -103,11 +126,13 @@ final class PageTranslationOfferProviderTests: XCTestCase {
 
     private func makeProvider(isEnabled: Bool = true,
                               manifest: TranslationManifest? = PageTranslationOfferProviderTests.manifest(),
-                              deviceLanguages: [String] = ["en-US"]) throws -> PageTranslationOfferProvider {
+                              deviceLanguages: [String] = ["en-US"],
+                              settings: WebPageTranslationSettings = WebPageTranslationSettings(
+                                privacyConfigurationManager: MockPrivacyConfigurationManager())) throws -> PageTranslationOfferProvider {
         return PageTranslationOfferProvider(detector: PageLanguageDetector(),
                                             manifest: { manifest },
                                             capability: MockCapability(isWebPageTranslationEnabled: isEnabled),
-                                            settings: WebPageTranslationSettings(privacyConfigurationManager: MockPrivacyConfigurationManager()),
+                                            settings: settings,
                                             deviceLanguages: { deviceLanguages })
     }
 

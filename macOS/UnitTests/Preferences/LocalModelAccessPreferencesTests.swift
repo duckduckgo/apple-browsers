@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import FeatureFlags_macOS
 import Foundation
+@_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 import Testing
@@ -177,4 +178,137 @@ final class LocalModelAccessPreferencesTests {
             try? await Task.sleep(nanoseconds: 2_000_000)
         }
     }
+}
+
+/// Settings on a Mac that gets the downloadable model.
+@MainActor
+@Suite("On-Device Models setting with a downloadable model")
+final class DownloadableLocalModelPreferencesTests {
+
+    private let apple = StubLocalModelEngine()
+    private let llama = UnloadableStubEngine()
+    private let installer = RecordingInstaller()
+    private let storage = MockAIChatPreferencesStorage()
+    private let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatLocalModels.rawValue: true])
+
+    private lazy var service = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                       storage: storage,
+                                                       engine: apple,
+                                                       downloadableModel: AIChatDownloadableLocalModel(engine: llama, installer: installer),
+                                                       engineOverride: LocalModelEngineOverridePersistor(keyValueStore: InMemoryKeyValueStore(),
+                                                                                                         notificationCenter: NotificationCenter()),
+                                                       notificationCenter: NotificationCenter())
+
+    private func makePreferences() -> AIChatPreferences {
+        AIChatPreferences(storage: storage,
+                          aiChatMenuConfiguration: MockAIChatConfig(),
+                          windowControllersManager: WindowControllersManagerMock(),
+                          featureFlagger: featureFlagger,
+                          localModelService: service)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without Apple Intelligence the section shows the downloadable model", .timeLimit(.minutes(1)))
+    func withoutAppleIntelligenceShowsTheDownloadableModel() {
+        apple.availability = .deviceNotEligible
+        let preferences = makePreferences()
+
+        #expect(preferences.shouldShowLocalModelAccess)
+        #expect(preferences.downloadableModelState == .notInstalled)
+        #expect(preferences.downloadableModelBytes == AIChatLocalModelSpec.granite.bytes)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With Apple Intelligence ready the section shows Apple Intelligence", .timeLimit(.minutes(1)))
+    func withAppleIntelligenceShowsAppleIntelligence() {
+        let preferences = makePreferences()
+
+        #expect(preferences.shouldShowLocalModelAccess)
+        #expect(preferences.downloadableModelState == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Install, Cancel and Uninstall reach the downloader", .timeLimit(.minutes(1)))
+    func buttonsReachTheDownloader() {
+        apple.availability = .deviceNotEligible
+        let preferences = makePreferences()
+
+        preferences.installDownloadableModel()
+        #expect(preferences.downloadableModelState == .downloading(receivedBytes: 0, totalBytes: AIChatLocalModelSpec.granite.bytes))
+        preferences.cancelDownloadableModelInstall()
+        #expect(preferences.downloadableModelState == .notInstalled)
+        installer.state = .installed(URL(fileURLWithPath: "/m.gguf"))
+        preferences.uninstallDownloadableModel()
+
+        #expect(installer.userCalls == ["install", "cancel", "uninstall"])
+        #expect(llama.unloadCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The debug override keeps its choice and forgets Automatic", .timeLimit(.minutes(1)))
+    func overrideIsStored() {
+        let store = InMemoryKeyValueStore()
+        let notificationCenter = NotificationCenter()
+        let persistor = LocalModelEngineOverridePersistor(keyValueStore: store, notificationCenter: notificationCenter)
+        var updates = 0
+        let cancellable = persistor.updates.sink { updates += 1 }
+
+        persistor.current = .llama
+        #expect(persistor.current == .llama)
+        #expect(persistor.current.engineKind == .llama)
+
+        persistor.current = .automatic
+        #expect(store.object(forKey: LocalModelEngineOverridePersistor.key) == nil)
+        #expect(persistor.current.engineKind == nil)
+        #expect(updates == 2)
+        cancellable.cancel()
+    }
+}
+
+private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalModelUnloading {
+    let model = AIChatLocalModelSpec.granite.info
+    var availability: AIChatLocalModelAvailability = .available
+    private(set) var unloadCount = 0
+
+    func run(_ request: AIChatLocalRunRequest) -> AsyncThrowingStream<AIChatLocalModelEngineEvent, Error> {
+        AsyncThrowingStream { $0.finish() }
+    }
+
+    func unloadModel() {
+        unloadCount += 1
+    }
+}
+
+@MainActor
+private final class RecordingInstaller: AIChatLocalModelInstalling {
+    let spec = AIChatLocalModelSpec.granite
+    private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
+    private(set) var userCalls: [String] = []
+
+    var state: AIChatLocalModelInstallState {
+        get { subject.value }
+        set { subject.send(newValue) }
+    }
+
+    var statePublisher: AnyPublisher<AIChatLocalModelInstallState, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func install() {
+        userCalls.append("install")
+        state = .downloading(receivedBytes: 0, totalBytes: spec.bytes)
+    }
+
+    func cancel() {
+        userCalls.append("cancel")
+        state = .notInstalled
+    }
+
+    func uninstall() {
+        userCalls.append("uninstall")
+        state = .notInstalled
+    }
+
+    func pause() {}
+    func resumeIfNeeded() {}
 }

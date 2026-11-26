@@ -163,6 +163,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746472
     case partnershipsHub
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219771272198496
+    case authBackupToken
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213569392605475
     case subscriptionPromoForReinstallers
 
@@ -407,6 +410,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
     case unifiedToggleInputKeyboardEdgeSweep
 
+    /// Shows chips for what Duck.ai can do above the native input on a blank new chat (iPhone only).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220895031092233
+    case newChatHints
     /// Simplifies the Duck.ai prompt box on iPhone: one ⊕ menu holds the attachments and tools, the tools button
     /// and Customize Responses leave the input, and Chats gets a Duck.ai Settings button.
     /// https://app.asana.com/0/0/1220262271015348/f
@@ -717,18 +723,15 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220874250279358
     case hardwareKeyboardMonitoring
 
-    /// On-device web page translation.
+    /// On-device web page translation. Gated by the top-level `pageTranslation` feature, which also gates
+    /// the C-S-S `pageTranslation` script, so one config entry controls both.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220370569025326?focus=true
-    case webPageTranslation
+    case pageTranslation
 
     /// Offers on-device page summaries with Apple Intelligence (Foundation Models) and lets Duck.ai run them locally.
     /// Internal-only for the first version.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220647281509936
     case aiChatLocalModels
-
-    /// Pins the redesigned New Tab Page's input to the top while the rest of the page scrolls.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220697284449900
-    case newTabPageStickyInput
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -889,6 +892,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.performanceOptimizedPaywalls), cohortType: PerformanceOptimizedPaywallsCohort.self)
         case .partnershipsHub:
             Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub))
+        case .authBackupToken:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(PrivacyProSubfeature.authBackupToken))
         case .subscriptionPromoForReinstallers:
             Config(defaultValue: .enabled, source: .remoteReleasable(PrivacyProSubfeature.subscriptionPromoForReinstallers))
         case .subscriptionExpirationReminderNotification:
@@ -1051,6 +1056,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputPastedText))
         case .unifiedToggleInputKeyboardEdgeSweep:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputKeyboardEdgeSweep))
+        case .newChatHints:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.newChatHints))
         case .unifiedToggleInputSimplifiedPromptBox:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputSimplifiedPromptBox))
         case .aiChatAttachmentPrivacyIPad:
@@ -1229,12 +1236,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         case .hardwareKeyboardMonitoring:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.hardwareKeyboardMonitoring))
-        case .webPageTranslation:
-            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.webPageTranslation))
+        case .pageTranslation:
+            Config(defaultValue: .disabled, source: .remoteReleasable(PageTranslationSubfeature.featureEnabled))
         case .aiChatLocalModels:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels))
-        case .newTabPageStickyInput:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.newTabPageStickyInput))
         }
     }
 

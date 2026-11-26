@@ -105,7 +105,7 @@ public final class SyncSetupAttemptTracker {
     }
 
     public func closeErrorScreen() {
-        guard let errorOnScreen else { return }
+        guard let errorOnScreen, attempt?.steps.last == .errorScreen else { return }
         end(with: errorOnScreen)
     }
 

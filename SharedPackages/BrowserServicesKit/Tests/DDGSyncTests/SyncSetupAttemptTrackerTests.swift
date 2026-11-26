@@ -159,6 +159,22 @@ final class SyncSetupAttemptTrackerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Closing the error screen after Try Again moved on leaves the retry open", .timeLimit(.minutes(1)))
+    func closingErrorScreenDuringRetry() {
+        start()
+        tracker.recordErrorScreen(for: .accountCreationFailed)
+        tracker.recordStep(.preparingSync)
+        tracker.closeErrorScreen()
+
+        #expect(wideEvent.completions.isEmpty)
+
+        tracker.succeed(.successScreenShown)
+
+        #expect(sent.count == 1)
+        #expect(sent.first?.status == .success)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("An error with no retry ends the attempt with the classified outcome", .timeLimit(.minutes(1)))
     func errorWithoutRetry() {
         start()

@@ -300,7 +300,8 @@ struct Launching: LaunchingHandling {
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            isSyncSetupWideEventEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sendSyncSetupWideEvent) }
         )
 
         // Service to display the Default Browser prompt.

@@ -52,7 +52,7 @@ final class PageTranslationOfferProviderTests: XCTestCase {
     func testEnglishPageForGermanUserShowsBanner() async throws {
         let provider = try makeProvider(deviceLanguages: ["de-DE"])
         let decision = await provider.decision(forSample: Self.english)
-        XCTAssertEqual(decision, .banner(TranslationOffer(source: "en", target: "de")))
+        XCTAssertEqual(decision, .banner(TranslationOffer(source: "en", target: "de", pairID: "en-de")))
     }
 
     func testReadsTheSampleFromTheWebView() async throws {
@@ -64,14 +64,14 @@ final class PageTranslationOfferProviderTests: XCTestCase {
 
         let provider = try makeProvider(deviceLanguages: ["en-US"])
         let decision = await provider.decision(in: webView)
-        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en")))
+        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
     }
 
     func testBannerOfferForAnUnchangedPage() async throws {
         let webView = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!])
         let provider = try makeProvider(deviceLanguages: ["en-US"])
         let offer = await provider.bannerOffer(in: webView)
-        XCTAssertEqual(offer, TranslationOffer(source: "fr", target: "en"))
+        XCTAssertEqual(offer, TranslationOffer(source: "fr", target: "en", pairID: "fr-en"))
     }
 
     func testNoBannerOfferWhenThePageChangedDuringDetection() async throws {
@@ -92,7 +92,7 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         XCTAssertNil(exceptedDecision)
         let otherPage = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.org/")!])
         let otherDecision = await provider.decision(in: otherPage)
-        XCTAssertEqual(otherDecision, .banner(TranslationOffer(source: "fr", target: "en")))
+        XCTAssertEqual(otherDecision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
     }
 
     func testOffersWhenTheFlagIsOnButTheConfigHasNoPageTranslationEntry() async throws {
@@ -102,7 +102,7 @@ final class PageTranslationOfferProviderTests: XCTestCase {
 
         let page = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!])
         let decision = await provider.decision(in: page)
-        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en")))
+        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
     }
 
     func testEligibility() {

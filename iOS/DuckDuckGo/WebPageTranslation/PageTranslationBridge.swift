@@ -92,8 +92,8 @@ final class PageTranslationBridge: NSObject, Subfeature {
     @MainActor private var pending: (reply: Reply, requestID: String, continuation: CheckedContinuation<Any, Swift.Error>)?
     @MainActor private var timeoutTask: Task<Void, Never>?
     @MainActor private var isInjected = false
-    /// Changes with every document, so a request can tell the page changed while it was injecting.
-    @MainActor private var document = 0
+    /// New for every document, so a request can tell the page changed while it was injecting.
+    @MainActor private var documentID = UUID()
 
     /// - Parameters:
     ///   - inject: puts the bundle into the current document.
@@ -119,14 +119,20 @@ final class PageTranslationBridge: NSObject, Subfeature {
         }
     }
 
+    /// - Returns: the units, and the document they belong to, for `apply`.
     @MainActor
-    func extract() async throws -> [PageTranslationUnit] {
+    func extract() async throws -> (units: [PageTranslationUnit], documentID: UUID) {
+        // Read before the request: the document can change after the reply, before this resumes.
+        let documentID = documentID
         let params = try await request("extract", reply: .extractResult) { ExtractParams(requestId: $0) }
-        return try Self.decode(ExtractResult.self, from: params).units
+        return (try Self.decode(ExtractResult.self, from: params).units, documentID)
     }
 
+    /// - Parameter documentID: from the `extract` the updates' units came from.
     @MainActor
-    func apply(_ updates: [PageTranslationUpdate], from source: String, to target: String) async throws -> Int {
+    func apply(_ updates: [PageTranslationUpdate], from source: String, to target: String, in documentID: UUID) async throws -> Int {
+        // Each document numbers its units from 0, so another document's updates would hit the wrong ones.
+        guard documentID == self.documentID else { throw CancellationError() }
         let params = try await request("apply", reply: .applyResult) {
             ApplyParams(requestId: $0, sourceLanguage: source, targetLanguage: target, updates: updates)
         }
@@ -138,7 +144,7 @@ final class PageTranslationBridge: NSObject, Subfeature {
     func documentDidChange() {
         finish(.failure(CancellationError()))
         isInjected = false
-        document += 1
+        documentID = UUID()
     }
 
     /// - Parameter params: the push's params for the request's id.
@@ -149,10 +155,10 @@ final class PageTranslationBridge: NSObject, Subfeature {
         defer { isRequesting = false }
 
         if !isInjected {
-            let document = document
+            let documentID = documentID
             try await inject()
             // The bundle went into a page that's gone.
-            guard document == self.document else { throw CancellationError() }
+            guard documentID == self.documentID else { throw CancellationError() }
             isInjected = true
         }
 
@@ -202,3 +208,6 @@ final class PageTranslationBridge: NSObject, Subfeature {
         return decoded
     }
 }
+
+// In an extension, so the protocol's @MainActor isn't inferred for the whole class.
+extension PageTranslationBridge: PageTranslationBridging {}

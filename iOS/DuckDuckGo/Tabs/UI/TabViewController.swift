@@ -874,7 +874,10 @@ class TabViewController: UIViewController {
 
     var pageTranslationOfferProvider: PageTranslationOfferProvider?
     private lazy var translationBannerPresenter = TranslationBannerPresenter(appSettings: appSettings)
+    var pageTranslator: PageTranslating?
     private var pageTranslationBridge: PageTranslationBridge?
+    /// Made on the first Translate, for the current bridge.
+    private var pageTranslationSession: PageTranslationSession?
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -3026,6 +3029,8 @@ extension TabViewController: WKNavigationDelegate {
             firstPaintCover.didCommit(navigation)
             signpostSearchCommit(url: webView.url)
             pageTranslationBridge?.documentDidChange()
+            // The old page's translation may still be running; the new page gets its own session.
+            pageTranslationSession = nil
         }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
@@ -3168,7 +3173,7 @@ extension TabViewController: WKNavigationDelegate {
             translationBannerPresenter.chromeInsets = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
         }
         translationBannerPresenter.present(offer, in: self, nextTo: addressBar) { [weak self] in
-            self?.translatePage()
+            self?.translatePage(offer)
         }
     }
 
@@ -3184,28 +3189,11 @@ extension TabViewController: WKNavigationDelegate {
         pageTranslationBridge = bridge
     }
 
-    // TODO: - Translate the extracted units (next task); for now, check extraction from the isolated world works.
-    private func translatePage() {
-        guard let bridge = pageTranslationBridge else { return }
-        Task {
-            do {
-                let units = try await bridge.extract()
-                
-                // TODO: - Replace debug logs below by actual translation.
-                Logger.webPageTranslation.info("Page translation: extracted \(units.count, privacy: .public) units")
-                // Page text stays private: Xcode's console shows it, Console.app redacts it.
-                let sample = units.filter(\.isVisible) + units.filter { !$0.isVisible }.prefix(50)
-                for unit in sample {
-                    Logger.webPageTranslation.debug("""
-                        Page translation unit \(unit.id, privacy: .public) \
-                        html: \(unit.html, privacy: .public) visible: \(unit.isVisible, privacy: .public) \
-                        text: \(String(unit.text.prefix(120)), privacy: .private)
-                        """)
-                }
-            } catch {
-                Logger.webPageTranslation.error("Page translation failed: \(error.localizedDescription, privacy: .public)")
-            }
-        }
+    private func translatePage(_ offer: TranslationOffer) {
+        guard let bridge = pageTranslationBridge, let pageTranslator else { return }
+        let session = pageTranslationSession ?? PageTranslationSession(bridge: bridge, translator: pageTranslator)
+        pageTranslationSession = session
+        session.start(offer)
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.

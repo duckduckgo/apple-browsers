@@ -3241,6 +3241,25 @@ final class FireDialogViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.shouldCloseTabsAndWindows)
     }
 
+    @MainActor func testWhenDuckAIOnboarding_ThenTheChatsRowShowsOnTheTabScopeAwayFromDuckAI() {
+        // The selected tab can be a placeholder while a relaunch reopens the chat.
+        let viewModel = makeViewModelWithChats(mode: .duckAIOnboarding, isFireDialogSimplified: true, settings: MockFireDialogViewSettings())
+
+        viewModel.clearingOption = .currentTab
+
+        XCTAssertTrue(viewModel.shouldShowChatHistoryToggle)
+    }
+
+    @MainActor func testWhenDuckAIOnboarding_ThenDeleteIsEnabledOnlyWhileChatsAreSelected() {
+        let viewModel = makeViewModelWithChats(mode: .duckAIOnboarding, isFireDialogSimplified: true, settings: MockFireDialogViewSettings())
+
+        viewModel.includeChatHistorySetting = false
+        XCTAssertFalse(viewModel.isDeleteEnabled, "Closing the tab alone must not count as deleting the chat")
+
+        viewModel.includeChatHistorySetting = true
+        XCTAssertTrue(viewModel.isDeleteEnabled)
+    }
+
     @MainActor func testWhenDuckAIOnboarding_ThenNoChoiceIsSaved() {
         let settings = MockFireDialogViewSettings()
         let viewModel = makeViewModelWithChats(mode: .duckAIOnboarding, isFireDialogSimplified: true, settings: settings)

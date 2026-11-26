@@ -411,6 +411,7 @@ jobs:
         test-outcome: ${{ steps.run-unit-tests.outcome }}
 
     - name: Process integration test results
+      id: integration-test-results
       if: always()
       uses: ./.github/actions/process-test-results
       with:
@@ -419,6 +420,7 @@ jobs:
         log-path: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
         xcresult-glob: DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult
         title: macOS ${{ matrix.flavor }} Integration Tests
+        report-retries: 'true'
         test-outcome: ${{ steps.run-integration-tests.outcome }}
 
     - name: Upload JUnit XML as artifact
@@ -510,17 +512,17 @@ jobs:
         path: macOS/DerivedData/Logs/Test/${{ matrix.flavor }}-unittests.xcresult
         retention-days: 7
 
-    - name: Upload failed integration tests log
+    - name: Upload integration tests log on failure or retry
       uses: actions/upload-artifact@v6
-      if: failure() || cancelled()
+      if: failure() || cancelled() || steps.integration-test-results.outputs.passed-on-retry == 'true'
       with:
         name: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
         path: macOS/${{ matrix.flavor }}-integrationtests-xcodebuild.log
         retention-days: 7
 
-    - name: Upload failed integration tests xcresult
+    - name: Upload integration tests xcresult on failure or retry
       uses: actions/upload-artifact@v6
-      if: failure() || cancelled()
+      if: failure() || cancelled() || steps.integration-test-results.outputs.passed-on-retry == 'true'
       with:
         name: ${{ matrix.flavor }}-integrationtests.xcresult
         path: macOS/DerivedData/Logs/Test/${{ matrix.flavor }}-integrationtests.xcresult

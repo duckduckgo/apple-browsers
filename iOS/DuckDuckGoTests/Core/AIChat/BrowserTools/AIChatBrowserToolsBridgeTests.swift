@@ -25,6 +25,7 @@ import FeatureFlags_iOS
 import JavaScriptCore
 import Persistence
 import PrivacyConfig
+import SitePermissions
 import UserScript
 import WebKit
 import XCTest
@@ -790,7 +791,7 @@ final class BrowserToolsBridgeFixture {
         self.defaults = defaults
         self.flags = flags
         owner = Tab(uid: "owner", link: Link(title: "Owner", url: URL(string: "https://owner.example")!), fireTab: fire)
-        service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: historyManager, permissionStorage: defaults.keyedStoring(),
+        service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: historyManager, sitePermissionsStore: SitePermissionsStore(storage: defaults.keyedStoring()),
                                             capabilities: capabilities)
         handler = AIChatUserScriptHandler(experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: flags),
                                           syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(),

@@ -22,7 +22,7 @@ import FoundationExtensions
 import os.log
 
 public protocol SubscriptionTierOptionsProviding {
-    func subscriptionTierOptions(includeProTier: Bool, currentSubscription: DuckDuckGoSubscription?) async -> Result<SubscriptionTierOptions, Error>
+    func subscriptionTierOptions(currentSubscription: DuckDuckGoSubscription?) async -> Result<SubscriptionTierOptions, Error>
 }
 
 public enum SubscriptionTierOptionsProviderError: Error {
@@ -46,7 +46,7 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
         self.isStripeProductsByPlanCountryEnabled = isStripeProductsByPlanCountryEnabled
     }
 
-    public func subscriptionTierOptions(includeProTier: Bool, currentSubscription: DuckDuckGoSubscription?) async -> Result<SubscriptionTierOptions, Error> {
+    public func subscriptionTierOptions(currentSubscription: DuckDuckGoSubscription?) async -> Result<SubscriptionTierOptions, Error> {
         let effectivePlatform: EffectivePlatform
         if let currentSubscription,
            currentSubscription.isActive {
@@ -57,16 +57,16 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
 
         switch effectivePlatform {
         case .subscription(.stripe), .app(.stripe):
-            return await fetchStripeTierOptions(includeProTier: includeProTier, planCountry: currentSubscription?.planCountry)
+            return await fetchStripeTierOptions(planCountry: currentSubscription?.planCountry)
         case .subscription(.apple):
             // Apple subscription on non–App Store app (e.g. Sparkle): we cannot show tier options;
             // the app has no StoreKit. UI should redirect user to App Store / subscription settings.
             guard subscriptionEnvironmentPlatform == .appStore else {
                 return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
             }
-            return await fetchAppleTierOptions(includeProTier: includeProTier)
+            return await fetchAppleTierOptions()
         case .app(.appStore):
-            return await fetchAppleTierOptions(includeProTier: includeProTier)
+            return await fetchAppleTierOptions()
         case .subscription(.google), .subscription(.unknown):
             return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
         }
@@ -79,7 +79,7 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
 
     // MARK: - Apple path
 
-    private func fetchAppleTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
+    private func fetchAppleTierOptions() async -> Result<SubscriptionTierOptions, Error> {
         guard subscriptionEnvironmentPlatform == .appStore else {
             return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
         }
@@ -87,7 +87,7 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
             return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
         }
         let result = await storePurchaseManager
-            .subscriptionTierOptions(includeProTier: includeProTier)
+            .subscriptionTierOptions()
         return result.mapError { $0 as Error }
     }
 
@@ -98,8 +98,8 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
         return planCountry.lowercased()
     }
 
-    private func fetchStripeTierOptions(includeProTier: Bool, planCountry: String?) async -> Result<SubscriptionTierOptions, Error> {
-        Logger.subscriptionStripePurchaseFlow.log("Getting subscription tier options for Stripe (includeProTier: \(includeProTier))")
+    private func fetchStripeTierOptions(planCountry: String?) async -> Result<SubscriptionTierOptions, Error> {
+        Logger.subscriptionStripePurchaseFlow.log("Getting subscription tier options for Stripe")
         let location: TierProductsLocation = isStripeProductsByPlanCountryEnabled()
             ? .country(countryParameter(planCountry: planCountry))
             : .legacyUSRegion
@@ -119,17 +119,8 @@ public final class DefaultSubscriptionTierOptionsProvider: SubscriptionTierOptio
             return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
         }
 
-        let filteredProducts = includeProTier
-            ? productsResponse.products
-            : productsResponse.products.filter { $0.tier != .pro }
-
-        guard !filteredProducts.isEmpty else {
-            Logger.subscription.error("Tier options provider: No products after filtering")
-            return .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
-        }
-
         var tiers: [SubscriptionTier] = []
-        for product in filteredProducts {
+        for product in productsResponse.products {
             guard let tier = createTier(from: product) else {
                 Logger.subscription.warning("Tier options provider: Failed to create tier for \(product.tier.rawValue)")
                 continue

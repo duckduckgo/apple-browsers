@@ -23,6 +23,7 @@ import XCTest
 @testable import BrowserServicesKit
 @testable import UserScript
 
+@MainActor
 final class SegmentSkipSubfeatureTests: XCTestCase {
 
     private typealias Subfeature = SegmentSkipSubfeature
@@ -30,8 +31,8 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
     private var preferences: SegmentSkipPreferences!
     private var isFeatureFlagOn = true
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         preferences = SegmentSkipPreferences(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter())
     }
 
@@ -42,7 +43,7 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
         Subfeature(segmentsProvider: provider, preferences: preferences, isFeatureFlagOn: { self.isFeatureFlagOn })
     }
 
-    private func getSegments(_ subfeature: Subfeature, params: Any) async throws -> [SegmentSkipSegmentsProvider.Segment] {
+    private func getSegments(_ subfeature: Subfeature, params: [String: any Sendable]) async throws -> [SegmentSkipSegmentsProvider.Segment] {
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getSegments"))
         let response = try await handler(params, WKScriptMessage.mock(name: "getSegments", body: [:]))
         return try XCTUnwrap(response as? Subfeature.GetSegmentsResponse).segments
@@ -80,28 +81,24 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
 
     // MARK: - getSegments
 
-    @MainActor
     func testGetSegmentsResolvesToEmptyWhenLookupFails() async throws {
         let provider = SegmentSkipSegmentsProvider(load: { _ in throw URLError(.notConnectedToInternet) })
         let segments = try await getSegments(makeSubfeature(provider: provider), params: ["videoID": "dQw4w9WgXcQ"])
         XCTAssertEqual(segments, [])
     }
 
-    @MainActor
     func testGetSegmentsAnswersEmptyWithoutLookupWhenFlagIsOff() async throws {
         isFeatureFlagOn = false
         let segments = try await getSegments(makeSubfeature(), params: ["videoID": "dQw4w9WgXcQ"])
         XCTAssertEqual(segments, [])
     }
 
-    @MainActor
     func testGetSegmentsAnswersEmptyWithoutLookupWhenSettingIsOff() async throws {
         preferences.isEnabled = false
         let segments = try await getSegments(makeSubfeature(), params: ["videoID": "dQw4w9WgXcQ"])
         XCTAssertEqual(segments, [])
     }
 
-    @MainActor
     func testGetSegmentsIgnoresCategoriesSentByThePage() async throws {
         let provider = SegmentSkipSegmentsProvider(load: { request in
             let url = request.url!.absoluteString
@@ -112,7 +109,6 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
         _ = try await getSegments(makeSubfeature(provider: provider), params: ["videoID": "dQw4w9WgXcQ", "categories": ["selfpromo"]])
     }
 
-    @MainActor
     func testGetSegmentsWithBadParamsThrowsSoBrokerRepliesWithError() async throws {
         do {
             _ = try await getSegments(makeSubfeature(), params: ["videoID": "too-short"])
@@ -124,7 +120,6 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
 
     // MARK: - getConfig
 
-    @MainActor
     func testGetConfigReflectsFlagSettingAndSkipMode() async throws {
         let subfeature = makeSubfeature()
         let enabled = try await getConfig(subfeature)
@@ -146,7 +141,6 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
 
     // MARK: - onConfigChanged
 
-    @MainActor
     func testPreferenceChangePushesOneConfigUpdateToThePageThatAskedForConfig() async throws {
         let webView = PushCapturingWebView()
         let broker = UserScriptMessageBroker(context: "test")
@@ -166,7 +160,6 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
         await fulfillment(of: [pushed], timeout: 1)
     }
 
-    @MainActor
     func testGetSegmentsDoesNotSubscribeToPreferenceUpdates() async throws {
         let webView = PushCapturingWebView()
         let broker = UserScriptMessageBroker(context: "test")

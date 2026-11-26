@@ -150,7 +150,7 @@ struct AIChatDebugView: View {
         Task { @MainActor in
             let window = UIApplication.shared.firstKeyWindow
             let modelName = localModel.service.model.name
-            _ = try? await localModel.service.requestAccess {
+            _ = try? await localModel.service.requestAccess { _ in
                 await localModel.accessPrompt.ask(in: window, modelName: modelName)
             }
         }

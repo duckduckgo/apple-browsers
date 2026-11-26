@@ -21,7 +21,7 @@ import Persistence
 
 public typealias KeyValueStoringDictionaryRepresentable = KeyValueStoring & DictionaryRepresentable
 
-public struct ExpiryStorageConfiguration {
+public struct ExpiryStorageConfiguration: Sendable {
 
     var expiryDatesStorageKey: String
     var valueExpiryDateKey: String

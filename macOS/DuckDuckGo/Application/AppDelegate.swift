@@ -418,7 +418,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitor
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
-        featureFlagger: featureFlagger,
         buttonDelegate: vpnUpsellToolbarButtonPromoDelegate
     )
     let themeManager: ThemeManager
@@ -1042,7 +1041,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
             ),
             internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger,
             pinningManager: pinningManager
         )
         tabsPreferences = TabsPreferences(
@@ -1059,7 +1057,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
-        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
+        // The flag also gates Apple Intelligence, so remote config could turn it on for everyone. The
+        // downloadable model stays internal either way. Decided at launch: a change in internal status
+        // applies after a relaunch.
+        let downloadableModel: AIChatDownloadableLocalModel? = internalUserDecider.isInternalUser
+            ? .llamaCpp(privacyConfigurationManager: privacyConfigurationManager)
+            : nil
+        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                     downloadableModel: downloadableModel)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)

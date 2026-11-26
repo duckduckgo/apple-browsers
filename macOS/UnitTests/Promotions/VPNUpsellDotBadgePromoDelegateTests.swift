@@ -31,7 +31,6 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
 
     private static let now = Date()
 
-    private var featureFlagger: MockFeatureFlagger!
     private var notificationCenter: NotificationCenter!
     private var subscriptionManager: SubscriptionManagerMock!
     private var persistor: MockVPNUpsellUserDefaultsPersistor!
@@ -42,8 +41,6 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub[FeatureFlag.promoQueueVPNUpsellPromo.rawValue] = true
         notificationCenter = NotificationCenter()
         subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
@@ -60,7 +57,6 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
         persistor = nil
         subscriptionManager = nil
         notificationCenter = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
@@ -76,8 +72,7 @@ final class VPNUpsellDotBadgePromoDelegateTests: XCTestCase {
     }
 
     private func makeSUT() -> VPNUpsellDotBadgePromoDelegate {
-        let sut = VPNUpsellDotBadgePromoDelegate(featureFlagger: featureFlagger,
-                                                 visibilityManager: manager,
+        let sut = VPNUpsellDotBadgePromoDelegate(visibilityManager: manager,
                                                  persistor: persistor,
                                                  dateProvider: { Self.now })
         sut.isShowingPublisher

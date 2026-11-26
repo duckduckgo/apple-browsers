@@ -30,12 +30,11 @@ final class VPNUpsellToolbarButtonPromoDelegate: InternalPromoDelegate, VPNUpsel
     private let dateProvider: () -> Date
     private let pixelFiring: (any PixelKitFiring)?
 
-    init(featureFlagger: FeatureFlagger,
-         visibilityManager: VPNUpsellVisibilityManager,
+    init(visibilityManager: VPNUpsellVisibilityManager,
          persistor: VPNUpsellUserDefaultsPersisting,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          dateProvider: @escaping () -> Date = Date.init) {
-        self.session = VPNUpsellPromoSession(featureFlagger: featureFlagger, visibilityManager: visibilityManager)
+        self.session = VPNUpsellPromoSession(visibilityManager: visibilityManager)
         self.persistor = persistor
         self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider

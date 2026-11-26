@@ -29,7 +29,6 @@ import XCTest
 @MainActor
 final class VPNUpsellPromoSessionTests: XCTestCase {
 
-    private var featureFlagger: MockFeatureFlagger!
     private var notificationCenter: NotificationCenter!
     private var subscriptionManager: SubscriptionManagerMock!
     private var manager: VPNUpsellVisibilityManager!
@@ -39,8 +38,6 @@ final class VPNUpsellPromoSessionTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub[FeatureFlag.promoQueueVPNUpsellPromo.rawValue] = true
         notificationCenter = NotificationCenter()
         subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
@@ -55,7 +52,6 @@ final class VPNUpsellPromoSessionTests: XCTestCase {
         manager = nil
         subscriptionManager = nil
         notificationCenter = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
@@ -71,7 +67,7 @@ final class VPNUpsellPromoSessionTests: XCTestCase {
     }
 
     private func makeSUT() -> VPNUpsellPromoSession {
-        let sut = VPNUpsellPromoSession(featureFlagger: featureFlagger, visibilityManager: manager)
+        let sut = VPNUpsellPromoSession(visibilityManager: manager)
         sut.isShowingPublisher
             .sink { [unowned self] in self.isShowing = $0 }
             .store(in: &cancellables)
@@ -97,16 +93,9 @@ final class VPNUpsellPromoSessionTests: XCTestCase {
 
     // MARK: - Eligibility
 
-    func testWhenFlagOnAndManagerEligibleThenIsEligible() {
+    func testWhenManagerEligibleThenIsEligible() {
         XCTAssertEqual(manager.state, .eligible)
         XCTAssertTrue(sut.isEligible)
-    }
-
-    func testWhenFlagOffThenIsNotEligible() {
-        featureFlagger.featuresStub[FeatureFlag.promoQueueVPNUpsellPromo.rawValue] = false
-        sut = makeSUT()
-
-        XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenManagerIsNotEligibleThenIsNotEligible() {
@@ -124,18 +113,6 @@ final class VPNUpsellPromoSessionTests: XCTestCase {
         notificationCenter.post(name: .entitlementsDidChange, object: nil)
 
         waitForEligibility(false)
-        XCTAssertFalse(sut.isEligible)
-    }
-
-    func testWhenFlagIsTurnedOffAtRuntimeThenEligibilityPublisherEmitsFalse() {
-        XCTAssertTrue(sut.isEligible)
-        var values: [Bool] = []
-        sut.isEligiblePublisher.sink { values.append($0) }.store(in: &cancellables)
-
-        featureFlagger.featuresStub[FeatureFlag.promoQueueVPNUpsellPromo.rawValue] = false
-        featureFlagger.triggerUpdate()
-
-        XCTAssertEqual(values, [true, false])
         XCTAssertFalse(sut.isEligible)
     }
 

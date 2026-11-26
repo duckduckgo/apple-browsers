@@ -30,16 +30,12 @@ final class VPNUpsellPromoSession {
     private var resultContinuation: CheckedContinuation<PromoResult, Never>?
     private var cancellables = Set<AnyCancellable>()
 
-    init(featureFlagger: FeatureFlagger, visibilityManager: VPNUpsellVisibilityManager) {
-        let isFlagOn = { featureFlagger.isFeatureOn(.promoQueueVPNUpsellPromo) }
-        Publishers.CombineLatest(
-            featureFlagger.updatesPublisher.map { _ in isFlagOn() }.prepend(isFlagOn()),
-            visibilityManager.$state.map { $0 == .eligible }
-        )
-        .map { $0 && $1 }
-        .removeDuplicates()
-        .sink { [eligibilitySubject] in eligibilitySubject.send($0) }
-        .store(in: &cancellables)
+    init(visibilityManager: VPNUpsellVisibilityManager) {
+        visibilityManager.$state
+            .map { $0 == .eligible }
+            .removeDuplicates()
+            .sink { [eligibilitySubject] in eligibilitySubject.send($0) }
+            .store(in: &cancellables)
     }
 
     var isEligible: Bool {

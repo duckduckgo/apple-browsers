@@ -32,7 +32,6 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
 
     private static let now = Date()
 
-    private var featureFlagger: MockFeatureFlagger!
     private var notificationCenter: NotificationCenter!
     private var subscriptionManager: SubscriptionManagerMock!
     private var persistor: MockVPNUpsellUserDefaultsPersistor!
@@ -44,8 +43,6 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub[FeatureFlag.promoQueueVPNUpsellPromo.rawValue] = true
         notificationCenter = NotificationCenter()
         subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
@@ -63,7 +60,6 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
         persistor = nil
         subscriptionManager = nil
         notificationCenter = nil
-        featureFlagger = nil
         pixelKit = nil
         super.tearDown()
     }
@@ -80,8 +76,7 @@ final class VPNUpsellToolbarButtonPromoDelegateTests: XCTestCase {
     }
 
     private func makeSUT() -> VPNUpsellToolbarButtonPromoDelegate {
-        let sut = VPNUpsellToolbarButtonPromoDelegate(featureFlagger: featureFlagger,
-                                                      visibilityManager: manager,
+        let sut = VPNUpsellToolbarButtonPromoDelegate(visibilityManager: manager,
                                                       persistor: persistor,
                                                       pixelFiring: pixelKit,
                                                       dateProvider: { Self.now })

@@ -2584,7 +2584,7 @@ class MainViewController: UIViewController {
               NewTabPageKeyboardPolicy().presentsFocusedLayoutBeforeAppOpen(
                 hasInlineInput: hasInlineNewTabPageInput,
                 isHeldForOnboarding: isNewTabPageKeyboardHeldForOnboarding,
-                isBlockedByDialog: isNewTabPageKeyboardBlockedByDialog,
+                isBlockedByDialog: isNewTabPageKeyboardBlockedByDialog || daxDialogsManager.isShowingContextualOnboardingDialog,
                 isAutoClearEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
                 hasLaunchAction: hasLaunchAction) else { return }
         hasStagedNewTabPageFocus = true

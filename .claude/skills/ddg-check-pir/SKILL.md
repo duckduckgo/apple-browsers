@@ -82,18 +82,15 @@ python3 "$P" run --platform ios --config ~/pir-runs/example/config.json \
 Use `--platform macos` for the macOS PIR agent and `--device ipad` on iOS build and run commands for an iPad.
 
 `build` records the source fingerprint and executable hash; later commands reject a stale build, so rebuild after source
-changes. On macOS it turns on debug deployment (`scripts/toggle-macos-debug-deployment.sh on`, preserving other local
-overrides), builds a private DEBUG browser under `DerivedData/ddg-check-pir/macos/` and finds its embedded PIR agent. It
-leaves `/Applications/DEBUG` alone and refuses while the private browser or agent runs; its error names the command to
-stop an agent a scheduler seed left registered.
+changes. On macOS it turns on debug deployment, builds a private DEBUG browser under `DerivedData/ddg-check-pir/macos/`
+and finds its embedded PIR agent. It leaves `/Applications/DEBUG` alone and refuses while the private browser or agent
+runs; its error names the command to stop an agent a scheduler seed left registered.
 
 `selftest` launches the recorded build in staging with a dummy credential, checks the prerequisites and native logs,
-writes the usual report and stops the runtime. It only reads local endpoints, takes no scenario, credential,
-check-config or keep options (on iOS it takes `--launch-profile`), and proves nothing about authentication, brokers,
-captcha, email or removal. Evidence or cleanup failures make it inconclusive.
+writes the usual report and stops. It only reads local endpoints and proves nothing about authentication,
+brokers, captcha, email or removal. Evidence or cleanup failures make it inconclusive.
 
-`--check-config` validates the configuration, inputs, token source and launch profile without building, launching or
-sending requests.
+`--check-config` validates the configuration, inputs and token source without building, launching or sending requests.
 
 ## 4. Run
 
@@ -112,14 +109,9 @@ running. Don't point another debug client at an attempt in progress.
 
 Cleanup stops the owned app or agent even with `--keep`, which only keeps the simulator. It cannot undo a broker request.
 
-Every iOS launch passes a launch profile that sets `internalUser`, `onboardingCompleted` and the
-`dbpCustomWebViewUserAgent` and `dbpExtractedProfileRefresh` feature flags to `true`. `--launch-profile <json|path>`
-adds keys or overrides them, as inline JSON or a `.json` file; the `ddg-ios-launch-profile` skill lists the keys. It may
-turn `onboardingCompleted` off, but the other three must stay `true`, and `tabs` is refused. The token and the other run
-values stay in the launch environment. If the app logs `LAUNCH_PROFILE_FAILED`, or no result line within 60 seconds, the
-attempt is inconclusive and the reason quotes the line. A `run` stops there, before any broker request; a scheduler seed
-may already have started its scans. `launch.json` records the profile's source, the merged profile and the app's result
-line, or `result.json` does when the launch failed. macOS keeps its flag arguments and refuses `--launch-profile`.
+iOS commands take `--launch-profile <json|path>`: `ddg-ios-launch-profile` keys merged over a base keeping
+`internalUser` and both `dbp*` flags `true`, without `tabs`. A `LAUNCH_PROFILE_FAILED` or missing result line is
+inconclusive.
 
 To inspect a running or stalled job, open the `snapshots/` folder the runner prints before launch (macOS writes PNGs
 directly; iOS copies them on each poll and before cleanup). Filenames give sequence, phase, action and capture point
@@ -172,8 +164,7 @@ in place. macOS seeds run one at a time.
 On iOS, each attempt creates a fresh simulator, launches the recorded build signed out with the profile in its launch
 environment, and picks a free port. The app refreshes broker JSON, saves the profile, records the plan and starts the
 same initial scans as a profile saved in the app. The tool reads the receipt from the app's container, then stops the
-app and deletes the simulator unless `--keep`. Attempts share nothing, so iOS seeds can run in parallel. iOS seed,
-reseed and upgrade take `--launch-profile` as `run` does; observe doesn't.
+app and deletes the simulator unless `--keep`. Attempts share nothing, so iOS seeds can run in parallel.
 
 For observe, use an app with a saved profile and its debug server on (on iOS, **Debug Server** in the PIR debug menu).
 Record a UTC cutoff before triggering the scan, allowing for second-resolution timestamps, and pass `--job` for each

@@ -23,12 +23,14 @@ import os
 /// Runs Duck.ai tasks with a downloaded GGUF model through llama.cpp, for devices without Apple Intelligence.
 public final class AIChatLlamaEngine: AIChatLocalModelEngine {
 
-    /// A page Duck.ai sends is at most 9,500 characters: about 2,100 tokens in English, but more
-    /// than one token per character in Chinese, which then gets cut.
+    /// A page Duck.ai sends is at most 9,500 characters. With Gemma 4 E2B that's about 2,000 tokens in
+    /// English and 7,000 in Chinese, so it fits with the answer. A model with a less efficient tokenizer
+    /// gets the page cut.
     public static let contextSize = 8_192
 
-    /// Free memory a load needs on iOS. A model with this context took about 700 MB on an iPhone;
-    /// the rest leaves the app room to work.
+    /// Free memory a load needs on iOS. The weights are mapped from the file and don't count toward
+    /// iOS's limit. With this context Gemma 4 E2B peaked at about 500 MB on a Mac, and Granite 4.0 1B at
+    /// about 760 MB on an iPhone. The rest leaves the app room to work.
     static let minimumAvailableMemory: UInt64 = 1_000_000_000
 
     /// Granite 4.0 1B repeated one bullet until it ran out of tokens on plain greedy decoding;

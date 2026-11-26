@@ -4913,7 +4913,9 @@ class MainViewController: UIViewController {
     private func presentDataBrokerProtectionSubscriptionFlow(redirectURLComponents: URLComponents?) {
         let subscriptionFlowViewController = makeSubscriptionFlowViewController(
             redirectURLComponents: redirectURLComponents,
-            includesPostPurchaseOnboarding: true
+            includesPostPurchaseOnboarding: true,
+            subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
+            onFlowEvent: nil
         )
 
         let presenter = topMostPresentedViewController() ?? self
@@ -4928,9 +4930,15 @@ class MainViewController: UIViewController {
         presenter.present(navigationController, animated: true)
     }
 
-    /// - Parameter includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    /// - Parameters:
+    ///   - includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
+    ///   - subscriptionExperimentAttributionProvider: The experiments sent with a purchase made in this flow.
+    ///   - onFlowEvent: Called with what happens in this flow. A restore still reports if the flow was closed meanwhile.
+    ///   - isPresentedFromOnboarding: Whether the onboarding flow presents the paywall, so its error alerts don't point back to Settings.
     private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
                                                     includesPostPurchaseOnboarding: Bool,
+                                                    subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding,
+                                                    onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
                                                     isPresentedFromOnboarding: Bool = false) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
@@ -4956,6 +4964,8 @@ class MainViewController: UIViewController {
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
+            subscriptionExperimentAttributionProvider: subscriptionExperimentAttributionProvider,
+            onFlowEvent: onFlowEvent,
             onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
         ).environment(\.isPaywallPresentedFromOnboarding, isPresentedFromOnboarding))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
@@ -5673,8 +5683,11 @@ class MainViewController: UIViewController {
 
     private func updateAIChatSelectedModel(for request: AIChatOpeningRequest) {
         guard request.shouldPresent, let modelID = request.modelID else { return }
-        // The model picked in onboarding applies to the onboarding chat only, so new chats don't start on it.
-        unifiedToggleInputCoordinator?.updateSelectedModel(modelID, persistsSelection: request.source != .onboarding)
+        unifiedToggleInputCoordinator?.updateSelectedModel(modelID, origin: openingModelOrigin(of: request.source))
+    }
+
+    private func openingModelOrigin(of source: AIChatEntryPointSource) -> UTIOpeningModelOrigin {
+        source == .onboarding ? .onboarding : .user
     }
 
     /// Tags the tab about to load Duck.ai with its door, any address-bar hand-over and the native prompt flow.
@@ -5886,6 +5899,12 @@ extension MainViewController: BrowserChromeDelegate {
 
     var omniBar: any OmniBar {
         viewCoordinator.omniBar
+    }
+
+    var addressBarChromeView: UIView {
+        let barView = omniBar.barView
+        guard let toolbar = viewCoordinator.toolbar, barView.isDescendant(of: toolbar) else { return barView }
+        return toolbar.capsuleView
     }
 
     func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
@@ -8141,6 +8160,11 @@ extension MainViewController: NewTabPageControllerDelegate {
 
 extension MainViewController: TabDelegate {
 
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool {
+        notificationView != nil || findInPageView?.isHidden == false || tab.isDuckPlayerPillVisible
+            || tab.daxContextualOnboardingController != nil
+    }
+
     func tabDidLoadPageForAppRatingPrompt(_ tab: TabViewController) {
         promoCoordinationService?.registerAppRatingPromptUsage()
     }
@@ -9981,6 +10005,13 @@ extension MainViewController: OnboardingDelegate {
         let paywall = makeSubscriptionFlowViewController(
             redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue),
             includesPostPurchaseOnboarding: false,
+            subscriptionExperimentAttributionProvider: PaywallEntryExperimentAttributionProvider(
+                wrapping: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
+                entry: PaywallEntryExperimentAttributionProvider.vpnOnboardingPaywallEntry
+            ),
+            onFlowEvent: { [weak self] event in
+                self?.contextualOnboardingPixelReporter.measureTryVPNPaywallEvent(event)
+            },
             isPresentedFromOnboarding: true
         )
         let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)

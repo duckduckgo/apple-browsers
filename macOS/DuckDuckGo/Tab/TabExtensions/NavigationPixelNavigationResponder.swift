@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
 import Foundation
 import DDGNavigation
 import PixelKit
@@ -43,12 +42,10 @@ extension Navigation {
 final class NavigationPixelNavigationResponder {
 
     private let pixelFiring: PixelFiring?
-    private let featureFlagger: FeatureFlagger
     fileprivate var previousSameDocumentNavigation: SameDocumentNavigation?
 
-    init(pixelFiring: PixelFiring? = PixelKit.shared, featureFlagger: FeatureFlagger) {
+    init(pixelFiring: PixelFiring? = PixelKit.shared) {
         self.pixelFiring = pixelFiring
-        self.featureFlagger = featureFlagger
     }
 
     struct SameDocumentNavigation: Equatable {
@@ -173,18 +170,12 @@ extension NavigationPixelNavigationResponder: NavigationResponder {
             allResourcesCompleteMs = Int(duration * 1000)
         }
 
-        // Pass CPM heuristic experiment cohort
-        var additionalParams: [String: String] = [:]
-        if let cohort = featureFlagger.resolveCohort(for: FeatureFlag.heuristicAction) as? FeatureFlag.HeuristicActionCohort {
-            additionalParams["consentHeuristicEnabled"] = cohort == .treatment ? "1" : "0"
-        }
-
         // Fire the updated pixel with comprehensive timing data
         pixelFiring?.fire(SiteLoadingPixel.siteLoadingTiming(
             firstVisualLayoutMs: firstVisualLayoutMs,
             firstMeaningfulPaintMs: firstMeaningfulPaintMs,
             documentCompleteMs: documentCompleteMs,
             allResourcesCompleteMs: allResourcesCompleteMs
-        ), frequency: .sample(percentage: SiteLoadingPixel.samplePercentage), options: .parameters(additionalParams))
+        ), frequency: .sample(percentage: SiteLoadingPixel.samplePercentage))
     }
 }

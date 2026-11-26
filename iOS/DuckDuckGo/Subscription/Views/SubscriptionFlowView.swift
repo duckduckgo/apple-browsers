@@ -193,6 +193,9 @@ struct SubscriptionFlowView: View {
             SubscriptionTransactionErrorAlert.alert(
                 for: errorMessageType,
                 onDismiss: {
+                    if errorMessageType == .activeSubscription {
+                        viewModel.subscriptionFoundCancelled()
+                    }
                     viewModel.clearTransactionError()
                     dismiss()
                 },

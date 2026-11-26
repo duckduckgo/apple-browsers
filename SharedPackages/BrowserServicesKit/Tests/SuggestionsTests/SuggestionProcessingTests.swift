@@ -22,8 +22,6 @@ import XCTest
 
 final class SuggestionProcessingTests: XCTestCase {
 
-    static let simpleUrlFactory: (String) -> URL? = { _ in return nil }
-
     // MARK: - Basic Suggestion Tests
 
     func testWhenOnlyHistoryMatches_ThenHistoryInTopHits() {

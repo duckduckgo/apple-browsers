@@ -20,18 +20,15 @@ import Common
 import Foundation
 @testable import AutoconsentStats
 
-public class MockAutoconsentStatsEventMapping: EventMapping<AutoconsentStatsError> {
-    var events: [AutoconsentStatsError] = []
-    var errors: [Error] = []
+final class AutoconsentStatsEvents: Sendable {
+    private let recorded = Locked(wrappedValue: [AutoconsentStatsError]())
 
-    public init() {
-        weak var weakSelf: MockAutoconsentStatsEventMapping!
-        super.init { event, error, _, _ in
-            weakSelf!.events.append(event)
-            if let error = error {
-                weakSelf!.errors.append(error)
-            }
+    var events: [AutoconsentStatsError] { recorded.wrappedValue }
+
+    func makeMapping() -> EventMapping<AutoconsentStatsError> {
+        EventMapping { [recorded] event, _, _, _ in
+            // The stats actor is the only writer.
+            recorded.wrappedValue.append(event)
         }
-        weakSelf = self
     }
 }

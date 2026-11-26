@@ -519,7 +519,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Set while a window resize moves the surface between the sheet and the sidebar. The chat carries on, so leaving
     /// one presentation and arriving in the other neither closes nor opens it. Arriving clears it, in `viewDidAppear`.
-    private(set) var isChangingSurface = false
+    @Published private(set) var isChangingSurface = false
 
     func beginSurfaceChange() {
         isChangingSurface = true

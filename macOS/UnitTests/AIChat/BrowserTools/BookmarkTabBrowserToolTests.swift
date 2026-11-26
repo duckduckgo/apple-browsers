@@ -44,6 +44,35 @@ final class BookmarkTabBrowserToolTests: XCTestCase {
         XCTAssertNil(bookmark?.parentFolderUUID)
     }
 
+    func testWhenThePageTitleIsLongThenTheBookmarkTitleIsCapped() async {
+        let (tool, context, manager, _) = make()
+        tabs[0].title = String(repeating: "é", count: BrowserToolOutputLimits.title + 10)
+
+        _ = await tool.execute(arguments: [:], context: context)
+
+        XCTAssertEqual(manager.getBookmark(forUrl: pageURL)?.title, String(repeating: "é", count: BrowserToolOutputLimits.title))
+    }
+
+    func testWhenTheOwnerTabIsNotAWebPageThenNothingIsBookmarked() async {
+        let store = BookmarkStoreMock(bookmarks: [])
+        let manager = LocalBookmarkManager(bookmarkStore: store, foldersStore: BookmarkFolderStoreMock(), appearancePreferences: .mock)
+        manager.loadBookmarks()
+        let owner = Tab(content: .settings(pane: nil))
+        let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: [owner]), pinnedTabsManagerProvider: nil)
+        let windows = WindowControllersManagerMock()
+        windows.customAllTabCollectionViewModels = [collection]
+        let tool = BookmarkTabBrowserTool(windowControllersManager: windows, bookmarkManager: manager)
+        let context = BrowserToolCallContext(ownerTabID: owner.uuid,
+                                             ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
+                                             isBurner: false)
+
+        let result = await tool.execute(arguments: [:], context: context)
+
+        XCTAssertEqual(result, .failure(.unavailable))
+        XCTAssertNil(tool.permissionTarget(arguments: [:], context: context))
+        XCTAssertNil(store.saveEntitiesAtIndicesCalledWith)
+    }
+
     func testWhenPartOfTheFolderPathIsMissingThenItIsCreatedUnderTheExistingFolder() async {
         let travel = BookmarkFolder(id: "travel", title: "Travel")
         let (tool, context, manager, owner) = make(bookmarks: [travel])

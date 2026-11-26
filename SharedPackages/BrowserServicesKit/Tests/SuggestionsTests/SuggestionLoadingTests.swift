@@ -31,7 +31,7 @@ final class SuggestionLoadingTests: XCTestCase {
         private var completionData: Data?
         private var completionError: Error?
 
-        private var asyncDelay: TimeInterval?
+        private var pendingCompletion: ((Data?, Error?) -> Void)?
 
         private(set) var bookmarkCallCount = 0
         private(set) var historyCallCount = 0
@@ -47,15 +47,13 @@ final class SuggestionLoadingTests: XCTestCase {
              history: [HistorySuggestion] = [],
              bookmarks: [Bookmark] = [],
              internalPages: [InternalPage] = [],
-             openTabs: [BrowserTab] = [],
-             delay: TimeInterval? = 0.01) {
+             openTabs: [BrowserTab] = []) {
             self.completionData = data
             self.bookmarks = bookmarks
             self.history = history
             self.internalPages = internalPages
             self.openTabs = openTabs
             self.completionError = error
-            self.asyncDelay = delay
             self.platform = platform
         }
 
@@ -84,13 +82,13 @@ final class SuggestionLoadingTests: XCTestCase {
                                withParameters parameters: [String: String],
                                completion: @escaping (Data?, Error?) -> Void) {
             dataCallCount += 1
-            if let asyncDelay = asyncDelay {
-                DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(Int(asyncDelay * 1000))) {
-                    completion(self.completionData, self.completionError)
-                }
-            } else {
-                completion(completionData, completionError)
-            }
+            pendingCompletion = completion
+        }
+
+        func finishRequest() {
+            let completion = pendingCompletion
+            pendingCompletion = nil
+            completion?(completionData, completionError)
         }
     }
 
@@ -125,12 +123,13 @@ final class SuggestionLoadingTests: XCTestCase {
             XCTAssertEqual(dataSource.dataCallCount, 1)
             e.fulfill()
         }
+        dataSource.finishRequest()
         waitForExpectations(timeout: 1)
     }
 
     @MainActor
     func testWhenAPIReturnsError_ThenErrorAndLocalSuggestionsAreReturned() {
-        let dataSource = SuggestionLoadingDataSourceMock(error: E(), platform: .desktop, bookmarks: [], delay: 0)
+        let dataSource = SuggestionLoadingDataSourceMock(error: E(), platform: .desktop, bookmarks: [])
         let loader = SuggestionLoader()
 
         let e = expectation(description: "suggestions callback")
@@ -139,6 +138,7 @@ final class SuggestionLoadingTests: XCTestCase {
             XCTAssertNotNil(error)
             e.fulfill()
         }
+        dataSource.finishRequest()
         waitForExpectations(timeout: 1)
     }
 
@@ -146,7 +146,7 @@ final class SuggestionLoadingTests: XCTestCase {
     func testWhenAPIReturnsMalformedData_ThenErrorAndLocalSuggestionsAreReturned() {
         let dataSource = SuggestionLoadingDataSourceMock(data: "malformed data".data(using: .utf8),
                                                          platform: .desktop,
-                                                         bookmarks: [], delay: 0)
+                                                         bookmarks: [])
         let loader = SuggestionLoader()
 
         let e = expectation(description: "suggestions callback")
@@ -155,6 +155,7 @@ final class SuggestionLoadingTests: XCTestCase {
             XCTAssertNotNil(error)
             e.fulfill()
         }
+        dataSource.finishRequest()
         waitForExpectations(timeout: 1)
     }
 
@@ -172,6 +173,7 @@ final class SuggestionLoadingTests: XCTestCase {
             XCTAssertNil(error)
             e.fulfill()
         }
+        dataSource.finishRequest()
         waitForExpectations(timeout: 1)
     }
 

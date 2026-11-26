@@ -45,6 +45,8 @@ private enum BrowserToolsDebugText {
     static let reset = "Reset Browser Tool Permissions"
     static let resetDetails = "Clears saved Always/Never decisions."
     static let invalidJSON = "JSON error"
+    static let showMockPrompt = "Show Mock Permission Alert"
+    static let mockPromptUnavailable = "Could not show the mock permission alert."
 }
 
 struct BrowserToolsDebugView: View {
@@ -105,6 +107,10 @@ struct BrowserToolsDebugView: View {
                 Button(action: model.run) { Text(verbatim: BrowserToolsDebugText.run) }
                     .disabled(model.isRunning)
                 if model.isRunning { SwiftUI.ProgressView() }
+            }
+            Section {
+                Button(action: model.showMockPermissionAlert) { Text(verbatim: BrowserToolsDebugText.showMockPrompt) }
+                    .disabled(model.isRunning)
             }
             if let output = model.output {
                 Section(header: Text(verbatim: BrowserToolsDebugText.response)) {
@@ -246,6 +252,7 @@ private final class BrowserToolsDebugModel: ObservableObject {
     private weak var owner: Tab?
     private weak var surface: UIViewController?
     private var session: BrowserToolsDebugSession?
+    private var mockPermissionPresenter: AIChatToolPermissionPresenter?
 
     init(tabManager: TabManager) {
         self.tabManager = tabManager
@@ -272,10 +279,10 @@ private final class BrowserToolsDebugModel: ObservableObject {
         self.surface = surface
         guard session == nil else { return }
         guard let owner, let scope = tabManager.makeBrowserToolScope(for: owner) else { return }
-        let presenter = AIChatNativePermissionPresenter(surface: { [weak surface] in
-            guard surface?.viewIfLoaded?.window?.windowScene?.activationState == .foregroundActive else { return nil }
-            return surface
-        })
+        let presenter = AIChatToolPermissionPresenter { [weak surface] in
+            guard let surface, surface.viewIfLoaded?.window?.windowScene?.activationState == .foregroundActive else { return nil }
+            return .init(surface)
+        }
         session = BrowserToolsDebugSession(service: tabManager.browserToolsService, scope: scope, presenter: presenter,
                                           isNormalMode: { [weak tabManager] in tabManager?.currentBrowsingMode == .normal })
     }
@@ -286,6 +293,8 @@ private final class BrowserToolsDebugModel: ObservableObject {
     }
 
     func close() {
+        mockPermissionPresenter?.withdrawActive {}
+        mockPermissionPresenter = nil
         if case .running(let task) = execution { task.cancel() }
         session?.close()
         session = nil
@@ -295,6 +304,20 @@ private final class BrowserToolsDebugModel: ObservableObject {
     func leaveScreen() {
         surface = nil
         close()
+    }
+
+    func showMockPermissionAlert() {
+        guard let surface, !isRunning, mockPermissionPresenter?.isPresentingPermission != true else { return }
+        let presenter = AIChatToolPermissionPresenter { [weak surface] in
+            surface.map { .init($0) }
+        }
+        let tools: [ClientToolCapability] = [.readTabContent, .searchHistory, .listOpenTabs]
+        // Repeat the sample tools to exercise scrolling in the permission list.
+        guard presenter.previewAccessPrompt(toolNames: (tools + tools).map(\.name)) else {
+            execution = .finished(BrowserToolsDebugText.mockPromptUnavailable)
+            return
+        }
+        mockPermissionPresenter = presenter
     }
 
     func resetPermissions() {
@@ -386,7 +409,6 @@ private struct BrowserToolsDebugSurface: UIViewControllerRepresentable {
             super.viewWillDisappear(animated)
             dismissKeyboard()
             removeKeyboardDismissalGesture()
-            if transitionCoordinator?.viewController(forKey: .to) is UIAlertController { return }
             model.leaveScreen()
         }
 

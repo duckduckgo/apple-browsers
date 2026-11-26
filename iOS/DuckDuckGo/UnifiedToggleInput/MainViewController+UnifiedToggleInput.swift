@@ -70,7 +70,8 @@ extension MainViewController {
         let aiChatPreferences = AIChatPreferencesPersistor()
         let stateStore = UnifiedInputStateStore(
             preferences: aiChatPreferences,
-            toggleModeStorage: toggleModeStorage
+            toggleModeStorage: toggleModeStorage,
+            startsNewChatsOnDefault: featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
         )
         stateStore.observeTabsModel(tabManager.normalTabsModel)
         stateStore.observeTabsModel(tabManager.fireModeTabsModel)

@@ -55,6 +55,8 @@ public enum BrowserToolPromptAnswer: String, Equatable, Sendable {
     case allowForChat = "allow_for_chat"
     case always
     case never
+    /// Refused this call without remembering it.
+    case dontAllow = "dont_allow"
     case dismiss
     /// Unanswered until the permission deadline.
     case timeout

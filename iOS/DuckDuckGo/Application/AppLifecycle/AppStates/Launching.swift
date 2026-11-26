@@ -56,7 +56,6 @@ struct Launching: LaunchingHandling {
     private let aiChatSettings: AIChatSettings
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
-    private let isAppLaunchedInBackground = UIApplication.shared.applicationState == .background
 
     private let configuration: AppConfiguration
     private let services: AppServices
@@ -378,8 +377,6 @@ struct Launching: LaunchingHandling {
                                               favicons: favicons,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               customConfigurationURLProvider: AppDependencyProvider.shared.configurationURLProvider,
-                                              didFinishLaunchingStartTime: isAppLaunchedInBackground ? nil : didFinishLaunchingStartTime,
-                                              isAppLaunchedInBackground: isAppLaunchedInBackground,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                               systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager,
                                               daxDialogsManager: daxDialogs,
@@ -640,14 +637,12 @@ extension Launching {
 
     struct StateContext {
 
-        let didFinishLaunchingStartTime: CFAbsoluteTime
         let appDependencies: AppDependencies
 
     }
 
     func makeStateContext() -> StateContext {
-        .init(didFinishLaunchingStartTime: didFinishLaunchingStartTime,
-              appDependencies: appDependencies)
+        .init(appDependencies: appDependencies)
     }
 
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {

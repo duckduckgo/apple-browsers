@@ -38,6 +38,8 @@ struct Background: BackgroundHandling {
     /// Passed on to the next foreground, which records the page: drawn by a launch that went to the background first,
     /// or by a warm return's `willLeave`.
     private var drewIdleReturnNewTabPage: Bool
+    /// The scene's first screen, when it was deferred and the scene went to the background before any foreground.
+    private var pendingInitialView: InitialViewLoader?
     private var services: AppServices { appDependencies.services }
 
     init(stateContext: Connected.StateContext, lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -46,6 +48,7 @@ struct Background: BackgroundHandling {
         sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = true
         drewIdleReturnNewTabPage = stateContext.drewIdleReturnNewTabPage
+        pendingInitialView = stateContext.pendingInitialView
     }
 
     init(stateContext: Foreground.StateContext, lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -111,8 +114,11 @@ extension Background {
         ThemeManager.shared.updateUserInterfaceStyle()
         var background = self
         let mainCoordinator = appDependencies.mainCoordinator
-        mainCoordinator.start(drawsIdleReturnNewTabPage: false, applicationState: .inactive)
-        if mainCoordinator.drawsNewTabPageForIdleReturnOnForeground(
+        if var initialView = pendingInitialView {
+            initialView.loadIfPending(hasLaunchAction: actionToHandle != nil)
+            background.pendingInitialView = nil
+            background.drewIdleReturnNewTabPage = initialView.drewIdleReturnNewTabPage
+        } else if mainCoordinator.drawsNewTabPageForIdleReturnOnForeground(
             outcome: appDependencies.idleReturnEvaluator.evaluateReturn(),
             isFeatureOn: appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageOnForeground),
             hasLaunchAction: actionToHandle != nil,
@@ -148,23 +154,29 @@ extension Background {
     }
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
-        Foreground(stateContext: StateContext(appDependencies: appDependencies,
-                                              sceneDependencies: sceneDependencies,
-                                              didTransitionFromLaunching: didTransitionFromLaunching,
-                                              drewIdleReturnNewTabPage: drewIdleReturnNewTabPage),
-                   actionToHandle: actionToHandle,
-                   lastBackgroundDateStorage: lastBackgroundDateStorage)
+        var drewIdleReturnNewTabPage = drewIdleReturnNewTabPage
+        // UIKit can activate the scene without `willLeave`, so a deferred first screen is drawn here too.
+        if var initialView = pendingInitialView {
+            initialView.loadIfPending(hasLaunchAction: actionToHandle != nil)
+            drewIdleReturnNewTabPage = initialView.drewIdleReturnNewTabPage
+        }
+        return Foreground(stateContext: StateContext(appDependencies: appDependencies,
+                                                     sceneDependencies: sceneDependencies,
+                                                     didTransitionFromLaunching: didTransitionFromLaunching,
+                                                     drewIdleReturnNewTabPage: drewIdleReturnNewTabPage),
+                          actionToHandle: actionToHandle,
+                          lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
     /// If confirmed this scenario never occurs, this code should be removed.
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
-        Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
-                                                       appDependencies: appDependencies),
+        Connected(stateContext: Launching.StateContext(appDependencies: appDependencies),
                   actionToHandle: actionToHandle,
                   window: window,
-                  lastBackgroundDateStorage: lastBackgroundDateStorage)
+                  lastBackgroundDateStorage: lastBackgroundDateStorage,
+                  isReattachingWindow: true)
     }
 
 }

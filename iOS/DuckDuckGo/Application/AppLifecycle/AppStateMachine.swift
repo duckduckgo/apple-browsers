@@ -106,7 +106,8 @@ protocol LaunchingHandling {
 protocol ConnectedHandling {
 
     associatedtype Dependencies
-    func willEnterForeground()
+    /// Draws the scene's first screen if it was deferred, and returns the state to keep.
+    func loadInitialViewIfPending(actionToHandle: AppAction?) -> any ConnectedHandling
     func makeBackgroundState() -> any BackgroundHandling
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
 
@@ -264,7 +265,7 @@ final class AppStateMachine {
     private func respond(to event: AppEvent, in connected: any ConnectedHandling) {
         switch event {
         case .didBecomeActive:
-            connected.willEnterForeground()
+            let connected = connected.loadInitialViewIfPending(actionToHandle: actionToHandle)
             let foreground = connected.makeForegroundState(actionToHandle: actionToHandle)
             foreground.onTransition()
             foreground.didReturn()
@@ -278,7 +279,7 @@ final class AppStateMachine {
             currentState = .background(background)
         case .willEnterForeground:
             launchBreadcrumb.mark(.enteringForeground)
-            connected.willEnterForeground()
+            currentState = .connected(connected.loadInitialViewIfPending(actionToHandle: actionToHandle))
         case .willConnectToWindow(let window):
             let windowChanged = lastConnectedWindowIdentifier != ObjectIdentifier(window)
             storeWindowIdentifier(window)

@@ -129,8 +129,6 @@ final class MainCoordinator {
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          customConfigurationURLProvider: CustomConfigurationURLProviding,
-         didFinishLaunchingStartTime: CFAbsoluteTime?,
-         isAppLaunchedInBackground: Bool,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
@@ -174,7 +172,7 @@ final class MainCoordinator {
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() },
                                                           promoGate: promoCoordinationService,
-                                                          isRMFAdmissionEnabled: !isAppLaunchedInBackground,
+                                                          isRMFAdmissionEnabled: false,
                                                           promptExposureReporter: promptExposureReporter)
         self.homePageConfiguration = homePageConfiguration
         let previewsSource = DefaultTabPreviewsSource()
@@ -317,7 +315,6 @@ final class MainCoordinator {
                                         favicons: favicons,
                                         textZoomCoordinatorProvider: textZoomCoordinatorProvider,
                                         websiteDataManager: websiteDataManager,
-                                        appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
                                         aiChatSyncCleaner: syncService.aiChatSyncCleaner,
@@ -370,8 +367,8 @@ final class MainCoordinator {
 
     }
 
-    func start(drawsIdleReturnNewTabPage: Bool, applicationState: UIApplication.State = UIApplication.shared.applicationState) {
-        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage, applicationState: applicationState)
+    func start(drawsIdleReturnNewTabPage: Bool) {
+        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
     }
 
     /// Whether a warm return puts up the after-idle New Tab Page before its first frame, given the UI it's returning to.
@@ -747,14 +744,9 @@ final class MainCoordinator {
     func onBackground() {
         homePageConfiguration.handleAppBackgrounded()
         promoCoordinationService.handleAppBackgrounded()
-        resetAppStartTime()
         Task {
             await privacyStats.handleAppTermination()
         }
-    }
-
-    private func resetAppStartTime() {
-        controller.appDidFinishLaunchingStartTime = nil
     }
 
     private func fireDailyAdBlockingPixel() {

@@ -300,11 +300,11 @@ extension Foreground {
     /// If confirmed this scenario never occurs, this code should be removed.
     func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
         keyboardPresenter.foregroundDidEnd()
-        return Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
-                                                              appDependencies: appDependencies),
+        return Connected(stateContext: Launching.StateContext(appDependencies: appDependencies),
                          actionToHandle: actionToHandle,
                          window: window,
-                         lastBackgroundDateStorage: lastBackgroundDateStorage)
+                         lastBackgroundDateStorage: lastBackgroundDateStorage,
+                         isReattachingWindow: true)
     }
 
 }

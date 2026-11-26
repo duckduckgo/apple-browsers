@@ -1,18 +1,4 @@
 {
-    "m_debug_app-did-show-ui-time-2-": {
-        "description": "Fires on app launch with the duration it took for the UI to become visible.",
-        "owners": ["jaceklyp", "bwaresiak"],
-        "triggers": ["startup"],
-        "suffixes": ["time_bucket", "platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "time",
-                "description": "Duration time",
-                "type": "number"
-            }
-        ]
-    },
     "m_keyboard_settings_on_new_tab_enabled": {
         "description": "Fires daily to measure the status of the \"Show keyboard on new tab\" setting",
         "owners": ["Bunn"],

@@ -51,7 +51,7 @@ let package = Package(
         .testTarget(
             name: "WebPageTranslationTests",
             dependencies: ["WebPageTranslation"],
-            resources: [.copy("Resources")],
+            resources: [.copy("Fixtures")],
             swiftSettings: [
                 .enableExperimentalFeature("StrictConcurrency")
             ]

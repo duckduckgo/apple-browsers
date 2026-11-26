@@ -37,7 +37,7 @@ extension StubbedNetworkTests {
         private let zst: Data
 
         init() throws {
-            let url = try #require(Bundle.module.url(forResource: "hello.txt", withExtension: "zst", subdirectory: "Resources"))
+            let url = try #require(Bundle.module.url(forResource: "hello.txt", withExtension: "zst", subdirectory: "Fixtures"))
             zst = try Data(contentsOf: url)
         }
 

@@ -67,30 +67,15 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
     }
 
-    func testBannerOfferForAnUnchangedPage() async throws {
-        let webView = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!])
-        let provider = try makeProvider(deviceLanguages: ["en-US"])
-        let offer = await provider.bannerOffer(in: webView)
-        XCTAssertEqual(offer, TranslationOffer(source: "fr", target: "en", pairID: "fr-en"))
-    }
-
-    func testNoBannerOfferWhenThePageChangedDuringDetection() async throws {
-        let webView = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!,
-                                                                URL(string: "https://example.fr/other")!])
-        let provider = try makeProvider(deviceLanguages: ["en-US"])
-        let offer = await provider.bannerOffer(in: webView)
-        XCTAssertNil(offer)
-    }
-
     func testNoOfferOnASiteInTheFeatureExceptions() async throws {
         let manager = MockPrivacyConfigurationManager()
         manager.privacyConfig = try WebPageTranslationSettingsTests.config(settings: "{}", exceptions: ["example.fr"])
         let provider = try makeProvider(settings: WebPageTranslationSettings(privacyConfigurationManager: manager))
 
-        let exceptedPage = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!])
+        let exceptedPage = try await loadedFrenchPage(at: URL(string: "https://example.fr/")!)
         let exceptedDecision = await provider.decision(in: exceptedPage)
         XCTAssertNil(exceptedDecision)
-        let otherPage = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.org/")!])
+        let otherPage = try await loadedFrenchPage(at: URL(string: "https://example.org/")!)
         let otherDecision = await provider.decision(in: otherPage)
         XCTAssertEqual(otherDecision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
     }
@@ -100,7 +85,7 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         manager.privacyConfig = try WebPageTranslationSettingsTests.config(settings: nil)
         let provider = try makeProvider(settings: WebPageTranslationSettings(privacyConfigurationManager: manager))
 
-        let page = try await loadedFrenchPage(urlsReported: [URL(string: "https://example.fr/")!])
+        let page = try await loadedFrenchPage(at: URL(string: "https://example.fr/")!)
         let decision = await provider.decision(in: page)
         XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
     }
@@ -114,13 +99,12 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         XCTAssertFalse(PageTranslationOfferProvider.isEligible(URL(string: "https://duck.ai/")!))
     }
 
-    private func loadedFrenchPage(urlsReported: [URL]) async throws -> WKWebView {
-        let webView = URLSequenceWebView()
+    private func loadedFrenchPage(at url: URL) async throws -> WKWebView {
+        let webView = WKWebView()
         let navigationDelegate = FinishedLoading()
         webView.navigationDelegate = navigationDelegate
-        webView.loadHTMLString("<html><body><p>\(Self.french)</p></body></html>", baseURL: URL(string: "https://example.fr/"))
+        webView.loadHTMLString("<html><body><p>\(Self.french)</p></body></html>", baseURL: url)
         await fulfillment(of: [navigationDelegate.finished], timeout: 10)
-        webView.urlsReported = urlsReported
         return webView
     }
 
@@ -148,14 +132,6 @@ final class PageTranslationOfferProviderTests: XCTestCase {
 }
 
 /// Reports the given URLs in turn, the last one from then on, to simulate the tab navigating mid-detection.
-private final class URLSequenceWebView: WKWebView {
-    var urlsReported: [URL] = []
-
-    override var url: URL? {
-        urlsReported.count > 1 ? urlsReported.removeFirst() : urlsReported.first
-    }
-}
-
 private struct MockCapability: WebPageTranslationCapable {
     let isWebPageTranslationEnabled: Bool
 }

@@ -878,6 +878,8 @@ class TabViewController: UIViewController {
     private var pageTranslationBridge: PageTranslationBridge?
     /// Made on the first Translate, for the current bridge.
     private var pageTranslationSession: PageTranslationSession?
+    /// Counts main-frame loads, so work started on a page can tell the tab has left it; pushState and replaceState don't count.
+    private var pageLoads = 0
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -2914,6 +2916,7 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        Task { @MainActor [pageTranslationSession] in pageTranslationSession?.cancel() }
         let browserToolsScript = userScripts?.aiChatUserScript
         Task { @MainActor in browserToolsScript?.detachBrowserTools() }
         delegateSessionFindInPage?.done()
@@ -2968,6 +2971,22 @@ extension TabViewController: LoginFormDetectionDelegate {
         detectedLoginURL = webView.url
     }
     
+}
+
+// The page's translation shows on the same bar as page loads.
+extension TabViewController: PageTranslationProgress {
+
+    func translationDidStart() {
+        progressWorker.didStartLoading(.translation)
+    }
+
+    func translationDidProgress(_ fraction: Double) {
+        progressWorker.progressDidChange(fraction, for: .translation)
+    }
+
+    func translationDidFinish() {
+        progressWorker.didFinishLoading(.translation)
+    }
 }
 
 // MARK: - WKNavigationDelegate
@@ -3030,7 +3049,7 @@ extension TabViewController: WKNavigationDelegate {
             signpostSearchCommit(url: webView.url)
             pageTranslationBridge?.documentDidChange()
             // The old page's translation may still be running; the new page gets its own session.
-            pageTranslationSession = nil
+            cancelPageTranslation()
         }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
@@ -3155,9 +3174,12 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
+        let pageLoad = pageLoads
         Task { [weak self, weak webView] in
-            guard let webView, let offer = await provider.bannerOffer(in: webView) else { return }
-            self?.showTranslationBanner(offer)
+            // Dropped if another page started loading while detecting; a URL change within the page, such as replaceState, keeps it.
+            guard let webView, case .banner(let offer) = await provider.decision(in: webView),
+                  let self, pageLoads == pageLoad else { return }
+            showTranslationBanner(offer)
         }
     }
 
@@ -3191,9 +3213,20 @@ extension TabViewController: WKNavigationDelegate {
 
     private func translatePage(_ offer: TranslationOffer) {
         guard let bridge = pageTranslationBridge, let pageTranslator else { return }
-        let session = pageTranslationSession ?? PageTranslationSession(bridge: bridge, translator: pageTranslator)
+        let settings = WebPageTranslationSettings(privacyConfigurationManager: privacyConfigurationManager)
+        let session = pageTranslationSession ?? PageTranslationSession(bridge: bridge,
+                                                                       translator: pageTranslator,
+                                                                       batchCharacterLimit: { settings.batchCharacterLimit },
+                                                                       progress: self)
         pageTranslationSession = session
         session.start(offer)
+    }
+
+    /// Stops the page's translation, if any, and clears its bar; a bar that a page load has taken over stays.
+    private func cancelPageTranslation() {
+        pageTranslationSession?.cancel()
+        pageTranslationSession = nil
+        progressWorker.didCancelLoading(.translation)
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.
@@ -3309,7 +3342,9 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         if webView === self.webView {
             firstPaintCover.didStartNavigation(navigation)
+            pageLoads += 1
             translationBannerPresenter.dismiss(animated: false)
+            cancelPageTranslation()
         }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {

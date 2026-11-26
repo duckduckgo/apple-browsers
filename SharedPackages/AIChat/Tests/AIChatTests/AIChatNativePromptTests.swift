@@ -22,6 +22,22 @@ import Testing
 
 struct AIChatNativePromptTests {
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A summary from the native chip says so, and other prompts leave the key out", .timeLimit(.minutes(1)))
+    func localTaskIsSentOnlyWhenSet() throws {
+        let summary = try queryJSON(AIChatNativePrompt.queryPrompt("Summarize this page.", autoSubmit: true, localTask: .summarize))
+        #expect(summary["localTask"] as? String == "summarize")
+
+        let typed = try queryJSON(AIChatNativePrompt.queryPrompt("Summarize this page.", autoSubmit: true))
+        #expect(typed["localTask"] == nil)
+    }
+
+    private func queryJSON(_ prompt: AIChatNativePrompt) throws -> [String: Any] {
+        let data = try JSONEncoder().encode(prompt)
+        let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        return try #require(object["query"] as? [String: Any])
+    }
+
     @Test
     func decodingQuery() throws {
         let json = """

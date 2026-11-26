@@ -23,6 +23,7 @@ import ConcurrencyExtensions
 import FoundationExtensions
 import Foundation
 import Persistence
+import PixelKit
 import UserScript
 import WebKit
 
@@ -33,6 +34,8 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var webView: WKWebView?
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
+    let messageFramePolicy: MessageFramePolicy
+    private let customURLHostname: String?
 
     private var cancellables: Set<AnyCancellable> = []
     private let additionalClientToolPermissionSources = NSHashTable<AnyObject>.weakObjects()
@@ -66,14 +69,17 @@ final class AIChatUserScript: NSObject, Subfeature {
     /// Nil uses the app's, which lives on the main actor and so can't be a default argument here.
     private let localModelAccessPrompt: LocalModelAccessAsking?
     private let bonusMessageLog: AIChatBonusMessageLogging?
+    private let pixelFiring: PixelFiring?
 
     init(handler: AIChatUserScriptHandling,
          urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
          browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService,
          localModelService: AIChatLocalModelServing? = Application.appDelegate.localModelService,
          localModelAccessPrompt: LocalModelAccessAsking? = nil,
-         bonusMessageLog: AIChatBonusMessageLogging? = nil) {
+         bonusMessageLog: AIChatBonusMessageLogging? = nil,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.handler = handler
+        self.pixelFiring = pixelFiring
         self.browserTools = browserTools
         self.localModelService = localModelService
         self.localModelAccessPrompt = localModelAccessPrompt
@@ -101,6 +107,9 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         self.messageOriginPolicy = .only(rules: originRules)
         self.messageDestinationPolicy = .only(rules: destinationRules)
+        // A custom hostname may be a local http server, so only the main-frame part applies then.
+        self.messageFramePolicy = urlSettings.customURLHostname == nil ? .secureMainFrame : .mainFrame
+        self.customURLHostname = urlSettings.customURLHostname
         super.init()
 
         handler.aiChatNativePromptPublisher
@@ -148,11 +157,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker?.push(method: AIChatUserScriptMessages.submitAIChatNativePrompt.rawValue, params: prompt, for: self, into: webView)
     }
 
-    private func submitAIChatPageContext(_ pageContextData: AIChatPageContextData?) {
+    private func submitAIChatPageContext(_ response: PageContextResponse) {
         guard let webView else {
             return
         }
-        let response = PageContextResponse(pageContext: pageContextData)
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
     }
 
@@ -198,6 +206,17 @@ final class AIChatUserScript: NSObject, Subfeature {
         pendingOpenSettingsAction = false
         openSettingsMessageCount = 0
         submitOpenSettingsAction()
+    }
+
+    /// Sync handlers expose sync secrets, so only Duck.ai's own main frame may call them,
+    /// not any page that passes the duckduckgo.com origin policy.
+    private func duckAIMainFrameOnly(_ handler: @escaping Subfeature.Handler) -> Subfeature.Handler {
+        return { [customURLHostname] params, message in
+            guard await message.isFromDuckAIMainFrame(customHostname: customURLHostname) else {
+                return AIChatErrorResponse(reason: "sync unavailable")
+            }
+            return try await handler(params, message)
+        }
     }
 
     private func resolveHandler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -253,6 +272,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.reportMetric
         case .togglePageContextTelemetry:
             return handler.togglePageContextTelemetry
+        case .responseReceived:
+            return handler.responseReceived
         case .storeMigrationData:
             return handler.storeMigrationData
         case .getMigrationDataByIndex:
@@ -262,19 +283,19 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .clearMigrationData:
             return handler.clearMigrationData
         case .getSyncStatus:
-            return handler.getSyncStatus
+            return duckAIMainFrameOnly(handler.getSyncStatus)
         case .getScopedSyncAuthToken:
-            return handler.getScopedSyncAuthToken
+            return duckAIMainFrameOnly(handler.getScopedSyncAuthToken)
         case .encryptWithSyncMasterKey:
-            return handler.encryptWithSyncMasterKey
+            return duckAIMainFrameOnly(handler.encryptWithSyncMasterKey)
         case .decryptWithSyncMasterKey:
-            return handler.decryptWithSyncMasterKey
+            return duckAIMainFrameOnly(handler.decryptWithSyncMasterKey)
         case .sendToSetupSync:
-            return handler.sendToSetupSync
+            return duckAIMainFrameOnly(handler.sendToSetupSync)
         case .sendToSyncSettings:
-            return handler.sendToSyncSettings
+            return duckAIMainFrameOnly(handler.sendToSyncSettings)
         case .setAIChatHistoryEnabled:
-            return handler.setAIChatHistoryEnabled
+            return duckAIMainFrameOnly(handler.setAIChatHistoryEnabled)
         case .getAIChatBonusRecord:
             return handler.getAIChatBonusRecord
         case .getAIChatNewBonusRecord:
@@ -380,14 +401,25 @@ extension AIChatUserScript: AIChatLocalModelPushing {
 
 extension AIChatUserScript: ClientToolPermissionPrompting {
 
-    /// No native prompt yet: a tool without a stored Always/Never decision is cancelled.
     @MainActor
     func presentClientToolPermissionPrompt(_ prompt: ClientToolPermissionPrompt) -> Bool {
-        false
+        browserTools?.permissionPrompts.present(prompt, chatWebView: webView, prompter: self) ?? false
     }
 
     @MainActor
-    func withdrawClientToolPermissionPrompt(requestID: String) {}
+    func withdrawClientToolPermissionPrompt(requestID: String) {
+        browserTools?.permissionPrompts.withdraw(requestID: requestID)
+    }
+
+    @MainActor
+    func clientToolUseDidStart(requestID: String, toolName: String) {
+        browserTools?.permissionPrompts.startUse(requestID: requestID, toolName: toolName, chatWebView: webView)
+    }
+
+    @MainActor
+    func clientToolUseDidEnd(requestID: String, completed: Bool) {
+        browserTools?.permissionPrompts.endUse(requestID: requestID, completed: completed)
+    }
 
     /// The chat document is gone (navigated, reloaded or closed), so its pending calls finish as
     /// `cancelled`. Hiding the sidebar keeps the document, so it does not come here.
@@ -411,6 +443,8 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
         let response = await handler.getAIChatNativeConfigValues(params: params, message: message)
         guard var configValues = response as? AIChatNativeConfigValues else { return response }
         configValues.clientTools = clientToolsConfiguration(for: message)
+        // Only where tools are offered, so Fire windows never send the answer metrics.
+        configValues.supportsBrowserToolsAnswerMetrics = configValues.clientTools != nil
         // The model's state and text reach the page only through `pushToDuckAI`. A page it skips,
         // such as Duck.ai on duckduckgo.com, would wait for a summary that never arrives.
         if !isDuckAIPushDestination(message.messageWebView?.url) {
@@ -428,8 +462,10 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
     @MainActor
     fileprivate func clientToolsConfiguration(for message: UserScriptMessage) -> ClientToolsConfiguration? {
         guard isClientToolsPage(message.messageWebView?.url),
-              handler.isFireWindowProvider?() != true else { return nil }
-        return browserTools?.clientToolsConfiguration
+              handler.isFireWindowProvider?() != true,
+              let configuration = browserTools?.clientToolsConfiguration else { return nil }
+        pixelFiring?.fire(BrowserToolsPixel.enabled, frequency: .daily)
+        return configuration
     }
 
     @MainActor
@@ -450,6 +486,9 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
         guard handler.isFireWindowProvider?() != true,
               let webView, let broker,
               isClientToolsPage(webView.url) else { return }
+        if data.clientTools != nil {
+            pixelFiring?.fire(BrowserToolsPixel.enabled, frequency: .daily)
+        }
         broker.push(method: AIChatUserScriptMessages.clientToolsChanged.rawValue, params: data, for: self, into: webView)
     }
 

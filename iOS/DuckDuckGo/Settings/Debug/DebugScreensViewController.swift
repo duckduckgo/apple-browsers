@@ -121,7 +121,7 @@ struct DebugScreensView: View {
                                         Text(verbatim: "Default: \(model.featureFlagDefaultValue(flag))")
                                             .font(.caption)
                                             .foregroundColor(.gray)
-                                        if flag == .promoPresentationCoordination || flag == .sitePermissions {
+                                        if flag == .promoPresentationCoordination {
                                             Text(verbatim: "Relaunch required for changes to take effect.")
                                                 .font(.caption)
                                                 .foregroundColor(.gray)

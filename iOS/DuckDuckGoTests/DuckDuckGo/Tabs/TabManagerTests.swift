@@ -1428,7 +1428,7 @@ final class TabManagerTests: XCTestCase {
         LastActiveTabStore(store: store).recordActiveTab(uid: fireTab.uid)
         let manager = try makeManager(TabsModel(tabs: [restored[0], restored[1]], currentIndex: 1, desktop: false),
                                       fireModel: TabsModel(tabs: [restored[2]], desktop: false, mode: .fire),
-                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode, .alwaysShowKeyboardOnNewTabPage]))
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
         let eligibility = MockIdleReturnEligibilityManager()
         eligibility.isFeatureAvailableResult = true
         eligibility.isEligibleForNTPAfterIdleResult = true

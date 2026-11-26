@@ -121,7 +121,7 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         let extensions = ["bitwarden": entry(identifier)]
         XCTAssertEqual(try makeCatalog(extensions: extensions, catalogState: "disabled").extensionIDs, [])
         XCTAssertEqual(try makeCatalog(extensions: extensions, webstoreState: "disabled").extensionIDs, [])
-        XCTAssertEqual(try makeCatalog(extensions: extensions, launchedState: "disabled").extensionIDs, [])
+        XCTAssertEqual(try makeCatalog(extensions: extensions, isLaunched: false).extensionIDs, [])
         XCTAssertEqual(try makeCatalog(extensions: extensions).extensionIDs, [identifier])
     }
 
@@ -130,7 +130,7 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
             privacyConfig: try makeConfiguration(extensions: ["bitwarden": entry(identifier)]),
             internalUserDecider: internalUser
         )
-        let catalog = ChromeWebStoreCatalog(configurationManager: manager)
+        let catalog = ChromeWebStoreCatalog(configurationManager: manager, isExtensionsEnabled: { true })
         XCTAssertEqual(catalog.extensionIDs, [identifier])
 
         manager.privacyConfig = try makeConfiguration(extensions: [
@@ -144,7 +144,8 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
     func testDisablingSiteProtectionsKeepsCatalogExtensionAvailable() throws {
         let protectionStore = MockDomainsProtectionStore()
         let config = try makeConfiguration(extensions: ["bitwarden": entry(identifier)], localProtection: protectionStore)
-        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config))
+        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config),
+                                            isExtensionsEnabled: { true })
         XCTAssertTrue(catalog.contains(identifier))
 
         protectionStore.disableProtection(forDomain: ChromeWebStoreURL.host)
@@ -158,7 +159,8 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
     func testTemporarilyUnprotectedSiteKeepsCatalogExtensionAvailable() throws {
         let config = try makeConfiguration(extensions: ["bitwarden": entry(identifier)],
                                            unprotectedTemporary: [ChromeWebStoreURL.host])
-        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config))
+        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config),
+                                            isExtensionsEnabled: { true })
         XCTAssertFalse(config.isFeature(.chromeWebstorePatching, enabledForDomain: ChromeWebStoreURL.host))
         XCTAssertTrue(catalog.contains(identifier))
     }
@@ -167,7 +169,8 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         let protectionStore = MockDomainsProtectionStore()
         let config = try makeConfiguration(extensions: ["bitwarden": entry(identifier)],
                                            localProtection: protectionStore, exceptions: [ChromeWebStoreURL.host])
-        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config))
+        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config),
+                                            isExtensionsEnabled: { true })
         XCTAssertFalse(catalog.contains(identifier))
 
         protectionStore.disableProtection(forDomain: ChromeWebStoreURL.host)
@@ -189,13 +192,14 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
     private func makeCatalog(extensions: [String: [String: Any]],
                              catalogState: String = "enabled",
                              webstoreState: String = "enabled",
-                             launchedState: String = "enabled",
+                             isLaunched: Bool = true,
                              managementSettings: [String: Any] = [:],
                              isAppStoreBuild: Bool = false) throws -> ChromeWebStoreCatalog {
         let config = try makeConfiguration(extensions: extensions, catalogState: catalogState, webstoreState: webstoreState,
-                                           launchedState: launchedState, managementSettings: managementSettings)
+                                           managementSettings: managementSettings)
         return ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: config,
                                                                                            internalUserDecider: internalUser),
+                                     isExtensionsEnabled: { isLaunched },
                                      isAppStoreBuild: isAppStoreBuild)
     }
 
@@ -203,7 +207,6 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
     private func makeConfiguration(extensions: [String: [String: Any]],
                                    catalogState: String = "enabled",
                                    webstoreState: String = "enabled",
-                                   launchedState: String = "enabled",
                                    managementSettings: [String: Any] = [:],
                                    localProtection: MockDomainsProtectionStore = MockDomainsProtectionStore(),
                                    exceptions: [String] = [],
@@ -216,10 +219,7 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
                 ],
                 "extensionManagement": [
                     "state": "enabled",
-                    "settings": managementSettings,
-                    "features": [
-                        "isLaunchedExtensions": ["state": launchedState]
-                    ]
+                    "settings": managementSettings
                 ],
                 "extensionsCatalog": [
                     "state": catalogState,

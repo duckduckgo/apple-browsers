@@ -19,12 +19,12 @@ appId: com.duckduckgo.mobile.ios
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
         "ff.aiChatChromeShortcutIPad": "true"
         "ff.aiChatChromeMenuButtonIPad": "true"
         "ff.contextualDuckAIMode": "true"
         "ff.aiChatAddressBarRecentChats": "true"
+- runFlow: dismiss_launch_keyboard.yaml
 
 # Dismiss the Dax onboarding tips if they appear over the New Tab Page.
 - runFlow: ./hide_daxdialogs.yaml

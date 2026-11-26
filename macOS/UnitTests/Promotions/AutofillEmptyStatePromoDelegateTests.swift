@@ -18,7 +18,6 @@
 
 import Combine
 @testable import DDGSync
-import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
@@ -27,7 +26,6 @@ import XCTest
 @MainActor
 final class AutofillEmptyStatePromoDelegateTests: XCTestCase {
 
-    private var featureFlagger: MockFeatureFlagger!
     private var dataImportCompleted: PassthroughSubject<Void, Never>!
     private var syncService: MockDDGSyncing!
     private var isAnyCategoryEmpty = true
@@ -36,8 +34,6 @@ final class AutofillEmptyStatePromoDelegateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.promoQueueAutofillEmptyStatePromo]
         dataImportCompleted = PassthroughSubject()
         syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
         isAnyCategoryEmpty = true
@@ -49,14 +45,12 @@ final class AutofillEmptyStatePromoDelegateTests: XCTestCase {
         recordedResults = []
         syncService = nil
         dataImportCompleted = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
     // Refreshes eligibility once, as `PromoService` does before reading it.
     private func makeSUT() -> AutofillEmptyStatePromoDelegate {
         let sut = AutofillEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             isAnyCategoryEmptyProvider: { [unowned self] in isAnyCategoryEmpty },
             dataImportCompletedPublisher: dataImportCompleted.eraseToAnyPublisher(),
             syncService: syncService,
@@ -101,12 +95,6 @@ final class AutofillEmptyStatePromoDelegateTests: XCTestCase {
 
     func testWhenEveryCategoryHasItemsThenNotEligible() {
         isAnyCategoryEmpty = false
-
-        XCTAssertFalse(makeSUT().isEligible)
-    }
-
-    func testWhenKillSwitchIsOffThenNotEligible() {
-        featureFlagger.enabledFeatureFlags = []
 
         XCTAssertFalse(makeSUT().isEligible)
     }

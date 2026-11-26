@@ -322,8 +322,20 @@ platform :mac do
 
     release = fetch_live_appstore_release(options)
     UI.message("App Store version: #{release[:version]} (#{release[:build_number]})")
+    UI.message("Version state: #{release[:version_state]}")
     UI.message("Phased release: #{release[:phase_state] || 'none'}, started #{release[:phase_start_date] || 'n/a'}")
     UI.message("Is critical: #{is_critical.nil? ? 'unchanged' : is_critical}")
+
+    # Apple can take up to a day to make a released version downloadable, so prompting for it now could
+    # point users at an update the App Store doesn't serve yet.
+    if release[:version_state] == Spaceship::ConnectAPI::AppStoreVersion::AppVersionState::PROCESSING_FOR_DISTRIBUTION
+      unless is_critical.nil?
+        UI.user_error!("#{release[:version]} is still processing for distribution, so is_critical can't be set yet. " \
+                       "Run this workflow again once App Store Connect shows it as Ready for Distribution.")
+      end
+      UI.important("#{release[:version]} is still processing for distribution: not updating release_metadata.json")
+      next
+    end
 
     s3_bucket = ENV['RELEASE_BUCKET_NAME']
     s3_prefix = ENV['RELEASE_BUCKET_PREFIX']
@@ -637,6 +649,7 @@ platform :mac do
     {
       version: version,
       build_number: build_number,
+      version_state: live_version.app_version_state,
       phase_state: phased_release&.phased_release_state,
       phase_start_date: phased_release&.start_date
     }

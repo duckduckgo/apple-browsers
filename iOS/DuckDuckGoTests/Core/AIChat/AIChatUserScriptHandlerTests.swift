@@ -600,6 +600,64 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testCustomizeResponsesInSettingsIsSentOnlyOnIPhoneWithSimplifiedPromptBox() throws {
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        for isIphone in [true, false] {
+            MockDevicePlatform.isIphone = isIphone
+            for isFlagOn in [false, true] {
+                mockFeatureFlagger.enabledFeatureFlags = isFlagOn ? [.unifiedToggleInputSimplifiedPromptBox] : []
+                aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+                let config = try XCTUnwrap(aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues)
+                let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+
+                let value = json["supportsCustomizeResponsesInSettings"] as? Bool
+                XCTAssertEqual(value, isIphone && isFlagOn ? true : nil, "iPhone: \(isIphone), flag: \(isFlagOn)")
+            }
+        }
+    }
+
+    @MainActor
+    func testCustomizeResponsesInSettingsFollowsTheFlagWhenItChangesWhileTheAppRuns() throws {
+        MockDevicePlatform.isIphone = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        func sentValue() throws -> Bool? {
+            let config = try XCTUnwrap(aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues)
+            let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+            return json["supportsCustomizeResponsesInSettings"] as? Bool
+        }
+
+        mockFeatureFlagger.enabledFeatureFlags = []
+        XCTAssertNil(try sentValue())
+        mockFeatureFlagger.enabledFeatureFlags = [.unifiedToggleInputSimplifiedPromptBox]
+        XCTAssertEqual(try sentValue(), true, "The next config Duck.ai asks for carries the capability")
+        mockFeatureFlagger.enabledFeatureFlags = []
+        XCTAssertNil(try sentValue(), "Turning the flag off takes it out again")
+    }
+
+    @MainActor
+    func testAIChatMessagesAreOnlyAcceptedFromHTTPSMainFrame() {
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: MockAIChatDebugSettingsForTests())
+
+        XCTAssertEqual(script.messageFramePolicy, .secureMainFrame)
+    }
+
+    @MainActor
+    func testWhenDebugHostnameIsSetThenAIChatAcceptsHTTPMainFrame() {
+        let debugSettings = MockAIChatDebugSettingsForTests()
+        debugSettings.messagePolicyHostname = "localhost"
+
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: debugSettings)
+
+        XCTAssertEqual(script.messageFramePolicy, .mainFrame)
+    }
+
+    @MainActor
+    func testPageContextIsOnlyAcceptedFromMainFrame() {
+        XCTAssertEqual(PageContextUserScript().messageFramePolicy, .mainFrame)
+    }
+
+    @MainActor
     func testAttachmentPrivacyBridgeHandlerRemainsAbsentOnIPhone() {
         let script = AIChatUserScript(handler: aiChatUserScriptHandler,
                                      debugSettings: MockAIChatDebugSettingsForTests(),
@@ -1091,8 +1149,87 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         XCTAssertEqual(configValues?.supportsNativeChatInput, true)
         XCTAssertEqual(configValues?.supportsPromoCards, true)
-        // iPad has no native chat header, so the FE keeps its own.
-        XCTAssertEqual(configValues?.supportsAIChatFullMode, false)
+        XCTAssertEqual(configValues?.supportsAIChatFullMode, true)
+    }
+
+    func testWhenIPadNativeInputIsOnThenEveryDisplayModeSupportsFullMode() {
+        MockDevicePlatform.isIphone = false
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+
+        for displayMode in [AIChatDisplayMode.fullTab, .contextual, nil] {
+            aiChatUserScriptHandler.displayMode = displayMode
+
+            let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+            XCTAssertEqual(configValues?.supportsAIChatFullMode, true, "\(String(describing: displayMode))")
+        }
+    }
+
+    func testWhenIPadNativeInputIsOffThenNoDisplayModeSupportsFullMode() {
+        MockDevicePlatform.isIphone = false
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = false
+
+        for displayMode in [AIChatDisplayMode.fullTab, .contextual] {
+            aiChatUserScriptHandler.displayMode = displayMode
+
+            let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+            XCTAssertEqual(configValues?.supportsAIChatFullMode, false, "\(displayMode)")
+        }
+    }
+
+    func testWhenIPadNativeInputAndNativeStorageAreOnThenEveryDisplayModeSupportsTheIPadNativeChatList() {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        MockDevicePlatform.isIphone = false
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+
+        for displayMode in [AIChatDisplayMode.fullTab, .contextual, nil] {
+            aiChatUserScriptHandler.displayMode = displayMode
+
+            let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+            XCTAssertEqual(configValues?.supportsiPadNativeChatList, true, "\(String(describing: displayMode))")
+        }
+    }
+
+    func testWhenNativeStorageIsOffThenTheIPadNativeChatListIsNotSupported() {
+        MockDevicePlatform.isIphone = false
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsiPadNativeChatList, false)
+    }
+
+    func testWhenIPadNativeInputIsOffThenTheIPadNativeChatListIsNotSupported() {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        MockDevicePlatform.isIphone = false
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = false
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsiPadNativeChatList, false)
+    }
+
+    func testWhenOnIPhoneThenTheIPadNativeChatListIsNotSupported() {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNativeStorage]
+        MockDevicePlatform.isIphone = true
+        mockUnifiedToggleInputFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isFullTabChatInputAvailable = true
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsiPadNativeChatList, false)
     }
 
     func testWhenFullTabOnIPadWithNativeInputThenUsageWarningsMoveToTheNativeInput() {
@@ -2561,6 +2698,81 @@ extension AIChatUserScriptHandlerTests {
 
         // Then
         XCTAssertNil(result)
+    }
+}
+
+// MARK: - openKeyboard Tests
+
+extension AIChatUserScriptHandlerTests {
+
+    @MainActor
+    func testWhenOpenKeyboardSelectorMatchesThenElementIsFocused() async throws {
+        // Given
+        let webView = try await makeLoadedWebView(html: "<input id='prompt'>")
+
+        // When
+        let result = await aiChatUserScriptHandler.openKeyboard(
+            params: ["selector": "#prompt"],
+            message: MockUserScriptMessage(name: "test", body: [:]),
+            webView: webView
+        )
+
+        // Then
+        XCTAssertEqual((result as? OpenKeyboardResponse)?.success, true)
+        let focusedID = try await webView.callAsyncJavaScript("return document.activeElement?.id", contentWorld: .page) as? String
+        XCTAssertEqual(focusedID, "prompt")
+    }
+
+    @MainActor
+    func testWhenOpenKeyboardSelectorContainsScriptThenScriptIsNotExecuted() async throws {
+        // Given
+        let webView = try await makeLoadedWebView(html: "<input id='prompt'>")
+
+        // When
+        _ = await aiChatUserScriptHandler.openKeyboard(
+            params: ["selector": "#prompt'); window.injected = true; ('"],
+            message: MockUserScriptMessage(name: "test", body: [:]),
+            webView: webView
+        )
+
+        // Then
+        let injected = try await webView.callAsyncJavaScript("return window.injected === true", contentWorld: .page) as? Bool
+        XCTAssertEqual(injected, false)
+    }
+
+    @MainActor
+    private func makeLoadedWebView(html: String) async throws -> WKWebView {
+        let webView = WKWebView()
+        let loadObserver = WebViewLoadObserver()
+        webView.navigationDelegate = loadObserver
+        webView.loadHTMLString(html, baseURL: URL(string: "https://duck.ai"))
+        try await loadObserver.waitForLoad()
+        return webView
+    }
+}
+
+private final class WebViewLoadObserver: NSObject, WKNavigationDelegate {
+
+    private var continuation: CheckedContinuation<Void, Error>?
+
+    @MainActor
+    func waitForLoad() async throws {
+        try await withCheckedThrowingContinuation { continuation = $0 }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        continuation?.resume()
+        continuation = nil
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        continuation?.resume(throwing: error)
+        continuation = nil
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        continuation?.resume(throwing: error)
+        continuation = nil
     }
 }
 

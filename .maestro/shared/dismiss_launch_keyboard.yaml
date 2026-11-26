@@ -1,0 +1,35 @@
+# Close the keyboard the New Tab page raises when the app opens, so a flow starts from the resting page.
+#
+# The keyboard comes up a moment after the page appears, so wait for its dismiss control before
+# tapping it; dismissing too early lets the keyboard arrive afterwards and swallow the next tap.
+# A launch that doesn't raise it (onboarding, App Lock, the New Tab keyboard setting off) only waits
+# out the timeout. Run this after every launchApp that lands on the New Tab page; a relaunch that
+# restores a website doesn't raise it.
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- extendedWaitUntil:
+    visible: "Cancel|Back|Enable Dictation\\?"
+    timeout: 5000
+    optional: true
+# iOS asks about dictation the first time a keyboard appears on a device, in place of the keyboard.
+- runFlow:
+    when:
+      visible: "Enable Dictation\\?"
+    commands:
+      - tapOn: "Not Now"
+      - extendedWaitUntil:
+          visible: "Cancel|Back"
+          timeout: 5000
+          optional: true
+- runFlow: dismiss_address_bar_editing.yaml
+# A tap during the input's entrance animation can be dropped, so confirm the input closed and retry once.
+- extendedWaitUntil:
+    notVisible: "Cancel|Back"
+    timeout: 3000
+    optional: true
+- runFlow:
+    when:
+      visible: "Cancel|Back"
+    file: dismiss_address_bar_editing.yaml

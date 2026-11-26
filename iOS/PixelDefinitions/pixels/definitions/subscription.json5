@@ -203,13 +203,6 @@
             }
         ]
     },
-    "m_subscription_tier-options_unexpected-pro-tier": {
-        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out",
-        "owners": ["SabrinaTardio"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
 
     // Plan Change Click Pixels
     "m_subscription_settings_view-all-plans_click": {
@@ -788,6 +781,90 @@
             }
         ]
     },
+    "m_ios_wide_subscription_cancellation": {
+        "description": "Wide pixel sent at the end of a subscription cancellation journey, when a subscription change within 24 hours of the entry tap shows the outcome, when an error with no other cancellation path stops the user, or after 24 hours from a refreshed subscription, with timeout if it is still auto-renewing on the same plan",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            "wideEventMetaVersion",
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-subscription-cancellation"]
+            },
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["subscription-cancellation"]
+            },
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Reason for the outcome: not_auto_renewable or expired on SUCCESS; plan_changed (product changed; deferred changes are not detected) on CANCELLED; timeout, no_subscription or partial_data on UNKNOWN; none on FAILURE",
+                "enum": ["not_auto_renewable", "timeout", "plan_changed", "no_subscription", "expired", "partial_data"]
+            },
+            {
+                "key": "feature.data.ext.entry_point",
+                "type": "string",
+                "description": "The Subscription Settings button that started the journey",
+                "enum": ["cancel_subscription", "manage_subscription", "manage_payment_or_cancel", "change_plan"]
+            },
+            {
+                "key": "feature.data.ext.purchase_platform",
+                "type": "string",
+                "description": "Platform the subscription was purchased on",
+                "enum": ["app_store", "stripe"]
+            },
+            {
+                "key": "feature.data.ext.is_trial",
+                "type": "boolean",
+                "description": "Whether the subscription had an active free trial offer at the entry tap"
+            },
+            {
+                "key": "feature.data.ext.manage_subscription_sheet_shown",
+                "type": "boolean",
+                "description": "Whether the App Store manage subscription sheet or the Stripe portal was shown in the app during the journey"
+            },
+            {
+                "key": "feature.data.ext.subscription_identifier",
+                "type": "string",
+                "description": "Product identifier of the subscription at the entry tap, e.g. ddg.privacy.pro.monthly.renews.us"
+            },
+            {
+                "key": "feature.data.ext.days_since_purchase_bucketed",
+                "type": "string",
+                "description": "Days between the subscription start and the entry tap, bucketed",
+                "enum": ["d1", "d2_7", "d8_30", "d31_plus"]
+            },
+            {
+                "key": "feature.data.ext.days_until_renewal_bucketed",
+                "type": "string",
+                "description": "Days between the entry tap and the next renewal or expiry date, bucketed",
+                "enum": ["d1", "d2_7", "d8_30", "d31_plus"]
+            },
+            {
+                "key": "feature.data.ext.error.error_description",
+                "type": "string",
+                "description": "Part of the shared error parameters; not set by this event, which reports only the error domain and code"
+            }
+        ]
+    },
     // Defined in https://app.asana.com/1/137249556945/project/72649045549333/task/1211468169482228?focus=true
     "m_ios_wide_auth_v2_token_refresh": {
         "description": "Wide pixel sent after an AuthV2 token refresh",
@@ -1022,6 +1099,30 @@
             }
         ]
     },
+    "subscription_onboarding_step_closed_": {
+        "description": "Fired when the customer closes the onboarding flow, either with the close button on its first screen or with the primary button on the completion screen.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": [
+            {
+                "type": "string",
+                "description": "The onboarding step the flow was closed from",
+                "enum": ["intro", "vpn", "idtr", "duck_ai", "completion"]
+            },
+            "platform",
+            "form_factor"
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Which entry point launched this onboarding run",
+                "enum": ["post_checkout", "subscription_settings"]
+            }
+        ]
+    },
     "subscription_onboarding_connection-info_failure": {
         "description": "Fired when the public IP and geolocation fetch behind the VPN activation screen fails during onboarding.",
         "owners": ["hanyutang-sandra"],
@@ -1162,6 +1263,43 @@
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_notifications-denied-dialog_not-now_click": {
+        "description": "Fired when the user taps 'Not Now' in the native dialog asking them to turn on notifications in Settings for the free-trial reminder. The subscription page shows the dialog when notifications are off and the user picks a reminder.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_notifications-denied-dialog_open-settings_click": {
+        "description": "Fired when the user taps 'Open Settings' in the native dialog asking them to turn on notifications for the free-trial reminder, which opens the app's notification settings.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_notifications-denied-dialog_settings_return": {
+        "description": "Fired the first time the app becomes active again after the user tapped 'Open Settings' in the notifications dialog, with the notification permission at that moment. Comparing it with open-settings_click shows how many users never came back.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "notifications_permission",
+                "type": "string",
+                "description": "Notification permission when the user comes back from Settings, as reported to the subscription page by getUserSettings",
+                "enum": ["granted", "denied", "notDetermined"]
+            }
+        ]
+    },
+    "subscription_notifications-denied-dialog_presentation_failure": {
+        "description": "Fired when the subscription page asks for the native dialog to turn on notifications in Settings, but the app cannot present it because no screen is available, the screen is not in a window, or a transition is in progress. The subscription page receives 'notNow' instead.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
     },
     "m_privacy-pro_app-settings_partner-benefits_click": {
         "description": "Fires when the user taps 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared verbatim with Android and Windows, and predates the label being renamed to 'Subscriber Offers'.",

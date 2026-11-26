@@ -90,6 +90,7 @@ let package = Package(
             ],
             path: "Tests/AppUpdaterTestHelpers",
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug)),
             ]
         ),

@@ -176,13 +176,14 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             fireCPMPixel(name: "web_extension_cpm_breakage", parameters: parameters)
         case .cpmMessagingBreakagePersistent:
             fireCPMPixel(name: "web_extension_cpm_breakage_persistent", parameters: [:])
-        case .enabled, .disabled, .remotelyDisabled:
+        case .enabled, .disabled, .remotelyDisabled, .killSwitchDisabled:
             // Store pixels are macOS-only, but iOS debug-menu toggles still reach here, so drop rather than assert.
             break
         case .updateCheck, .updateDownloadFailed, .updateVerificationFailed, .updateVerified, .updateApplied, .updateInstallFailed:
             // Chrome Web Store updates are only enabled on macOS.
             return
-        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps, .retained14Days, .churned14Days, .installedCount:
+        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps, .retained14Days, .churned14Days, .installedCount,
+             .nativeMessagingBlocked:
             // Chrome extensions, and so password manager extensions, are only supported on macOS, so
             // these are only sent there.
             assertionFailure("\(event) is only sent on macOS")

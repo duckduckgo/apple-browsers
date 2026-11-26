@@ -53,6 +53,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let aiChatSettings: AIChatSettingsProvider
     private let locale: Locale
     let cancellationInstrumentation: SubscriptionCancellationInstrumenting
+    private var shouldRefreshAfterStripePortal = false
     let withdrawal: SubscriptionWithdrawalModel
     private var withdrawalCancellable: AnyCancellable?
 
@@ -120,10 +121,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     public let usesUnifiedFeedbackForm: Bool
 
     /// Returns the tier badge variant to display, or nil if badge should not be shown
-    /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
     var tierBadgeToDisplay: TierBadgeView.Variant? {
         guard let tier = state.subscriptionInfo?.tier else { return nil }
-        guard tier == .pro || featureFlagger.isFeatureOn(.allowProTierPurchase) else { return nil }
         switch tier {
         case .plus: return .plus
         case .pro: return .pro
@@ -133,20 +132,18 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     /// Returns true if "View All Plans" option should be shown
     /// Requirements:
     /// - Subscription is active
-    /// - Pro tier purchase feature flag is enabled OR user has Pro tier subscription
     var shouldShowViewAllPlans: Bool {
         guard let subscriptionInfo = state.subscriptionInfo,
               subscriptionInfo.isActive else {
             return false
         }
-        return featureFlagger.isFeatureOn(.allowProTierPurchase) || subscriptionInfo.tier == .pro
+        return true
     }
 
     /// Returns true if "Upgrade" section should be shown
     /// Requirements:
     /// - Subscription is active
     /// - No pending plan (don't show upgrade if downgrade is scheduled)
-    /// - Pro tier purchase feature flag is enabled
     /// - Backend reports available upgrades
     var shouldShowUpgrade: Bool {
         guard let subscriptionInfo = state.subscriptionInfo,
@@ -155,7 +152,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         }
         // Don't show upgrade if there's a pending plan (downgrade scheduled)
         guard subscriptionInfo.pendingPlans?.isEmpty ?? true else { return false }
-        guard featureFlagger.isFeatureOn(.allowProTierPurchase) else { return false }
         return firstAvailableUpgradeTier != nil
     }
 
@@ -170,9 +166,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         if isAppleSubscriptionWithCancellationFlowEnabled {
             return UserText.subscriptionManageSubscription
         }
-        return featureFlagger.isFeatureOn(.allowProTierPurchase)
-            ? UserText.subscriptionManagePayment
-            : UserText.subscriptionChangePlan
+        return UserText.subscriptionManagePayment
     }
 
     var isEligibleToCancel: Bool {
@@ -184,7 +178,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     }
 
     func cancelSubscriptionTapped() {
-        cancellationInstrumentation.cancelClicked()
+        cancellationInstrumentation.cancelSubscriptionTapped(subscription: state.subscriptionInfo)
     }
 
     @MainActor
@@ -238,7 +232,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
          locale: Locale = .current,
-         cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation(),
+         cancellationInstrumentation: SubscriptionCancellationInstrumenting? = nil,
          withdrawalInstrumentation: SubscriptionWithdrawalInstrumenting = SubscriptionWithdrawalInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
@@ -248,7 +242,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.aiChatSettings = aiChatSettings
         self.locale = locale
-        self.cancellationInstrumentation = cancellationInstrumentation
+        self.cancellationInstrumentation = cancellationInstrumentation ?? SubscriptionCancellationInstrumentation(wideEvent: wideEvent)
         self.withdrawal = SubscriptionWithdrawalModel(subscriptionManager: subscriptionManager,
                                                       featureFlagger: featureFlagger,
                                                       locale: locale,
@@ -382,6 +376,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             return
         }
 
+        let entryPoint: SubscriptionCancellationWideEventData.EntryPoint = if isAppleSubscriptionWithCancellationFlowEnabled {
+            .manageSubscription
+        } else {
+            .managePaymentOrCancel
+        }
+        cancellationInstrumentation.manageSubscriptionTapped(entryPoint: entryPoint, subscription: state.subscriptionInfo)
+
         switch platform {
         case .apple:
             Task {
@@ -390,6 +391,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         case .google:
             displayGoogleView(true)
         case .stripe:
+            shouldRefreshAfterStripePortal = true
             Task { await manageStripeSubscription() }
         case .unknown:
             manageInternalSubscription()
@@ -567,6 +569,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         if value != state.isShowingStripeView {
             state.isShowingStripeView = value
         }
+        if !value, shouldRefreshAfterStripePortal {
+            shouldRefreshAfterStripePortal = false
+            Task { @MainActor in
+                _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
+            }
+        }
     }
 
     func displayInternalSubscriptionNotice(_ value: Bool) {
@@ -624,8 +632,10 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 do {
                     try await AppStore.showManageSubscriptions(in: windowScene)
+                    cancellationInstrumentation.manageSubscriptionSheetShown()
                     await refetchAndDetectCancellation(since: subscriptionBefore, entry: entry)
                 } catch {
+                    cancellationInstrumentation.appStoreSheetFailed(error)
                     self.openURL(url)
                 }
             } else {
@@ -650,6 +660,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         do {
             // Get Stripe Customer Portal URL and update the model
             let url = try await subscriptionManager.getCustomerPortalURL()
+            cancellationInstrumentation.manageSubscriptionSheetShown()
             if let existingModel = state.stripeViewModel {
                 existingModel.url = url
             } else {
@@ -663,6 +674,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
         } catch {
             Logger.subscription.error("Failed to get Stripe customer portal URL: \(error, privacy: .public)")
+            cancellationInstrumentation.stripePortalFailed(error)
         }
         Task { @MainActor in
             self.displayStripeView(true)

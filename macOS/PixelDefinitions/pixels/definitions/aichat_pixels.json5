@@ -22,7 +22,8 @@
                     "tabbar-button",
                     "ask-about-page",
                     "open-sidebar",
-                    "main-menu-ask-about-page"
+                    "main-menu-ask-about-page",
+                    "ask-about-link"
                 ]
             },
             {
@@ -422,6 +423,35 @@
                 "description": "The sidebar item the menu offered, decided by whether a chat is open and whether the page can be attached: 'close-sidebar' when a chat is open, docked or floating; otherwise 'ask-about-page' on a web page that can be attached, or 'open-sidebar' on a page that can't, such as the New Tab Page.",
                 "type": "string",
                 "enum": ["ask-about-page", "open-sidebar", "close-sidebar"]
+            }
+        ]
+    },
+    "aichat_title_bar_menu_outcome_macos": {
+        "description": "Fired when the tab-bar Ask Duck.ai menu closes, once per open, with what the user picked, or 'none' when they dismissed it without picking. Page type and chat state are taken when the menu opened. Pairs 1:1 with aichat_title_bar_menu_shown_macos.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "choice",
+                "description": "The menu item picked. 'ask-about-page', 'open-sidebar' and 'close-sidebar' are the menu's one sidebar item, matching sidebarEntry on aichat_title_bar_menu_shown_macos. 'none' when the menu closed without a pick.",
+                "type": "string",
+                "enum": ["new-chat", "ask-about-page", "open-sidebar", "close-sidebar", "chats", "none"]
+            },
+            {
+                "key": "pageType",
+                "description": "The selected tab's page when the menu opened: 'serp' for DuckDuckGo search results, 'ntp' for the New Tab Page, 'duckai' for a Duck.ai tab, 'web' for any other http(s) page, 'other' for internal pages such as Settings or Bookmarks.",
+                "type": "string",
+                "enum": ["serp", "ntp", "duckai", "web", "other"]
+            },
+            {
+                "key": "chatState",
+                "description": "The selected tab's Duck.ai chat when the menu opened: 'sidebar-open' docked and visible, 'floating' in a detached window, 'hidden' a closed sidebar whose chat would resume if reopened, 'none' no chat or an expired one.",
+                "type": "string",
+                "enum": ["sidebar-open", "floating", "hidden", "none"]
             }
         ]
     },

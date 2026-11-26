@@ -29,7 +29,6 @@ final class SearchDownloadsBrowserTool: BrowserTool {
 
     let name = "searchDownloads"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "It will see the names and source addresses of files you've downloaded."
 
     let inputSchema: JSONValue = [
         "type": "object",
@@ -83,4 +82,6 @@ final class SearchDownloadsBrowserTool: BrowserTool {
             }
         return .success(["results": .array(Array(results))])
     }
+
+    func resultCount(of value: JSONValue) -> Int? { value["results"]?.arrayValue?.count }
 }

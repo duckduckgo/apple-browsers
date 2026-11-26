@@ -175,6 +175,12 @@ private final class PageContextMock: PageContextProtocol {
     func requestPageContextAttachment() {
         requestPageContextAttachmentCallCount += 1
     }
+
+    func attachLinkedPage(_ url: URL) -> Task<LinkedPageContextLoadResult?, Never> {
+        Task { nil }
+    }
+
+    var linkedPageDomains = Set<String>()
 }
 
 private final class SelectionActionAIChatCoordinatorMock: AIChatCoordinating {
@@ -189,6 +195,7 @@ private final class SelectionActionAIChatCoordinatorMock: AIChatCoordinating {
     func isChatPresentedForCurrentTab() -> Bool { isChatPresented }
     func sidebarHiddenAt(for tabID: TabIdentifier) -> Date? { nil }
     func sidebarHiddenAtForCurrentTab() -> Date? { nil }
+    func hasHiddenChat(for tabID: TabIdentifier) -> Bool { false }
     var sidebarPresenceDidChangePublisher: AnyPublisher<AIChatPresenceChange, Never> { Empty().eraseToAnyPublisher() }
     func isChatFloating(for tabID: TabIdentifier) -> Bool { false }
     var chatFloatingStateDidChangePublisher: AnyPublisher<TabIdentifier, Never> { Empty().eraseToAnyPublisher() }

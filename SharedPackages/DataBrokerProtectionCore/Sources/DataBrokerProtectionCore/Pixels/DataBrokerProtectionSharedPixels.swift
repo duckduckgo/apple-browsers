@@ -182,9 +182,6 @@ public enum DataBrokerProtectionSharedPixels {
     // freemium → paid upsell
     case freemiumUpsell
 
-    // Temporary Freemium PIR monitoring
-    case freemiumPIRMaintenanceScanSkipped
-
     // Challenge baseline pixels
     case mainFrameChallengeDetected(dataBroker: String, brokerVersion: String, isSolverEnabled: Bool)
     case challengeClearanceObserved(dataBroker: String, brokerVersion: String, resolution: ChallengeResolution, isSolverEnabled: Bool)
@@ -314,9 +311,6 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
 
             // freemium upsell
         case .freemiumUpsell: return "dbp_freemium_upsell_u"
-
-            // Temporary Freemium PIR monitoring
-        case .freemiumPIRMaintenanceScanSkipped: return "dbp_freemium_pir_maintenance_scan_skipped"
 
             // Challenge baseline pixels
         case .mainFrameChallengeDetected: return "dbp_challenge_main-frame_detected_macos"
@@ -572,8 +566,7 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 .dashboardOpen(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan),
                 .firstScan(isAuthenticated: let isAuthenticated, isFreeScan: let isFreeScan):
             return addingFreeScanParamIfNeeded(to: [Consts.isAuthenticated: isAuthenticated.description], isFreeScan: isFreeScan)
-        case .freemiumUpsell,
-                .freemiumPIRMaintenanceScanSkipped:
+        case .freemiumUpsell:
             return [:]
         case .mainFrameChallengeDetected(let dataBroker, let brokerVersion, let isSolverEnabled):
             return [
@@ -762,7 +755,6 @@ extension DataBrokerProtectionSharedPixels: PixelKit.Event {
                 .dashboardOpen,
                 .firstScan,
                 .freemiumUpsell,
-                .freemiumPIRMaintenanceScanSkipped,
                 .mainFrameChallengeDetected,
                 .challengeClearanceObserved,
                 .challengeSolved,
@@ -924,8 +916,6 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .updateDataBrokersSuccess:
 
                 pixelKit.fire(event.prefixed(platform.pixelNamePrefix))
-            case .freemiumPIRMaintenanceScanSkipped:
-                pixelKit.fire(event.prefixed(platform.pixelNamePrefix), frequency: .dailyAndCount)
             case .mainFrameChallengeDetected,
                     .challengeClearanceObserved,
                     .challengeSolved,

@@ -502,7 +502,20 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @available(iOS 16, macOS 13, *)
-        @Test("The VPN reason's table reuses the ad-blocking rows without AI chat and trackers, then adds a subscription VPN row", .timeLimit(.minutes(1)))
+        @Test("Only the VPN reason's table springs its checkmarks in already drawn", .timeLimit(.minutes(1)), arguments: [nil] + OnboardingDownloadReason.allCases.map(Optional.some))
+        func drawsCheckmarksPerReason(reason: OnboardingDownloadReason?) {
+            // GIVEN
+            let sut = makeSUT(reason: reason)
+
+            // WHEN
+            let result = sut.setDefaultBrowserContent
+
+            // THEN
+            #expect(result.drawsCheckmarks == (reason != .vpn))
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("The VPN reason's table reuses the ad-blocking rows without AI chat and trackers, then adds two subscription VPN rows", .timeLimit(.minutes(1)))
         func vpnFeaturesReuseAdBlockingRows() {
             // WHEN
             let features = RebrandedComparisonTableModel.browserFeatures(for: .vpn)
@@ -514,9 +527,10 @@ struct OnboardingIntroContentProviderTests {
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.cookiePopupsAndAds,
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.duckplayer,
                 BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.privateSearch,
-                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.hideLocationWithVPN
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.hideLocationWithVPN,
+                BrowsersComparisonModel.PrivacyFeature.UserText.BrowsersComparison.Features.secureWiFiWithVPN
             ])
-            #expect(features.map(\.ddgAvailability) == [.available, .available, .available, .subscription])
+            #expect(features.map(\.ddgAvailability) == [.available, .available, .available, .subscription, .subscription])
             #expect(features.allSatisfy { $0.competitorAvailability == .unavailable })
         }
 
@@ -552,6 +566,42 @@ struct OnboardingIntroContentProviderTests {
             #expect(result.footer == UserText.Onboarding.TryVPN.footer)
             #expect(result.primaryCTA == UserText.Onboarding.TryVPN.cta)
             #expect(result.secondaryCTA == UserText.onboardingSkip)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("Check VPN activation content reuses the subscription onboarding copy", .timeLimit(.minutes(1)))
+        func checkVPNActivationContent() {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.vpnActivationContent
+
+            // THEN
+            #expect(result.offTitle == UserText.subscriptionOnboardingVPNActivationOffTitle)
+            #expect(result.onTitle == UserText.subscriptionOnboardingVPNActivationOnTitle)
+            #expect(result.turnOnCTA == UserText.subscriptionOnboardingVPNActivationTurnOnButton)
+            #expect(result.skipCTA == UserText.onboardingSkip)
+            #expect(result.nextCTA == UserText.subscriptionOnboardingVPNActivationNextButton)
+        }
+
+        @available(iOS 16, macOS 13, *)
+        @Test("Check subscription reminder content bolds the Settings path", .timeLimit(.minutes(1)))
+        func checkSubscriptionReminderContent() {
+            // GIVEN
+            let sut = OnboardingIntroContentProvider(flowType: .default, featureFlagger: MockFeatureFlagger())
+
+            // WHEN
+            let result = sut.subscriptionReminderContent
+
+            // THEN
+            #expect(result.title == UserText.Onboarding.SubscriptionReminder.title)
+            #expect(String(result.message.characters) == "Add the subscription anytime in Settings > Subscription")
+            let boldText = result.message.runs
+                .filter { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
+                .map { String(result.message[$0.range].characters) }
+            #expect(boldText == ["Settings > Subscription"])
+            #expect(result.cta == UserText.Onboarding.SubscriptionReminder.cta)
         }
 
     }
@@ -1286,8 +1336,8 @@ struct OnboardingIntroContentProviderTests {
         func aiModelPersonalizationContent() {
             // GIVEN
             let expected = OnboardingAIModelContent(
-                title: "Your chats, your way.",
-                message: "Change your default AI now, or anytime during chat.",
+                title: "Pick an AI to try first",
+                message: "With Duck.ai, you can swap anytime.",
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft
             )

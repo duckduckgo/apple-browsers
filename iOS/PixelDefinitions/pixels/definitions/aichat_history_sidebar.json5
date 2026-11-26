@@ -1,0 +1,90 @@
+// Pixels for what only the iPad Duck.ai chat list sidebar does. Actions inside the list (open, delete,
+// pin, search, …) fire the `aichat_history_*` pixels in aichat_history.json5, as `_ios_tablet`.
+{
+    "aichat_history_sidebar_opened": {
+        "description": "The user opened the chat list sidebar in an iPad Duck.ai tab, from a Chats button or from a Chats entry point that loads `sidebar=open`. Doesn't fire when the sidebar shows because it was left open in another Duck.ai tab. The daily leg counts sidebar users and is the denominator for the tablet `aichat_history_*` pixels",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "What opened the sidebar: the floating Chats button shown while it's closed, the Chats button beside the collapsed input that replaces it in narrow windows, or a Chats entry point (address bar menu, app menu, contextual \"View all\")",
+                "type": "string",
+                "enum": ["chats_button", "input_chats_button", "chats_entry_point"]
+            },
+            {
+                "key": "layout",
+                "description": "Whether the sidebar is a column over the chat's leading edge, or covers the whole tab because the window is too narrow",
+                "type": "string",
+                "enum": ["column", "overlay"]
+            }
+        ]
+    },
+    "aichat_history_sidebar_closed": {
+        "description": "The user closed the iPad Duck.ai chat list sidebar with its close button or a Chats button. Doesn't fire when the sidebar closes on its own after New Chat or after picking a chat",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "description": "What closed the sidebar: its close button, the floating Chats button, or the Chats button beside the collapsed input",
+                "type": "string",
+                "enum": ["close_button", "chats_button", "input_chats_button"]
+            },
+            {
+                "key": "layout",
+                "description": "Whether the sidebar was a column over the chat's leading edge, or covered the whole tab because the window is too narrow",
+                "type": "string",
+                "enum": ["column", "overlay"]
+            }
+        ]
+    },
+    "aichat_history_sidebar_new_chat_tapped": {
+        "description": "The user tapped the floating New Chat button shown while the iPad Duck.ai chat list sidebar is closed. New Chat inside the open sidebar fires `aichat_history_new_chat_tapped` instead",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_history_sidebar_menu_action": {
+        "description": "The user chose a sidebar-only item from the \"…\" menu of the iPad Duck.ai chat list sidebar. Chat Protection and Select Chats fire their `aichat_history_*` pixels instead",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "action",
+                "description": "The menu item chosen: Sync & Backup settings, or Duck.ai settings",
+                "type": "string",
+                "enum": ["sync_settings", "duckai_settings"]
+            }
+        ]
+    },
+    "aichat_history_sidebar_chat_open_fallback": {
+        "description": "A chat picked in the iPad Duck.ai chat list sidebar couldn't open in place (the `submitOpenChatAction` push), so the app reloaded the page with the chat's `chatID` instead. A rise points to old pages or a Duck.ai web app regression",
+        "owners": ["Bunn"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "reason",
+                "description": "Why the page didn't open the chat: it reported the chat as not found, it reported a failure, or it couldn't take the request or didn't answer in time",
+                "type": "string",
+                "enum": ["not_found", "failed", "no_answer"]
+            }
+        ]
+    },
+    "aichat_history_sidebar_open_chat_deleted": {
+        "description": "The chat shown in an iPad Duck.ai tab with the chat list sidebar disappeared from storage, so the app started a new chat in its place. Usually the user deleted it in the sidebar, but a deletion synced from another device also fires it",
+        "owners": ["Bunn"],
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

@@ -44,6 +44,7 @@ let package = Package(
             ],
             path: "Sources/FeatureFlags",
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),

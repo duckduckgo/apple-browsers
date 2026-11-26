@@ -96,6 +96,12 @@
         "description": "The Unified Toggle Input surface the pixel was fired from, distinguishing the contextual chat sheet from the Duck.ai tab and the address bar.",
         "enum": ["address_bar", "duck_ai", "contextual_chat"]
     },
+    "simplified_prompt_box": {
+        "key": "simplified_prompt_box",
+        "type": "string",
+        "description": "Temporary, for the unifiedToggleInputSimplifiedPromptBox rollout: on when the iPhone Duck.ai prompt box is the simplified one (one circled-plus menu, no tools button), off otherwise. Always off on iPad. Remove once the rollout's monitoring ends.",
+        "enum": ["on", "off"]
+    },
     "aichat_tab_picker_source": {
         "key": "source",
         "type": "string",
@@ -585,6 +591,7 @@
             "funnel_modal_ios__subscriptionnudge",
             "funnel_appsettings_ios",
             "funnel_appmenu_ios",
+            "funnel_appmenu_ios__chat",
             "funnel_addressbar_ios__modelpicker",
             "funnel_addressbar_ios__reasoningdropdown",
             "funnel_duckai_ios__modelpicker",
@@ -639,8 +646,8 @@
     "onboardingEventType": {
         "key": "event",
         "type": "string",
-        "description": "Event type to classify what happened at each onboarding step",
-        "enum": ["shown", "clicked", "confirmed"]
+        "description": "Event type to classify what happened at each onboarding step. failed: something went wrong on the step, with the reason in value",
+        "enum": ["shown", "clicked", "confirmed", "failed"]
     },
     "onboardingClickedValue": {
         "key": "value",
@@ -670,7 +677,7 @@
         "key": "flow",
         "type": "string",
         "description": "Version of the onboarding flow the user entered",
-        "enum": ["default", "duckai", "tailored_by_download_reason"]
+        "enum": ["default", "duckai", "tailored_by_download_reason", "tailored_by_download_reason_vpn"]
     },
     "onboardingVariantSearchExperience": {
         "key": "variant_search_experience",
@@ -682,7 +689,13 @@
         "key": "variant_download_reason",
         "type": "string",
         "description": "Variant of the onboarding flow the user selected on the download-reason screen",
-        "enum": ["download_reason_search", "download_reason_ai-chat", "download_reason_no-ai", "download_reason_ad-blocking"]
+        "enum": [
+            "download_reason_search",
+            "download_reason_ai-chat",
+            "download_reason_no-ai",
+            "download_reason_ad-blocking",
+            "download_reason_vpn"
+        ]
     },
     "tabCount": {
         "key": "tab_count",

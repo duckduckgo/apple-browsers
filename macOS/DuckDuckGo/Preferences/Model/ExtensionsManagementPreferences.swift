@@ -38,8 +38,8 @@ final class ExtensionsManagementPreferences: ObservableObject {
         }
     }
 
-    /// Opened when the configuration doesn't set `learnMoreUrlRemoteDisable`, matching Windows.
-    private static let remoteDisableLearnMoreFallbackURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages")!
+    /// Opened when the configuration doesn't set `learnMoreUrl` or `learnMoreUrlRemoteDisable` to an absolute URL, matching Windows.
+    private static let learnMoreFallbackURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages")!
 
     private let configurationManager: PrivacyConfigurationManaging
     private let webExtensionManager: WebExtensionManaging?
@@ -108,11 +108,8 @@ final class ExtensionsManagementPreferences: ObservableObject {
     }
 
     func openLearnMore() {
-        guard let url = webExtensionManager?.chromeWebStore?.learnMoreURL else {
-            return
-        }
-
-        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+        fire(.learnMoreClicked)
+        openConfiguredLearnMore(settingsKey: "learnMoreUrl")
     }
 
     func openNativeMessagingLearnMore() {
@@ -120,10 +117,16 @@ final class ExtensionsManagementPreferences: ObservableObject {
     }
 
     func openRemoteDisableLearnMore() {
-        let configuredURL = configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrlRemoteDisable"] as? String
-        let url = configuredURL.flatMap(URL.init(string:)) ?? Self.remoteDisableLearnMoreFallbackURL
+        fire(.learnMoreRemoteDisableClicked)
+        openConfiguredLearnMore(settingsKey: "learnMoreUrlRemoteDisable")
+    }
 
-        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    private func openConfiguredLearnMore(settingsKey: String) {
+        let configuredURL = (configurationManager.privacyConfig.settings(for: .extensionManagement)[settingsKey] as? String)
+            .flatMap(URL.init(string:))
+            .flatMap { $0.scheme == nil ? nil : $0 }
+
+        windowControllersManager.show(url: configuredURL ?? Self.learnMoreFallbackURL, source: .ui, newTab: true, selected: true)
     }
 }
 

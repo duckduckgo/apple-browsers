@@ -100,6 +100,22 @@ final class ReadTabContentBrowserToolTests: XCTestCase {
         XCTAssertNil(reader.requestedTabID)
     }
 
+    func testWhenTheOwnerTabIsNotAWebPageThenCallIsUnavailable() async {
+        let owner = Tab(content: .settings(pane: nil))
+        let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: [owner]), pinnedTabsManagerProvider: nil)
+        let manager = WindowControllersManagerMock()
+        manager.customAllTabCollectionViewModels = [collection]
+        let tool = ReadTabContentBrowserTool(windowControllersManager: manager, reader: reader)
+        let context = BrowserToolCallContext(ownerTabID: owner.uuid,
+                                             ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
+                                             isBurner: false)
+
+        let result = await tool.execute(arguments: nil, context: context)
+
+        XCTAssertEqual(result, .failure(.unavailable))
+        XCTAssertNil(reader.requestedTabID)
+    }
+
     func testWhenArgumentsAreMalformedThenTheyAreInvalid() async {
         let (tool, context, _) = make()
 
@@ -136,7 +152,6 @@ final class ReadTabContentBrowserToolTests: XCTestCase {
 
         XCTAssertEqual(tool.name, "readTabContent")
         XCTAssertEqual(tool.permissionMode, .ask)
-        XCTAssertEqual(tool.permissionReason, "Duck.ai wants to read this tab's content.")
     }
 
     // MARK: -

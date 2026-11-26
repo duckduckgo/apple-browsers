@@ -21,6 +21,7 @@ import AIChat
 import BrowserServicesKit
 import Common
 import Core
+import DDGError
 import EventHub
 import Foundation
 import FoundationExtensions
@@ -51,6 +52,7 @@ final class UserScripts: UserScriptsProvider {
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let pageContextUserScript: PageContextUserScript
     let internalFeedbackUserScript: InternalFeedbackUserScript
+    let duckAILoadingSkeletonUserScript: DuckAILoadingSkeletonUserScript?
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -69,11 +71,16 @@ final class UserScripts: UserScriptsProvider {
     private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
     private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
-    private(set) var sponsorBlockSubfeature: SponsorBlockSubfeature
+    private(set) var segmentSkipSubfeature: SegmentSkipSubfeature
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
     private(set) var browserUiLockSubfeature = BrowserUiLockSubfeature()
 
     private let isAutoconsentExtensionAvailable: Bool
+
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let contentScopeProperties: ContentScopeProperties
+    private let isolatedConfigGenerator: ContentScopePrivacyConfigurationJSONGenerator
+    private var pageTranslationSourceCache: String?
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -85,17 +92,20 @@ final class UserScripts: UserScriptsProvider {
          internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
          geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         sponsorBlockPreferences: SponsorBlockPreferences,
-         sponsorBlockSegmentsProvider: SponsorBlockSegmentsProvider = AppDependencyProvider.shared.sponsorBlockSegmentsProvider,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+         segmentSkipPreferences: SegmentSkipPreferences,
+         segmentSkipSegmentsProvider: SegmentSkipSegmentsProvider = AppDependencyProvider.shared.segmentSkipSegmentsProvider,
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
         findInPageScript = findInPageImplementation == .legacy ? FindInPageUserScript() : nil
 
         selectionFrameScript = SelectionFrameUserScript()
-        sponsorBlockSubfeature = SponsorBlockSubfeature(segmentsProvider: sponsorBlockSegmentsProvider,
-                                                        preferences: sponsorBlockPreferences,
-                                                        isFeatureFlagOn: { featureFlagger.isFeatureOn(.sponsorBlock) })
+        duckAILoadingSkeletonUserScript = DuckAILoadingSkeletonUserScript(unifiedToggleInputFeature: unifiedToggleInputFeature,
+                                                                          debugSettings: aiChatDebugSettings)
+        segmentSkipSubfeature = SegmentSkipSubfeature(segmentsProvider: segmentSkipSegmentsProvider,
+                                                        preferences: segmentSkipPreferences,
+                                                        isFeatureFlagOn: { featureFlagger.isFeatureOn(.segmentSkip) })
         self.mediaCaptureUserScript = mediaCaptureUserScript
         self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil
 
@@ -103,18 +113,21 @@ final class UserScripts: UserScriptsProvider {
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
+        privacyConfigurationManager = sourceProvider.privacyConfigurationManager
+        contentScopeProperties = sourceProvider.contentScopeProperties
+        isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                                                                                excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures
+                                                                                    + [PrivacyFeature.aiChatBrowserTools.rawValue])
         do {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                                                                                 excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue,
                                                                                                    PrivacyFeature.aiChatBrowserTools.rawValue])
-            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
-                                                                                        privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
-                                                                                        excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures
-                                                                                            + [PrivacyFeature.aiChatBrowserTools.rawValue])
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
-                                                                scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
+                                                                scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData,
+                                                                                             disableScriptSurrogateInjection: sourceProvider.webExtensionAvailability?.isAppleSurrogateRedirectionEnabled == true),
                                                                 allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue,
                                                                                              SelectionFrameUserScript.featureName],
                                                                 privacyConfigurationJSONGenerator: configGenerator)
@@ -155,13 +168,15 @@ final class UserScripts: UserScriptsProvider {
                                                           bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings,
-                                            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
+                                            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog,
+                                            localModelService: sourceProvider.aiChatLocalModel?.service,
+                                            localModelAccessPrompt: sourceProvider.aiChatLocalModel?.accessPrompt)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))
 
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
-                .exactOrSubdomain(hostname: "duck.ai"),
+                .exact(hostname: "duck.ai"),
             ]
             if let debugHostname = aiChatDebugSettings.messagePolicyHostname {
                 originRules.append(.exact(hostname: debugHostname))
@@ -169,6 +184,7 @@ final class UserScripts: UserScriptsProvider {
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
                 originRules: originRules,
+                framePolicy: aiChatDebugSettings.messagePolicyHostname == nil ? .secureMainFrame : .mainFrame,
                 pixelFiring: DuckAiNativeStoragePixelAdapter()
             )
         } else {
@@ -183,11 +199,9 @@ final class UserScripts: UserScriptsProvider {
         )
 
         subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
-        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .ios,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-            featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: subscriptionNavigationHandler,
             debugHost: aiChatDebugSettings.messagePolicyHostname)
 
@@ -196,7 +210,7 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: sponsorBlockSubfeature)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: segmentSkipSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: browserUiLockSubfeature)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
@@ -223,6 +237,52 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: handler)
     }
 
+    enum PageTranslationSourceError: DDGError {
+        case empty
+
+        static var errorDomain: String { "com.duckduckgo.pageTranslationSource" }
+
+        var errorCode: Int {
+            switch self {
+            case .empty: return 1
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .empty: return "The page translation script couldn't be generated"
+            }
+        }
+    }
+
+    /// C-S-S's `pageTranslation` bundle, injected only when the user translates a page. It messages
+    /// through the isolated script's handler, so it gets that broker's config. Built on first use.
+    ///
+    /// Running it again in a page that has it does nothing: a page restored from the back-forward
+    /// cache, or one whose user scripts were rebuilt, keeps the bundle, and a second copy would
+    /// answer every request too.
+    func pageTranslationSource() throws -> String {
+        if let pageTranslationSourceCache {
+            return pageTranslationSourceCache
+        }
+        let bundle = try ContentScopeUserScript.generateSource(privacyConfigurationManager,
+                                                               properties: contentScopeProperties,
+                                                               scriptContext: .pageTranslation,
+                                                               config: contentScopeUserScriptIsolated.broker.messagingConfig(),
+                                                               privacyConfigurationJSONGenerator: isolatedConfigGenerator)
+        guard !bundle.isEmpty else { throw PageTranslationSourceError.empty }
+        // The isolated world's globals are invisible to the page, so the page can't set the marker.
+        let source = """
+            "use strict";
+            if (!globalThis.__ddgPageTranslation) {
+            globalThis.__ddgPageTranslation = true;
+            \(bundle)
+            }
+            """
+        pageTranslationSourceCache = source
+        return source
+    }
+
     lazy var userScripts: [UserScript] = {
         var scripts: [UserScript?] = [
             findInPageScript,
@@ -232,7 +292,8 @@ final class UserScripts: UserScriptsProvider {
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,
-            contentScopeUserScriptIsolated
+            contentScopeUserScriptIsolated,
+            duckAILoadingSkeletonUserScript
         ]
 
         if !isAutoconsentExtensionAvailable {

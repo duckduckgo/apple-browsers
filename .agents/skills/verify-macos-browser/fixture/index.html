@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>verify-macos-browser fixture</title>
+<style>
+  body{font:15px -apple-system,system-ui,sans-serif;margin:24px;line-height:1.5}
+  button{font:inherit;padding:6px 12px;margin:4px 0}
+  .row{margin:14px 0}
+  :root{color-scheme:light dark}
+</style>
+</head>
+<body>
+<h1 id="title">verify-macos-browser fixture</h1>
+<p>token: <span id="token" aria-label="token">none</span></p>
+<p>status: <span id="status" aria-label="status">idle</span></p>
+<p>stored: <span id="stored" aria-label="stored">unknown</span></p>
+
+<div class="row">
+  <button id="disabled" aria-label="disabled button" disabled>disabled button</button>
+</div>
+
+<div class="row">
+  <!-- Two buttons with one label: a press that guessed would change #status, so an ambiguity probe can see it. -->
+  <button id="twin-a" aria-label="twin button">twin button</button>
+  <button id="twin-b" aria-label="twin button">twin button</button>
+</div>
+
+<div class="row">
+  <!-- The label differs from the text, so press("target link") names the link alone, not also its text. -->
+  <a id="target-link" href="/target.html" aria-label="target link">open the target page</a>
+</div>
+
+<div class="row">
+  <!-- Saves download.txt as verify-<token>.txt in ~/Downloads, so a proof can find this run's file by name. -->
+  <a id="download-link" href="/download.txt" download aria-label="download link">download a file</a>
+</div>
+
+<ol id="list" aria-label="long list"></ol>
+<p id="bottom" aria-label="bottom marker">bottom of page</p>
+
+<script>
+  const token = new URLSearchParams(location.search).get("token") || "none";
+  document.getElementById("token").textContent = token;
+  document.title = "fixture " + token;   // the tab title carries the token too, for an AX read
+  document.getElementById("download-link").download = "verify-" + token + ".txt";
+
+  // What localStorage held before this load, then this load's token: a data-clearing proof reads "empty" after.
+  let prior = null;
+  try { prior = localStorage.getItem("verify-macos-browser"); } catch (e) {}
+  document.getElementById("stored").textContent = prior ? "present" : "empty";
+  try { localStorage.setItem("verify-macos-browser", token); } catch (e) {}
+
+  for (const id of ["twin-a", "twin-b"]) {
+    document.getElementById(id).addEventListener("click", () => {
+      document.getElementById("status").textContent = id;
+    });
+  }
+  const list = document.getElementById("list");
+  for (let i = 1; i <= 60; i++) {
+    const li = document.createElement("li");
+    li.textContent = "item " + i;
+    list.appendChild(li);
+  }
+</script>
+</body>
+</html>

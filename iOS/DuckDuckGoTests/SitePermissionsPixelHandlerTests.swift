@@ -138,6 +138,10 @@ final class SitePermissionsPixelHandlerTests: XCTestCase {
             (.permissionDialogClick(type: .cameraAndMicrophone, selection: .allowAlways), "permission_dialog_click_camera_and_microphone_allow_always"),
             (.permissionDialogClick(type: .geolocation, selection: .never), "permission_dialog_click_geolocation_never"),
             (.permissionDialogClick(type: .camera, selection: .dismissed), "permission_dialog_click_camera_dismissed"),
+            (.permissionDialogClosedWithoutChoice(type: .camera, reason: .navigationReload, visibleFor: .lessThanOneSecond, frame: .main),
+             "debug_permission_dialog_closed_without_choice_camera"),
+            (.permissionDialogClosedWithoutChoice(type: .cameraAndMicrophone, reason: .cancelled, visibleFor: .moreThanThirtySeconds, frame: .iframe),
+             "debug_permission_dialog_closed_without_choice_camera_and_microphone"),
             (.permissionDialogClick(type: .microphone, selection: .dismissed), "permission_dialog_click_microphone_dismissed"),
             (.permissionDialogClick(type: .cameraAndMicrophone, selection: .dismissed), "permission_dialog_click_camera_and_microphone_dismissed"),
             (.permissionDialogClick(type: .geolocation, selection: .dismissed), "permission_dialog_click_geolocation_dismissed"),
@@ -191,6 +195,29 @@ final class SitePermissionsPixelHandlerTests: XCTestCase {
         XCTAssertEqual(fireCall.pixel.name, "permission_center_changed_camera_to_ask")
         XCTAssertEqual(fireCall.pixel.parameters, ["from": "deny"])
         XCTAssertNil(fireCall.additionalParameters)
+    }
+
+    func testDialogClosedWithoutChoiceSendsReasonVisibleTimeAndFrameAsParameters() throws {
+        let fireCall = try fire(.permissionDialogClosedWithoutChoice(type: .geolocation,
+                                                                     reason: .navigationCrossSite,
+                                                                     visibleFor: .oneToFiveSeconds,
+                                                                     frame: .iframe))
+
+        XCTAssertEqual(fireCall.pixel.name, "debug_permission_dialog_closed_without_choice_geolocation")
+        XCTAssertEqual(fireCall.pixel.parameters, ["reason": "navigation_cross_site", "visible_for": "1_5s", "frame": "iframe"])
+        XCTAssertEqual(fireCall.frequency, .standard)
+    }
+
+    func testDialogVisibleDurationBucketEdges() {
+        let cases: [(TimeInterval, SitePermissionsEvent.DialogVisibleDuration)] = [
+            (0, .lessThanOneSecond), (0.999, .lessThanOneSecond),
+            (1, .oneToFiveSeconds), (4.999, .oneToFiveSeconds),
+            (5, .fiveToThirtySeconds), (29.999, .fiveToThirtySeconds),
+            (30, .moreThanThirtySeconds), (3600, .moreThanThirtySeconds)
+        ]
+        for (seconds, expected) in cases {
+            XCTAssertEqual(SitePermissionsEvent.DialogVisibleDuration(seconds: seconds), expected, "\(seconds)s")
+        }
     }
 
     func testManagementPixelsNeverContainSiteData() throws {

@@ -19,6 +19,7 @@
 import Foundation
 import Persistence
 import PrivacyDashboard
+import Subscription
 
 /// The one value only the search path reads and writes.
 protocol BlockedTrackerStoring: AnyObject {
@@ -53,21 +54,21 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
 
     init(progress: ContextualOnboardingProgressReading,
          storage: BlockedTrackerStoring = SearchOnboardingPathStorage(),
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         subscriptionManager: any SubscriptionManager,
          trackerMessageProvider: TrackerMessageProviding) {
         self.progress = progress
         self.storage = storage
-        self.ending = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: subscriptionUpsellExperiment)
+        self.ending = OnboardingEndingSteps(progress: progress, subscriptionManager: subscriptionManager)
         self.trackerMessageProvider = trackerMessageProvider
     }
 
-    let isUILocked = false
+    let uiLock = UserInteractionLock.unlocked
 
     func reset() {
         storage.blockedTrackerSeen = false
     }
 
-    func dialog(for tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualOnboardingDecision {
+    func dialog(for tab: Tab) -> ContextualOnboardingDecision {
         // 1. Once the final dialog was seen, the ending decides (upsell or completed).
         if case .decided(let decision) = ending.decisionForNextDialog() { return decision }
         // 2. Otherwise pick today's dialog for this tab, without writing anything.
@@ -82,7 +83,7 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
             } else {
                 // For website visit, decide dialog also based on the tracker type.
                 let trackerType = trackerMessageProvider.trackersType(privacyInfo: tab.privacyInfo)
-                dialog = dialogForRegularUrl(trackerType: trackerType, privacyInfo: privacyInfo)
+                dialog = dialogForRegularUrl(trackerType: trackerType, privacyInfo: tab.privacyInfo)
             }
         default:
             dialog = nil

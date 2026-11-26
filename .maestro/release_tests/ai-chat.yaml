@@ -14,9 +14,9 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
         ff.aiChatTabHandoffImprovements: "true"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # NTP: open a chat through the Duck.ai menu when available
 - assertVisible:

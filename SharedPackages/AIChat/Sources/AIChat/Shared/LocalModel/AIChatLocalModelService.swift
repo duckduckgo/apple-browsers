@@ -40,6 +40,8 @@ public protocol AIChatLocalModelServing: AnyObject {
     func register(_ pusher: AIChatLocalModelPushing)
     func startRun(_ request: AIChatLocalRunRequest, for pusher: AIChatLocalModelPushing) throws -> AIChatLocalRunStartReply
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing)
+    /// For a script replaced under a page that stays open: the page's runs carry on through the new script.
+    func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing)
     func cancelRuns(ownerID: ObjectIdentifier)
     func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result
 }
@@ -58,6 +60,7 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
     private let storage: AIChatPageSummariesModelStoring
     private let engine: AIChatLocalModelEngine
     private let runQueue: AIChatLocalRunQueue
+    private let instrumentation: AIChatLocalModelInstrumentation?
     private let pushers = NSHashTable<AnyObject>.weakObjects()
     private var lastPushedState: AIChatLocalModelState?
     private var cancellables = Set<AnyCancellable>()
@@ -67,12 +70,14 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
                 storage: AIChatPageSummariesModelStoring,
                 engine: AIChatLocalModelEngine = AppleFoundationModelEngine(),
                 runQueue: AIChatLocalRunQueue? = nil,
-                notificationCenter: NotificationCenter = .default) {
+                notificationCenter: NotificationCenter = .default,
+                instrumentation: AIChatLocalModelInstrumentation? = nil) {
         self.isFeatureFlagOn = isFeatureFlagOn
         self.featureFlagUpdates = featureFlagUpdates
         self.storage = storage
         self.engine = engine
         self.runQueue = runQueue ?? AIChatLocalRunQueue(engine: engine)
+        self.instrumentation = instrumentation
         self.availability = Self.uncheckedAvailability
         self.lastPushedState = currentState
 
@@ -83,15 +88,15 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
 
         featureFlagUpdates
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.refreshAvailability() }
+            .sink { [weak self] in self?.refreshAvailabilityAndReportState() }
             .store(in: &cancellables)
 
         // Apple Intelligence is turned on and off in System Settings, so check again whenever the user comes back.
         notificationCenter.publisher(for: Self.didBecomeActiveNotification)
-            .sink { [weak self] _ in self?.refreshAvailability() }
+            .sink { [weak self] _ in self?.refreshAvailabilityAndReportState() }
             .store(in: &cancellables)
 
-        refreshAvailability()
+        refreshAvailabilityAndReportState()
     }
 
     /// Stands in while the flag is off, so launch doesn't touch Foundation Models for everyone else.
@@ -154,6 +159,14 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         setPageSummariesModel(.duckAI)
     }
 
+    /// The user's own choice. Sends `selected` only when the choice changes, so the prompt and
+    /// Settings count a change once even when both happen.
+    public func select(_ model: AIChatPageSummariesModel, source: AIChatLocalModelPixel.SelectionSource) {
+        guard storage.pageSummariesModel != model else { return }
+        setPageSummariesModel(model)
+        instrumentation?.fire(.selected(model, source: source))
+    }
+
     private func setPageSummariesModel(_ model: AIChatPageSummariesModel) {
         // The storage publisher fires during the write and the push reads `storage` again. Writing
         // through the stored property would overlap the two accesses and trap; the copy writes to
@@ -185,11 +198,19 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
         runQueue.enqueue(request, ownerID: ObjectIdentifier(pusher)) { [weak pusher] chunk in
             pusher?.pushLocalRunChunk(chunk)
         }
+        instrumentation?.fire(.runStarted(engine: storage.pageSummariesModel, task: request.task))
         return AIChatLocalRunStartReply(model: engine.model)
     }
 
     public func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {
         runQueue.cancel(requestId: requestId, ownerID: ObjectIdentifier(pusher))
+    }
+
+    public func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing) {
+        guard pusher !== replacement else { return }
+        runQueue.reassign(ownerID: ObjectIdentifier(pusher), to: ObjectIdentifier(replacement)) { [weak replacement] chunk in
+            replacement?.pushLocalRunChunk(chunk)
+        }
     }
 
     public func cancelRuns(ownerID: ObjectIdentifier) {
@@ -206,9 +227,23 @@ public final class AIChatLocalModelService: AIChatLocalModelServing {
 
         let result = await ask()
         if result == .allowed {
-            optIn()
+            select(.appleIntelligence, source: .duckAIPromo)
         }
         return result
+    }
+
+    // MARK: - Pixels
+
+    /// The state pixel is daily, so sending it at launch, on every return to the app and on flag
+    /// updates counts each person once a day, including one whose flag turns on mid-session.
+    private func refreshAvailabilityAndReportState() {
+        refreshAvailability()
+        reportState()
+    }
+
+    private func reportState() {
+        guard let state = currentState else { return }
+        instrumentation?.fire(.state(selected: storage.pageSummariesModel, state: state, availability: availability))
     }
 
     // MARK: - Pushes

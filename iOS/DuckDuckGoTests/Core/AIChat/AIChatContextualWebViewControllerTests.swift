@@ -22,6 +22,7 @@ import AIChat
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
+import JavaScriptCore
 import UserScript
 import WebKit
 @testable import Core
@@ -37,6 +38,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         defer { sut.detachBrowserTools() }
         sut.browserToolsOwner = fixture.owner
         sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
         var scopeCreations = 0
         sut.browserToolScopeFactory = { [weak fixture] in
             scopeCreations += 1
@@ -72,6 +74,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         defer { sut.detachBrowserTools() }
         sut.browserToolsOwner = fixture.owner
         sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
         var scopeCreations = 0
         sut.browserToolScopeFactory = { [weak fixture] in
             scopeCreations += 1
@@ -102,24 +105,25 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testBrowserToolsRetainGrantedListingAcrossHiddenViewAndFailedProvisionalNavigation() async throws {
+    func testBrowserToolsCancelOnSurfaceDepartureButKeepDocumentAfterFailedNavigation() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         let sut = makeAttachmentSubmissionController()
         sut.browserToolsOwner = fixture.owner
         sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
         sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
         sut.configureContentHandler(with: fixture.script)
         let actualWebView = try XCTUnwrap(fixture.script.webView)
         fixture.script.webView = fixture.webView
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
         }
-        sut.viewDidDisappear(false)
+        sut.viewWillDisappear(false)
         sut.webView(actualWebView, didStartProvisionalNavigation: nil)
         sut.webView(actualWebView, didFailProvisionalNavigation: nil, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled))
         let retained = await performExecution { .success([:]) }
-        XCTAssertEqual(retained, .success([:]))
+        XCTAssertNil(retained)
         let result = await fixture.invoke()
         XCTAssertEqual(result, fixture.success)
         XCTAssertEqual(fixture.listings, 1)
@@ -135,6 +139,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             defer { sut.detachBrowserTools() }
             sut.browserToolsOwner = fixture.owner
             sut.browserToolsService = fixture.service
+            sut.browserToolsPermissionPresenter = fixture.presenter
             sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
             sut.configureContentHandler(with: fixture.script)
             let navigationDelegate = try XCTUnwrap(fixture.script.webView?.navigationDelegate)
@@ -149,20 +154,21 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         let sut = makeAttachmentSubmissionController()
         sut.browserToolsOwner = fixture.owner
         sut.browserToolsService = fixture.service
+        sut.browserToolsPermissionPresenter = fixture.presenter
         sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
         sut.configureContentHandler(with: fixture.script)
         let actualWebView = try XCTUnwrap(fixture.script.webView)
         fixture.script.webView = fixture.webView
-        guard case .granted(let performAfterForeignCommit) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+        guard case .granted(_, let performAfterForeignCommit) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
         }
         sut.webView(WKWebView(), didCommit: nil)
         let retained = await performAfterForeignCommit { .success([:]) }
         XCTAssertEqual(retained, .success([:]))
         let unaffected = await fixture.invoke()
         XCTAssertEqual(unaffected, fixture.success)
-        guard case .granted(let performAfterOwnCommit) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+        guard case .granted(_, let performAfterOwnCommit) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
         }
         sut.webView(actualWebView, didCommit: nil)
         let cancelled = await performAfterOwnCommit {
@@ -186,6 +192,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         let freshController = makeAttachmentSubmissionController()
         freshController.browserToolsOwner = fixture.owner
         freshController.browserToolsService = fixture.service
+        freshController.browserToolsPermissionPresenter = fixture.presenter
         freshController.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
         let freshScript = AIChatUserScript(handler: fixture.handler, debugSettings: AIChatDebugSettings(userDefault: fixture.defaults))
         freshController.configureContentHandler(with: freshScript)
@@ -349,6 +356,110 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
                                                       didConsume: {}, cancel: { released.fulfill() }))
         sut = nil
         await fulfillment(of: [released], timeout: 1)
+    }
+
+    // MARK: - Local task
+
+    /// The user script reads the mark only while a prompt is being sent, so a queued prompt has to carry it.
+    @MainActor
+    func testWhenARichSummaryIsQueuedBeforeTheFrontendIsReadyThenItIsDeliveredAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        let delivered = expectation(description: "Summary delivered")
+        harness.webView.onPrompt = { _ in delivered.fulfill() }
+
+        harness.sut.submitting(localTask: .summarize) {
+            harness.sut.submitPrompt("Summarize this page.", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
+        }
+        XCTAssertTrue(harness.webView.prompts.isEmpty)
+        harness.sut.markFrontendAsReady()
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [.summarize])
+        withExtendedLifetime(harness) {}
+    }
+
+    @MainActor
+    func testWhenASimpleSummaryIsQueuedBeforeTheFrontendIsReadyThenItIsDeliveredAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        let delivered = expectation(description: "Summary delivered")
+        harness.webView.onPrompt = { _ in delivered.fulfill() }
+
+        harness.sut.submitPrompt("Summarize this page.", localTask: .summarize)
+        XCTAssertTrue(harness.webView.prompts.isEmpty)
+        harness.sut.markFrontendAsReady()
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [.summarize])
+        withExtendedLifetime(harness) {}
+    }
+
+    @MainActor
+    func testWhenASimpleSummaryIsSubmittedAfterTheFrontendIsReadyThenItIsDeliveredAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        harness.sut.markFrontendAsReady()
+        let delivered = expectation(description: "Summary delivered")
+        harness.webView.onPrompt = { _ in delivered.fulfill() }
+
+        harness.sut.submitPrompt("Summarize this page.", localTask: .summarize)
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [.summarize])
+        withExtendedLifetime(harness) {}
+    }
+
+    /// A summary leaves no mark behind for the prompt that follows it, queued or not.
+    @MainActor
+    func testWhenAPromptFollowsASummaryThenItIsNotMarkedAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        let summaryDelivered = expectation(description: "Summary delivered")
+        harness.webView.onPrompt = { _ in summaryDelivered.fulfill() }
+        harness.sut.submitting(localTask: .summarize) {
+            harness.sut.submitPrompt("Summarize this page.", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
+        }
+        harness.sut.markFrontendAsReady()
+        await fulfillment(of: [summaryDelivered], timeout: 1)
+
+        let typedDelivered = expectation(description: "Typed prompt delivered")
+        harness.webView.onPrompt = { _ in typedDelivered.fulfill() }
+        harness.sut.submitPrompt("Summarize this page.", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
+        await fulfillment(of: [typedDelivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [.summarize, nil])
+        withExtendedLifetime(harness) {}
+    }
+
+    @MainActor
+    func testWhenATypedPromptIsQueuedBeforeTheFrontendIsReadyThenItIsNotMarkedAsALocalTask() async {
+        let harness = makeRecordingHarness()
+        let delivered = expectation(description: "Prompt delivered")
+        harness.webView.onPrompt = { _ in delivered.fulfill() }
+
+        harness.sut.submitPrompt("Summarize this page.", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
+        harness.sut.markFrontendAsReady()
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(harness.webView.localTasks, [nil])
+        withExtendedLifetime(harness) {}
+    }
+
+    private struct RecordingHarness {
+        let sut: AIChatContextualWebViewController
+        let script: AIChatUserScript
+        let webView: LocalTaskRecordingWebView
+        let broker: UserScriptMessageBroker
+    }
+
+    @MainActor
+    private func makeRecordingHarness() -> RecordingHarness {
+        let sut = makeAttachmentSubmissionController()
+        let script = makeTestUserScript()
+        let webView = LocalTaskRecordingWebView()
+        let broker = UserScriptMessageBroker(context: "aiChat", requiresRunInPageContentWorld: true)
+        sut.configureContentHandler(with: script)
+        script.with(broker: broker)
+        script.webView = webView
+        sut.webView(WKWebView(), didFinish: nil)
+        return RecordingHarness(sut: sut, script: script, webView: webView, broker: broker)
     }
 
     @MainActor
@@ -673,6 +784,43 @@ private final class StubUserAgentManager: UserAgentManaging {
     func update(webView: WKWebView, isDesktop: Bool, url: URL?) {}
 
     var applicationNameForUserAgent: String { "" }
+}
+
+private final class LocalTaskRecordingWebView: WKWebView {
+    private(set) var prompts: [AIChatNativePrompt] = []
+    var onPrompt: ((AIChatNativePrompt) -> Void)?
+    private let javaScriptContext = JSContext()!
+
+    var localTasks: [AIChatLocalModelTask?] {
+        prompts.map { prompt in
+            guard case .query(let query) = prompt.tool else { return nil }
+            return query.localTask
+        }
+    }
+
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        javaScriptContext.evaluateScript("""
+            var capturedPrompt = null;
+            var navigator = { duckduckgo: { messageHandlers: {
+                submitAIChatNativePrompt: function(event) { capturedPrompt = event.params; }
+            } } };
+            """)
+        javaScriptContext.evaluateScript(javaScriptString)
+        if let error = javaScriptContext.exception {
+            XCTFail("Bridge JavaScript failed: \(error)")
+        }
+        if let object = javaScriptContext.objectForKeyedSubscript("capturedPrompt")?.toDictionary() as? [String: Any] {
+            do {
+                let data = try JSONSerialization.data(withJSONObject: object)
+                let prompt = try JSONDecoder().decode(AIChatNativePrompt.self, from: data)
+                prompts.append(prompt)
+                onPrompt?(prompt)
+            } catch {
+                XCTFail("Invalid native prompt: \(error)")
+            }
+        }
+        completionHandler?(nil, nil)
+    }
 }
 
 private final class StubDownloadHandler: NSObject, DownloadHandling {

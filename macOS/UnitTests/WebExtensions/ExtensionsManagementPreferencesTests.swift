@@ -102,7 +102,51 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         XCTAssertEqual(settings.detailsEntry?.hasHitNativeMessagingLimitation, true)
     }
 
+    func testWhenLearnMoreIsClicked_ThenTheConfiguredPageOpensAndTheLearnMorePixelFires() throws {
+        let settings = makeModel(featureSettings: ["learnMoreUrl": "https://duckduckgo.com/duckduckgo-help-pages/extensions"])
+
+        settings.openLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages/extensions"))
+        try assertSingleFire("web_extension_learn_more_clicked_macos", parameters: nil)
+    }
+
+    func testWhenTheConfigurationHasNoLearnMoreURL_ThenLearnMoreOpensTheHelpPages() {
+        makeModel(featureSettings: [:]).openLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages"))
+    }
+
+    func testWhenTheLearnMoreURLIsNotAbsolute_ThenLearnMoreOpensTheHelpPages() {
+        makeModel(featureSettings: ["learnMoreUrl": "duckduckgo-help-pages/extensions"]).openLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages"))
+    }
+
+    func testWhenRemoteDisableLearnMoreIsClicked_ThenTheConfiguredPageOpensAndItsPixelFires() throws {
+        let settings = makeModel(featureSettings: ["learnMoreUrlRemoteDisable": "https://duckduckgo.com/duckduckgo-help-pages/extensions/disabled"])
+
+        settings.openRemoteDisableLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages/extensions/disabled"))
+        try assertSingleFire("web_extension_learn_more_remote_disable_clicked_macos", parameters: nil)
+    }
+
+    func testWhenTheConfigurationHasNoRemoteDisableLearnMoreURL_ThenItOpensTheHelpPages() {
+        makeModel(featureSettings: ["learnMoreUrl": "https://duckduckgo.com/duckduckgo-help-pages/extensions"]).openRemoteDisableLearnMore()
+
+        XCTAssertEqual(windowControllersManager.showCalled?.url, URL(string: "https://duckduckgo.com/duckduckgo-help-pages"))
+    }
+
     // MARK: - Helpers
+
+    private func makeModel(featureSettings: [String: Any]) -> ExtensionsManagementPreferences {
+        let configuration = MockPrivacyConfiguration()
+        configuration.featureSettings = featureSettings
+        return ExtensionsManagementPreferences(configurationManager: MockPrivacyConfigurationManager(privacyConfig: configuration),
+                                               windowControllersManager: windowControllersManager,
+                                               pixelFiring: pixels)
+    }
 
     private func makeModel(webExtensionManager: WebExtensionManaging) -> ExtensionsManagementPreferences {
         ExtensionsManagementPreferences(configurationManager: MockPrivacyConfigurationManager(),
@@ -136,15 +180,17 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         settings["publisherUri"] = publisherURL
         let configuration = MockPrivacyConfiguration()
         configuration.subfeatureSettings = String(data: try JSONEncoder().encode(settings), encoding: .utf8)
-        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: configuration))
+        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: configuration),
+                                            isExtensionsEnabled: { true })
         return try XCTUnwrap(catalog.listing(of: .bitwarden))
     }
 
-    private func assertSingleFire(_ name: String, file: StaticString = #filePath, line: UInt = #line) throws {
+    private func assertSingleFire(_ name: String, parameters: [String: String]? = ["extension": "bitwarden"],
+                                  file: StaticString = #filePath, line: UInt = #line) throws {
         XCTAssertEqual(pixels.actualFireCalls.count, 1, file: file, line: line)
         let call = try XCTUnwrap(pixels.actualFireCalls.first, file: file, line: line)
         XCTAssertEqual(call.pixel.name, name, file: file, line: line)
-        XCTAssertEqual(call.pixel.parameters, ["extension": "bitwarden"], file: file, line: line)
+        XCTAssertEqual(call.pixel.parameters, parameters, file: file, line: line)
         XCTAssertEqual(call.frequency, .dailyAndCount, file: file, line: line)
     }
 }
@@ -152,7 +198,6 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
 @available(macOS 15.4, *)
 private final class StubChromeWebStore: ChromeWebStoreManaging {
     let catalogExtensionIDs: [String]
-    let learnMoreURL: URL? = nil
     private let storeListing: ChromeWebStoreListing
 
     init(storeID: String, listing: ChromeWebStoreListing) {
@@ -213,6 +258,7 @@ private final class StubWebExtensionManager: WebExtensionManaging {
     @MainActor func hasHitNativeMessagingLimitation(identifier: String) -> Bool { limitedIdentifiers.contains(identifier) }
     @MainActor func isNativeMessagingAlertSuppressed(identifier: String) -> Bool { false }
     @MainActor func suppressNativeMessagingAlert(identifier: String) {}
+    @MainActor func pixelExtension(identifier: String) -> WebExtensionPixelExtension { .other }
     func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }

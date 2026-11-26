@@ -17,8 +17,6 @@
 //
 
 import Combine
-import FeatureFlags_macOS
-import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -27,15 +25,12 @@ final class AutofillToolbarPinningPromoDelegateTests: XCTestCase {
 
     private static let promoID = "autofill-toolbar-pinning"
 
-    private var featureFlagger: MockFeatureFlagger!
     private var pinningManager: MockPinningManager!
     private var presenter: MockAutofillToolbarPinningPromoPresenter!
     private var sut: AutofillToolbarPinningPromoDelegate!
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger(
-            featuresStub: [FeatureFlag.promoQueueAutofillToolbarPinningPromo.rawValue: true])
         pinningManager = MockPinningManager()
         presenter = MockAutofillToolbarPinningPromoPresenter()
         sut = makeSUT(presenter: presenter)
@@ -45,13 +40,11 @@ final class AutofillToolbarPinningPromoDelegateTests: XCTestCase {
         sut = nil
         presenter = nil
         pinningManager = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
     private func makeSUT(presenter: AutofillToolbarPinningPromoPresenting?) -> AutofillToolbarPinningPromoDelegate {
-        AutofillToolbarPinningPromoDelegate(featureFlagger: featureFlagger,
-                                            pinningManager: pinningManager,
+        AutofillToolbarPinningPromoDelegate(pinningManager: pinningManager,
                                             presenterProvider: { presenter })
     }
 
@@ -61,14 +54,8 @@ final class AutofillToolbarPinningPromoDelegateTests: XCTestCase {
 
     // MARK: - Eligibility
 
-    func testWhenFlagOnAndNotPinnedThenEligible() {
+    func testWhenNotPinnedThenEligible() {
         XCTAssertTrue(sut.isEligible)
-    }
-
-    func testWhenFlagOffThenNotEligible() {
-        featureFlagger.featuresStub = [FeatureFlag.promoQueueAutofillToolbarPinningPromo.rawValue: false]
-
-        XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenAlreadyPinnedThenNotEligible() {

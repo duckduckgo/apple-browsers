@@ -40,6 +40,8 @@ protocol OnboardingIntroContentProviding {
     var searchExperienceContent: OnboardingSearchExperienceContent { get }
     var duckAIQueryContent: OnboardingDuckAIQueryContent { get }
     var tryVPNContent: OnboardingTryVPNContent { get }
+    var vpnActivationContent: OnboardingVPNActivationContent { get }
+    var subscriptionReminderContent: OnboardingSubscriptionReminderContent { get }
 }
 
 struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
@@ -407,6 +409,8 @@ struct OnboardingComparisonContent: Equatable {
     /// When set, renders a secondary skip button below the primary CTA.
     let secondaryCTA: String?
     let daxAnimation: DaxAnimation?
+    /// When false, checkmarks spring in already drawn, matching the subscription badges.
+    let drawsCheckmarks: Bool
 
     init(
         title: String,
@@ -416,7 +420,8 @@ struct OnboardingComparisonContent: Equatable {
         footer: String? = nil,
         primaryCTA: String,
         secondaryCTA: String?,
-        daxAnimation: DaxAnimation?
+        daxAnimation: DaxAnimation?,
+        drawsCheckmarks: Bool
     ) {
         self.title = title
         self.subHeader = subHeader
@@ -426,6 +431,7 @@ struct OnboardingComparisonContent: Equatable {
         self.primaryCTA = primaryCTA
         self.secondaryCTA = secondaryCTA
         self.daxAnimation = daxAnimation
+        self.drawsCheckmarks = drawsCheckmarks
     }
 }
 
@@ -445,7 +451,8 @@ extension OnboardingIntroContentProvider {
             features: RebrandedComparisonTableModel.defaultBrowserFeatures,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
-            daxAnimation: .wingBottom
+            daxAnimation: .wingBottom,
+            drawsCheckmarks: true
         )
     }
 
@@ -485,7 +492,8 @@ extension OnboardingIntroContentProvider {
             footer: reason == .vpn ? UserText.Onboarding.BrowsersComparison.vpnSubscriptionFooter : nil,
             primaryCTA: UserText.Onboarding.BrowsersComparison.cta,
             secondaryCTA: UserText.onboardingSkip,
-            daxAnimation: nil
+            daxAnimation: nil,
+            drawsCheckmarks: reason != .vpn
         )
     }
 
@@ -497,7 +505,8 @@ extension OnboardingIntroContentProvider {
             features: RebrandedComparisonTableModel.defaultAIFeatures,
             primaryCTA: UserText.Onboarding.DuckAICPP.AIComparison.cta,
             secondaryCTA: nil,
-            daxAnimation: .wingBottom
+            daxAnimation: .wingBottom,
+            drawsCheckmarks: true
         )
     }
 
@@ -527,6 +536,47 @@ extension OnboardingIntroContentProvider {
         )
     }
 
+    var vpnActivationContent: OnboardingVPNActivationContent {
+        OnboardingVPNActivationContent(
+            offTitle: UserText.subscriptionOnboardingVPNActivationOffTitle,
+            onTitle: UserText.subscriptionOnboardingVPNActivationOnTitle,
+            turnOnCTA: UserText.subscriptionOnboardingVPNActivationTurnOnButton,
+            tryAgainCTA: UserText.subscriptionOnboardingVPNActivationTryAgainButton,
+            skipCTA: UserText.onboardingSkip,
+            nextCTA: UserText.subscriptionOnboardingVPNActivationNextButton,
+            daxAnimation: .wingLeft
+        )
+    }
+
+    var subscriptionReminderContent: OnboardingSubscriptionReminderContent {
+        OnboardingSubscriptionReminderContent(
+            title: UserText.Onboarding.SubscriptionReminder.title,
+            message: (try? AttributedString(markdown: UserText.Onboarding.SubscriptionReminder.message))
+                ?? AttributedString(UserText.Onboarding.SubscriptionReminder.message),
+            cta: UserText.Onboarding.SubscriptionReminder.cta,
+            daxAnimation: .wingLeft
+        )
+    }
+
+}
+
+// MARK: - Content Provider + Try VPN follow-up
+
+struct OnboardingVPNActivationContent: Equatable {
+    let offTitle: String
+    let onTitle: String
+    let turnOnCTA: String
+    let tryAgainCTA: String
+    let skipCTA: String
+    let nextCTA: String
+    let daxAnimation: DaxAnimation?
+}
+
+struct OnboardingSubscriptionReminderContent: Equatable {
+    let title: String
+    let message: AttributedString
+    let cta: String
+    let daxAnimation: DaxAnimation?
 }
 
 // MARK: - Content Provider + Add to Dock (Add me to your Dock!)

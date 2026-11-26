@@ -50,6 +50,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
         case reportInitException
         case reportPageException
         case telemetryEvent
+        case submitQuery
     }
 
     init(onboardingActionsManager: OnboardingActionsManaging) {
@@ -75,7 +76,8 @@ final class OnboardingUserScript: NSObject, Subfeature {
             .stepCompleted: stepCompleted,
             .reportInitException: reportException,
             .reportPageException: reportException,
-            .telemetryEvent: reportTelemetryEvent
+            .telemetryEvent: reportTelemetryEvent,
+            .submitQuery: submitQuery
     ]
 
     @MainActor
@@ -88,6 +90,25 @@ final class OnboardingUserScript: NSObject, Subfeature {
 
     struct UserValuesNotification: Encodable {
         let userValuesNotification: UserValues
+    }
+
+    // MARK: - SubmitQuery
+
+    /// Sent by the Search or Duck.ai step when the user submits.
+    struct SubmitQuery: Decodable, Equatable {
+        enum Mode: String, Decodable {
+            case search
+            case duckAi
+        }
+
+        enum Source: String, Decodable {
+            case typed
+            case suggestion
+        }
+
+        let mode: Mode
+        let query: String
+        let source: Source
     }
 
 }
@@ -179,6 +200,13 @@ extension OnboardingUserScript {
     private func reportTelemetryEvent(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let event: OnboardingUserScript.TelemetryEvent = DecodableHelper.decode(from: params) else { return nil }
         onboardingActionsManager.reportTelemetryEvent(event)
+        return nil
+    }
+
+    @MainActor
+    private func submitQuery(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let query: SubmitQuery = DecodableHelper.decode(from: params) else { return nil }
+        onboardingActionsManager.submitQuery(query)
         return nil
     }
 

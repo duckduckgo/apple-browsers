@@ -54,6 +54,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var sessionRestoreEnabled: Bool?
     var duckAiInAddressBarEnabled: Bool?
     var reportedTelemetryEvent: OnboardingUserScript.TelemetryEvent?
+    var submittedQuery: OnboardingUserScript.SubmitQuery?
 
     func onboardingStarted() {
         onboardingStartedCalled = true
@@ -119,5 +120,9 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent) {
         reportedTelemetryEvent = event
+    }
+
+    func submitQuery(_ query: OnboardingUserScript.SubmitQuery) {
+        submittedQuery = query
     }
 }

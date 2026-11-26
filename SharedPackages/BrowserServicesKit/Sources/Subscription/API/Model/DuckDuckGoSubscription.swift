@@ -19,7 +19,7 @@
 import Foundation
 import Networking
 
-public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConvertible {
+public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConvertible, Sendable {
     public let productId: String
     public let name: String
     public let billingPeriod: BillingPeriod
@@ -37,7 +37,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     public var features: [SubscriptionEntitlement]?
 
     /// Represents available subscription tier changes
-    public struct AvailableChanges: Codable, Equatable {
+    public struct AvailableChanges: Codable, Equatable, Sendable {
         public let upgrade: [TierChange]
         public let downgrade: [TierChange]
         /// Current product ID from the backend; use for cancel-downgrade instead of subscription.productId when present.
@@ -69,7 +69,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     }
 
     /// Represents a single tier change option
-    public struct TierChange: Codable, Equatable {
+    public struct TierChange: Codable, Equatable, Sendable {
         public let tier: String
         public let productIds: [String]
         public let order: Int
@@ -93,7 +93,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     }
 
     /// Represents a pending plan change that will take effect at a future date
-    public struct PendingPlan: Codable, Equatable {
+    public struct PendingPlan: Codable, Equatable, Sendable {
         public let productId: String
         public let billingPeriod: BillingPeriod
         public let effectiveAt: Date
@@ -122,7 +122,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         }
     }
 
-    public enum BillingPeriod: String, Codable {
+    public enum BillingPeriod: String, Codable, Sendable {
         case monthly = "Monthly"
         case yearly = "Yearly"
         case unknown
@@ -140,7 +140,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         }
     }
 
-    public enum Platform: String, Codable {
+    public enum Platform: String, Codable, Sendable {
         case apple, google, stripe
         case unknown
 
@@ -149,7 +149,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         }
     }
 
-    public enum Status: String, Codable {
+    public enum Status: String, Codable, Sendable {
         case autoRenewable = "Auto-Renewable"
         case notAutoRenewable = "Not Auto-Renewable"
         case gracePeriod = "Grace Period"
@@ -177,7 +177,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     ///
     /// The `Offer` struct encapsulates information about a specific subscription offer,
     /// including its type.
-    public struct Offer: Codable, Equatable, Hashable {
+    public struct Offer: Codable, Equatable, Hashable, Sendable {
         /// The type of the offer.
         public let type: OfferType
     }
@@ -186,7 +186,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     ///
     /// - `trial`: A trial offer.
     /// - `unknown`: A fallback case for any unrecognized offer types, ensuring forward compatibility.
-    public enum OfferType: String, Codable {
+    public enum OfferType: String, Codable, Sendable {
         case trial = "Trial"
         case unknown
 

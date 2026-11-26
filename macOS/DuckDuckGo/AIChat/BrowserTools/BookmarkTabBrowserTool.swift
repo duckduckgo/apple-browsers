@@ -29,6 +29,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
 
     let name = "bookmarkTab"
     let permissionMode = BrowserToolPermissionMode.ask
+    let asksEveryTime = true
 
     let inputSchema: JSONValue = [
         "type": "object",
@@ -53,6 +54,13 @@ final class BookmarkTabBrowserTool: BrowserTool {
         self.bookmarkManager = bookmarkManager
     }
 
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? {
+        guard case .resolved(let tabID, let collection) = BrowserToolTargetTab.resolve(tabIDArgument: arguments?["tabId"], context: context,
+                                                                                       in: windowControllersManager) else { return nil }
+        return BrowserToolTargetTab.actionableTab(withID: tabID, in: collection)?
+            .content.userEditableUrl?.absoluteString
+    }
+
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         // One call at a time, so a folder one call creates is found by the next.
         let previous = running
@@ -73,7 +81,7 @@ final class BookmarkTabBrowserTool: BrowserTool {
         switch BrowserToolTargetTab.resolve(tabIDArgument: arguments?["tabId"], context: context, in: windowControllersManager) {
         case .failure(let failure): return .failure(failure)
         case .resolved(let tabID, let collection):
-            guard let resolvedTab = BrowserToolTargetTab.actionableTab(withID: tabID, ownerTabID: context.ownerTabID, in: collection) else {
+            guard let resolvedTab = BrowserToolTargetTab.actionableTab(withID: tabID, in: collection) else {
                 return .failure(.notFound)
             }
             tab = resolvedTab
@@ -86,8 +94,9 @@ final class BookmarkTabBrowserTool: BrowserTool {
         do {
             let (folder, folderCreated) = try await folder(at: folderPath, in: list)
             try Task.checkCancellation()
-            let alreadyBookmarked = try await save(url, title: tab.title ?? url.host ?? url.absoluteString,
-                                                   in: folder, moving: !folderPath.isEmpty)
+            // A page sets its own title, so it is capped like every other name the tools write.
+            let title = BrowserToolOutputLimits.clip(tab.title ?? url.host ?? url.absoluteString, to: BrowserToolOutputLimits.title)
+            let alreadyBookmarked = try await save(url, title: title, in: folder, moving: !folderPath.isEmpty)
             return .success([
                 "tabId": .string(tab.uuid),
                 "alreadyBookmarked": .bool(alreadyBookmarked),

@@ -74,7 +74,7 @@ private struct LegacyMediaCaptureScenario {
         let cartesianScenarios = ["example.com", "duck.ai"].flatMap { host in
             captureTypes.flatMap { type in
                 audioStatuses.map { status in
-                    let consultsAudio = host == "duck.ai" && type != .camera
+                    let consultsAudio = host == "duck.ai" && type == .microphone
                     return Self(name: "\(host) \(type) with audio status \(status)",
                                 host: host,
                                 type: type,
@@ -94,20 +94,20 @@ private struct LegacyMediaCaptureScenario {
                  videoStatus: .authorized,
                  expectedDecision: .grant,
                  expectedRequestedMediaTypes: [.audio]),
-            Self(name: "DuckDuckGo subdomain is a Duck.ai host",
+            Self(name: "DuckDuckGo subdomain is not a Duck.ai host",
                  host: "subdomain.duckduckgo.com",
                  type: .microphone,
                  audioStatus: .authorized,
                  videoStatus: .authorized,
-                 expectedDecision: .grant,
-                 expectedRequestedMediaTypes: [.audio]),
-            Self(name: "combined capture ignores denied video authorization",
+                 expectedDecision: fallthroughDecision,
+                 expectedRequestedMediaTypes: []),
+            Self(name: "combined capture is not granted from audio authorization alone",
                  host: "duck.ai",
                  type: .cameraAndMicrophone,
                  audioStatus: .authorized,
                  videoStatus: .denied,
-                 expectedDecision: .grant,
-                 expectedRequestedMediaTypes: [.audio])
+                 expectedDecision: fallthroughDecision,
+                 expectedRequestedMediaTypes: [])
         ]
     }
 }

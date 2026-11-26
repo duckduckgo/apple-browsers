@@ -48,30 +48,26 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
 
     private let store: SitePermissionsStore
     private let favicons: SitePermissionsFaviconStore?
-    private let isEnabled: () -> Bool
     private let openSystemSettingsHandler: () -> Void
     private let presentUndoToast: UndoToastPresenter
     private let callbacks: Callbacks
 
     init(store: SitePermissionsStore,
-         isEnabled: @escaping () -> Bool,
          favicons: SitePermissionsFaviconStore? = nil,
          openSystemSettings: @escaping () -> Void,
          presentUndoToast: @escaping UndoToastPresenter,
          callbacks: Callbacks) {
         self.store = store
         self.favicons = favicons
-        self.isEnabled = isEnabled
         self.openSystemSettingsHandler = openSystemSettings
         self.presentUndoToast = presentUndoToast
         self.callbacks = callbacks
         refresh()
     }
 
-    convenience init(store: SitePermissionsStore, isEnabled: @escaping () -> Bool,
+    convenience init(store: SitePermissionsStore,
                      favicons: SitePermissionsFaviconStore? = nil, callbacks: Callbacks) {
         self.init(store: store,
-                  isEnabled: isEnabled,
                   favicons: favicons,
                   openSystemSettings: Self.openSystemSettingsDefault,
                   presentUndoToast: Self.presentUndoToastDefault,
@@ -79,7 +75,6 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
     }
 
     func didOpen() {
-        guard isEnabled() else { return }
         refresh()
         callbacks.didOpen()
     }
@@ -118,13 +113,11 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
     }
 
     func openSystemSettings() {
-        guard isEnabled() else { return }
         callbacks.didOpenSystemSettings()
         openSystemSettingsHandler()
     }
 
     func removePermissions(for site: SitePermissionKey) {
-        guard isEnabled() else { return }
         let images = favicons?.retainedImages(for: [site]) ?? [:]
         let snapshot = store.removePermissions(for: site)
         guard !snapshot.isEmpty else { return }
@@ -132,18 +125,15 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
         callbacks.didRequestRevocation(site, Set(Self.supportedPermissionTypes))
         callbacks.didRemoveSite()
         presentUndoToast(
-            String(format: UserText.settingsSitePermissionsRemovedSiteFormat, site.host)) { [weak self, store, favicons, callbacks, isEnabled] in
+            String(format: UserText.settingsSitePermissionsRemovedSiteFormat, site.host)) { [weak self, store, favicons, callbacks] in
             store.restore(snapshot)
             favicons?.restoreImages(images)
             self?.refresh()
-            if isEnabled() {
-                callbacks.didUndoRemoval()
-            }
+            callbacks.didUndoRemoval()
         }
     }
 
     func removeAllSitePermissions() {
-        guard isEnabled() else { return }
         let sitesToRevoke = store.storedSites
         let images = favicons?.retainedImages(for: store.storedSites) ?? [:]
         let snapshot = store.clearSitePermissions()
@@ -153,18 +143,15 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
             callbacks.didRequestRevocation($0, Set(Self.supportedPermissionTypes))
         }
         callbacks.didRemoveAll()
-        presentUndoToast(UserText.settingsSitePermissionsRemovedAll) { [weak self, store, favicons, callbacks, isEnabled] in
+        presentUndoToast(UserText.settingsSitePermissionsRemovedAll) { [weak self, store, favicons, callbacks] in
             store.restore(snapshot)
             favicons?.restoreImages(images)
             self?.refresh()
-            if isEnabled() {
-                callbacks.didUndoRemoval()
-            }
+            callbacks.didUndoRemoval()
         }
     }
 
     private func setGlobalDefault(_ decision: GlobalSitePermissionDecision, for permissionType: SitePermissionType) {
-        guard isEnabled() else { return }
         guard globalDefault(for: permissionType) != decision else { return }
         store.setGlobalDefault(decision, for: permissionType)
         globalDefaults[permissionType] = decision
@@ -174,7 +161,6 @@ final class SettingsSitePermissionsViewModel: ObservableObject {
     private func setSiteDecision(_ decision: SitePermissionDecision,
                                  for permissionType: SitePermissionType,
                                  at site: SitePermissionKey) {
-        guard isEnabled() else { return }
         let previousDecision = siteDecision(for: permissionType, at: site)
         guard previousDecision != decision else { return }
 
@@ -313,7 +299,6 @@ struct SettingsSitePermissionsView: View {
         .sitePermissionsListLayout()
         .animation(reduceMotion ? nil : .default, value: viewModel.storedSites)
         .applySettingsListModifiers(title: UserText.sitePermissions, displayMode: .inline, viewModel: settingsViewModel)
-        .disabled(!settingsViewModel.state.sitePermissionsEnabled)
         .onFirstAppear {
             viewModel.didOpen()
         }
@@ -380,7 +365,6 @@ private struct SettingsSitePermissionsSiteView: View {
         }
         .sitePermissionsListLayout()
         .applySettingsListModifiers(title: site.host, displayMode: .inline, viewModel: settingsViewModel)
-        .disabled(!settingsViewModel.state.sitePermissionsEnabled)
         .onChange(of: viewModel.storedSites) { sites in
             if !sites.contains(site) {
                 dismiss()

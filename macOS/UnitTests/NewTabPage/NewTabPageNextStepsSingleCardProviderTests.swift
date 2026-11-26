@@ -389,11 +389,48 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
 
     func testWhenAppNotAddedToDockAndAppStoreThenAddAppToDockCardIsNotVisible() {
         persistor.orderedCardIDs = [.addAppToDockMac]
-        let testProvider = createProvider(dockStatus: false, isAppStoreBuild: true)
+        dockCustomizer.supportsAddingToDock = false
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+        let testProvider = createProvider(isAppStoreBuild: true)
         triggerNewTabPageView(on: testProvider)
 
         let cards = testProvider.cards
         XCTAssertFalse(cards.contains(.addAppToDockMac))
+    }
+
+    func testWhenAppStoreBuildCanShowVideoAndNotInDockThenAddAppToDockCardIsVisible() {
+        persistor.orderedCardIDs = [.addAppToDockMac]
+        dockCustomizer.supportsAddingToDock = false
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        let testProvider = createProvider(isAppStoreBuild: true)
+        triggerNewTabPageView(on: testProvider)
+
+        XCTAssertTrue(testProvider.cards.contains(.addAppToDockMac))
+    }
+
+    func testWhenAppStoreBuildCanShowVideoAndInDockThenAddAppToDockCardIsNotVisible() {
+        persistor.orderedCardIDs = [.addAppToDockMac]
+        dockCustomizer.supportsAddingToDock = false
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        dockCustomizer.dockStatus = true
+        let testProvider = createProvider(isAppStoreBuild: true)
+        triggerNewTabPageView(on: testProvider)
+
+        XCTAssertFalse(testProvider.cards.contains(.addAppToDockMac))
+    }
+
+    func testWhenAppStoreVideoFlagTurnsOffThenAddAppToDockCardIsHiddenOnNextRefresh() {
+        persistor.orderedCardIDs = [.addAppToDockMac]
+        dockCustomizer.supportsAddingToDock = false
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        let testProvider = createProvider(isAppStoreBuild: true)
+        triggerNewTabPageView(on: testProvider)
+        XCTAssertTrue(testProvider.cards.contains(.addAppToDockMac))
+
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+        triggerNewTabPageView(on: testProvider)
+
+        XCTAssertFalse(testProvider.cards.contains(.addAppToDockMac))
     }
 
     func testWhenAppAddedToDockThenAddAppToDockCardIsNotVisible() {
@@ -1122,13 +1159,9 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
         let testLegacySubscriptionCardPersistor = legacySubscriptionCardPersistor ?? self.legacySubscriptionCardPersistor!
         let testFeatureFlagger = featureFlagger ?? self.featureFlagger!
         let testAdBlockingAvailability = adBlockingAvailability ?? MockAdBlockingAvailability()
-        let testApplicationBuildType: MockApplicationBuildType = {
-            let buildType = MockApplicationBuildType()
-            if let isAppStoreBuild {
-                buildType.isAppStoreBuild = isAppStoreBuild
-            }
-            return buildType
-        }()
+        if let isAppStoreBuild {
+            testDockCustomizer.supportsAddingToDock = !isAppStoreBuild
+        }
 
         return NewTabPageNextStepsSingleCardProvider(
             cardActionHandler: actionHandler,
@@ -1146,7 +1179,6 @@ final class NewTabPageNextStepsSingleCardProviderTests: XCTestCase {
             subscriptionCardVisibilityManager: testSubscriptionCardVisibilityManager,
             syncService: testSyncService,
             adBlockingAvailability: testAdBlockingAvailability,
-            applicationBuildType: testApplicationBuildType,
             scheduler: .immediate
         )
     }

@@ -18,16 +18,13 @@
 
 import Combine
 import DuckPlayer
-import FeatureFlags_macOS
 import Foundation
-import PrivacyConfig
 
 /// Reports whether the "Watch in Duck Player?" overlay is on screen in the selected tab.
 final class DuckPlayerOverlayObserver: ExternalPromoDelegate {
 
     private let duckPlayer: DuckPlayer
     private let windowControllersManager: WindowControllersManagerProtocol
-    private let featureFlagger: FeatureFlagger
 
     private let visibilitySubject: CurrentValueSubject<Bool, Never>
     private var cancellables = Set<AnyCancellable>()
@@ -40,11 +37,9 @@ final class DuckPlayerOverlayObserver: ExternalPromoDelegate {
 
     @MainActor
     init(duckPlayer: DuckPlayer,
-         windowControllersManager: WindowControllersManagerProtocol,
-         featureFlagger: FeatureFlagger) {
+         windowControllersManager: WindowControllersManagerProtocol) {
         self.duckPlayer = duckPlayer
         self.windowControllersManager = windowControllersManager
-        self.featureFlagger = featureFlagger
         self.visibilitySubject = CurrentValueSubject(false)
 
         // Re-subscribe to the newly selected tab's content whenever the selection changes, so a
@@ -81,9 +76,7 @@ final class DuckPlayerOverlayObserver: ExternalPromoDelegate {
 
     @MainActor
     private func computeVisibility() -> Bool {
-        guard featureFlagger.isFeatureOn(.promoQueueDuckPlayerOverlayPromo) else { return false }
-
-        return duckPlayer.isAvailable
+        duckPlayer.isAvailable
             && duckPlayer.mode == .alwaysAsk
             && !duckPlayer.overlayInteracted
             && windowControllersManager.selectedTab?.content.urlForWebView?.isYoutubeWatch == true

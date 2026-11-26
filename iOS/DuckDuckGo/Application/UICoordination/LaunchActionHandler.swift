@@ -20,8 +20,6 @@
 import UIKit
 import Core
 import PixelKit
-import PrivacyConfig
-import FeatureFlags_iOS
 
 enum LaunchAction {
 
@@ -101,7 +99,6 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let idleReturnOutcome: IdleReturnOutcome
     /// Whether the launch already drew the after-idle New Tab Page; used by the first action only.
     private var drewNewTabPage: Bool
-    private let featureFlagger: FeatureFlagger
     private weak var idleReturnDelegate: IdleReturnLaunchDelegate?
 
     init(urlHandler: URLHandling,
@@ -111,7 +108,6 @@ final class LaunchActionHandler: LaunchActionHandling {
          launchSourceService: LaunchSourceManaging,
          idleReturnOutcome: IdleReturnOutcome,
          drewNewTabPage: Bool = false,
-         featureFlagger: FeatureFlagger,
          idleReturnDelegate: IdleReturnLaunchDelegate? = nil,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.urlHandler = urlHandler
@@ -121,7 +117,6 @@ final class LaunchActionHandler: LaunchActionHandling {
         self.launchSourceManager = launchSourceService
         self.idleReturnOutcome = idleReturnOutcome
         self.drewNewTabPage = drewNewTabPage
-        self.featureFlagger = featureFlagger
         self.idleReturnDelegate = idleReturnDelegate
         self.pixelFiring = pixelFiring
     }
@@ -150,9 +145,7 @@ final class LaunchActionHandler: LaunchActionHandling {
             let isAfterIdleReturn = outcome.isAfterIdle
             switch outcome {
             case .afterIdle(.ntp, let timeAwayMs):
-                let flagOn = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
                 let showKeyboard: (IdleReturnNewTabPageResult) -> Void = { [self] result in
-                    guard flagOn, featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else { return }
                     switch result {
                     case .keptCurrent:
                         // Preparation already closed the old screen; don't dismiss a newly presented launch prompt.

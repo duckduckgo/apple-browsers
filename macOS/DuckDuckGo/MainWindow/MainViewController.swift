@@ -1241,11 +1241,11 @@ extension MainViewController {
 
         switch event.button {
         case .back:
-            guard selectedTabViewModel.canGoBack else { return nil }
+            guard allowsUserInteraction, selectedTabViewModel.canGoBack else { return nil }
             selectedTabViewModel.tab.goBack()
             return nil
         case .forward:
-            guard selectedTabViewModel.canGoForward else { return nil }
+            guard allowsUserInteraction, selectedTabViewModel.canGoForward else { return nil }
             selectedTabViewModel.tab.goForward()
             return nil
         default:
@@ -1266,12 +1266,14 @@ extension MainViewController {
 
 extension MainViewController {
 
-    func userInteraction(prevented: Bool) {
+    func userInteraction(lock: UserInteractionLock) {
+        let prevented = lock.isLocked
         allowsUserInteraction = !prevented
         tabCollectionViewModel.changesEnabled = !prevented
         tabCollectionViewModel.selectedTabViewModel?.tab.contentChangeEnabled = !prevented
+        tabCollectionViewModel.selectedTabViewModel?.tab.webView.allowsBackForwardNavigationGestures = !prevented
 
-        tabBarViewController.fireButton.isEnabled = !prevented
+        tabBarViewController.fireButton.isEnabled = lock.allows(.fire)
         tabBarViewController.isInteractionPrevented = prevented
 
         navigationBarViewController.userInteraction(prevented: prevented)

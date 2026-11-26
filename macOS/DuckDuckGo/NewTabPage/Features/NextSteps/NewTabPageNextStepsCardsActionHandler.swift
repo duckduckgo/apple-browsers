@@ -41,12 +41,14 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let dockCustomizer: DockCustomization
+    private let featureFlagger: FeatureFlagger
     private let dataImportProvider: DataImportStatusProviding
     private let tabOpener: NewTabPageNextStepsCardsTabOpening
     private let pixelHandler: NewTabPageNextStepsCardsPixelHandling
     private let newTabPageNavigator: NewTabPageNavigator
     private let syncLauncher: SyncDeviceFlowLaunching?
     private let pixelFiring: (any PixelKitFiring)?
+    private let videoPresenter: AddToDockVideoPresenting
 
     var duckPlayerURL: String {
         let duckPlayerSettings = privacyConfigurationManager.privacyConfig.settings(for: .duckPlayer)
@@ -63,10 +65,13 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
          pixelHandler: NewTabPageNextStepsCardsPixelHandling,
          newTabPageNavigator: NewTabPageNavigator,
          syncLauncher: SyncDeviceFlowLaunching? = nil,
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+         videoPresenter: AddToDockVideoPresenting) {
 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.dockCustomizer = dockCustomizer
+        self.featureFlagger = featureFlagger
         self.dataImportProvider = dataImportProvider
         self.tabOpener = tabOpener
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -74,6 +79,7 @@ final class NewTabPageNextStepsCardsActionHandler: NewTabPageNextStepsCardsActio
         self.newTabPageNavigator = newTabPageNavigator
         self.syncLauncher = syncLauncher
         self.pixelFiring = pixelFiring
+        self.videoPresenter = videoPresenter
     }
 
     @MainActor func performAction(for card: NewTabPageDataModel.CardID, refreshCardsAction: (() -> Void)?) {
@@ -129,10 +135,15 @@ private extension NewTabPageNextStepsCardsActionHandler {
         tabOpener.openTab(tab)
     }
 
+    @MainActor
     func performDockAction(completion: (() -> Void)?) {
         pixelHandler.fireAddedToDockPixel()
-        if dockCustomizer.addToDock() {
-            completion?()
+        if dockCustomizer.supportsAddingToDock {
+            if dockCustomizer.addToDock() {
+                completion?()
+            }
+        } else if featureFlagger.isFeatureOn(.appStoreAddToDockOnlyCTA) {
+            videoPresenter.present(primaryAction: .done) { _ in completion?() }
         }
     }
 

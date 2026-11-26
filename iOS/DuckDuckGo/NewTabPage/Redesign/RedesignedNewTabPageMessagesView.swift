@@ -33,7 +33,6 @@ struct RedesignedNewTabPageMessagesView: View {
                 }
             }
             .padding(.horizontal, Metrics.horizontalPadding)
-            .padding(.top, Metrics.topPadding)
             .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -42,5 +41,4 @@ struct RedesignedNewTabPageMessagesView: View {
 private enum Metrics {
     static let messageSpacing: CGFloat = 20
     static let horizontalPadding: CGFloat = 16
-    static let topPadding: CGFloat = 20
 }

@@ -20,10 +20,10 @@ name: test_contextual_immediate_uti_manual_context_clears_after_navigation
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         ff.contextualDuckAIMode: "true"
         ff.aiChatContextualUnifiedToggleInput: "true"
         ff.aiChatAutoAttachContextByDefault: "false"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml

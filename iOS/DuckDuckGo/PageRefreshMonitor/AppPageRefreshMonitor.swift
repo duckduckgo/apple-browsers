@@ -27,16 +27,21 @@ import PixelKit
 
 extension PageRefreshMonitor {
 
-    static let onDidDetectRefreshPattern: (NumberOfRefreshes) -> Void = { numberOfRefreshes in
+    static let onDidDetectRefreshPattern: (NumberOfRefreshes) -> Void = {
+        onDidDetectRefreshPattern($0, firePixelExperiment: PixelKit.fireExperimentPixel)
+    }
+
+    static func onDidDetectRefreshPattern(_ numberOfRefreshes: NumberOfRefreshes,
+                                          firePixelExperiment: SiteBreakageExperimentMetrics.FirePixelExperiment) {
         let tdsEtag = AppDependencyProvider.shared.configurationStore.loadEtag(for: .trackerDataSet) ?? ""
         switch numberOfRefreshes {
         case 2:
-            SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh2X, etag: tdsEtag, fireDebugExperiment: { parameters in
+            SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh2X, etag: tdsEtag, firePixelExperiment: firePixelExperiment, fireDebugExperiment: { parameters in
                 PixelKit.fire(Pixel.Event.debugBreakageExperiment, frequency: .uniqueByName, options: .parameters(parameters))
             })
         case 3:
             PixelKit.fire(Pixel.Event.pageRefreshThreeTimesWithin20Seconds)
-            SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh3X, etag: tdsEtag, fireDebugExperiment: { parameters in
+            SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh3X, etag: tdsEtag, firePixelExperiment: firePixelExperiment, fireDebugExperiment: { parameters in
                 PixelKit.fire(Pixel.Event.debugBreakageExperiment, frequency: .uniqueByName, options: .parameters(parameters))
             })
         default:

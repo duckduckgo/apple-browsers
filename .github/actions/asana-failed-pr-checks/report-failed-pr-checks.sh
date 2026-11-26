@@ -207,12 +207,14 @@ validate_assignee() {
 	local assignee=$1
 	local pr_reviewers=$2
 
-	if _is_user_in_apple_team "${assignee}"; then
+	if [[ -z "${assignee}" ]]; then
+		echo "No commit author assignee, checking PR reviewers" >&2
+	elif _is_user_in_apple_team "${assignee}"; then
 		echo "${assignee}"
 		return
+	else
+		echo "Assignee $assignee not found in Apple team, checking PR reviewers" >&2
 	fi
-
-	echo "Assignee $assignee not found in Apple team, checking PR reviewers" >&2
 
 	# Check each PR reviewer if pr_reviewers is not empty
 	if [[ -n "${pr_reviewers}" ]]; then

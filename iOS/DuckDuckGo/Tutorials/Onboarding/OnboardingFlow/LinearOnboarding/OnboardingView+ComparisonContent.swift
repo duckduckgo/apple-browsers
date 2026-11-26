@@ -73,7 +73,7 @@ extension OnboardingView {
                     RebrandedOnboardingComparisonTableView(
                         header: tableHeader,
                         features: content.features,
-                        availableFeatureAnimation: .animated(startAnimation: showContent)
+                        availableFeatureAnimation: .animated(startAnimation: showContent, drawsCheckmark: content.drawsCheckmarks)
                     )
 
                     if let footer = content.footer {

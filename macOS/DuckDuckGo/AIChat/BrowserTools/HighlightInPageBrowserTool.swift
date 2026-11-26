@@ -30,7 +30,6 @@ final class HighlightInPageBrowserTool: BrowserTool {
     /// Matches `AIChatBrowserToolsSubfeature.highlightInPage`, which is how the catalog gates it.
     let name = "highlightInPage"
     let permissionMode = BrowserToolPermissionMode.auto
-    let permissionReason = "Duck.ai wants to highlight text on this page."
 
     let inputSchema: JSONValue = [
         "type": "object",

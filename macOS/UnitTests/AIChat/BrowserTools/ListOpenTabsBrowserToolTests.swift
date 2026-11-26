@@ -104,6 +104,8 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
 
         let tabs = try XCTUnwrap(tabsPayload(from: result))
         XCTAssertEqual(tabs.map { $0["url"] }, ["https://a.example", "https://b.example"])
+        guard case .success(let value) = result else { return XCTFail("expected success, got \(result)") }
+        XCTAssertEqual(tool.resultCount(of: value), 2)
     }
 
     func testWhenLimitIsOutOfRangeThenArgumentsAreInvalid() async {
@@ -156,7 +158,6 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
 
         XCTAssertEqual(tool.name, "listOpenTabs")
         XCTAssertEqual(tool.permissionMode, .ask)
-        XCTAssertEqual(tool.permissionReason, "Duck.ai wants to see your open tabs.")
     }
 
     // MARK: -

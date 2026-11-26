@@ -50,6 +50,25 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         XCTAssertEqual(prompt, .queryPrompt("hello", autoSubmit: true, pageContext: .single(page)))
     }
 
+    func testOnlyThePromptSubmittedAsASummaryIsMarkedForTheLocalModel() async throws {
+        let script = makeScript()
+        let delivered = expectation(description: "Both prompts dispatched")
+        delivered.expectedFulfillmentCount = 2
+        webView.onPrompt = { _ in delivered.fulfill() }
+
+        script.submitting(localTask: .summarize) {
+            script.submitPrompt("Summarize this page.", attachments: .none, modelId: nil)
+        }
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
+        await fulfillment(of: [delivered], timeout: 1)
+
+        let localTasks = webView.prompts.map { prompt -> AIChatLocalModelTask? in
+            guard case .query(let query) = prompt.tool else { return nil }
+            return query.localTask
+        }
+        XCTAssertEqual(localTasks, [.summarize, nil])
+    }
+
     func testEmptyContextsWithoutCurrentPageOmitsPageContext() async throws {
         let script = makeScript()
         var consumed = false

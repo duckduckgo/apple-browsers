@@ -60,14 +60,17 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     private let featureFlagger: FeatureFlagger
     private let nativeMessagingSupport: NativeMessagingSupport
     private let webExtensionManagerProvider: () -> WebExtensionManaging?
+    private let isSurrogateRedirectionOSSupported: Bool
 
     init(
         featureFlagger: FeatureFlagger,
         nativeMessagingSupport: NativeMessagingSupport = NativeMessagingSupport(),
+        isSurrogateRedirectionOSSupported: Bool = { if #available(iOS 26, *) { true } else { false } }(),
         webExtensionManagerProvider: @escaping () -> WebExtensionManaging?
     ) {
         self.featureFlagger = featureFlagger
         self.nativeMessagingSupport = nativeMessagingSupport
+        self.isSurrogateRedirectionOSSupported = isSurrogateRedirectionOSSupported
         self.webExtensionManagerProvider = webExtensionManagerProvider
     }
 
@@ -93,5 +96,14 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
 
     var isExtensionManagementAvailable: Bool {
         false
+    }
+
+    /// The only place that combines the conditions: iOS 26+, `trackerProtection.appleSurrogateRedirection`, and the
+    /// embedded extension being loaded and able to reach the app over native messaging. Requiring it loaded (not just
+    /// flagged on) means C-S-S keeps injecting surrogates if the extension fails to load or is removed.
+    var isAppleSurrogateRedirectionEnabled: Bool {
+        isSurrogateRedirectionOSSupported
+            && featureFlagger.isFeatureOn(.appleSurrogateRedirection)
+            && isAutoconsentExtensionAvailable
     }
 }

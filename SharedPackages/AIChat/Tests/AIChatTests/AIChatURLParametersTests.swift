@@ -20,6 +20,17 @@ import XCTest
 @testable import AIChat
 
 final class AIChatURLParametersTests: XCTestCase {
+    func testDesktopOnboardingPromptURLSendsPromptInOnboardingMode() {
+        let baseURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=5")!
+        let result = AIChatURLParameters.desktopOnboardingPromptURL(from: baseURL, prompt: "Plan a day in London")
+
+        let queryItems = URLComponents(url: result, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        XCTAssertEqual(queryItems.filter { $0.name == "q" }, [URLQueryItem(name: "q", value: "Plan a day in London")])
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "prompt", value: "1")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "flow", value: "desktop-app-onboarding")))
+        XCTAssertTrue(queryItems.contains(URLQueryItem(name: "duckai", value: "5")))
+    }
+
     func testVoiceModeURLAppendsMode() {
         let baseURL = URL(string: "https://duck.ai")!
         let result = AIChatURLParameters.voiceModeURL(from: baseURL)

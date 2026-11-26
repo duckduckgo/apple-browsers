@@ -1687,7 +1687,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
             /// Force layout update after becoming first responder to update in case the window was resized
             layoutTextFields(withMinX: addressBarButtonsViewController.buttonsWidth)
 
-            addressBarTextField.refreshSuggestions()
+            /// Skip for an unedited URL: reopening the suggestions window makes the border flicker
+            if mode.isEditing {
+                addressBarTextField.refreshSuggestions()
+            }
         }
         sharedTextState?.resetUserInteractionAfterSwitchingModes()
         delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)

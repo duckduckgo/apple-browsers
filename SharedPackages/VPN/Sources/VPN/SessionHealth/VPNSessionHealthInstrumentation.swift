@@ -339,7 +339,7 @@ private extension DefaultVPNSessionHealthInstrumentation {
         Logger.networkProtectionSessionHealth.log("Completing vpn_session_health pixel: status=\(status.description, privacy: .public)")
         logPixelDetails(event)
 
-        wideEvent.completeFlow(event, status: status) { success, error in
+        wideEvent.completeFlow(event, status: status, options: .withRetry) { success, error in
             if success {
                 Logger.networkProtectionSessionHealth.log("vpn_session_health pixel completion succeeded")
             } else {

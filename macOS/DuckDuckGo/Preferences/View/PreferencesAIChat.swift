@@ -204,6 +204,9 @@ extension Preferences {
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
+                PreferencesBrowserToolPermissionsView()
+                    .visibility(model.shouldShowAIFeatures ? .visible : .gone)
+
                 if isLocalModelAccessShown {
                     PreferencePaneSection(UserText.localModelAccessSettingsTitle, spacing: 8) {
                         VStack(alignment: .leading, spacing: 0) {
@@ -216,7 +219,7 @@ extension Preferences {
                         LocalModelAccessRow(modelName: model.localModelName,
                                             isOn: model.isLocalModelOn,
                                             turnOn: { Task { await model.turnOnLocalModel() } },
-                                            turnOff: model.turnOffLocalModel)
+                                            turnOff: { model.turnOffLocalModel() })
                     }
                 }
 

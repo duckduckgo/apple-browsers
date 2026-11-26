@@ -30,7 +30,6 @@ final class SearchHistoryBrowserTool: BrowserTool {
     /// Matches `AIChatBrowserToolsSubfeature.searchHistory`, which is how the catalog gates it.
     let name = "searchHistory"
     let permissionMode = BrowserToolPermissionMode.ask
-    let permissionReason = "Duck.ai wants to search your browsing history."
 
     let inputSchema: JSONValue = [
         "type": "object",
@@ -196,4 +195,6 @@ final class SearchHistoryBrowserTool: BrowserTool {
             return .object(fields)
         })])
     }
+
+    func resultCount(of value: JSONValue) -> Int? { value["results"]?.arrayValue?.count }
 }

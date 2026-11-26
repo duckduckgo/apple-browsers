@@ -1,8 +1,26 @@
 appId: com.duckduckgo.mobile.ios
 ---
 
+# "All debug options" is the last row in Settings, so it can never be centered: with
+# `centerElement: true` the scroll walks past it and runs out of attempts.
 - scrollUntilVisible:
-    element: All debug options
-    centerElement: true
-- assertVisible: All debug options
-- tapOn: All debug options
+    element:
+        text: "All debug options"
+    direction: DOWN
+    centerElement: false
+- assertVisible: "All debug options"
+
+# Maestro doesn't retry a tap that changes nothing, so a dropped tap leaves Settings up and the
+# caller's next step fails. Wait for the debug screen, re-tapping if not.
+- retry:
+    maxRetries: 2
+    commands:
+        - runFlow:
+            when:
+                visible: "All debug options"
+            commands:
+                - tapOn: "All debug options"
+        - extendedWaitUntil:
+            visible:
+                id: "Settings.Debug.InternalUser.identifier"
+            timeout: 5000

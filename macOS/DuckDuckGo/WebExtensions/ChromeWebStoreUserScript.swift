@@ -42,6 +42,10 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     /// The tab's web view, set by `ChromeWebStoreTabExtension`. The tab sets it on every new instance,
     /// because changes such as an extension's autofill takeover rebuild the tab's user scripts.
     @MainActor weak var webView: WKWebView?
+    /// Whether the store integration is on, set by `ChromeWebStoreTabExtension` to read the `webExtensions`
+    /// feature flag. Read on each request, so a flag change reaches the next page load.
+    /// When off, setup tells the page to stay untouched and the other methods fail.
+    @MainActor var isEnabled: @MainActor () -> Bool = { false }
 
     init(serviceProvider: @escaping @MainActor () -> ChromeWebStoreManaging?,
          notificationCenter: NotificationCenter = .default) {
@@ -128,8 +132,9 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
 
         // Setup does not require an extension ID or a service.
         if method == .initialSetup {
-            return InitialSetupResponse(enabled: true)
+            return InitialSetupResponse(enabled: isEnabled())
         }
+        guard isEnabled() else { throw ChromeWebStoreError.unavailable }
 
         // The catalog takes no extension ID. Without a service, web extensions are off and
         // nothing is installable, so reply with an empty list. C-S-S hides the button on

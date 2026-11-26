@@ -188,6 +188,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
     let isSitePermissionsEnabled: Bool
+    @MainActor var browserToolsService: AIChatBrowserToolsService?
     @MainActor private var sitePermissionsStore: SitePermissionsStore?
     @MainActor private var sitePermissionsFavicons: SitePermissionsFaviconStore?
     @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
@@ -196,10 +197,15 @@ final class SettingsViewModel: ObservableObject {
     @MainActor
     private(set) lazy var sitePermissionsSettingsViewModel = SettingsSitePermissionsViewModel(
         store: sitePermissionsStore ?? SitePermissionsStore(storage: UserDefaults.app.keyedStoring()),
-        isEnabled: { [isSitePermissionsEnabled] in isSitePermissionsEnabled },
         favicons: sitePermissionsFavicons,
         callbacks: makeSitePermissionsCallbacks()
     )
+
+    @MainActor
+    private(set) lazy var localModelAccessSettingsViewModel: LocalModelAccessSettingsViewModel? = {
+        guard let service = userScriptsDependencies.aiChatLocalModel?.service else { return nil }
+        return LocalModelAccessSettingsViewModel(service: service)
+    }()
 
     // View State
     @Published private(set) var state: SettingsState
@@ -220,11 +226,6 @@ final class SettingsViewModel: ObservableObject {
     // When true, indicates the AI Features settings was opened from the SERP settings button
     // This affects UI: shows Done button and hides Search Assist link
     var openedFromSERPSettingsButton: Bool = false
-
-    // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
-    var isPaidAIChatEnabled: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat)
-    }
 
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
@@ -836,28 +837,28 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - YouTube Sponsor Skipping (internal MVP)
 
     /// Same file-backed store as the tabs' instance, so writes here reach open YouTube tabs through its change notification.
-    lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+    lazy var segmentSkipPreferences = SegmentSkipPreferences(store: keyValueStore)
 
-    var isSponsorBlockAvailable: Bool {
-        featureFlagger.isFeatureOn(.sponsorBlock)
+    var isSegmentSkipAvailable: Bool {
+        featureFlagger.isFeatureOn(.segmentSkip)
     }
 
-    var sponsorBlockEnabled: Binding<Bool> {
+    var segmentSkipEnabled: Binding<Bool> {
         Binding<Bool>(
-            get: { self.sponsorBlockPreferences.isEnabled },
+            get: { self.segmentSkipPreferences.isEnabled },
             set: {
                 self.objectWillChange.send()
-                self.sponsorBlockPreferences.isEnabled = $0
+                self.segmentSkipPreferences.isEnabled = $0
             }
         )
     }
 
-    var sponsorBlockSkipMode: Binding<SponsorBlockSkipMode> {
-        Binding<SponsorBlockSkipMode>(
-            get: { self.sponsorBlockPreferences.skipMode },
+    var segmentSkipMode: Binding<SegmentSkipMode> {
+        Binding<SegmentSkipMode>(
+            get: { self.segmentSkipPreferences.skipMode },
             set: {
                 self.objectWillChange.send()
-                self.sponsorBlockPreferences.skipMode = $0
+                self.segmentSkipPreferences.skipMode = $0
             }
         )
     }

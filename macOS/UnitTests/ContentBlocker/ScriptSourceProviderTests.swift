@@ -91,6 +91,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             tld: Application.appDelegate.tld,
             featureFlagger: featureFlagger,
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
+            onboardingPathStarter: { CapturingPathStarter() },
             appearancePreferences: appearancePreferences,
             themeManager: MockThemeManager(),
             startupPreferences: startupPreferences,

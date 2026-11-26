@@ -170,7 +170,6 @@ public struct ChromeWebStoreManualUpdateTesting {
 @MainActor
 private struct ManualUpdateCatalog: ChromeWebStoreCatalogProviding {
     var extensionIDs: [String] { [ChromeWebStoreManualUpdateTesting.extensionID] }
-    var learnMoreURL: URL? { nil }
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 

@@ -43,7 +43,9 @@ final class PromoRegistryTests: XCTestCase {
             notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
             uiHosting: { nil },
             isOnboardingCompletedProvider: { true },
-            dockCustomization: DockCustomizerMock()
+            dockCustomization: DockCustomizerMock(),
+            addToDockVideoFeatureFlagger: MockFeatureFlagger(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter()
         )
         let windowControllersManager = WindowControllersManagerMock()
         let dependencies = PromoDependencies(
@@ -85,8 +87,7 @@ final class PromoRegistryTests: XCTestCase {
                         privacyConfigurationManager: MockPrivacyConfigurationManaging(),
                         internalUserDecider: featureFlagger.internalUserDecider
                     ),
-                    windowControllersManager: windowControllersManager,
-                    featureFlagger: featureFlagger
+                    windowControllersManager: windowControllersManager
                 )
             }(),
             updateController: nil,
@@ -121,7 +122,6 @@ final class PromoRegistryTests: XCTestCase {
                 recordResult: { _, _ in }
             ),
             bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 hasTopLevelEntitiesProvider: { false },
                 bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
@@ -129,7 +129,6 @@ final class PromoRegistryTests: XCTestCase {
                 recordResult: { _, _ in }
             ),
             autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 isAnyCategoryEmptyProvider: { true },
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
                 syncService: nil,

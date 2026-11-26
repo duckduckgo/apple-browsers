@@ -30,6 +30,11 @@ public protocol WebExtensionManaging: AnyObject, NativeMessagingLimitationProvid
     @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
 
+    /// Records genuine browser UI interaction with an extension, for app permission requests.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func recordUserGesture(for context: WKWebExtensionContext)
+
     /// The set of embedded extension types currently loaded into the controller.
     @available(macOS 15.4, iOS 18.4, *)
     var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> { get }
@@ -248,6 +253,9 @@ public protocol WebExtensionManaging: AnyObject, NativeMessagingLimitationProvid
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionManaging {
+    @MainActor
+    func recordUserGesture(for context: WKWebExtensionContext) {}
+
     // Preserve lightweight test and platform-specific conformers that do not own embedded content.
     @MainActor
     var isCPMUpgradeBeforeLoadEnabled: Bool { false }
@@ -328,6 +336,7 @@ public extension WebExtensionManaging {
             .filter(\.needsChromeCompatibility)
             .sorted(by: { $0.uniqueIdentifier < $1.uniqueIdentifier })
         for context in contexts where context.performCommand(for: event) {
+            recordUserGesture(for: context)
             return true
         }
         return false

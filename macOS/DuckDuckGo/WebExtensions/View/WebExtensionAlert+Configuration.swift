@@ -48,7 +48,7 @@ extension WebExtensionAlert.Configuration {
         return Self(
             icon: .illustration(NSImage(resource: .duckDuckGoResponseAlertFeature96)),
             title: UserText.webExtensionNativeMessagingUnavailableTitle(name),
-            message: UserText.webExtensionNativeMessagingUnavailableMessage(name),
+            message: UserText.webExtensionNativeMessagingUnavailableMessage + "\n\n" + UserText.webExtensionNativeMessagingUnavailableMessageDownload,
             messageColor: .textPrimary,
             checkbox: .suppression(UserText.webExtensionNativeMessagingUnavailableDontShowAgain(name)),
             confirmTitle: UserText.ok,

@@ -25,6 +25,7 @@ import FeatureFlags_iOS
 import JavaScriptCore
 import Persistence
 import PrivacyConfig
+import SitePermissions
 import UserScript
 import WebKit
 import XCTest
@@ -421,6 +422,21 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
     }
 
+    func testActualScriptRouteExecutesToolFromTrustedWebKitMessage() async throws {
+        let fixture = makeFixture()
+        let documentURL = try XCTUnwrap(fixture.webView.url)
+        let message = BrowserToolsTrustedScriptMessage(
+            webView: fixture.webView,
+            frameInfo: .mock(isMainFrame: true, securityOrigin: MockWKSecurityOrigin.new(url: documentURL)))
+        let route = try XCTUnwrap(fixture.script.handler(forMethodNamed: "executeClientTool"))
+
+        let result = try await route(fixture.params(), message) as? ExecuteClientToolResponse
+
+        XCTAssertEqual(result, fixture.success)
+        XCTAssertEqual(fixture.listings, 1)
+        XCTAssertEqual(fixture.presenter.prompts.count, 1)
+    }
+
     func testActualScriptRoutesRejectUntrustedWebKitMessageBeforePermission() async throws {
         let fixture = makeFixture()
         let route = try XCTUnwrap(fixture.script.handler(forMethodNamed: "executeClientTool"))
@@ -503,19 +519,20 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertFalse(fixture.service.canPushMetadata(from: fixture.script))
     }
 
-    func testAutoListingReturnsOriginalExecutionResultWithoutPermissionPrompt() async {
+    func testNativeAllowOnceReturnsOriginalExecutionResultWithoutWebPermissionPrompt() async {
         let fixture = makeFixture()
         let result = await fixture.invoke()
         XCTAssertEqual(result, fixture.success)
         XCTAssertEqual(fixture.listings, 1)
+        XCTAssertEqual(fixture.presenter.prompts.map(\.toolName), ["listOpenTabs"])
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
     }
 
     func testCleanupCancelsGrantedListingAndDoesNotReviveOldSource() async throws {
         let fixture = makeFixture()
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
         }
         fixture.script.cleanUpForReplacement()
         let result = await performExecution {
@@ -538,7 +555,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
             let fixture = makeFixture(enabledFlags: enabled)
             let result = await fixture.invoke()
             XCTAssertEqual(result, .failure(callId: "call", error: .unavailable))
-            XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+            XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
             XCTAssertEqual(fixture.listings, 0)
             XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
         }
@@ -549,23 +566,23 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         let tool = BrowserToolsBridgeAskTool()
         let authorization = await fixture.service.clientToolPermissions.authorize(callID: "call", tool: tool, prompter: fixture.script)
         switch authorization {
-        case .refused(let error):
+        case .refused(let error, _, _):
             XCTAssertEqual(error, .cancelled)
-        case .granted(let performExecution):
+        case .granted(_, let performExecution):
             XCTFail("A tool requiring a native prompt must be cancelled")
             _ = await performExecution {
                 await tool.execute(arguments: [:], context: BrowserToolCallContext(ownerTabID: fixture.owner.uid, isBurner: false))
             }
         }
         XCTAssertEqual(tool.executions, 0)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: tool.name), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: tool.name))
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
     }
 
     func testOwnerRemovalCancelsGrantedListingWithoutPersistingPermission() async throws {
         let fixture = makeFixture()
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
         }
         fixture.service.detachSources(ownerTabID: fixture.owner.uid)
         let result = await performExecution {
@@ -574,7 +591,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         }
         XCTAssertNil(result)
         XCTAssertEqual(fixture.listings, 0)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
     }
 
     func testCommitAndProcessLossCancelOnlyLocalSourceAndRequireRealCommit() async {
@@ -598,8 +615,8 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         for processLoss in [false, true] {
             let fixture = makeFixture()
             let contextual = fixture.makeScript()
-            guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
-                return XCTFail("Expected automatic authorization")
+            guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
+                return XCTFail("Expected native authorization")
             }
             if processLoss {
                 fixture.script.browserToolsDocumentProcessDidTerminate()
@@ -641,8 +658,8 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
 
     func testFireCancelsGrantedBeforeExecutionAndFailureAllowsFreshRequest() async throws {
         let fixture = makeFixture()
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
         }
         let token = fixture.service.beginClearing(.chats(ids: ["chat"]))
         fixture.service.endClearing(token)
@@ -652,7 +669,7 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         }
         XCTAssertNil(cancelled)
         XCTAssertEqual(fixture.listings, 0)
-        XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "listOpenTabs"), .ask)
+        XCTAssertNil(fixture.service.permissions.state(forToolNamed: "listOpenTabs"))
         let actual11 = await fixture.invoke()
         XCTAssertEqual(actual11, fixture.success)
     }
@@ -665,6 +682,38 @@ final class AIChatBrowserToolsBridgeTests: XCTestCase {
         XCTAssertEqual(actual12, .failure(callId: "call", error: .unavailable))
         XCTAssertEqual(fixture.listings, 0)
         XCTAssertTrue(fixture.webView.permissionPrompts.isEmpty)
+    }
+
+    func testOwnerNavigationNotifiesOnlyItsContextualClient() async throws {
+        let contextual = makeFixture()
+        let otherContextual = makeFixture()
+        let fullTab = makeFixture()
+        let otherOwner = Tab(uid: "other-owner", link: Link(title: "Other", url: URL(string: "https://other.example")!), fireTab: false)
+        contextual.script.setDisplayMode(.contextual)
+        otherContextual.script.setDisplayMode(.contextual)
+        fullTab.script.setDisplayMode(.fullTab)
+        otherContextual.script.bindBrowserTools(to: contextual.service, owner: otherOwner) {
+            let source = MultiTabAttachmentSource(currentTabID: otherOwner.uid, mode: .normal, tabsProvider: { [otherOwner] })
+            return BrowserToolScope(owner: otherOwner, source: source, selectedTabID: { otherOwner.uid })
+        }
+        fullTab.script.bindBrowserTools(to: contextual.service, owner: contextual.owner) { [weak contextual] in
+            contextual?.makeScope()
+        }
+        for client in [contextual, otherContextual, fullTab] {
+            XCTAssertNotNil(contextual.service.configuration(for: client.script))
+        }
+
+        contextual.service.ownerDidNavigate(tabID: contextual.owner.uid, url: URL(string: "https://next.example"))
+        await drainBridge()
+
+        XCTAssertEqual(contextual.webView.metadataPayloads.count, 1)
+        let payload = try XCTUnwrap(contextual.webView.metadataPayloads.first)
+        XCTAssertEqual(payload["tabId"] as? String, contextual.owner.uid)
+        XCTAssertEqual(payload["change"] as? String, "navigated")
+        XCTAssertEqual(payload["url"] as? String, "https://next.example")
+        XCTAssertEqual(payload["isAttachable"] as? Bool, true)
+        XCTAssertTrue(otherContextual.webView.metadataPayloads.isEmpty)
+        XCTAssertTrue(fullTab.webView.metadataPayloads.isEmpty)
     }
 
     func testContextualMetadataUsesOnlyMainFlagAndOwnerNavigationPreservesToolAvailability() async {
@@ -724,13 +773,17 @@ final class BrowserToolsBridgeFixture {
     let owner: Tab
     let service: AIChatBrowserToolsService
     let handler: AIChatUserScriptHandler
+    let presenter = MockAIChatNativePermissionPresenter()
     let webView = BrowserToolsBridgeWebView()
     let broker = UserScriptMessageBroker(context: "aiChat", requiresRunInPageContentWorld: true)
     var ownerPresent = true
     var listings = 0
+    var sourceProvider: (() -> MultiTabAttachmentSource)?
+    var pageAcquisitions = 0
     lazy var script = makeScript()
 
-    init(fire: Bool = false, enabledFlags: [FeatureFlag] = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]) {
+    init(fire: Bool = false, enabledFlags: [FeatureFlag] = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs],
+         capabilities: [ClientToolCapability]? = [.listOpenTabs], historyManager: HistoryManaging = MockHistoryManager()) {
         let suiteName = UUID().uuidString
         let defaults = UserDefaults(suiteName: suiteName)!
         let flags = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true), enabledFeatureFlags: enabledFlags)
@@ -738,8 +791,8 @@ final class BrowserToolsBridgeFixture {
         self.defaults = defaults
         self.flags = flags
         owner = Tab(uid: "owner", link: Link(title: "Owner", url: URL(string: "https://owner.example")!), fireTab: fire)
-        service = AIChatBrowserToolsService(featureFlagger: flags, permissionStorage: defaults.keyedStoring(),
-                                            capabilities: [.listOpenTabs])
+        service = AIChatBrowserToolsService(featureFlagger: flags, historyManager: historyManager, sitePermissionsStore: SitePermissionsStore(storage: defaults.keyedStoring()),
+                                            capabilities: capabilities)
         handler = AIChatUserScriptHandler(experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: flags),
                                           syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(),
                                           featureFlagger: flags, keyValueStore: defaults)
@@ -749,12 +802,13 @@ final class BrowserToolsBridgeFixture {
         let script = AIChatUserScript(handler: handler, debugSettings: AIChatDebugSettings(userDefault: defaults))
         script.webView = webView
         script.broker = broker
-        script.bindBrowserTools(to: service, owner: owner) { [weak self] in self?.makeScope() }
+        script.bindBrowserTools(to: service, owner: owner, presenter: presenter) { [weak self] in self?.makeScope() }
         return script
     }
 
     func makeScope() -> BrowserToolScope? {
         guard ownerPresent else { return nil }
+        if let sourceProvider { return BrowserToolScope(owner: owner, source: sourceProvider(), selectedTabID: { [owner] in owner.uid }) }
         let source = MultiTabAttachmentSource(currentTabID: owner.uid, mode: owner.mode, tabsProvider: { [weak self] in
             guard let self, self.ownerPresent else { return [] }
             return [self.owner]
@@ -784,6 +838,7 @@ final class BrowserToolsBridgeFixture {
     }
 
     func cleanUp() {
+        sourceProvider = nil
         webView.onTabChanged = nil
         script.detachBrowserTools()
         defaults.removePersistentDomain(forName: suiteName)
@@ -824,6 +879,20 @@ final class BrowserToolsBridgeWebView: WKWebView {
             configurationPayloads.append(params)
         }
         completionHandler?(nil, nil)
+    }
+}
+
+private final class BrowserToolsTrustedScriptMessage: WKScriptMessage {
+    private let sourceWebView: WKWebView
+    private let sourceFrameInfo: WKFrameInfo
+
+    override var webView: WKWebView? { sourceWebView }
+    override var frameInfo: WKFrameInfo { sourceFrameInfo }
+
+    init(webView: WKWebView, frameInfo: WKFrameInfo) {
+        sourceWebView = webView
+        sourceFrameInfo = frameInfo
+        super.init()
     }
 }
 

@@ -195,6 +195,61 @@ final class PacketTunnelProviderTests: XCTestCase {
         ]
         XCTAssertTrue(supersedingSources.allSatisfy { !$0.preservesFailureRecoveryDuringReassertUpdate })
     }
+
+    // MARK: - Subscription environment before the token
+
+    private func makeStartupOptions(environment: VPNSettings.SelectedEnvironment) throws -> StartupOptions {
+        let snapshot = VPNSettingsSnapshot(registrationKeyValidity: .automatic,
+                                           selectedEnvironment: environment,
+                                           selectedServer: .automatic,
+                                           selectedLocation: .nearest,
+                                           dnsSettings: .ddg(blockRiskyDomains: true),
+                                           excludeLocalNetworks: false)
+        return StartupOptions(options: [NetworkProtectionOptionKey.settings: try JSONEncoder().encode(snapshot)])
+    }
+
+    private func makeSettings(environment: VPNSettings.SelectedEnvironment) -> VPNSettings {
+        let settings = VPNSettings(defaults: startupDefaults)
+        settings.selectedEnvironment = environment
+        return settings
+    }
+
+    func testWhenTheAppSendsAnotherEnvironmentThenItIsLoaded() throws {
+        let settings = makeSettings(environment: .staging)
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: try makeStartupOptions(environment: .production), into: settings)
+
+        XCTAssertTrue(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .production)
+    }
+
+    func testWhenTheAppSendsTheSameEnvironmentThenNothingChanges() throws {
+        let settings = makeSettings(environment: .production)
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: try makeStartupOptions(environment: .production), into: settings)
+
+        XCTAssertFalse(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .production)
+    }
+
+    func testWhenTheTunnelStartsWithoutSettingsThenTheStoredEnvironmentIsKept() {
+        let settings = makeSettings(environment: .staging)
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: StartupOptions(options: [:]), into: settings)
+
+        XCTAssertFalse(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .staging)
+    }
+
+    func testWhenTheSentSettingsCannotBeDecodedThenTheStoredEnvironmentIsKept() {
+        let settings = makeSettings(environment: .staging)
+        let options = StartupOptions(options: [NetworkProtectionOptionKey.settings: Data("not json".utf8)])
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: options, into: settings)
+
+        XCTAssertFalse(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .staging)
+    }
 }
 
 private final class RetryRecordingPixelFiring: PixelKitFiring {

@@ -35,6 +35,178 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
 
     // MARK: - App Permissions
 
+#if os(macOS)
+    func testClipboardReadIsIncludedInInstallConsentAndOptionalAccessCanBeRevoked() async throws {
+        let controller = makeController()
+        let required = try await makeContext(permissions: ["clipboardRead"])
+        try await controller.prepare(required)
+        XCTAssertEqual(prompter.installationRequests.last?.appPermissions, [.clipboardRead])
+        XCTAssertTrue(controller.isGranted(.clipboardRead, to: required.uniqueIdentifier))
+
+        let optional = try await makeContext(optionalPermissions: ["clipboardRead"])
+        try await controller.prepare(optional)
+        XCTAssertFalse(controller.isGranted(.clipboardRead, to: optional.uniqueIdentifier))
+        controller.recordUserGesture(for: optional)
+        let granted = await controller.requestAppPermissions([.clipboardRead], for: optional)
+        XCTAssertTrue(granted)
+        XCTAssertTrue(controller.revoke(.clipboardRead, from: optional))
+        XCTAssertFalse(controller.isGranted(.clipboardRead, to: optional.uniqueIdentifier))
+    }
+#endif
+
+    func testAppPermissionRequestWithoutUserGestureDoesNotPrompt() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+
+        let granted = await controller.requestAppPermissions([.privacy], for: context)
+
+        XCTAssertFalse(granted)
+        XCTAssertTrue(prompter.permissionRequests.isEmpty)
+    }
+
+    func testCancelConsumesGestureAndAnotherInteractionAllowsRetry() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        prompter.permissionResponse = .denied
+        controller.recordUserGesture(for: context)
+
+        let first = await controller.requestAppPermissions([.privacy], for: context)
+        let retry = await controller.requestAppPermissions([.privacy], for: context)
+        XCTAssertFalse(first)
+        XCTAssertFalse(retry)
+        XCTAssertEqual(prompter.permissionRequests.count, 1)
+
+        controller.recordUserGesture(for: context)
+        prompter.permissionResponse = .granted
+        let afterAnotherGesture = await controller.requestAppPermissions([.privacy], for: context)
+        XCTAssertTrue(afterAnotherGesture)
+        XCTAssertEqual(prompter.permissionRequests.count, 2)
+    }
+
+    func testGestureExpiresAfterFiveSeconds() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        var uptime: TimeInterval = 100
+        controller.uptime = { uptime }
+        controller.recordUserGesture(for: context)
+        uptime += 5
+
+        let granted = await controller.requestAppPermissions([.privacy], for: context)
+
+        XCTAssertFalse(granted)
+        XCTAssertTrue(prompter.permissionRequests.isEmpty)
+    }
+
+    func testReservedCombinedRequestSurvivesTimeSpentReadingTheWebKitPrompt() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        var uptime: TimeInterval = 100
+        controller.uptime = { uptime }
+        controller.recordUserGesture(for: context)
+        let reservation = try XCTUnwrap(controller.prepareAppPermissionRequest([.privacy], for: context))
+        uptime += 60
+
+        let granted = await controller.requestAppPermissions([.privacy], for: context, requestIdentifier: reservation)
+        let replay = await controller.requestAppPermissions([.privacy], for: context, requestIdentifier: reservation)
+
+        XCTAssertTrue(granted)
+        XCTAssertFalse(replay)
+        XCTAssertEqual(prompter.permissionRequests.count, 1)
+    }
+
+    func testCancelledCombinedRequestCannotReuseItsAuthorization() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        controller.recordUserGesture(for: context)
+        let reservation = try XCTUnwrap(controller.prepareAppPermissionRequest([.privacy], for: context))
+        controller.cancelAppPermissionRequest(reservation, for: context)
+
+        let replay = await controller.requestAppPermissions([.privacy], for: context, requestIdentifier: reservation)
+        let retry = await controller.requestAppPermissions([.privacy], for: context)
+
+        XCTAssertFalse(replay)
+        XCTAssertFalse(retry)
+        XCTAssertTrue(prompter.permissionRequests.isEmpty)
+        controller.recordUserGesture(for: context)
+        let afterAnotherGesture = await controller.requestAppPermissions([.privacy], for: context)
+        XCTAssertTrue(afterAnotherGesture)
+    }
+
+    func testFreshInteractionRecoversAnAbandonedReservation() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        controller.recordUserGesture(for: context)
+        let abandoned = try XCTUnwrap(controller.prepareAppPermissionRequest([.privacy], for: context))
+
+        controller.recordUserGesture(for: context)
+        let stale = await controller.requestAppPermissions([.privacy], for: context, requestIdentifier: abandoned)
+        let fresh = await controller.requestAppPermissions([.privacy], for: context)
+
+        XCTAssertFalse(stale)
+        XCTAssertTrue(fresh)
+        XCTAssertEqual(prompter.permissionRequests.count, 1)
+    }
+
+    func testGestureCannotAuthorizeAnotherExtension() async throws {
+        let controller = makeController()
+        let first = try await makeContext(optionalPermissions: ["privacy"])
+        let second = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(first)
+        try await controller.prepare(second)
+        controller.recordUserGesture(for: first)
+
+        let otherExtension = await controller.requestAppPermissions([.privacy], for: second)
+        let originalExtension = await controller.requestAppPermissions([.privacy], for: first)
+
+        XCTAssertFalse(otherExtension)
+        XCTAssertTrue(originalExtension)
+        XCTAssertEqual(prompter.permissionRequests.count, 1)
+    }
+
+    func testUnloadClearsGestureEvenWhenTheSameContextIsReloaded() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        controller.recordUserGesture(for: context)
+        controller.didUnload(context.uniqueIdentifier)
+        try await controller.prepare(context)
+
+        let granted = await controller.requestAppPermissions([.privacy], for: context)
+
+        XCTAssertFalse(granted)
+        XCTAssertTrue(prompter.permissionRequests.isEmpty)
+    }
+
+    func testPendingPromptRejectsConcurrentRequestsAndDiscardsNewGestures() async throws {
+        let controller = makeController()
+        let context = try await makeContext(optionalPermissions: ["privacy"])
+        try await controller.prepare(context)
+        prompter.permissionResponse = .denied
+        let promptStarted = expectation(description: "Permission prompt started")
+        prompter.onPermissionRequest = { promptStarted.fulfill() }
+        prompter.suspendPermissionPrompt = true
+        controller.recordUserGesture(for: context)
+        let first = Task { await controller.requestAppPermissions([.privacy], for: context) }
+        await fulfillment(of: [promptStarted], timeout: 2)
+
+        controller.recordUserGesture(for: context)
+        let concurrent = await controller.requestAppPermissions([.privacy], for: context)
+        prompter.permissionContinuation?.resume(returning: .denied)
+        let firstResult = await first.value
+        let retry = await controller.requestAppPermissions([.privacy], for: context)
+
+        XCTAssertFalse(firstResult)
+        XCTAssertFalse(concurrent)
+        XCTAssertFalse(retry)
+        XCTAssertEqual(prompter.permissionRequests.count, 1)
+    }
+
     func testWhenOptionalPrivacyIsApproved_ThenItIsGrantedAndRestoredOnTheNextLoad() async throws {
         let controller = makeController()
         var changes: [String] = []
@@ -369,6 +541,20 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
         XCTAssertEqual(granted, [.clipboardWrite])
         XCTAssertTrue(manager.hasHitNativeMessagingLimitation(identifier: context.uniqueIdentifier))
         XCTAssertTrue(NativeMessagingLimitationStore(keyValueStore: keyValueStore).hasHitLimitation(extensionKey: limitedStoreID))
+    }
+
+    func testWhenAnExtensionHitsTheLimitationAgainThenTheBlockedPixelFiresOnlyTheFirstTime() async throws {
+        let context = try await makeContext(optionalPermissions: ["nativeMessaging"])
+        recordStoreInstallation(of: context)
+        let pixels = InstallationPixelFiringMock()
+        let manager = makeManager(permissionController: nil,
+                                  unavailablePermissions: [.nativeMessaging],
+                                  nativeMessagingLimitationStore: NativeMessagingLimitationStore(keyValueStore: keyValueStore),
+                                  pixelFiring: pixels)
+
+        await requestNativeMessaging(times: 2, from: manager, for: context)
+
+        XCTAssertEqual(pixels.nativeMessagingBlocked, [.other])
     }
 
     func testWhenAnExtensionThatHitTheLimitationIsUninstalledThenItsStateIsForgotten() async throws {
@@ -1209,7 +1395,8 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
     private func makeManager(
         permissionController: WebExtensionPermissionController?,
         unavailablePermissions: Set<WKWebExtension.Permission>,
-        nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol? = nil
+        nativeMessagingLimitationStore: NativeMessagingLimitationStoreProtocol? = nil,
+        pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()
     ) -> WebExtensionManager {
         let extensionsDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         return WebExtensionManager(configuration: WebExtensionConfigurationProvidingMock(),
@@ -1218,6 +1405,7 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                                    storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
                                    installationStore: installationStore,
                                    permissionController: permissionController,
+                                   pixelFiring: pixelFiring,
                                    unavailablePermissions: unavailablePermissions,
                                    nativeMessagingLimitationStore: nativeMessagingLimitationStore)
     }
@@ -1228,6 +1416,12 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
                                                                            name: nil,
                                                                            version: "1.0",
                                                                            storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: storeID ?? limitedStoreID)))
+    }
+
+    private func requestNativeMessaging(times: Int, from manager: WebExtensionManager, for context: WKWebExtensionContext) async {
+        for _ in 0..<times {
+            _ = await requestPermissions([.nativeMessaging], from: manager, for: context)
+        }
     }
 
     private func requestPermissions(
@@ -1275,6 +1469,8 @@ final class WebExtensionPermissionControllerTests: XCTestCase {
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 private final class PermissionPrompterMock: WebExtensionPermissionPrompting {
+    var suspendPermissionPrompt = false
+    var permissionContinuation: CheckedContinuation<WebExtensionPermissionPromptResult, Never>?
     var installationResponse: WebExtensionPermissionInstallationPromptResult = .granted(privateDataAccess: false)
     var permissionResponse: WebExtensionPermissionPromptResult = .granted
     var installationRequests: [WebExtensionPermissionRequest] = []
@@ -1289,6 +1485,9 @@ private final class PermissionPrompterMock: WebExtensionPermissionPrompting {
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
         permissionRequests.append(permissions)
         onPermissionRequest?()
+        if suspendPermissionPrompt {
+            return await withCheckedContinuation { permissionContinuation = $0 }
+        }
         return permissionResponse
     }
 }
@@ -1325,10 +1524,16 @@ private final class FailingUnloadWebExtensionController: WKWebExtensionControlle
 @available(macOS 15.4, iOS 18.4, *)
 private final class InstallationPixelFiringMock: WebExtensionPixelFiring {
     private(set) var installErrors: [Error] = []
+    private(set) var nativeMessagingBlocked: [WebExtensionPixelExtension] = []
 
     func fire(_ event: WebExtensionPixelEvent) {
-        if case .installError(_, let error) = event {
+        switch event {
+        case .installError(_, let error):
             installErrors.append(error)
+        case .nativeMessagingBlocked(let pixelExtension):
+            nativeMessagingBlocked.append(pixelExtension)
+        default:
+            break
         }
     }
 }

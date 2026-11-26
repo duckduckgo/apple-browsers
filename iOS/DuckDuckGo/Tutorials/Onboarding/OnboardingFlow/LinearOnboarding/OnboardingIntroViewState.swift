@@ -68,6 +68,8 @@ extension OnboardingIntroViewState.Intro {
         case keepDuckAIDialog(content: OnboardingDuckAIEnabledPersonalizationContent)
         case adBlockingDialog(content: OnboardingPersonalizationContent)
         case tryVPNDialog(content: OnboardingTryVPNContent)
+        case vpnActivationDialog(content: OnboardingVPNActivationContent)
+        case subscriptionReminderDialog(content: OnboardingSubscriptionReminderContent)
     }
 
     struct StepInfo: Equatable {

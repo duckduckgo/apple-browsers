@@ -17,10 +17,13 @@ let package = Package(
         .target(
             name: "AppLauncher",
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]),
         .testTarget(
             name: "AppLauncherTests",
-            dependencies: ["AppLauncher"]),
+            dependencies: ["AppLauncher"],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
     ]
 )

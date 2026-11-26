@@ -542,7 +542,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         // platforms-related operations are performed.
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: serviceEnvironment, purchasePlatform: .stripe)
 
-        Logger.networkProtection.debug("Subscription ServiceEnvironment: \(subscriptionEnvironment.serviceEnvironment.rawValue, privacy: .public)")
+        Logger.networkProtection.log("VPN extension created with the saved VPN environment: \(settings.selectedEnvironment.rawValue, privacy: .public)")
 
         let notificationCenter: NetworkProtectionNotificationCenter = DistributedNotificationCenter.default()
         let controllerErrorStore = NetworkProtectionTunnelErrorStore(notificationCenter: notificationCenter)
@@ -550,8 +550,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // MARK: - Subscription
         let subscriptionUserDefaults = UserDefaults(suiteName: MacPacketTunnelProvider.subscriptionsAppGroup)!
-        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
-                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
+        let authService = EnvironmentResolvingOAuthService(apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent())) {
+            settings.selectedEnvironment == .production ? .production : .staging
+        }
         let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
@@ -570,8 +571,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                             authService: authService,
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
 
-        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
-                                                                                 baseURL: subscriptionEnvironment.serviceEnvironment.url)
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())) {
+            settings.selectedEnvironment == .production ? SubscriptionEnvironment.ServiceEnvironment.production.url : SubscriptionEnvironment.ServiceEnvironment.staging.url
+        }
         let pixelHandler = SubscriptionPixelHandler(source: .systemExtension, pixelKit: PixelKit.shared)
         let subscriptionManager = DefaultSubscriptionManager(oAuthClient: authClient,
                                                                userDefaults: subscriptionUserDefaults,
@@ -580,7 +582,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                pixelHandler: pixelHandler,
                                                                initForPurchase: false,
                                                                wideEvent: self.wideEvent,
-                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production },
+                                                               isAuthV2WideEventEnabled: { settings.selectedEnvironment == .production },
                                                                authV2TokenRefreshInstrumentation: authV2RefreshInstrumentation)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {

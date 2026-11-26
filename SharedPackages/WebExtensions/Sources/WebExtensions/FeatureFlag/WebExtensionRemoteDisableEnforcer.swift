@@ -25,13 +25,18 @@ import PrivacyConfig
 /// of the `extensionManagement` Privacy Configuration feature, or that the app disables itself
 /// (`disabledExtensionIDs`), such as an extension whose feature flag is off.
 ///
-/// The configuration's list counts only while `extensionManagement.isLaunchedExtensions` is enabled.
+/// The configuration's list counts only while `isExtensionsEnabled` returns true or
+/// `extensionManagement.isLaunchedExtensions` is enabled.
 /// A pass runs when the enforcer starts, on every Privacy Configuration update or
 /// `disabledExtensionIDsDidChange`, and whenever the loaded extensions change. The last one
 /// covers new installations and the user enabling a listed extension, which is disabled again.
 ///
+/// While extensions are not enabled, a pass disables every Chrome Web Store extension,
+/// matching the Windows browser's sweep.
+///
 /// Disabling is one-way, matching the Windows browser: the enforcer never enables an extension.
-/// An extension stays disabled after its ID leaves the list, until the user enables it.
+/// An extension stays disabled after its ID leaves the list or extensions are enabled again,
+/// until the user enables it.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
 public final class WebExtensionRemoteDisableEnforcer {
@@ -40,6 +45,7 @@ public final class WebExtensionRemoteDisableEnforcer {
     private let configurationManager: PrivacyConfigurationManaging
     private let disabledExtensionIDs: @MainActor () -> Set<String>
     private let disabledExtensionIDsDidChange: AnyPublisher<Void, Never>
+    private let isExtensionsEnabled: @MainActor () -> Bool
     private let pixelFiring: WebExtensionPixelFiring
     private var cancellables = Set<AnyCancellable>()
 
@@ -48,25 +54,28 @@ public final class WebExtensionRemoteDisableEnforcer {
 
     /// - Parameters:
     ///   - disabledExtensionIDs: Chrome Web Store IDs the app disables, whether or not extension management is launched.
-    ///   - disabledExtensionIDsDidChange: Fires when `disabledExtensionIDs` may have changed.
+    ///   - disabledExtensionIDsDidChange: Fires when `disabledExtensionIDs` or `isExtensionsEnabled` may have changed.
+    ///   - isExtensionsEnabled: When it returns false, every Chrome Web Store extension is disabled.
     public init(manager: WebExtensionManaging,
                 configurationManager: PrivacyConfigurationManaging,
                 disabledExtensionIDs: @escaping @MainActor () -> Set<String> = { [] },
                 disabledExtensionIDsDidChange: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher(),
+                isExtensionsEnabled: @escaping @MainActor () -> Bool = { true },
                 pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring()) {
         self.manager = manager
         self.configurationManager = configurationManager
         self.disabledExtensionIDs = disabledExtensionIDs
         self.disabledExtensionIDsDidChange = disabledExtensionIDsDidChange
+        self.isExtensionsEnabled = isExtensionsEnabled
         self.pixelFiring = pixelFiring
     }
 
-    /// The lowercased Chrome Web Store IDs to disable. The configuration's list counts only while extension
-    /// management is launched.
+    /// The lowercased Chrome Web Store IDs to disable. The configuration's list counts only while extensions
+    /// are enabled or extension management is launched.
     public var remotelyDisabledExtensionIDs: Set<String> {
         let config = configurationManager.privacyConfig
         var identifiers = disabledExtensionIDs()
-        if config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) {
+        if isExtensionsEnabled() || config.isSubfeatureEnabled(ExtensionManagementSubfeature.isLaunchedExtensions) {
             identifiers.formUnion(config.settings(for: .extensionManagement)["disabledExtensionIds"] as? [String] ?? [])
         }
         return Set(identifiers.map { $0.lowercased() })
@@ -118,24 +127,39 @@ public final class WebExtensionRemoteDisableEnforcer {
     private func enforce() async {
         guard let manager else { return }
 
+        let isSweeping = !isExtensionsEnabled()
         // A disabled extension can still be loaded when it was disabled while installed extensions were loading.
         let extensionsToDisable = manager.webExtensionIdentifiers
             .compactMap { manager.installedExtension(identifier: $0) }
-            .filter { isRemotelyDisabled($0) && (!$0.isDisabled || manager.context(for: $0.uniqueIdentifier) != nil) }
+            .filter { (isSweeping && isFromChromeWebStore($0)) || isRemotelyDisabled($0) }
+            .filter { !$0.isDisabled || manager.context(for: $0.uniqueIdentifier) != nil }
 
+        var sweptCount = 0
         for installedExtension in extensionsToDisable {
             let identifier = installedExtension.uniqueIdentifier
+            let isListed = isRemotelyDisabled(installedExtension)
             do {
                 try await manager.disableExtension(identifier: identifier)
                 // Unloading an extension that was disabled while loading doesn't turn it off.
                 if !installedExtension.isDisabled {
-                    pixelFiring.fire(.remotelyDisabled(extension: pixelExtension(for: installedExtension)))
+                    if isListed {
+                        pixelFiring.fire(.remotelyDisabled(extension: pixelExtension(for: installedExtension)))
+                    } else {
+                        sweptCount += 1
+                    }
                 }
-                Logger.webExtensions.info("Disabled extension '\(identifier)' because remote configuration lists it")
+                Logger.webExtensions.info("Disabled extension '\(identifier)' because \(isListed ? "remote configuration lists it" : "extensions are not enabled")")
             } catch {
                 Logger.webExtensions.error("Failed to disable remotely disabled extension '\(identifier)': \(error.localizedDescription)")
             }
         }
+        if sweptCount > 0 {
+            pixelFiring.fire(.killSwitchDisabled(count: sweptCount))
+        }
+    }
+
+    private func isFromChromeWebStore(_ installedExtension: InstalledWebExtension) -> Bool {
+        installedExtension.storeIdentity?.store == .chromeWebStore
     }
 
     private func pixelExtension(for installedExtension: InstalledWebExtension) -> WebExtensionPixelExtension {

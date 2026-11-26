@@ -27,6 +27,8 @@ import Foundation
 /// reports calls to placeholders to the API compatibility log.
 ///
 /// Some namespaces are implemented rather than placeholders:
+/// - On macOS, `chrome.downloads.download` saves data and same-extension blob URLs using the browser's download preferences.
+///   Its completion event is delivered to the page that requested the download.
 /// - `chrome.idle`, on macOS: the state (`locked`, `idle` or `active`) comes from the app through
 ///   `idleMessageHandlerName`, and `onStateChanged` polls while it has listeners.
 /// - `chrome.offscreen`: `createDocument` loads the document in a hidden iframe, so the offscreen
@@ -52,7 +54,7 @@ import Foundation
 /// `windows.WINDOW_ID_*`) are defined with Chrome's values. `Symbol.dispose` and `Symbol.asyncDispose`
 /// are defined where missing. `chrome.permissions` grants `idle` and `offscreen` itself, since the script
 /// implements them, and `webRequestAuthProvider`, since WebKit implements `webRequest.onAuthRequired` under
-/// `webRequest`. It asks the app about `privacy`, so the user decides whether an extension gets it.
+/// `webRequest`. The app asks the user about `privacy` and, on macOS, `downloads`.
 public enum WebExtensionAPIStubScript {
 
     /// Property on `globalThis` holding the objects the script decorated, so WebKit's native
@@ -62,6 +64,9 @@ public enum WebExtensionAPIStubScript {
     /// Name of the script message handler `chrome.idle.queryState` asks for the idle state. It is
     /// optional: a page with no handler of this name hears `active`.
     public static let idleMessageHandlerName = "ddgWebExtensionIdle"
+
+    public static let clipboardReadMessageHandlerName = "ddgWebExtensionClipboardRead"
+    public static let downloadMessageHandlerName = "ddgWebExtensionDownload"
 
     /// Name of the script message handler `chrome.privacy.services` settings go through. It is
     /// optional: without it the settings stay in the extension's own storage.
@@ -90,6 +95,13 @@ public enum WebExtensionAPIStubScript {
 
     /// Permissions WebKit doesn't know that the script or the app implements.
     static let providedPermissionNames = Set(localPermissionNames + WebExtensionAppPermission.allCases.map(\.rawValue))
+#if os(macOS)
+    private static let downloadBridgeEnabled = true
+    private static let maximumDataURLLength = WebExtensionDownload.maximumDataURLLength
+#else
+    private static let downloadBridgeEnabled = false
+    private static let maximumDataURLLength = 0
+#endif
 
     /// `names` as a JavaScript array literal.
     private static func jsArray(_ names: [String]) -> String {
@@ -128,8 +140,8 @@ public enum WebExtensionAPIStubScript {
         // `browser_specific_settings.duckduckgo` and need no Chrome shims. Keep in sync with
         // `WKWebExtension.needsChromeCompatibility`.
         try {
-            var settings = api.runtime && typeof api.runtime.getManifest === "function"
-                ? api.runtime.getManifest().browser_specific_settings : undefined;
+            var manifest = api.runtime && typeof api.runtime.getManifest === "function" ? api.runtime.getManifest() : undefined;
+            var settings = manifest && manifest.browser_specific_settings;
             if (settings && settings.duckduckgo) {
                 return;
             }
@@ -281,7 +293,7 @@ public enum WebExtensionAPIStubScript {
         var missingNamespaces = [
             { name: "notifications" },
             { name: "offscreen", kind: "offscreen" },
-            { name: "downloads" },
+            { name: "downloads", kind: "downloads" },
             { name: "idle", kind: "idle" },
             { name: "management" },
             { name: "privacy", kind: "privacy" },
@@ -973,7 +985,57 @@ public enum WebExtensionAPIStubScript {
             return value !== null && typeof value === "object" ? Object.freeze(value) : value;
         }
 
+        function makeDownloads() {
+            var placeholder = makeStub("downloads", true);
+            if (!\(downloadBridgeEnabled)) { return placeholder; }
+            var listeners = new Set();
+            var downloads = Object.create(placeholder);
+            downloads.onChanged = {
+                addListener: function(listener) { if (typeof listener === "function") { listeners.add(listener); } },
+                removeListener: function(listener) { listeners.delete(listener); },
+                hasListener: function(listener) { return listeners.has(listener); },
+                hasListeners: function() { return listeners.size > 0; }
+            };
+            // Read the caller's options before it can reuse them. A throwing getter rejects the promise.
+            async function snapshotDownloadOptions(options) {
+                var keys = options && typeof options === "object" && !Array.isArray(options) ? Object.keys(options) : [];
+                if (keys.length !== 2 || !keys.includes("url") || !keys.includes("filename")) {
+                    throw new Error("Unsupported download options");
+                }
+                var url = options.url;
+                var filename = options.filename;
+                if (typeof url !== "string" || typeof filename !== "string" || filename.length > 255) {
+                    throw new Error("Unsupported download options");
+                }
+                if (url.length > \(maximumDataURLLength) && /^data:/i.test(url)) {
+                    throw new Error("Attachment data URL is too long");
+                }
+                return { url: url, filename: filename };
+            }
+            // Download events are scoped to the initiating page. The reply contains only the basename and ID.
+            downloads.download = function(options, callback) {
+                var promise = snapshotDownloadOptions(options).then(function(request) {
+                    var handler = globalThis.webkit && globalThis.webkit.messageHandlers["\(Self.downloadMessageHandlerName)"];
+                    if (!handler) { throw new Error("Extension downloads are unavailable"); }
+                    return handler.postMessage(request);
+                }).then(function(result) {
+                    // A caller can register its listener after receiving the download ID.
+                    setTimeout(function() {
+                        listeners.forEach(function(listener) {
+                            invokeCallback(listener, { id: result.id, filename: { current: result.filename }, state: { current: "complete" } });
+                        });
+                    }, 0);
+                    return result.id;
+                });
+                return answerBothStyles(promise, callback);
+            };
+            return downloads;
+        }
+
         function makeMember(entry, path) {
+            if (entry.kind === "downloads") {
+                return makeDownloads();
+            }
             if (entry.kind === "event") {
                 return makeEvent(path);
             }
@@ -1046,6 +1108,25 @@ public enum WebExtensionAPIStubScript {
         // `privacy` lets an extension take over DuckDuckGo autofill.
         var appPermissionNames = \(jsArray(WebExtensionAppPermission.allCases.map(\.rawValue)));
         var permissionsMessageHandlerName = "\(Self.permissionsMessageHandlerName)";
+
+        // Bitwarden reads text from its background or offscreen extension document when its clear timer fires.
+        var clipboardReadPermission = "\(WebExtensionManifestPermission.clipboardRead.rawValue)";
+        if (isAppPermission(clipboardReadPermission) && manifest &&
+            [manifest.permissions, manifest.optional_permissions].some(function(names) {
+                return Array.isArray(names) && names.includes(clipboardReadPermission);
+            })) {
+            var clipboard = globalThis.navigator && globalThis.navigator.clipboard;
+            var clipboardHandlers = globalThis.webkit && globalThis.webkit.messageHandlers;
+            var clipboardHandler = clipboardHandlers && clipboardHandlers["\(Self.clipboardReadMessageHandlerName)"];
+            if (clipboard && typeof clipboard.readText === "function" && clipboardHandler) {
+                var originalReadText = clipboard.readText.bind(clipboard);
+                define(clipboard, "readText", async function() {
+                    var text = await clipboardHandler.postMessage(null);
+                    // Without an app grant, WebKit still handles a user-initiated paste under its own rules.
+                    return typeof text === "string" ? text : originalReadText();
+                });
+            }
+        }
 
         function isLocalPermission(name) {
             return localPermissionNames.indexOf(name) !== -1;
@@ -1199,6 +1280,15 @@ public enum WebExtensionAPIStubScript {
             var wrapper = function(descriptor) {
                 var callback = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
                 var hostQuery = splitPermissions(descriptor);
+                var preparation = methodName === "request" && hostQuery.appNames.length > 0
+                    ? askApp({ action: "prepareRequest", permissions: hostQuery.appNames }, null) : null;
+                function cancelPreparation() {
+                    if (preparation === null) { return Promise.resolve(false); }
+                    return preparation.then(function(identifier) {
+                        return typeof identifier === "string" ? askApp({ action: "cancelRequest",
+                            permissions: hostQuery.appNames, requestIdentifier: identifier }, false) : false;
+                    });
+                }
                 var promise;
                 if (hostQuery.isEmpty) {
                     // Only app permissions leave the answer to the app.
@@ -1216,11 +1306,20 @@ public enum WebExtensionAPIStubScript {
                 if (hostQuery.appNames.length > 0) {
                     promise = promise.then(function(hostAnswer) {
                         if (hostAnswer !== true && methodName !== "remove") {
-                            return false;
+                            return cancelPreparation().then(function() { return false; });
+                        }
+                        if (preparation !== null) {
+                            return preparation.then(function(identifier) {
+                                if (typeof identifier !== "string") { return false; }
+                                return askApp({ action: "request", permissions: hostQuery.appNames,
+                                    requestIdentifier: identifier }, false).then(function(answer) { return answer === true; });
+                            });
                         }
                         return askAppAbout(methodName, hostQuery.appNames).then(function(appAnswer) {
                             return hostAnswer === true && appAnswer;
                         });
+                    }, function(error) {
+                        return cancelPreparation().then(function() { throw error; });
                     });
                 }
                 if (typeof callback === "function") {

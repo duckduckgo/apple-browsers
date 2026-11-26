@@ -61,6 +61,8 @@ actor CurrentPack {
      * It sets a new empty pack with the current timestamp.
      */
     func resetPack() {
+        // A pending commit holds the pack from before the reset and would write it back.
+        commitTask?.cancel()
         resetStats(andSet: Date.currentPrivacyStatsPackTimestamp)
     }
 

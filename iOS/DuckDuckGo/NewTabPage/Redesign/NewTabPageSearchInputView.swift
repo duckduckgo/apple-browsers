@@ -27,6 +27,7 @@ struct NewTabPageSearchInputView: View {
     @ObservedObject var model: NewTabPageSearchInputModel
     let onActivate: (TextEntryMode) -> Void
     let onVoiceSearch: (TextEntryMode) -> Void
+    var usesLiquidGlass = false
     /// When non-nil, the Duck.ai button shows this menu instead of opening Duck.ai.
     var aiChatMenu: () -> UIMenu? = { nil }
 
@@ -49,9 +50,10 @@ struct NewTabPageSearchInputView: View {
                                         onActivate: onActivate,
                                         onVoiceSearch: onVoiceSearch,
                                         aiChatMenu: aiChatMenu)
-                .frame(height: Metrics.fieldHeight)
+                .padding(.horizontal, Metrics.fieldHorizontalInset)
+                .frame(height: model.settings.isModeToggleShown ? Metrics.fieldHeightWithToggle : Metrics.fieldHeightWithoutToggle)
         }
-        .background(RedesignedNewTabPageCardBackground())
+        .background(RedesignedNewTabPageCardBackground(usesLiquidGlass: usesLiquidGlass))
         .padding(.horizontal, Metrics.horizontalMargin)
     }
 }
@@ -173,7 +175,9 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
 private enum Metrics {
     static let horizontalMargin: CGFloat = 16
     static let cardPadding: CGFloat = 8
-    static let fieldHeight: CGFloat = 64
+    static let fieldHeightWithToggle: CGFloat = 64
+    static let fieldHeightWithoutToggle: CGFloat = 57
+    static let fieldHorizontalInset: CGFloat = 5
     static let toggleHeight: CGFloat = 40
 }
 

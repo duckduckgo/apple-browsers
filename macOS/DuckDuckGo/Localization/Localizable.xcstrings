@@ -24038,6 +24038,3966 @@
         }
       }
     },
+    "browser-tool.access.allow" : {
+      "comment" : "Button in the Duck.ai browser tools prompt that allows the listed tools in the current chat until the browser quits",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In diesem Chat zulassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow in This Chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir en este chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser dans cette discussion"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti in questa chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toestaan in deze chat"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwól w tym czacie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir nesta conversa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить в этом чате"
+          }
+        }
+      }
+    },
+    "browser-tool.access.detail" : {
+      "comment" : "Text under the title of the prompt Duck.ai shows once for the browser tools a chat will use",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai kann diese Aktionen in diesem Chat ausführen, ohne erneut zu fragen, bis du den Browser schließt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai can take these actions without asking again in this chat, until you close the browser."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai puede realizar estas acciones sin volver a preguntar en este chat hasta que cierres el navegador."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai peut effectuer ces actions sans te redemander confirmation dans cette discussion, jusqu’à ce que tu fermes le navigateur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai può eseguire queste azioni senza chiedere di nuovo in questa chat, finché non chiudi il browser."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai kan deze acties in deze chat uitvoeren zonder het opnieuw te vragen, totdat je de browser sluit."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai może wykonywać te czynności bez ponownego pytania w tym czacie, dopóki nie zamkniesz przeglądarki."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Duck.ai pode realizar estas ações sem voltar a perguntar nesta conversa, até fechares o navegador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai сможет выполнять эти действия в этом чате без повторного запроса, пока ты не закроешь браузер."
+          }
+        }
+      }
+    },
+    "browser-tool.access.dont-allow" : {
+      "comment" : "Button in the Duck.ai browser tools prompt that refuses the listed tools this time, without remembering the choice",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht zulassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't Allow"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No permitir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne pas autoriser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non consentire"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet toestaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie zezwalaj"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não permitir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не разрешать"
+          }
+        }
+      }
+    },
+    "browser-tool.access.remove-tool" : {
+      "comment" : "Tooltip and accessibility label of the X button beside one tool in the Duck.ai browser tools prompt. It takes that tool out of the ones being allowed. Parameter is the tool name, e.g. Read Tab Content",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht zulassen: %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't allow %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No permitir %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne pas autoriser %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non consentire %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet toestaan voor %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie zezwalaj na %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não permitir %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не разрешать %@"
+          }
+        }
+      }
+    },
+    "browser-tool.access.removed-note" : {
+      "comment" : "Shown in the Duck.ai browser tools prompt after the user takes tools out of it. Parameter is the tools' names joined with or, e.g. Read Tab Content or List Open Tabs. Followed by an Undo link",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai wird diesmal nicht %@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai won’t %@ this time."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai no %@ esta vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai n'utilisera pas %@ cette fois."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai non %@ questa volta."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai voert %@ deze keer niet uit."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai nie będzie tym razem korzystać z funkcji %@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Duck.ai não vai %@ desta vez."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai не будет использовать %@ в этот раз."
+          }
+        }
+      }
+    },
+    "browser-tool.access.title" : {
+      "comment" : "Title of the prompt Duck.ai shows once for the browser tools it expects to use in a chat. The tools are listed under it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai erlauben, Folgendes zu tun:"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to do the following:"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que Duck.ai haga lo siguiente:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à effectuer les actions suivantes :"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti a Duck.ai di eseguire le seguenti azioni:"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan het volgende te doen:"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwól Duck.ai na wykonywanie następujących czynności:"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai faça o seguinte:"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai выполнять следующие действия:"
+          }
+        }
+      }
+    },
+    "browser-tool.access.undo" : {
+      "comment" : "Link in the Duck.ai browser tools prompt that puts back every tool the user took out of it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rückgängig machen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Undo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deshacer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ongedaan maken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cofnij"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anular"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить"
+          }
+        }
+      }
+    },
+    "browser-tool.in-use" : {
+      "comment" : "Tooltip on the tab bar icon shown while Duck.ai runs a browser tool",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai verwendet ein Browser-Tool"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai is using a browser tool"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai está usando una herramienta del navegador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai utilise un outil du navigateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai sta usando uno strumento del browser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai gebruikt een browsertool"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai używa narzędzia przeglądarki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Duck.ai está a utilizar uma ferramenta do navegador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai использует инструмент браузера"
+          }
+        }
+      }
+    },
+    "browser-tool.panel.all-default" : {
+      "comment" : "Note at the bottom of the Browser Permissions panel once every browser tool permission is back to its default",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Browserberechtigungen sind wieder auf ihre Standardwerte zurückgesetzt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All browser permissions are back to their defaults."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los permisos del navegador han vuelto a sus valores predeterminados."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toutes les autorisations du navigateur sont rétablies à leurs valeurs par défaut."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutte le autorizzazioni del browser sono state ripristinate ai valori predefiniti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle browsermachtigingen zijn teruggezet naar de standaardinstellingen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wszystkie uprawnienia przeglądarki zostały przywrócone do wartości domyślnych."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas as permissões do navegador foram repostas para os valores predefinidos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все разрешения для браузера восстановлены по умолчанию."
+          }
+        }
+      }
+    },
+    "browser-tool.panel.close" : {
+      "comment" : "Tooltip of the tab bar button that closes the Browser Permissions panel",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browserzugriff schließen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Browser Access"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar el acceso al navegador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer l’accès au navigateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi l’accesso al browser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsertoegang sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij dostęp do przeglądarki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar acesso ao navegador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть доступ браузера"
+          }
+        }
+      }
+    },
+    "browser-tool.panel.manage-in-settings" : {
+      "comment" : "Link in the Browser Permissions panel that opens the Browser Permissions section in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Einstellungen verwalten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage in Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestionar en Ajustes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérer dans les paramètres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestisci nelle impostazioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beheren in de instellingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzaj w ustawieniach"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerir nas definições"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Управлять в настройках"
+          }
+        }
+      }
+    },
+    "browser-tool.panel.scope" : {
+      "comment" : "Note at the bottom of the Browser Permissions panel opened from the Duck.ai button menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese gelten für jede Website und jeden Chat."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "These apply to every site and chat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto se aplica a todos los sitios y chats."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elles s’appliquent à tous les sites et à toutes les discussions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si applicano a tutti i siti e a tutte le chat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze gelden voor elke site en chat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To dotyczy każdej witryny i każdego czatu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estas aplicam-se a todos os sites e conversas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это относится ко всем сайтам и чатам."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.allow-once" : {
+      "comment" : "Duck.ai browser tool permission prompt button that lets one tool call run",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einmal zulassen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow once"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir una vez"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser une fois"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti una volta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eenmalig toestaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwól raz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir uma vez"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить один раз"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.close-tabs" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will do",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch werden Tabs in diesem Fenster geschlossen. Angepinnte Tabs bleiben geöffnet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will close tabs in this window. Pinned tabs stay open."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrará las pestañas de esta ventana. Las pestañas ancladas permanecen abiertas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cela fermera les onglets de cette fenêtre. Les onglets épinglés restent ouverts."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiuderà le schede in questa finestra. Le schede fissate rimangono aperte."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hierdoor worden tabbladen in dit venster gesloten. Vastgezette tabbladen blijven open."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spowoduje zamknięcie kart w tym oknie. Przypięte karty pozostaną otwarte."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai fechar os separadores nesta janela. Os separadores afixados permanecem abertos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закроет вкладки в этом окне. Закреплённые вкладки останутся открытыми."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.find-in-other-tab" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es sieht den Titel und die Adresse dieses Tabs sowie kurze Textausschnitte rund um jede Übereinstimmung."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see that tab's title, address and short snippets around each match."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verá el título, la dirección y fragmentos breves alrededor de cada coincidencia de esa pestaña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il verra le titre, l’adresse et de courts extraits autour de chaque résultat dans cet onglet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedrà il titolo, l’indirizzo e brevi estratti intorno a ogni corrispondenza in quella scheda."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tool ziet de titel, het adres en korte fragmenten rond elke overeenkomst op dat tabblad."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobaczy tytuł i adres tej karty oraz krótkie fragmenty tekstu wokół każdego dopasowania."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai ver o título, o endereço e pequenos excertos à volta de cada correspondência desse separador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он увидит заголовок и адрес этой вкладки, а также короткие фрагменты текста вокруг каждого совпадения."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.find-in-page" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es sieht kurze Textausschnitte rund um jede Übereinstimmung."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see short snippets around each match."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verá fragmentos breves alrededor de cada coincidencia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il verra de courts extraits autour de chaque résultat."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedrà brevi estratti intorno a ogni corrispondenza."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tool ziet korte fragmenten rond elke overeenkomst."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobaczy krótkie fragmenty tekstu wokół każdego dopasowania."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai ver pequenos excertos à volta de cada correspondência."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он увидит короткие фрагменты текста вокруг каждого совпадения."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.list-open-tabs" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es sieht den Titel und die Adresse jedes Tabs in diesem Fenster."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see the title and address of each tab in this window."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verá el título y la dirección de cada pestaña de esta ventana."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il verra le titre et l'adresse de chaque onglet de cette fenêtre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedrà il titolo e l’indirizzo di ogni scheda in questa finestra."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tool ziet de titel en het adres van elk tabblad in dit venster."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobaczy tytuły i adresy każdej karty w tym oknie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai ver o título e o endereço de cada separador nesta janela."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он увидит заголовок и адрес каждой вкладки в этом окне."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.read-other-tab-content" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es sieht den Titel, die Adresse und den Text dieses Tabs."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see that tab's title, address and text."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verá el título, la dirección y el texto de esa pestaña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il verra le titre, l’adresse et le texte de cet onglet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedrà il titolo, l’indirizzo e il testo di quella scheda."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tool ziet de titel, het adres en de tekst van dat tabblad."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobaczy tytuł, adres i tekst tej karty."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai ver o título, o endereço e o texto desse separador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он увидит заголовок, адрес и текст этой вкладки."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.read-tab-content" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es sieht den Titel, die Adresse und den Text der Seite."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see the page's title, address, and text."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verá el título, la dirección y el texto de la página."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il verra le titre, l’adresse et le texte de la page."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedrà il titolo, l’indirizzo e il testo della pagina."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tool ziet de titel, het adres en de tekst van de pagina."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobaczy tytuł, adres i tekst strony."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai ver o título, o endereço e o texto da página."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он увидит заголовок, адрес и текст страницы."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.search-bookmarks" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es sieht die Titel, Adressen und Ordner deiner Lesezeichen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see the titles, addresses and folders of your bookmarks."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verá los títulos, las direcciones y las carpetas de tus marcadores."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il verra les titres, les adresses et les dossiers de tes favoris."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedrà i titoli, gli indirizzi e le cartelle dei tuoi segnalibri."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tool ziet de titels, adressen en mappen van je bladwijzers."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobaczy tytuły, adresy i foldery Twoich zakładek."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai ver os títulos, os endereços e as pastas dos teus marcadores."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он увидит названия, адреса и папки закладок."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.search-downloads" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es sieht die Namen und Quelladressen der Dateien, die du heruntergeladen hast."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see the names and source addresses of files you've downloaded."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verá los nombres y las direcciones de origen de los archivos que has descargado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il verra les noms et les adresses source des fichiers que tu as téléchargés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedrà i nomi e gli indirizzi di origine dei file che hai scaricato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tool ziet de namen en bronadressen van bestanden die je hebt gedownload."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobaczy nazwy i adresy źródłowe pobranych przez Ciebie plików."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai ver os nomes e os endereços de origem dos ficheiros que transferiste."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он увидит названия и исходные адреса скачанных тобой файлов."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.detail.search-history" : {
+      "comment" : "Duck.ai browser tool permission prompt: what the tool will see",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es sieht, welche Websites du besucht hast, auch vor diesem Chat."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It will see sites you've visited, including before this chat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verá los sitios que has visitado, incluso antes de este chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il verra les sites que vous avez visités, y compris ceux que vous avez visités avant cette discussion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedrà i siti che hai visitato, anche prima di questa chat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De tool ziet welke sites je hebt bezocht, ook vóór deze chat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobaczy odwiedzone przez Ciebie witryny, także te odwiedzone przed rozpoczęciem tego czatu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vai ver os sites que visitaste, incluindo os que visitaste antes desta conversa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Он увидит список посещённых вами сайтов, в том числе тех, которые вы посещали до этого чата."
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.bookmark-tab" : {
+      "comment" : "Title of the prompt asking to let Duck.ai bookmark a tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai einen Tab als Lesezeichen speichern?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to bookmark a tab?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai guarde una pestaña en los marcadores?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à ajouter un onglet aux favoris ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di aggiungere una scheda ai segnalibri?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan een tabblad als bladwijzer op te slaan?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na dodanie karty do zakładek?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai adicione um separador aos favoritos?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai добавить вкладку в закладки?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.close-tabs" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai Tabs schließen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to close tabs?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai cierre pestañas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à fermer des onglets ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di chiudere le schede?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan tabbladen te sluiten?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na zamykanie kart?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai feche separadores?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai закрывать вкладки?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.find-in-other-tab" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai die Funktion „Auf Seite suchen“ in einem anderen Tab verwenden?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to use Find in Page on another tab?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai use «Buscar en la página» en otra pestaña?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à utiliser la fonction Rechercher dans la page dans un autre onglet ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di usare Trova nella pagina in un'altra scheda?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan Zoeken op pagina op een ander tabblad te gebruiken?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na użycie funkcji „Znajdź na stronie” na innej karcie?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai utilize o Localizar na página noutro separador?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai использовать поиск по странице на другой вкладке?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.find-in-page" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai die Funktion „Auf Seite suchen“ in diesem Tab verwenden?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to use Find in Page on this tab?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai use «Buscar en la página» en esta pestaña?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à utiliser la fonction Rechercher dans la page dans cet onglet ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di usare Trova nella pagina in questa scheda?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan Zoeken op pagina op dit tabblad te gebruiken?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na użycie funkcji Znajdź na stronie na tej karcie?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai utilize Encontrar na página neste separador?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai использовать поиск по странице на этой вкладке?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.highlight-in-page" : {
+      "comment" : "Title of the prompt asking to let Duck.ai highlight text on a page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai Text auf dieser Seite markieren?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to highlight text on this page?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai resalte texto en esta página?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à surligner du texte sur cette page ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di evidenziare il testo in questa pagina?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan tekst op deze pagina te markeren?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na podświetlanie tekstu na tej stronie?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai realce texto nesta página?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai выделять текст на этой странице?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.list-open-tabs" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai deine geöffneten Tabs sehen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to see your open tabs?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai vea las pestañas abiertas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à voir tes onglets ouverts ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di vedere le schede aperte?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan je open tabbladen te zien?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na dostęp do otwartych kart?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai veja os teus separadores abertos?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai видеть открытые вкладки?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.open-tab" : {
+      "comment" : "Title of the prompt asking to let Duck.ai open a new tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai einen neuen Tab öffnen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to open a new tab?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai abra una pestaña nueva?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à ouvrir un nouvel onglet ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di aprire una nuova scheda?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan een nieuw tabblad te openen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na otwieranie nowych kart?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai abra um novo separador?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai открыть новую вкладку?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.other" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai ein Browser-Tool verwenden?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to use a browser tool?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai use una herramienta del navegador?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à utiliser un outil du navigateur ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di usare uno strumento del browser?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan een browsertool te gebruiken?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na korzystanie z narzędzia przeglądarki?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai utilize uma ferramenta do navegador?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai использовать инструмент браузера?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.pin-tab" : {
+      "comment" : "Title of the prompt asking to let Duck.ai pin a tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai einen Tab anpinnen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to pin a tab?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai ancle una pestaña?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à épingler un onglet ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di fissare una scheda?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan een tabblad vast te zetten?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na przypinanie kart?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai afixe um separador?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai закрепить вкладку?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.read-other-tab-content" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai den Inhalt eines anderen Tabs lesen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to read the content of another tab?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai lea el contenido de otra pestaña?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à lire le contenu d’un autre onglet ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di leggere il contenuto di un'altra scheda?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan de inhoud van een ander tabblad te lezen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na odczytywanie zawartości innej karty?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai leia o conteúdo de outro separador?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai читать содержимое другой вкладки?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.read-tab-content" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai den Inhalt dieses Tabs lesen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to read the content of this tab?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai lea el contenido de esta pestaña?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à lire le contenu de cet onglet ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di leggere il contenuto di questa scheda?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan de inhoud van dit tabblad te lezen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na odczytywanie zawartości tej karty?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai leia o conteúdo deste separador?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai читать содержимое этой вкладки?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.search-bookmarks" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai deine Lesezeichen durchsuchen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to search your bookmarks?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai busque en tus marcadores?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à effectuer une recherche dans vos signets ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di cercare nei tuoi segnalibri?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan je bladwijzers te doorzoeken?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na przeszukiwanie zakładek?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai pesquise nos teus marcadores?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai искать в закладках?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.search-downloads" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai deine Downloads durchsuchen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to search your downloads?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai busque en tus descargas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à effectuer une recherche dans vos téléchargements ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di cercare nei tuoi download?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan je downloads te doorzoeken?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na przeszukiwanie pobranych plików?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai pesquise nas tuas transferências?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai искать среди загруженных файлов?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.search-history" : {
+      "comment" : "Duck.ai browser tool permission prompt title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai deinen Browserverlauf durchsuchen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to search your browsing history?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai busque en tu historial de navegación?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à effectuer une recherche dans votre historique de navigation ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di cercare nella cronologia di navigazione?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan je browsegeschiedenis te doorzoeken?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na przeszukiwanie historii przeglądania?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai pesquise no teu histórico de navegação?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai искать в истории просмотров?"
+          }
+        }
+      }
+    },
+    "browser-tool.permission.title.switch-to-tab" : {
+      "comment" : "Title of the prompt asking to let Duck.ai switch tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Darf Duck.ai zu einem anderen Tab wechseln?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Duck.ai to switch to another tab?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que Duck.ai cambie a otra pestaña?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser Duck.ai à passer à un autre onglet ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consentire a Duck.ai di passare a un'altra scheda?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai toestaan naar een ander tabblad te schakelen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwolić Duck.ai na przełączanie się na inną kartę?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que o Duck.ai mude para outro separador?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить Duck.ai переключаться на другую вкладку?"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.bookmark-tab.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen für Seiten setzen und Lesezeichenordner hinzufügen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bookmark pages and add bookmark folders."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar páginas en marcadores y añadir carpetas de marcadores."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter des pages aux favoris et créer des dossiers de favoris."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungere pagine ai segnalibri e creare cartelle di segnalibri."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagina's als bladwijzer opslaan en bladwijzermappen toevoegen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodawanie strony do zakładek i tworzenie folderów zakładek."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Páginas aos Favoritos e Criar Pastas de Favoritos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавлять страницы в закладки и создавать папки закладок."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.bookmark-tab.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seite mit Lesezeichen versehen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bookmark Page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter la page aux signets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi la pagina ai segnalibri"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bladwijzer voor pagina maken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj stronę do zakładek"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar página"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить в закладки"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.caption" : {
+      "comment" : "Caption of the settings section for what Duck.ai can do in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lege fest, welche Aktionen Duck.ai im Browser ausführen kann und ob Duck.ai handeln kann, ohne jedes Mal um Erlaubnis zu fragen. Diese Einstellungen gelten für jede Website und jeden Chat."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose what actions Duck.ai can take in the browser, and whether it can act without asking for permission each time. These settings apply to every site and chat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige qué acciones puede realizar Duck.ai en el navegador y si puede hacerlo sin pedir permiso cada vez. Estos ajustes se aplican a todos los sitios y chats."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis les actions que Duck.ai peut effectuer dans le navigateur, et indique si tu l’autorises à agir sans demander la permission à chaque fois. Ces paramètres s’appliquent à tous les sites et à toutes les discussions."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli quali azioni può eseguire Duck.ai nel browser e se può agire senza chiedere il permesso ogni volta. Queste impostazioni si applicano a tutti i siti e a tutte le chat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies welke acties Duck.ai in de browser kan uitvoeren en of het acties kan uitvoeren zonder telkens om toestemming te vragen. Deze instellingen gelden voor elke site en chat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz, jakie działania Duck.ai może wykonywać w przeglądarce i czy może to robić bez każdorazowego pytania o zgodę. Te ustawienia dotyczą każdej witryny i każdego czatu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolhe que ações o Duck.ai pode realizar no navegador e se pode agir sem pedir autorização de cada vez. Estas definições aplicam-se a todos os sites e conversas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбери, какие действия Duck.ai может выполнять в браузере и может ли он делать это без запроса разрешения каждый раз. Эти настройки применяются ко всем сайтам и чатам."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.close-tabs.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs schließen, wenn du es darum bittest. Angepinnte Tabs bleiben geöffnet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close tabs you ask it to. Pinned tabs stay open."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar las pestañas que le pidas. Las pestañas ancladas permanecen abiertas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer les onglets que tu lui demandes de fermer. Les onglets épinglés restent ouverts."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudere le schede che gli chiedi di chiudere. Le schede fissate rimangono aperte."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen sluiten waar je om vraagt. Vastgezette tabbladen blijven open."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamykanie kart, które wskażesz. Przypięte karty pozostaną otwarte."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar os separadores que lhe pedires. Os separadores afixados permanecem abertos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрывать вкладки по твоей просьбе. Закреплённые вкладки остаются открытыми."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.close-tabs.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs schließen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Tabs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar pestañas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer les onglets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi schede"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij karty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar separadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть вкладки"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.find-in-page.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf einer Seite nach Text suchen und kurze Textausschnitte rund um jede Übereinstimmung anzeigen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find text on a page and see short snippets around each match."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar texto en una página y ver fragmentos breves alrededor de cada coincidencia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher du texte sur une page et voir de courts extraits autour de chaque résultat."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cercare testo in una pagina e vedere brevi estratti intorno a ogni corrispondenza."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekst op een pagina zoeken en korte fragmenten rond elke overeenkomst bekijken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyszukiwanie tekstu na stronie i wyświetlanie krótkich fragmentów wokół każdego dopasowania."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localizar texto numa página e ver pequenos excertos à volta de cada correspondência."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Искать текст на странице и просматривать короткие фрагменты вокруг каждого совпадения."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.find-in-page.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Seite suchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find in Page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en la página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher dans la page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova nella pagina"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek op pagina"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Znajdź na stronie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontrar na página"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найти на странице"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.highlight-in-page.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text auf einer Seite hervorheben, damit er leicht zu erkennen ist."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Highlight text on a page so it’s easy to spot."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resaltar texto en una página para que sea fácil de encontrar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Surligner du texte sur une page pour le repérer facilement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evidenzia il testo di una pagina per individuarlo facilmente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markeer tekst op een pagina zodat die makkelijk opvalt."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyróżnianie tekstu na stronie, aby łatwo było go zauważyć."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Realçar texto numa página para ser fácil de encontrar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выделять текст на странице, чтобы его было легко заметить."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.highlight-in-page.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf der Seite hervorheben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Highlight in Page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resaltar en la página"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Surbrillance dans la page"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evidenzia nella pagina"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markering op pagina"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyróżnienie na stronie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destaque na Página"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выделение на странице"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.list-open-tabs.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titel und Adresse jedes geöffneten Tabs sehen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "See the title and address of each open tab."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver el título y la dirección de cada pestaña abierta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir le titre et l’adresse de chaque onglet ouvert."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vedere il titolo e l’indirizzo di ogni scheda aperta."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De titel en het adres van elk geopend tabblad zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyświetlanie tytułu i adresu każdej otwartej karty."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver o título e o endereço de cada separador aberto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видеть заголовок и адрес каждой открытой вкладки."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.list-open-tabs.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offene Tabs auflisten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "List Open Tabs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listar pestañas abiertas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lister les onglets ouverts"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elenca schede aperte"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open tabbladen weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyświetl otwarte karty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listar separadores abertos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Список открытых вкладок"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.open-tab.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Seite in einem neuen Tab öffnen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open a page in a new tab."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir una página en una pestaña nueva."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une page dans un nouvel onglet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprire una pagina in una nuova scheda."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een pagina in een nieuw tabblad openen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwieranie strony w nowej karcie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir uma página num novo separador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывать страницу в новой вкладке."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.open-tab.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tab öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Tab"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir pestaña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir un onglet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri scheda"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabblad openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz kartę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir separador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть вкладку"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.pin-tab.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs am Anfang der Tableiste anpinnen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pin tabs to the start of the tab bar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anclar pestañas al inicio de la barra de pestañas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Épingler les onglets au début de la barre d’onglets."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fissare le schede all’inizio della barra delle schede."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen vastzetten aan het begin van de tabbladbalk."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przypinanie kart na początku paska kart."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afixar separadores no início da barra de separadores."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закреплять вкладки в начале панели вкладок."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.pin-tab.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs anpinnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pin Tabs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anclar pestañas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Épingler les onglets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fissa schede"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladen vastzetten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przypnij karty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fixar separadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрепить вкладки"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.read-tab-content.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titel, Adresse und Text eines Tabs lesen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read the title, address, and text of a tab."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer el título, la dirección y el texto de una pestaña."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lire le titre, l’adresse et le texte d’un onglet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leggere il titolo, l’indirizzo e il testo di una scheda."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De titel, het adres en de tekst van een tabblad lezen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odczytywanie tytułu, adresu i tekstu karty."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ler o título, o endereço e o texto de um separador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читать заголовок, адрес и текст вкладки."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.read-tab-content.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tab-Inhalt lesen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read Tab Content"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer el contenido de la pestaña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lire le contenu de l’onglet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leggi il contenuto della scheda"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabbladinhoud lezen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odczytaj zawartość karty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ler Conteúdo do Separador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Читать содержимое вкладки"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.reset" : {
+      "comment" : "Accessibility label of the button that resets one browser tool permission to its default",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Standardwerte zurücksetzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset to default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer a los valores predeterminados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rétablir les valeurs par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ripristina i valori predefiniti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herstellen naar standaard"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przywróć ustawienia domyślne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repor predefinição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить до настроек по умолчанию"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.reset-all" : {
+      "comment" : "Button that resets every browser tool permission to its default",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle zurücksetzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset All"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer todo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout réinitialiser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ripristina tutto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles herstellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przywróć wszystkie ustawienia domyślne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repor tudo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить всё"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.reset-tool" : {
+      "comment" : "Accessibility label of the button that resets one browser tool permission to its default. Parameter is the tool name, e.g. Search Downloads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ auf Standardwert zurücksetzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset %@ to default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer %@ a los valores predeterminados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rétablir %@ aux valeurs par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ripristina %@ ai valori predefiniti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ herstellen naar de standaardinstellingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przywróć %@ do ustawień domyślnych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repor %@ para a predefinição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить %@ до настроек по умолчанию"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-bookmarks.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durchsuche deine Lesezeichen und deren Ordner."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search your bookmarks and their folders."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en los marcadores y sus carpetas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effectuer une recherche dans vos signets et leurs dossiers."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cercare nei segnalibri e nelle relative cartelle."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je bladwijzers en de bijbehorende mappen doorzoeken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeszukiwanie zakładek i ich folderów."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar os teus marcadores e as respetivas pastas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Искать в закладках и их папках."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-bookmarks.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen durchsuchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search Bookmarks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar marcadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effectuer une recherche dans les signets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca segnalibri"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bladwijzers zoeken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyszukaj zakładki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar marcadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск по закладкам"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-downloads.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durchsuche die Namen und Quellen der Dateien, die du heruntergeladen hast."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the names and sources of files you’ve downloaded."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar los nombres y las direcciones de origen de los archivos que has descargado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher les noms et les sources des fichiers que vous avez téléchargés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cercare i nomi e le origini dei file che hai scaricato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De namen en bronadressen doorzoeken van bestanden die je hebt gedownload."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeszukiwanie nazwy i źródła pobranych przez Ciebie plików."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar os nomes e as origens dos ficheiros que transferiste."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Искать названия и исходные адреса скачанных вами файлов."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-downloads.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloads durchsuchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search Downloads"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar descargas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effectuer une recherche dans les téléchargements"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca nei download"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloads doorzoeken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeszukaj pobrane pliki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar Transferências"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск по загрузкам"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-history.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durchsuche die Websites, die du besucht hast, auch vor diesem Chat."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the sites you’ve visited, including before this chat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar los sitios que has visitado, incluso antes de este chat."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effectuer une recherche parmi les sites que vous avez visités, y compris avant cette discussion."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cercare i siti che hai visitato, anche prima di questa chat."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De sites doorzoeken die je hebt bezocht, ook vóór deze chat."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeszukiwanie odwiedzonych przez Ciebie witryn, także sprzed rozpoczęcia tego czatu."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar os sites que visitaste, incluindo os que visitaste antes desta conversa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Искать сайты, которые вы посещали, в том числе до этого чата."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.search-history.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browserverlauf durchsuchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search Browsing History"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar en el historial de navegación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effectuer une recherche dans l'historique de navigation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca nella cronologia di navigazione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsegeschiedenis doorzoeken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeszukaj historię przeglądania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar Histórico de Navegação"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История просмотров"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.switch-to-tab.detail" : {
+      "comment" : "What a browser tool lets Duck.ai do, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einen deiner geöffneten Tabs in den Vordergrund holen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bring one of your open tabs to the front."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poner una de tus pestañas abiertas en primer plano."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Placer l’un de tes onglets ouverts au premier plan."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portare in primo piano una delle tue schede aperte."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een van je open tabbladen naar de voorgrond halen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przenoszenie jednej z otwartych kart na pierwszy plan."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trazer um dos teus separadores abertos para primeiro plano."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переключать одну из открытых вкладок на передний план."
+          }
+        }
+      }
+    },
+    "browser-tool.settings.switch-to-tab.title" : {
+      "comment" : "Name of a browser tool Duck.ai can use, in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu Tab wechseln"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switch to Tab"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambiar a Pestaña"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer à l'onglet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passa alla scheda"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overschakelen naar tabblad"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przełącz na kartę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mudar para separador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перейти на вкладку"
+          }
+        }
+      }
+    },
+    "browser-tool.settings.title" : {
+      "comment" : "Title of the settings section for what Duck.ai can do in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browserzugriff"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser Access"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acceso al navegador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accès au navigateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accesso al browser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsertoegang"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostęp do przeglądarki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acesso ao navegador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ браузера"
+          }
+        }
+      }
+    },
     "burn.fireproofing.explanation.message" : {
       "comment" : "Explanation of what Fireproofing site cookies and data means.",
       "localizations" : {
@@ -27072,6 +31032,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Кстати, пока не забыл..."
+          }
+        }
+      }
+    },
+    "contextual.onboarding.thats-duck-ai.message" : {
+      "comment" : "Message of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. It invites them to delete that chat with the browser's Fire Button, which clears browsing data. Keep \"Fire Button\" as the app's name for it, and keep the * around it: they make it bold.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Private AI chats you can delete anytime with the *Fire Button*. Give it a try! 🔥"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.thats-duck-ai.title" : {
+      "comment" : "Title of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. \"Duck.ai\" is a product name: keep it as is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That’s Duck.ai!"
           }
         }
       }
@@ -61339,10 +65323,58 @@
       "comment" : "Label next to the History import option explaining that only the last 30 days of browsing history are imported",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letzte 30 Tage"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Last 30 days"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 30 días"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 derniers jours"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ultimi 30 giorni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afgelopen 30 dagen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostatnie 30 dni"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 30 dias"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За последние 30 дней"
           }
         }
       }
@@ -65502,10 +69534,58 @@
       "comment" : "Title text for the button to select the type of data to import when bookmarks, passwords and history are selected",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen, Passwörter und Verlauf importieren"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Import Bookmarks, Passwords, and History"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar marcadores, contraseñas e historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importer les signets, les mots de passe et l’historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importa segnalibri, password e cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bladwijzers, wachtwoorden en geschiedenis importeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importuj zakładki, hasła i historię"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar marcadores, palavras-passe e histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт закладок, паролей и истории"
           }
         }
       }
@@ -65574,10 +69654,58 @@
       "comment" : "Title text for the button to select the type of data to import when bookmarks and history are selected",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen und Verlauf importieren"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Import Bookmarks and History"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar marcadores e historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importer les signets et l’historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importa segnalibri e cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bladwijzers en geschiedenis importeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importuj zakładki i historię"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar marcadores e histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт закладок и истории"
           }
         }
       }
@@ -65586,10 +69714,58 @@
       "comment" : "Title text for the button to select the type of data to import when history selected",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf importieren"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Import History"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historial de importación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importer l'historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importa cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importgeschiedenis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importuj historię"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт истории"
           }
         }
       }
@@ -65658,10 +69834,58 @@
       "comment" : "Title text for the button to select the type of data to import when passwords and history are selected",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwörter und Verlauf importieren"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Import Passwords and History"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar contraseñas e historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importer les mots de passe et l’historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importa password e cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachtwoorden en geschiedenis importeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importuj hasła i historię"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar palavras-passe e histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт паролей и истории"
           }
         }
       }
@@ -65790,10 +70014,58 @@
       "comment" : "Instructions to import bookmarks, credit cards and history exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Öffne %2$@ **Safari → Datei → Browserdaten in Datei exportieren ...**\n%3$d Wähle aus **Lesezeichen, Kreditkarten** und **Verlauf** → **Exportieren** und speichere die Datei\n%4$d Lade die exportierte ZIP- oder HTML-Datei auf DuckDuckGo hoch"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Select from **Bookmarks, Credit Cards,** and **History** → **Export** and save the file\n%4$d Upload the exported ZIP or HTML file to DuckDuckGo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a un archivo...**\n%3$d Elige **Marcadores, tarjetas de crédito,** e **historial** → **Exportar** y guarda el archivo\n%4$d Sube el archivo ZIP o HTML exportado a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Ouvre %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Sélectionne **Signets, Cartes de crédit** et **Historique**, puis clique sur **Exporter** et enregistre le fichier\n%4$d Télécharge le fichier ZIP ou HTML exporté sur DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Seleziona **Segnalibri, Carte di credito** e **Cronologia** → **Esporta** e salva il file\n%4$d Carica il file ZIP o HTML esportato su DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsergegevens naar bestand…**\n%3$d Selecteer uit **Bladwijzers, Creditcards,** en **Geschiedenis** → **Exporteer/Download** en sla het bestand op\n%4$d Upload het geëxporteerde ZIP- of HTML-bestand naar DuckDuckGo"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku…**\n%3$d Wybierz **Zakładki, Karty kredytowe** i **Historia** → **Eksportuj** i zapisz plik\n%4$d Prześlij wyeksportowany plik ZIP lub HTML do DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Seleciona **Marcadores, cartões de crédito,** e **Histórico** → **Exportar** e guarda o ficheiro\n%4$d Carrega o ficheiro ZIP ou HTML exportado para o DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспортировать данные браузера в файл...**\n%3$d Выберите **Закладки, кредитные карты** и **История** → **Экспортировать** и сохраните файл\n%4$d Загрузите экспортированный ZIP-архив или HTML-файл в DuckDuckGo"
           }
         }
       }
@@ -65802,10 +70074,58 @@
       "comment" : "Instructions to import history exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Öffne %2$@ **Safari → Datei → Browserdaten in Datei exportieren ...**\n%3$d Wähle **Verlauf** → **Exportieren** und speichere die Datei\n%4$d Lade die exportierte ZIP-Datei auf DuckDuckGo hoch"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Select **History** → **Export** and save the file\n%4$d Upload the exported ZIP file to DuckDuckGo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a un archivo...**\n%3$d Elige **Historial** → **Exportar** y guarda el archivo\n%4$d Sube el archivo ZIP exportado a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Ouvrez %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Sélectionnez **Historique** → **Exporter** et enregistrez le fichier\n%4$d Téléchargez le fichier ZIP exporté sur DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Seleziona **Cronologia** → **Esporta** e salva il file\n%4$d Carica il file ZIP esportato su DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsergegevens naar bestand…**\n%3$d Selecteer **Geschiedenis** → **Exporteer/Download** en sla het bestand op\n%4$d Upload het geëxporteerde ZIP-bestand naar DuckDuckGo"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku…**\n%3$d Wybierz **Historia** → **Eksportuj** i zapisz plik\n%4$d Prześlij wyeksportowany plik ZIP do DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Seleciona **Histórico** → **Exportar** e guarda o ficheiro\n%4$d Carrega o ficheiro ZIP exportado para o DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспортировать данные браузера в файл...**\n%3$d Выберите **История** → **Экспортировать** и сохраните файл\n%4$d Загрузите экспортированный ZIP-архив в DuckDuckGo"
           }
         }
       }
@@ -65874,10 +70194,58 @@
       "comment" : "Instructions to import passwords, credit cards and history exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Öffne %2$@ **Safari → Datei → Browserdaten in Datei exportieren ...**\n%3$d Wähle **Passwörter, Kreditkarten** und **Verlauf** → **Exportieren** und speichere die Datei\n%4$d Lade die exportierte ZIP- oder CSV-Datei auf DuckDuckGo hoch"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Select from **Passwords, Credit Cards,** and **History** → **Export** and save the file\n%4$d Upload the exported ZIP or CSV file to DuckDuckGo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a un archivo...**\n%3$d Elige **Contraseñas, tarjetas de crédito,** e **historial** → **Exportar** y guarda el archivo\n%4$d Sube el archivo ZIP o CSV exportado a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Ouvre %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Sélectionne **Mots de passe, Cartes de crédit** et **Historique**, puis clique sur **Exporter** et enregistre le fichier\n%4$d Télécharge le fichier ZIP ou CSV exporté sur DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Seleziona **Password, Carte di credito** e **Cronologia** → **Esporta** e salva il file\n%4$d Carica il file ZIP o CSV esportato su DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsergegevens naar bestand…**\n%3$d Selecteer uit **Wachtwoorden, Creditcards,** en **Geschiedenis** → **Exporteer/Download** en sla het bestand op\n%4$d Upload het geëxporteerde ZIP- of CSV-bestand naar DuckDuckGo"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku...**\n%3$d Wybierz **Hasła, Karty kredytowe** i **Historia** → **Eksportuj** i zapisz plik\n%4$d Prześlij wyeksportowany plik ZIP lub CSV do DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Seleciona **Palavras-passe, cartões de crédito,** e **Histórico** → **Exportar** e guarda o ficheiro\n%4$d Carrega o ficheiro ZIP ou CSV exportado para o DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспортировать данные браузера в файл...**\n%3$d Выберите **Пароли, кредитные карты** и **История** → **Экспортировать** и сохраните файл\n%4$d Загрузите экспортированный ZIP-архив или CSV-файл в DuckDuckGo"
           }
         }
       }
@@ -65886,10 +70254,58 @@
       "comment" : "Instructions to import multiple data types, including history, exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Öffne %2$@ **Safari → Datei → Browserdaten in Datei exportieren ...**\n%3$d Wähle **Lesezeichen, Passwörter, Kreditkarten** und **Verlauf** → **Exportieren** und speichere die Datei\n%4$d Lade die exportierte ZIP- oder CSV-Datei auf DuckDuckGo hoch"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Select from **Bookmarks, Passwords, Credit Cards,** and **History** → **Export** and save the file\n%4$d Upload the exported ZIP or CSV file to DuckDuckGo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a un archivo...**\n%3$d Elige **Marcadores, contraseñas, tarjetas de crédito,** e **historial** → **Exportar** y guarda el archivo\n%4$d Sube el archivo ZIP o CSV exportado a DuckDuckGo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Ouvre %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Sélectionne parmi **Signets, Mots de passe, Cartes de crédit** et **Historique**, puis clique sur **Exporter** et enregistre le fichier\n%4$d Télécharge le fichier ZIP ou CSV exporté sur DuckDuckGo"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Seleziona tra **Segnalibri, Password, Carte di credito** e **Cronologia** → **Esporta** e salva il file\n%4$d Carica il file ZIP o CSV esportato su DuckDuckGo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsergegevens naar bestand…**\n%3$d Selecteer uit **Bladwijzers, Wachtwoorden, Creditcards,** en **Geschiedenis** → **Exporteer/Download** en sla het bestand op\n%4$d Upload het geëxporteerde ZIP- of CSV-bestand naar DuckDuckGo"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku...**\n%3$d Wybierz **Zakładki, Hasła, Karty kredytowe** i **Historia** → **Eksportuj** i zapisz plik\n%4$d Prześlij wyeksportowany plik ZIP lub CSV do DuckDuckGo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Seleciona **Marcadores, palavras-passe, cartões de crédito,** e **Histórico** → **Exportar** e guarda o ficheiro\n%4$d Carrega o ficheiro ZIP ou CSV exportado para o DuckDuckGo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспортировать данные браузера в файл...**\n%3$d Выберите **Закладки, пароли, кредитные карты** и **История** → **Экспортировать** и сохраните файл\n%4$d Загрузите экспортированный ZIP-архив или CSV-файл в DuckDuckGo"
           }
         }
       }
@@ -94450,10 +98866,58 @@
       "comment" : "Button on the About screen for App Store builds that opens DuckDuckGo in the Mac App Store",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open App Store"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir App Store"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre l’App Store"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri l’App Store"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz App Store"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir App Store"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть App Store"
           }
         }
       }
@@ -94462,10 +98926,58 @@
       "comment" : "Message on the About screen for App Store builds explaining how to turn on automatic updates in the App Store app",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erhalte die neuesten Fehlerbehebungen und Verbesserungen, sobald sie verfügbar sind. Wähle im App Store in der Menüleiste „App Store“ › „Einstellungen“ und aktiviere dann die automatischen Updates."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Get the latest fixes and improvements as soon as they're ready. In the App Store, choose App Store › Settings in the menu bar, then turn on Automatic Updates."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recibe las últimas correcciones y mejoras en cuanto estén listas. En App Store, elige App Store › Configuración en la barra de menús y luego activa Actualizaciones automáticas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtiens les dernières corrections et améliorations dès qu’elles sont prêtes. Dans l’App Store, sélectionne App Store › Réglages dans la barre des menus, puis active les mises à jour automatiques."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricevi le correzioni e i miglioramenti più recenti non appena disponibili. Nell'App Store, scegli App Store › Impostazioni nella barra dei menu, quindi attiva Aggiornamenti automatici."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krijg de nieuwste oplossingen en verbeteringen zodra ze klaar zijn. Kies in de menubalk App Store › Instellingen en schakel Automatische updates in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pobieraj najnowsze poprawki i ulepszenia, gdy tylko będą gotowe. W App Store wybierz na pasku menu App Store › Ustawienia, a następnie włącz Uaktualnienia automatyczne."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtém as correções e melhorias mais recentes assim que estiverem prontas. Na App Store, seleciona App Store › Definições na barra de menus e, em seguida, ativa as atualizações automáticas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Получайте последние исправления и улучшения сразу после их выхода. В App Store выберите «App Store › Настройки» в строке меню, затем включите «Автоматические обновления»."
           }
         }
       }
@@ -94474,10 +98986,58 @@
       "comment" : "Title of the card on the About screen for App Store builds that explains how to turn on automatic updates",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatische Updates aktivieren"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Turn on automatic updates"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activar las actualizaciones automáticas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer les mises à jour automatiques"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attiva gli aggiornamenti automatici"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatische updates inschakelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włącz automatyczne uaktualnienia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar atualizações automáticas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включи автоматические обновления"
           }
         }
       }
@@ -113820,66 +118380,6 @@
         }
       }
     },
-    "subscription.upsell.popover.plus.features.subtitle" : {
-      "comment" : "Subtitle shown in VPN Upsell popover when there is only one plus feature is listed",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ weitere Premium-Schutzmaßnahmen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "+ more premium protections"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ protecciones prémium adicionales"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ protections Premium supplémentaires"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ altre protezioni premium"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ meer premium beveiligingen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ więcej zabezpieczeń premium"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ proteções premium adicionais"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ другие виды премиум-защиты"
-          }
-        }
-      }
-    },
     "subscription.upsell.popover.plus.features.subtitle.count" : {
       "comment" : "Subtitle shown in VPN Upsell popover when there are multiple plus features listed",
       "extractionState" : "extracted_with_value",
@@ -119916,10 +124416,58 @@
       "comment" : "Title of the illustrated card at the top of the browser menu that tells the user a new version of the browser is available",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Version verfügbar"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "New version available"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva versión disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une nouvelle version est disponible"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova versione disponibile"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe versie beschikbaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostępna nowa wersja"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova versão disponível"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступна новая версия"
           }
         }
       }
@@ -119928,10 +124476,58 @@
       "comment" : "Button in the update banner at the top of the browser menu that opens DuckDuckGo in the App Store",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open App Store"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir App Store"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre l’App Store"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri l’App Store"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "APP STORE openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz App Store"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir App Store"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть App Store"
           }
         }
       }
@@ -119940,10 +124536,58 @@
       "comment" : "Title of the compact banner at the top of the browser menu in App Store builds that tells the user a new version is available in the App Store",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update verfügbar"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Update available"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualización disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mise à jour disponible"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiornamento disponibile"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update beschikbaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostępna aktualizacja"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualização disponível"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступно обновление"
           }
         }
       }
@@ -119952,10 +124596,58 @@
       "comment" : "Title of the compact banner at the top of the browser menu that tells the user an update is ready to install",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update bereit"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Update ready"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualización lista"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mise à jour prête"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiornamento pronto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update klaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualizacja gotowa"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualização pronta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновление готово"
           }
         }
       }
@@ -120024,10 +124716,58 @@
       "comment" : "Button in the update prompts in the browser menu. It restarts the browser to install an update that has already downloaded",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt neu starten"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Restart Now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiniciar ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redémarre maintenant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riavvia ora"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nu opnieuw opstarten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uruchom ponownie teraz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiniciar agora"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перезапусти сейчас"
           }
         }
       }
@@ -120036,10 +124776,58 @@
       "comment" : "Button in the update prompts in the browser menu. It downloads and installs the update",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt aktualisieren"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Update Now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar ahora"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettre à jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna ora"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nu updaten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaktualizuj teraz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar agora"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить"
           }
         }
       }
@@ -120108,10 +124896,58 @@
       "comment" : "Button next to the browser menu button that tells the user an update is available. It opens the App Store, or downloads and installs the update",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update verfügbar"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Update Available"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualización disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mise à jour disponible"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiornamento disponibile"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update beschikbaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostępna aktualizacja"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualização disponível"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступно обновление"
           }
         }
       }
@@ -120120,10 +124956,58 @@
       "comment" : "Button next to the browser menu button. It restarts the browser to install an update that has already downloaded",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Aktualisieren neu starten"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Restart To Update"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiniciar para actualizar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redémarrer pour mettre à jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riavvia per aggiornare"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start opnieuw om bij te werken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uruchom ponownie, aby zaktualizować"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reiniciar para atualizar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перезапустите для обновления"
           }
         }
       }
@@ -126473,6 +131357,126 @@
         }
       }
     },
+    "webExtensions.nativeMessagingUnavailable.dontShowAgain" : {
+      "comment" : "Checkbox in the alert shown when an extension tries to communicate with a desktop app in the App Store version of the browser. When ticked, the alert isn't shown again for that extension. %@ is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für %@ nicht erneut anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t show again for %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No volver a mostrar para %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne plus afficher pour %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non mostrare più per %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet meer weergeven voor %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie pokazuj więcej dla %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não mostrar novamente para %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Больше не показывать для %@"
+          }
+        }
+      }
+    },
+    "webExtensions.nativeMessagingUnavailable.title" : {
+      "comment" : "Title of the alert shown when an extension asks to communicate with a desktop app, which the App Store version of the browser can't allow. %@ is the extension name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kann keine Verbindung zu anderen Apps auf deinem Mac herstellen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ can’t connect to other apps on your Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ no puede conectarse a otras apps en el Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ne peut pas se connecter aux autres applications sur ton Mac"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ non può connettersi ad altre app sul tuo Mac"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kan geen verbinding maken met andere apps op je Mac"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ nie może łączyć się z innymi aplikacjami na Macu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ não consegue ligar-se a outras aplicações no Mac"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ не может подключаться к другим приложениям на Mac"
+          }
+        }
+      }
+    },
     "webExtensions.permissions.allow" : {
       "comment" : "Approve additional extension permissions",
       "extractionState" : "extracted_with_value",
@@ -127793,6 +132797,66 @@
         }
       }
     },
+    "webExtensions.permissions.nativeMessagingUnavailable" : {
+      "comment" : "Note below the permission list when an extension also asks to communicate with a desktop app, which the App Store version of the browser can't allow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Kommunikation mit anderen Apps auf deinem Mac ist in der App-Store-Version von DuckDuckGo nicht verfügbar."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Communicating with other apps on your Mac isn’t available in the App Store version of DuckDuckGo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La comunicación con otras apps en el Mac no está disponible en la versión de DuckDuckGo de App Store."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La communication avec d’autres applications sur ton Mac n’est pas disponible dans la version de DuckDuckGo de l’App Store."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La comunicazione con altre app sul tuo Mac non è disponibile nella versione di DuckDuckGo sull’App Store."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Communiceren met andere apps op je Mac is niet beschikbaar in de App Store-versie van DuckDuckGo."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komunikacja z innymi aplikacjami na Macu jest niedostępna w wersji DuckDuckGo z App Store."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A comunicação com outras aplicações no teu Mac não está disponível na versão da App Store do DuckDuckGo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обмен данными с другими приложениями на Mac недоступен в версии DuckDuckGo из App Store."
+          }
+        }
+      }
+    },
     "webExtensions.permissions.none" : {
       "comment" : "Extension requests no permissions",
       "extractionState" : "extracted_with_value",
@@ -129109,6 +134173,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Другие параметры"
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.message" : {
+      "comment" : "Explanation in an extension's details in Settings > Extensions after the extension tried to communicate with a desktop app, which the App Store version of the browser can't allow. A Learn More link follows it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erweiterungen in der App-Store-Version von DuckDuckGo können keine Verbindung zu anderen Apps herstellen, daher funktionieren Funktionen, die darauf angewiesen sind, nicht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Extensions in the App Store version of DuckDuckGo can't connect to other apps, so features that rely on this won't work."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las extensiones de la versión de DuckDuckGo de App Store no pueden conectarse a otras apps, por lo que las funciones que dependen de ello no funcionarán."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les extensions de la version de DuckDuckGo de l’App Store ne peuvent pas se connecter aux autres applications, donc les fonctionnalités qui en dépendent ne fonctionneront pas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le estensioni nella versione di DuckDuckGo sull’App Store non possono connettersi ad altre app, quindi le funzionalità che dipendono da questa possibilità non funzioneranno."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensies in de App Store-versie van DuckDuckGo kunnen geen verbinding maken met andere apps, dus functies die hiervan afhankelijk zijn, werken niet."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozszerzenia w wersji DuckDuckGo z App Store nie mogą łączyć się z innymi aplikacjami, dlatego funkcje, które od tego zależą, nie będą działać."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As extensões na versão do DuckDuckGo da App Store não conseguem ligar-se a outras aplicações, pelo que as funcionalidades que dependem disso não funcionarão."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Расширения браузера в версии DuckDuckGo из App Store не могут подключаться к другим приложениям, поэтому функции, зависящие от этого, не будут работать."
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.message.download" : {
+      "comment" : "Text at the bottom of the native mesasging limitation alert.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um alle Funktionen dieser Erweiterung nutzen zu können, lade DuckDuckGo direkt von duckduckgo.com/mac herunter."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "To use all of this extension's features, download DuckDuckGo directly from duckduckgo.com/mac."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para usar todas las funciones de esta extensión, descarga DuckDuckGo directamente desde duckduckgo.com/mac."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour utiliser toutes les fonctionnalités de cette extension, télécharge DuckDuckGo directement depuis duckduckgo.com/mac."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per usare tutte le funzionalità di questa estensione, scarica DuckDuckGo direttamente da duckduckgo.com/mac."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om alle functies van deze extensie te gebruiken, download je DuckDuckGo rechtstreeks van duckduckgo.com/mac."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aby korzystać ze wszystkich funkcji tego rozszerzenia, pobierz DuckDuckGo bezpośrednio ze strony duckduckgo.com/mac."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para usares todas as funcionalidades desta extensão, transfere o DuckDuckGo diretamente de duckduckgo.com/mac."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы использовать все функции этого расширения браузера, скачай DuckDuckGo напрямую с duckduckgo.com/mac."
+          }
+        }
+      }
+    },
+    "webExtensions.settings.nativeMessaging.title" : {
+      "comment" : "Title of a row in an extension's details in Settings > Extensions, and the accessibility label of the warning badge on its icon, after the extension tried to communicate with a desktop app, which the App Store version of the browser can't allow",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kann keine Verbindung zu anderen Apps auf deinem Mac herstellen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can’t connect to other apps on your Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se puede conectar a otras apps en el Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de se connecter aux autres applications sur ton Mac"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile connettersi ad altre app sul tuo Mac"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan geen verbinding maken met andere apps op je Mac"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można połączyć się z innymi aplikacjami na Twoim Macu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não consegue ligar-se a outras aplicações no Mac"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не может подключаться к другим приложениям на Mac"
           }
         }
       }

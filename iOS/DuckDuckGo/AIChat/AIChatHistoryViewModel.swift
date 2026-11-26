@@ -60,20 +60,30 @@ final class AIChatHistoryViewModel: ObservableObject {
     /// currently shown in `pinned`/`recent`.
     private(set) var totalChatCount: Int = 0
 
+    /// Every stored chat, unfiltered by search; nil until the first read and after a failed one, when nothing is known.
+    @Published private(set) var storedChatIds: Set<String>?
+
     private let reader: ChatHistoryReading
     private let fireExecutor: FireExecuting?
     private let downloader: ChatHistoryDownloading?
+    /// Read when an export starts, not when the list is built: a long-lived list would otherwise keep an empty catalog.
+    private let modelDisplays: () -> [String: ModelDisplay]
     private let pinner: ChatPinning?
     private let mutationQueue: DispatchQueue
     private let instrumentation: AIChatHistoryInstrumentation
     private let source: AIChatHistorySource
     private let featureFlagger: FeatureFlagger
+    private let simplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding
     private let isFireMode: Bool
     private var cancellables: Set<AnyCancellable> = []
 
     /// Gates the redesigned Chats UI (overflow menu + multi-select); off keeps the original layout.
     var isRedesignEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatHistoryMultiselect)
+    }
+
+    var showsDuckAISettingsButton: Bool {
+        isRedesignEnabled && simplifiedPromptBoxFeature.isAvailable
     }
 
     weak var delegate: AIChatHistoryViewModelDelegate?
@@ -83,6 +93,7 @@ final class AIChatHistoryViewModel: ObservableObject {
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         fireExecutor: FireExecuting? = nil,
         downloader: ChatHistoryDownloading? = nil,
+        modelDisplays: @escaping () -> [String: ModelDisplay] = { [:] },
         pinner: ChatPinning? = nil,
         source: AIChatHistorySource = .browserMenu,
         isFireMode: Bool = false,
@@ -91,8 +102,10 @@ final class AIChatHistoryViewModel: ObservableObject {
     ) {
         self.reader = reader
         self.featureFlagger = featureFlagger
+        self.simplifiedPromptBoxFeature = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger)
         self.fireExecutor = fireExecutor
         self.downloader = downloader
+        self.modelDisplays = modelDisplays
         self.pinner = pinner
         self.source = source
         self.isFireMode = isFireMode
@@ -129,6 +142,7 @@ final class AIChatHistoryViewModel: ObservableObject {
                 : allChats.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
             loadFailed = false
             totalChatCount = allChats.count
+            storedChatIds = Set(allChats.map(\.chatId))
             pinned = filtered.filter(\.pinned)
             recent = filtered.filter { !$0.pinned }
         case .failure(let error):
@@ -137,6 +151,7 @@ final class AIChatHistoryViewModel: ObservableObject {
             }
             loadFailed = true
             totalChatCount = 0
+            storedChatIds = nil
             pinned = []
             recent = []
         }
@@ -222,6 +237,11 @@ final class AIChatHistoryViewModel: ObservableObject {
         delegate?.viewModelDidRequestChatProtection()
     }
 
+    func openDuckAISettings(source: AIChatHistorySettingsSource) {
+        instrumentation.duckAISettingsTapped(source: source)
+        delegate?.viewModelDidRequestDuckAISettings()
+    }
+
     func deleteChat(chatId: String) {
         guard let fireExecutor else { return }
         instrumentation.chatDeleted()
@@ -290,11 +310,13 @@ final class AIChatHistoryViewModel: ObservableObject {
     private func exportChats(_ chatIds: [String], onExported: @escaping ([URL]) -> Void) {
         guard let downloader, !chatIds.isEmpty else { return }
         let instrumentation = instrumentation
+        // The catalog lives on the main actor, so it's read here before the export moves off it.
+        let modelDisplays = modelDisplays()
         mutationQueue.async {
             var urls: [URL] = []
             for chatId in chatIds {
                 do {
-                    urls.append(try downloader.downloadChat(chatId: chatId))
+                    urls.append(try downloader.downloadChat(chatId: chatId, modelDisplays: modelDisplays))
                 } catch {
                     Logger.aiChat.debug("Chat export failed: \(error.localizedDescription)")
                     instrumentation.downloadFailed(error: error)
@@ -416,6 +438,8 @@ protocol AIChatHistoryViewModelDelegate: AnyObject {
 
     /// Dismiss the sheet and open the Duck.ai chat protection page.
     func viewModelDidRequestChatProtection()
+
+    func viewModelDidRequestDuckAISettings()
 
     /// A chat export finished writing to disk. Present the "Download complete" toast for
     /// `filename` with a "Show" action that dismisses the sheet and opens the in-app

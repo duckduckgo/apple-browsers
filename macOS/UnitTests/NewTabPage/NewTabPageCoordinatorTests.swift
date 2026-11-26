@@ -201,7 +201,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             pinningManager: MockPinningManager(),
             fireDailyPixel: { self.firePixelCalls.append($0) },
-            dockCustomization: DockCustomizerMock()
+            dockCustomization: DockCustomizerMock(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter()
         )
     }
 

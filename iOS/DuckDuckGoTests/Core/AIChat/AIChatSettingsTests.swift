@@ -615,6 +615,39 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertTrue(secondInstance.isAIChatTabBarUserSettingsEnabled)
     }
 
+    // MARK: - Page summaries model
+
+    private func makePageSummariesSettings() -> AIChatSettings {
+        AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                       debugSettings: mockAIChatDebugSettings,
+                       keyValueStore: mockKeyValueStore,
+                       notificationCenter: mockNotificationCenter,
+                       featureFlagger: mockFeatureFlagger)
+    }
+
+    func testPageSummariesModelStartsWithDuckAI() {
+        XCTAssertEqual(makePageSummariesSettings().pageSummariesModel, .duckAI)
+    }
+
+    func testPageSummariesModelIsKeptAcrossInstances() {
+        let settings = makePageSummariesSettings()
+        settings.pageSummariesModel = .appleIntelligence
+
+        XCTAssertEqual(makePageSummariesSettings().pageSummariesModel, .appleIntelligence)
+    }
+
+    func testPageSummariesModelPublisherSendsTheCurrentValueThenChangesFromAnyInstance() {
+        let settings = makePageSummariesSettings()
+        let other = makePageSummariesSettings()
+        var received: [AIChatPageSummariesModel] = []
+        let cancellable = settings.pageSummariesModelPublisher.sink { received.append($0) }
+
+        other.pageSummariesModel = .appleIntelligence
+
+        XCTAssertEqual(received, [.duckAI, .appleIntelligence])
+        cancellable.cancel()
+    }
+
 }
 
 final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {

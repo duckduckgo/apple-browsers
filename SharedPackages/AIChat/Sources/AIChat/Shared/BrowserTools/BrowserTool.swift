@@ -25,11 +25,11 @@ public protocol BrowserTool: AnyObject {
     /// Stable capability identifier.
     var name: String { get }
 
-    /// `auto` never prompts; `ask` is subject to a stored Always/Never decision.
+    /// The default when the user hasn't chosen one in the prompt or in settings.
     var permissionMode: BrowserToolPermissionMode { get }
 
-    /// Shown to the user when an `ask` tool needs consent. Not localized, mirroring Windows.
-    var permissionReason: String { get }
+    /// A tool that changes the browser: it prompts on every call, a stored Always is ignored, and `requestAccess` never grants it.
+    var asksEveryTime: Bool { get }
 
     var inputSchema: JSONValue { get }
 
@@ -40,14 +40,21 @@ public protocol BrowserTool: AnyObject {
     /// Shapes a successful `execute` value into this capability's client-tools result: only the
     /// contract's fields, within its limits.
     func clientToolResult(from value: JSONValue) -> BrowserToolResult
+
+    /// The exact address the call acts on, shown in its prompt.
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String?
+
+    /// How many items a search or list tool returned in a `clientToolResult` value. Nil for every other tool.
+    func resultCount(of value: JSONValue) -> Int?
 }
 
 public extension BrowserTool {
-    var permissionReason: String { "Duck.ai wants to use a browser tool." }
+    var asksEveryTime: Bool { false }
     func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }
+    func permissionTarget(arguments: JSONValue?, context: BrowserToolCallContext) -> String? { nil }
+    func resultCount(of value: JSONValue) -> Int? { nil }
 }
 
-/// A tool's declared default. Distinct from the *stored* decision, which only Ask tools have.
 public enum BrowserToolPermissionMode: String, Equatable, Sendable {
     case auto
     case ask
@@ -97,4 +104,11 @@ public protocol BrowserToolsConfiguration: AnyObject {
 
     /// The tool's own sub-feature, already combined with the parent.
     func isToolEnabled(named name: String) -> Bool
+
+    /// The `requestAccess` sub-feature, already combined with the parent.
+    var isRequestAccessEnabled: Bool { get }
+}
+
+public extension BrowserToolsConfiguration {
+    var isRequestAccessEnabled: Bool { false }
 }

@@ -19,6 +19,7 @@
 
 import PrivacyConfig
 import AIChat
+import Combine
 import Foundation
 import Core
 import Persistence
@@ -385,6 +386,27 @@ final class AIChatSettings: AIChatSettingsProvider {
     
 }
 
+extension AIChatSettings: AIChatPageSummariesModelStoring {
+
+    var pageSummariesModel: AIChatPageSummariesModel {
+        get {
+            (keyValueStore.object(forKey: .pageSummariesModelKey) as? String).flatMap(AIChatPageSummariesModel.init(rawValue:)) ?? .duckAI
+        }
+        set {
+            keyValueStore.set(newValue.rawValue, forKey: .pageSummariesModelKey)
+            triggerSettingsChangedNotification()
+        }
+    }
+
+    /// Other `AIChatSettings` instances write to the same store, so this follows the shared notification.
+    var pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> {
+        notificationCenter.publisher(for: .aiChatSettingsChanged)
+            .compactMap { [weak self] _ in self?.pageSummariesModel }
+            .prepend(pageSummariesModel)
+            .eraseToAnyPublisher()
+    }
+}
+
 // MARK: - Keys for storage
 
 private extension String {
@@ -401,6 +423,7 @@ private extension String {
     static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
     static let isKeyboardAnimationEnabledKey = "aichat.settings.isKeyboardAnimationEnabled"
     static let defaultOmnibarModeKey = "aichat.settings.defaultOmnibarMode"
+    static let pageSummariesModelKey = "aichat.settings.pageSummariesModel"
 }
 
 enum LegacyAiChatUserDefaultsKeys {

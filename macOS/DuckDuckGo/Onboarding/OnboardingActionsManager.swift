@@ -100,6 +100,9 @@ protocol OnboardingActionsManaging {
 
     /// Used for any event sent exclusively for telemetry
     func reportTelemetryEvent(_ event: OnboardingUserScript.TelemetryEvent)
+
+    /// At the end of the onboarding the user submits a search or a Duck.ai prompt
+    func submitQuery(_ query: OnboardingUserScript.SubmitQuery)
 }
 
 protocol OnboardingNavigating: AnyObject {
@@ -112,12 +115,16 @@ protocol OnboardingNavigating: AnyObject {
 final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private let navigation: OnboardingNavigating
+    /// Looked up when used: the dialogs manager is created after the onboarding scripts.
+    private let pathStarter: () -> ContextualOnboardingPathStarting
     private let dockCustomization: DockCustomization
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let appearancePreferences: AppearancePreferences
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
+    /// Read on submit: the remote settings aren't ready when the onboarding scripts are created.
+    private let aiChatURL: () -> URL
     private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
@@ -188,11 +195,13 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private func isStepActive(_ step: OnboardingSteps) -> Bool {
         switch step {
         case .welcome, .getStarted, .makeDefaultSingle, .systemSettings, .customize, .addressBarMode:
-            true
+            return true
         case .duckPlayerSingle:
-            false
+            return false
         case .searchOrChat:
-            featureFlagger.isFeatureOn(.onboardingSearchOrChat)
+            // The Duck.ai path's dialogs need the rebranded layout, which needs macOS 13.
+            guard #available(macOS 13, *) else { return false }
+            return featureFlagger.isFeatureOn(.onboardingSearchOrChat)
         }
     }
 
@@ -211,6 +220,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     convenience init(
         navigationDelegate: OnboardingNavigating,
+        pathStarter: @escaping () -> ContextualOnboardingPathStarting,
         dockCustomization: DockCustomization,
         defaultBrowserProvider: DefaultBrowserProvider,
         appearancePreferences: AppearancePreferences,
@@ -230,6 +240,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         )
         self.init(
             navigationDelegate: navigationDelegate,
+            pathStarter: pathStarter,
             dockCustomization: dockCustomization,
             defaultBrowserProvider: defaultBrowserProvider,
             appearancePreferences: appearancePreferences,
@@ -250,24 +261,28 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     init(
         navigationDelegate: OnboardingNavigating,
+        pathStarter: @escaping () -> ContextualOnboardingPathStarting,
         dockCustomization: DockCustomization,
         defaultBrowserProvider: DefaultBrowserProvider,
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
         dataImportProvider: DataImportStatusProviding,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        aiChatURL: @escaping () -> URL = { AIChatRemoteSettings().aiChatURL },
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
         chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
     ) {
         self.navigation = navigationDelegate
+        self.pathStarter = pathStarter
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
         self.appearancePreferences = appearancePreferences
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.aiChatURL = aiChatURL
         self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
@@ -298,6 +313,27 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     @MainActor
     func goToSettings() {
         _ = leaveOnboarding(content: .settings(pane: nil))
+    }
+
+    @MainActor
+    func submitQuery(_ query: OnboardingUserScript.SubmitQuery) {
+        let text = query.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Nothing to search or send: leave onboarding as without the junction.
+        guard !text.isEmpty else {
+            goToAddressBar()
+            return
+        }
+        // To do: pixel (path chosen, from mode and source)
+        switch query.mode {
+        case .search:
+            // Before the tab changes, so the results page already gets the search path's dialogs.
+            pathStarter().startPath(.search)
+            _ = leaveOnboarding(content: .url(URL.makeSearchUrl(from: text) ?? .duckDuckGo, source: .ui))
+        case .duckAi:
+            // After the tab changes: the Duck.ai path will lock the UI, and a locked window can't replace its tab.
+            _ = leaveOnboarding(content: .aiChat(AIChatURLParameters.desktopOnboardingPromptURL(from: aiChatURL(), prompt: text)))
+            pathStarter().startPath(.duckAI)
+        }
     }
 
     @MainActor

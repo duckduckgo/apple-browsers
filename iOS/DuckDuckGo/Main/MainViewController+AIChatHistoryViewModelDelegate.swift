@@ -45,14 +45,19 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
     }
 
     private func startNewChatFromHistoryInPlace(in tab: TabViewController) {
+        beginNewChatFromHistory(in: tab)
+        dismiss(animated: true) { [weak self] in
+            self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
+        }
+    }
+
+    /// Starts a fresh chat in the Duck.ai tab the chats list was opened over.
+    func beginNewChatFromHistory(in tab: TabViewController) {
         fireAIChatEntryPointPixel(source: .chatHistoryNewChat, opensNewTab: false, hasPrompt: false)
         stampDuckAIEntrySourceOnCurrentTab(.chatHistoryNewChat)
         recordDuckAISessionNewChatCreatedOnCurrentTab()
         unifiedToggleInputCoordinator?.startNewChat()
         tab.submitStartChatAction()
-        dismiss(animated: true) { [weak self] in
-            self?.unifiedToggleInputCoordinator?.showExpanded(inputMode: .aiChat)
-        }
     }
 
     func viewModelDidRequestOpenChat(chatId: String) {
@@ -72,6 +77,23 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
             } else {
                 let url = AIChatURLParameters.chatProtectionURL(from: self.aiChatSettings.aiChatURL)
                 self.loadUrlRespectingAIBoundary(url)
+            }
+        }
+    }
+
+    func viewModelDidRequestDuckAISettings() {
+        duckAIInputFocus.forget()
+        dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            if let tab = self.currentTab, tab.isAITab {
+                if let coordinator = self.unifiedToggleInputCoordinator, coordinator.isAITabExpanded {
+                    coordinator.showCollapsed()
+                }
+                tab.submitOpenSettingsAction()
+            } else if let tab = self.currentTab {
+                tab.openSettingsInNewTab()
+            } else {
+                self.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
             }
         }
     }
@@ -102,8 +124,14 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
             actionTitle: UserText.actionGenericShow,
             presentationLocation: .withBottomBar(andAddressBarBottom: appSettings.currentAddressBarPosition.isBottom),
             onAction: { [weak self] in
-                self?.duckAIInputFocus.forget()
-                self?.dismiss(animated: true) { self?.segueToDownloads() }
+                guard let self else { return }
+                self.duckAIInputFocus.forget()
+                // The iPad sidebar isn't presented, so there's no sheet to close first.
+                guard self.presentedViewController != nil else {
+                    self.segueToDownloads()
+                    return
+                }
+                self.dismiss(animated: true) { self.segueToDownloads() }
             }
         )
     }

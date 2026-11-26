@@ -25,6 +25,7 @@ public protocol WideEventSending {
         _ data: T,
         status: WideEventStatus,
         featureFlagProvider: WideEventFeatureFlagProviding,
+        options: PixelKit.Options,
         onComplete: @escaping PixelKit.CompletionBlock
     )
 }
@@ -66,6 +67,7 @@ public final class DefaultWideEventSender: WideEventSending {
         _ data: T,
         status: WideEventStatus,
         featureFlagProvider: WideEventFeatureFlagProviding,
+        options: PixelKit.Options = .default,
         onComplete: @escaping PixelKit.CompletionBlock
     ) {
         guard let pixelName = Self.generatePixelName(for: T.metadata.pixelName) else {
@@ -87,7 +89,7 @@ public final class DefaultWideEventSender: WideEventSending {
         writeToValidationLog(data: data, status: status, isFirstDailyOccurrence: isFirstDailyOccurrence)
 #endif
 
-        firePixels(pixelName: pixelName, parameters: parameters, onComplete: onComplete)
+        firePixels(pixelName: pixelName, parameters: parameters, options: options, onComplete: onComplete)
         storage.recordSentTimestamp(for: T.metadata.type, date: Date())
         sendPOSTRequest(data: data, status: status, isFirstDailyOccurrence: isFirstDailyOccurrence)
     }
@@ -147,7 +149,7 @@ public final class DefaultWideEventSender: WideEventSending {
         #endif
     }
 
-    private func firePixels(pixelName: String, parameters: [String: String], onComplete: @escaping PixelKit.CompletionBlock) {
+    private func firePixels(pixelName: String, parameters: [String: String], options: PixelKit.Options, onComplete: @escaping PixelKit.CompletionBlock) {
         guard let pixelKit = pixelKitProvider() else {
             Self.logger.error("Cannot fire wide event: PixelKit not initialized")
             onComplete(false, WideEventError.invalidFlowState)
@@ -157,12 +159,9 @@ public final class DefaultWideEventSender: WideEventSending {
         let event = WideEventPixelKitEvent(name: pixelName, parameters: parameters, standardParameters: [])
 
         pixelKit.fire(
-            event,
+            event: event,
             frequency: .daily,
-            withHeaders: nil,
-            withAdditionalParameters: nil,
-            allowedQueryReservedCharacters: nil,
-            includeAppVersionParameter: true,
+            options: options,
             onComplete: { success, error in
                 if success {
                     Self.logger.info("Daily wide event pixel sent successfully: \(pixelName, privacy: .public)")
@@ -173,12 +172,9 @@ public final class DefaultWideEventSender: WideEventSending {
         )
 
         pixelKit.fire(
-            event,
+            event: event,
             frequency: .standard,
-            withHeaders: nil,
-            withAdditionalParameters: nil,
-            allowedQueryReservedCharacters: nil,
-            includeAppVersionParameter: true,
+            options: options,
             onComplete: { success, error in
                 if success {
                     Self.logger.info("Wide event pixel sent successfully: \(pixelName, privacy: .public)")

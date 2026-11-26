@@ -29,8 +29,8 @@ struct OnboardingAIModelsFallbackTests {
 
     // The baked last-resort list, restated independently so a change to it is caught here.
     private enum BakedDefault {
-        static let ids = ["gpt-5.4-nano", "claude-haiku-4-5", "mistral-small-2603"]
-        static let providers: [OnboardingAIProvider] = [.openai, .anthropic, .mistral]
+        static let ids = ["gpt-5.4-nano", "claude-haiku-4-5", "tinfoil/gemma4-31b"]
+        static let providers: [OnboardingAIProvider] = [.openai, .anthropic, .tinfoil]
         static let defaultModelId = "gpt-5.4-nano"
     }
 
@@ -118,14 +118,14 @@ struct OnboardingAIModelsFallbackTests {
     func unknownDefaultWithoutOpenAIFallsBackToFirstModel() {
         // GIVEN no OpenAI model and a default that isn't in the list
         let sut = makeSUT(settingsJSON: """
-            { "defaultModelId": "missing", "models": [{"id": "c", "provider": "anthropic"}, {"id": "m", "provider": "mistral"}] }
+            { "defaultModelId": "missing", "models": [{"id": "c", "provider": "anthropic"}, {"id": "tinfoil/gemma4-31b", "provider": "tinfoil"}] }
             """)
 
         // WHEN
         let result = sut.aiModels
 
         // THEN
-        #expect(result.models.map(\.id) == ["c", "m"])
+        #expect(result.models.map(\.id) == ["c", "tinfoil/gemma4-31b"])
         #expect(result.defaultModelId == "c")
     }
 
@@ -186,7 +186,7 @@ struct OnboardingAIModelsFallbackTests {
                             "models": [
                                 { "id": "gpt-5.4-nano", "provider": "openai", "modelShortName": "5.4-nano" },
                                 { "id": "claude-haiku-4-5", "provider": "anthropic", "modelShortName": "Haiku 4.5" },
-                                { "id": "mistral-small-2603", "provider": "mistral", "modelShortName": "Mistral" }
+                                { "id": "tinfoil/gemma4-31b", "provider": "tinfoil", "modelShortName": "Gemma" }
                             ]
                         }
                     },
@@ -208,9 +208,9 @@ struct OnboardingAIModelsFallbackTests {
         let result = sut.aiModels
 
         // THEN
-        #expect(result.models.map(\.id) == ["gpt-5.4-nano", "claude-haiku-4-5", "mistral-small-2603"])
-        #expect(result.models.map(\.provider) == [.openai, .anthropic, .mistral])
-        #expect(result.models.map(\.modelShortName) == ["5.4-nano", "Haiku 4.5", "Mistral"])
+        #expect(result.models.map(\.id) == ["gpt-5.4-nano", "claude-haiku-4-5", "tinfoil/gemma4-31b"])
+        #expect(result.models.map(\.provider) == [.openai, .anthropic, .tinfoil])
+        #expect(result.models.map(\.modelShortName) == ["5.4-nano", "Haiku 4.5", "Gemma"])
         #expect(result.defaultModelId == "gpt-5.4-nano")
     }
 

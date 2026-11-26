@@ -147,24 +147,24 @@ extension Preferences {
                     }
                 }
 
-                if model.isSponsorBlockAvailable {
-                    PreferencePaneSection(SponsorBlockCopy.sectionHeader) {
-                        TextMenuItemCaption(SponsorBlockCopy.explanation)
+                if model.isSegmentSkipAvailable {
+                    PreferencePaneSection(SegmentSkipCopy.sectionHeader) {
+                        TextMenuItemCaption(SegmentSkipCopy.explanation)
 
                         Spacer().frame(height: 4)
 
-                        ToggleMenuItem(SponsorBlockCopy.toggle, isOn: $model.sponsorBlockEnabled)
-                            .accessibilityIdentifier("Preferences.SponsorBlock.enabledToggle")
+                        ToggleMenuItem(SegmentSkipCopy.toggle, isOn: $model.segmentSkipEnabled)
+                            .accessibilityIdentifier("Preferences.SegmentSkip.enabledToggle")
 
-                        if model.sponsorBlockEnabled {
-                            Picker(SponsorBlockCopy.skipModeLabel, selection: $model.sponsorBlockSkipMode) {
-                                Text(verbatim: SponsorBlockCopy.manual).tag(SponsorBlockSkipMode.manual)
-                                Text(verbatim: SponsorBlockCopy.auto).tag(SponsorBlockSkipMode.auto)
+                        if model.segmentSkipEnabled {
+                            Picker(SegmentSkipCopy.skipModeLabel, selection: $model.segmentSkipMode) {
+                                Text(verbatim: SegmentSkipCopy.manual).tag(SegmentSkipMode.manual)
+                                Text(verbatim: SegmentSkipCopy.auto).tag(SegmentSkipMode.auto)
                             }
                             .pickerStyle(.menu)
                             .fixedSize()
                             .padding(.leading, 19)
-                            .accessibilityIdentifier("Preferences.SponsorBlock.skipModePicker")
+                            .accessibilityIdentifier("Preferences.SegmentSkip.skipModePicker")
                         }
                     }
                 }
@@ -216,7 +216,7 @@ extension Preferences {
     }
 }
 
-private enum SponsorBlockCopy {
+private enum SegmentSkipCopy {
     static let sectionHeader = "Sponsor Segments"
     static let toggle = "Skip sponsor segments"
     static let explanation = "Marks sponsored segments on the video progress bar. Manual mode shows a Skip button, Automatic mode skips them for you."

@@ -28,6 +28,8 @@ import DesignResourcesKitIcons
 struct AIChatHistoryEmptyStateView: View {
 
     @ObservedObject var viewModel: AIChatHistoryViewModel
+    /// The iPad sidebar leaves it out: its toolbar keeps New Chat, and Duck.ai is already open beside it.
+    var showsOpenButton = true
 
     var body: some View {
         VStack(spacing: 24) {
@@ -39,10 +41,12 @@ struct AIChatHistoryEmptyStateView: View {
                     .multilineTextAlignment(.center)
             }
 
-            Button(action: viewModel.emptyStateCTATapped) {
-                Text(UserText.aiChatHistoryEmptyStateOpenDuckAi)
+            if showsOpenButton {
+                Button(action: viewModel.emptyStateCTATapped) {
+                    Text(UserText.aiChatHistoryEmptyStateOpenDuckAi)
+                }
+                .buttonStyle(PrimaryButtonStyle(fullWidth: false))
             }
-            .buttonStyle(PrimaryButtonStyle(fullWidth: false))
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 56)

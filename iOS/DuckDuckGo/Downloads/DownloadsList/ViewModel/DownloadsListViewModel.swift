@@ -33,7 +33,7 @@ class DownloadsListViewModel: ObservableObject {
     private let dataSource: DownloadsListDataSource
     private var subscribers: Set<AnyCancellable> = []
     
-    init(dataSource: DownloadsListDataSource) {
+    init(dataSource: DownloadsListDataSource, locale: Locale = .autoupdatingCurrent) {
         Logger.general.debug("DownloadsListViewModel init")
 
         self.dataSource = dataSource
@@ -42,7 +42,7 @@ class DownloadsListViewModel: ObservableObject {
             .sink { [weak self] in
                 Logger.general.debug("DownloadsListViewModel changed - ongoing:\($0.ongoingDownloads.count) complete:\($0.completeDownloads.count)")
 
-                self?.sections = DownloadsListSectioningHelper().makeSections(from: $0.ongoingDownloads + $0.completeDownloads)
+                self?.sections = DownloadsListSectioningHelper(locale: locale).makeSections(from: $0.ongoingDownloads + $0.completeDownloads)
             }
             .store(in: &subscribers)
     }

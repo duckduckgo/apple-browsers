@@ -24,6 +24,7 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import WebExtensions
+import WebExtensionsTestSupport
 import WebKit
 import XCTest
 
@@ -88,7 +89,7 @@ final class CPMErrorPageMonitoringTests: XCTestCase {
         let detector = MockMaliciousSiteProtectionManager()
         detector.threatKind = .phishing
         let monitor = RecordingCPMHealthMonitor()
-        let manager = StubWebExtensionManager(monitor: monitor)
+        let manager = makeWebExtensionManager(monitor: monitor)
         let tab = Tab(content: .none,
                       webViewConfiguration: schemeHandler.webViewConfiguration(),
                       privacyFeatures: privacyFeaturesMock,
@@ -114,7 +115,7 @@ final class CPMErrorPageMonitoringTests: XCTestCase {
     @MainActor
     private func assertErrorPageIsReportedAsErrorPage(failure: NSError, expectedErrorCode: Int) async throws {
         let monitor = RecordingCPMHealthMonitor()
-        let manager = StubWebExtensionManager(monitor: monitor)
+        let manager = makeWebExtensionManager(monitor: monitor)
         let tab = Tab(content: .none,
                       webViewConfiguration: schemeHandler.webViewConfiguration(),
                       privacyFeatures: privacyFeaturesMock,
@@ -153,6 +154,13 @@ final class CPMErrorPageMonitoringTests: XCTestCase {
                        "no commit of the failed URL may be an ordinary navigation: \(events)", file: file, line: line)
     }
 
+    /// A tab only asks its web extension manager for the health monitor.
+    private func makeWebExtensionManager(monitor: CPMMessagingHealthMonitoring) -> MockWebExtensionManaging {
+        let manager = MockWebExtensionManaging()
+        manager.cpmMessagingHealthMonitor = monitor
+        return manager
+    }
+
     @MainActor
     private func waitUntil(timeout: TimeInterval, _ condition: () -> Bool) async -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
@@ -176,53 +184,4 @@ private final class RecordingCPMHealthMonitor: CPMMessagingHealthMonitoring, @un
             events.append("committed:\(url.absoluteString):kind=\(navigationKind.rawValue)")
         }
     }
-}
-
-/// A web extension manager that only provides the health monitor, which is all a tab asks for.
-@available(macOS 15.4, *)
-private final class StubWebExtensionManager: WebExtensionManaging {
-
-    let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
-    let badgeColors = WebExtensionBadgeColorStore()
-    let eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
-    let extensionsDirectory = FileManager.default.temporaryDirectory
-    let loadedExtensions: Set<WKWebExtensionContext> = []
-    let webExtensionIdentifiers: [String] = []
-    let extensionUpdates = AsyncStream<Void>.makeStream().stream
-    let lifecycleEvents = AsyncStream<WebExtensionLifecycleEvent>.makeStream().stream
-
-    init(monitor: CPMMessagingHealthMonitoring) {
-        self.cpmMessagingHealthMonitor = monitor
-    }
-
-    func attachExtensions(to configuration: WKWebViewConfiguration) {}
-    func loadInstalledExtensions() async {}
-    func reloadInstalledExtensions() async {}
-    func installExtension(from sourceURL: URL) async throws {}
-    func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws {}
-    func uninstallExtension(identifier: String) throws {}
-    func uninstallAllExtensions() -> [Result<Void, Error>] { [] }
-    func syncEmbeddedExtensions(enabledTypes: Set<DuckDuckGoWebExtensionType>) async {}
-    func uninstallEmbeddedExtension(type: DuckDuckGoWebExtensionType) {}
-    func installedEmbeddedExtension(for type: DuckDuckGoWebExtensionType) -> InstalledWebExtension? { nil }
-    func installedExtensionPath(for type: DuckDuckGoWebExtensionType) -> URL? { nil }
-    func unloadAllExtensions() {}
-    func reloadExtension(identifier: String) async throws {}
-    func disableExtension(identifier: String) async throws {}
-    func enableExtension(identifier: String) async throws {}
-    func installedExtension(identifier: String) -> InstalledWebExtension? { nil }
-    func isRemotelyDisabled(identifier: String) -> Bool { false }
-    func extensionName(for identifier: String) -> String? { nil }
-    func extensionVersion(for identifier: String) -> String? { nil }
-    func extensionPermissions(for identifier: String) -> [String] { [] }
-    func extensionMatchPatterns(for identifier: String) -> [String] { [] }
-    @MainActor func hasAccessToPrivateData(for identifier: String) -> Bool? { nil }
-    @MainActor func hasHitNativeMessagingLimitation(identifier: String) -> Bool { false }
-    @MainActor func isNativeMessagingAlertSuppressed(identifier: String) -> Bool { false }
-    @MainActor func suppressNativeMessagingAlert(identifier: String) {}
-    @MainActor func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
-    func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
-    func context(for identifier: String) -> WKWebExtensionContext? { nil }
-    func clearCachedScriptlets() {}
-    func scriptletDebugInfo() -> [ScriptletDebugInfo] { [] }
 }

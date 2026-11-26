@@ -22,8 +22,19 @@ import Foundation
 @_spi(Testing)
 public final class MockURLProtocol: URLProtocol {
 
-    public static var lastRequest: URLRequest?
-    public static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data?))?
+    // startLoading() runs on a different thread per session, so concurrent requests write this at the same time.
+    public static var lastRequest: URLRequest? {
+        get { lock.withLock { _lastRequest } }
+        set { lock.withLock { _lastRequest = newValue } }
+    }
+    private static let lock = NSLock()
+    private static var _lastRequest: URLRequest?
+    public typealias RequestHandler = (URLRequest) throws -> (HTTPURLResponse, Data?)
+    private static var _requestHandler: RequestHandler?
+    public static var requestHandler: RequestHandler? {
+        get { lock.withLock { _requestHandler } }
+        set { lock.withLock { _requestHandler = newValue } }
+    }
     public override class func canInit(with request: URLRequest) -> Bool { true }
     public override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 

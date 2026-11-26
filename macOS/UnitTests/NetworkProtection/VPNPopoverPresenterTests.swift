@@ -51,7 +51,6 @@ final class VPNPopoverPresenterTests: XCTestCase {
 
         sut = DefaultVPNUpsellPopoverPresenter(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             buttonDelegate: buttonDelegate,
             pixelHandler: { pixel in
                 self.firedPixels.append(pixel)

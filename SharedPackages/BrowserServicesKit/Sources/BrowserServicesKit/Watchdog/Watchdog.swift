@@ -24,12 +24,17 @@ import os.log
 
 // MARK: - Settings
 
-public struct WatchdogSettings {
+public struct WatchdogSettings: Sendable {
     let checkInterval: TimeInterval
     let minimumHangDuration: TimeInterval
     let maximumHangDuration: TimeInterval
     let requiredRecoveryHeartbeats: Int
     let timeoutRepeatCooldown: TimeInterval
+
+    /// A tick arriving later than this means the watchdog itself was stalled (e.g. App Nap)
+    var lateTickThreshold: TimeInterval {
+        checkInterval * 2
+    }
 
     public static let `default` = WatchdogSettings(checkInterval: 0.5, minimumHangDuration: 2.0, maximumHangDuration: 5.0, requiredRecoveryHeartbeats: 4, timeoutRepeatCooldown: 60.0)
 }
@@ -156,6 +161,7 @@ private extension Watchdog {
 
         timestamps.signalHangRecovered()
         timestamps.signalHeartbeat()
+        _ = timestamps.signalTick()
 
         detectionState = .responsive
         paused = false
@@ -214,10 +220,19 @@ private extension Watchdog {
     }
 
     func performHangDetection() {
+        let secondsSinceLastTick = timestamps.signalTick()
+        if secondsSinceLastTick > settings.lateTickThreshold, detectionState == .responsive {
+            /// Late tick: the watchdog was stalled (e.g. App Nap), so no heartbeat was requested meanwhile.
+            /// The last heartbeat is old because of us, not because the main thread was blocked.
+            /// Restart the baseline now: otherwise, the next tick would count the stalled time as a hang.
+            /// Only while responsive: during a hang, this reset would be mistaken for a recovery heartbeat.
+            timestamps.signalHeartbeat()
+        }
+
         let secondsSinceLastHeartbeat = timestamps.secondsSinceLastHeartbeat
         let secondsSinceHangStarted = timestamps.secondsSinceHangStarted
 
-        let nextState = WatchdogDetectionState.nextState(currentState: detectionState, settings: settings, secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, secondsSinceHangStarted: secondsSinceHangStarted)
+        let nextState = WatchdogDetectionState.nextState(currentState: detectionState, settings: settings, secondsSinceLastTick: secondsSinceLastTick, secondsSinceLastHeartbeat: secondsSinceLastHeartbeat, secondsSinceHangStarted: secondsSinceHangStarted)
         if nextState == detectionState {
             return
         }

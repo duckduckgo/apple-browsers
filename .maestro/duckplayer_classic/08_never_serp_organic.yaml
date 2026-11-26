@@ -32,9 +32,8 @@ tags:
     file: shared/load_serp_url.yaml
 
 # Tap on video in organic results
-- assertVisible: ${output.videoTitle}.*
-- tapOn: 
-    text: ${output.videoTitle}.*
+- runFlow:
+    file: shared/tap_serp_watch_result.yaml
 
 # Wait for results to load
 - waitForAnimationToEnd

@@ -33,6 +33,7 @@ import DataBrokerProtection_iOS
 import Subscription
 import WebExtensions
 import PixelKit
+import WebPageTranslation
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -66,6 +67,8 @@ class SettingsLegacyViewProvider: ObservableObject {
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
     let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
+    let translationModels: TranslationModels?
+    let aiChatLocalModel: AIChatLocalModelDependencies?
     let daxGreetingDebugging: DaxGreetingDebugging
 
     init(syncService: any DDGSyncing,
@@ -93,7 +96,9 @@ class SettingsLegacyViewProvider: ObservableObject {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
          promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
-         promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil) {
+         promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil,
+         translationModels: TranslationModels? = nil,
+         aiChatLocalModel: AIChatLocalModelDependencies? = nil) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -119,6 +124,8 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
         self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
+        self.translationModels = translationModels
+        self.aiChatLocalModel = aiChatLocalModel
         self.daxGreetingDebugging = daxGreetingDebugging
     }
     
@@ -175,7 +182,9 @@ class SettingsLegacyViewProvider: ObservableObject {
             aiChatBonusMessageLog: self.aiChatBonusMessageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
             promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter,
-            daxGreetingDebugging: self.daxGreetingDebugging))
+            translationModels: self.translationModels,
+            daxGreetingDebugging: self.daxGreetingDebugging,
+            aiChatLocalModel: self.aiChatLocalModel))
     }
 
     // Legacy UIKit Views (Pushed unmodified)
@@ -183,9 +192,6 @@ class SettingsLegacyViewProvider: ObservableObject {
     var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
     var keyboard: UIViewController {
-        guard AppDependencyProvider.shared.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
-            return KeyboardSettingsViewController()
-        }
         let controller = UIHostingController(rootView: KeyboardSettingsView())
         controller.title = UserText.settingsKeyboard
         return controller

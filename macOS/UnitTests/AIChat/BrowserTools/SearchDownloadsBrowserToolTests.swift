@@ -78,6 +78,8 @@ final class SearchDownloadsBrowserToolTests: XCTestCase {
         XCTAssertEqual(defaulted.results?.count, 10)
         XCTAssertEqual(defaulted.results?.first?["fileName"], "file59.pdf")
         XCTAssertEqual(limited.results?.count, 50)
+        guard case .success(let value) = limited else { return XCTFail("expected success, got \(limited)") }
+        XCTAssertEqual(tool.resultCount(of: value), 50)
     }
 
     func testWhenArgumentsAreMalformedThenTheyAreInvalid() async {

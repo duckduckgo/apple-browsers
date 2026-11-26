@@ -731,6 +731,65 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.downloads.state.then === undefined")
     }
 
+    // MARK: - Downloads
+
+    #if os(macOS)
+    func testWhenDownloadOptionsAreReused_ThenEachRequestUsesItsOriginalURLAndFilename() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var requests = [];
+        var webkit = { messageHandlers: { "\(WebExtensionAPIStubScript.downloadMessageHandlerName)": {
+            postMessage: function(request) {
+                requests.push(request);
+                return Promise.resolve({ id: requests.length, filename: request.filename });
+            }
+        } } };
+        var setTimeout = function() {};
+        var name = 'first';
+        var urlReads = 0, filenameReads = 0;
+        var options = {
+            get url() { urlReads++; return 'data:,' + name; },
+            get filename() { filenameReads++; return name + '.txt'; }
+        };
+        var ids;
+        var first = chrome.downloads.download(options);
+        name = 'second';
+        var second = chrome.downloads.download(options);
+        options.saveAs = true;
+        Promise.all([first, second]).then(function(result) { ids = result; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("JSON.stringify(ids) === '[1,2]'")
+        try assertTrue("urlReads === 2 && filenameReads === 2")
+        try assertTrue("requests[0].url === 'data:,first' && requests[0].filename === 'first.txt'")
+        try assertTrue("requests[1].url === 'data:,second' && requests[1].filename === 'second.txt'")
+    }
+
+    func testWhenDownloadOptionsAreInvalidAtCallTime_ThenThePromiseAndCallbackReceiveTheError() throws {
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var promiseError, callbackError, unsupportedError;
+        var getterError = new Error('Cannot read URL');
+        var options = { get url() { throw getterError; }, filename: 'file.txt' };
+        chrome.downloads.download(options, function(id) {
+            if (id === undefined) { callbackError = chrome.runtime.lastError.message; }
+        }).catch(function(error) { promiseError = error; });
+
+        var unsupported = { url: 'data:,text', filename: 'file.txt', saveAs: true };
+        chrome.downloads.download(unsupported).catch(function(error) { unsupportedError = error.message; });
+        delete unsupported.saveAs;
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("promiseError === getterError && callbackError === getterError.message")
+        try assertTrue("chrome.runtime.lastError === undefined")
+        try assertTrue("unsupportedError === 'Unsupported download options'")
+    }
+    #endif
+
     // MARK: - Idle
 
     func testWhenIdleIsQueried_ThenTheReplyIsHandedToThePromiseAndTheCallback() throws {
@@ -949,6 +1008,56 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     // MARK: - App Permissions
 
+    func testCombinedRequestReservesInteractionBeforeTheHostPromptResolves() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler()
+        context.evaluateScript("""
+        var resolveHost;
+        chrome.permissions.request = function() {
+            if (appPreparations.length !== 1) { throw new Error('Interaction was not reserved first'); }
+            return new Promise(function(resolve) { resolveHost = resolve; });
+        };
+        """)
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy', 'tabs'] })")
+        try assertTrue("permissionsResult === 'pending' && appRequests.length === 0")
+        context.evaluateScript("resolveHost(true);")
+
+        try assertNoExceptions()
+        try assertTrue("permissionsResult === true")
+        try assertTrue("appRequests[0].requestIdentifier === 'reservation'")
+    }
+
+    func testCombinedRequestCancelsReservationWhenTheHostRefuses() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy', 'management'] })")
+
+        try assertTrue("permissionsResult === false")
+        try assertTrue("appPreparations.length === 1 && appCancellations.length === 1")
+        try assertTrue("appRequests.length === 0")
+    }
+
+    func testCombinedRequestCancelsReservationWhenTheHostFails() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler()
+        context.evaluateScript("chrome.permissions.request = function() { return Promise.reject(new Error('Host failed')); };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hostError = '';
+        chrome.permissions.request({ permissions: ['privacy', 'tabs'] }).catch(function(error) { hostError = error.message; });
+        """)
+
+        try assertNoExceptions()
+        try assertTrue("hostError === 'Host failed'")
+        try assertTrue("appPreparations.length === 1 && appCancellations.length === 1")
+        try assertTrue("appRequests.length === 0")
+    }
+
     func testWhenPrivacyIsAskedAbout_ThenTheAppAnswersAndTheHostIsNotAsked() throws {
         try installFakePermissions()
         try installFakePermissionsHandler()
@@ -982,7 +1091,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissionsHandler(granted: ["privacy"])
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'management'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -1011,7 +1120,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissionsHandler()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy', 'downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy', 'management'] })")
 
         try assertTrue("permissionsResult === false")
         try assertTrue("appRequests.length === 0")
@@ -1515,7 +1624,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['management'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -1535,7 +1644,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging', 'downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['nativeMessaging', 'management'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -1556,7 +1665,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         var unknownCallbackResult = 'pending';
         var grantedCallbackResult = 'pending';
-        chrome.permissions.contains({ permissions: ['downloads'] }, function(result) { unknownCallbackResult = result; });
+        chrome.permissions.contains({ permissions: ['management'] }, function(result) { unknownCallbackResult = result; });
         chrome.permissions.contains({ permissions: ['nativeMessaging'] }, function(result) { grantedCallbackResult = result; });
         """)
         try assertNoExceptions()
@@ -1569,7 +1678,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("(function() { var contains = chrome.permissions.contains; return contains({ permissions: ['downloads'] }); })()")
+        try evaluatePermissionsCall("(function() { var contains = chrome.permissions.contains; return contains({ permissions: ['management'] }); })()")
 
         try assertTrue("permissionsResult === false")
     }
@@ -1578,7 +1687,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['management'] })")
         try assertTrue("permissionsResult === false")
 
         try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['nativeMessaging'] })")
@@ -1589,7 +1698,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['downloads', 'nativeMessaging'] })")
+        try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['management', 'nativeMessaging'] })")
 
         try assertTrue("permissionsResult === true")
         try assertTrue("permissionsLog.removed.length === 1 && permissionsLog.removed[0] === 'nativeMessaging'")
@@ -1605,7 +1714,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         context.evaluateScript("""
         var permissionsError = 'pending';
-        chrome.permissions.contains({ permissions: ['downloads'] }).then(function() {
+        chrome.permissions.contains({ permissions: ['management'] }).then(function() {
             permissionsError = 'unexpectedly resolved';
         }, function(error) {
             permissionsError = String(error && error.message);
@@ -1621,13 +1730,13 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         context.evaluateScript("""
         chrome.permissions.contains = function(descriptor) {
             permissionsLog.contains.push(descriptor);
-            throw invalidPermissionError('contains', 'downloads');
+            throw invalidPermissionError('contains', 'management');
         };
         """)
         try assertNoExceptions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['management'] })")
 
         try assertTrue("permissionsResult === false")
     }
@@ -1636,11 +1745,11 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakePermissions()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['management'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['management'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['management'] })")
 
-        try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'downloads' permission\") !== -1; }).length === 1")
+        try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'management' permission\") !== -1; }).length === 1")
     }
 
     func testWhenPermissionsIsWrapped_ThenTheNamespaceAndEventsAreUntouched() throws {
@@ -1768,10 +1877,10 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try installFakeReporting()
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['downloads'] })")
-        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['downloads'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['management'] })")
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['management'] })")
 
-        try assertReports("[{\"kind\":\"missing\",\"api\":\"permission:downloads\"}]")
+        try assertReports("[{\"kind\":\"missing\",\"api\":\"permission:management\"}]")
     }
 
     func testWhenAStubIsSerializedOrConverted_ThenNothingIsReported() throws {
@@ -1789,14 +1898,14 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try evaluateStubScript()
 
         context.evaluateScript("""
-        chrome.downloads.download.call(null, {});
+        chrome.downloads.cancel.call(null, 1);
         chrome.downloads.pause.apply(null, [1]);
         chrome.downloads.resume.bind(null)(1);
         """)
         try assertNoExceptions()
 
         try assertReports("""
-        [{"kind":"stubbed","api":"downloads.download"},\
+        [{"kind":"stubbed","api":"downloads.cancel"},\
         {"kind":"stubbed","api":"downloads.pause"},\
         {"kind":"stubbed","api":"downloads.resume"}]
         """)
@@ -2002,10 +2111,10 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     /// Mirrors WebKit's `chrome.permissions`: it answers for the permissions it implements and
     /// rejects the whole call with its validation error as soon as one name is not among them.
     /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy`, `idle` and
-    /// `offscreen` are unknown but handled by the stub script, so `downloads` stands in for a truly unknown name.
+    /// `offscreen` are unknown but handled by the stub script, so `management` stands in for a truly unknown name.
     private func installFakePermissions() throws {
         context.evaluateScript("""
-        var unknownPermissions = ['privacy', 'idle', 'offscreen', 'downloads'];
+        var unknownPermissions = ['privacy', 'idle', 'offscreen', 'downloads', 'management'];
         var grantedPermissions = ['nativeMessaging'];
         var permissionsLog = { contains: [], request: [], remove: [], removed: [] };
 
@@ -2142,10 +2251,20 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         let grantedList = granted.map { "'\($0)'" }.joined(separator: ", ")
         context.evaluateScript("""
         var appRequests = [];
+        var appPreparations = [];
+        var appCancellations = [];
         var appGranted = [\(grantedList)];
         var webkit = { messageHandlers: {
             "\(WebExtensionAPIStubScript.permissionsMessageHandlerName)": {
                 postMessage: function(payload) {
+                    if (payload.action === 'prepareRequest') {
+                        appPreparations.push(payload);
+                        return Promise.resolve(\(fails) ? null : 'reservation');
+                    }
+                    if (payload.action === 'cancelRequest') {
+                        appCancellations.push(payload);
+                        return Promise.resolve(true);
+                    }
                     appRequests.push(payload);
                     if (\(fails)) {
                         return Promise.reject(new Error('nope'));

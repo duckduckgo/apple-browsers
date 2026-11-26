@@ -35,7 +35,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
     func test_emptyInput_whenAIVoiceChatBecomesInactive_showsDisabledSubmitButton() {
         let sut = UnifiedToggleInputToolbarView()
         sut.isSubmitEnabled = false
-        sut.isAIVoiceChatActive = true
+        sut.voiceButton = .available
 
         guard let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut) else {
             XCTFail("Expected to find submit button")
@@ -43,7 +43,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         }
         XCTAssertTrue(submitButton.isEnabled)
 
-        sut.isAIVoiceChatActive = false
+        sut.voiceButton = .hidden
 
         XCTAssertFalse(submitButton.isEnabled)
     }
@@ -199,7 +199,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
     /// Voice is a way into a chat the allowance can't pay for either, so it greys out with submit.
     func test_isInputBlockedByUsageLimit_disablesTheVoiceButton() {
         let sut = UnifiedToggleInputToolbarView()
-        sut.isAIVoiceChatActive = true
+        sut.voiceButton = .available
 
         let submitButton = findButton(accessibilityLabel: UserText.aiChatToolbarSubmitButtonAccessibilityLabel, in: sut)
         XCTAssertTrue(submitButton?.isEnabled ?? false, "Voice is live on an empty input")
@@ -207,6 +207,69 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         sut.isInputBlockedByUsageLimit = true
 
         XCTAssertFalse(submitButton?.isEnabled ?? true)
+    }
+
+    // MARK: - Voice unavailable in this chat
+
+    func testUnavailableVoiceShowsTheVoiceGlyphDimmedButStaysTappable() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        var voiceTaps = 0
+        var submitTaps = 0
+        sut.onVoiceTapped = { voiceTaps += 1 }
+        sut.onSubmitTapped = { submitTaps += 1 }
+
+        sut.voiceButton = .unavailable(message: "Unavailable in chats with files")
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.voice)
+        XCTAssertTrue(submitButton.isEnabled)
+        assertColor(submitButton.backgroundColor, matches: .controlsFillPrimary)
+        XCTAssertEqual(submitButton.accessibilityLabel, UserText.aiChatToolbarSubmitButtonAccessibilityLabel)
+        XCTAssertTrue(submitButton.accessibilityTraits.contains(.notEnabled))
+        XCTAssertEqual(submitButton.accessibilityHint, "Unavailable in chats with files")
+
+        submitButton.sendActions(for: .touchUpInside)
+
+        XCTAssertEqual(voiceTaps, 1, "The tap goes to voice, which says why it can't start")
+        XCTAssertEqual(submitTaps, 0)
+    }
+
+    func testTypingTurnsUnavailableVoiceIntoSend() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.voiceButton = .unavailable(message: "Unavailable in chats with files")
+
+        sut.isSubmitEnabled = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.arrowUp)
+        XCTAssertFalse(submitButton.accessibilityTraits.contains(.notEnabled))
+        XCTAssertNil(submitButton.accessibilityHint)
+    }
+
+    func testAvailableVoiceKeepsTodaysLook() throws {
+        let sut = UnifiedToggleInputToolbarView()
+
+        sut.voiceButton = .available
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertEqual(submitButton.currentImage, DesignSystemImages.Glyphs.Size24.voice)
+        XCTAssertTrue(submitButton.isEnabled)
+        XCTAssertFalse(submitButton.accessibilityTraits.contains(.notEnabled))
+        XCTAssertNil(submitButton.accessibilityHint)
+    }
+
+    func testWhileGeneratingTheStopButtonReplacesVoice() throws {
+        for voiceButton: UnifiedToggleInputVoiceButton in [.available, .unavailable(message: "m")] {
+            let sut = UnifiedToggleInputToolbarView()
+            sut.voiceButton = voiceButton
+
+            sut.isGenerating = true
+
+            let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+            let stopButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.StopGenerating", in: sut))
+            XCTAssertTrue(submitButton.isHidden)
+            XCTAssertFalse(stopButton.isHidden)
+        }
     }
 
     // MARK: - Terms of Service submit button
@@ -256,7 +319,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
     func testWhenTheTermsLabelShowsOnAnEmptyInputThenItReplacesTheVoiceButtonDisabledUntilTyping() throws {
         let sut = UnifiedToggleInputToolbarView()
         sut.isSubmitEnabled = false
-        sut.isAIVoiceChatActive = true
+        sut.voiceButton = .available
 
         sut.termsOfServiceSendButton = .ask
 
@@ -274,7 +337,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
     func testWhenTheTermsLabelGoesAwayOnAnEmptyInputThenTheVoiceButtonReturns() throws {
         let sut = UnifiedToggleInputToolbarView()
         sut.isSubmitEnabled = false
-        sut.isAIVoiceChatActive = true
+        sut.voiceButton = .available
         sut.termsOfServiceSendButton = .create
 
         sut.termsOfServiceSendButton = nil
@@ -641,7 +704,7 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
     func testWhenTextIsTypedWithTheTermsUnacceptedThenTheLevelIsTheSame() {
         let sut = makeFittingToolbar()
         sut.reservesTermsOfServiceSendButton = true
-        sut.isAIVoiceChatActive = true
+        sut.voiceButton = .available
         sut.isSubmitEnabled = false
         let container = layOut(sut, width: sut.rowFit.minimumToolbarWidth(at: .full))
         XCTAssertEqual(sut.compactLevel, .full, "The empty input already counts the Ask label")

@@ -1681,6 +1681,19 @@ extension MainViewController: UnifiedToggleInputDelegate {
         onDuckAIVoiceModeRequested()
     }
 
+    /// Same tab, same chat: the page hides the input itself once voice starts.
+    func unifiedToggleInputDidRequestAIVoiceChatInCurrentChat() {
+        pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped,
+                          options: .parameters([PixelParameters.source: VoiceEntryPointSource.duckAIChat.rawValue]))
+        guard !presentNoMicPermissionReminderIfNeeded() else { return }
+        unifiedToggleInputCoordinator?.dismissOmnibarKeyboard()
+        unifiedToggleInputCoordinator?.startVoiceSessionInCurrentChat()
+    }
+
+    func unifiedToggleInputDidTapUnavailableAIVoiceChat(message: String) {
+        ActionMessageView.present(message: message)
+    }
+
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
         // Coordinator-resolved: empty = untouched prefill (open Duck.ai, no prompt), else submit as the prompt.
         openUnifiedToggleInputAIShortcutChat(prompt: prefilledText.trimmingWhitespace())

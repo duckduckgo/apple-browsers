@@ -22,6 +22,15 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
 
+/// The voice button in the toolbar's submit slot while the input is empty.
+enum UnifiedToggleInputVoiceButton: Equatable {
+    /// The send arrow instead, disabled until the user types.
+    case hidden
+    case available
+    /// The voice glyph in the inactive fill; a tap shows `message`, the page's reason.
+    case unavailable(message: String)
+}
+
 /// Horizontal toolbar with leading action buttons, a trailing model or selected-tool chip, and submit controls.
 final class UnifiedToggleInputToolbarView: UIView {
 
@@ -59,8 +68,12 @@ final class UnifiedToggleInputToolbarView: UIView {
 
     // MARK: - State
 
-    var isAIVoiceChatActive: Bool = false {
-        didSet { updateSubmitButtonAppearance() }
+    /// What the submit slot shows while the input is empty.
+    var voiceButton: UnifiedToggleInputVoiceButton = .hidden {
+        didSet {
+            guard oldValue != voiceButton else { return }
+            updateSubmitButtonAppearance()
+        }
     }
 
     var isSubmitEnabled: Bool = false {
@@ -874,7 +887,7 @@ private extension UnifiedToggleInputToolbarView {
 
     /// The "Ask" or "Create" label replaces the voice button too, disabled until the user types.
     private var showsVoiceButton: Bool {
-        isAIVoiceChatActive && !isSubmitEnabled && !isEditing && !isSubmitBlockedByMissingPromptText && !isPreparingInitialPrompt
+        voiceButton != .hidden && !isSubmitEnabled && !isEditing && !isSubmitBlockedByMissingPromptText && !isPreparingInitialPrompt
             && (preservedTermsOfServiceSendButton ?? termsOfServiceSendButton) == nil
     }
 
@@ -909,6 +922,8 @@ private extension UnifiedToggleInputToolbarView {
         } else if labelTitle != nil {
             // An enabled "Ask" is the disclaimer's call to action, so it keeps the primary fill in every style.
             submitButton.applyPrimaryButtonStyle()
+        } else if case .unavailable = voiceButton, showVoice {
+            applyAIVoiceChatUnavailableStyle()
         } else if showVoice {
             submitButton.applyAIVoiceChatStyle()
         } else if usesReturnKeyStyle {
@@ -916,6 +931,7 @@ private extension UnifiedToggleInputToolbarView {
         } else {
             submitButton.applySubmitStyle(isActive: isActive, isFireTab: isFireTab, activeForeground: .white)
         }
+        updateVoiceUnavailableAccessibility(showsVoice: showVoice)
         if isPreparingInitialPrompt {
             preparationIndicator.startAnimating()
         } else {
@@ -923,6 +939,24 @@ private extension UnifiedToggleInputToolbarView {
         }
         // The labels the row reserves come and go with the terms state, not with what the button shows.
         setNeedsLayout()
+    }
+
+    /// Still tappable, so a tap can say why voice can't continue this chat.
+    private func applyAIVoiceChatUnavailableStyle() {
+        submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
+    }
+
+    /// Unavailable voice reads as dimmed, with the page's reason as the hint.
+    private func updateVoiceUnavailableAccessibility(showsVoice: Bool) {
+        var traits: UIAccessibilityTraits = .button
+        if case .unavailable(let message) = voiceButton, showsVoice {
+            traits.insert(.notEnabled)
+            submitButton.accessibilityHint = message
+        } else {
+            submitButton.accessibilityHint = nil
+        }
+        if !submitButton.isEnabled { traits.insert(.notEnabled) }
+        submitButton.accessibilityTraits = traits
     }
 
     func updateGeneratingVisibility() {

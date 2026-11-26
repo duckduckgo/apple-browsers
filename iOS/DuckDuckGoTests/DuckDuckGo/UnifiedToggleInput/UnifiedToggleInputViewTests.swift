@@ -1085,7 +1085,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
 
     func test_recoveryCardBlock_leavesVoiceButtonUntouched_whenNoContent() throws {
         let sut = UnifiedToggleInputToolbarView()
-        sut.isAIVoiceChatActive = true
+        sut.voiceButton = .available
         sut.isSubmitEnabled = false
         sut.isSubmitBlockedByRecoveryCard = true
 

@@ -242,8 +242,8 @@ final class UnifiedToggleInputView: UIView {
     private(set) var isExpanded = false
     private var currentLayout: UnifiedToggleInputCardLayout = .collapsed
 
-    var isToolbarAIVoiceChatActive: Bool = false {
-        didSet { toolsToolbar.isAIVoiceChatActive = isToolbarAIVoiceChatActive }
+    var toolbarVoiceButton: UnifiedToggleInputVoiceButton = .hidden {
+        didSet { toolsToolbar.voiceButton = toolbarVoiceButton }
     }
 
     var isToolbarSubmitBlockedByRecoveryCard: Bool = false {

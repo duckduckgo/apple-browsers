@@ -1944,6 +1944,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         fetchModels()
     }
 
+    /// Asks the bound page to continue its chat by voice, only while it last said it can.
+    func startVoiceSessionInCurrentChat() {
+        guard hasSubmittedPrompt, toolbarVoiceButton == .available, let boundUserScript else { return }
+        boundUserScript.submitStartVoiceSessionInCurrentChat()
+    }
+
     func startNewChat() {
         Logger.unifiedInputState.debug("startNewChat [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
         attachmentController.resetPasteConversation()
@@ -2936,8 +2942,20 @@ private extension UnifiedToggleInputCoordinator {
 
     // MARK: Toolbar
 
+    /// Continuing a chat by voice belongs to the Duck.ai tab's own input, not the contextual sheet.
+    private var continuesChatsByVoice: Bool {
+        host == .omnibar && featureFlagger.isFeatureOn(.aiChatVoiceInExistingChat)
+    }
+
+    var toolbarVoiceButton: UnifiedToggleInputVoiceButton {
+        UnifiedToggleInputVoiceButton(isDuckAIMode: inputMode == .aiChat,
+                                      hasSubmittedPrompt: hasSubmittedPrompt,
+                                      continuesChatsByVoice: continuesChatsByVoice,
+                                      availability: voiceInChatAvailability)
+    }
+
     func updateToolbarAIVoiceChat() {
-        viewController.isToolbarAIVoiceChatActive = inputMode == .aiChat && !hasSubmittedPrompt
+        viewController.toolbarVoiceButton = toolbarVoiceButton
     }
 
     func applyToolbarPresentation() {
@@ -3140,13 +3158,31 @@ private extension UnifiedToggleInputCoordinator {
     func subscribeToAIVoiceChatTap() {
         viewController.handler.aiVoiceChatButtonTappedPublisher
             .sink { [weak self] in
-                guard let self else { return }
-                let hasPendingPageContext = self.hasPendingPageContextProvider?() ?? false
-                self.pixelReporter.reportVoiceTapped(hasPendingPageContext: hasPendingPageContext)
-                self.inputOutcomeMeasurement.record(.voiceStarted)
-                self.delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+                self?.handleAIVoiceChatTap()
             }
             .store(in: &cancellables)
+    }
+
+    /// A chat with messages continues by voice, or says why it can't; anything else starts a new voice chat as before.
+    private func handleAIVoiceChatTap() {
+        switch (hasSubmittedPrompt, toolbarVoiceButton) {
+        case (true, .unavailable(let message)):
+            if case .unavailable(let reason, _) = voiceInChatAvailability {
+                pixelReporter.reportVoiceInChatUnavailableTapped(reason: reason)
+            }
+            delegate?.unifiedToggleInputDidTapUnavailableAIVoiceChat(message: message)
+        case (true, .available):
+            reportVoiceStarted()
+            delegate?.unifiedToggleInputDidRequestAIVoiceChatInCurrentChat()
+        default:
+            reportVoiceStarted()
+            delegate?.unifiedToggleInputDidRequestAIVoiceChat()
+        }
+    }
+
+    private func reportVoiceStarted() {
+        pixelReporter.reportVoiceTapped(hasPendingPageContext: hasPendingPageContextProvider?() ?? false)
+        inputOutcomeMeasurement.record(.voiceStarted)
     }
 
     func subscribeToClearButtonTap() {
@@ -3259,5 +3295,29 @@ extension UnifiedToggleInputCoordinator {
             isFirstPrompt: isFirstPrompt,
             hasPageContext: hasPageContext
         )
+    }
+}
+
+// MARK: - Voice Button
+
+extension UnifiedToggleInputVoiceButton {
+
+    /// A new chat always offers voice. A chat with messages follows the page: available, unavailable
+    /// with the page's reason for the reasons web explains, and hidden otherwise or until it says.
+    init(isDuckAIMode: Bool,
+         hasSubmittedPrompt: Bool,
+         continuesChatsByVoice: Bool,
+         availability: AIChatVoiceInChatAvailability?) {
+        guard isDuckAIMode else { self = .hidden; return }
+        guard hasSubmittedPrompt else { self = .available; return }
+        guard continuesChatsByVoice else { self = .hidden; return }
+        switch availability {
+        case .available:
+            self = .available
+        case .unavailable(let reason, let message?) where reason != .unavailable && !message.isEmpty:
+            self = .unavailable(message: message)
+        case .unavailable, nil:
+            self = .hidden
+        }
     }
 }

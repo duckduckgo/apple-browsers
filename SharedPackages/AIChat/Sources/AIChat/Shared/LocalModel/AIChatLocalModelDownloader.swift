@@ -94,9 +94,23 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
             state = .notInstalled
         }
         stateSubject = CurrentValueSubject(state)
-        // An app update or remote config can switch models. The earlier model's file, a gigabyte or more,
-        // would otherwise stay until the user taps Install or Uninstall.
-        removeModelFiles(keeping: [spec.fileName, spec.fileName + ".part"])
+        removeRetiredModelFiles()
+    }
+
+    /// Models the app used to offer by default. Their files stayed on disk after the switch until the
+    /// user tapped Install or Uninstall.
+    static let retiredSHA256s: Set<String> = [
+        "227e78e2fb9a3e5699190be0ce0885fd2ea72a242ed1bf718c2148c45dd090b5" // Granite 4.0 1B, Q4_0
+    ]
+
+    /// Only files of retired models. Any other model may be one that remote config names again after a
+    /// rollback, so it goes only when the user installs or uninstalls.
+    private func removeRetiredModelFiles() {
+        for sha256 in Self.retiredSHA256s where sha256 != spec.sha256 {
+            for name in ["\(sha256).gguf", "\(sha256).gguf.part"] {
+                try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))
+            }
+        }
     }
 
     public var statePublisher: AnyPublisher<AIChatLocalModelInstallState, Never> {

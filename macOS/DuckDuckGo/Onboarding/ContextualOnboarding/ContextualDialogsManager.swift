@@ -36,6 +36,7 @@ enum ContextualDialogType: Equatable {
     case trackers(message: NSAttributedString, shouldFollowUp: Bool)
     case tryFireButton
     case highFive
+    case tryDuckAI
     case subscriptionUpsell
     case thatsDuckAI
 }
@@ -151,6 +152,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
          settings: any ThrowingKeyedStoring<ContextualOnboardingSettings> = Application.appDelegate.keyValueStore.throwingKeyedStoring(),
          uiLocker: ContextualOnboardingUILocking? = nil,
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          makePath: ((ContextualOnboardingPathKind, ContextualOnboardingProgressReading) -> ContextualOnboardingPath)? = nil) {
         let progress = ContextualOnboardingProgress(storage: stateStorage, settings: settings)
         self.progress = progress
@@ -161,7 +163,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             case .search:
                 return SearchOnboardingPath(progress: progress,
                                             subscriptionManager: subscriptionManager,
-                                            trackerMessageProvider: trackerMessageProvider)
+                                            trackerMessageProvider: trackerMessageProvider,
+                                            aiChatMenuConfig: aiChatMenuConfig)
             case .duckAI:
                 return DuckAIOnboardingPath(progress: progress, subscriptionManager: subscriptionManager)
             }
@@ -303,6 +306,8 @@ extension ContextualDialogType {
             return "tryFireButton"
         case .highFive:
             return "highFive"
+        case .tryDuckAI:
+            return "tryDuckAI"
         case .subscriptionUpsell:
             return "subscriptionUpsell"
         case .thatsDuckAI:

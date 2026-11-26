@@ -1296,7 +1296,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ),
             subscriptionManager: subscriptionManager,
             settings: keyValueStore.throwingKeyedStoring(),
-            uiLocker: windowControllersManager
+            uiLocker: windowControllersManager,
+            aiChatMenuConfig: aiChatMenuConfiguration
         )
         onboardingContextualDialogsManager = contextualDialogsManager
         onboardingDuckAIPathWindowRestorer = OnboardingDuckAIPathWindowRestorer(

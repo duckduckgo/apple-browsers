@@ -118,7 +118,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             return AnyView(trackersDialog(message: message, shouldFollowUp: shouldFollowUp, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         case .tryFireButton:
             return AnyView(tryFireButtonDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
-        case .highFive:
+        case .highFive, .tryDuckAI:
             onboardingPixelReporter.measureLastDialogShown()
             return AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .subscriptionUpsell:
@@ -183,7 +183,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             return Image(.contextualBgTrackers)
         case .tryFireButton, .thatsDuckAI:
             return Image(.contextualBgFire)
-        case .highFive:
+        case .highFive, .tryDuckAI:
             return Image(.contextualBgEndOfJourney)
         case .subscriptionUpsell:
             return Image(.contextualBgSubscriptionUpsell)

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Persistence
 import PrivacyDashboard
@@ -51,15 +52,27 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
     private let storage: BlockedTrackerStoring
     private let ending: OnboardingEndingSteps
     private let trackerMessageProvider: TrackerMessageProviding
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    private let aiChatPreferences: AIChatPreferencesStorage
 
     init(progress: ContextualOnboardingProgressReading,
          storage: BlockedTrackerStoring = SearchOnboardingPathStorage(),
          subscriptionManager: any SubscriptionManager,
-         trackerMessageProvider: TrackerMessageProviding) {
+         trackerMessageProvider: TrackerMessageProviding,
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         aiChatPreferences: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage()) {
         self.progress = progress
         self.storage = storage
         self.ending = OnboardingEndingSteps(progress: progress, subscriptionManager: subscriptionManager)
         self.trackerMessageProvider = trackerMessageProvider
+        self.aiChatMenuConfig = aiChatMenuConfig
+        self.aiChatPreferences = aiChatPreferences
+    }
+
+    /// People who kept Duck.ai in the address bar end with Try Duck.ai instead of High Five.
+    private var offersDuckAIEnding: Bool {
+        guard #available(macOS 13, *) else { return false }
+        return aiChatMenuConfig.shouldDisplayAnyAIChatFeature && aiChatPreferences.showSearchAndDuckAIToggle
     }
 
     let uiLock = UserInteractionLock.unlocked
@@ -89,7 +102,7 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
             dialog = nil
         }
         switch dialog {
-        case .highFive?: return ending.start()
+        case .highFive?: return ending.start(offeringDuckAI: offersDuckAIEnding)
         case let dialog?: return .next(dialog)
         case nil: return .none
         }
@@ -105,7 +118,7 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
             return .next(.tryFireButton)
         case .tryFireButton:
             // Skipping Fire reaches the ending.
-            return ending.start()
+            return ending.start(offeringDuckAI: offersDuckAIEnding)
         default:
             return ending.gotItPressed(after: lastDialog)
         }

@@ -39,7 +39,8 @@ struct SearchOnboardingPathTests {
         sut = SearchOnboardingPath(progress: progress,
                                    storage: pathStorage,
                                    subscriptionManager: subscriptionManager,
-                                   trackerMessageProvider: trackerProvider)
+                                   trackerMessageProvider: trackerProvider,
+                                   aiChatMenuConfig: MockAIChatConfig())
     }
 
     @available(iOS 16, macOS 13, *)
@@ -70,6 +71,30 @@ struct SearchOnboardingPathTests {
         let tab = await Tab(content: .newtab)
 
         #expect(sut.dialog(for: tab) == .next(.highFive))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only people who kept Duck.ai in the address bar end with Try Duck.ai", .timeLimit(.minutes(1)),
+          arguments: [(true, true, ContextualDialogType.tryDuckAI),
+                      (false, true, .highFive),
+                      (true, false, .highFive)])
+    func duckAIEnding(keptDuckAIToggle: Bool, isDuckAIAvailable: Bool, expected: ContextualDialogType) async {
+        let aiChatMenuConfig = MockAIChatConfig()
+        aiChatMenuConfig.shouldDisplayAnyAIChatFeature = isDuckAIAvailable
+        let aiChatPreferences = MockAIChatPreferencesStorage()
+        aiChatPreferences.showSearchAndDuckAIToggle = keptDuckAIToggle
+        let sut = SearchOnboardingPath(progress: progress,
+                                       storage: pathStorage,
+                                       subscriptionManager: subscriptionManager,
+                                       trackerMessageProvider: trackerProvider,
+                                       aiChatMenuConfig: aiChatMenuConfig,
+                                       aiChatPreferences: aiChatPreferences)
+        progress.markSeen(.tryASearch)
+        progress.markSeen(.defaultTrackers)
+        progress.markSeen(.tryFireButton)
+        let tab = await Tab(content: .newtab)
+
+        #expect(sut.dialog(for: tab) == .next(expected))
     }
 
     @available(iOS 16, macOS 13, *)

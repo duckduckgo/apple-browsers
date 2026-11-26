@@ -263,7 +263,8 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func auditLogAccountIdentifier() throws -> String?
 
     /**
-     Returns the locally persisted review state for this account, or nil if no state has been stored.
+     Returns the saved review state for this account, or nil if it is missing or malformed.
+     Throws if storage cannot be read.
      */
     func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState?
 

@@ -412,14 +412,22 @@ public class DDGSync: DDGSyncing {
         guard let data = try dependencies.keyValueStore.object(forKey: auditLogReviewStateKey(for: accountID)) as? Data else {
             return nil
         }
-        return try JSONDecoder().decode(SyncAuditLogReviewState.self, from: data)
+        do {
+            return try JSONDecoder().decode(SyncAuditLogReviewState.self, from: data)
+        } catch is DecodingError {
+            // Leave the record in place until a successful activity fetch can seed a new baseline.
+            Logger.sync.error("Saved Device Activity review state could not be decoded")
+            return nil
+        }
     }
 
     public func setAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws {
-        if let current = try auditLogReviewState(for: accountID), !canAdvanceReviewState(from: current, to: reviewState) {
-            return
+        try auditLogReviewStateLock.withLock {
+            if let current = try auditLogReviewState(for: accountID), !canAdvanceReviewState(from: current, to: reviewState) {
+                return
+            }
+            try persistAuditLogReviewState(reviewState, for: accountID)
         }
-        try persistAuditLogReviewState(reviewState, for: accountID)
     }
 
     public func resetAuditLogReviewStateForDebug(to date: Date) throws {
@@ -427,7 +435,9 @@ public class DDGSync: DDGSyncing {
             throw SyncError.accountNotFound
         }
         // Debug resets intentionally bypass the forward-only rule used by setAuditLogReviewState.
-        try persistAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: date, isInitialized: true), for: account.userId)
+        try auditLogReviewStateLock.withLock {
+            try persistAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: date, isInitialized: true), for: account.userId)
+        }
     }
 
     private func persistAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws {
@@ -1021,7 +1031,9 @@ public class DDGSync: DDGSyncing {
             Logger.sync.error("Failed to clear the audit log cursor during account removal: \(String(reflecting: error), privacy: .private)")
         }
         do {
-            try dependencies.keyValueStore.removeObject(forKey: auditLogReviewStateKey(for: account.userId))
+            try auditLogReviewStateLock.withLock {
+                try dependencies.keyValueStore.removeObject(forKey: auditLogReviewStateKey(for: account.userId))
+            }
         } catch {
             Logger.sync.error("Failed to clear Device Activity review state during account removal: \(String(reflecting: error), privacy: .private)")
         }
@@ -1075,6 +1087,8 @@ public class DDGSync: DDGSyncing {
     private var syncQueueRequestErrorCancellable: AnyCancellable?
     private let deviceInfoUpdateState = DeviceInfoUpdateState()
     private var auditLogPoller: AuditLogPoller?
+    // Serialize the screen and poller's review-date comparisons and writes.
+    private let auditLogReviewStateLock = NSLock()
 
     deinit {
         auditLogPoller?.cancel()

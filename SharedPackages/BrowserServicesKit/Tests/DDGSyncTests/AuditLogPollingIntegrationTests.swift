@@ -103,6 +103,110 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         XCTAssertEqual(try service.auditLogReviewState(for: SyncAccount.mock.userId), reviewed)
     }
 
+    func testConcurrentReviewStateWritesPreserveTheNewerDate() async throws {
+        let service = makeService()
+        let accountID = SyncAccount.mock.userId
+        let reviewKey = "\(DDGSync.Constants.auditLogReviewStateKey).\(accountID)"
+        let older = SyncAuditLogReviewState(reviewedThrough: Date(timeIntervalSince1970: 100), isInitialized: true)
+        let newer = SyncAuditLogReviewState(reviewedThrough: Date(timeIntervalSince1970: 200), isInitialized: true)
+        let olderWritePaused = expectation(description: "Older review date reached persistence")
+        let olderWriteFinished = expectation(description: "Older review date finished")
+        let newerWriteStarted = expectation(description: "Newer review date started")
+        let newerWriteFinished = expectation(description: "Newer review date finished")
+        let resumeOlderWrite = DispatchSemaphore(value: 0)
+        let newerWriteCompleted = DispatchSemaphore(value: 0)
+        defer { resumeOlderWrite.signal() }
+        store.onWillSet = { key, value in
+            guard key == reviewKey, let data = value as? Data,
+                  try JSONDecoder().decode(SyncAuditLogReviewState.self, from: data) == older else { return }
+            olderWritePaused.fulfill()
+            XCTAssertEqual(resumeOlderWrite.wait(timeout: .now() + 5), .success)
+        }
+
+        DispatchQueue.global().async {
+            defer { olderWriteFinished.fulfill() }
+            do {
+                try service.setAuditLogReviewState(older, for: accountID)
+            } catch {
+                XCTFail("Failed to save older review date: \(error)")
+            }
+        }
+        await fulfillment(of: [olderWritePaused], timeout: 2)
+        DispatchQueue.global().async {
+            defer {
+                newerWriteFinished.fulfill()
+                newerWriteCompleted.signal()
+            }
+            newerWriteStarted.fulfill()
+            do {
+                try service.setAuditLogReviewState(newer, for: accountID)
+            } catch {
+                XCTFail("Failed to save newer review date: \(error)")
+            }
+        }
+        await fulfillment(of: [newerWriteStarted], timeout: 2)
+        // Without serialization the newer write finishes here, then the older write overwrites it.
+        _ = newerWriteCompleted.wait(timeout: .now() + 0.2)
+        resumeOlderWrite.signal()
+        await fulfillment(of: [olderWriteFinished, newerWriteFinished], timeout: 2)
+
+        XCTAssertEqual(try service.auditLogReviewState(for: accountID), newer)
+    }
+
+    func testMalformedReviewStateIsReplacedAfterSuccessfulInitialFetch() async throws {
+        let service = makeService()
+        let accountID = SyncAccount.mock.userId
+        let reviewKey = "\(DDGSync.Constants.auditLogReviewStateKey).\(accountID)"
+        let malformed = Data("invalid JSON".utf8)
+        try store.set(malformed, forKey: reviewKey)
+        accountManager.fetchAuditLogError = SyncError.unexpectedStatusCode(500)
+
+        do {
+            _ = try await service.pollAuditLog()
+            XCTFail("Expected the fetch to fail")
+        } catch SyncError.unexpectedStatusCode(500) {
+            XCTAssertEqual(try store.object(forKey: reviewKey) as? Data, malformed)
+            XCTAssertNil(try store.object(forKey: cursorKey))
+        }
+
+        let date = Date(timeIntervalSince1970: 100)
+        accountManager.fetchAuditLogError = nil
+        accountManager.fetchAuditLogStub = AuditLogPage(entries: [
+            .decoded(AuditLogEvent(id: "newest", type: .login, occurredAt: date, device: .mock, actor: nil, hasDeviceInfo: false))
+        ], after: "initial", before: nil)
+
+        let completed = try await service.pollAuditLog()
+
+        XCTAssertTrue(completed)
+        XCTAssertEqual(try service.auditLogReviewState(for: accountID),
+                       SyncAuditLogReviewState(reviewedThrough: date, isInitialized: true))
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "initial")
+    }
+
+    func testUnavailableReviewStatePreservesRecordAndPreventsSavingCursor() async throws {
+        let service = makeService()
+        let accountID = SyncAccount.mock.userId
+        let reviewKey = "\(DDGSync.Constants.auditLogReviewStateKey).\(accountID)"
+        let reviewed = SyncAuditLogReviewState(reviewedThrough: Date(timeIntervalSince1970: 100), isInitialized: true)
+        try service.setAuditLogReviewState(reviewed, for: accountID)
+        let savedRecord = try XCTUnwrap(store.object(forKey: reviewKey) as? Data)
+        let expectedError = NSError(domain: "storage", code: 1)
+        store.onRead = { key in
+            if key == reviewKey { throw expectedError }
+        }
+
+        do {
+            _ = try await service.pollAuditLog()
+            XCTFail("Expected the review-state read error")
+        } catch {
+            XCTAssertEqual(error as NSError, expectedError)
+        }
+
+        store.onRead = nil
+        XCTAssertEqual(try store.object(forKey: reviewKey) as? Data, savedRecord)
+        XCTAssertNil(try store.object(forKey: cursorKey))
+    }
+
     func testEmptyInitialPollingSeedsInitializedReviewState() async throws {
         let service = makeService()
         try await requestSync(service, expectingCursor: "cursor")
@@ -443,6 +547,7 @@ private final class PollingStore: ThrowingKeyValueStoring {
     private let lock = NSLock()
     private var values: [String: Any] = [:]
     var onRead: ((String) throws -> Void)?
+    var onWillSet: ((String, Any?) throws -> Void)?
     var onSet: ((String, Any?) throws -> Void)?
     var onRemove: ((String) -> Void)?
 
@@ -454,6 +559,7 @@ private final class PollingStore: ThrowingKeyValueStoring {
     }
 
     func set(_ value: Any?, forKey key: String) throws {
+        try onWillSet?(key, value)
         lock.lock()
         values[key] = value
         lock.unlock()

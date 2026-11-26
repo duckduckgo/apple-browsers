@@ -29,6 +29,6 @@ SPARKLE_FEED_URL[config=Alpha] = $(SPARKLE_URL_ALPHA)
 // Release/Alpha: production key for real updates
 SPARKLE_PUBLIC_EDKEY[config=Debug] = u4cpMVhyxFHfY8j6L2SBw8uq7LiwADdwOunvPoV7XNc=
 SPARKLE_PUBLIC_EDKEY[config=CI] = u4cpMVhyxFHfY8j6L2SBw8uq7LiwADdwOunvPoV7XNc=
-SPARKLE_PUBLIC_EDKEY[config=Review] = u4cpMVhyxFHfY8j6L2SBw8uq7LiwADdwOunvPoV7XNc=
+SPARKLE_PUBLIC_EDKEY[config=Review] = Nl3TK2dqzq129S6teEb2CaCtJEB2ObGK7gJ9SgPO+u0=
 SPARKLE_PUBLIC_EDKEY[config=Release] = ZaO/DNMzMPBldh40b5xVrpNBmqRkuGY0BNRCUng2qRo=
 SPARKLE_PUBLIC_EDKEY[config=Alpha] = fn+ugd5f2DMAxCMVGar9jDfNQjqDVTtKNLe6whsJ82s=

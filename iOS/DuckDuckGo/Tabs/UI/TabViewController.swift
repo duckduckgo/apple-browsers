@@ -3210,7 +3210,7 @@ extension TabViewController: WKNavigationDelegate {
     /// Translates at once when the pair is installed or already downloading; otherwise asks first, since the user decides on the download.
     private func translatePage(_ offer: TranslationOffer) {
         guard let pageTranslator else { return }
-        let offeredURL = webView.url
+        let pageLoad = pageLoads
         Task { [weak self] in
             guard await pageTranslator.needsDownload(offer.pairID) else {
                 self?.startTranslation(offer)
@@ -3218,7 +3218,7 @@ extension TabViewController: WKNavigationDelegate {
             }
             let sheet = TranslationDownloadSheet.makeController(for: offer) { [weak self] in
                 // The page can navigate on its own while the sheet is up; the offer was for the page that showed it.
-                guard let self, let offeredURL, let url = self.webView.url, Self.isSamePage(url, as: offeredURL) else { return }
+                guard let self, pageLoads == pageLoad else { return }
                 self.startTranslation(offer)
             }
             self?.present(sheet, animated: true)

@@ -169,6 +169,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case nativeInputFocused(Bool)
         case bonusRecordChanged(AIChatBonusRecordPayload)
         case openChatAction(chatId: String)
+        case startVoiceSessionInCurrentChat
 
         struct ChangeModelActionParams: Encodable {
             let modelId: String
@@ -180,6 +181,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         struct OpenChatActionParams: Encodable {
             let chatId: String
+        }
+
+        struct StartVoiceSessionParams: Encodable {
+            let inCurrentChat: Bool
         }
 
         var methodName: String {
@@ -212,6 +217,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue
             case .openChatAction:
                 return AIChatUserScriptMessages.submitOpenChatAction.rawValue
+            case .startVoiceSessionInCurrentChat:
+                return AIChatUserScriptMessages.startVoiceSession.rawValue
             }
         }
 
@@ -229,6 +236,8 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return payload
             case .openChatAction(let chatId):
                 return OpenChatActionParams(chatId: chatId)
+            case .startVoiceSessionInCurrentChat:
+                return StartVoiceSessionParams(inCurrentChat: true)
             default:
                 return nil
             }
@@ -473,6 +482,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.voiceModeOpened
         case .voiceModeClosed:
             return handler.voiceModeClosed
+        case .voiceInChatAvailability:
+            return handler.voiceInChatAvailability
         case .newImageGenerationChatStarted:
             return handler.newImageGenerationChatStarted
         case .showModelPicker:
@@ -893,6 +904,14 @@ final class AIChatUserScript: NSObject, Subfeature {
     @MainActor
     func submitOpenChatProtectionAction() {
         push(.openChatProtectionAction)
+    }
+
+    /// Asks the page to continue the open chat by voice. The page checks again that it can, and
+    /// hides the input itself (`hideChatInput`, `voiceModeOpened`) once voice starts.
+    @MainActor
+    func submitStartVoiceSessionInCurrentChat() {
+        guard push(.startVoiceSessionInCurrentChat) else { return }
+        handler.isVoiceRequestedInCurrentChat = true
     }
 
     /// Asks the page to open a chat in place, superseding any open still waiting for its answer.

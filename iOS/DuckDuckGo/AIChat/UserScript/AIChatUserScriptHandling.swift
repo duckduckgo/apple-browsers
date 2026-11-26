@@ -195,6 +195,10 @@ protocol AIChatUserScriptHandling: AnyObject {
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceModeOpened(params: Any, message: UserScriptMessage) async -> Encodable?
     func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func voiceInChatAvailability(params: Any, message: UserScriptMessage) async -> Encodable?
+    /// Set when native asks the page to continue the open chat by voice; the next started session
+    /// reports it, and a closed voice surface or a page load clears it.
+    @MainActor var isVoiceRequestedInCurrentChat: Bool { get set }
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable?
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -611,6 +615,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         )
         config.supportsResponseStateReporting = true
         config.supportsiPadNativeChatList = isIPadNativeChatListOn
+        // Only the full-tab chat's own native input continues a chat by voice; the contextual sheet doesn't.
+        config.supportsVoiceInChat = featureFlagger.isFeatureOn(.aiChatVoiceInExistingChat)
+            && displayMode == .fullTab && supportsNativeChatInput
+        // A page load ends any in-chat voice request the previous page didn't start.
+        isVoiceRequestedInCurrentChat = false
         if simplifiedPromptBoxFeature.isAvailable {
             config.supportsCustomizeResponsesInSettings = true
         }
@@ -860,7 +869,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? {
         // `object` carries the source webView so listeners can route per-tab (matches macOS).
         NotificationCenter.default.post(name: .aiChatVoiceSessionStarted, object: message.messageWebView)
-        PixelKit.fire(Pixel.Event.voiceSessionStarted)
+        let inCurrentChat = isVoiceRequestedInCurrentChat
+        isVoiceRequestedInCurrentChat = false
+        pixelFiring?.fire(Pixel.Event.voiceSessionStarted,
+                          options: .parameters([PixelParameters.inCurrentChat: inCurrentChat ? "true" : "false"]))
         return nil
     }
 
@@ -882,7 +894,22 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor
     func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable? {
+        isVoiceRequestedInCurrentChat = false
         NotificationCenter.default.post(name: .aiChatVoiceModeClosed, object: message.messageWebView)
+        return nil
+    }
+
+    @MainActor var isVoiceRequestedInCurrentChat = false
+
+    /// Only the bound tab's script has an input box handler, so a background tab's update is dropped
+    /// until the page resends it.
+    @MainActor
+    func voiceInChatAvailability(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard let availability = AIChatVoiceInChatAvailability(params: params) else {
+            Logger.aiChat.debug("Ignoring malformed voiceInChatAvailability")
+            return nil
+        }
+        inputBoxHandler?.voiceInChatAvailability = availability
         return nil
     }
 

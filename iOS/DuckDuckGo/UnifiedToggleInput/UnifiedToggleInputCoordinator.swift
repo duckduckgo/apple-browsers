@@ -160,6 +160,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
+    /// The bound page's last word on continuing this chat by voice, kept per tab in `TabInputState`.
+    var voiceInChatAvailability: AIChatVoiceInChatAvailability? {
+        didSet {
+            guard oldValue != voiceInChatAvailability else { return }
+            persistDraftToStore()
+            updateToolbarAIVoiceChat()
+        }
+    }
+
     /// The bound page sets this on every bind, so only `unbind` clears it.
     var isTermsOfServiceShownOnPage: Bool = false {
         didSet {
@@ -859,6 +868,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         aiChatInputBoxVisibility = state.aiChatInputBoxVisibility
         isVoiceSessionActive = state.isVoiceSessionActive
         isModelPickerForcedVisible = state.isModelPickerForcedVisible
+        voiceInChatAvailability = state.voiceInChatAvailability
         setText(state.text)
         syncInputModeFromExternalSource(state.toggleMode)
 
@@ -897,7 +907,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             selectedTool: toolsController.selectedTool,
             aiChatInputBoxVisibility: aiChatInputBoxVisibility,
             isVoiceSessionActive: isVoiceSessionActive,
-            isModelPickerForcedVisible: isModelPickerForcedVisible
+            isModelPickerForcedVisible: isModelPickerForcedVisible,
+            voiceInChatAvailability: voiceInChatAvailability
         )
     }
 
@@ -913,6 +924,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         if tabUID == currentTabUID {
             aiChatInputBoxVisibility = visibility
             isVoiceSessionActive = false
+            voiceInChatAvailability = nil
             if didChangeChat {
                 if !currentText.isEmpty { setText("") }
                 clearAttachments()
@@ -924,6 +936,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         var updated = current
         updated.aiChatInputBoxVisibility = visibility
         updated.isVoiceSessionActive = false
+        updated.voiceInChatAvailability = nil
         if didChangeChat {
             updated.clearDraft()
             let isCurrentTab = tabUID == currentTabUID
@@ -1950,6 +1963,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentUsage = nil
         aiChatInputBoxVisibility = .visible
         isVoiceSessionActive = false
+        voiceInChatAvailability = nil
     }
 
     var attachmentCount: Int {

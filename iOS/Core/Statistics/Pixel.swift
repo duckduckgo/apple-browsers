@@ -93,6 +93,7 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let inCurrentChat = "in_current_chat"
     public static let aiChatSelectionCount = "selection_count"
     public static let aiChatHadUnsubmittedSelections = "had_unsubmitted_selections"
     public static let aiChatSuggestionScope = "suggestion_scope"

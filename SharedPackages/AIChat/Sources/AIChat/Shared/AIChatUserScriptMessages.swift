@@ -70,6 +70,13 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case voiceModeOpened
     case voiceModeClosed
 
+    /// Posted by the FE with `{ isAvailable, reason?, message? }` once native says `supportsVoiceInChat`:
+    /// on chat load or switch, on any change, and when the page becomes visible again.
+    case voiceInChatAvailability
+
+    /// Pushed (native→FE) with `{ inCurrentChat: true }` to continue the open chat by voice.
+    case startVoiceSession
+
     /// Posted by the FE when the user creates a new chat — e.g. taps "Start new chat" in the
     /// duck.ai sidebar, or any other FE entry point. Native uses this as the single source of
     /// truth to reset host UI state (unified input, attachments) for the new chat.

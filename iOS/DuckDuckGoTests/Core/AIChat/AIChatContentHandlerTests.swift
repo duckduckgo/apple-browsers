@@ -1291,6 +1291,8 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func voiceSessionEnded(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func voiceModeOpened(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func voiceModeClosed(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    func voiceInChatAvailability(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
+    var isVoiceRequestedInCurrentChat = false
     func newImageGenerationChatStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func showModelPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func showReasoningPicker(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

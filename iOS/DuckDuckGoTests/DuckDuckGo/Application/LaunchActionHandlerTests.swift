@@ -587,6 +587,18 @@ final class LaunchActionHandlerTests {
     }
 
     @available(iOS 16, *)
+    @Test("A launch action retracts a New Tab Page staged focused before the action arrived", .timeLimit(.minutes(1)))
+    func launchActionRetractsStagedFocus() {
+        let handler = makeHandler()
+
+        handler.handleLaunchAction(.openURL(URL(string: "https://example.com")!))
+        handler.handleLaunchAction(.handleShortcutItem(UIApplicationShortcutItem(type: "shortcut", localizedTitle: "Shortcut")))
+        handler.handleLaunchAction(.handleUserActivity(NSUserActivity(activityType: "activity")))
+
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 3)
+    }
+
+    @available(iOS 16, *)
     @Test("A launch action handled first leaves no drawn New Tab Page for a later return", .timeLimit(.minutes(1)))
     func launchActionTakesTheDrawnNewTabPage() {
         let handler = makeHandler(outcome: .ordinary(timeAwayMs: nil), drewNewTabPage: true)

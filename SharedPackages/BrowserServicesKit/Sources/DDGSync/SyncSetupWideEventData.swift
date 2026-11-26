@@ -277,7 +277,7 @@ extension SyncSetupWideEventData {
     private static let petalRandomize = "randomize"
 
     public func pixelParameters() -> [String: String] {
-        var parameters = jsonParameters().mapValues { ($0 as? String) ?? String(describing: $0) }
+        var parameters = Self.pixelParameters(from: jsonParameters())
         if closedAtColdLaunch {
             parameters[Key.petal] = Self.petalRandomize
         }

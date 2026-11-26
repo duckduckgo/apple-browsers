@@ -42,7 +42,7 @@ public final class SyncSetupAttemptTracker {
     private let isEnabled: () -> Bool
     private let now: () -> Date
     private var attempt: SyncSetupWideEventData?
-    private var errorOnScreen: SyncConnectionError?
+    private var errorOnScreen: (error: SyncConnectionError, underlyingError: Error?)?
 
     public init(wideEvent: WideEventManaging,
                 isEnabled: @escaping () -> Bool,
@@ -98,19 +98,19 @@ public final class SyncSetupAttemptTracker {
         }
     }
 
-    public func recordErrorScreen(for error: SyncConnectionError) {
+    public func recordErrorScreen(for error: SyncConnectionError, underlyingError: Error?) {
         guard attempt != nil else { return }
-        errorOnScreen = error
+        errorOnScreen = (error, underlyingError)
         recordStep(.errorScreen)
     }
 
     public func closeErrorScreen() {
         guard let errorOnScreen, attempt?.steps.last == .errorScreen else { return }
-        end(with: errorOnScreen)
+        end(with: errorOnScreen.error, underlyingError: errorOnScreen.underlyingError)
     }
 
-    public func end(with error: SyncConnectionError) {
-        end(error.syncSetupWideEventOutcome)
+    public func end(with error: SyncConnectionError, underlyingError: Error?) {
+        end(error.syncSetupWideEventOutcome, underlyingError: underlyingError)
     }
 
     public func succeed(_ successStep: SuccessStep) {
@@ -119,9 +119,16 @@ public final class SyncSetupAttemptTracker {
     }
 
     public func end(_ outcome: Outcome) {
+        end(outcome, underlyingError: nil)
+    }
+
+    private func end(_ outcome: Outcome, underlyingError: Error?) {
         guard let attempt else { return }
         attempt.statusReason = outcome.statusReason
         attempt.timeoutStage = outcome.timeoutStage
+        if outcome.status == .failure, let underlyingError {
+            attempt.errorData = WideEventErrorData(error: underlyingError)
+        }
         close(attempt, status: outcome.status)
     }
 

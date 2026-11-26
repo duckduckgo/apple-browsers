@@ -43,7 +43,9 @@ final class SyncSetupAttemptTrackerTests {
 
     private var sent: [(status: WideEventStatus, parameters: [String: String])] {
         wideEvent.completions.map { data, status in
-            (status, data.pixelParameters().merging(data.contextData.pixelParameters()) { _, new in new })
+            (status, data.pixelParameters()
+                .merging(data.contextData.pixelParameters()) { _, new in new }
+                .merging(data.errorData?.pixelParameters() ?? [:]) { _, new in new })
         }
     }
 
@@ -74,7 +76,7 @@ final class SyncSetupAttemptTrackerTests {
 
         start()
         tracker.recordDeviceAuthShown()
-        tracker.recordErrorScreen(for: .accountCreationFailed)
+        tracker.recordErrorScreen(for: .accountCreationFailed, underlyingError: nil)
         tracker.closeErrorScreen()
         start()
         tracker.succeed(.recoveryCodeShown)
@@ -119,7 +121,7 @@ final class SyncSetupAttemptTrackerTests {
     func tryAgainThenSuccess() {
         start()
         tracker.recordStep(.preparingSync)
-        tracker.recordErrorScreen(for: .accountCreationFailed)
+        tracker.recordErrorScreen(for: .accountCreationFailed, underlyingError: nil)
 
         #expect(wideEvent.completions.isEmpty)
 
@@ -137,7 +139,7 @@ final class SyncSetupAttemptTrackerTests {
     func closingErrorScreen() {
         start()
         tracker.recordStep(.preparingSync)
-        tracker.recordErrorScreen(for: .accountCreationFailed)
+        tracker.recordErrorScreen(for: .accountCreationFailed, underlyingError: nil)
         tracker.closeErrorScreen()
 
         #expect(sent.count == 1)
@@ -150,7 +152,7 @@ final class SyncSetupAttemptTrackerTests {
     @Test("Closing the error screen after a successful retry sends nothing more", .timeLimit(.minutes(1)))
     func closingErrorScreenAfterAttemptEnded() {
         start()
-        tracker.recordErrorScreen(for: .accountCreationFailed)
+        tracker.recordErrorScreen(for: .accountCreationFailed, underlyingError: nil)
         tracker.succeed(.successScreenShown)
         tracker.closeErrorScreen()
 
@@ -162,7 +164,7 @@ final class SyncSetupAttemptTrackerTests {
     @Test("Closing the error screen after Try Again moved on leaves the retry open", .timeLimit(.minutes(1)))
     func closingErrorScreenDuringRetry() {
         start()
-        tracker.recordErrorScreen(for: .accountCreationFailed)
+        tracker.recordErrorScreen(for: .accountCreationFailed, underlyingError: nil)
         tracker.recordStep(.preparingSync)
         tracker.closeErrorScreen()
 
@@ -179,7 +181,7 @@ final class SyncSetupAttemptTrackerTests {
     func errorWithoutRetry() {
         start()
         tracker.recordStep(.codeEntry)
-        tracker.end(with: .unableToRecognizeCode)
+        tracker.end(with: .unableToRecognizeCode, underlyingError: nil)
 
         #expect(sent.first?.status == .cancelled)
         #expect(sent.first?.parameters["feature.data.ext.status_reason"] == "code_rejected")
@@ -285,7 +287,7 @@ final class SyncSetupAttemptTrackerTests {
         advance(milliseconds: 2000)
         tracker.recordStep(.accountCreated)
         advance(milliseconds: 4000)
-        tracker.end(with: .accountCreationFailed)
+        tracker.end(with: .accountCreationFailed, underlyingError: nil)
 
         #expect(sent.first?.status == .failure)
         #expect(sent.first?.parameters["feature.data.ext.total_latency_ms_bucketed"] == "10000")
@@ -306,11 +308,61 @@ final class SyncSetupAttemptTrackerTests {
         #expect(sent.first?.parameters["feature.data.ext.total_latency_ms_bucketed"] == "3000")
     }
 
+    private let underlyingError = NSError(domain: "TestDomain", code: 42, userInfo: [
+        NSUnderlyingErrorKey: NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
+    ])
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A FAILURE sends the underlying error and its own underlying error", .timeLimit(.minutes(1)))
+    func failureSendsUnderlyingError() {
+        start()
+        tracker.end(with: .accountCreationFailed, underlyingError: underlyingError)
+
+        #expect(sent.first?.status == .failure)
+        #expect(sent.first?.parameters["feature.data.ext.error.domain"] == "TestDomain")
+        #expect(sent.first?.parameters["feature.data.ext.error.code"] == "42")
+        #expect(sent.first?.parameters["feature.data.ext.error.underlying_domain"] == NSURLErrorDomain)
+        #expect(sent.first?.parameters["feature.data.ext.error.underlying_code"] == String(NSURLErrorTimedOut))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A CANCELLED outcome doesn't send the underlying error", .timeLimit(.minutes(1)))
+    func cancelledDoesNotSendUnderlyingError() {
+        start()
+        tracker.end(with: .unableToRecognizeCode, underlyingError: underlyingError)
+
+        #expect(sent.first?.status == .cancelled)
+        #expect(sent.first?.parameters["feature.data.ext.error.domain"] == nil)
+        #expect(sent.first?.parameters["feature.data.ext.error.code"] == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Closing the error screen sends the error the screen showed", .timeLimit(.minutes(1)))
+    func closingErrorScreenSendsItsUnderlyingError() {
+        start()
+        tracker.recordErrorScreen(for: .accountCreationFailed, underlyingError: underlyingError)
+        tracker.closeErrorScreen()
+
+        #expect(sent.first?.status == .failure)
+        #expect(sent.first?.parameters["feature.data.ext.error.domain"] == "TestDomain")
+        #expect(sent.first?.parameters["feature.data.ext.error.code"] == "42")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A FAILURE without an underlying error sends no error fields", .timeLimit(.minutes(1)))
+    func failureWithoutUnderlyingError() {
+        start()
+        tracker.end(with: .accountCreationFailed, underlyingError: nil)
+
+        #expect(sent.first?.status == .failure)
+        #expect(sent.first?.parameters["feature.data.ext.error.domain"] == nil)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("Calls without an open attempt send nothing", .timeLimit(.minutes(1)))
     func callsWithoutOpenAttempt() {
         tracker.recordStep(.codeScreen)
-        tracker.recordErrorScreen(for: .accountCreationFailed)
+        tracker.recordErrorScreen(for: .accountCreationFailed, underlyingError: nil)
         tracker.closeErrorScreen()
         tracker.end(.userClosed)
         tracker.succeed(.successScreenShown)

@@ -64,32 +64,7 @@ extension NewChatHint {
         return capable.first { $0.id == selectedModelID } ?? capable.first
     }
 
-    /// Every hint in an order that stays the same for a tab, so the row doesn't reshuffle while the user looks at it.
-    /// Seeded from a stable hash of the tab's ID: `String.hashValue` changes on every launch.
-    static func order(forTab tabID: String) -> [NewChatHint] {
-        var generator = SeededGenerator(seed: Self.stableHash(tabID))
-        return allCases.shuffled(using: &generator)
-    }
-
-    /// FNV-1a, 64-bit.
-    private static func stableHash(_ string: String) -> UInt64 {
-        string.utf8.reduce(0xcbf29ce484222325) { ($0 ^ UInt64($1)) &* 0x100000001b3 }
-    }
-}
-
-/// SplitMix64: small, deterministic for a given seed.
-private struct SeededGenerator: RandomNumberGenerator {
-    private var state: UInt64
-
-    init(seed: UInt64) {
-        state = seed
-    }
-
-    mutating func next() -> UInt64 {
-        state &+= 0x9e3779b97f4a7c15
-        var z = state
-        z = (z ^ (z >> 30)) &* 0xbf58476d1ce4e5b9
-        z = (z ^ (z >> 27)) &* 0x94d049bb133111eb
-        return z ^ (z >> 31)
-    }
+    /// Every hint, best first: the order Android's taps per new chat ranked (image generation, then photos, then
+    /// files). Fixed rather than shuffled, so the most used hint sits in the first slot, which is always on screen.
+    static let displayOrder: [NewChatHint] = [.imageGeneration, .photo, .documents]
 }

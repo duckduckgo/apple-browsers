@@ -1357,7 +1357,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isPromoClear: true,
             isTypeAtTipHidden: true,
             isDraftEmpty: true,
-            availableHints: NewChatHint.order(forTab: tab).filter(canOfferNewChatHint)
+            availableHints: NewChatHint.displayOrder.filter(canOfferNewChatHint)
         )
         publishNewChatHints(inputs.visibleHints)
     }

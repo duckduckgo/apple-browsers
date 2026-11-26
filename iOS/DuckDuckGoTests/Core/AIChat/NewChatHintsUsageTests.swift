@@ -248,21 +248,10 @@ final class NewChatHintsUsageTests {
 struct NewChatHintOrderTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test("A tab always gets the same order of every hint", .timeLimit(.minutes(1)))
-    func stableOrderPerTab() {
-        let order = NewChatHint.order(forTab: "8C1F6A9E-tab")
-        #expect(Set(order) == Set(NewChatHint.allCases))
-        #expect(order.count == NewChatHint.allCases.count)
-        for _ in 0..<5 {
-            #expect(NewChatHint.order(forTab: "8C1F6A9E-tab") == order)
-        }
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Different tabs get different orders", .timeLimit(.minutes(1)))
-    func ordersVaryAcrossTabs() {
-        let orders = Set((0..<50).map { NewChatHint.order(forTab: "tab-\($0)").map(\.pixelValue).joined(separator: ",") })
-        #expect(orders.count > 3)
+    @Test("Hints show best first: image generation, photos, then files", .timeLimit(.minutes(1)))
+    func fixedBestFirstOrder() {
+        #expect(NewChatHint.displayOrder == [.imageGeneration, .photo, .documents])
+        #expect(Set(NewChatHint.displayOrder) == Set(NewChatHint.allCases))
     }
 
     private static func model(_ id: String, access: Bool = true, images: Bool = false, files: Bool = false,

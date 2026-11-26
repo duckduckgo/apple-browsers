@@ -95,7 +95,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         }
     }
 
-    private var tabOrder: [NewChatHint] { NewChatHint.order(forTab: "tab-A") }
+    private var tabOrder: [NewChatHint] { NewChatHint.displayOrder }
 
     private func fired(_ name: String) -> [[String: String]?] {
         pixels.actualFireCalls.filter { $0.pixel.name == name }.map(\.pixel.parameters)

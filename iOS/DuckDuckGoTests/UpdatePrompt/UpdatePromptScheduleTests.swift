@@ -228,6 +228,18 @@ struct UpdatePromptScheduleTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Decodes release dates with fractional seconds", .timeLimit(.minutes(1)))
+    func decodesFractionalSeconds() throws {
+        let json = """
+        {"latest_appstore_version": {"latest_version": "7.250.0",
+         "release_date": "2026-11-23T15:00:45.500Z", "minimum_os_version": "16.0"}}
+        """
+        let metadata = try AppStoreReleaseMetadata.decode(from: Data(json.utf8))
+
+        #expect(metadata.latest.releaseDate == Date(timeIntervalSince1970: 1_795_446_045.5))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Rejects metadata without a minimum OS version", .timeLimit(.minutes(1)))
     func rejectsIncompleteMetadata() {
         let json = """

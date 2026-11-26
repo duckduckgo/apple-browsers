@@ -42,7 +42,17 @@ struct AppStoreReleaseMetadata: Decodable {
 
     static func decode(from data: Data) throws -> AppStoreReleaseMetadata {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+            // Accepts dates with or without fractional seconds.
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = formatter.date(from: string) { return date }
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: string) { return date }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Not an ISO8601 date: \(string)")
+        }
         return try decoder.decode(AppStoreReleaseMetadata.self, from: data)
     }
 }

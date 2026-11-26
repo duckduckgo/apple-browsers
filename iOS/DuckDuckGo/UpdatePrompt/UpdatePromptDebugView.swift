@@ -44,6 +44,11 @@ struct UpdatePromptDebugView: View {
                         simulateRelease(daysAgo: days, minimumOSVersion: "15.0")
                     }
                 }
+                ForEach([UpdatePromptStep.second, .last], id: \.self) { step in
+                    Button("Simulate step \(step.rawValue) due, step \(step.rawValue - 1) shown") {
+                        simulateRelease(daysAgo: step.days, minimumOSVersion: "15.0", dueStep: step)
+                    }
+                }
                 Button("Simulate release needing iOS 99") {
                     simulateRelease(daysAgo: 15, minimumOSVersion: "99.0")
                 }
@@ -97,14 +102,20 @@ struct UpdatePromptDebugView: View {
         return "Step \(next.rawValue), not yet due"
     }
 
-    private func simulateRelease(daysAgo: Int, minimumOSVersion: String) {
+    /// With `dueStep`, the step before it is recorded as shown when it was due, so `dueStep` is due now.
+    private func simulateRelease(daysAgo: Int, minimumOSVersion: String, dueStep: UpdatePromptStep? = nil) {
         let now = Date()
-        let releaseDate = now.addingTimeInterval(-TimeInterval(daysAgo) * 24 * 60 * 60)
+        let day: TimeInterval = 24 * 60 * 60
+        let releaseDate = now.addingTimeInterval(-TimeInterval(daysAgo) * day)
         let release = AppStoreRelease(version: Self.nextMinorVersion(after: installedVersion),
                                       releaseDate: releaseDate,
                                       minimumOSVersion: minimumOSVersion)
+        var state = UpdatePromptState(installedVersion: installedVersion, clockStart: releaseDate)
+        if let dueStep, let previous = UpdatePromptStep(rawValue: dueStep.rawValue - 1) {
+            state = state.recordingShown(previous, at: releaseDate.addingTimeInterval(TimeInterval(previous.days) * day))
+        }
         try? storage.set(release, for: \.latestRelease)
-        try? storage.set(UpdatePromptState(installedVersion: installedVersion, clockStart: releaseDate), for: \.state)
+        try? storage.set(state, for: \.state)
         try? storage.set(now, for: \.lastFetchDate)
         refresh += 1
     }

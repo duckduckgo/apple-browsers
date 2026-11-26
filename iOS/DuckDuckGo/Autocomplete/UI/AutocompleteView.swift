@@ -243,10 +243,18 @@ private struct SuggestionView: View {
                 FailedAssertionView("Unknown or unsupported suggestion type")
 
             case .askAIChat(value: let value):
-                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
-                                   title: value,
-                                   subtitle: UserText.autocompleteAskAIChat)
-                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
+                if autocompleteModel.askDuckAIAppearance == .legacy {
+                    SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
+                                       title: value,
+                                       subtitle: UserText.autocompleteAskAIChat)
+                    .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
+                } else {
+                    SuggestionListItem(iconKind: .askDuckAI(highlighted: autocompleteModel.askDuckAIAppearance == .fullColour),
+                                       title: UserText.autocompleteAskDuckAITitle,
+                                       subtitle: AskDuckAIRowAppearance.subtitle(for: value))
+                    .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
+                    .accessibilityLabel(AskDuckAIRowAppearance.accessibilityLabel(query: AskDuckAIRowAppearance.subtitle(for: value)))
+                }
 
             }
 
@@ -263,7 +271,13 @@ private struct SuggestionListItem: View {
 
     @Environment(\.suggestionIsSelected) private var isSelected: Bool
 
-    let icon: Image
+    enum Icon {
+        case image(Image)
+        /// The Duck.ai logo on the redesigned Ask Duck.ai row.
+        case askDuckAI(highlighted: Bool)
+    }
+
+    let icon: Icon
     let title: String
     let subtitle: String?
     let query: String?
@@ -278,8 +292,24 @@ private struct SuggestionListItem: View {
          indicator: Image? = nil,
          onTapIndicator: ( () -> Void)? = nil,
          onDelete: (() -> Void)? = nil) {
+        self.init(iconKind: .image(icon),
+                  title: title,
+                  subtitle: subtitle,
+                  query: query,
+                  indicator: indicator,
+                  onTapIndicator: onTapIndicator,
+                  onDelete: onDelete)
+    }
 
-        self.icon = icon
+    init(iconKind: Icon,
+         title: String,
+         subtitle: String? = nil,
+         query: String? = nil,
+         indicator: Image? = nil,
+         onTapIndicator: ( () -> Void)? = nil,
+         onDelete: (() -> Void)? = nil) {
+
+        self.icon = iconKind
         self.title = title
         self.subtitle = subtitle
         self.query = query
@@ -295,10 +325,7 @@ private struct SuggestionListItem: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            icon
-                .resizable()
-                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
-                .tintIfAvailable(contentColor(.icons))
+            iconView
 
             VStack(alignment: .leading, spacing: 0) {
 
@@ -355,6 +382,19 @@ private struct SuggestionListItem: View {
                     .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.DeleteButton")
                     .accessibilityLabel(UserText.actionDelete)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var iconView: some View {
+        switch icon {
+        case .image(let image):
+            image
+                .resizable()
+                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                .tintIfAvailable(contentColor(.icons))
+        case .askDuckAI(let highlighted):
+            AskDuckAIRowIcon(isHighlighted: highlighted, tint: contentColor(.icons))
         }
     }
 

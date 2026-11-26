@@ -5896,6 +5896,21 @@ Take back control of your personal information with the browser designed for dat
 /* Button in the translation banner that translates the current web page */
 "translation.banner.translate" = "Translate";
 
+/* Body of the pop-up asking people on an outdated app version to update. */
+"update-prompt.body" = "A new version is ready, with the latest privacy protections and fixes.";
+
+/* Body of the last pop-up asking people on an outdated app version to update. No more reminders follow for this version. */
+"update-prompt.body.last" = "A new version is ready, with the latest privacy protections and fixes. This is the last reminder for this version. You can update anytime from the App Store.";
+
+/* Button that closes the update pop-up until the next reminder. */
+"update-prompt.not-now" = "Not Now";
+
+/* Title of the pop-up asking people on an outdated app version to update. */
+"update-prompt.title" = "Update DuckDuckGo";
+
+/* Button on the update pop-up that opens DuckDuckGo in the App Store. */
+"update-prompt.update" = "Update";
+
 /* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
 "vcard.add-contact.parse-failure" = "Unable to add contact. Try opening the contact file from Downloads instead.";
 

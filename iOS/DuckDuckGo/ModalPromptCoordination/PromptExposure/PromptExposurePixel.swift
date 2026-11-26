@@ -33,6 +33,7 @@ enum PromptExposureID: String {
     case importPasswordsGoogle = "import_passwords_google"
     case autofillExtensionPrompt = "autofill_extension_prompt"
     case addToDockReminder = "add_to_dock_reminder"
+    case updatePrompt = "update_prompt"
 }
 
 enum PromptExposurePromptType: String {

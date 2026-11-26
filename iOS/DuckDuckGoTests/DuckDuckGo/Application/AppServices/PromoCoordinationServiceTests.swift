@@ -190,7 +190,8 @@ final class PromoCoordinationServiceTests {
     @Test(
         "Check Provider Priority Order",
         arguments: [
-            ProviderPriority.winBackOffer,
+            ProviderPriority.updatePrompt,
+            .winBackOffer,
             .subscriptionPromo,
             .subscriptionPromoExistingUser,
             .newAddressBarPicker,
@@ -205,6 +206,7 @@ final class PromoCoordinationServiceTests {
             // Not eligible, so it cannot win ahead of the provider under test. Deferred ordering
             // is covered by ModalPromptCoordinationManagerDeferredTests.
             appRatingPrompt: MockModalPromptProvider(shouldReturnPrompt: false),
+            updatePrompt: MockModalPromptProvider(shouldReturnPrompt: priority == .updatePrompt),
             newAddressBarPicker: MockModalPromptProvider(shouldReturnPrompt: priority == .newAddressBarPicker),
             defaultBrowser: MockModalPromptProvider(shouldReturnPrompt: priority == .defaultBrowser),
             winBackOffer: MockModalPromptProvider(shouldReturnPrompt: priority == .winBackOffer),
@@ -254,6 +256,7 @@ extension ModalPromptProviders {
 
     func provider(for priority: ProviderPriority) -> ModalPromptProvider? {
         switch priority {
+        case .updatePrompt: return updatePrompt
         case .winBackOffer: return winBackOffer
         case .subscriptionPromo: return subscriptionPromo
         case .subscriptionPromoExistingUser: return subscriptionPromoExistingUser
@@ -267,18 +270,20 @@ extension ModalPromptProviders {
 }
 
 enum ProviderPriority: Int, CaseIterable, CustomStringConvertible {
-    case winBackOffer = 0
-    case subscriptionPromo = 1
-    case subscriptionPromoExistingUser = 2
-    case newAddressBarPicker = 3
-    case defaultBrowser = 4
-    case whatsNew = 5
-    case cookiePopupProtectionOptIn = 6
+    case updatePrompt = 0
+    case winBackOffer = 1
+    case subscriptionPromo = 2
+    case subscriptionPromoExistingUser = 3
+    case newAddressBarPicker = 4
+    case defaultBrowser = 5
+    case whatsNew = 6
+    case cookiePopupProtectionOptIn = 7
 
     var index: Int { rawValue }
 
     var description: String {
         switch self {
+        case .updatePrompt: return "UpdatePrompt"
         case .winBackOffer: return "WinBackOffer"
         case .subscriptionPromo: return "SubscriptionPromo"
         case .subscriptionPromoExistingUser: return "SubscriptionPromoExistingUser"

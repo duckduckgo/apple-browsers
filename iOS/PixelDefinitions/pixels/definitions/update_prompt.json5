@@ -1,0 +1,47 @@
+{
+    "update-prompt_shown": {
+        "description": "Fires when the update prompt appears on an app version older than the latest on the App Store. It is shown 2, 7 and 14 days after the newer version came out, then not again for that installed version.",
+        "owners": ["kkoch"],
+        "triggers": ["impression"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "step",
+                "type": "string",
+                "description": "Which reminder for the installed version: 1 is 2 days after the newer version came out, 2 is 7 days, 3 is 14 days and the last.",
+                "enum": ["1", "2", "3"]
+            }
+        ]
+    },
+    "update-prompt_update-tapped": {
+        "description": "Fires when the user taps Update on the update prompt, which opens the App Store.",
+        "owners": ["kkoch"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "step",
+                "type": "string",
+                "description": "Which reminder for the installed version: 1 is 2 days after the newer version came out, 2 is 7 days, 3 is 14 days and the last.",
+                "enum": ["1", "2", "3"]
+            }
+        ]
+    },
+    "update-prompt_dismissed": {
+        "description": "Fires when the user taps Not Now on the update prompt.",
+        "owners": ["kkoch"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "step",
+                "type": "string",
+                "description": "Which reminder for the installed version: 1 is 2 days after the newer version came out, 2 is 7 days, 3 is 14 days and the last.",
+                "enum": ["1", "2", "3"]
+            }
+        ]
+    }
+}

@@ -733,6 +733,9 @@ public enum FeatureFlag: String {
     /// Internal-only for the first version.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220647281509936
     case aiChatLocalModels
+    /// Asks people on an outdated version to update, 2, 7 and 14 days after a newer version is released.
+    /// https://app.asana.com/1/137249556945/project/1220860545409766/task/1220915371296356
+    case updatePrompt
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1247,6 +1250,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(PageTranslationSubfeature.featureEnabled))
         case .aiChatLocalModels:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels))
+        case .updatePrompt:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.updatePrompt))
         }
     }
 

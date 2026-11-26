@@ -88,6 +88,7 @@ public extension URL {
     static let internalFeedbackForm = URL(string: "https://internalapps.duckduckgo.com/internal-feedback/")!
 
     static let appStore = URL(string: "https://apps.apple.com/app/duckduckgo-privacy-browser/id663592361")!
+    static let iOSReleaseMetadata = URL(string: "\(staticBase)/ios-browser/release_metadata.json")!
 
     static let mac = URL(string: "\(base)/mac")!
     static let windows = URL(string: "\(base)/windows")!

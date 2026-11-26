@@ -61,6 +61,11 @@ enum PromoCoordinationFactory {
             featureFlagger: dependency.featureFlagger
         )
 
+        let updatePromptModalPromptProvider = UpdatePromptModalPromptProvider(
+            storage: dependency.keyValueFileStoreService.throwingKeyedStoring(),
+            featureFlagger: dependency.featureFlagger
+        )
+
         let appRatingPromptCoordinator = AppRatingPromptCoordinator(
             appRatingPrompt: AppRatingPrompt(featureFlagger: dependency.featureFlagger),
             coordinationPolicy: AppRatingPromptCoordinationPolicy(
@@ -74,6 +79,7 @@ enum PromoCoordinationFactory {
 
         let providers = ModalPromptProviders(
             appRatingPrompt: appRatingPromptCoordinator,
+            updatePrompt: updatePromptModalPromptProvider,
             newAddressBarPicker: newAddressBarPickerModalPromptProvider,
             defaultBrowser: defaultBrowserModalPromptProvider,
             winBackOffer: winBackOfferModalPromptProvider,

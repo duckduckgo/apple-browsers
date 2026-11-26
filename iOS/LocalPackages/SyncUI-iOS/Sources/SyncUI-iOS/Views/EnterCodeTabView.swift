@@ -46,12 +46,14 @@ struct EnterCodeTabView: View {
 
     private var instructions: some View {
         VStack(spacing: 16) {
-            Text(UserText.simplifiedEnterCodeTitle)
+            Text(model.isSyncPairingUrlEnabled ? UserText.pairingURLEnterCodeTitle : UserText.simplifiedEnterCodeTitle)
                 .daxTitle2()
                 .multilineTextAlignment(.center)
 
             VStack(spacing: 4) {
-                SyncOpenAppInstruction(format: UserText.simplifiedEnterCodeOpenInstruction)
+                SyncOpenAppInstruction(format: model.isSyncPairingUrlEnabled
+                                       ? UserText.pairingURLOpenAnotherAppInstruction
+                                       : UserText.simplifiedEnterCodeOpenInstruction)
 
                 if model.isSyncPairingUrlEnabled {
                     SyncPairingURLInstruction(format: UserText.pairingURLEnterCodeInstruction)
@@ -158,7 +160,7 @@ struct EnterCodeTabView_Previews: PreviewProvider {
         configurations: [
             .init(name: "Enter Code", state: .empty),
             .init(name: "Verifying", state: .verifying, scope: .previews),
-            .init(name: "Pairing URL", state: .pairingURL, scope: .previews)
+            .init(name: "Pairing URL", state: .pairingURL)
         ],
         configure: { state in
             EnterCodeTabView(model: model(for: state))

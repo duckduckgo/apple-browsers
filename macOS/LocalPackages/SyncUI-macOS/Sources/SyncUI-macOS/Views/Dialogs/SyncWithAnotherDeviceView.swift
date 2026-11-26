@@ -61,7 +61,7 @@ struct SyncWithAnotherDeviceView: View {
         case .scanCode:
             UserText.syncWithAnotherDeviceScanTitle
         case .enterCode:
-            UserText.syncWithAnotherDeviceEnterTitle
+            model.isSyncPairingUrlEnabled ? UserText.syncWithAnotherDevicePairingURLEnterTitle : UserText.syncWithAnotherDeviceEnterTitle
         }
     }
 
@@ -181,16 +181,26 @@ struct SyncWithAnotherDeviceView: View {
 
     private var instructions: some View {
         VStack(alignment: .leading, spacing: 10) {
-            InstructionStep(
-                number: 1,
-                format: selectedTab == .scanCode ? UserText.syncWithAnotherDeviceScanStep1 : UserText.syncWithAnotherDeviceEnterStep1,
-                detail: selectedTab == .scanCode ? UserText.syncWithAnotherDeviceScanStep1Detail : UserText.syncWithAnotherDeviceEnterStep1Detail,
-                showsAppIcon: true
-            )
+            if model.isSyncPairingUrlEnabled {
+                InstructionStep(
+                    number: 1,
+                    format: selectedTab == .scanCode ? UserText.syncWithAnotherDevicePairingURLScanStep1 : UserText.syncWithAnotherDeviceEnterStep1,
+                    detail: selectedTab == .scanCode ? UserText.syncWithAnotherDevicePairingURLScanStep1Detail : UserText.syncWithAnotherDeviceEnterStep1Detail,
+                    showsAppIcon: true,
+                    emphasizesDetail: true
+                )
+            } else {
+                InstructionStep(
+                    number: 1,
+                    format: UserText.syncWithAnotherDeviceScanStep1,
+                    detail: UserText.syncWithAnotherDeviceScanStep1Detail,
+                    showsAppIcon: true
+                )
+            }
 
             InstructionStep(
                 number: 2,
-                format: model.isSyncPairingUrlEnabled ? UserText.syncWithAnotherDevicePairingURLStep : UserText.syncWithAnotherDeviceStep2,
+                format: UserText.syncWithAnotherDeviceStep2,
                 detail: model.isSyncPairingUrlEnabled ? Metrics.pairingURL : UserText.syncWithAnotherDeviceStep2Detail,
                 detailImage: model.isSyncPairingUrlEnabled ? pairingURLPill : nil
             )
@@ -202,7 +212,7 @@ struct SyncWithAnotherDeviceView: View {
                     : UserText.syncWithAnotherDeviceEnterStep3
             )
 
-            if selectedTab == .scanCode {
+            if !model.isSyncPairingUrlEnabled || selectedTab == .scanCode {
                 InstructionStep(
                     number: 4,
                     text: UserText.syncWithAnotherDeviceStep4
@@ -389,7 +399,7 @@ private struct InstructionStep: View {
             .foregroundColor(Color(designSystemColor: .textSecondary))
     }
 
-    init(number: Int, format: String, detail: String, showsAppIcon: Bool = false, detailImage: NSImage? = nil) {
+    init(number: Int, format: String, detail: String, showsAppIcon: Bool = false, emphasizesDetail: Bool = false, detailImage: NSImage? = nil) {
         self.number = number
         self.accessibilityText = String(format: format, detail)
 
@@ -399,8 +409,10 @@ private struct InstructionStep: View {
 
         var detailText = detailImage.map { Text(Image(nsImage: $0)).baselineOffset(NSFont.systemFont(ofSize: 12).descender - 2) }
             ?? Text(detail)
-                .fontWeight(.semibold)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
+        if emphasizesDetail {
+            detailText = detailText.fontWeight(.semibold)
+        }
         if showsAppIcon {
             detailText = detailText
                 + Text(verbatim: "\u{00A0}")
@@ -471,8 +483,8 @@ struct SyncWithAnotherDeviceView_Previews: PreviewProvider {
         configurations: [
             .init(name: "Scan Code", state: .scanCode),
             .init(name: "Enter Code", state: .enterCode),
-            .init(name: "Scan Code - Pairing URL", state: .scanCodeWithPairingURL, scope: .previews),
-            .init(name: "Enter Code - Pairing URL", state: .enterCodeWithPairingURL, scope: .previews)
+            .init(name: "Scan Code - Pairing URL", state: .scanCodeWithPairingURL),
+            .init(name: "Enter Code - Pairing URL", state: .enterCodeWithPairingURL)
         ],
         configure: { state in
             let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="

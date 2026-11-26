@@ -6816,7 +6816,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Enter the Sync code"
+            "value" : "Enter the Sync Code"
           }
         },
         "es" : {
@@ -6923,6 +6923,42 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device-v2.pairing-url.enter-title" : {
+      "comment" : "Code-entry dialog title when pairing URL instructions are enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enter the Sync code"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.pairing-url.scan-step-1" : {
+      "comment" : "First pairing URL QR-scanning instruction. %@ is the emphasized phrase DuckDuckGo App on your phone, followed by the app icon.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open the %@"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.pairing-url.scan-step-1-detail" : {
+      "comment" : "Emphasized phrase in the first pairing URL QR-scanning instruction Open the %@",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo App on your phone"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device-v2.paste-code" : {
       "comment" : "Button that pastes a sync code from the clipboard",
       "extractionState" : "extracted_with_value",
@@ -6984,7 +7020,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.scan-step-1" : {
-      "comment" : "First QR scanning instruction. %@ is replaced by the emphasized phrase DuckDuckGo App on your phone, shown with the DuckDuckGo icon after it.",
+      "comment" : "First pairing instruction. %@ is replaced by the emphasized DuckDuckGo product name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon after it.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -6996,7 +7032,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open the %@"
+            "value" : "On your phone, open the %@"
           }
         },
         "es" : {
@@ -7044,7 +7080,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.scan-step-1-detail" : {
-      "comment" : "Emphasized phrase inserted into the first QR scanning instruction Open the %@",
+      "comment" : "Emphasized DuckDuckGo product name inserted into the first pairing instruction (On your phone, open the %@)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -7056,7 +7092,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "DuckDuckGo App on your phone"
+            "value" : "DuckDuckGo App"
           }
         },
         "es" : {
@@ -7284,7 +7320,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.step-2" : {
-      "comment" : "Second pairing instruction. %@ is replaced by the emphasized Settings path (e.g. “Settings › Sync & Backup › Sync With Another Device”).",
+      "comment" : "Second pairing instruction. %@ is replaced by the Settings path or duck.com/pair.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -7399,18 +7435,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настройки > Sync & Backup > Синхронизировать с другим устройством"
-          }
-        }
-      }
-    },
-    "preferences.sync.sync-with-another-device-v2.step-2-pairing-url" : {
-      "comment" : "Second pairing instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Go to %@"
           }
         }
       }

@@ -184,14 +184,14 @@ struct ScanTabView: View {
 
     private var instructions: some View {
         VStack(spacing: 16) {
-            Text(UserText.simplifiedScanQRHeading)
+            Text(model.isSyncPairingUrlEnabled ? UserText.pairingURLScanHeading : UserText.simplifiedScanQRHeading)
                 .daxTitle2()
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
 
             VStack(spacing: 4) {
                 if model.isSyncPairingUrlEnabled {
-                    SyncOpenAppInstruction(format: UserText.simplifiedScanQROpenInstruction, appName: UserText.simplifiedScanQRAppName)
+                    SyncOpenAppInstruction(format: UserText.pairingURLScanOpenInstruction, appName: UserText.simplifiedScanQRAppName)
                     SyncPairingURLInstruction(format: UserText.pairingURLScanInstruction)
                 } else if model.isImprovedPairingFlowEnabled {
                     SyncOpenAppInstruction(format: UserText.simplifiedScanQRInstruction, appName: UserText.simplifiedScanQRAppName)

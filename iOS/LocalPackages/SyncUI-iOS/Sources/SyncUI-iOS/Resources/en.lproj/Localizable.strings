@@ -133,11 +133,32 @@
 /* Manual pairing instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder. */
 "sync.pairing-url.enter-code.instruction" = "go to %@ and Copy Text Code.";
 
+/* Heading on the enter-code tab when pairing URL instructions are enabled */
+"sync.pairing-url.enter-code.title" = "Enter the Sync code";
+
+/* First pairing URL code-entry and QR-sharing instruction. %@ is the app name, preceded by its icon. Preserve the placeholder. */
+"sync.pairing-url.open-another-app" = "Open another %@";
+
+/* Heading on the scan-QR tab and intro when pairing URL instructions are enabled */
+"sync.pairing-url.scan.heading" = "Scan QR Code to Sync";
+
 /* Scanner instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder. */
 "sync.pairing-url.scan.instruction" = "go to %@";
 
+/* First pairing URL scanner instruction. %@ is the desktop app name, preceded by its icon. Preserve the placeholder and trailing comma. */
+"sync.pairing-url.scan.open-app" = "Open %@,";
+
+/* App name in the pairing URL QR-sharing instruction Open another %@, preceded by its icon */
+"sync.pairing-url.show-code.app-name" = "DuckDuckGo";
+
+/* Heading above this device's QR code when pairing URL instructions are enabled */
+"sync.pairing-url.show-code.heading" = "Scan from another device";
+
 /* QR code sharing instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder. */
 "sync.pairing-url.show-code.instruction" = "go to %@ and scan this code:";
+
+/* Navigation title of the QR-sharing sheet when pairing URL instructions are enabled */
+"sync.pairing-url.show-code.title" = "QR code";
 
 /* Sync passcode required alert - button */
 "sync.passcode.required.alert.go.to.settings.button" = "Go to Settings";
@@ -227,7 +248,7 @@
 "sync.simplified.enter.code.example.label" = "Example Code:";
 
 /* First part of the enter-code instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
-"sync.simplified.enter.code.open.app" = "Open another %@";
+"sync.simplified.enter.code.open.app" = "Open your other %@";
 
 /* Button to paste the sync code on the enter-code tab */
 "sync.simplified.enter.code.paste.button" = "Paste Sync Code";
@@ -236,7 +257,7 @@
 "sync.simplified.enter.code.steps" = "Go to **Sync & Backup** › **Sync With Another Device** › **Copy Text Code**.";
 
 /* Title on the enter-code tab of the scan screen */
-"sync.simplified.enter.code.title" = "Enter the Sync code";
+"sync.simplified.enter.code.title" = "Enter the Sync code.";
 
 /* Row label to get the DuckDuckGo desktop browser */
 "sync.simplified.get.our.desktop.browser.title" = "Get Our Desktop Browser";
@@ -298,7 +319,7 @@
 /* Confirmation alert title when removing a device from Sync & Backup. Parameter is the device name */
 "sync.simplified.remove.device.confirm.title" = "Remove %@ from Sync & Backup?";
 
-/* Name of the DuckDuckGo app, inserted into the first enter-code instruction */
+/* Name of the DuckDuckGo app, inserted into the first enter-code and sync-code sheet instructions */
 "sync.simplified.scan-or-view-code.app.name" = "DuckDuckGo App";
 
 /* Status text when connecting devices to sync */
@@ -334,14 +355,14 @@
 /* Button on the scan-QR intro animation card that dismisses the card and reveals the camera scanner */
 "sync.simplified.scan.v2.qr.got.it.button" = "Got It";
 
-/* Heading on the scan-QR tab and its intro */
-"sync.simplified.scan.v2.qr.heading" = "Scan QR Code to Sync";
+/* Heading overlaid on the camera on the scan-QR tab */
+"sync.simplified.scan.v2.qr.heading" = "Scan QR code to sync.";
 
 /* Scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. **...** marks the parts shown in the primary text color. \\n is a line break. */
-"sync.simplified.scan.v2.qr.instruction" = "Open %@,\ngo to **Sync & Backup** › **Sync With Another Device**";
+"sync.simplified.scan.v2.qr.instruction" = "On %@,\ngo to **Sync & Backup** › **Sync With Another Device**";
 
 /* First part of the scan-QR instructions. %@ is replaced by the DuckDuckGo desktop app name (e.g. “DuckDuckGo for Desktop”), shown with the DuckDuckGo icon before it. */
-"sync.simplified.scan.v2.qr.open.app" = "Open %@,";
+"sync.simplified.scan.v2.qr.open.app" = "Open %@";
 
 /* Button on the scan-QR intro animation that dismisses the animation and reveals the camera */
 "sync.simplified.scan.v2.qr.ready.button" = "I’m Ready to Scan";
@@ -364,20 +385,14 @@
 /* Button to copy the text sync code on the sync-code sheet */
 "sync.simplified.sync.code.copy.button" = "Copy Text Code";
 
-/* App name in the QR code sharing instruction Open another %@, preceded by the app icon */
-"sync.simplified.sync.code.sheet.app.name" = "DuckDuckGo";
-
-/* Heading above this device's QR code and scanning instructions */
-"sync.simplified.sync.code.sheet.heading" = "Scan from another device";
-
-/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo”), shown with the DuckDuckGo icon before it. */
-"sync.simplified.sync.code.sheet.open.app" = "Open another %@";
+/* First part of the sync-code sheet instructions. %@ is replaced by the DuckDuckGo app name (e.g. “DuckDuckGo App”), shown with the DuckDuckGo icon before it. */
+"sync.simplified.sync.code.sheet.open.app" = "On another device, open %@";
 
 /* Second part of the sync-code sheet instructions. **...** marks the parts shown in the primary text color. */
 "sync.simplified.sync.code.sheet.scan" = "Go to **Sync & Backup** › **Sync With Another Device** and scan this code:";
 
 /* Navigation title of the sheet that shows this device's sync QR code */
-"sync.simplified.sync.code.sheet.title" = "QR code";
+"sync.simplified.sync.code.sheet.title" = "Scan or Copy Code";
 
 /* Button on the sync-setup prompt to enable Sync & Backup on the current device only, without pairing another device */
 "sync.simplified.this.device.only" = "Sync This Device Only";

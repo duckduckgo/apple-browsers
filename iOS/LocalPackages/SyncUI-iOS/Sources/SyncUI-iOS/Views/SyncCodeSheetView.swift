@@ -45,7 +45,7 @@ struct SyncCodeSheetView: View {
             .onAppear {
                 model.delegate?.barcodeScreenShown()
             }
-            .navigationTitle(UserText.simplifiedSyncCodeSheetTitle)
+            .navigationTitle(model.isSyncPairingUrlEnabled ? UserText.pairingURLShowCodeTitle : UserText.simplifiedSyncCodeSheetTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -68,16 +68,18 @@ struct SyncCodeSheetView: View {
 
     private var instructions: some View {
         VStack(spacing: 16) {
-            Text(UserText.simplifiedSyncCodeSheetHeading)
-                .daxTitle2()
-                .multilineTextAlignment(.center)
+            if model.isSyncPairingUrlEnabled {
+                Text(UserText.pairingURLShowCodeHeading)
+                    .daxTitle2()
+                    .multilineTextAlignment(.center)
+            }
 
             VStack(spacing: 4) {
-                SyncOpenAppInstruction(format: UserText.simplifiedSyncCodeSheetOpenInstruction, appName: UserText.simplifiedSyncCodeSheetAppName)
-
                 if model.isSyncPairingUrlEnabled {
+                    SyncOpenAppInstruction(format: UserText.pairingURLOpenAnotherAppInstruction, appName: UserText.pairingURLShowCodeAppName)
                     SyncPairingURLInstruction(format: UserText.pairingURLShowCodeInstruction)
                 } else {
+                    SyncOpenAppInstruction(format: UserText.simplifiedSyncCodeSheetOpenInstruction)
                     SyncInstructionText(markdown: UserText.simplifiedSyncCodeSheetScanInstruction)
                 }
             }
@@ -201,7 +203,7 @@ struct SyncCodeSheetView_Previews: PreviewProvider {
     static let snapshots = PreviewSnapshots<Bool>(
         configurations: [
             .init(name: "Show Code", state: false),
-            .init(name: "Show Code - Pairing URL", state: true, scope: .previews)
+            .init(name: "Show Code - Pairing URL", state: true)
         ],
         configure: { isSyncPairingUrlEnabled in
             SyncCodeSheetView(

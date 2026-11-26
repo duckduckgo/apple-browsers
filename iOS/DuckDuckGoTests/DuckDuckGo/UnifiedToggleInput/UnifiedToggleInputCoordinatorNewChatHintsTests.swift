@@ -21,8 +21,10 @@ import AIChat
 import Combine
 import Foundation
 @_spi(Testing) import Persistence
+import PhotosUI
 @_spi(Testing) import PixelKit
 import Testing
+import UIKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -54,7 +56,9 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
                          isReturningUser: Bool = true,
                          models: [AIChatRemoteModel] = [everyModel],
                          attachmentLimits: AIChatAttachmentLimits? = defaultAttachmentLimits,
-                         usageLimitsStore: DuckAiUsageLimitsStore? = nil) throws -> UnifiedToggleInputCoordinator {
+                         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+                         scheduleInputFocus: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) })
+        throws -> UnifiedToggleInputCoordinator {
         let storage = DuckAiNativeMemoryStorageHandler()
         if isReturningUser {
             try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.originConversions.rawValue, value: #"["duckai_prompt"]"#)
@@ -76,7 +80,8 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
             termsOfServiceStore: terms,
             newChatHintsFeature: feature,
             newChatHintsUsage: NewChatHintsUsage(capStore: capStore, pixelFiring: pixels,
-                                                 isFeatureEnabled: { feature.isEnabled })
+                                                 isFeatureEnabled: { feature.isEnabled }),
+            scheduleInputFocus: scheduleInputFocus
         )
     }
 
@@ -434,6 +439,30 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         #expect(fired("aichat_new_chat_shown").count == 1)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("From the collapsed bar, a picker hint puts its sheet up before the input takes focus, and focus follows the cancel",
+          .timeLimit(.minutes(1)), arguments: [NewChatHint.photo, .documents])
+    func pickerHintFocusesAfterThePicker(hint: NewChatHint) async throws {
+        let events = EventLog()
+        let sut = try makeSUT(scheduleInputFocus: { focus in
+            events.append("focus")
+            focus()
+        })
+        let presenter = RecordingPresenter { events.append("picker") }
+        sut.attachmentPresentingViewController = presenter
+        try await openBlankChat(sut)
+        try #require(!sut.isInputPaneExpanded)
+
+        sut.performNewChatHint(hint)
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(events.entries == ["picker"])
+
+        try presenter.cancelPicker()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(events.entries == ["picker", "focus"])
+        #expect(sut.isInputPaneExpanded)
+    }
+
     private static let weeklyLimitReached: String = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -483,4 +512,42 @@ private final class HintsTestToggleModeStorage: ToggleModeStoring {
     private var storedMode: TextEntryMode?
     func save(_ mode: TextEntryMode) { storedMode = mode }
     func restore() -> TextEntryMode? { storedMode }
+}
+
+@MainActor
+private final class EventLog {
+    private(set) var entries: [String] = []
+    func append(_ entry: String) { entries.append(entry) }
+}
+
+/// Stands in for the window's root view controller: records the picker the input puts up and plays the user's cancel.
+@MainActor
+private final class RecordingPresenter: UIViewController {
+    private let onPresent: () -> Void
+    private var presented: UIViewController?
+
+    init(onPresent: @escaping () -> Void) {
+        self.onPresent = onPresent
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        presented = viewControllerToPresent
+        onPresent()
+    }
+
+    func cancelPicker() throws {
+        switch presented {
+        case let picker as PHPickerViewController:
+            picker.delegate?.picker(picker, didFinishPicking: [])
+        case let picker as UIDocumentPickerViewController:
+            picker.delegate?.documentPickerWasCancelled?(picker)
+        default:
+            throw CancelError.noPicker
+        }
+    }
+
+    private enum CancelError: Error { case noPicker }
 }

@@ -2298,7 +2298,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportSubmitChangeModel(modelId: modelId)
     }
 
-    /// Expands the input if needed, then presents a picker once the toolbar is laid out.
+    /// Expands the input if needed, then presents a picker menu once the toolbar it hangs from is laid out.
+    /// Picker sheets don't wait for this: expanding raises the keyboard, which would rise under the sheet. They go up
+    /// over the input as it is, and closing them, by a pick or a cancel, expands it (`expandIfOnExpandedInputHost`).
     private func presentPickerForActiveChat(_ present: @escaping () -> Void) {
         if isInputPaneExpanded {
             applyToolbarPresentation()
@@ -2342,16 +2344,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// Opens the system file picker on the active chat (FE `openFilePicker`).
     func presentFilePickerForActiveChat() {
-        presentPickerForActiveChat { [weak self] in
-            self?.attachmentController.presentFilePicker()
-        }
+        guard !isOnboardingLocked else { return }
+        attachmentController.presentFilePicker()
     }
 
     /// Opens the photo library on the active chat. The limited picker needs no photo permission.
     func presentPhotoPickerForActiveChat() {
-        presentPickerForActiveChat { [weak self] in
-            self?.attachmentController.presentPhotoPicker()
-        }
+        guard !isOnboardingLocked else { return }
+        attachmentController.presentPhotoPicker()
     }
 
     func handleModelSelection(_ modelId: String) {

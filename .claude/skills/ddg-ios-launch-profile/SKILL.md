@@ -22,7 +22,7 @@ the profile and prints the result line:
 }'
 ```
 
-- `--fresh` uninstalls first. Use it when you switch to a different PR or bug: a profile sets only the keys it lists,
+- `--fresh` uninstalls first, so it needs `--app`. Use it when you switch to a different PR or bug: a profile sets only the keys it lists,
   and saved values from the previous one, such as flag overrides, would otherwise still apply. For the same PR, leave
   it out.
 - Leave out `--app` to relaunch the installed build. `--device ipad` uses an iPad. `--udid` picks another simulator.

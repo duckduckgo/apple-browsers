@@ -589,6 +589,8 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         // Back on the start state, so the next prompt is a first prompt again and reports itself.
         hasDeliveredFirstPrompt = false
         clearAttachedContext()
+        currentUserScript?.isAIChatPromoVisible = nil
+        currentUserScript?.aiChatStatusOnPage = nil
         if startsPreSubmit, let currentUserScript {
             coordinator.unbind()
             isBoundToUserScript = false

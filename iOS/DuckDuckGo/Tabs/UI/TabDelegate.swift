@@ -34,10 +34,6 @@ protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
-    /// The current cached search token, or nil if none is live. Used by the SERP interceptor
-    /// to attach the `X-DDG-Search-Token` header for the treatment cohort of the Search Token experiment.
-    func searchToken(for tab: TabViewController) -> String?
-
     func tabDidRequestNewTab(_ tab: TabViewController)
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource)
@@ -288,8 +284,6 @@ extension TabDelegate {
     func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool) {}
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
-
-    func searchToken(for tab: TabViewController) -> String? { nil }
 
     func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool { false }
 

@@ -509,10 +509,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
 
-    /// Enables the VPN toolbar upsell button and dot badge promos in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
-    case promoQueueVPNUpsellPromo
-
     /// Enables the "Sync your bookmarks" promo (Bookmarks panel and Manage Bookmarks) in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218734?focus=true
     case promoQueueSyncSetupBookmarksPromo
@@ -1041,8 +1037,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .promoQueueVPNUpsellPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
         case .promoQueueSyncSetupBookmarksPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupBookmarksPromo))
         case .promoQueueSyncSetupAutofillPromo:

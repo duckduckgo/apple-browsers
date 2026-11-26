@@ -413,6 +413,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
     case unifiedToggleInputKeyboardEdgeSweep
 
+    /// Shows chips for what Duck.ai can do above the native input on a blank new chat (iPhone only).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220895031092233
+    case newChatHints
     /// Simplifies the Duck.ai prompt box on iPhone: one ⊕ menu holds the attachments and tools, the tools button
     /// and Customize Responses leave the input, and Chats gets a Duck.ai Settings button.
     /// https://app.asana.com/0/0/1220262271015348/f
@@ -669,10 +672,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220815578039512
     case sendSyncSetupWideEvent
 
-    /// NA experiment: attach a search token to speed up SERP by combining Index/Deep responses.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216365830146824
-    case searchTokenExperimentV4
-
     /// NA Experiment: add VPN as a download reason, with its own onboarding branch that offers the subscription.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220388646436579
     case onboardingVPNDownloadReasonExperiment
@@ -741,12 +740,6 @@ public enum FeatureFlag: String {
 extension FeatureFlag: FeatureFlagDescribing {
     /// Test-only cohort for verifying UI test experiment override mechanism.
     public enum UITestExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
-    /// Search-token experiment cohorts. Treatment devices signal the SERP to serve the faster combined response.
-    public enum SearchTokenExperimentCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -1068,6 +1061,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputPastedText))
         case .unifiedToggleInputKeyboardEdgeSweep:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputKeyboardEdgeSweep))
+        case .newChatHints:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.newChatHints))
         case .unifiedToggleInputSimplifiedPromptBox:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.unifiedToggleInputSimplifiedPromptBox))
         case .aiChatAttachmentPrivacyIPad:
@@ -1086,8 +1081,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .uiTestExperiment:
             Config(source: .disabled, cohortType: UITestExperimentCohort.self)
-        case .searchTokenExperimentV4:
-            Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.searchTokenExperimentV4), cohortType: SearchTokenExperimentCohort.self)
         case .onboardingVPNDownloadReasonExperiment:
             Config(source: .remoteReleasable(PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment), cohortType: OnboardingVPNDownloadReasonExperimentCohort.self)
         case .monthlyFreeTrialExperiment2:

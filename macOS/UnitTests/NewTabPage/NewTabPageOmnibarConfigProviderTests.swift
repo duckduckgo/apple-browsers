@@ -1397,7 +1397,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
                                             modelsLoaded: Bool = true,
                                             userTier: AIChatUserTier? = .free,
                                             storage: DuckAiNativeStorageHandling? = nil,
-                                            burnerStorage: DuckAiNativeStorageHandling? = nil) throws -> NewTabPageOmnibarConfigProvider {
+                                            burnerStorage: DuckAiNativeStorageHandling? = nil,
+                                            windowControllersManager: WindowControllersManagerMock? = nil) throws -> NewTabPageOmnibarConfigProvider {
         let flagger = flaggerWithReasoningOn()
         flagger.featuresStub[FeatureFlag.aiChatNewChatDefaultModel.rawValue] = true
         let models = [makeModel(id: "luna", supportedReasoningEffort: [.none, .high]),
@@ -1413,7 +1414,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
             featureFlagger: flagger,
             aiChatPreferencesPersistor: persistor,
             searchPreferences: makeSearchPreferences(),
-            windowControllersManager: WindowControllersManagerMock(),
+            windowControllersManager: windowControllersManager ?? WindowControllersManagerMock(),
             duckAiStorageHandlerProvider: { $0.isBurner ? burnerStorage : storage },
             availableModelsProvider: { models },
             newChatDefaults: newChatDefaults,
@@ -1541,6 +1542,72 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         await fulfillment(of: [refreshed], timeout: 1)
         XCTAssertEqual(provider.selectedModelId, "luna")
         cancellable.cancel()
+    }
+
+    func testWhenUserDefaultChangesAfterAPick_ThenPagesStartOnTheNewDefault() async throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
+        provider.selectedModelId = "luna"
+        let pickEnded = expectation(description: "pick ended")
+        let cancellable = provider.selectedModelIdPublisher.filter { $0 == nil }.sink { _ in pickEnded.fulfill() }
+
+        try storage.putUserDefaultModel("terra")
+
+        await fulfillment(of: [pickEnded], timeout: 1)
+        XCTAssertEqual(provider.selectedModelId, "terra")
+        XCTAssertEqual(provider.newChatModelPixelParameters(sentModelId: "terra", sentReasoningEffort: nil)?.parameters["model_source"], "user_default")
+        cancellable.cancel()
+    }
+
+    func testWhenAnotherTabShowsTheNewTabPageAfterAPick_ThenThePickEnds() async throws {
+        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
+        provider.selectedModelId = "luna"
+        let pickEnded = expectation(description: "pick ended")
+        let cancellable = provider.selectedModelIdPublisher.filter { $0 == nil }.sink { _ in pickEnded.fulfill() }
+
+        tabs.append(tab: Tab(content: .newtab))
+        tabsChanged.send()
+
+        await fulfillment(of: [pickEnded], timeout: 1)
+        XCTAssertEqual(provider.selectedModelId, "terra")
+        cancellable.cancel()
+    }
+
+    func testWhenTabsChangeWithoutShowingAnotherNewTabPage_ThenThePickStays() async throws {
+        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
+        provider.selectedModelId = "luna"
+
+        tabs.append(tab: Tab(content: .none), selected: false)
+        tabsChanged.send()
+        await Task.yield()
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+    }
+
+    func testWhenReturningToTheSameNewTabPageAfterAnotherTab_ThenThePickStays() async throws {
+        let (windowControllersManager, tabsChanged, tabs) = makeWindowWithNewTabPage()
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), windowControllersManager: windowControllersManager)
+        provider.selectedModelId = "luna"
+
+        tabs.append(tab: Tab(content: .none))
+        tabsChanged.send()
+        await Task.yield()
+        tabs.select(at: .unpinned(0))
+        tabsChanged.send()
+        await Task.yield()
+
+        XCTAssertEqual(provider.selectedModelId, "luna")
+    }
+
+    private func makeWindowWithNewTabPage() -> (WindowControllersManagerMock, PassthroughSubject<Void, Never>, TabCollectionViewModel) {
+        let windowControllersManager = WindowControllersManagerMock()
+        let tabsChanged = PassthroughSubject<Void, Never>()
+        let tabs = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab)]), windowControllersManager: windowControllersManager)
+        windowControllersManager.tabsChanged = tabsChanged.eraseToAnyPublisher()
+        windowControllersManager.customAllTabCollectionViewModels = [tabs]
+        return (windowControllersManager, tabsChanged, tabs)
     }
 
     func testWhenUserDefaultIsSet_ThenItAppliesOutsideDuckAiModeFromRegularStorage() throws {

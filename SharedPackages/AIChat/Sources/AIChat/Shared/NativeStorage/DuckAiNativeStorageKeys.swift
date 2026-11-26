@@ -43,6 +43,10 @@ public enum DuckAiNativeStorageReservedEntryKeys: String, CaseIterable {
     /// disclosure. Native adopts it once and owns the count from then on.
     case fileUploadDisclaimerShown = "duckaiFileUploadDisclaimerShown"
 
+    /// Web-written, native-read: the conversions the web app has recorded, a JSON array of strings such as
+    /// `["duckai_prompt"]`. iOS reads it to tell a returning Duck.ai user.
+    case originConversions = "origin_conversions"
+
     /// Web-written, native-read: the user's "Default AI Model" setting. JSON-encoded model id `String`;
     /// read with `DuckAiUserDefaultModelStore`. Absent when not set.
     case defaultDuckaiModel

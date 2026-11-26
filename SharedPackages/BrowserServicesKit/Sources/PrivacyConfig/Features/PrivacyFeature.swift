@@ -425,6 +425,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
     case unifiedToggleInputKeyboardEdgeSweep
 
+    /// Shows chips for what Duck.ai can do above the native input on a blank new chat (iPhone).
+    /// https://app.asana.com/0/0/1218264470262324/f
+    case newChatHints
     /// Simplifies the Duck.ai prompt box on iPhone: one ⊕ menu holds the attachments and tools, the tools button
     /// and Customize Responses leave the input, and Chats gets a Duck.ai Settings button.
     /// https://app.asana.com/0/0/1220262271015348/f
@@ -1076,9 +1079,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
-
-    /// Kill switch for the VPN toolbar upsell button and dot badge promos.
-    case vpnUpsellPromo
 
     /// Kill switch for the "Sync your bookmarks" promo.
     case syncSetupBookmarksPromo

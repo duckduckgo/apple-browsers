@@ -2043,10 +2043,6 @@ extension Pixel {
         case webExtensionAdBlockingUpgraded
         case webExtensionAdBlockingInstallError
 
-        case webExtensionSearchTokenInstalled
-        case webExtensionSearchTokenUpgraded
-        case webExtensionSearchTokenInstallError
-        case webExtensionSearchTokenNotLoaded
 
         case webExtensionAdBlockingSettingsOpen
         case webExtensionAdBlockingEnabled
@@ -3994,10 +3990,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
         case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
 
-        case .webExtensionSearchTokenInstalled: return "search-token_web_extension_installed"
-        case .webExtensionSearchTokenUpgraded: return "search-token_web_extension_upgraded"
-        case .webExtensionSearchTokenInstallError: return "search-token_web_extension_install_error"
-        case .webExtensionSearchTokenNotLoaded: return "search-token_web_extension_not_loaded"
 
         case .webExtensionScriptletFetchSuccess: return "m_web_extension_scriptlet_fetch_success"
         case .webExtensionScriptletFetchError: return "m_web_extension_scriptlet_fetch_error"

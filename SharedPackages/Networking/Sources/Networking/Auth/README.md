@@ -48,6 +48,7 @@ A Swift implementation of the subset of OAuth 2.0 that DuckDuckGo's subscription
 | `TokenRefreshing` / `DefaultTokenRefresher` | Spends a refresh token for a new pair (`refresh`), spends it several times for independent pairs (`fork`), and verifies tokens (`decode`). Never touches storage. |
 | `TokenBackupStore` | Internal. Reads and writes the backup, decides when it needs renewal, validates it before a restore, and keeps the sign-out cut-off. |
 | `OAuthService` / `DefaultOAuthService` | Sends the Auth API requests and turns their responses into values or errors. |
+| `EnvironmentResolvingOAuthService` | An `OAuthService` that picks the auth environment for each request. The macOS VPN extension uses it so its requests follow the subscription environment. |
 | `OAuthRequest` | Builds each Auth API request and declares which status codes are success and which carry a decodable error body. |
 | `AuthTokenStoring` | Where a token container is kept. Injected; the apps use the keychain. |
 | `BackupRestoreFailure` | Classifies a failed restore as temporary, permanent or unknown, so callers can decide whether to retry. |
@@ -65,7 +66,7 @@ public struct TokenContainer: Codable {
 
 - Two containers are equal when their encoded access and refresh tokens are equal.
 - `decodedAccessToken.externalID` identifies the account; the backup code uses it to tell accounts apart.
-- `decodedRefreshToken.issuedAtDate` and `expirationDate` drive backup renewal, the sign-out cut-off and the iOS background refresh.
+- `decodedRefreshToken.issuedAtDate` and `expirationDate` drive backup renewal and the sign-out cut-off.
 - For IPC, such as handing the token to the macOS VPN system extension, `data: NSData?` encodes the container and `init(with: NSData)` decodes it.
 
 **Warnings:**
@@ -223,7 +224,7 @@ If the fork fails part way:
 - After one pair: that pair becomes the current token and the spent backup is deleted.
 - On the first call: nothing is stored. After `invalidTokenRequest` or `unknownAccount` the backup is deleted; after any other error, such as a network failure, it's kept. The error is thrown.
 
-Concurrent calls share one restore.
+Concurrent calls share one restore. A caller that joins a restore already running gets `TokenBackupError.accountMismatch` when the restored account isn't its `expectedExternalID`; the restored tokens stay stored.
 
 ### Sign-out cut-off
 
@@ -248,7 +249,7 @@ The cut-off is the newest issue date among the current token's and the stored ba
 - a stored backup is still deleted in the cases above, so turning the flag back on never brings back a backup that should have been deleted;
 - a renewal or restore that was running stores no new backup.
 
-The apps wire it to the `authBackupToken` feature flag.
+The apps wire it to the `authBackupToken` feature flag. On macOS the flag is turned off for now, so the macOS app keeps no backup.
 
 ## Sessions and concurrency
 
@@ -258,7 +259,7 @@ The client counts session changes: sign-out, adoption, activation, account creat
 - A **backup renewal** is discarded.
 - A **restore** throws `TokenBackupError.sessionChanged`.
 
-Refreshes and restores are each deduplicated: a second caller waits for the running task and gets its result.
+Refreshes and restores are each deduplicated: a second caller waits for the running task and gets its result. A restore caller that expects another account gets `TokenBackupError.accountMismatch` instead.
 
 ## Error handling
 
@@ -440,6 +441,8 @@ The `TestingSupport` folder of the `Networking` target holds the test helpers, b
 - `APIMockResponseFactory` and `HTTPURLResponseExtension` provide ready-made responses, such as `HTTPURLResponse.ok` or `HTTPURLResponse.internalServerError`.
 
 `DefaultTokenRefresher.setTestingDecodedTokenContainers(_:)` (debug builds only) makes `decode` return given containers instead of verifying real JWTs.
+
+`StagingTokenInvalidator` invalidates a refresh token on the staging Auth API, for the token tools in the debug menus. It can only be created for the staging environment.
 
 ## Additional documentation
 

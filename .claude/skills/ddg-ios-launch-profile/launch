@@ -108,6 +108,8 @@ def main():
     parser.add_argument("--app", help="install this DuckDuckGo.app first")
     parser.add_argument("--fresh", action="store_true", help="uninstall first, so no saved state from earlier profiles applies")
     args = parser.parse_args()
+    if args.fresh and not args.app:
+        parser.error("--fresh uninstalls the app, so it needs --app to install a build again")
     try:
         udid, name = chosen_simulator(args.udid) if args.udid else own_simulator(args.device)
         print(f"simulator: {name} {udid}", flush=True)

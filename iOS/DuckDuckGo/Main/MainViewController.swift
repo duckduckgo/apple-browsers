@@ -4934,10 +4934,12 @@ class MainViewController: UIViewController {
     ///   - includesPostPurchaseOnboarding: Whether a purchase can lead into the subscription onboarding.
     ///   - subscriptionExperimentAttributionProvider: The experiments sent with a purchase made in this flow.
     ///   - onFlowEvent: Called with what happens in this flow. A restore still reports if the flow was closed meanwhile.
+    ///   - isPresentedFromOnboarding: Whether the onboarding flow presents the paywall, so its error alerts don't point back to Settings.
     private func makeSubscriptionFlowViewController(redirectURLComponents: URLComponents?,
                                                     includesPostPurchaseOnboarding: Bool,
                                                     subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding,
-                                                    onFlowEvent: ((SubscriptionFlowEvent) -> Void)?) -> UIViewController {
+                                                    onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
+                                                    isPresentedFromOnboarding: Bool = false) -> UIViewController {
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator()
         let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
             privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -4965,7 +4967,7 @@ class MainViewController: UIViewController {
             subscriptionExperimentAttributionProvider: subscriptionExperimentAttributionProvider,
             onFlowEvent: onFlowEvent,
             onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
-        ))
+        ).environment(\.isPaywallPresentedFromOnboarding, isPresentedFromOnboarding))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController
     }
@@ -10009,7 +10011,8 @@ extension MainViewController: OnboardingDelegate {
             ),
             onFlowEvent: { [weak self] event in
                 self?.contextualOnboardingPixelReporter.measureTryVPNPaywallEvent(event)
-            }
+            },
+            isPresentedFromOnboarding: true
         )
         let navigationController = OnboardingSubscriptionFlowNavigationController(rootViewController: paywall)
         navigationController.onDismiss = onDismiss

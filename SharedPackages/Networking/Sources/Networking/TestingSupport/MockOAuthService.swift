@@ -32,7 +32,9 @@ public final class MockOAuthService: OAuthService {
     }
 
     public var authorizeResponse: Result<Networking.OAuthSessionID, Error>?
+    public private(set) var authorizeCallCount = 0
     public func authorize(codeChallenge: String) async throws -> Networking.OAuthSessionID {
+        authorizeCallCount += 1
         switch authorizeResponse! {
         case .success(let result):
             return result
@@ -42,7 +44,9 @@ public final class MockOAuthService: OAuthService {
     }
 
     public var createAccountResponse: Result<Networking.AuthorisationCode, Error>?
+    public private(set) var createAccountCallCount = 0
     public func createAccount(authSessionID: String) async throws -> Networking.AuthorisationCode {
+        createAccountCallCount += 1
         switch createAccountResponse! {
         case .success(let result):
             return result
@@ -52,7 +56,10 @@ public final class MockOAuthService: OAuthService {
     }
 
     public var loginWithSignatureResponse: Result<Networking.AuthorisationCode, Error>?
+    /// The signatures passed to `login(withSignature:authSessionID:)`, in call order.
+    public private(set) var loginSignatures: [String] = []
     public func login(withSignature signature: String, authSessionID: String) async throws -> Networking.AuthorisationCode {
+        loginSignatures.append(signature)
         switch loginWithSignatureResponse! {
         case .success(let result):
             return result
@@ -62,7 +69,10 @@ public final class MockOAuthService: OAuthService {
     }
 
     public var getAccessTokenResponse: Result<Networking.OAuthTokenResponse, Error>?
+    /// The authorization codes passed to `getAccessToken`, in call order.
+    public private(set) var getAccessTokenCodes: [String] = []
     public func getAccessToken(clientID: String, codeVerifier: String, code: String, redirectURI: String) async throws -> Networking.OAuthTokenResponse {
+        getAccessTokenCodes.append(code)
         switch getAccessTokenResponse! {
         case .success(let result):
             return result
@@ -92,7 +102,13 @@ public final class MockOAuthService: OAuthService {
     }
 
     public var logoutError: Error?
+    /// The access tokens passed to `logout(accessToken:)`, in call order.
+    public private(set) var logoutAccessTokens: [String] = []
+    /// Called with the access token after each `logout(accessToken:)` call is recorded.
+    public var onLogout: ((String) -> Void)?
     public func logout(accessToken: String) async throws {
+        logoutAccessTokens.append(accessToken)
+        onLogout?(accessToken)
         if let logoutError {
             throw logoutError
         }

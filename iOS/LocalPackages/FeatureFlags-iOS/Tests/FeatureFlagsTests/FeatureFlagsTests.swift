@@ -206,22 +206,10 @@ final class FeatureFlagsTests: XCTestCase {
     }
 
     func testWhenReadingIOSBrowserConfigSubfeatureThenParentAndRawValueAreStable() {
-        let subfeature = iOSBrowserConfigSubfeature.searchTokenExperimentV4
+        let subfeature = iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning
 
         XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
-        XCTAssertEqual(subfeature.rawValue, "searchTokenExperimentV4")
-    }
-
-    func testWhenReadingSearchTokenFeatureFlagThenSourceAndCohortUseSearchTokenConfiguration() {
-        guard case let .remoteReleasable(subfeature) = FeatureFlag.searchTokenExperimentV4.source else {
-            XCTFail("Expected remote-releasable source")
-            return
-        }
-
-        XCTAssertEqual((subfeature as? iOSBrowserConfigSubfeature)?.rawValue,
-                       iOSBrowserConfigSubfeature.searchTokenExperimentV4.rawValue)
-        XCTAssertEqual(FeatureFlag.searchTokenExperimentV4.cohortType.map(ObjectIdentifier.init),
-                       ObjectIdentifier(FeatureFlag.SearchTokenExperimentCohort.self))
+        XCTAssertEqual(subfeature.rawValue, "tabEvictionOnMemoryWarning")
     }
 
     func testTabEvictionFlagsAreDefaultEnabledRemoteReleasableAndLocallyOverridable() {

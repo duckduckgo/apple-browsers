@@ -603,7 +603,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         moreOptionsMenu.update()
         moreOptionsMenu.addToDock(moreOptionsMenu.items[1])
 
-        XCTAssertEqual(videoPresenter.presentations, [.done])
+        XCTAssertEqual(videoPresenter.presentations, [.init(entryPoint: .moreOptionsMenu, primaryAction: .done)])
         XCTAssertEqual(addToDockPixelFiring.actualFireCalls,
                        [ExpectedFireCall(pixel: GeneralPixel.userAddedToDockFromMoreOptionsMenu, frequency: .dailyAndStandard)])
     }

@@ -1321,7 +1321,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
         guard state != newChatState else { return }
         newChatState = state
-        if featureFlagger.isFeatureOn(.newChatHints) {
+        if newChatHintsFeature.isEnabled {
             logNewChatHintsState()
         }
     }
@@ -1348,7 +1348,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         } else if state.isFullTabInput, state.hasChat || state.carriesPrompt {
             newChatHintsUsage.leftNewChat(tab: tab)
         }
-        guard featureFlagger.isFeatureOn(.newChatHints), state.isGuaranteedNewChat else {
+        guard newChatHintsFeature.isEnabled, state.isGuaranteedNewChat else {
             publishNewChatHints([])
             return
         }
@@ -1412,7 +1412,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// Runs a hint: moves to a model that can do it if needed, then opens the picker or selects the image tool.
     /// Ignored with the flag off: a tap can land after the flag turns off but before its update clears the row.
     func performNewChatHint(_ hint: NewChatHint) {
-        guard featureFlagger.isFeatureOn(.newChatHints),
+        guard newChatHintsFeature.isEnabled,
               let tab = currentTabUID, let index = newChatHints.firstIndex(of: hint),
               let model = capableModel(for: hint) else { return }
         newChatHintsUsage.hintTapped(hint, position: index + 1, tab: tab)

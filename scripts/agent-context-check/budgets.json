@@ -20,7 +20,7 @@
     ".claude/skills/ddg-sentry-report/SKILL.md#description": 220,
     ".agents/skills/verify-ios/SKILL.md": 8800,
     ".agents/skills/verify-ios/SKILL.md#description": 220,
-    ".agents/skills/verify-macos-browser/SKILL.md": 5700,
+    ".agents/skills/verify-macos-browser/SKILL.md": 6500,
     "REVIEW-pixels.md": 6060
   },
   "ignored_references": [

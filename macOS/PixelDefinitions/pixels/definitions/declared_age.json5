@@ -1,0 +1,55 @@
+{
+    "declared-age_check_not-required_macos": {
+        "description": "Fires when Apple reports that the Declared Age Range request isn't required. The result is final, so it fires at most once per install, or once more after a reinstall.",
+        "owners": ["jleandroperez"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "isReinstall",
+                "type": "boolean",
+                "description": "Whether the app was reinstalled."
+            }
+        ]
+    },
+    "declared-age_request_shown_macos": {
+        "description": "Fires when Apple's Declared Age Range sheet is requested, right before it is shown.",
+        "owners": ["jleandroperez"],
+        "triggers": ["impression"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "isReinstall",
+                "type": "boolean",
+                "description": "Whether the app was reinstalled."
+            }
+        ]
+    },
+    "declared-age_request_completed_macos": {
+        "description": "Fires when the user responds to Apple's Declared Age Range sheet. The response itself is never sent.",
+        "owners": ["jleandroperez"],
+        "triggers": ["user_interaction"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "isReinstall",
+                "type": "boolean",
+                "description": "Whether the app was reinstalled."
+            }
+        ]
+    },
+    "declared-age_request_failed_macos": {
+        "description": "Fires when Apple's Declared Age Range request throws. Nothing is stored, so it is retried on the next launch.",
+        "owners": ["jleandroperez"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "isReinstall",
+                "type": "boolean",
+                "description": "Whether the app was reinstalled."
+            }
+        ]
+    }
+}

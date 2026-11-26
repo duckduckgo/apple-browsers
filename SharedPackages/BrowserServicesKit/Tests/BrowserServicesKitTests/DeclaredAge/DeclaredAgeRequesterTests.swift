@@ -17,6 +17,7 @@
 //
 
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 import XCTest
 @testable import BrowserServicesKit
 
@@ -25,10 +26,12 @@ final class DeclaredAgeRequesterTests: XCTestCase {
 
     private let start = Date(timeIntervalSince1970: 1_767_225_600) // 2026-01-01 UTC
     private var storage: (any ThrowingKeyedStoring<DeclaredAgeSettings>)!
+    private var pixelKit: PixelKitMock!
 
     override func setUp() async throws {
         try await super.setUp()
         storage = InMemoryKeyValueStore().throwingKeyedStoring()
+        pixelKit = PixelKitMock()
     }
 
     func testFirstLaunchIsRequestNeeded() async throws {
@@ -129,6 +132,46 @@ final class DeclaredAgeRequesterTests: XCTestCase {
         XCTAssertFalse(isNeeded)
     }
 
+    func testMarkNotRequiredFiresPixelOnce() {
+        let requester = makeRequester()
+
+        requester.markNotRequired(isReinstall: false)
+        requester.markNotRequired(isReinstall: false)
+
+        XCTAssertEqual(pixelKit.actualFireCalls, [
+            ExpectedFireCall(pixel: DeclaredAgePixel.checkNotRequired(isReinstall: false), frequency: .standard)
+        ])
+    }
+
+    func testSuccessfulRequestFiresShownAndCompleted() async {
+        _ = await makeRequester().requestDeclaredAge(isReinstall: true, in: makeAnchor())
+
+        XCTAssertEqual(pixelKit.actualFireCalls, [
+            ExpectedFireCall(pixel: DeclaredAgePixel.requestShown(isReinstall: true), frequency: .standard),
+            ExpectedFireCall(pixel: DeclaredAgePixel.requestCompleted(isReinstall: true), frequency: .standard)
+        ])
+    }
+
+    func testFailedRequestFiresShownAndFailed() async {
+        let service = ServiceMock(isRequired: true, requestError: CancellationError())
+
+        _ = await makeRequester(service: service).requestDeclaredAge(isReinstall: false, in: makeAnchor())
+
+        XCTAssertEqual(pixelKit.actualFireCalls, [
+            ExpectedFireCall(pixel: DeclaredAgePixel.requestShown(isReinstall: false), frequency: .standard),
+            ExpectedFireCall(pixel: DeclaredAgePixel.requestFailed(isReinstall: false), frequency: .dailyAndCount)
+        ])
+    }
+
+    func testRequestNotDueFiresNoPixel() async throws {
+        try storeMarker(at: start)
+
+        _ = try await makeRequester().isRequestNeeded(isReinstall: false)
+        makeRequester().markNotRequired(isReinstall: false)
+
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
+    }
+
     private func storeMarker(at date: Date) throws {
         try storage.set(date, for: \.lastRequestDate)
     }
@@ -146,6 +189,7 @@ final class DeclaredAgeRequesterTests: XCTestCase {
         let date = now ?? start
         return DeclaredAgeRequester(service: service ?? ServiceMock(isRequired: true),
                                   storage: storage,
+                                  pixelFiring: pixelKit,
                                   now: { date })
     }
 }

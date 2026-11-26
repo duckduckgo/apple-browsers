@@ -34,6 +34,8 @@ struct PageTranslationSessionTests {
         var suspendsApply = false
         private var applyContinuation: CheckedContinuation<Void, Never>?
 
+        /// When set, the n-th apply reports `writes[n]` written instead of every update.
+        var writes: [Int] = []
         var isApplySuspended: Bool { applyContinuation != nil }
 
         func resumeApply() {
@@ -51,13 +53,15 @@ struct PageTranslationSessionTests {
             if suspendsApply {
                 await withCheckedContinuation { applyContinuation = $0 }
             }
-            return updates.count
+            return writes.isEmpty ? updates.count : writes[applied.count - 1]
         }
     }
 
     /// Answers with each unit's text plus " (en)"; with `suspends`, waits until `resume()`.
     private final class FakeTranslator: PageTranslating, @unchecked Sendable {
         var suspends = false
+        /// The 0-based call that throws.
+        var failsOnCall: Int?
         private(set) var calls: [(units: [PageTranslationUnit], pairID: String)] = []
         private var continuation: CheckedContinuation<Void, Never>?
 
@@ -65,6 +69,9 @@ struct PageTranslationSessionTests {
 
         func translate(_ units: [PageTranslationUnit], pairID: String) async throws -> [PageTranslationUpdate] {
             calls.append((units, pairID))
+            if calls.count - 1 == failsOnCall {
+                throw ExtractFailure()
+            }
             if suspends {
                 await withCheckedContinuation { continuation = $0 }
             }
@@ -108,7 +115,9 @@ struct PageTranslationSessionTests {
 
     private final class ProgressSpy: PageTranslationProgress {
         var events: [String] = []
+        var states: [PageTranslationSession.State] = []
 
+        func translationStateDidChange(_ state: PageTranslationSession.State) { states.append(state) }
         func translationDidStart() { events.append("start") }
         func translationDidProgress(_ fraction: Double) { events.append("\(fraction)") }
         func translationDidFinish() { events.append("finish") }
@@ -340,5 +349,120 @@ struct PageTranslationSessionTests {
 
         #expect(translator.calls.count == 1)
         #expect(bridge.applied.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("the visible units applying makes the page partly translated, then the rest fully translated", .timeLimit(.minutes(1)))
+    func partlyThenFullyTranslated() async {
+        bridge.units = units(visible: [5])
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(progress.states == [.translating, .partiallyTranslated, .fullyTranslated])
+        #expect(session.state == .fullyTranslated)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("nothing written goes back to idle when the translation ends", .timeLimit(.minutes(1)))
+    func idleWhenNothingWasWritten() async {
+        bridge.units = units(visible: [5])
+        bridge.writes = [0, 0, 0]
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(progress.states == [.translating, .idle])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a later batch that writes after an empty viewport makes the page partly translated", .timeLimit(.minutes(1)))
+    func translatedWhenALaterBatchWrites() async {
+        bridge.units = units(visible: [5])
+        bridge.writes = [0, 2, 0]
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(progress.states == [.translating, .partiallyTranslated, .fullyTranslated])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a failure after something was written leaves the page partly translated", .timeLimit(.minutes(1)))
+    func failureAfterAWriteIsViewportTranslated() async {
+        bridge.units = units(visible: [])
+        translator.failsOnCall = 1
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(progress.states == [.translating, .partiallyTranslated])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a failure before anything was written goes back to idle", .timeLimit(.minutes(1)))
+    func failureBeforeAWriteGoesBackToIdle() async {
+        bridge.extractError = ExtractFailure()
+        let session = makeSession()
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(progress.states == [.translating, .idle])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a page with no units goes back to idle", .timeLimit(.minutes(1)))
+    func noUnitsGoesBackToIdle() async {
+        let session = makeSession()
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(progress.states == [.translating, .idle])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("an apply that returns after a cancel leaves the page idle", .timeLimit(.minutes(1)))
+    func applyAfterCancelStaysIdle() async {
+        bridge.units = units(visible: [5])
+        bridge.suspendsApply = true
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        while !bridge.isApplySuspended {
+            await Task.yield()
+        }
+        bridge.resumeApply()
+        while bridge.applied.count < 2 || !bridge.isApplySuspended {
+            await Task.yield()
+        }
+        session.cancel()
+        bridge.resumeApply()
+        await waitUntilDone(session)
+
+        #expect(progress.states == [.translating, .partiallyTranslated, .idle])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("cancel goes back to idle", .timeLimit(.minutes(1)))
+    func cancelGoesBackToIdle() async {
+        bridge.units = units(visible: [5])
+        translator.suspends = true
+        let session = makeSession(characterLimit: { 2 })
+
+        session.start(offer)
+        while !translator.isSuspended {
+            await Task.yield()
+        }
+        session.cancel()
+        translator.resume()
+        await waitUntilDone(session)
+
+        #expect(progress.states == [.translating, .idle])
     }
 }

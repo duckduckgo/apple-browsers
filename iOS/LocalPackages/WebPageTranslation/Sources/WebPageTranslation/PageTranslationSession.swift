@@ -42,6 +42,7 @@ public protocol PageTranslationProgress: AnyObject {
     func translationDidStart()
     func translationDidProgress(_ fraction: Double)
     func translationDidFinish()
+    func translationStateDidChange(_ state: PageTranslationSession.State)
 }
 
 /// Translates one tab's page: extracts its text, then translates and writes it back one batch at a time,
@@ -55,6 +56,20 @@ public final class PageTranslationSession {
     private let batchCharacterLimit: () -> Int
     private weak var progress: PageTranslationProgress?
     private var task: Task<Void, Never>?
+    /// How many translations the page has written, across batches.
+    private var written = 0
+
+    public enum State: Equatable {
+        case idle
+        /// Downloading, or the visible part isn't written yet.
+        case translating
+        /// Some text is written: the visible part is done and the rest may still be translating, or it failed partway.
+        case partiallyTranslated
+        /// Every batch was written.
+        case fullyTranslated
+    }
+
+    public private(set) var state = State.idle
 
     var isTranslating: Bool { task != nil }
 
@@ -72,6 +87,8 @@ public final class PageTranslationSession {
     /// Ignored while a translation is running.
     public func start(_ offer: TranslationOffer) {
         guard task == nil else { return }
+        written = 0
+        setState(.translating)
         progress?.translationDidStart()
         task = Task {
             await translate(offer)
@@ -82,10 +99,12 @@ public final class PageTranslationSession {
     /// Stops before the next batch and leaves the progress bar alone: the navigation that cancels owns it now.
     public func cancel() {
         task?.cancel()
+        setState(.idle)
     }
 
     private func translate(_ offer: TranslationOffer) async {
         var bar = BarProgress()
+        var translatedAll = false
         do {
             let downloaded = try await prepare(offer.pairID)
             let (units, documentID) = try await bridge.extract()
@@ -93,17 +112,26 @@ public final class PageTranslationSession {
             let limit = batchCharacterLimit()
             // Measuring every HTML unit takes long enough on a big page to stall scrolling, so batching runs off the main actor.
             let batches = await Task.detached { PageTranslationBatches.make(units, characterLimit: limit) }.value
-            var applied = 0
             for batch in batches {
-                applied += try await translateAndApply(batch, offer: offer, in: documentID)
+                written += try await translateAndApply(batch, offer: offer, in: documentID)
                 advance(&bar, past: batch)
+                if bar.isFinished && written > 0 && !Task.isCancelled {
+                    setState(.partiallyTranslated)
+                }
             }
-            Logger.webPageTranslation.info("Page translation: applied \(applied, privacy: .public) of \(units.count, privacy: .public) units")
+            translatedAll = true
+            Logger.webPageTranslation.info("Page translation: applied \(self.written, privacy: .public) of \(units.count, privacy: .public) units")
         } catch is CancellationError {
             Logger.webPageTranslation.info("Page translation cancelled")
+            setState(.idle)
             return
         } catch {
             logFailure(error)
+        }
+        if written == 0 || Task.isCancelled {
+            setState(.idle)
+        } else {
+            setState(translatedAll ? .fullyTranslated : .partiallyTranslated)
         }
         if !bar.isFinished && !Task.isCancelled {
             progress?.translationDidFinish()
@@ -141,6 +169,12 @@ public final class PageTranslationSession {
         if bar.isFinished {
             progress?.translationDidFinish()
         }
+    }
+
+    private func setState(_ newState: State) {
+        guard state != newState else { return }
+        state = newState
+        progress?.translationStateDidChange(newState)
     }
 
     private func logFailure(_ error: Error) {

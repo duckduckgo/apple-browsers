@@ -2987,6 +2987,8 @@ extension TabViewController: PageTranslationProgress {
     func translationDidFinish() {
         progressWorker.didFinishLoading(.translation)
     }
+
+    func translationStateDidChange(_ state: PageTranslationSession.State) {}
 }
 
 // MARK: - WKNavigationDelegate

@@ -70,7 +70,7 @@ final class BrowsingMenuViewController: UIViewController {
 
     private var headerButtons: [BrowsingMenuButton] = []
     private let headerEntries: [BrowsingMenuEntry]
-    private let menuEntries: [BrowsingMenuEntry]
+    private var menuEntries: [BrowsingMenuEntry]
     private let daxDialogsManager: DaxDialogsManaging
     private let appSettings: AppSettings
     private var wasActionSelected: Bool = false
@@ -389,6 +389,14 @@ final class BrowsingMenuViewController: UIViewController {
         rightConstraint.constant = isUsingSingleBar ? 67 : 10
 
         recalculatePreferredWidthConstraint()
+    }
+
+    /// Shows new entries in the open menu, for a row whose state changed while it's on screen.
+    func update(menuEntries: [BrowsingMenuEntry]) {
+        self.menuEntries = menuEntries
+        guard isViewLoaded else { return }
+        recalculatePreferredWidthConstraint()
+        recalculateHeightConstraints()
     }
 
     private func recalculatePreferredWidthConstraint() {

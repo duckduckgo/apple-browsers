@@ -1267,13 +1267,15 @@ extension TabViewController: BrowsingMenuEntryBuilding {
                                          image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.translate : DesignSystemImages.Glyphs.Size24.translate,
                                          showNotificationDot: content.showsDot,
                                          isEnabled: content.isEnabled) { [weak self] in
-            switch state {
+            // The open menu can show an older state than the page's; act on the page's.
+            guard let self else { return }
+            switch pageTranslationState {
             case .idle:
-                self?.translatePageFromMenu(offer)
+                translatePageFromMenu(offer)
             case .translating:
                 break
             case .partiallyTranslated, .fullyTranslated:
-                self?.showOriginalPage()
+                showOriginalPage()
             }
         }
     }

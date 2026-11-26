@@ -285,6 +285,19 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         XCTAssertEqual(menu.tableView(tableView, willSelectRowAt: IndexPath(row: 1, section: 0)), IndexPath(row: 1, section: 0))
     }
 
+    func testPopoverMenuShowsUpdatedEntries() {
+        let menu = BrowsingMenuViewController(headerEntries: [],
+                                              menuEntries: [.regular(name: "Translating…", image: UIImage(), isEnabled: false) {}],
+                                              daxDialogsManager: MockDaxDialogsManager(),
+                                              appSettings: AppSettingsMock())
+        let tableView = UITableView()
+
+        menu.update(menuEntries: [.regular(name: "Show Original Page", image: UIImage()) {}, .separator])
+
+        XCTAssertEqual(menu.tableView(tableView, numberOfRowsInSection: 0), 2)
+        XCTAssertEqual(menu.tableView(tableView, willSelectRowAt: IndexPath(row: 0, section: 0)), IndexPath(row: 0, section: 0))
+    }
+
     func testWebsiteMenuOmitsTranslateWhenEntryIsUnavailable() throws {
         let entryBuilder = MockBrowsingMenuEntryBuilder(chatsEntry: nil, includesBookmarkEntries: true)
         let model = try XCTUnwrap(makeWebsiteMenu(entryBuilder: entryBuilder))

@@ -235,6 +235,8 @@ class MainViewController: UIViewController {
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     private var isMenuAlertVisible: Bool?
+    /// Rebuilds the open website menu from its tab, so a row reflects a change while the menu is on screen.
+    private var refreshOpenBrowsingMenu: (() -> Void)?
     private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
@@ -6867,7 +6869,16 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager)
         browsingMenu.isUsingSingleBar = isUsingSingleBar
+        if context == .website {
+            refreshOpenBrowsingMenu = { [weak self, weak browsingMenu, weak tab] in
+                guard let self, let browsingMenu, let tab else { return }
+                browsingMenu.update(menuEntries: tab.buildBrowsingMenu(with: menuBookmarksViewModel,
+                                                                       mobileCustomization: mobileCustomization,
+                                                                       clearTabsAndData: onFirePressed))
+            }
+        }
         browsingMenu.onDismiss = { wasActionSelected in
+            self.refreshOpenBrowsingMenu = nil
             self.showMenuHighlighterIfNeeded()
             self.viewCoordinator.menuToolbarButton.isEnabled = true
             if !wasActionSelected {
@@ -6909,21 +6920,36 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
-        let view = BrowsingMenuSheetView(model: model,
-                                         headerDataSource: browsingMenuHeaderDataSource,
-                                         highlightRowWithTag: menuHighlightingTag,
-                                         dismissInstantly: isNewTabTransitionEnabled ? { [weak self] in
-                                             self?.dismissPresentedSheetInstantly()
-                                         } : nil,
-                                         onDismiss: { wasActionSelected in
-                                             self.showMenuHighlighterIfNeeded()
-                                             self.viewCoordinator.menuToolbarButton.isEnabled = true
-                                             if !wasActionSelected {
-                                                 PixelKit.fire(Pixel.Event.browsingMenuDismissed)
-                                             }
-                                         })
+        let highlightTag = menuHighlightingTag
+        func makeView(_ model: BrowsingMenuModel) -> BrowsingMenuSheetView {
+            BrowsingMenuSheetView(model: model,
+                                  headerDataSource: browsingMenuHeaderDataSource,
+                                  highlightRowWithTag: highlightTag,
+                                  dismissInstantly: isNewTabTransitionEnabled ? { [weak self] in
+                                      self?.dismissPresentedSheetInstantly()
+                                  } : nil,
+                                  onDismiss: { wasActionSelected in
+                                      self.refreshOpenBrowsingMenu = nil
+                                      self.showMenuHighlighterIfNeeded()
+                                      self.viewCoordinator.menuToolbarButton.isEnabled = true
+                                      if !wasActionSelected {
+                                          PixelKit.fire(Pixel.Event.browsingMenuDismissed)
+                                      }
+                                  })
+        }
 
-        let controller = BrowsingMenuSheetViewController(rootView: view)
+        let controller = BrowsingMenuSheetViewController(rootView: makeView(model))
+        if context == .website {
+            refreshOpenBrowsingMenu = { [weak self, weak controller, weak tab] in
+                guard let self, let controller, let tab,
+                      let model = tab.buildSheetBrowsingMenu(context: context,
+                                                             with: menuBookmarksViewModel,
+                                                             mobileCustomization: mobileCustomization,
+                                                             browsingMenuSheetCapability: browsingMenuSheetCapability,
+                                                             clearTabsAndData: onFirePressed) else { return }
+                controller.rootView = makeView(model)
+            }
+        }
         let contentHeight = model.estimatedContentHeight(
             headerDataSource: browsingMenuHeaderDataSource,
             verticalSizeClass: traitCollection.verticalSizeClass
@@ -8136,8 +8162,10 @@ extension MainViewController: NewTabPageControllerDelegate {
 extension MainViewController: TabDelegate {
 
     func tabDidChangePageTranslationState(_ tab: TabViewController) {
+        guard tab === currentTab else { return }
+        refreshOpenBrowsingMenu?()
         // Refreshing the button cancels its site permission animation, so only when the dot changes.
-        guard tab === currentTab, shouldShowMenuAlert != isMenuAlertVisible else { return }
+        guard shouldShowMenuAlert != isMenuAlertVisible else { return }
         refreshMenuAlertState(animated: true)
     }
 

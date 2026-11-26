@@ -207,6 +207,17 @@ jobs:
           build-number: ${{ env.build_number }}
           output-name: ${{ env.output_name }}
 
+      - name: Attach QR code to Asana task
+        id: attach-qr
+        if: github.event.inputs.asana-task-url != '' && steps.generate-ota.outputs.qr-url != ''
+        continue-on-error: true # the QR is a convenience, never fail the build over it
+        uses: ./.github/actions/asana-attach-image
+        with:
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-task-url: ${{ github.event.inputs.asana-task-url }}
+          image-url: ${{ steps.generate-ota.outputs.qr-url }}
+          filename: install-qr-${{ github.run_id }}.png
+
       - name: Report success
         env:
           ASANA_TASK_URL: ${{ github.event.inputs.asana-task-url }}
@@ -216,6 +227,7 @@ jobs:
           DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
           INSTALL_URL: ${{ steps.generate-ota.outputs.install-url }}
           QR_URL: ${{ steps.generate-ota.outputs.qr-url }}
+          QR_ATTACHMENT_GID: ${{ steps.attach-qr.outputs.attachment-gid }}
           TITLE: ${{ steps.generate-ota.outputs.title }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}

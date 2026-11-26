@@ -1,0 +1,48 @@
+name: 'Attach Image to Asana Task'
+description: >
+  Uploads an image as an attachment to an Asana task so it can be shown inline in a
+  comment or description (via <img data-asana-gid="...">). By default it also deletes
+  the automatic "attached" activity entry that Asana adds for the upload, so the image
+  only appears where it is referenced.
+
+inputs:
+  asana-access-token:
+    description: 'Asana access token.'
+    required: true
+  asana-task-url:
+    description: 'URL of the Asana task to attach the image to.'
+    required: true
+  image-url:
+    description: 'Public URL of the image to attach.'
+    required: true
+  filename:
+    description: 'File name for the attachment. Keep it unique per run, it is used to find the activity entry to delete.'
+    required: true
+  content-type:
+    description: 'MIME type of the image.'
+    required: false
+    default: 'image/png'
+  delete-attachment-story:
+    description: 'Whether to delete the automatic "attached" activity entry for this upload.'
+    required: false
+    default: 'true'
+
+outputs:
+  attachment-gid:
+    description: 'GID of the created attachment, to reference in Asana rich text.'
+    value: ${{ steps.attach-image.outputs.attachment-gid }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: attach-image
+      shell: bash
+      env:
+        ASANA_ACCESS_TOKEN: ${{ inputs.asana-access-token }}
+        ASANA_TASK_URL: ${{ inputs.asana-task-url }}
+        IMAGE_URL: ${{ inputs.image-url }}
+        FILENAME: ${{ inputs.filename }}
+        CONTENT_TYPE: ${{ inputs.content-type }}
+        DELETE_ATTACHMENT_STORY: ${{ inputs.delete-attachment-story }}
+      run: |
+        bash "${{ github.action_path }}/attach_image.sh"

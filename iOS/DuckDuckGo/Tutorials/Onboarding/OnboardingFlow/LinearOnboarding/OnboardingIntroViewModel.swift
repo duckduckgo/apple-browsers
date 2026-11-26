@@ -159,7 +159,8 @@ final class OnboardingIntroViewModel: ObservableObject {
                 flowType: onboardingManager.currentOnboardingFlow,
                 featureFlagger: featureFlagger,
                 downloadReasonProvider: { onboardingManager.currentDownloadReason },
-                isVPNDownloadReasonAvailable: { onboardingManager.isVPNDownloadReasonAvailable }
+                isVPNDownloadReasonAvailable: { onboardingManager.isVPNDownloadReasonAvailable },
+                onboardingSourceProvider: { tutorialSettings.onboardingSource }
             ),
             personalizationManager: personalizationManager,
             aiModelsPrefetcher: OnboardingAIModelsPrefetcher(),

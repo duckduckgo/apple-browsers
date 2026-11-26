@@ -53,19 +53,31 @@ struct OnboardingIntroContentProvider: OnboardingIntroContentProviding {
     private let downloadReasonProvider: () -> OnboardingDownloadReason?
     /// Read on demand: enrollment happens when the user starts onboarding, after this provider is built.
     private let isVPNDownloadReasonAvailable: () -> Bool
+    /// Where the user installed and opened the app from: the App Store page (`.default`) or an App Store custom product page (e.g. `.duckAICPP`).
+    private let onboardingSourceProvider: () -> OnboardingSource?
 
     init(
         flowType: OnboardingFlowType,
         featureFlagger: FeatureFlagger,
         searchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience(),
         downloadReasonProvider: @escaping () -> OnboardingDownloadReason? = { nil },
-        isVPNDownloadReasonAvailable: @escaping () -> Bool = { false }
+        isVPNDownloadReasonAvailable: @escaping () -> Bool = { false },
+        onboardingSourceProvider: @escaping () -> OnboardingSource? = { nil }
     ) {
         self.flowType = flowType
         self.featureFlagger = featureFlagger
         self.searchExperienceProvider = searchExperienceProvider
         self.downloadReasonProvider = downloadReasonProvider
         self.isVPNDownloadReasonAvailable = isVPNDownloadReasonAvailable
+        self.onboardingSourceProvider = onboardingSourceProvider
+    }
+}
+
+private extension OnboardingIntroContentProvider {
+
+    /// Duck.ai CPP install with the AI chat reason preset. The reason is preset only on iPhone, so iPad is excluded.
+    var isDuckAICPPInstallWithAIChatReason: Bool {
+        onboardingSourceProvider() == .duckAICPP && downloadReasonProvider() == .privateAIChat
     }
 }
 
@@ -117,6 +129,7 @@ extension OnboardingIntroContentProvider {
 
     var introStepContent: OnboardingIntroStepContent {
         let introMessage = switch flowType {
+        case .default where isDuckAICPPInstallWithAIChatReason: UserText.Onboarding.DuckAICPP.Intro.message
         case .default: UserText.Onboarding.Rebranding.Intro.message
         case .duckAI: UserText.Onboarding.DuckAICPP.Intro.message
         }

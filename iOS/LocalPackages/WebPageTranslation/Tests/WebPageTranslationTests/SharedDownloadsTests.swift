@@ -94,4 +94,18 @@ struct SharedDownloadsTests {
         #expect(failed.ended.map { (try? $0.get()) == nil } == true)
         #expect(retried.fractions == [1])
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a download is running from its start until it ends, with or without listeners", .timeLimit(.minutes(1)))
+    func runningUntilTheDownloadEnds() async {
+        #expect(await !downloads.isRunning("es-en"))
+        let listening = ProgressListener().listen(to: download())
+        await waitUntil { installs.count == 1 }
+        listening.cancel()
+        await listening.value
+        #expect(await downloads.isRunning("es-en"))
+
+        installs.finish()
+        while await downloads.isRunning("es-en"), !Task.isCancelled { await Task.yield() }
+    }
 }

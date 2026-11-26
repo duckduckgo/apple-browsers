@@ -66,6 +66,8 @@ public protocol TranslationModelsProviding: Sendable {
     /// Downloads and installs a pair, reporting progress from 0 to 1. Callers share one download per pair,
     /// and a caller that stops listening leaves it running.
     func install(_ pairID: String) -> AsyncThrowingStream<Double, Error>
+    /// Whether the pair's shared download is running, for any caller.
+    func isDownloading(_ pairID: String) async -> Bool
 }
 
 /// Translates page units with an installed model. One instance is shared by all tabs, so only one
@@ -91,6 +93,12 @@ public final class PageTranslator: @unchecked Sendable {
 
     public func isInstalled(_ pairID: String) -> Bool {
         modelsProvider.installedPair(pairID) != nil
+    }
+
+    /// Whether translating would start a new download: the pair isn't installed and no one is downloading it.
+    public func needsDownload(_ pairID: String) async -> Bool {
+        guard !isInstalled(pairID) else { return false }
+        return await !modelsProvider.isDownloading(pairID)
     }
 
     /// Makes a pair ready to translate, reporting progress from 0 to 1: at once when it's installed, otherwise

@@ -33,6 +33,11 @@ actor SharedDownloads {
 
     private var running: [String: Download] = [:]
 
+    /// Whether `id` is downloading, listened to or not.
+    func isRunning(_ id: String) -> Bool {
+        running[id] != nil
+    }
+
     /// The download of `id`, joined when one is running and started with `start` otherwise.
     nonisolated func download(_ id: String, start: @escaping @Sendable () -> AsyncThrowingStream<Double, Error>) -> AsyncThrowingStream<Double, Error> {
         AsyncThrowingStream { listener in

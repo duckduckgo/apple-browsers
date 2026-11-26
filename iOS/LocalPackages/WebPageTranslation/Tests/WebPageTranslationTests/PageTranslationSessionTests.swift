@@ -84,8 +84,8 @@ struct PageTranslationSessionTests {
         private(set) var stoppedListening = false
         private(set) var isDownloadHeld = false
 
-        func isInstalled(_ pairID: String) -> Bool {
-            downloadProgress.isEmpty && downloadError == nil && !holdsDownload
+        func needsDownload(_ pairID: String) async -> Bool {
+            !downloadProgress.isEmpty || downloadError != nil || holdsDownload
         }
 
         func prepare(_ pairID: String) -> AsyncThrowingStream<Double, Error> {

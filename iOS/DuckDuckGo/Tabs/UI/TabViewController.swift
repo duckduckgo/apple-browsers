@@ -3207,20 +3207,22 @@ extension TabViewController: WKNavigationDelegate {
         pageTranslationBridge = bridge
     }
 
-    /// Translates at once when the pair is installed; otherwise asks first, since the user decides on the download.
+    /// Translates at once when the pair is installed or already downloading; otherwise asks first, since the user decides on the download.
     private func translatePage(_ offer: TranslationOffer) {
         guard let pageTranslator else { return }
-        guard pageTranslator.isInstalled(offer.pairID) else {
-            let offeredURL = webView.url
+        let offeredURL = webView.url
+        Task { [weak self] in
+            guard await pageTranslator.needsDownload(offer.pairID) else {
+                self?.startTranslation(offer)
+                return
+            }
             let sheet = TranslationDownloadSheet.makeController(for: offer) { [weak self] in
                 // The page can navigate on its own while the sheet is up; the offer was for the page that showed it.
                 guard let self, let offeredURL, let url = self.webView.url, Self.isSamePage(url, as: offeredURL) else { return }
                 self.startTranslation(offer)
             }
-            present(sheet, animated: true)
-            return
+            self?.present(sheet, animated: true)
         }
-        startTranslation(offer)
     }
 
     private func startTranslation(_ offer: TranslationOffer) {

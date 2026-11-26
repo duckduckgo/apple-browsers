@@ -109,6 +109,10 @@ public final class TranslationModels: TranslationModelsProviding, @unchecked Sen
         return downloads.download(pairID) { store.install(bundle, policy: Self.decompressingPolicy(for: pair)) }
     }
 
+    public func isDownloading(_ pairID: String) async -> Bool {
+        await downloads.isRunning(pairID)
+    }
+
     public func installed() -> [InstalledBundle] {
         store.installed()
     }

@@ -43,6 +43,7 @@ struct PageTranslatorTests {
     struct FakeModelsProvider: TranslationModelsProviding {
         let installed: Set<String>
         var installs = StubInstalls()
+        var downloading: Set<String> = []
 
         func installedPair(_ pairID: String) -> (pair: TranslationManifest.Pair, folder: URL)? {
             guard installed.contains(pairID) else { return nil }
@@ -52,6 +53,10 @@ struct PageTranslatorTests {
 
         func install(_ pairID: String) -> AsyncThrowingStream<Double, Error> {
             installs.start()
+        }
+
+        func isDownloading(_ pairID: String) async -> Bool {
+            downloading.contains(pairID)
         }
     }
 
@@ -147,6 +152,16 @@ struct PageTranslatorTests {
         #expect(listener.fractions == [1])
         #expect(installs.count == 0)
         #expect(makeTranslator().isInstalled("fr-en"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("only a pair that's neither installed nor downloading needs a download", .timeLimit(.minutes(1)))
+    func needsDownloadOnlyWhenMissingAndNotDownloading() async {
+        let translator = PageTranslator(modelsProvider: FakeModelsProvider(installed: ["fr-en"], downloading: ["es-en"]))
+
+        #expect(await !translator.needsDownload("fr-en"))
+        #expect(await !translator.needsDownload("es-en"))
+        #expect(await translator.needsDownload("de-en"))
     }
 
     @available(iOS 16, macOS 13, *)

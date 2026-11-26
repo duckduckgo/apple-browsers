@@ -138,7 +138,9 @@ final class AuditLogPoller {
                     try save(page, for: account, isInitialPage: false)
                     return
                 }
-                cursor = try afterCursor(in: page)
+                let nextCursor = try afterCursor(in: page)
+                guard nextCursor != cursor else { throw AuditLogError.nonAdvancingAfterCursor }
+                cursor = nextCursor
                 try await sleep(Constants.pageDelayNanoseconds)
             }
         } catch AuditLogError.invalidCursor {

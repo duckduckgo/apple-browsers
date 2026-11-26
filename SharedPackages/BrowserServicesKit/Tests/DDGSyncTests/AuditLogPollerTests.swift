@@ -107,6 +107,26 @@ final class AuditLogPollerTests: XCTestCase {
         XCTAssertTrue(initializedPages.isEmpty)
     }
 
+    func testNonAdvancingCursorStopsPollingAndPreservesCheckpoint() async throws {
+        try setCursor()
+        let entries: [AuditLogEntryDecodingResult] = [.unreadable(id: "event", reason: .keyUnavailable)]
+        var pages = [
+            AuditLogPage(entries: entries, after: "stalled", before: nil),
+            AuditLogPage(entries: entries, after: "stalled", before: nil),
+            AuditLogPage(entries: [], after: "end", before: nil)
+        ]
+        accountManager.fetchAuditLogHandler = { _, _, _ in pages.removeFirst() }
+        let poller = makePoller()
+
+        do {
+            _ = try await poller.pollIfNeeded(for: .mock)
+            XCTFail("Expected a non-advancing cursor error")
+        } catch AuditLogError.nonAdvancingAfterCursor {
+            XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 2)
+            XCTAssertEqual(try cursor(), "saved")
+        }
+    }
+
     func testRequestFailuresRetainCursorAndRetryOnNextPoll() async throws {
         for error in [SyncError.unexpectedStatusCode(418), .unexpectedStatusCode(429), .unexpectedStatusCode(500), .unexpectedStatusCode(400)] {
             try setCursor()

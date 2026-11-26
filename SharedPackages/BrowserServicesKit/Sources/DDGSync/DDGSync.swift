@@ -764,7 +764,8 @@ public class DDGSync: DDGSyncing {
             guard case .decoded(let event) = result else { return nil }
             return event.occurredAt
         }.max()
-        // Seed the review date once, so enabling polling does not highlight existing history.
+        // Let Device Activity find the baseline when there may be readable entries on an older page.
+        guard newestDate != nil || page.before == nil else { return }
         try setAuditLogReviewState(SyncAuditLogReviewState(reviewedThrough: newestDate, isInitialized: true), for: account.userId)
     }
 

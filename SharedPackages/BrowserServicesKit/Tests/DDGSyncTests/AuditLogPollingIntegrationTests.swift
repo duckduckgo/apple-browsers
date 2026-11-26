@@ -207,6 +207,21 @@ final class AuditLogPollingIntegrationTests: XCTestCase {
         XCTAssertNil(try store.object(forKey: cursorKey))
     }
 
+    func testUnreadableInitialPageWithOlderHistorySavesCursorWithoutSeedingReviewState() async throws {
+        accountManager.fetchAuditLogStub = AuditLogPage(
+            entries: [.unreadable(id: "event", reason: .keyUnavailable)],
+            after: "head",
+            before: "older"
+        )
+        let service = makeService()
+
+        let completed = try await service.pollAuditLog()
+
+        XCTAssertTrue(completed)
+        XCTAssertEqual(try store.object(forKey: cursorKey) as? String, "head")
+        XCTAssertNil(try service.auditLogReviewState(for: SyncAccount.mock.userId))
+    }
+
     func testEmptyInitialPollingSeedsInitializedReviewState() async throws {
         let service = makeService()
         try await requestSync(service, expectingCursor: "cursor")

@@ -565,6 +565,7 @@ enum AuditLogError: DDGError {
     case missingRequiredAfterCursor
     case accountInfoKeyUnavailable
     case invalidCursor
+    case nonAdvancingAfterCursor
 
     static var errorDomain: String { "com.duckduckgo.sync.audit-log" }
 
@@ -574,6 +575,7 @@ enum AuditLogError: DDGError {
         case .missingRequiredAfterCursor: 2
         case .accountInfoKeyUnavailable: 3
         case .invalidCursor: 4
+        case .nonAdvancingAfterCursor: 5
         }
     }
 
@@ -583,6 +585,7 @@ enum AuditLogError: DDGError {
         case .missingRequiredAfterCursor: "Audit log response is missing the required after cursor."
         case .accountInfoKeyUnavailable: "The account-info key manager is unavailable for reading the audit log."
         case .invalidCursor: "The audit log cursor is invalid."
+        case .nonAdvancingAfterCursor: "The audit log cursor did not advance after a non-empty page."
         }
     }
 }

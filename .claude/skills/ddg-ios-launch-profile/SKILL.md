@@ -60,6 +60,8 @@ Keys marked * need `"internalUser": true` in the same profile (flags and experim
 | `debug.onboarding.flowType` | `default`, `duckAI` | Saved | Forces an onboarding flow |
 | `debug.duckAI.customURL` | http(s) URL | Saved | Loads Duck.ai from this URL |
 | `debug.idleReturnThresholdSeconds` | Int > 0 | Saved | Seconds in the background before the app returns to a new tab page |
+| `debug.subscription.tokenRefreshAgeSeconds` * | Int > 0 | Saved | Refreshes the subscription token once its refresh token is this many seconds old, instead of 15 days |
+| `debug.subscription.tokenRefreshRetrySeconds` * | Int > 0 | Saved | Retries a failed subscription token refresh after this many seconds, instead of 6 hours |
 | `debug.syncEnvironment` | `Production`, `Development` | Saved | Sync server; use it signed out of Sync |
 | `debug.configURLs.<name>` * | http(s) URL | Saved | Custom configuration URL; `<name>` is `privacyConfiguration`, `trackerDataSet`, `surrogates`, `remoteMessagingConfig`, `bloomFilterSpec`, `bloomFilterBinary` or `bloomFilterExcludedDomains` |
 

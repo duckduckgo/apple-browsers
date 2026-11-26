@@ -34,13 +34,15 @@ extension IOSLaunchSettings {
     static func debugMenu(appSettings: AppSettings,
                           appDefaults: UserDefaults,
                           aiChatDebugSettings: AIChatDebugSettingsHandling,
-                          customConfigurationURLs urlStore: CustomConfigurationURLStoring) -> [LaunchSetting] {
+                          customConfigurationURLs urlStore: CustomConfigurationURLStoring,
+                          appKeyValueStore: @escaping () throws -> ThrowingKeyValueStoring) -> [LaunchSetting] {
         [onboardingUserType(appSettings),
          onboardingFlowType(appSettings),
          duckAICustomURL(aiChatDebugSettings),
          idleReturnThreshold(appDefaults.keyedStoring()),
          syncEnvironment(appDefaults)]
         + customConfigurationURLs(urlStore)
+        + subscriptionTokenRefresh(appKeyValueStore)
     }
 
     static func onboardingUserType(_ settings: AppSettings) -> LaunchSetting {
@@ -90,6 +92,28 @@ extension IOSLaunchSettings {
                        name: \.description) { environment in
             appDefaults.set(environment.description, forKey: UserDefaultsWrapper<String>.Key.syncEnvironment.rawValue)
         }
+    }
+
+    /// Only internal users get the token refresh overrides; see `SubscriptionTokenRefreshIntervals`.
+    static func subscriptionTokenRefresh(_ store: @escaping () throws -> ThrowingKeyValueStoring) -> [LaunchSetting] {
+        [LaunchSetting("debug.subscription.tokenRefreshAgeSeconds",
+                       summary: "Refreshes the subscription token once its refresh token is this many seconds old, instead of 15 days.",
+                       requires: requiresInternalUser,
+                       validate: requirePositiveSeconds,
+                       write: { (seconds: Int) in
+            SubscriptionTokenRefreshDebugSettings(keyValueStore: try store()).maxRefreshTokenAgeOverride = TimeInterval(seconds)
+        }),
+         LaunchSetting("debug.subscription.tokenRefreshRetrySeconds",
+                       summary: "Retries a failed subscription token refresh after this many seconds, instead of 6 hours.",
+                       requires: requiresInternalUser,
+                       validate: requirePositiveSeconds,
+                       write: { (seconds: Int) in
+            SubscriptionTokenRefreshDebugSettings(keyValueStore: try store()).retryIntervalOverride = TimeInterval(seconds)
+        })]
+    }
+
+    private static func requirePositiveSeconds(_ seconds: Int) throws {
+        guard seconds > 0 else { throw LaunchSettingInvalidValue("use a number of seconds above 0.") }
     }
 
     /// Only internal users load configuration from custom URLs.

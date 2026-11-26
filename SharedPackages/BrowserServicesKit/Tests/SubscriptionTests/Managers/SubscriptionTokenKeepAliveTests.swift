@@ -89,14 +89,40 @@ struct SubscriptionTokenKeepAliveTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A token that can't be read is not refreshed", .timeLimit(.minutes(1)))
+    @Test("A token store that can't be read is retried 6 hours later, without refreshing", .timeLimit(.minutes(1)))
     func unreadableToken() async {
+        let now = issuedAt.addingTimeInterval(.days(20))
         let provider = FakeTokenProvider(token: token(issuedAt: issuedAt))
         provider.stateOverride = .readError
+        let keepAlive = makeKeepAlive(provider: provider, flag: FlagState(isOn: true), now: now)
+
+        #expect(await keepAlive.refreshIfNeeded() == .failed(retryAt: now.addingTimeInterval(.hours(6))))
+        #expect(provider.requestedPolicies.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A token read that fails is retried 6 hours later, without refreshing", .timeLimit(.minutes(1)))
+    func tokenReadFails() async {
+        let now = issuedAt.addingTimeInterval(.days(20))
+        let provider = FakeTokenProvider(token: token(issuedAt: issuedAt))
+        provider.localReadError = URLError(.unknown)
+        let keepAlive = makeKeepAlive(provider: provider, flag: FlagState(isOn: true), now: now)
+
+        #expect(await keepAlive.refreshIfNeeded() == .failed(retryAt: now.addingTimeInterval(.hours(6))))
+        #expect(provider.requestedPolicies == [.local])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A token removed before it could be read reports no token and schedules nothing", .timeLimit(.minutes(1)))
+    func tokenRemovedBeforeRead() async {
+        let provider = FakeTokenProvider(token: token(issuedAt: issuedAt))
+        provider.localReadError = SubscriptionManagerError.noTokenAvailable
         let keepAlive = makeKeepAlive(provider: provider, flag: FlagState(isOn: true), now: issuedAt.addingTimeInterval(.days(20)))
 
-        #expect(await keepAlive.refreshIfNeeded() == .noToken)
-        #expect(provider.requestedPolicies.isEmpty)
+        let outcome = await keepAlive.refreshIfNeeded()
+
+        #expect(outcome == .noToken)
+        #expect(outcome.nextCheckDate == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -265,6 +291,7 @@ private final class FakeTokenProvider: SubscriptionTokenRefreshing, @unchecked S
     var refreshedToken: TokenContainer?
     var refreshError: Error?
     var stateOverride: LocalSubscriptionTokenState?
+    var localReadError: Error?
     var onForceRefresh: (() -> Void)?
     private(set) var requestedPolicies: [AuthTokensCachePolicy] = []
     private(set) var stateReads = 0
@@ -281,6 +308,7 @@ private final class FakeTokenProvider: SubscriptionTokenRefreshing, @unchecked S
 
     func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         requestedPolicies.append(policy)
+        if policy == .local, let localReadError { throw localReadError }
         if policy == .localForceRefresh {
             onForceRefresh?()
             if let refreshError { throw refreshError }

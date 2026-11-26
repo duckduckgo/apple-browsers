@@ -204,6 +204,27 @@ struct SubscriptionTokenRefreshTaskTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A background run that can't read the token keeps the task scheduled, 6 hours later", .timeLimit(.minutes(1)))
+    func backgroundUnreadableToken() async {
+        let now = issuedAt.addingTimeInterval(.days(16))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+        fixture.provider.stateOverride = .readError
+        let task = FakeBGTask(identifier: identifier)
+
+        await fixture.refreshTask.handle(task).value
+
+        #expect(fixture.scheduler.events == [.submit(now.addingTimeInterval(.hours(6)))])
+        #expect(task.completions == [false])
+        #expect(fixture.provider.requestedPolicies.isEmpty)
+
+        fixture.provider.stateOverride = nil
+        fixture.provider.refreshedToken = token(issuedAt: now)
+        await fixture.refreshTask.handle(FakeBGTask(identifier: identifier)).value
+        #expect(fixture.provider.requestedPolicies.contains(.localForceRefresh))
+        #expect(fixture.scheduler.events.last == .submit(now.addingTimeInterval(.days(15))))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Expiring during the refresh: completes once, unsuccessfully, and reschedules after 6 hours", .timeLimit(.minutes(1)))
     func backgroundExpiration() async {
         let now = issuedAt.addingTimeInterval(.days(16))
@@ -423,6 +444,7 @@ private final class FakeTokenProvider: SubscriptionTokenRefreshing, @unchecked S
     var refreshedToken: TokenContainer?
     var refreshError: Error?
     var beforeForceRefresh: (() async -> Void)?
+    var stateOverride: LocalSubscriptionTokenState?
     private(set) var requestedPolicies: [AuthTokensCachePolicy] = []
     private var forceRefreshStarted = false
 
@@ -431,7 +453,8 @@ private final class FakeTokenProvider: SubscriptionTokenRefreshing, @unchecked S
     }
 
     func localTokenState() -> LocalSubscriptionTokenState {
-        token == nil ? .missing : .present
+        if let stateOverride { return stateOverride }
+        return token == nil ? .missing : .present
     }
 
     func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {

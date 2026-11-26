@@ -365,8 +365,8 @@ Sign-out (`.accountDidSignOut`) cancels the scheduled task.
 `SubscriptionTokenKeepAlive.refreshIfNeeded()`:
 
 1. Returns `.disabled` when the flag is off, without reading anything.
-2. Returns `.noToken` when `localTokenState()` isn't `.present` or the stored container can't be read.
-3. Reads the stored container with `.local`. The refresh is due when the refresh token's `issuedAtDate` plus the maximum age (15 days) has passed.
+2. Returns `.noToken` when no token is stored. When the token store can't be read, returns `.failed` with a retry date 6 hours later, so a passing keychain error doesn't cancel the background task.
+3. Reads the stored container with `.local`: `.noToken` if it was removed meanwhile, `.failed` with a retry date for any other read error. The refresh is due when the refresh token's `issuedAtDate` plus the maximum age (15 days) has passed.
 4. Not due: returns `.notDue` with the due date.
 5. Due: refreshes with `.localForceRefresh` through `SubscriptionManager.getTokenContainer`, so a rejected refresh goes through the usual recovery and sign-out handling. It returns:
    - `.refreshed` with the new refresh token's due date;
@@ -387,14 +387,17 @@ At 15 days the backup is older than its 14-day renewal age, so the refresh renew
 
 ### Limits
 
-- iOS decides when a processing task actually runs, usually while the device is charging, on Wi-Fi and idle. A device that rarely meets those conditions may still reach 30 days without a refresh.
+- **iOS decides when the background task runs.** The scheduled date is only the earliest time iOS may launch it, not when it will. iOS weighs how idle the device is, charging, network, battery and how much the app is used, so the task usually runs hours after that date, often overnight while the phone is locked, charging and idle. A device that rarely meets those conditions may still reach 30 days without a refresh.
+- **Some states stop it entirely.** iOS doesn't launch background tasks for an app the user force-quit from the app switcher until it's opened again, or while Background App Refresh is off for the app or Low Power Mode is on.
+- **Short debug intervals don't speed it up.** The debug overrides make the refresh due sooner, so a foreground run refreshes quickly, but iOS still picks when the background task runs. To see a background run on demand, use the debugger command in [Debugging](#debugging).
 - macOS has no background task that starts an app that isn't running, so it has no background refresh. A session there survives only if the browser, or a process that shares its token, refreshes within 30 days.
 
 ### Debugging
 
 - **Logs**: subsystem `Subscription`, category `TokenKeepAlive`. They cover every decision with the refresh token's dates, every schedule and cancel, and each run's trigger and outcome.
 - **Debug screen**: Settings > Debug > Subscription > Background Token Refresh. It shows the flag, the last run and the pending task. It sets shorter intervals (applied from the next run, for internal users only), runs the keep-alive now, and resets to the defaults.
-- **Launch the task now**: pause in the debugger after a `Background task scheduled for` log, run the following, then resume:
+- **Launch profile**: `debug.subscription.tokenRefreshAgeSeconds` and `debug.subscription.tokenRefreshRetrySeconds` set the same intervals at launch, with `"internalUser": true`.
+- **Launch the task now**: the only way to run the background task on demand. With the app running from Xcode, pause in the debugger after a `Background task scheduled for` log, run the following, then resume:
   ```
   e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.duckduckgo.app.subscriptionTokenRefresh"]
   ```

@@ -52,7 +52,8 @@ enum LaunchProfileStartup {
             appSettings: AppUserDefaults(),
             appDefaults: .app,
             appConfigurationDefaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
-            aiChatDebugSettings: AIChatDebugSettings()
+            aiChatDebugSettings: AIChatDebugSettings(),
+            appKeyValueStore: { try AppKeyValueFileStoreService().keyValueFilesStore }
         ))
     }
 

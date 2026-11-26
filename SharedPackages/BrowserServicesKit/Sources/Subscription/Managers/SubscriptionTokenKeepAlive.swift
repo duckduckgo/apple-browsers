@@ -40,7 +40,7 @@ public struct SubscriptionTokenKeepAlive {
     public enum Outcome: Equatable, CustomStringConvertible {
         /// The keep-alive is disabled. Nothing was read or refreshed.
         case disabled
-        /// No token container is stored, or it can't be read, or the session ended during the refresh.
+        /// No token container is stored, or the session ended during the check or the refresh.
         case noToken
         /// The refresh token is younger than the maximum age. Nothing was refreshed.
         /// - Parameter nextRefresh: When the refresh token reaches the maximum age.
@@ -48,7 +48,7 @@ public struct SubscriptionTokenKeepAlive {
         /// The token container was refreshed.
         /// - Parameter nextRefresh: When the new refresh token reaches the maximum age.
         case refreshed(nextRefresh: Date)
-        /// The refresh failed and can be tried again.
+        /// The token couldn't be read or refreshed, and can be tried again.
         /// - Parameter retryAt: When to try again.
         case failed(retryAt: Date)
 
@@ -118,18 +118,28 @@ public struct SubscriptionTokenKeepAlive {
         let retryInterval = retryInterval()
         Logger.subscriptionTokenKeepAlive.log("Check started, max refresh token age \(Int(maxAge), privacy: .public)s, retry interval \(Int(retryInterval), privacy: .public)s")
 
-        let tokenState = tokenProvider.localTokenState()
-        guard tokenState == .present else {
-            Logger.subscriptionTokenKeepAlive.log("Check ended: no usable token stored (\(String(describing: tokenState), privacy: .public))")
+        switch tokenProvider.localTokenState() {
+        case .present:
+            break
+        case .missing:
+            Logger.subscriptionTokenKeepAlive.log("Check ended: no token stored")
             return .noToken
+        case .readError:
+            let retryAt = now().addingTimeInterval(retryInterval)
+            Logger.subscriptionTokenKeepAlive.error("Check ended: the token store couldn't be read, retrying at \(retryAt, privacy: .public)")
+            return .failed(retryAt: retryAt)
         }
 
         let current: TokenContainer
         do {
             current = try await tokenProvider.getTokenContainer(policy: .local)
-        } catch {
-            Logger.subscriptionTokenKeepAlive.error("Check ended: failed to read the token: \(String(describing: error), privacy: .public)")
+        } catch SubscriptionManagerError.noTokenAvailable {
+            Logger.subscriptionTokenKeepAlive.log("Check ended: the token was removed before it could be read")
             return .noToken
+        } catch {
+            let retryAt = now().addingTimeInterval(retryInterval)
+            Logger.subscriptionTokenKeepAlive.error("Check ended: failed to read the token, retrying at \(retryAt, privacy: .public): \(String(describing: error), privacy: .public)")
+            return .failed(retryAt: retryAt)
         }
 
         let issuedAt = current.decodedRefreshToken.issuedAtDate

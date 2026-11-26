@@ -98,7 +98,7 @@ struct SuggestionRowView: View {
     @ViewBuilder
     private var icon: some View {
         if case .duckAI(let isHighlighted) = row.icon {
-            AskDuckAIRowIcon(isHighlighted: isHighlighted, tint: iconColor)
+            AskDuckAIRowIcon(isHighlighted: isHighlighted, isSelected: isSelected, tint: iconColor)
         } else {
             Image(uiImage: row.icon.glyph)
                 .resizable()

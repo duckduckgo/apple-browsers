@@ -219,14 +219,15 @@ final class AutocompleteViewModelTests: XCTestCase {
     func testUpdateSuggestions_WhenRedesignOn_AppearanceFollowsTheCurrentList() {
         let (vm, _) = makeViewModel(showAskAIChat: true, isAskDuckAIRedesignEnabled: true)
         vm.query = "running shoes"
+        let threshold = AskDuckAIRowAppearance.highlightThreshold
 
-        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: phrases(3), localSuggestions: []))
+        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: phrases(threshold + 1), localSuggestions: []))
         XCTAssertEqual(vm.askDuckAIAppearance, .oneColour)
 
-        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: phrases(2), localSuggestions: []))
+        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: phrases(threshold), localSuggestions: []))
         XCTAssertEqual(vm.askDuckAIAppearance, .fullColour)
 
-        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: phrases(5), localSuggestions: []))
+        vm.updateSuggestions(SuggestionResult(topHits: [], duckduckgoSuggestions: phrases(threshold + 3), localSuggestions: []))
         XCTAssertEqual(vm.askDuckAIAppearance, .oneColour)
     }
 

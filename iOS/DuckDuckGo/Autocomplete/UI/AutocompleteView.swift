@@ -396,7 +396,7 @@ private struct SuggestionListItem: View {
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
                 .tintIfAvailable(contentColor(.icons))
         case .askDuckAI(let highlighted):
-            AskDuckAIRowIcon(isHighlighted: highlighted, tint: contentColor(.icons))
+            AskDuckAIRowIcon(isHighlighted: highlighted, isSelected: isSelected, tint: contentColor(.icons))
         }
     }
 

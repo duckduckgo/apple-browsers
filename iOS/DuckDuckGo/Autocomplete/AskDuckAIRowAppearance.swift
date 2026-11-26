@@ -31,10 +31,11 @@ enum AskDuckAIRowAppearance: Equatable {
     /// Redesigned row with the full-colour Duck.ai logo: few search suggestions left.
     case fullColour
 
-    /// The row is highlighted when this many search suggestions or fewer are shown. Open with design.
-    static let highlightThreshold = 2
+    /// The row is highlighted when this many search suggestions or fewer are shown: design asked for full colour
+    /// once fewer than 5 remain.
+    static let highlightThreshold = 4
 
-    /// Cross-fade between the one-colour and full-colour logo (ease-out). Open with design.
+    /// Cross-fade between the one-colour and full-colour logo (ease-out). Design's value, to be tuned on device.
     static let iconFadeDuration: TimeInterval = 0.4
 
     /// Counts the search suggestions in the raw result, so the fallback row that repeats the query when the
@@ -62,10 +63,15 @@ enum AskDuckAIRowAppearance: Equatable {
 
 /// The Duck.ai logo on the redesigned Ask Duck.ai row. The one-colour logo follows `tint`;
 /// the full-colour logo keeps its own colours. Only the icon animates when the highlight changes.
+/// A keyboard- or pointer-selected row uses the standard selected look, so it shows the one-colour logo, switching
+/// at once like the row's background does.
 struct AskDuckAIRowIcon: View {
 
     let isHighlighted: Bool
+    let isSelected: Bool
     let tint: Color
+
+    private var showsFullColour: Bool { isHighlighted && !isSelected }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -77,13 +83,13 @@ struct AskDuckAIRowIcon: View {
                 .resizable()
                 .frame(width: Self.size, height: Self.size)
                 .tintIfAvailable(tint)
-                .opacity(isHighlighted ? 0 : 1)
+                .opacity(showsFullColour ? 0 : 1)
 
             Image(uiImage: DesignSystemImages.Color.Size24.duckAI)
                 .renderingMode(.original)
                 .resizable()
                 .frame(width: Self.size, height: Self.size)
-                .opacity(isHighlighted ? 1 : 0)
+                .opacity(showsFullColour ? 1 : 0)
         }
         .animation(reduceMotion ? nil : .easeOut(duration: AskDuckAIRowAppearance.iconFadeDuration), value: isHighlighted)
     }

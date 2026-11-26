@@ -54,7 +54,9 @@ final class AskDuckAIRowAppearanceTests: XCTestCase {
     }
 
     func testSearchSuggestionsCountFromEverySection() {
-        XCTAssertEqual(appearance(topHits: phrases(1), ddg: phrases(1), local: phrases(1)), .oneColour)
+        // One more than the threshold, spread over all three sections.
+        let total = AskDuckAIRowAppearance.highlightThreshold + 1
+        XCTAssertEqual(appearance(topHits: phrases(1), ddg: phrases(total - 2), local: phrases(1)), .oneColour)
     }
 
     func testSitesBookmarksHistoryAndOpenTabsDoNotCount() {
@@ -67,6 +69,6 @@ final class AskDuckAIRowAppearanceTests: XCTestCase {
             .openTab(title: "Tab", url: url, tabId: nil, score: 0)
         ]
 
-        XCTAssertEqual(appearance(topHits: nonSearch, ddg: phrases(2), local: nonSearch), .fullColour)
+        XCTAssertEqual(appearance(topHits: nonSearch, ddg: phrases(AskDuckAIRowAppearance.highlightThreshold), local: nonSearch), .fullColour)
     }
 }

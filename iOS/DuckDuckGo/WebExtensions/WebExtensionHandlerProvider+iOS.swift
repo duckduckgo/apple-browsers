@@ -29,7 +29,6 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let autoconsentPreferences: AutoconsentPreferencesProviding
     private let darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding?
-    private let searchTokenProvider: SearchTokenProviding?
     private let autoconsentDelegate: IOSAutoconsentMessageHandlerDelegate
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
     private let isAppleSurrogateRedirectionEnabled: @MainActor () -> Bool
@@ -39,7 +38,6 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         autoconsentPreferences: AutoconsentPreferencesProviding,
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
-        searchTokenProvider: SearchTokenProviding? = nil,
         eventHub: EventHubManaging,
         isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool
     ) {
@@ -47,7 +45,6 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         self.autoconsentPreferences = autoconsentPreferences
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
-        self.searchTokenProvider = searchTokenProvider
         self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
         self.isAppleSurrogateRedirectionEnabled = isAppleSurrogateRedirectionEnabled
     }
@@ -68,9 +65,6 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
         case .darkReader:
             guard let provider = darkReaderExcludedDomainsProvider else { return [] }
             return [DarkReaderWebExtensionMessageHandler(excludedDomainsProvider: provider)]
-        case .searchToken:
-            guard let searchTokenProvider else { return [] }
-            return [SearchTokenWebExtensionMessageHandler(tokenProvider: searchTokenProvider)]
         default:
             return []
         }

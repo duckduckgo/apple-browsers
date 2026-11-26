@@ -26,7 +26,6 @@ import PixelKit
 import PixelExperimentKit
 import PrivacyConfig
 import os.log
-import FeatureFlags_iOS
 
 public class StatisticsLoader {
 
@@ -52,12 +51,10 @@ public class StatisticsLoader {
          usageSegmentation: UsageSegmenting = UsageSegmentation(pixelEvents: UsageSegmentation.pixelEvents),
          fireAppRetentionExperimentPixels: @escaping () -> Void = {
             PixelKit.fireAppRetentionExperimentPixels()
-            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "app_use")
             OnboardingVPNDownloadReasonExperimentMetrics.live.fireAppUseMetrics()
          },
          fireSearchExperimentPixels: @escaping () -> Void = {
             PixelKit.fireSearchExperimentPixels()
-            StatisticsLoader.fireSearchTokenExperimentPixels(metric: "search")
             OnboardingVPNDownloadReasonExperimentMetrics.live.fireSearchMetrics()
          },
          fireNewAIPromptExperimentPixels: @escaping () -> Void = {
@@ -80,18 +77,6 @@ public class StatisticsLoader {
         self.fireOSDistributionPixel = fireOSDistributionPixel
         self.pixelFiring = pixelFiring
         self.isPad = isPad
-    }
-
-    /// Fires the d1-4 conversion-window metric scoped to the search-token experiment only.
-    static func fireSearchTokenExperimentPixels(metric: String) {
-        for threshold in [1, 4, 6, 11, 21, 30] {
-            PixelKit.fireExperimentPixelIfThresholdReached(
-                for: iOSBrowserConfigSubfeature.searchTokenExperimentV4.rawValue,
-                metric: metric,
-                conversionWindowDays: 1...4,
-                threshold: threshold
-            )
-        }
     }
 
     public func load(shouldRefreshAtb: Bool = true, completion: @escaping Completion = {}) {

@@ -636,7 +636,8 @@ extension MainViewController {
                     // Attachments grow the card, so re-cap before sizing or it overflows in landscape.
                     updateLandscapeEditingCap()
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
-                } else if coordinator.isParkedOnNewTabPage, !coordinator.viewController.currentAttachments.isEmpty {
+                } else if coordinator.isParkedOnNewTabPage, !coordinator.isRestoringAttachments,
+                          !coordinator.viewController.currentAttachments.isEmpty {
                     scheduleRestingNewTabPageActivation()
                 }
                 updateFloatingReturnKeyVisibility()

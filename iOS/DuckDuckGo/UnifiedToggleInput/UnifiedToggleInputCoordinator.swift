@@ -240,6 +240,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// new URL into the field, which persists the draft) can't overwrite the tab's attachments
     /// with an empty list. Mirrors `UTITextModel.currentText` surviving `clearForDismiss()`.
     private var attachmentsRetainedForDismiss: [UnifiedToggleInputAttachment]?
+    /// Whether attachments are being put back from saved state, which is not the user adding one.
+    private(set) var isRestoringAttachments = false
     private var isPerformingDismissCleanup: Bool { textModel.isPerformingDismissCleanup }
     private(set) var committedInputMode: TextEntryMode = .search
     private(set) var cardPosition: UnifiedToggleInputCardPosition = .bottom
@@ -932,7 +934,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
 
         attachmentsRetainedForDismiss = nil
-        attachmentController.replaceAllAttachments(with: state.attachments)
+        restoreAttachments(state.attachments)
         synchronizeTabAttachmentPreparations()
 
         // Always sync the live model store from per-tab state — including nil values —
@@ -1194,7 +1196,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // `applyEditMode()`; refresh here so the disclaimer reflects the new request.
         if wasEditing { applyEditMode() }
         showExpanded(prefilledText: prompt, inputMode: .aiChat, activatesInput: true)
-        attachmentController.replaceAllAttachments(with: attachments)
+        restoreAttachments(attachments)
         synchronizeTabAttachmentPreparations()
     }
 
@@ -2472,6 +2474,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func restoreAttachmentsRetainedForDismiss() {
         guard let attachments = attachmentsRetainedForDismiss else { return }
         attachmentsRetainedForDismiss = nil
+        restoreAttachments(attachments)
+    }
+
+    private func restoreAttachments(_ attachments: [UnifiedToggleInputAttachment]) {
+        isRestoringAttachments = true
+        defer { isRestoringAttachments = false }
         attachmentController.replaceAllAttachments(with: attachments)
     }
 

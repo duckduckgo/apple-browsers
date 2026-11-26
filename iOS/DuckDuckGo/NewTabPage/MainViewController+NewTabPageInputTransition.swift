@@ -127,6 +127,10 @@ extension MainViewController {
             forName: UIResponder.keyboardDidShowNotification, object: nil, queue: .main) { [weak self] _ in
             self?.releaseBottomInputHold(heldBy: .focus)
         }
+        // A hardware keyboard or a refused focus never shows the software keyboard, which would leave the hold in place.
+        DispatchQueue.main.asyncAfter(deadline: .now() + InlineNTPTransitionMetrics.bottomInputHoldKeyboardTimeout) { [weak self] in
+            self?.releaseBottomInputHold(heldBy: .focus)
+        }
     }
 
     /// Releases only while `transition` still owns the hold.
@@ -309,6 +313,7 @@ extension MainViewController {
 private enum InlineNTPTransitionMetrics {
     static let contentTravel: CGFloat = 12
     static let focusedPoseRefreshDuration: TimeInterval = 0.2
+    static let bottomInputHoldKeyboardTimeout: TimeInterval = 1
 }
 
 extension UIView {

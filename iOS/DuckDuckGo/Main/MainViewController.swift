@@ -3846,6 +3846,8 @@ class MainViewController: UIViewController {
             coordinator.unbind()
             viewCoordinator.hideAITabChrome()
             applyUnifiedInputChromeBackground(.standardChrome)
+            // A page attached while the coordinator was still on a Duck.ai tab could not park the input yet.
+            refreshUnifiedToggleInputPlacement()
         }
         updateFloatingDomainCapsuleVisibility(for: lastChromeVisibilityPercent)
     }

@@ -25,8 +25,6 @@
 
 import CoreGraphics
 
-extension DesignSystemColor: Sendable {}
-
 /// One shadow: a design system color, its opacity, blur radius and offset.
 public struct DesignSystemShadowLayer: Equatable, Sendable {
     public let color: DesignSystemColor

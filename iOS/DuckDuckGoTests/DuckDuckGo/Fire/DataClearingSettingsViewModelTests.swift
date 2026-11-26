@@ -21,6 +21,7 @@ import XCTest
 @testable import DuckDuckGo
 @testable import Core
 import AIChat
+import FeatureFlags_iOS
 
 final class MockDataClearingCapability: DataClearingCapable {
     var isFireButtonRefinementsEnabled: Bool = false
@@ -76,13 +77,30 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     // MARK: - Factory
 
-    private func makeViewModel() -> DataClearingSettingsViewModel {
+    private func makeViewModel(featureFlagger: MockFeatureFlagger = MockFeatureFlagger()) -> DataClearingSettingsViewModel {
         DataClearingSettingsViewModel(
             appSettings: mockAppSettings,
             aiChatSettings: mockAIChatSettings,
             fireproofing: mockFireproofing,
+            featureFlagger: featureFlagger,
             delegate: mockDelegate
         )
+    }
+
+    // MARK: - AI Chat Toggle Title Tests
+
+    func testWhenSettingsButtonFlagOffThenAIChatsToggleKeepsItsTitle() {
+        let viewModel = makeViewModel(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+
+        XCTAssertEqual(viewModel.aiChatsToggleTitle, UserText.settingsDeleteDuckAIChats)
+        XCTAssertEqual(viewModel.aiChatsToggleFooter, UserText.settingsClearAIChatHistoryFooter)
+    }
+
+    func testWhenSettingsButtonFlagOnThenAIChatsToggleSaysItAppliesToDeleteAll() {
+        let viewModel = makeViewModel(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireSheetSettingsButton]))
+
+        XCTAssertEqual(viewModel.aiChatsToggleTitle, UserText.settingsDeleteAllIncludesDuckAIChats)
+        XCTAssertEqual(viewModel.aiChatsToggleFooter, UserText.settingsDeleteAllIncludesDuckAIChatsFooter)
     }
 
     // MARK: - AI Chat Toggle Visibility Tests

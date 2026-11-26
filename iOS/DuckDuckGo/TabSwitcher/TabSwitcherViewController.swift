@@ -706,7 +706,15 @@ class TabSwitcherViewController: UIViewController {
         dismiss(animated: animated, completion: nil)
     }
 
+    func dismissForDataClearingSettings(completion: @escaping () -> Void) {
+        dismiss(animated: true, completion: completion, emptyFirePageFallback: tabManager.tabsModel(for: .normal).currentTab)
+    }
+
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
+        dismiss(animated: animated, completion: completion, emptyFirePageFallback: nil)
+    }
+
+    private func dismiss(animated: Bool, completion: (() -> Void)?, emptyFirePageFallback: Tab?) {
         // When a presented child (e.g. TipKit popover) is being dismissed, skip
         // tab-switcher teardown — only forward to super so the child is removed.
         if presentedViewController != nil {
@@ -724,12 +732,12 @@ class TabSwitcherViewController: UIViewController {
             tabManager.tabsModel(for: .normal).tabs.forEach { $0.removeObserver(normalPC) }
         }
 
-        let tabsModel = tabManager.tabsModel(for: selectedBrowsingMode)
+        let isEmptyFirePage = selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty
 
-        if selectedBrowsingMode.allowsEmpty && tabsModel.isEmpty {
+        if isEmptyFirePage && emptyFirePageFallback == nil {
             tabManager.setBrowsingMode(selectedBrowsingMode, source: .tabSelection)
         } else {
-            let selectedTab = activePageController.selectedTab
+            let selectedTab = isEmptyFirePage ? emptyFirePageFallback : activePageController.selectedTab
             delegate?.tabSwitcher(self, didFinishWithSelectedTab: selectedTab)
         }
 

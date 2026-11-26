@@ -387,6 +387,7 @@ final class SettingsViewModel: ObservableObject {
             appSettings: appSettings,
             aiChatSettings: aiChatSettings,
             fireproofing: legacyViewProvider.fireproofing,
+            featureFlagger: featureFlagger,
             delegate: self
         )
     }()
@@ -1890,6 +1891,7 @@ extension SettingsViewModel {
         case appearance
         case general
         case cookiePopupProtection
+        case dataClearing
         case about
         // Add other cases as needed
 
@@ -1911,6 +1913,7 @@ extension SettingsViewModel {
             case .appearance: return "appearance"
             case .general: return "general"
             case .cookiePopupProtection: return "cookiePopupProtection"
+            case .dataClearing: return "dataClearing"
             case .about: return "about"
             // Ensure all cases are covered
             }
@@ -1920,7 +1923,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection, .about:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection, .dataClearing, .about:
                 return .navigationLink
             }
         }

@@ -67,6 +67,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to open sync settings.
     func aiChatContextualSheetCoordinatorDidRequestOpenSyncSettings(_ coordinator: AIChatContextualSheetCoordinator)
 
+    /// Called when the user requests to open Data Clearing settings.
+    func aiChatContextualSheetCoordinatorDidRequestOpenDataClearingSettings(_ coordinator: AIChatContextualSheetCoordinator)
+
     /// Called when the contextual chat URL changes, used to persist for cold restore.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?)
 
@@ -1621,6 +1624,13 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         dismissSurface(of: viewController) { [weak self] in
             guard let self else { return }
             self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenSyncSettings(self)
+        }
+    }
+
+    func aiChatContextualSheetViewControllerDidRequestOpenDataClearingSettings(_ viewController: AIChatContextualSheetViewController) {
+        dismissSurface(of: viewController) { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenDataClearingSettings(self)
         }
     }
 

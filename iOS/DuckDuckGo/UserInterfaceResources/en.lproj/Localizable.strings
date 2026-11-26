@@ -4600,6 +4600,9 @@ https://duckduckgo.com/mac";
 /* Informational message explaining that new tabs can also be deleted individually */
 "scoped.fire.confirmation.new.tabs.info" = "New tabs you created can also be deleted individually.";
 
+/* Accessibility label for the button in the fire confirmation dialog that opens Data Clearing settings */
+"scoped.fire.confirmation.settings.button" = "Data Clearing Settings";
+
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";
 
@@ -4950,6 +4953,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Option to always default the omnibar toggle to Search */
 "settings.default.omnibar.mode.search" = "Search";
+
+/* Settings screen toggle text for the option that makes the Fire Button's Delete All also delete Duck.ai chats */
+"settings.delete.all.includes.duckai.chats" = "Delete All Includes Duck.ai Chats";
+
+/* Settings screen footer text explaining that the Fire Button's Delete All also deletes Duck.ai chats when the toggle is on */
+"settings.delete.all.includes.duckai.chats.footer" = "When on, choosing Delete All with the Fire Button also deletes your Duck.ai chats, including pinned chats.";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Delete Duck.ai Chats";

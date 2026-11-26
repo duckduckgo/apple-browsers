@@ -1951,6 +1951,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     func unparkFromNewTabPage() {
         let previousSurface = restingSurface
         stateMachine.moveToChrome()
+        // The resting card's top pose must not reach the Duck.ai tab, which anchors only a bottom card above the
+        // safe area. Entering the Duck.ai tab can already have moved the surface to the chrome, and an omnibar
+        // session sets its own position.
+        if !isOmnibarSession {
+            cardPosition = .bottom
+        }
         switch previousSurface {
         case .chrome:
             return

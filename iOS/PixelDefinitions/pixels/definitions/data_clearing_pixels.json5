@@ -114,6 +114,45 @@
         ]
     },
 
+    "data_clearing_settings-duckai_chats_toggled": {
+        "description": "Fires when the user turns the Duck.ai chats toggle in Data Clearing settings on or off.",
+        "owners": ["bkunat"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "enabled",
+                "description": "Whether the toggle was turned on",
+                "type": "boolean"
+            },
+            {
+                "key": "source",
+                "description": "How the user reached Data Clearing settings: from the Settings menu, or with Settings opened straight to Data Clearing (for example from a Fire sheet)",
+                "type": "string",
+                "enum": ["settings", "deepLink"]
+            }
+        ]
+    },
+
+    "data_clearing_settings-fireproof_sites_opened": {
+        "description": "Fires when the user opens Fireproof Sites from Data Clearing settings.",
+        "owners": ["bkunat"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "How the user reached Data Clearing settings: from the Settings menu, or with Settings opened straight to Data Clearing (for example from a Fire sheet)",
+                "type": "string",
+                "enum": ["settings", "deepLink"]
+            }
+        ]
+    },
+
     "m_fire_user_action_before_completion": {
         "description": "Fired when user performs an action before the clearing operation completes",
         "owners": ["hanyutang-sandra"],

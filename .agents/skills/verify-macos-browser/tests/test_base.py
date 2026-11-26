@@ -253,7 +253,7 @@ class BaseWorktreeTests(unittest.TestCase):
 
     def test_a_clean_worktree_is_reused_with_its_build(self):
         tree = base.base_worktree(self.sha, self.repo, self.trees)
-        built = os.path.join(tree, ".build", "DerivedData", "built")
+        built = os.path.join(tree, ".build", "DerivedData-verify", "built")
         open(built, "w").close()
         self.assertEqual(base.base_worktree(self.sha, self.repo, self.trees), tree)
         self.assertTrue(os.path.exists(built))
@@ -262,10 +262,10 @@ class BaseWorktreeTests(unittest.TestCase):
         tree = base.base_worktree(self.sha, self.repo, self.trees)
         with open(os.path.join(tree, ".gitignore"), "a") as f:
             f.write("changed\n")
-        open(os.path.join(tree, ".build", "DerivedData", "built"), "w").close()
+        open(os.path.join(tree, ".build", "DerivedData-verify", "built"), "w").close()
         self.assertEqual(base.base_worktree(self.sha, self.repo, self.trees), tree)
         self.assertEqual(self.git("status", "--porcelain", cwd=tree), "")
-        self.assertFalse(os.path.exists(os.path.join(tree, ".build", "DerivedData", "built")))
+        self.assertFalse(os.path.exists(os.path.join(tree, ".build", "DerivedData-verify", "built")))
 
     def test_a_worktree_at_another_commit_is_never_trusted(self):
         tree = base.base_worktree(self.sha, self.repo, self.trees)

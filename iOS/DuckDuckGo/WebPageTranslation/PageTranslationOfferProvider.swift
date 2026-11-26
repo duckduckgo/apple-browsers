@@ -24,6 +24,13 @@ import os.log
 import WebKit
 import WebPageTranslation
 
+/// A translation offer for one page: the banner shows it, or only the menu does.
+struct PageTranslationOffer: Equatable {
+    let offer: TranslationOffer
+    let showsBanner: Bool
+    let url: URL
+}
+
 /// Decides what translation to offer for a loaded page: reads a text sample, detects its language
 /// and applies the offer rules. One instance is shared by all tabs.
 @MainActor
@@ -73,6 +80,16 @@ final class PageTranslationOfferProvider {
         } catch {
             Logger.webPageTranslation.error("Reading the page sample failed: \(error.localizedDescription, privacy: .public)")
             return nil
+        }
+    }
+
+    /// The page's offer, banner or menu-only; nil when there's none.
+    func offer(in webView: WKWebView) async -> PageTranslationOffer? {
+        guard let url = webView.url else { return nil }
+        switch await decision(in: webView) {
+        case .banner(let offer): return PageTranslationOffer(offer: offer, showsBanner: true, url: url)
+        case .menuOnly(let offer): return PageTranslationOffer(offer: offer, showsBanner: false, url: url)
+        case .noOffer, nil: return nil
         }
     }
 

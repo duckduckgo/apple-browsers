@@ -67,6 +67,24 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en", downloadBytes: 1)))
     }
 
+    func testOfferShowsTheBanner() async throws {
+        let webView = try await loadedFrenchPage(at: URL(string: "https://example.fr/")!)
+        let provider = try makeProvider(deviceLanguages: ["en-US"])
+        let pageOffer = await provider.offer(in: webView)
+        XCTAssertEqual(pageOffer, PageTranslationOffer(offer: TranslationOffer(source: "fr", target: "en", pairID: "fr-en", downloadBytes: 1),
+                                                       showsBanner: true,
+                                                       url: URL(string: "https://example.fr/")!))
+    }
+
+    func testMenuOnlyOfferDoesNotShowTheBanner() async throws {
+        let webView = try await loadedFrenchPage(at: URL(string: "https://example.fr/")!)
+        let provider = try makeProvider(deviceLanguages: ["en-US", "fr-FR"])
+        let pageOffer = await provider.offer(in: webView)
+        XCTAssertEqual(pageOffer, PageTranslationOffer(offer: TranslationOffer(source: "fr", target: "en", pairID: "fr-en", downloadBytes: 1),
+                                                       showsBanner: false,
+                                                       url: URL(string: "https://example.fr/")!))
+    }
+
     func testNoOfferOnASiteInTheFeatureExceptions() async throws {
         let manager = MockPrivacyConfigurationManager()
         manager.privacyConfig = try WebPageTranslationSettingsTests.config(settings: "{}", exceptions: ["example.fr"])

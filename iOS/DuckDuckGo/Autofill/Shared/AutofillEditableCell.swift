@@ -52,6 +52,7 @@ struct AutofillEditableCell: View {
                         }
                         .font(.system(.footnote, design: .monospaced))
                         .foregroundStyle(Color(designSystemColor: .textPrimary))
+                        .accessibilityIdentifier(textFieldAccessibilityIdentifier)
                 } else {
                     ClearTextField(placeholderText: placeholderText,
                                    text: $text,
@@ -59,10 +60,10 @@ struct AutofillEditableCell: View {
                                    disableAutoCorrection: disableAutoCorrection,
                                    keyboardType: keyboardType,
                                    secure: secure,
-                                   characterLimit: characterLimit)
+                                   characterLimit: characterLimit,
+                                   accessibilityIdentifier: textFieldAccessibilityIdentifier)
                 }
             }
-            .accessibilityIdentifier(textFieldAccessibilityIdentifier)
         }
         .frame(minHeight: 60)
         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))

@@ -20,7 +20,21 @@
 import XCTest
 import UITestingSupport
 
+private enum SimulatorDeviceAuthentication {
+    static let passcode = "password"
+}
+
 extension XCUIApplication {
+
+    /// Call on the SpringBoard application to submit the UI-test simulator authentication fixture value.
+    func enterSimulatorPasscode(file: StaticString = #filePath, line: UInt = #line) {
+        let passcodeField = secureTextFields.firstMatch
+        guard passcodeField.waitForExistence(timeout: UITestTimeouts.elementExistence) else {
+            XCTFail("System passcode field did not appear.", file: file, line: line)
+            return
+        }
+        passcodeField.typeText(SimulatorDeviceAuthentication.passcode + "\n")
+    }
 
     /// Waits for SpringBoard's authentication prompt and passcode field to close.
     func waitForSystemAuthenticationToDismiss(

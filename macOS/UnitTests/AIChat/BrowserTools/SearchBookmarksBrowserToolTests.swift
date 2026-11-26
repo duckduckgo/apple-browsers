@@ -32,7 +32,7 @@ final class SearchBookmarksBrowserToolTests: XCTestCase {
         let disney = BookmarkFolder(id: "disney", title: "Disney", parentFolderUUID: "travel", children: [parks, hotels])
         let paris = bookmark("paris", "Louvre", "https://louvre.example", parent: "travel")
         let travel = BookmarkFolder(id: "travel", title: "Travel", children: [disney, paris])
-        return [bookmark("news", "News", "https://news.example"), travel,
+        return [bookmark("news", "News", "http://news.example"), travel,
                 bookmark("script", "Bookmarklet", "javascript:alert(1)")]
     }
 
@@ -42,7 +42,7 @@ final class SearchBookmarksBrowserToolTests: XCTestCase {
         let result = await tool.execute(arguments: ["query": .null, "folder": .null, "limit": .null], context: context)
 
         XCTAssertEqual(result, .success(["results": [
-            entry("News", "https://news.example", []),
+            entry("News", "http://news.example", []),
             entry("Parks", "https://disney.example/@parks", ["Travel", "Disney"]),
             entry("Grand Hotel", "https://grand.example/rooms", ["Travel", "Disney", "Hotels"]),
             entry("Louvre", "https://louvre.example", ["Travel"])

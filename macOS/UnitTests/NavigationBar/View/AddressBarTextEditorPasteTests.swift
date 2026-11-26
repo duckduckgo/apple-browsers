@@ -21,41 +21,34 @@ import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@Suite("Address bar paste: URLs wrapped across lines")
+@Suite("Address bar paste: multi-line text")
 struct AddressBarTextEditorPasteTests {
 
     @available(macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
-    func lineBreakInQueryValueIsRemoved(useUnifiedLogic: Bool) {
-        let result = AddressBarTextEditor.urlStringRemovingLineBreaks(from: "https://duckduckgo.com/?q=duck\nduckgo&ia=web", useUnifiedLogic: useUnifiedLogic)
-        #expect(result == "https://duckduckgo.com/?q=duckduckgo&ia=web")
+    @Test(.timeLimit(.minutes(1)), arguments: [
+        ("https://duckduckgo.com/?q=duck\nduckgo&ia=web", "https://duckduckgo.com/?q=duckduckgo&ia=web"),
+        ("https://claude.ai/oauth/authorize?code=true&redir\nect_uri=https%3A%2F%2Fexample.com", "https://claude.ai/oauth/authorize?code=true&redirect_uri=https%3A%2F%2Fexample.com"),
+        ("https://duck\r\nduckgo.com/?q=a\rb\nc\n", "https://duckduckgo.com/?q=abc"),
+        ("\n  https://duck\n\nduckgo.com  \n", "https://duckduckgo.com"),
+    ])
+    func textWithoutSpacesIsJoined(pasted: String, expected: String) {
+        #expect(AddressBarTextEditor.singleLineTextForPaste(pasted) == expected)
     }
 
     @available(macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
-    func lineBreakInParameterNameIsRemoved(useUnifiedLogic: Bool) {
-        let result = AddressBarTextEditor.urlStringRemovingLineBreaks(from: "https://claude.ai/oauth/authorize?code=true&redir\nect_uri=https%3A%2F%2Fexample.com", useUnifiedLogic: useUnifiedLogic)
-        #expect(result == "https://claude.ai/oauth/authorize?code=true&redirect_uri=https%3A%2F%2Fexample.com")
+    @Test(.timeLimit(.minutes(1)), arguments: [
+        ("best pizza\nnear me", "best pizza near me"),
+        ("best pizza \n near me", "best pizza near me"),
+        ("TODO:\nbuy milk", "TODO: buy milk"),
+        ("one two\r\n\r\nthree", "one two three"),
+    ])
+    func textWithSpacesIsJoinedWithSpaces(pasted: String, expected: String) {
+        #expect(AddressBarTextEditor.singleLineTextForPaste(pasted) == expected)
     }
 
     @available(macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
-    func crlfAndMultipleBreaksAreRemoved(useUnifiedLogic: Bool) {
-        let result = AddressBarTextEditor.urlStringRemovingLineBreaks(from: "https://duck\r\nduckgo.com/?q=a\rb\nc\n", useUnifiedLogic: useUnifiedLogic)
-        #expect(result == "https://duckduckgo.com/?q=abc")
-    }
-
-    @available(macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
-    func multiLineSearchTextIsLeftAlone(useUnifiedLogic: Bool) {
-        let result = AddressBarTextEditor.urlStringRemovingLineBreaks(from: "best pizza\nnear me", useUnifiedLogic: useUnifiedLogic)
-        #expect(result == nil)
-    }
-
-    @available(macOS 13, *)
-    @Test(.timeLimit(.minutes(1)), arguments: [false, true])
-    func singleLineTextIsLeftAlone(useUnifiedLogic: Bool) {
-        let result = AddressBarTextEditor.urlStringRemovingLineBreaks(from: "https://duckduckgo.com", useUnifiedLogic: useUnifiedLogic)
-        #expect(result == nil)
+    @Test(.timeLimit(.minutes(1)), arguments: ["https://duckduckgo.com", "best pizza near me"])
+    func singleLineTextIsLeftToTheDefaultPaste(pasted: String) {
+        #expect(AddressBarTextEditor.singleLineTextForPaste(pasted) == nil)
     }
 }

@@ -165,8 +165,9 @@ final class AddressBarTextEditor: NSTextView {
 
     override func paste(_ sender: Any?) {
         if let string = NSPasteboard.general.string(forType: .string),
-           let urlString = Self.urlStringRemovingLineBreaks(from: string, useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) {
-            insertText(urlString, replacementRange: selectedRange())
+           let singleLine = Self.singleLineTextForPaste(string) {
+            // `super` skips the typing path, which would autocomplete the pasted text
+            super.insertText(singleLine, replacementRange: selectedRange())
         } else if let url = NSPasteboard.general.url {
             // Fixes an issue when url-name instead of url is pasted
             super.pasteAsPlainText(url.absoluteString)
@@ -175,13 +176,16 @@ final class AddressBarTextEditor: NSTextView {
         }
     }
 
-    /// A URL wrapped across lines (e.g. copied from a terminal) would otherwise get a space at each line break.
-    /// Returns the string without line breaks if it then parses as a URL, otherwise `nil`.
-    static func urlStringRemovingLineBreaks(from string: String, useUnifiedLogic: Bool) -> String? {
+    /// Joins multi-line text for the single-line address bar; `nil` if `string` has no line breaks.
+    /// Lines are joined with a space if the text contains other whitespace, otherwise with nothing,
+    /// so a URL wrapped across lines (e.g. copied from a terminal) stays one URL.
+    static func singleLineTextForPaste(_ string: String) -> String? {
         guard string.rangeOfCharacter(from: .newlines) != nil else { return nil }
-        let joined = string.components(separatedBy: .newlines).joined().trimmingWhitespace()
-        guard URL(trimmedAddressBarString: joined, useUnifiedLogic: useUnifiedLogic) != nil else { return nil }
-        return joined
+        let lines = string.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        let hasOtherWhitespace = lines.contains { $0.rangeOfCharacter(from: .whitespaces) != nil }
+        return lines.joined(separator: hasOtherWhitespace ? " " : "")
     }
 
     // MARK: - Exclude “ – Search with DuckDuckGo” suffix from selection range

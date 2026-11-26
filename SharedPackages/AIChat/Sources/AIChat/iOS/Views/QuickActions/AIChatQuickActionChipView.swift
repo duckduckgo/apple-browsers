@@ -257,13 +257,15 @@ private extension AIChatQuickActionChipView {
 
         let effect = UIGlassEffect(style: .regular)
         effect.isInteractive = true
-        effect.tintColor = UIColor.black.withAlphaComponent(alpha)
+        effect.tintColor = alpha > 0 ? UIColor.black.withAlphaComponent(alpha) : nil
         glass.effect = effect
     }
 
     /// Dark glass carries more tint: it sits over darker content, so the same value would barely read.
+    /// The outlined chips use plain glass, like the app's toolbar buttons; their hairline ring separates them.
     var glassTintAlpha: CGFloat {
-        traitCollection.userInterfaceStyle == .dark
+        guard backgroundStyle != .outlinedGlass else { return 0 }
+        return traitCollection.userInterfaceStyle == .dark
             ? Constants.glassTintAlphaDark
             : Constants.glassTintAlphaLight
     }

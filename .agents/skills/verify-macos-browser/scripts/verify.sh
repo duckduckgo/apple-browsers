@@ -35,6 +35,11 @@
 set -euo pipefail
 
 BUNDLE_ID="com.duckduckgo.macos.browser.debug"
+# CI, not Debug: it signs with Developer ID and a match profile, which has no device list, so the app runs on any Mac
+# or VM. Same .debug bundle id and app groups as Debug, and DEBUG in the app target. Xcode builds Swift packages in
+# release under CI: SPM_FORCE_DEBUG=1 (as macos_pr_checks.yml sets it) keeps DEBUG in AppKitExtensions and WideEvent,
+# or the app counts as a production build (real pixels, no AutomationServer) and writes no wide event validation log.
+CONFIGURATION="CI"
 # The app reads pinned flags (FeatureFlagLocalOverrides) from UserDefaults.appConfiguration: this app group's
 # preferences, kept in its group container, not in the $BUNDLE_ID domain.
 CONFIG_SUITE="HKE973VLUW.com.duckduckgo.macos.browser.app-configuration.debug"
@@ -84,32 +89,21 @@ epoch_of_pid() { on_target 'date -j -f "%a %b %d %T %Y" "$(ps -o lstart= -p "$1"
 WINDOW_JS='function run(argv) { ObjC.import("CoreGraphics"); var l = ObjC.castRefToObject($.CGWindowListCopyWindowInfo($.kCGWindowListOptionOnScreenOnly, 0)); var n = 0; for (var i = 0; i < l.count; i++) { var w = l.objectAtIndex(i); if (w.objectForKey("kCGWindowOwnerPID").intValue == parseInt(argv[0]) && w.objectForKey("kCGWindowLayer").intValue == 0) n++; } return n; }'
 window_count() { on_target 'osascript -l JavaScript -e "$1" "$2" 2>/dev/null || echo 0' "$WINDOW_JS" "$1"; }
 
-# DerivedData for a checkout: Xcode's folder for its workspace (newest if several), else the runner's
-# <checkout>/.build/DerivedData if it exists. Prints nothing when neither exists.
-derived_data_of() {
-    local workspace="$1/DuckDuckGo.xcworkspace" d best="" newest=0 mtime
-    for d in "$HOME"/Library/Developer/Xcode/DerivedData/*/; do
-        [[ "$(/usr/libexec/PlistBuddy -c 'Print :WorkspacePath' "$d/info.plist" 2>/dev/null)" == "$workspace" ]] || continue
-        mtime=$(stat -f %m "$d")
-        (( mtime > newest )) && { newest=$mtime; best=${d%/}; }
-    done
-    [[ -z "$best" && -d "$1/.build/DerivedData" ]] && best="$1/.build/DerivedData"
-    printf '%s' "$best"
-}
-
-# Which DerivedData to build into, and why: $VERIFY_DERIVED_DATA, this checkout's, the main checkout's
-# (a worktree shares it, so its first build is incremental), else a new one where the runner puts it.
+# Which DerivedData to build into, and why: $VERIFY_DERIVED_DATA, else <checkout>/.build/DerivedData-verify: this
+# checkout's if it exists (a --base worktree has its own), else the main checkout's (worktrees share it, so a
+# worktree's first build is incremental). Never Xcode's or another build's: a DerivedData keeps the package manifests
+# as first evaluated, so one built without SPM_FORCE_DEBUG=1 (Xcode, a Debug build) keeps AppKitExtensions without
+# DEBUG. Only verify.sh builds into this one, always with the flag.
 resolve_derived_data() {
-    local worktree=$1 main dd
+    local worktree=$1 main dd=".build/DerivedData-verify"
     if [[ -n "${VERIFY_DERIVED_DATA:-}" ]]; then echo "$VERIFY_DERIVED_DATA	VERIFY_DERIVED_DATA"; return; fi
-    dd=$(derived_data_of "$worktree")
-    if [[ -n "$dd" ]]; then echo "$dd	this checkout"; return; fi
+    if [[ -d "$worktree/$dd" ]]; then echo "$worktree/$dd	this checkout"; return; fi
     main=$(git -C "$worktree" worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')
     if [[ -n "$main" && "$main" != "$worktree" ]]; then
-        dd=$(derived_data_of "$main")
-        if [[ -n "$dd" ]]; then echo "$dd	main checkout $main"; return; fi
+        if [[ -d "$main/$dd" ]]; then echo "$main/$dd	main checkout $main"; return; fi
+        echo "$main/$dd	new in the main checkout (first build is a full build)"; return
     fi
-    echo "$worktree/.build/DerivedData	new (first build is a full build)"
+    echo "$worktree/$dd	new (first build is a full build)"
 }
 
 build_ax() {
@@ -204,7 +198,7 @@ write_default() {  # app|config key type value
 # Resets everything a run can leave in the VM, so each run (both sides of prove --base) starts from the same state:
 # the app and recorders, the debug app's data and defaults (pinned flags too), its temp and cache folders, ~/Downloads
 # and the pasteboard. The keychain is kept. Then one "check<TAB>what<TAB>ok|fail" line per state read back, and last
-# the macOS version and Provisioning UDID. $2 non-empty is a test seam: a file left in Downloads, so a check fails.
+# the macOS version. $2 non-empty is a test seam: a file left in Downloads, so a check fails.
 # bash, so an unmatched glob is just skipped.
 VM_RESET='shopt -s nullglob
 for _ in 1 2 3 4 5 6 7 8 9 10; do pkill -f "DuckDuckGo - verify-.*\.app/Contents/MacOS" || break; sleep 1; done
@@ -229,7 +223,7 @@ check "app data and temp files removed" eval "data \"$1\" | none"
 check "app defaults and pinned flags removed" eval "! defaults read \"$1\""
 check "Downloads empty" eval "[[ -z \"\$(ls -A ~/Downloads)\" ]]"
 check "pasteboard empty" eval "[[ -z \"\$(pbpaste)\" ]]"
-printf "%s\t%s\n" "$(sw_vers -productVersion)" "$(system_profiler SPHardwareDataType | awk -F": " "/Provisioning UDID/{print \$2}")"'
+sw_vers -productVersion'
 
 case "$command" in
 vm)
@@ -257,11 +251,11 @@ vm)
     fi
     echo "$VM" > "$RUN_DIR/vm"
     out=$(on_target "$VM_RESET" "$BUNDLE_ID" "${VERIFY_DEBUG_BREAK_RESET:-}")
-    info=$(tail -1 <<< "$out")
+    macos=$(tail -1 <<< "$out")
     helper reset-record "$RUN_DIR" "$VM" <<< "$out"
-    printf '{"host": "%s", "macos": "%s", "provisioning_udid": "%s"}\n' "$VM" "${info%%$'\t'*}" "${info##*$'\t'}" > "$RUN_DIR/vm.json"
+    printf '{"host": "%s", "macos": "%s"}\n' "$VM" "$macos" > "$RUN_DIR/vm.json"
     sync_ax
-    echo "vm=$VM macOS ${info%%$'\t'*} (reset: $(grep -c $'\tok$' <<< "$out") of $(grep -c $'^check\t' <<< "$out") checks ok)"
+    echo "vm=$VM macOS $macos (reset: $(grep -c $'\tok$' <<< "$out") of $(grep -c $'^check\t' <<< "$out") checks ok)"
     ;;
 build)
     worktree="."; automation=0; language="en"; locale="en_US"; skip_onboarding=1; launch=1
@@ -295,7 +289,7 @@ build)
     done
     echo $$ > "$build_lock/pid"; echo "$topic" > "$build_lock/topic"
     build_start=$(date +%s)
-    if ! (cd "$worktree" && xcodebuild -workspace DuckDuckGo.xcworkspace -scheme "macOS Browser" -configuration Debug \
+    if ! (cd "$worktree" && SPM_FORCE_DEBUG=1 xcodebuild -workspace DuckDuckGo.xcworkspace -scheme "macOS Browser" -configuration "$CONFIGURATION" \
             -destination "platform=macOS" -derivedDataPath "$DERIVED_DATA" -skipPackagePluginValidation \
             -skipMacroValidation -skipPackageUpdates "PRODUCT_NAME_PREFIX=$APP_NAME" build) > "$RUN_DIR/build.log" 2>&1; then
         rm -rf "$build_lock"
@@ -304,7 +298,14 @@ build)
     fi
     build_end=$(date +%s)
     rm -rf "$build_lock"
-    app="$DERIVED_DATA/Build/Products/Debug/$APP_NAME.app"
+    # The app counts as a production build (LetsMove, real pixels, no AutomationServer) when AppKitExtensions misses
+    # DEBUG. Read from the compile commands, so only a build that compiled it can tell.
+    if grep -E -- '/swiftc .*-module-name AppKitExtensions ' "$RUN_DIR/build.log" | grep -qv -- '-DDEBUG'; then
+        echo "PACKAGES NOT DEBUG: AppKitExtensions compiled without DEBUG (manifest evaluated without SPM_FORCE_DEBUG=1)."
+        echo "  Build into a DerivedData only verify.sh uses: remove $DERIVED_DATA and build again."
+        exit 2
+    fi
+    app="$DERIVED_DATA/Build/Products/$CONFIGURATION/$APP_NAME.app"
     exe="$app/Contents/MacOS/$APP_NAME"
     [[ -x "$exe" ]] || { echo "BUILD PRODUCT MISSING: $exe"; exit 2; }
     # A build stopped halfway can leave an empty compiled asset catalog that later incremental builds reuse;
@@ -350,7 +351,7 @@ build)
         "$target_app" ${open_env[@]+"${open_env[@]}"} --args "${launch_args[@]}")
     pid=""
     for _ in $(seq 60); do pid=$(app_pid); [[ -n "$pid" ]] && break; sleep 1; done
-    [[ -n "$pid" ]] || { echo "NOT LAUNCHED: no $APP_NAME process after 60 s${VM:+ in $VM (AMFI? is its Provisioning UDID in the profile?)}"; exit 2; }
+    [[ -n "$pid" ]] || { echo "NOT LAUNCHED: no $APP_NAME process after 60 s${VM:+ in $VM (AMFI? is the app signed with Developer ID? see SKILL.md, Signing)}"; exit 2; }
     printf '{"pid": %s, "launched": %s, "language": "%s", "locale": "%s", "internal_user": true, "automation_port": %s, "vm": %s}\n' \
         "$pid" "$launched" "$language" "$locale" "$port" "$([[ -n "$VM" ]] && echo "\"$VM\"" || echo null)" > "$RUN_DIR/launch.json"
 

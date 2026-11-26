@@ -1048,9 +1048,8 @@ extension AIChatUserScript: AIChatLocalModelPushing {
             throw AIChatLocalModelRequestError.unavailable
         }
         let window = message.messageWebView?.window
-        let modelName = localModelService.model.name
-        let result = try await localModelService.requestAccess { _ in
-            await localModelAccessPrompt.ask(in: window, modelName: modelName)
+        let result = try await localModelService.requestAccess { request in
+            await localModelAccessPrompt.ask(in: window, request: request)
         }
         return AIChatLocalModelAccessReply(result: result)
     }

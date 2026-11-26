@@ -58,6 +58,7 @@ public enum WideEventParameter {
         static let name = "app.name"
         static let version = "app.version"
         static let formFactor = "app.form_factor"
+        static let devMode = "app.dev_mode"
     }
 
     public enum Context {

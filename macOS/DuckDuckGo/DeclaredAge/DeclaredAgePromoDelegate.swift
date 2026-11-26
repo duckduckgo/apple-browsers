@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AppKitExtensions
 import BrowserServicesKit
 import Combine
 import FeatureFlags_macOS
@@ -29,6 +30,7 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
     private let requester: DeclaredAgeRequester
     private let isReinstall: Bool
     private let featureFlagger: FeatureFlagger
+    private let featureFlag: FeatureFlag
     private let notificationCenter: NotificationCenter
     private let windowProvider: @MainActor () -> NSWindow?
     private let isRequestNeededSubject = CurrentValueSubject<Bool, Never>(false)
@@ -37,11 +39,13 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
     init(requester: DeclaredAgeRequester,
          reinstallUserDetection: ReinstallingUserDetecting,
          featureFlagger: FeatureFlagger,
+         buildType: ApplicationBuildType,
          notificationCenter: NotificationCenter = .default,
          windowProvider: @escaping @MainActor () -> NSWindow?) {
         self.requester = requester
         self.isReinstall = reinstallUserDetection.isReinstallingUser
         self.featureFlagger = featureFlagger
+        self.featureFlag = buildType.isSparkleBuild ? .declaredAgeRangeSparkle : .declaredAgeRange
         self.notificationCenter = notificationCenter
         self.windowProvider = windowProvider
 
@@ -49,7 +53,7 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
     }
 
     var isEligible: Bool {
-        featureFlagger.isFeatureOn(.declaredAgeRange) && isRequestNeededSubject.value
+        featureFlagger.isFeatureOn(featureFlag) && isRequestNeededSubject.value
     }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
@@ -92,8 +96,8 @@ private extension DeclaredAgePromoDelegate {
 
         Publishers.Merge(featureFlagsDidChange, internalUserDidChange)
             .prepend(())
-            .first { [featureFlagger] in
-                featureFlagger.isFeatureOn(.declaredAgeRange)
+            .first { [featureFlagger, featureFlag] in
+                featureFlagger.isFeatureOn(featureFlag)
             }
             .sink { [weak self] in
                 Task { @MainActor [weak self] in

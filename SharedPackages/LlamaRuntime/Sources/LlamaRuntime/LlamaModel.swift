@@ -68,6 +68,9 @@ public final class LlamaModel: @unchecked Sendable {
     /// - Parameter addAssistantStart: Ends with the opening of the assistant's turn, ready to generate.
     public func applyChatTemplate(_ messages: [LlamaChatMessage], addAssistantStart: Bool = true) throws -> String {
         let template = api.llama_model_chat_template!(pointer, nil)
+        if let template, LlamaChatFormat.isGemma4(template: String(cString: template)) {
+            return LlamaChatFormat.gemma4(messages, addAssistantStart: addAssistantStart)
+        }
         let cStrings = messages.flatMap { [strdup($0.role), strdup($0.content)] }
         defer { cStrings.forEach { free($0) } }
         guard !cStrings.contains(where: { $0 == nil }) else {

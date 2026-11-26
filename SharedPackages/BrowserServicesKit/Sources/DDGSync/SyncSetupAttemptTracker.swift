@@ -42,7 +42,12 @@ public final class SyncSetupAttemptTracker {
     private let isEnabled: () -> Bool
     private let now: () -> Date
     private var attempt: SyncSetupWideEventData?
-    private var errorOnScreen: (error: SyncConnectionError, underlyingError: Error?)?
+    private struct ErrorOnScreen {
+        let error: SyncConnectionError
+        let underlyingError: Error?
+    }
+
+    private var errorOnScreen: ErrorOnScreen?
 
     public init(wideEvent: WideEventManaging,
                 isEnabled: @escaping () -> Bool,
@@ -100,7 +105,7 @@ public final class SyncSetupAttemptTracker {
 
     public func recordErrorScreen(for error: SyncConnectionError, underlyingError: Error?) {
         guard attempt != nil else { return }
-        errorOnScreen = (error, underlyingError)
+        errorOnScreen = ErrorOnScreen(error: error, underlyingError: underlyingError)
         recordStep(.errorScreen)
     }
 

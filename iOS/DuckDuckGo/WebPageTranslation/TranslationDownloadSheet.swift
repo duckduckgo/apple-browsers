@@ -75,24 +75,32 @@ final class TranslationDownloadSheetController: UIHostingController<TranslationD
 
     private var lastHeight: CGFloat?
 
-    /// A custom detent's height leaves out the bottom safe area, which the sheet adds back, so it's taken off here.
     func fittingHeight(upTo maximum: CGFloat) -> CGFloat {
-        let window = view.window ?? presentingViewController?.view.window
-        let width = view.bounds.width > 0 ? view.bounds.width : (window?.bounds.width ?? UIScreen.main.bounds.width)
-        let contentHeight = sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude)).height
-        return min(contentHeight - (window?.safeAreaInsets.bottom ?? 0), maximum)
+        min(height(forWidth: layoutWidth), maximum)
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updatePreferredContentSize()
         guard #available(iOS 16, *) else { return }
-        let height = sizeThatFits(in: CGSize(width: view.bounds.width, height: .greatestFiniteMagnitude)).height
+        let height = contentHeight(forWidth: view.bounds.width)
         guard height != lastHeight else { return }
         lastHeight = height
         sheetPresentationController?.invalidateDetents()
     }
 
+    func updatePreferredContentSize() {
+        let width = preferredWidth
+        if #available(iOS 17, *), !DevicePlatform.isIpad {
+            sheetPresentationController?.prefersPageSizing = width == nil
+        }
+        let size = width.map { CGSize(width: $0, height: height(forWidth: $0)) } ?? .zero
+        if preferredContentSize != size {
+            preferredContentSize = size
+        }
+    }
+
+    /// iPad: the modal's width. iPhone in landscape: the screen's height, like the fire confirmation. Otherwise the full width.
     private var preferredWidth: CGFloat? {
         if DevicePlatform.isIpad {
             return Constants.iPadWidth
@@ -101,15 +109,21 @@ final class TranslationDownloadSheetController: UIHostingController<TranslationD
         return window.bounds.width > window.bounds.height ? window.bounds.height : nil
     }
 
-    func updatePreferredContentSize() {
-        let width = preferredWidth
-        if #available(iOS 17, *), !DevicePlatform.isIpad {
-            sheetPresentationController?.prefersPageSizing = width == nil
+    private var layoutWidth: CGFloat {
+        if view.bounds.width > 0 {
+            return view.bounds.width
         }
-        let size = width.map { CGSize(width: $0, height: sizeThatFits(in: CGSize(width: $0, height: .greatestFiniteMagnitude)).height) } ?? .zero
-        if preferredContentSize != size {
-            preferredContentSize = size
-        }
+        return preferredWidth ?? UIApplication.shared.firstKeyWindow?.bounds.width ?? UIScreen.main.bounds.width
+    }
+
+    /// The iPhone sheet adds the bottom safe area back, so it's taken off; the iPad modal applies it inside, so it's added.
+    private func height(forWidth width: CGFloat) -> CGFloat {
+        let bottomInset = UIApplication.shared.firstKeyWindow?.safeAreaInsets.bottom ?? 0
+        return contentHeight(forWidth: width) + (DevicePlatform.isIpad ? bottomInset : -bottomInset)
+    }
+
+    private func contentHeight(forWidth width: CGFloat) -> CGFloat {
+        sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude)).height
     }
 
     private enum Constants {

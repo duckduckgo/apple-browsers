@@ -57,6 +57,7 @@ struct SettingsAIFeaturesView: View {
                           frequency: .dailyAndCount,
                           options: .parameters(viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat)))
         }
+        .accessibilityIdentifier("Settings.List.AIFeatures")
     }
 
     private var header: some View {
@@ -234,6 +235,7 @@ private extension AIFeaturesSettingsRowProviding {
         NavigationLink(destination: SettingsAIChatShortcutsView().environmentObject(viewModel)) {
             SettingsCellView(label: UserText.settingsManageAIChatShortcuts)
         }
+        .accessibilityIdentifier("Settings.AIFeatures.ManageShortcuts")
     }
 
     @ViewBuilder

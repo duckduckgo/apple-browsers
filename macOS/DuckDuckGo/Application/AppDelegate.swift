@@ -2408,6 +2408,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             featureFlagger: featureFlagger
         )
+        webExtensionManager.installUserAllowlistNotifier(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager
+        )
         let nativeBitwardenRetirement = NativeBitwardenRetirement(
             isBitwardenExtensionInstalled: { [weak webExtensionManager] in
                 webExtensionManager?.isBitwardenExtensionInstalled ?? false

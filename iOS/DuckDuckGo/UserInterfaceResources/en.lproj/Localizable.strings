@@ -2134,6 +2134,12 @@
 /* Button that lets Duck.ai use the on-device model. */
 "duckai.local-model-access.turn-on" = "Turn On";
 
+/* Button that downloads the on-device model for Duck.ai page summaries. %@ is the download size, such as 975 MB. */
+"duckai.local-model-install.install" = "Install %@";
+
+/* Second paragraph of the pop-up that offers to download an on-device AI for Duck.ai page summaries. */
+"duckai.local-model-install.prompt.future-use" = "Once installed, the on-device AI will be used for future page summaries.";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
 
@@ -2217,6 +2223,39 @@
 
 /* Title of the toggle in AI Features settings that lets Duck.ai use the on-device model. %@ is the model's name, for example Apple Intelligence. */
 "duckai.settings.local-model-access.use-model.title" = "Use %@";
+
+/* Accessibility label of the button in AI Features settings that stops downloading the on-device model. */
+"duckai.settings.local-model.cancel-download" = "Cancel Download";
+
+/* Shown in AI Features settings on iPad when there isn't enough storage to download the on-device model. */
+"duckai.settings.local-model.disk-full.ipad" = "There isn't enough space on your iPad for the model.";
+
+/* Shown in AI Features settings on iPhone when there isn't enough storage to download the on-device model. */
+"duckai.settings.local-model.disk-full.iphone" = "There isn't enough space on your iPhone for the model.";
+
+/* Shown in AI Features settings when downloading the on-device model failed. */
+"duckai.settings.local-model.download-failed" = "Couldn't download the model. Check your connection and try again.";
+
+/* Button in AI Features settings that downloads the on-device model for Duck.ai page summaries. */
+"duckai.settings.local-model.install" = "Install";
+
+/* Name of the row for the downloadable on-device AI in the On-Device Model section of AI Features settings, on devices without Apple Intelligence. */
+"duckai.settings.local-model.local-ai.title" = "Local AI";
+
+/* Caption under the downloadable on-device AI in AI Features settings. %@ is the AI's name, such as Granite 4.0 1B. */
+"duckai.settings.local-model.model.caption" = "Uses %@ for tasks like page summaries.";
+
+/* Download progress next to the on-device model's name in AI Features settings. %1$@ is how much has downloaded and %2$@ the total, such as (400 MB/975 MB). */
+"duckai.settings.local-model.progress" = "(%1$@/%2$@)";
+
+/* The on-device model's download size next to its name in AI Features settings, such as (975 MB). */
+"duckai.settings.local-model.size" = "(%@)";
+
+/* Button in AI Features settings that retries downloading the on-device model. */
+"duckai.settings.local-model.try-again" = "Try Again";
+
+/* Button in AI Features settings that deletes the downloaded on-device model. */
+"duckai.settings.local-model.uninstall" = "Uninstall";
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";

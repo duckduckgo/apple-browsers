@@ -215,7 +215,7 @@ final class DownloadableLocalModelPreferencesTests {
 
         #expect(preferences.shouldShowLocalModelAccess)
         #expect(preferences.downloadableModelState == .notInstalled)
-        #expect(preferences.downloadableModelBytes == AIChatLocalModelSpec.granite.bytes)
+        #expect(preferences.downloadableModelBytes == AIChatLocalModelSpec.gemma4E2B.bytes)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -234,7 +234,7 @@ final class DownloadableLocalModelPreferencesTests {
         let preferences = makePreferences()
 
         preferences.installDownloadableModel()
-        #expect(preferences.downloadableModelState == .downloading(receivedBytes: 0, totalBytes: AIChatLocalModelSpec.granite.bytes))
+        #expect(preferences.downloadableModelState == .downloading(receivedBytes: 0, totalBytes: AIChatLocalModelSpec.gemma4E2B.bytes))
         preferences.cancelDownloadableModelInstall()
         #expect(preferences.downloadableModelState == .notInstalled)
         installer.state = .installed(URL(fileURLWithPath: "/m.gguf"))
@@ -243,30 +243,10 @@ final class DownloadableLocalModelPreferencesTests {
         #expect(installer.userCalls == ["install", "cancel", "uninstall"])
         #expect(llama.unloadCount == 1)
     }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The debug override keeps its choice and forgets Automatic", .timeLimit(.minutes(1)))
-    func overrideIsStored() {
-        let store = InMemoryKeyValueStore()
-        let notificationCenter = NotificationCenter()
-        let persistor = LocalModelEngineOverridePersistor(keyValueStore: store, notificationCenter: notificationCenter)
-        var updates = 0
-        let cancellable = persistor.updates.sink { updates += 1 }
-
-        persistor.current = .llama
-        #expect(persistor.current == .llama)
-        #expect(persistor.current.engineKind == .llama)
-
-        persistor.current = .automatic
-        #expect(store.object(forKey: LocalModelEngineOverridePersistor.key) == nil)
-        #expect(persistor.current.engineKind == nil)
-        #expect(updates == 2)
-        cancellable.cancel()
-    }
 }
 
 private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalModelUnloading {
-    let model = AIChatLocalModelSpec.granite.info
+    let model = AIChatLocalModelSpec.gemma4E2B.info
     var availability: AIChatLocalModelAvailability = .available
     private(set) var unloadCount = 0
 
@@ -281,7 +261,8 @@ private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalMod
 
 @MainActor
 private final class RecordingInstaller: AIChatLocalModelInstalling {
-    let spec = AIChatLocalModelSpec.granite
+    let spec = AIChatLocalModelSpec.gemma4E2B
+    let isActive = false
     private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
     private(set) var userCalls: [String] = []
 

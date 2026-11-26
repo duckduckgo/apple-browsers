@@ -188,6 +188,8 @@ final class AppDependencyProvider: DependencyProvider {
         )
         let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))
 
+        let launchOptionsHandler = LaunchOptionsHandler()
+        let isUITesting = launchOptionsHandler.isUITesting
         var featureFlagger: FeatureFlagger
 
         if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
@@ -199,7 +201,7 @@ final class AppDependencyProvider: DependencyProvider {
             let defaultFeatureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
                                                               privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                                               localOverrides: featureFlaggerOverrides,
-                                                              allowOverrides: { [internalUserDecider, isUITesting=LaunchOptionsHandler().isUITesting] in
+                                                              allowOverrides: { [internalUserDecider] in
                                                                   internalUserDecider.isInternalUser || isUITesting
                                                               },
                                                               experimentManager: experimentManager,
@@ -208,7 +210,7 @@ final class AppDependencyProvider: DependencyProvider {
 
             // Applied after DefaultFeatureFlagger.init, which clears local overrides for non-internal users.
             // Writing overrides afterwards keeps them intact for UI test mode where allowOverrides also returns true.
-            LaunchOptionsHandler().applyUITestOverrides(
+            launchOptionsHandler.applyUITestOverrides(
                 featureFlagOverrideStore: featureFlagOverrideStore,
                 configRolloutStore: .standard
             )
@@ -225,13 +227,8 @@ final class AppDependencyProvider: DependencyProvider {
                                         eventTracker: ExperimentEventTracker(store: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
 
         self.wideEvent = WideEvent(
-            useMockRequests: {
-#if DEBUG || REVIEW || ALPHA
-                true
-#else
-                false
-#endif
-            }(),
+            useMockRequests: isUITesting || AppVersion.runType != .normal,
+            isDevMode: !BuildFlags.isProductionBuild,
             featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
         )
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))

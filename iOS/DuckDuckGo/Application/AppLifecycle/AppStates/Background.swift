@@ -154,12 +154,18 @@ extension Background {
     }
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
-        Foreground(stateContext: StateContext(appDependencies: appDependencies,
-                                              sceneDependencies: sceneDependencies,
-                                              didTransitionFromLaunching: didTransitionFromLaunching,
-                                              drewIdleReturnNewTabPage: drewIdleReturnNewTabPage),
-                   actionToHandle: actionToHandle,
-                   lastBackgroundDateStorage: lastBackgroundDateStorage)
+        var drewIdleReturnNewTabPage = drewIdleReturnNewTabPage
+        // UIKit can activate the scene without `willLeave`, so a deferred first screen is drawn here too.
+        if var initialView = pendingInitialView {
+            initialView.loadIfPending(hasLaunchAction: actionToHandle != nil)
+            drewIdleReturnNewTabPage = initialView.drewIdleReturnNewTabPage
+        }
+        return Foreground(stateContext: StateContext(appDependencies: appDependencies,
+                                                     sceneDependencies: sceneDependencies,
+                                                     didTransitionFromLaunching: didTransitionFromLaunching,
+                                                     drewIdleReturnNewTabPage: drewIdleReturnNewTabPage),
+                          actionToHandle: actionToHandle,
+                          lastBackgroundDateStorage: lastBackgroundDateStorage)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -169,7 +175,8 @@ extension Background {
         Connected(stateContext: Launching.StateContext(appDependencies: appDependencies),
                   actionToHandle: actionToHandle,
                   window: window,
-                  lastBackgroundDateStorage: lastBackgroundDateStorage)
+                  lastBackgroundDateStorage: lastBackgroundDateStorage,
+                  isReattachingWindow: true)
     }
 
 }

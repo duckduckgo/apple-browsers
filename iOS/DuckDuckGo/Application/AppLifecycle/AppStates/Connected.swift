@@ -51,7 +51,8 @@ struct Connected: ConnectedHandling {
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
 
     init(stateContext: Launching.StateContext, actionToHandle: AppAction?, window: UIWindow,
-         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
+         lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>,
+         isReattachingWindow: Bool = false) {
         appDependencies = stateContext.appDependencies
         self.actionToHandle = actionToHandle
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
@@ -76,7 +77,7 @@ struct Connected: ConnectedHandling {
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
-        initialView = Self.makeInitialViewLoader(appDependencies: appDependencies)
+        initialView = Self.makeInitialViewLoader(appDependencies: appDependencies, isReattachingWindow: isReattachingWindow)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
                                               authenticationService: authenticationService,
                                               autoClearService: autoClearService)

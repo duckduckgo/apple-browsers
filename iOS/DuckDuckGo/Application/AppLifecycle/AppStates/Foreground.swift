@@ -303,7 +303,8 @@ extension Foreground {
         return Connected(stateContext: Launching.StateContext(appDependencies: appDependencies),
                          actionToHandle: actionToHandle,
                          window: window,
-                         lastBackgroundDateStorage: lastBackgroundDateStorage)
+                         lastBackgroundDateStorage: lastBackgroundDateStorage,
+                         isReattachingWindow: true)
     }
 
 }

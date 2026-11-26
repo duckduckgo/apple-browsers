@@ -82,11 +82,14 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
     }
 
     func dialog(for tab: Tab) -> ContextualOnboardingDecision {
-        // 1. After Try Duck.ai opened Duck.ai, the upsell waits for a page that isn't Duck.ai.
-        if progress.hasSeen(.tryDuckAI), !progress.hasSeen(.subscriptionUpsell), tab.url?.isDuckAIURL == true { return .none }
-        // 2. Once the final dialog was seen, the ending decides (upsell or completed).
-        if case .decided(let decision) = ending.decisionForNextDialog() { return decision }
-        // 3. Otherwise pick today's dialog for this tab, without writing anything.
+        // 1. The redirect a bang search goes through is neither a site visit nor a place for the ending.
+        if let url = tab.url, Self.isBangRedirect(url) { return .none }
+        let endingDecision = ending.decisionForNextDialog()
+        // 2. After Try Duck.ai opened Duck.ai, the upsell waits for a page that isn't Duck.ai.
+        if endingDecision == .decided(.next(.subscriptionUpsell)), progress.hasSeen(.tryDuckAI), tab.url?.isDuckAIURL == true { return .none }
+        // 3. Once the final dialog was seen, the ending decides (upsell or completed).
+        if case .decided(let decision) = endingDecision { return decision }
+        // 4. Otherwise pick today's dialog for this tab, without writing anything.
         let dialog: ContextualDialogType?
         switch tab.content {
         case .newtab:
@@ -95,9 +98,6 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
             // Check if the URL is a DuckDuckGo search.
             if url.isDuckDuckGoSearch {
                 dialog = dialogForDuckDuckGoSearch()
-            } else if url.isDuckDuckGo, url.path == "/l" || url.path == "/l/" {
-                // The redirect a bang search goes through isn't a site visit.
-                dialog = nil
             } else {
                 // For website visit, decide dialog also based on the tracker type.
                 let trackerType = trackerMessageProvider.trackersType(privacyInfo: tab.privacyInfo)
@@ -132,6 +132,10 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
 
 // MARK: - Helpers
 extension SearchOnboardingPath {
+    private static func isBangRedirect(_ url: URL) -> Bool {
+        url.isDuckDuckGo && (url.path == "/l" || url.path == "/l/")
+    }
+
     // Determines the dialog for a new tab.
     private func dialogForNewTab() -> ContextualDialogType? {
         // If "tryASearch" has not been shown, show it.

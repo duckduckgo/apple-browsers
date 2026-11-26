@@ -341,9 +341,11 @@ class WorkflowTests(unittest.TestCase):
 
     def test_selftest_only_reads_native_endpoints_and_reports_owned_cleanup(self):
         self.auth_diagnostics["pirEndpoint"] = "https://dbp-staging.duckduckgo.com"
-        args = pir.parser().parse_args(["selftest", "--platform", "ios", "--evidence-dir", str(self.directory / "evidence")])
+        args = pir.parser().parse_args(["selftest", "--platform", "ios", "--evidence-dir", str(self.directory / "evidence"),
+                                        "--launch-profile", '{"onboardingCompleted": false}'])
         result = self.execute_args(args)
         self.assertEqual(result["status"], "pass", result)
+        self.assertEqual(self.instances[-1].kwargs["launch_profile"], {"onboardingCompleted": False})
         self.assertTrue(result["cleanup"]["stopped"])
         self.assertEqual(result["brokerRequests"], 0)
         self.assertFalse(self.instances[-1].snapshots_enabled)
@@ -411,6 +413,37 @@ class WorkflowTests(unittest.TestCase):
                 pir.execute(self.args(), self.Runtime)
             self.config = original
         self.assertEqual(self.instances, [])
+
+    def test_launch_profile_reaches_runtime_launch_evidence_and_rerun(self):
+        profile = self.input_directory / "launch-profile.json"
+        profile.write_text('{"featureFlags": {"x": true}}')
+        result = self.execute("--launch-profile", str(profile))
+        self.assertEqual(result["status"], "pass", result)
+        self.assertEqual(self.instances[-1].kwargs["launch_profile"], {"featureFlags": {"x": True}})
+        source = dict(reference=str(profile.resolve()), sha256=pir.sha256(profile.read_bytes()))
+        self.assertEqual(result["launch"]["launchProfile"]["source"], source)
+        self.assertEqual(json.loads((Path(result["evidence"]) / "launch.json").read_text())["launchProfile"]["source"], source)
+        self.assertIn(pir.shlex.join(["--launch-profile", str(profile.resolve())]), result["rerun"])
+        inline = '{"onboardingCompleted": false}'
+        result = self.execute("--launch-profile", inline)
+        self.assertEqual(result["launch"]["launchProfile"]["source"], dict(inline={"onboardingCompleted": False}))
+        self.assertIn(pir.shlex.join(["--launch-profile", inline]), result["rerun"])
+
+    def test_launch_profile_is_ios_only_and_validated_before_launch(self):
+        evidence = str(self.directory / "evidence")
+        for argv, message in ((["run", "--platform", "macos", "--config", "/absent.json"], "only to iOS"),
+                              (["build", "--platform", "ios"], "only to run, selftest"),
+                              (["scheduler", "observe", "--platform", "ios", "--since", "2026-01-01T00:00:00Z",
+                                "--job", "a.com", "1"], "only to run, selftest")):
+            with self.subTest(argv=argv), self.assertRaisesRegex(ValueError, message):
+                pir.execute(pir.parser().parse_args([*argv, "--launch-profile", "{}", "--evidence-dir", evidence]), self.Runtime)
+        for profile, message in (('{"internalUser": false}', "internalUser true"), ('{"tabs": []}', "tabs")):
+            with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, message):
+                pir.execute(self.args("--check-config", "--launch-profile", profile), self.Runtime)
+        self.assertEqual(self.instances, [])
+        valid = pir.execute(self.args("--check-config", "--launch-profile", '{"onboardingCompleted": false}'), self.Runtime)
+        self.assertEqual(valid["launchProfile"], dict(inline={"onboardingCompleted": False}))
+        self.assertFalse((self.directory / "evidence").exists())
 
     def test_optout_can_use_existing_subscription_without_injected_token(self):
         self.configure_auth()

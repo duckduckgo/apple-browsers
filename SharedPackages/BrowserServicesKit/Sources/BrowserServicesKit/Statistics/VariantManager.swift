@@ -19,7 +19,7 @@
 import Foundation
 
 /// Define new experimental features by extending the struct in client project.
-public struct FeatureName: RawRepresentable, Equatable {
+public struct FeatureName: RawRepresentable, Equatable, Sendable {
 
     public var rawValue: String
 

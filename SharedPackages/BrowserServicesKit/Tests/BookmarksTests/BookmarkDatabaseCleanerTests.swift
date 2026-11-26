@@ -85,32 +85,27 @@ final class BookmarkDatabaseCleanerTests: XCTestCase {
 
         databaseCleaner.removeBookmarksPendingDeletion()
 
-        waitForExpectations(timeout: 1)
+        wait(for: [expectation], timeout: 1)
         XCTAssertEqual(MockEventMapper.errors.count, 1)
         let error = try XCTUnwrap(MockEventMapper.errors.first)
         XCTAssertTrue(error is BookmarksCleanupCancelledError)
     }
 
-    func testWhenThereAreNoConflictsThenCleanerContextIsSavedOnce() {
+    func testWhenThereAreNoConflictsThenCleanerContextIsSavedOnce() throws {
         let context = bookmarksDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
-        var bookmarkUUID: String!
         var fetchBookmarksPendingDeletionCallCount = 0
 
-        context.performAndWait {
+        let bookmarkUUID = try context.performAndWait {
             BookmarkUtils.prepareFoldersStructure(in: context)
-            let folder1 = makeFolder(named: "Folder 1", in: context)
-            let bookmark = makeBookmark(withParent: folder1, in: context)
+            let folder1 = Self.makeFolder(named: "Folder 1", in: context)
+            let bookmark = Self.makeBookmark(withParent: folder1, in: context)
 
-            do {
-                try context.save()
-            } catch {
-                XCTFail("failed to save context")
-            }
-            bookmarkUUID = bookmark.uuid
+            try context.save()
+            return try XCTUnwrap(bookmark.uuid)
         }
 
         context.performAndWait {
-            let bookmark = fetchBookmarkOrFolder(with: bookmarkUUID, in: context)!
+            let bookmark = Self.fetchBookmarkOrFolder(with: bookmarkUUID, in: context)!
             bookmark.markPendingDeletion()
             do {
                 try context.save()
@@ -130,7 +125,7 @@ final class BookmarkDatabaseCleanerTests: XCTestCase {
         databaseCleaner.removeBookmarksPendingDeletion()
 
         context.performAndWait {
-            let bookmark = fetchBookmarkOrFolder(with: bookmarkUUID, in: context)
+            let bookmark = Self.fetchBookmarkOrFolder(with: bookmarkUUID, in: context)
             XCTAssertNil(bookmark)
         }
 
@@ -140,32 +135,25 @@ final class BookmarkDatabaseCleanerTests: XCTestCase {
 
     func testWhenThereIsMergeConflictThenCleanupIsRetried() throws {
         let context = bookmarksDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
-        var bookmarkUUID: String!
-        var folder2UUID: String!
         var fetchBookmarksPendingDeletionCallCount = 0
 
         // Create Folder 1, Folder 2, and Bookmark inside Folder 1
         // Mark Bookmark for deletion
-        context.performAndWait {
+        let (bookmarkUUID, folder2UUID) = try context.performAndWait {
             BookmarkUtils.prepareFoldersStructure(in: context)
-            let folder1 = makeFolder(named: "Folder 1", in: context)
-            let folder2 = makeFolder(named: "Folder 2", in: context)
-            let bookmark = makeBookmark(withParent: folder1, in: context)
+            let folder1 = Self.makeFolder(named: "Folder 1", in: context)
+            let folder2 = Self.makeFolder(named: "Folder 2", in: context)
+            let bookmark = Self.makeBookmark(withParent: folder1, in: context)
             bookmark.markPendingDeletion()
 
-            do {
-                try context.save()
-            } catch {
-                XCTFail("failed to save context")
-            }
-            bookmarkUUID = bookmark.uuid
-            folder2UUID = folder2.uuid
+            try context.save()
+            return try (XCTUnwrap(bookmark.uuid), XCTUnwrap(folder2.uuid))
         }
 
         databaseCleaner = BookmarkDatabaseCleaner(
             bookmarkDatabase: bookmarksDatabase,
             errorEvents: eventMapper,
-            fetchBookmarksPendingDeletion: { [weak self] cleanerContext in
+            fetchBookmarksPendingDeletion: { cleanerContext in
                 fetchBookmarksPendingDeletionCallCount += 1
                 let bookmarks = BookmarkUtils.fetchBookmarksPendingDeletion(cleanerContext)
 
@@ -173,8 +161,8 @@ final class BookmarkDatabaseCleanerTests: XCTestCase {
                 // to create a merge conflict
                 if bookmarks.first?.parent?.title != "Folder 2" {
                     context.performAndWait {
-                        let bookmark = self!.fetchBookmarkOrFolder(with: bookmarkUUID, in: context)!
-                        let folder2 = self!.fetchBookmarkOrFolder(with: folder2UUID, in: context)!
+                        let bookmark = Self.fetchBookmarkOrFolder(with: bookmarkUUID, in: context)!
+                        let folder2 = Self.fetchBookmarkOrFolder(with: folder2UUID, in: context)!
 
                         bookmark.parent = folder2
                         do {
@@ -192,7 +180,7 @@ final class BookmarkDatabaseCleanerTests: XCTestCase {
         databaseCleaner.removeBookmarksPendingDeletion()
 
         context.performAndWait {
-            let bookmark = fetchBookmarkOrFolder(with: bookmarkUUID, in: context)
+            let bookmark = Self.fetchBookmarkOrFolder(with: bookmarkUUID, in: context)
             XCTAssertNil(bookmark)
         }
 
@@ -200,12 +188,12 @@ final class BookmarkDatabaseCleanerTests: XCTestCase {
         XCTAssertEqual(fetchBookmarksPendingDeletionCallCount, 2)
     }
 
-    private func makeFolder(named title: String, with parent: BookmarkEntity? = nil, in context: NSManagedObjectContext) -> BookmarkEntity {
+    private static func makeFolder(named title: String, with parent: BookmarkEntity? = nil, in context: NSManagedObjectContext) -> BookmarkEntity {
         let parentFolder = parent ?? BookmarkUtils.fetchRootFolder(context)!
         return BookmarkEntity.makeFolder(title: title, parent: parentFolder, context: context)
     }
 
-    private func makeBookmark(withParent parent: BookmarkEntity? = nil, in context: NSManagedObjectContext) -> BookmarkEntity {
+    private static func makeBookmark(withParent parent: BookmarkEntity? = nil, in context: NSManagedObjectContext) -> BookmarkEntity {
         let parentFolder = parent ?? BookmarkUtils.fetchRootFolder(context)!
         return BookmarkEntity.makeBookmark(
             title: "Bookmark 1",
@@ -215,7 +203,7 @@ final class BookmarkDatabaseCleanerTests: XCTestCase {
         )
     }
 
-    public func fetchBookmarkOrFolder(with uuid: String, in context: NSManagedObjectContext) -> BookmarkEntity? {
+    private static func fetchBookmarkOrFolder(with uuid: String, in context: NSManagedObjectContext) -> BookmarkEntity? {
         let request = BookmarkEntity.fetchRequest()
         request.predicate = NSPredicate(format: "%K == %@", #keyPath(BookmarkEntity.uuid), uuid)
         request.fetchLimit = 1

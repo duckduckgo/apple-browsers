@@ -68,7 +68,6 @@ protocol AIChatUserScriptProviding: AnyObject {
     @MainActor
     func cancelPendingTabContextSubmission()
     @MainActor func cleanUpForReplacement()
-    @MainActor func handOverLocalRuns(to replacement: AIChatUserScriptProviding)
     @MainActor
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -314,7 +313,6 @@ final class AIChatContentHandler: AIChatContentHandling {
         let replacedTermsOfServiceState = self.userScript?.isTermsOfServiceShownOnPage
         let replacedPromoVisibility = self.userScript?.isAIChatPromoVisible
         let replacedStatus = self.userScript?.aiChatStatusOnPage
-        self.userScript?.handOverLocalRuns(to: userScript)
         self.userScript?.cleanUpForReplacement()
         self.userScript = userScript
         self.userScript?.delegate = self

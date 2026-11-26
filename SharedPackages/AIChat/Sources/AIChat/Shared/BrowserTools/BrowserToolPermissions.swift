@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import Persistence
 
 public enum BrowserToolPermissionState: String, Equatable, Sendable {
     case ask
@@ -52,64 +51,5 @@ public extension BrowserToolPermissionStoring {
 public extension BrowserToolPermissionMode {
     var defaultState: BrowserToolPermissionState {
         self == .auto ? .allow : .ask
-    }
-}
-
-enum BrowserToolPermissionStorageKey: String, StorageKeyDescribing {
-    // Dot-free on purpose: dots break UserDefaults KVO, and `StorageKey` asserts on them.
-    case decisions = "ai-chat_browser-tool-permissions"
-}
-
-public struct BrowserToolPermissionStorageKeys: StoringKeys {
-    public let decisions = StorageKey<[String: String]>(BrowserToolPermissionStorageKey.decisions)
-    public init() {}
-}
-
-/// `[toolName: "allow" | "deny"]` under one key, the layout Windows persists. iOS stores decisions here;
-/// macOS keeps them in its site permissions.
-@MainActor
-public final class BrowserToolPermissionStore: BrowserToolPermissionStoring {
-
-    private let storage: any KeyedStoring<BrowserToolPermissionStorageKeys>
-    private let shouldApplyDecisionsToAutoTools: @MainActor () -> Bool
-
-    public init(storage: any KeyedStoring<BrowserToolPermissionStorageKeys>,
-                shouldApplyDecisionsToAutoTools: @escaping @MainActor () -> Bool = { false }) {
-        self.storage = storage
-        self.shouldApplyDecisionsToAutoTools = shouldApplyDecisionsToAutoTools
-    }
-
-    public var appliesDecisionsToAutoTools: Bool { shouldApplyDecisionsToAutoTools() }
-
-    public func state(forToolNamed name: String) -> BrowserToolPermissionState? {
-        Self.parse(decisions[name])
-    }
-
-    public func setState(_ state: BrowserToolPermissionState?, forToolNamed name: String) {
-        var decisions = decisions
-        decisions[name] = state.flatMap { $0 == .ask ? nil : $0.rawValue }
-        self.decisions = decisions
-    }
-
-    public var storedDecisions: [String: BrowserToolPermissionState] {
-        decisions.compactMapValues(Self.parse)
-    }
-
-    public func clearAll() {
-        storage.decisions = nil
-    }
-
-    private var decisions: [String: String] {
-        get { storage.decisions ?? [:] }
-        set { storage.decisions = newValue.isEmpty ? nil : newValue }
-    }
-
-    /// Anything unrecognised reads as no decision, so a bad value can only ever cause an extra prompt.
-    private static func parse(_ value: String?) -> BrowserToolPermissionState? {
-        switch value {
-        case BrowserToolPermissionState.allow.rawValue: .allow
-        case BrowserToolPermissionState.deny.rawValue: .deny
-        default: nil
-        }
     }
 }

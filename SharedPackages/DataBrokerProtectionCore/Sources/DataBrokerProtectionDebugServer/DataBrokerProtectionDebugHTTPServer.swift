@@ -36,6 +36,13 @@ public final class DataBrokerProtectionDebugHTTPServer {
     /// Set before `start()`; the prerequisites route exists only in DEBUG builds.
     public var prerequisiteReader: PrerequisiteReader?
     private var prerequisites: DebugPrerequisiteSnapshot?
+    public typealias BrokerJSONRefresher = @MainActor @Sendable (_ resetDelivery: Bool) async throws -> [DebugBrokerState]
+    public typealias ImmediateScanStarter = @MainActor @Sendable (_ brokerURLs: [String]) async throws -> DebugImmediateScans
+    /// Set before `start()`: re-reads bundled and remote broker JSON now, ignoring the update check's rate limit.
+    public var brokerJSONRefresher: BrokerJSONRefresher?
+    /// Set before `start()`: queues scans for these brokers now through the regular job path.
+    public var immediateScanStarter: ImmediateScanStarter?
+    private let maintenance = DebugMaintenanceOperations()
     #endif
     private let instanceID: String?
     private let server: DebugHTTPServer
@@ -110,6 +117,7 @@ public final class DataBrokerProtectionDebugHTTPServer {
             }
             return try Self.json(prerequisites.snapshot(checkID: checkID))
         }
+        registerMaintenanceRoutes()
         #endif
 
         server.addRoute("/api", method: .GET) { _ in
@@ -211,6 +219,55 @@ public final class DataBrokerProtectionDebugHTTPServer {
             }
         }
     }
+
+    #if DEBUG
+    private struct RefreshRequest: Decodable {
+        let resetDelivery: Bool?
+    }
+
+    private struct ImmediateScanRequest: Decodable {
+        let brokers: [String]
+    }
+
+    private func registerMaintenanceRoutes() {
+        let instanceID = instanceID
+        let maintenance = maintenance
+        @Sendable func guarded(_ request: HTTPRequest, _ start: () throws -> DebugMaintenanceOperations.State) throws -> HTTPResponse {
+            if !Self.isOwned(request, instanceID: instanceID) {
+                return .text("PIR debug instance mismatch", status: .forbidden)
+            }
+            if Self.isFromWebPage(request) {
+                return Self.webPageRejection
+            }
+            return try Self.json(try start(), status: .accepted)
+        }
+        if let refresher = brokerJSONRefresher {
+            server.addRoute("/api/debug/broker-json/refresh", method: .POST) { request in
+                try guarded(request) {
+                    let body = try request.body.flatMap { $0.isEmpty ? nil : try JSONDecoder().decode(RefreshRequest.self, from: $0) }
+                    let resetDelivery = body?.resetDelivery ?? false
+                    return maintenance.start(kind: "brokerJSONRefresh") { try await refresher(resetDelivery) }
+                }
+            }
+        }
+        if let starter = immediateScanStarter {
+            server.addRoute("/api/debug/scans/immediate", method: .POST) { request in
+                guard let body = request.body, let brokers = try? JSONDecoder().decode(ImmediateScanRequest.self, from: body).brokers,
+                      !brokers.isEmpty, brokers.allSatisfy({ !$0.isEmpty }) else {
+                    return .text("Body must be {\"brokers\": [\"<broker URL>\", ...]}", status: .badRequest)
+                }
+                return try guarded(request) { maintenance.start(kind: "immediateScans") { try await starter(brokers) } }
+            }
+        }
+        server.addPrefixRoute("/api/debug/maintenance/", method: .GET) { request in
+            let id = String(request.path.dropFirst("/api/debug/maintenance/".count))
+            guard let state = maintenance.state(id: id) else {
+                return .text("Maintenance operation not found: \(id)", status: .notFound)
+            }
+            return try Self.json(state)
+        }
+    }
+    #endif
 
     static func isOwned(_ request: HTTPRequest, instanceID: String?) -> Bool {
         guard let instanceID else { return true }

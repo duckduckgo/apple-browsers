@@ -736,7 +736,7 @@ public enum FeatureFlag: String {
 
     /// Shows the Ask Duck.ai row in address bar suggestions as an action: "Ask Duck.ai" over the typed query,
     /// with the Duck.ai logo, which turns full colour when few search suggestions are left.
-    /// https://app.asana.com/0/0/1220349416195292
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220934712322633
     case askDuckAIRowRedesign
 }
 

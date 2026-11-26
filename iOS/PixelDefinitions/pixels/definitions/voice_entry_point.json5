@@ -42,7 +42,7 @@
         ]
     },
     "aichat_voice_in_chat_unavailable_tapped": {
-        "description": "Fires when the user taps the voice button in a Duck.ai chat with messages while Duck.ai says voice can't continue that chat. Nothing starts; the app shows Duck.ai's reason",
+        "description": "Fires when the user taps the voice button in a Duck.ai chat with messages while Duck.ai says voice can't continue that chat. Nothing starts and nothing is shown; VoiceOver reads Duck.ai's reason as the button's hint",
         "owners": ["aataraxiaa"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],

@@ -4761,7 +4761,8 @@ extension UnifiedToggleInputCoordinatorTests {
 
     private func makeVoiceInChatCoordinator(flagOn: Bool = true,
                                             host: UnifiedToggleInputHost = .omnibar,
-                                            pixelKit: PixelKitMock = PixelKitMock()) -> UnifiedToggleInputCoordinator {
+                                            pixelKit: PixelKitMock = PixelKitMock(),
+                                            featureFlagger: MockFeatureFlagger? = nil) -> UnifiedToggleInputCoordinator {
         let coordinator = UnifiedToggleInputCoordinator(
             host: host,
             isToggleEnabled: host == .omnibar,
@@ -4772,7 +4773,7 @@ extension UnifiedToggleInputCoordinatorTests {
             featureDiscovery: mockFeatureDiscovery,
             pixelFiring: UTIPixelFiring(pixelKit: { pixelKit }),
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.aiChatVoiceInExistingChat] : [])
+            featureFlagger: featureFlagger ?? MockFeatureFlagger(enabledFeatureFlags: flagOn ? [.aiChatVoiceInExistingChat] : [])
         )
         coordinator.delegate = mockDelegate
         return coordinator
@@ -4828,6 +4829,30 @@ extension UnifiedToggleInputCoordinatorTests {
         coordinator.handleToolsMenuSelection(.imageGeneration)
         XCTAssertNil(coordinator.selectedTool)
         XCTAssertEqual(voiceButton(in: coordinator), .available)
+    }
+
+    func testTurningTheFlagOffWhileAChatIsOpenFallsBackToTodaysVoicePath() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatVoiceInExistingChat])
+        let coordinator = makeVoiceInChatCoordinator(featureFlagger: flagger)
+        let webView = VoicePushRecordingWebView()
+        let script = makeVoicePushScript(webView: webView)
+        showChat(script, tab: "tab-A", in: coordinator)
+        coordinator.voiceInChatAvailability = .available
+        XCTAssertEqual(voiceButton(in: coordinator), .available)
+
+        flagger.enabledFeatureFlags = []
+        coordinator.viewController.handler.aiVoiceChatButtonTapped()
+
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 1)
+        XCTAssertEqual(mockDelegate.didRequestAIVoiceChatInCurrentChatCount, 0)
+        coordinator.voiceInChatAvailability = .unavailable(reason: .files, message: Self.filesMessage)
+        XCTAssertEqual(voiceButton(in: coordinator), .hidden)
+
+        flagger.enabledFeatureFlags = [.aiChatVoiceInExistingChat]
+        coordinator.voiceInChatAvailability = .available
+        XCTAssertEqual(voiceButton(in: coordinator), .available)
+        drainMainQueue()
+        XCTAssertTrue(webView.voicePushes.isEmpty, "Nothing reaches the page while the flag is off")
     }
 
     func testFlagOffKeepsTodaysHiddenVoiceButtonInAChatWithMessages() {

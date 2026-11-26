@@ -89,23 +89,9 @@ enum BrowserToolTargetTab {
     }
 
     static func actionableTabs(withIDs tabIDs: [TabIdentifier]?, ownerTabID: TabIdentifier, in collection: TabCollectionViewModel) -> [AnyTab]? {
-        var unique: [TabIdentifier] = []
-        for tabID in tabIDs ?? [ownerTabID] where !unique.contains(tabID) { unique.append(tabID) }
-        let tabs = unique.compactMap { actionableTab(withID: $0, in: collection) }
-        return tabs.count == unique.count ? tabs : nil
-    }
-
-    static func tabIDs(from arguments: JSONValue?, maxCount: Int = 50) -> TabIDsArgument {
-        guard let value = arguments?["tabIds"], value != .null else { return .absent }
-        guard let values = value.arrayValue, (1...maxCount).contains(values.count) else { return .invalid }
-        let tabIDs = values.compactMap { $0.stringValue?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        return tabIDs.count == values.count ? .ids(tabIDs) : .invalid
-    }
-
-    enum TabIDsArgument: Equatable {
-        case absent
-        case ids([TabIdentifier])
-        case invalid
+        let ids = tabIDs ?? [ownerTabID]
+        let tabs = ids.compactMap { actionableTab(withID: $0, in: collection) }
+        return tabs.count == ids.count ? tabs : nil
     }
 
     /// The loaded tab, or nil when it is not a page the tab picker would offer.

@@ -47,7 +47,7 @@ final class PinTabBrowserTool: BrowserTool {
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
         let requestedIDs: [TabIdentifier]?
-        switch BrowserToolTargetTab.tabIDs(from: arguments, maxCount: Self.maxTabIDs) {
+        switch BrowserToolTabIDs(arguments: arguments, maxCount: Self.maxTabIDs) {
         case .absent: requestedIDs = nil
         case .ids(let ids): requestedIDs = ids
         case .invalid: return .failure(.invalidArguments)

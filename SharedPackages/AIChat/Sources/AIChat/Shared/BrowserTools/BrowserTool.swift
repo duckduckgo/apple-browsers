@@ -36,6 +36,9 @@ public protocol BrowserTool: AnyObject {
 
     var inputSchema: JSONValue { get }
 
+    /// Validates argument values before the invoker asks for permission.
+    func acceptsArguments(_ arguments: JSONValue?) -> Bool
+
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
     /// re-checks the Fire boundary so a direct call cannot bypass it.
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult
@@ -52,6 +55,7 @@ public protocol BrowserTool: AnyObject {
 }
 
 public extension BrowserTool {
+    func acceptsArguments(_ arguments: JSONValue?) -> Bool { true }
     var asksEveryTime: Bool { false }
     var requiresPermissionTarget: Bool { false }
     func clientToolResult(from value: JSONValue) -> BrowserToolResult { .success(value) }

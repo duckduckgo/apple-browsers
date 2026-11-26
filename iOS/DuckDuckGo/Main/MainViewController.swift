@@ -9237,6 +9237,39 @@ extension MainViewController: TabSwitcherDelegate {
         }
     }
 
+    func closeTabsForBrowserTool(_ tabs: [Tab], in model: TabsModelManaging, canClose: (Tab) -> Bool) -> Set<String> {
+        let selectedTab = model.currentTab
+        var closedIDs = Set<String>()
+        for tab in tabs where canClose(tab) {
+            newTabPageControllerStore.removePage(for: tab)
+            recordDuckAISessionCloseIfNeeded(closingTabs: [tab])
+            if #available(iOS 18.4, *) {
+                webExtensionEventsCoordinator?.didCloseTab(tab)
+            }
+            discardNewTabPageSessionIfHostingTabClosed([tab])
+            reportDuckAITabClosedIfNeeded(tab)
+
+            tabManager.remove(tab: tab, in: model)
+            if model.indexOf(tab: tab) == nil {
+                closedIDs.insert(tab.uid)
+            }
+        }
+        guard !closedIDs.isEmpty, isViewLoaded, tabManager.currentBrowsingMode == .normal,
+              tabManager.currentTabsModel === model else { return closedIDs }
+        hideSuggestionTray()
+        hideNotificationBarIfBrokenSitePromptShown()
+        if model.currentTab !== selectedTab {
+            updateCurrentTab()
+            showKeyboardOnNewTabPageIfAllowed()
+        } else {
+            themeColorManager.updateThemeColor()
+            refreshTabIcon()
+            refreshTabBar()
+            swipeTabsCoordinator?.refresh(tabsModel: model, scrollToSelected: true)
+        }
+        return closedIDs
+    }
+
     func closeTab(_ tab: Tab,
                   behavior: TabClosingBehavior = .onlyClose,
                   clearTabHistory: Bool = true,

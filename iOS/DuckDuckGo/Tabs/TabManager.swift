@@ -377,7 +377,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     @MainActor
     func makeBrowserToolScope(for owner: Tab) -> BrowserToolScope? {
         let mode = owner.mode
-        guard tabsModel(for: mode).tabs.contains(where: { $0 === owner }) else { return nil }
+        let ownerModel = tabsModel(for: mode)
+        guard ownerModel.indexOf(tab: owner) != nil else { return nil }
         return BrowserToolScope(owner: owner, source: makeTabAttachmentSource(for: owner), selectedTabID: { [weak self] in
             self?.tabsModel(for: mode).currentTab?.uid
         }, selectTab: { [weak self] target in
@@ -396,7 +397,32 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             guard ownerModel.indexOf(tab: tab) != nil else { return nil }
             (self.delegate as? MainViewController)?.refreshTabsAfterBrowserToolOpen()
             return tab.uid
+        }, resolveTabsToClose: { [weak self, weak owner] requestedIDs in
+            guard let self, let owner, owner.mode == .normal,
+                  self.currentBrowsingMode == .normal, self.normalTabsModel === ownerModel,
+                  ownerModel.indexOf(tab: owner) != nil else {
+                return .failure(.unavailable)
+            }
+
+            let tabs = requestedIDs.compactMap { id in
+                ownerModel.tabs.first { $0.uid == id && Self.isEligibleForBrowserToolClose($0) }
+            }
+            guard tabs.count == requestedIDs.count else { return .failure(.notFound) }
+
+            guard let mainController = self.delegate as? MainViewController else { return .failure(.unavailable) }
+            return .success(CloseTabsBrowserTool.PreparedBatch(ids: tabs.map(\.uid)) {
+                mainController.closeTabsForBrowserTool(tabs, in: ownerModel) { tab in
+                    self.currentBrowsingMode == .normal && self.normalTabsModel === ownerModel &&
+                        owner.mode == .normal && ownerModel.indexOf(tab: owner) != nil &&
+                        ownerModel.indexOf(tab: tab) != nil && Self.isEligibleForBrowserToolClose(tab)
+                }
+            })
         })
+    }
+
+    private static func isEligibleForBrowserToolClose(_ tab: Tab) -> Bool {
+        guard tab.mode == .normal, let url = tab.link?.url, let scheme = url.scheme?.lowercased() else { return false }
+        return (scheme == "http" || scheme == "https") && !url.isDuckAIURL
     }
 
     @MainActor

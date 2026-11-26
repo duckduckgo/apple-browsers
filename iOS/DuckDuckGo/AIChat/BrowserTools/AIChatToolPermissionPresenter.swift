@@ -49,6 +49,7 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
         case findInPage
         case switchToTab
         case openTab
+        case closeTabs
 
         init?(name: String) {
             switch AIChatBrowserToolsSubfeature(rawValue: name) {
@@ -59,6 +60,7 @@ final class AIChatToolPermissionPresenter: AIChatNativePermissionPresenting {
             case .findInPage: self = .findInPage
             case .switchToTab: self = .switchToTab
             case .openTab: self = .openTab
+            case .closeTabs: self = .closeTabs
             default: return nil
             }
         }

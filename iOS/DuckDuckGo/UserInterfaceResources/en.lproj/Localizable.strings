@@ -1532,10 +1532,16 @@
 "broken.site.report.success.toast" = "Your report helps make DuckDuckGo better for everyone!";
 
 /* Duck.ai browser tool permission prompt: what the tool will do */
+"browser-tool.permission.detail.close-tabs" = "It will close tabs in this window.";
+
+/* Duck.ai browser tool permission prompt: what the tool will do */
 "browser-tool.permission.detail.open-tab" = "It will open this page in a background tab.";
 
 /* Duck.ai browser tool permission prompt: what the tool will see */
 "browser-tool.permission.detail.search-bookmarks" = "It will see the titles, addresses and folders of your bookmarks.";
+
+/* Title of the prompt asking to let Duck.ai close tabs */
+"browser-tool.permission.title.close-tabs" = "Allow Duck.ai to close tabs?";
 
 /* Title of the prompt asking to let Duck.ai open a new tab */
 "browser-tool.permission.title.open-tab" = "Allow Duck.ai to open a new tab?";
@@ -1554,6 +1560,12 @@
 
 /* Explains the scope of Duck.ai browser tool permissions in Settings */
 "browser-tool.settings.caption" = "Choose what actions Duck.ai can take in the browser, and whether it can act without asking for permission each time. These settings apply to every site and chat.";
+
+/* What a browser tool lets Duck.ai do, in settings */
+"browser-tool.settings.close-tabs.detail" = "Close tabs you ask it to.";
+
+/* Name of a browser tool Duck.ai can use, in settings */
+"browser-tool.settings.close-tabs.title" = "Close Tabs";
 
 /* Description of Duck.ai's Find in Page browser tool */
 "browser-tool.settings.find-in-page.detail" = "Find text on a page and see short snippets around each match.";

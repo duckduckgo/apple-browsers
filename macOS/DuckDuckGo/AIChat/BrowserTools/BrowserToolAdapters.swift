@@ -80,6 +80,28 @@ extension OpenTabBrowserTool {
     }
 }
 
+extension CloseTabsBrowserTool {
+    convenience init(windowControllersManager: WindowControllersManagerProtocol) {
+        self.init(prepareBatch: { requestedIDs, context in
+            guard let token = context.ownerWindowToken,
+                  let collection = AIChatTabPickerSource.tabCollectionViewModel(forWindowToken: token, in: windowControllersManager) else {
+                return .failure(.unavailable)
+            }
+            guard let tabs = BrowserToolTargetTab.actionableTabs(withIDs: requestedIDs, ownerTabID: context.ownerTabID, in: collection) else {
+                return .failure(.notFound)
+            }
+            return .success(PreparedBatch(ids: tabs.map(\.uuid)) {
+                Set(tabs.compactMap { tab in
+                    let id = tab.uuid
+                    guard let index = collection.indexInAllTabs(where: { $0.uuid == id }), index.isUnpinnedTab else { return nil }
+                    collection.close(at: index)
+                    return collection.indexInAllTabs(where: { $0.uuid == id }) == nil ? id : nil
+                })
+            })
+        })
+    }
+}
+
 extension ReadTabContentBrowserTool {
     convenience init(windowControllersManager: WindowControllersManagerProtocol, reader: BrowserToolPageContentReading) {
         self.init(readPage: pageLoader(windowControllersManager: windowControllersManager, reader: reader))

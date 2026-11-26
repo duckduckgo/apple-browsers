@@ -65,7 +65,7 @@ public final class BrowserToolInvoker {
             return .failure(callId: request.callId, error: .unavailable)
         }
         // Malformed inputs are rejected before asking. Each tool still validates its values after permission.
-        guard Self.isAcceptedInput(request.input, for: tool) else {
+        guard Self.isAcceptedInput(request.input, for: tool), tool.acceptsArguments(request.input) else {
             return .failure(callId: request.callId, error: .invalidArguments)
         }
         let target = tool.permissionTarget(arguments: request.input, context: context)

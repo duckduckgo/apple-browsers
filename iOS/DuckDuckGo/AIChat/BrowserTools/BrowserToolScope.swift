@@ -32,13 +32,15 @@ final class BrowserToolScope {
     let selectedTabID: () -> String?
     let selectTab: (Tab) -> Bool
     let openTab: (@MainActor (URL) -> String?)?
+    let resolveTabsToClose: (@MainActor ([String]) -> Result<CloseTabsBrowserTool.PreparedBatch, BrowserToolFailure>)?
     private weak var owner: Tab?
     private var isRevoked = false
     let revocations = PassthroughSubject<Void, Never>()
 
     init(owner: Tab, source: MultiTabAttachmentSource, selectedTabID: @escaping () -> String?,
          selectTab: @escaping (Tab) -> Bool = { _ in false },
-         openTab: (@MainActor (URL) -> String?)? = nil) {
+         openTab: (@MainActor (URL) -> String?)? = nil,
+         resolveTabsToClose: (@MainActor ([String]) -> Result<CloseTabsBrowserTool.PreparedBatch, BrowserToolFailure>)? = nil) {
         self.owner = owner
         self.ownerTabID = owner.uid
         self.isBurner = owner.mode == .fire
@@ -46,6 +48,7 @@ final class BrowserToolScope {
         self.selectedTabID = selectedTabID
         self.selectTab = selectTab
         self.openTab = openTab
+        self.resolveTabsToClose = resolveTabsToClose
     }
 
     var isValid: Bool {

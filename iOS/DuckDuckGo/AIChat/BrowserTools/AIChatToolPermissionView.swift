@@ -72,6 +72,10 @@ struct AIChatToolPermissionView: View {
                 copy = Copy.openTab
                 icon = DesignSystemImages.Glyphs.Size24.tabNew
                 rowIcon = icon
+            case .closeTabs:
+                copy = Copy.closeTabs
+                icon = Icons.tabCloseAlt
+                rowIcon = icon
             }
             self.name = copy.name
             title = copy.title
@@ -501,6 +505,14 @@ private extension AIChatToolPermissionView {
                 name: UserText.settingsBrowserAccessOpenTab,
                 title: UserText.browserToolPermissionTitleOpenTab,
                 detail: UserText.browserToolPermissionDetailOpenTab
+            )
+        }
+
+        static var closeTabs: ToolText {
+            ToolText(
+                name: UserText.settingsBrowserAccessCloseTabs,
+                title: UserText.browserToolPermissionTitleCloseTabs,
+                detail: UserText.browserToolPermissionDetailCloseTabs
             )
         }
 

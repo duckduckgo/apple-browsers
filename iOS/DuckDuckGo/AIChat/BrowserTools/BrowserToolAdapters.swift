@@ -60,6 +60,18 @@ extension OpenTabBrowserTool {
     }
 }
 
+extension CloseTabsBrowserTool {
+    convenience init(scopeProvider: @escaping BrowserToolScopeProvider) {
+        self.init(prepareBatch: { requestedIDs, context in
+            guard let scope = scopeProvider(context), scope.accepts(context),
+                  let resolveTabsToClose = scope.resolveTabsToClose else {
+                return .failure(.unavailable)
+            }
+            return resolveTabsToClose(requestedIDs)
+        })
+    }
+}
+
 extension ReadTabContentBrowserTool {
     convenience init(scopeProvider: @escaping BrowserToolScopeProvider, reader: BrowserToolPageContentReading) {
         self.init(readPage: pageLoader(scopeProvider: scopeProvider, reader: reader))

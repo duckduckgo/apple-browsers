@@ -4600,6 +4600,9 @@ https://duckduckgo.com/mac";
 /* Informational message explaining that new tabs can also be deleted individually */
 "scoped.fire.confirmation.new.tabs.info" = "New tabs you created can also be deleted individually.";
 
+/* Accessibility label for the button in the fire confirmation dialog that opens Data Clearing settings */
+"scoped.fire.confirmation.settings.button" = "Data Clearing Settings";
+
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";
 

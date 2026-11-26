@@ -33,8 +33,10 @@ public final class AIChatLlamaEngine: AIChatLocalModelEngine {
     /// about 760 MB on an iPhone. The rest leaves the app room to work.
     static let minimumAvailableMemory: UInt64 = 1_000_000_000
 
-    /// Granite 4.0 1B repeated one bullet until it ran out of tokens on plain greedy decoding;
-    /// this mild penalty stopped it.
+    /// The evals that picked Gemma 4 E2B ran with this mild penalty. Without it Gemma didn't loop on the
+    /// 39 eval pages, but wrote about 15% more and once padded a summary with unrelated headlines from
+    /// the page. Granite 4.0 1B needed it: on plain greedy decoding it repeated one bullet until it ran
+    /// out of tokens.
     static let sampling = LlamaSampling(repeatPenalty: 1.1, repeatPenaltyWindow: 256)
 
     /// Stands in for the page while the chat template is applied, so the page text can be

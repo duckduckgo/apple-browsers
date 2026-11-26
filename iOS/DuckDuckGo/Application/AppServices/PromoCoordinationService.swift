@@ -35,6 +35,7 @@ extension MainViewController: ModalPromptPresenter {}
 
 struct ModalPromptProviders {
     let appRatingPrompt: ModalPromptProvider
+    let updatePrompt: ModalPromptProvider
     let newAddressBarPicker: ModalPromptProvider
     let defaultBrowser: ModalPromptProvider
     let winBackOffer: ModalPromptProvider
@@ -47,6 +48,7 @@ struct ModalPromptProviders {
     var ordered: [ModalPromptProvider] {
         [
             appRatingPrompt,
+            updatePrompt,
             winBackOffer,
             subscriptionPromo,
             subscriptionPromoExistingUser,

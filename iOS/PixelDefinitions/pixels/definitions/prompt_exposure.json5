@@ -40,7 +40,8 @@
                     "remote_message_card",
                     "import_passwords_google",
                     "autofill_extension_prompt",
-                    "add_to_dock_reminder"
+                    "add_to_dock_reminder",
+                    "update_prompt"
                 ]
             },
             "petal",

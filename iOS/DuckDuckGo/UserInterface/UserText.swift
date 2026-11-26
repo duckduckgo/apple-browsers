@@ -3535,6 +3535,13 @@ public struct UserText {
         String(format: NSLocalizedString("translation.banner.subtitle", value: "%1$@ to %2$@", comment: "Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to"), source, target)
     }
 
+    // MARK: - Update Prompt
+    public static let updatePromptTitle = NSLocalizedString("update-prompt.title", value: "Update DuckDuckGo", comment: "Title of the pop-up asking people on an outdated app version to update.")
+    public static let updatePromptBody = NSLocalizedString("update-prompt.body", value: "A new version is ready, with the latest privacy protections and fixes.", comment: "Body of the pop-up asking people on an outdated app version to update.")
+    public static let updatePromptBodyLast = NSLocalizedString("update-prompt.body.last", value: "A new version is ready, with the latest privacy protections and fixes. This is the last reminder for this version. You can update anytime from the App Store.", comment: "Body of the last pop-up asking people on an outdated app version to update. No more reminders follow for this version.")
+    public static let updatePromptUpdate = NSLocalizedString("update-prompt.update", value: "Update", comment: "Button on the update pop-up that opens DuckDuckGo in the App Store.")
+    public static let updatePromptNotNow = NSLocalizedString("update-prompt.not-now", value: "Not Now", comment: "Button that closes the update pop-up until the next reminder.")
+
     // MARK: - OmniBar Long Press Menu
     public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")
     public static let omnibarLongPressMoveToTop = NSLocalizedString("omnibar.menu.move-to-top", value: "Move Address Bar to Top", comment: "Label for moving the address bar to the top of the screen")

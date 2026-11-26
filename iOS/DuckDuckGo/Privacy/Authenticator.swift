@@ -54,8 +54,13 @@ public class Authenticator: Authenticating {
     public func authenticate(reason: String) async -> Bool {
         let context = LAContext()
         do {
-            return try await context.evaluatePolicy(policy, localizedReason: reason)
+            AppLockUITestDiagnostics.record("policy.evaluationRequested")
+            let success = try await context.evaluatePolicy(policy, localizedReason: reason)
+            AppLockUITestDiagnostics.record("policy.evaluationCompleted success=\(success)")
+            return success
         } catch {
+            let authenticationError = error as NSError
+            AppLockUITestDiagnostics.record("policy.evaluationFailed domain=\(authenticationError.domain) code=\(authenticationError.code)")
             PixelKit.fire(Pixel.Event.dbLocalAuthenticationError.withError(error))
         }
         return false

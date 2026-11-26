@@ -29,6 +29,7 @@ final class BookmarksUITests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        app.dismissAddressBarEditing()
         app.resetBookmarks()
     }
 

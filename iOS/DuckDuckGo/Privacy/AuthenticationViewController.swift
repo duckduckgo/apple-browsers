@@ -71,6 +71,7 @@ class AuthenticationViewController: UIViewController {
     }
 
     @objc func onTap(_ sender: Any) {
+        AppLockUITestDiagnostics.record("view.recoveryGestureRecognized")
         delegate?.authenticationViewController(authenticationViewController: self, didTapWithSender: sender)
     }
     

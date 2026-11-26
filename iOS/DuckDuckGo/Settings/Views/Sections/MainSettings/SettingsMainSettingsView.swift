@@ -60,6 +60,7 @@ struct SettingsMainSettingsView: View {
                 SettingsCellView(label: UserText.general,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.settings))
             }
+            .accessibilityIdentifier("Settings.Main.General")
 
             // The rest of settings comes from this array which is sorted by localised label
             ForEach(settingsArrangement, id: \.label) { entry in
@@ -97,7 +98,7 @@ struct SettingsMainSettingsView: View {
             AnyView(NavigationLink(destination: SettingsDataClearingView(viewModel: viewModel.dataClearingViewModel).environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.dataClearing,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.fire))
-            })
+            }.accessibilityIdentifier("Settings.Main.DataClearing"))
         }
 
         @ViewBuilder func buildDuckPlayer(viewModel: SettingsViewModel) -> AnyView? {

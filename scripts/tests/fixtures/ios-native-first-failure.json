@@ -1,0 +1,63 @@
+{
+  "provenance": {
+    "run": 44100661815,
+    "head": "1c9ce70643d1c452a4841bcc9c30bf22eabe55e4",
+    "native_source": "native tests.json from ios-uitest-logs-ContentBlockingUITests-iphone-production-attempt1",
+    "native_sha256": "a3f275c8d6a2c3ce4429f0326d6b6d4f440bbda0ff523322d8ad9ab454b62f14",
+    "raw_source": "ui-tests.log from same immutable artifact",
+    "raw_sha256": "bd0c089653e320838fda3f18404759a033c46da88624e69efb45ea825e693951",
+    "projection": "First native repetition percase; verbatim raw testcase start/terminal lines from first class execution. Full raw log remains in evidence."
+  },
+  "tree": {
+    "testNodes": [
+      {
+        "children": [
+          {
+            "name": "XCTAssertTrue failed - Protection feedback prompt did not appear.",
+            "nodeType": "Failure Message",
+            "sourceLocation": {
+              "filePath": "/Users/vagrant/actions-runner/_work/apple-browsers/apple-browsers/iOS/UITests/Privacy/ContentBlockingUITests.swift",
+              "lineNumber": 64
+            }
+          },
+          {
+            "name": "This method should not be called on the main thread as it may lead to UI unresponsiveness.",
+            "nodeType": "Runtime Warning"
+          }
+        ],
+        "details": "\u26a0\ufe0f Passed after 1 retry",
+        "duration": "2m 26s",
+        "durationInSeconds": 145.61809504032135,
+        "name": "testBrowsingMenuTogglesProtectionAndUndoRestoresPreviousState()",
+        "nodeIdentifier": "ContentBlockingUITests/testBrowsingMenuTogglesProtectionAndUndoRestoresPreviousState()",
+        "nodeIdentifierURL": "test://com.apple.xcode/DuckDuckGo-iOS/UI%20Tests/ContentBlockingUITests/testBrowsingMenuTogglesProtectionAndUndoRestoresPreviousState",
+        "nodeType": "Test Case",
+        "result": "Failed"
+      },
+      {
+        "children": [
+          {
+            "name": "This method should not be called on the main thread as it may lead to UI unresponsiveness.",
+            "nodeType": "Runtime Warning"
+          }
+        ],
+        "duration": "1m 7s",
+        "durationInSeconds": 82.48531401157379,
+        "name": "testPrivacyDashboardReportsBlockedTrackerAndPersistsDisabledProtection()",
+        "nodeIdentifier": "ContentBlockingUITests/testPrivacyDashboardReportsBlockedTrackerAndPersistsDisabledProtection()",
+        "nodeIdentifierURL": "test://com.apple.xcode/DuckDuckGo-iOS/UI%20Tests/ContentBlockingUITests/testPrivacyDashboardReportsBlockedTrackerAndPersistsDisabledProtection",
+        "nodeType": "Test Case",
+        "result": "Passed"
+      }
+    ]
+  },
+  "summary": {
+    "totalTestCount": 2,
+    "passedTests": 1,
+    "failedTests": 1,
+    "skippedTests": 0,
+    "expectedFailures": 0,
+    "result": "Failed"
+  },
+  "log": "Test Case '-[UI_Tests.ContentBlockingUITests testBrowsingMenuTogglesProtectionAndUndoRestoresPreviousState]' started.\nTest Case '-[UI_Tests.ContentBlockingUITests testBrowsingMenuTogglesProtectionAndUndoRestoresPreviousState]' failed (145.618 seconds).\nTest Case '-[UI_Tests.ContentBlockingUITests testPrivacyDashboardReportsBlockedTrackerAndPersistsDisabledProtection]' started.\nTest Case '-[UI_Tests.ContentBlockingUITests testPrivacyDashboardReportsBlockedTrackerAndPersistsDisabledProtection]' passed (82.485 seconds)."
+}

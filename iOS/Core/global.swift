@@ -26,6 +26,8 @@ public let isDebugBuild = false
 #endif
 
 public struct Global {
+    public static let appUserDefaultsGroupName = "group.com.duckduckgo.app"
+
     public static let groupIdPrefix: String = {
         let groupIdPrefixKey = "DuckDuckGoGroupIdentifierPrefix"
         guard let groupIdPrefix = Bundle.main.object(forInfoDictionaryKey: groupIdPrefixKey) as? String else {

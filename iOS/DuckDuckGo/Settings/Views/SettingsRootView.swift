@@ -86,10 +86,14 @@ struct SettingsRootView: View {
             SettingsDebugView()
                 .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
+        .accessibilityIdentifier("Settings.List.Main")
         .navigationBarTitle(UserText.settingsTitle, displayMode: .inline)
-        .navigationBarItems(trailing: Button(UserText.navigationTitleDone) {
-            viewModel.onRequestDismissSettings?()
-        })
+        .navigationBarItems(trailing:
+            Button(UserText.navigationTitleDone) {
+                viewModel.onRequestDismissSettings?()
+            }
+            .accessibilityIdentifier("Settings.Button.Done")
+        )
         .accentColor(Color(designSystemColor: .textPrimary))
         .environmentObject(viewModel)
         .conditionalInsetGroupedListStyle()

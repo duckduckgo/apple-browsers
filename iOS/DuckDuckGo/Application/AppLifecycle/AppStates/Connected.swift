@@ -82,7 +82,10 @@ struct Connected: ConnectedHandling {
                                               authenticationService: authenticationService,
                                               autoClearService: autoClearService)
 
-        configure(window, with: mainCoordinator)
+        attach(window, to: mainCoordinator)
+        // Before the window shows, so the first frame is this screen.
+        initialView.loadAtConnection(hasLaunchAction: actionToHandle != nil)
+        show(window)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -113,7 +116,10 @@ struct Connected: ConnectedHandling {
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
                                               authenticationService: authenticationService,
                                               autoClearService: autoClearService)
-        configure(window, with: mainCoordinator)
+        attach(window, to: mainCoordinator)
+        // Before the window shows, so the first frame is this screen.
+        initialView.loadAtConnection(hasLaunchAction: actionToHandle != nil)
+        show(window)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -144,14 +150,20 @@ struct Connected: ConnectedHandling {
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
                                               authenticationService: authenticationService,
                                               autoClearService: autoClearService)
-        configure(window, with: mainCoordinator)
-    }
-
-    private mutating func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) {
-        ThemeManager.shared.updateUserInterfaceStyle(window: window)
-        window.rootViewController = mainCoordinator.controller
+        attach(window, to: mainCoordinator)
         // Before the window shows, so the first frame is this screen.
         initialView.loadAtConnection(hasLaunchAction: actionToHandle != nil)
+        show(window)
+    }
+
+    /// Puts the main view controller in the window, styled for the current theme.
+    private func attach(_ window: UIWindow, to mainCoordinator: MainCoordinator) {
+        ThemeManager.shared.updateUserInterfaceStyle(window: window)
+        window.rootViewController = mainCoordinator.controller
+    }
+
+    /// Makes the window key and visible.
+    private func show(_ window: UIWindow) {
         sceneDependencies.authenticationService.suspend()
         window.makeKeyAndVisible()
         window.accessibilityIdentifier = "Browser.Window.Main"

@@ -374,14 +374,33 @@ final class AIChatLocalModelDownloaderTests {
     func installRemovesOtherModels() async throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let otherModel = directory.appendingPathComponent("\(String(repeating: "a", count: 64)).gguf")
-        try Data([1, 2, 3]).write(to: otherModel)
         StubModelServer.respond { _ in .init(status: 200, body: self.model) }
         let downloader = makeDownloader()
+        try Data([1, 2, 3]).write(to: otherModel)
 
         downloader.install()
         await waitUntil { downloader.state.isInstalled }
 
         #expect(!FileManager.default.fileExists(atPath: otherModel.path))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An earlier model's files are deleted at launch, and this model's partial download is kept", .timeLimit(.minutes(1)))
+    func launchDeletesEarlierModels() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let earlierModel = directory.appendingPathComponent("\(String(repeating: "a", count: 64)).gguf")
+        let earlierPart = directory.appendingPathComponent("\(String(repeating: "b", count: 64)).gguf.part")
+        try Data([1, 2, 3]).write(to: earlierModel)
+        try Data([1]).write(to: earlierPart)
+        try writePart(model.prefix(300))
+        defaults.set(spec.sha256, forKey: AIChatLocalModelDownloader.installRequestKey)
+
+        let downloader = makeDownloader()
+
+        #expect(!FileManager.default.fileExists(atPath: earlierModel.path))
+        #expect(!FileManager.default.fileExists(atPath: earlierPart.path))
+        #expect(FileManager.default.fileExists(atPath: partURL.path))
+        #expect(downloader.state == .downloading(receivedBytes: 300, totalBytes: Int64(model.count)))
     }
 
     /// Remote config can switch models, which leaves the earlier model's files behind.

@@ -94,6 +94,9 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
             state = .notInstalled
         }
         stateSubject = CurrentValueSubject(state)
+        // An app update or remote config can switch models. The earlier model's file, a gigabyte or more,
+        // would otherwise stay until the user taps Install or Uninstall.
+        removeModelFiles(keeping: [spec.fileName, spec.fileName + ".part"])
     }
 
     public var statePublisher: AnyPublisher<AIChatLocalModelInstallState, Never> {

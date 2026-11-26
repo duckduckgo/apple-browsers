@@ -31,11 +31,12 @@ final class OnboardingUITests: UITestCase {
     }
 
     /// Launches the app into the onboarding flow.
-    private func launchOnboarding() {
+    private func launchOnboarding(featureFlags: [String: Bool] = [:]) {
         app = XCUIApplication.setUp(
             environment: [
                 "UITEST_MODE_ONBOARDING": "1"
-            ]
+            ],
+            featureFlags: featureFlags
         )
         app.enforceSingleWindow()
         welcomeWindow = app.windows["Welcome"]
@@ -47,6 +48,88 @@ final class OnboardingUITests: UITestCase {
     }
 
     func testOnboardingToBrowsing() throws {
+        // The flow without the search or AI chat step, which the remote config can still turn off.
+        app.terminate()
+        launchOnboarding(featureFlags: ["onboardingSearchOrChat": false])
+
+        goToAIChatStep()
+
+        // Start Browsing
+        let startBrowsingButton = welcomeWindow.webViews["Welcome"].buttons
+            .matching(NSPredicate(format: "title ==[c] %@", "Start Browsing"))
+            .firstMatch
+        XCTAssertTrue(startBrowsingButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        startBrowsingButton.click()
+
+        // AfterOnboarding
+        let ddgLogo = app.windows.webViews.groups.containing(.image, identifier: "DuckDuckGo Logo").element
+        let tooltip = app.windows.webViews.groups.containing(.staticText, identifier: "Toggle between search and AI chat").element
+        XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    func testSearchOnlyToSearch() throws {
+        goToAIChatStep()
+        welcomeButton(titled: "Search Only").click()
+        welcomeButton(titled: "Next").click()
+
+        XCTAssertTrue(welcomeText(containing: "Now, try a private search!").waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        welcomeButton(titled: "in spanish").click()
+
+        assertAddressBar(contains: "duckduckgo.com")
+    }
+
+    func testSearchAndDuckAIToSearch() throws {
+        goToAIChatStep()
+        welcomeButton(titled: "Next").click()
+
+        // Search is selected by default.
+        XCTAssertTrue(welcomeText(containing: "Ready to get started?").waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        welcomeButton(titled: "in spanish").click()
+
+        assertAddressBar(contains: "duckduckgo.com")
+    }
+
+    func testSearchAndDuckAIToDuckAI() throws {
+        goToAIChatStep()
+        welcomeButton(titled: "Next").click()
+
+        XCTAssertTrue(welcomeText(containing: "Ready to get started?").waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        // The mode toggle is a tab, not a button.
+        let askAITab = welcomeWindow.webViews["Welcome"].descendants(matching: .any)
+            .matching(NSPredicate(format: "title ==[c] %@ OR label ==[c] %@", "Ask AI", "Ask AI"))
+            .firstMatch
+        XCTAssertTrue(askAITab.waitForExistence(timeout: UITests.Timeouts.elementExistence), "No \"Ask AI\" toggle")
+        askAITab.click()
+        welcomeButton(titled: "Plan a perfect day in London").click()
+
+        // Contextual onboarding is off in this test mode, so the Duck.ai path's lock and dialogs aren't checked here.
+        assertAddressBar(contains: "Duck.ai")
+    }
+
+    private func welcomeButton(titled title: String) -> XCUIElement {
+        let button = welcomeWindow.webViews["Welcome"].buttons
+            .matching(NSPredicate(format: "title CONTAINS[c] %@", title))
+            .firstMatch
+        XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.elementExistence), "No \"\(title)\" button")
+        return button
+    }
+
+    private func welcomeText(containing text: String) -> XCUIElement {
+        welcomeWindow.webViews["Welcome"].staticTexts
+            .matching(NSPredicate(format: "value CONTAINS[c] %@", text))
+            .firstMatch
+    }
+
+    private func assertAddressBar(contains text: String, file: StaticString = #filePath, line: UInt = #line) {
+        let addressBar = app.windows.firstMatch.staticTexts[XCUIApplication.AccessibilityIdentifiers.addressBarPassiveTextField]
+        let predicate = NSPredicate(format: "value CONTAINS[c] %@", text)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: addressBar)
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: UITests.Timeouts.navigation), .completed,
+                       "Address bar shows \"\(addressBar.value as? String ?? "")\"", file: file, line: line)
+    }
+
+    /// Goes through the welcome steps up to the AI Chat step.
+    private func goToAIChatStep() {
         // Options button initially disabled on welcome
         let optionsButton = welcomeWindow.buttons["NavigationBarViewController.optionsButton"]
         XCTAssertTrue(optionsButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
@@ -111,18 +194,6 @@ final class OnboardingUITests: UITestCase {
 
         // AI Chat
         XCTAssertTrue(welcomeWindow.webViews["Welcome"].staticTexts["Want easy access to private AI Chat?"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-
-        // Start Browsing
-        let startBrowsingButton = welcomeWindow.webViews["Welcome"].buttons
-            .matching(NSPredicate(format: "title ==[c] %@", "Start Browsing"))
-            .firstMatch
-        XCTAssertTrue(startBrowsingButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        startBrowsingButton.click()
-
-        // AfterOnboarding
-        let ddgLogo = app.windows.webViews.groups.containing(.image, identifier: "DuckDuckGo Logo").element
-        let tooltip = app.windows.webViews.groups.containing(.staticText, identifier: "Toggle between search and AI chat").element
-        XCTAssertTrue(ddgLogo.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     func testDuckAIIsUnavailableDuringOnboarding() throws {

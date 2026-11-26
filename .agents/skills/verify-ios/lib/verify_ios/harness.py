@@ -2,7 +2,8 @@
 
 A proof is a short Python file written for one change, saved with its evidence, never committed. It defines `run(ios)`
 and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services it depends on),
-`FLAGS = {"flagName": True}` (remote feature flags to pin, on top of env.PINNED_FLAGS) and
+`FLAGS = {"flagName": True}` (remote feature flags to pin, on top of env.PINNED_FLAGS),
+`PROFILE = {"settings": {"theme": "dark"}}` (launch profile keys other than flags, applied by `ios.reset()`) and
 `LANGUAGE = {"language": "fr", "locale": "fr_FR"}` (only to test localization: the default, env.LANGUAGE, is en-US).
 Checks made inside `with ios.on_base("fail"):` (or "pass") declare what the base build should do; `prove --base`
 judges each check against a run on the base build (compare.py). Elsewhere a check should be unchanged on base.
@@ -25,6 +26,7 @@ from verify_ios import steps
 DEVICES = ["iphone", "ipad"]
 LIVE = []    # live services this proof depends on, e.g. ["duck.ai"]; empty means local fixture / app only
 FLAGS = {}   # remote feature flags to pin for this proof, e.g. {"someFlag": True}
+PROFILE = {} # app state for steps.fresh_start, as launch profile keys, e.g. {"settings": {"theme": "dark"}}
 
 
 def run(ios):
@@ -49,12 +51,14 @@ BASE_OUTCOMES = ("fail", "pass", "unchanged")
 class Ios:
     """The handle a proof receives: user actions, reads, waiting assertions, telemetry and evidence for one device."""
 
-    def __init__(self, device, evidence, flags=None, device_obj=None, language=None, as_base=False):
+    def __init__(self, device, evidence, flags=None, device_obj=None, language=None, as_base=False, profile=None):
         self.device = device                     # "iphone" | "ipad"
         self.form_factor = "phone" if device == "iphone" else "tablet"   # pixel names end in _ios_<form_factor>
         self.d = device_obj or Device(device)
         self.evidence = evidence
         self.flags = dict(flags or {})
+        self.profile = dict(profile or {})
+        self.profile_applied = False             # PROFILE reaches the app only through reset()
         self.language = dict(language or env.LANGUAGE)
         self.checks, self.unverified_items, self.notes, self.warnings = [], [], [], []
         self.shots = []   # screenshot files in the order taken: the key frames
@@ -90,7 +94,9 @@ class Ios:
     # session ---------------------------------------------------------------------
     def reset(self):
         """Reinstall and launch: no app data, one blank tab, per-site permissions and daily pixel state cleared."""
-        return self._session("reset", lambda: self.d.reset(flags=self.flags, language=self.language))
+        out = self._session("reset", lambda: self.d.reset(flags=self.flags, language=self.language, profile=self.profile))
+        self.profile_applied = True
+        return out
 
     def launch(self):
         return self._session("launch", lambda: self.d.launch(flags=self.flags, language=self.language))
@@ -503,6 +509,9 @@ def load(path):
         problems.append("FLAGS must map feature flag names to True/False")
     elif env.flag_problem(flags):
         problems.append(f"FLAGS: {env.flag_problem(flags)}")
+    problem = profile_problem(getattr(mod, "PROFILE", {}))
+    if problem:
+        problems.append(f"PROFILE: {problem}")
     if not (mod.__doc__ or "").strip():
         problems.append("needs a docstring saying what it proves")
     return mod, problems
@@ -587,6 +596,17 @@ def _restore(handlers):
         signal.signal(s, h)
 
 
+def profile_problem(profile):
+    """Why a proof's PROFILE can't be used, or None. The app checks the keys themselves when it launches."""
+    if not isinstance(profile, dict) or not all(isinstance(k, str) for k in profile):
+        return 'must be a dict of launch profile keys, e.g. {"settings": {"theme": "dark"}}'
+    if any(k == "featureFlags" or k.startswith("featureFlags.") for k in profile):
+        return "pin flags with FLAGS, not featureFlags"
+    if "internalUser" in profile:
+        return "leave out internalUser: proofs run in UI-test mode, not as an internal user"
+    return None
+
+
 def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, video=True, as_base=False):
     """Run one proof file on each device, always writing evidence and cleaning up. Returns (exit code, summary).
     `as_base`: this is the base-build run of `prove --base` (see Ios.on_base)."""
@@ -596,6 +616,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
     devices = check_devices(devices or getattr(mod, "DEVICES", list(env.PORT_OFFSET)))
     attempt, proof_path = attempt_dir(path, evidence_root(decision_log, evidence_dir))
     live, flags, language = getattr(mod, "LIVE", []), getattr(mod, "FLAGS", {}), getattr(mod, "LANGUAGE", env.LANGUAGE)
+    profile = getattr(mod, "PROFILE", {})
     started = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     results, build = [], None
     old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
@@ -607,7 +628,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
         else:
             for dev in devices:
                 results.append(_run_device(mod, dev, f"{attempt}/{dev}", keep, flags, language=language, video=video,
-                                           as_base=as_base))
+                                           as_base=as_base, profile=profile))
                 if results[-1]["status"] == "cancelled":
                     break
     except _Stop as e:   # between devices, or before the first one started
@@ -617,7 +638,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
     try:
         add_problems(gallery.problems(gallery.compose(gallery.proof_jobs(attempt, results)), attempt, results))
         manifest = _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log,
-                             evidence_dir, video, as_base)
+                             evidence_dir, video, as_base, profile)
         write_index(attempt, results, lambda: page.proof_page(mod, manifest, results, attempt))
         manifest["results"] = _manifest_results(results)   # with any problem writing the page
         with open(f"{attempt}/manifest.json", "w") as f:
@@ -631,7 +652,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
                       results=[{k: r[k] for k in ("device", "status", "reason", "problems") if r.get(k)} for r in results])
 
 
-def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=None, video=True, as_base=False):
+def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=None, video=True, as_base=False, profile=None):
     lock = DeviceLock(device)
     try:
         lock.acquire(f"prove {os.path.basename(os.path.dirname(evidence))}")
@@ -642,7 +663,7 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=No
     status, reason, ios, phase, recording, problems = "error", None, None, "setup", None, []
     try:
         try:
-            ios = Ios(device, evidence, flags, device_obj, language, as_base)
+            ios = Ios(device, evidence, flags, device_obj, language, as_base, profile)
             ios.launch()
             if video:   # a recording that fails is an evidence problem, never a proof failure
                 try:
@@ -659,6 +680,8 @@ def _run_device(mod, device, evidence, keep, flags, device_obj=None, language=No
             if inspect.isawaitable(returned) or inspect.isgenerator(returned):
                 raise Unsupported("run(ios) returned a coroutine or generator: its body never ran")
             phase = "after"
+            if ios.profile and not ios.profile_applied:
+                raise Failed("PROFILE was never applied: start the proof with steps.fresh_start (ios.reset)")
             status, reason = _verdict(ios)
         except _Stop as e:
             status, reason = "cancelled", f"cancelled by {e}"
@@ -791,7 +814,7 @@ def _skill_hash():
 
 
 def _manifest(proof_path, attempt, devices, live, flags, build, results, started, decision_log=None, evidence_dir=None,
-              video=True, as_base=False):
+              video=True, as_base=False, profile=None):
     xcode = run(["xcodebuild", "-version"]).stdout.split()
     hosts = sorted({h for r in results for h in r.get("liveHostsSeen", [])})
     return dict(
@@ -801,6 +824,7 @@ def _manifest(proof_path, attempt, devices, live, flags, build, results, started
         appBuild=build,   # source fingerprint and sha256 the build was made from, checked before running
         launched={r["device"]: ((r.get("launched") or {}).get("build") or {}).get("runningSha") for r in results if r.get("device") != "-"},
         flags={**env.PINNED_FLAGS, **flags},
+        profile=profile or {},
         capture={r["device"]: r.get("capture") for r in results if r.get("device") != "-"},
         appLogs={r["device"]: f"{r['device']}/app.log" if r.get("appLog") else None for r in results if r.get("device") != "-"},
         skillSha256=_skill_hash(), xcode=" ".join(xcode[:4]),
@@ -887,6 +911,8 @@ def _report(mod, m, results, attempt):
               "- Devices: " + ", ".join(f"{d} ({s['type']}, {s['runtime'].rsplit('.', 1)[-1]})" for d, s in m["simulators"].items()),
               f"- Evidence: {m['evidenceKind']}" + (f". **Undeclared live hosts seen: {', '.join(undeclared)}**" if undeclared else ""),
               f"- Pinned flags: {', '.join(f'{k}={v}' for k, v in m['flags'].items()) or '(none)'}"]
+    if m.get("profile"):
+        lines.append(f"- Launch profile: `{json.dumps(m['profile'], sort_keys=True)}`")
     lines += [f"- Capture conditions, {r['device']}: " + ", ".join(f"{k} {v}" for k, v in r["capture"].items() if k != "window")
               for r in runs if r.get("capture")]
     lines += [f"- Rerun: `{m['rerun']}`", "", "## Unverified", ""]

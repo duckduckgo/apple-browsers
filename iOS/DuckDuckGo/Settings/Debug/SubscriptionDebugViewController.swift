@@ -668,15 +668,14 @@ final class SubscriptionDebugViewController: UITableViewController {
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType),
                                               pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
         let subscriptionManager = subscriptionManager
-        let authService = DefaultOAuthService(baseURL: currentEnvironment.authEnvironment.url,
-                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
-        let tokenRefresher = DefaultTokenRefresher(authService: authService, clientID: DefaultOAuthClient.clientID, refreshEventMapping: nil)
+        let invalidator = StagingTokenInvalidator(environment: currentEnvironment.authEnvironment,
+                                                  apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
         let model = SubscriptionTokensDebugViewModel(keychainManager: keychainManager,
                                                      getTokenContainer: { policy in
                                                          try await subscriptionManager.getTokenContainer(policy: policy)
                                                      },
-                                                     fork: { container in
-                                                         try await tokenRefresher.refresh(container, refreshID: nil)
+                                                     invalidate: invalidator.map { invalidator in
+                                                         { refreshToken in try await invalidator.invalidate(refreshToken: refreshToken) }
                                                      })
         navigationController?.pushViewController(UIHostingController(rootView: SubscriptionTokensDebugView(model: model)), animated: true)
     }

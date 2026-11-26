@@ -49,49 +49,47 @@ public final class SubscriptionTokensDebugViewModel: ObservableObject {
     @Published private(set) var tokens: [Token] = []
     @Published private(set) var lastGetResult: String?
     @Published private(set) var isGettingToken = false
-    @Published private(set) var forking: Field?
+    @Published private(set) var invalidating: Field?
     @Published var alert: Alert?
+
+    var canInvalidate: Bool { invalidate != nil }
 
     private let keychainManager: any KeychainManaging
     private let getTokenContainer: (AuthTokensCachePolicy) async throws -> TokenContainer
-    private let fork: (TokenContainer) async throws -> TokenContainer
+    private let invalidate: ((String) async throws -> Void)?
     /// The Terminal command that deletes the VPN system extension's token from the System keychain, or `nil` to leave it out.
     let vpnExtensionTokenRemovalCommand: String?
 
     /// - Parameters:
     ///   - keychainManager: Reads and deletes the subscription token keychain items.
     ///   - getTokenContainer: Gets the token through the subscription manager with the given policy.
-    ///   - fork: Spends the refresh token of the given container once and returns the new pair, without storing anything.
+    ///   - invalidate: Invalidates the given refresh token on the server. Nil outside staging.
     ///   - vpnSystemExtensionBundleID: The bundle ID of the VPN system extension, used to build the command that deletes its token,
     ///     or `nil` when the VPN doesn't run as a system extension.
     public init(keychainManager: any KeychainManaging,
                 getTokenContainer: @escaping (AuthTokensCachePolicy) async throws -> TokenContainer,
-                fork: @escaping (TokenContainer) async throws -> TokenContainer,
+                invalidate: ((String) async throws -> Void)?,
                 vpnSystemExtensionBundleID: String? = nil) {
         self.keychainManager = keychainManager
         self.getTokenContainer = getTokenContainer
-        self.fork = fork
+        self.invalidate = invalidate
         self.vpnExtensionTokenRemovalCommand = vpnSystemExtensionBundleID.map(Self.vpnExtensionTokenRemovalCommand(bundleID:))
         reload()
     }
 
-    func forceFork(_ field: Field) async {
-        guard case .found(let container) = read(field) else { return }
-        forking = field
+    func invalidateRefreshToken(_ field: Field) async {
+        guard let invalidate, case .found(let container) = read(field) else { return }
+        invalidating = field
         defer {
-            forking = nil
+            invalidating = nil
             reload()
         }
         do {
-            let minted = try await fork(container)
-            alert = Alert(title: "Fork succeeded",
-                          message: """
-                          Spent the stored \(field.rawValue) refresh token and discarded the new pair.
-                          New refresh token issued \(minted.decodedRefreshToken.issuedAtDate.formatted(date: .omitted, time: .standard)), \
-                          expires \(minted.decodedRefreshToken.expirationDate.formatted(date: .abbreviated, time: .standard)).
-                          """)
+            try await invalidate(container.refreshToken)
+            alert = Alert(title: "Token invalidated",
+                          message: "The server invalidated the stored \(field.rawValue) refresh token. The token stays in the keychain.")
         } catch {
-            alert = Alert(title: "Fork failed", message: String(describing: error))
+            alert = Alert(title: "Invalidation failed", message: String(describing: error))
         }
     }
 
@@ -150,6 +148,7 @@ public struct SubscriptionTokensDebugView: View {
 
     @ObservedObject var model: SubscriptionTokensDebugViewModel
     @State private var pendingRemoval: SubscriptionTokensDebugViewModel.Field?
+    @State private var pendingInvalidation: SubscriptionTokensDebugViewModel.Field?
 
     public init(model: SubscriptionTokensDebugViewModel) {
         self.model = model
@@ -159,7 +158,7 @@ public struct SubscriptionTokensDebugView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text("Tokens").font(.title2.bold())
+                    Text(verbatim: "Tokens").font(.title2.bold())
                     Spacer()
                     Button("Reload") { model.reload() }
                 }
@@ -184,6 +183,13 @@ public struct SubscriptionTokensDebugView: View {
                 if let pendingRemoval { model.remove(pendingRemoval) }
             }
         }
+        .confirmationDialog("Invalidate the \(pendingInvalidation.map(title(for:)) ?? "") refresh token on the server?",
+                            isPresented: Binding(get: { pendingInvalidation != nil }, set: { if !$0 { pendingInvalidation = nil } }),
+                            titleVisibility: .visible) {
+            Button("Invalidate", role: .destructive) {
+                if let pendingInvalidation { Task { await model.invalidateRefreshToken(pendingInvalidation) } }
+            }
+        }
         .alert(model.alert?.title ?? "", isPresented: Binding(get: { model.alert != nil }, set: { if !$0 { model.alert = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -205,14 +211,14 @@ public struct SubscriptionTokensDebugView: View {
                 } else if let lastGetResult = model.lastGetResult {
                     Text(lastGetResult).font(.footnote.monospaced()).textSelection(.enabled)
                 }
-                Text("Runs SubscriptionManager.getTokenContainer, including recovery and sign-out when the refresh is rejected.")
+                Text(verbatim: "Runs SubscriptionManager.getTokenContainer, including recovery and sign-out when the refresh is rejected.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(4)
         } label: {
-            Text("Get Token").font(.headline)
+            Text(verbatim: "Get Token").font(.headline)
         }
     }
 
@@ -221,18 +227,23 @@ public struct SubscriptionTokensDebugView: View {
             VStack(alignment: .leading, spacing: 8) {
                 details(for: token.state)
                 HStack {
-                    if model.forking == token.field {
+                    if model.invalidating == token.field {
                         SwiftUI.ProgressView().controlSize(.small)
                     } else {
-                        Button("Force Fork (spend refresh token)") {
-                            Task { await model.forceFork(token.field) }
+                        Button("Invalidate Refresh Token", role: .destructive) {
+                            pendingInvalidation = token.field
                         }
-                        .disabled(!isFound(token.state) || model.forking != nil)
+                        .disabled(!model.canInvalidate || !isFound(token.state) || model.invalidating != nil)
                     }
                     Button("Remove From Keychain", role: .destructive) {
                         pendingRemoval = token.field
                     }
                     .disabled(isMissing(token.state))
+                }
+                if !model.canInvalidate {
+                    Text(verbatim: "Invalidating works only on the staging environment.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -245,7 +256,7 @@ public struct SubscriptionTokensDebugView: View {
     private func vpnExtensionTokenSection(command: String) -> some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 8) {
-                Text("The VPN system extension keeps its own copy of the token in the System keychain. Run this in Terminal to delete it:")
+                Text(verbatim: "The VPN system extension keeps its own copy of the token in the System keychain. Run this in Terminal to delete it:")
                 Text(command)
                     .font(.footnote.monospaced())
                     .textSelection(.enabled)
@@ -255,7 +266,7 @@ public struct SubscriptionTokensDebugView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(4)
         } label: {
-            Text("VPN Extension Token").font(.headline)
+            Text(verbatim: "VPN Extension Token").font(.headline)
         }
     }
 
@@ -268,11 +279,11 @@ public struct SubscriptionTokensDebugView: View {
             row("Refresh token issued", dateText(container.decodedRefreshToken.issuedAtDate))
             row("Refresh token expires", dateText(container.decodedRefreshToken.expirationDate))
         case .missing:
-            Text("Not stored").foregroundColor(.secondary)
+            Text(verbatim: "Not stored").foregroundColor(.secondary)
         case .undecodable:
-            Text("Stored but can't be decoded").foregroundColor(.red)
+            Text(verbatim: "Stored but can't be decoded").foregroundColor(.red)
         case .readFailed(let error):
-            Text("Read failed: \(String(describing: error))").foregroundColor(.red)
+            Text(verbatim: "Read failed: \(String(describing: error))").foregroundColor(.red)
         }
     }
 

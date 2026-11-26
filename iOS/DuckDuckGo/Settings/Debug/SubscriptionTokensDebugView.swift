@@ -44,42 +44,39 @@ final class SubscriptionTokensDebugViewModel: ObservableObject {
     @Published private(set) var tokens: [Token] = []
     @Published private(set) var lastGetResult: String?
     @Published private(set) var isGettingToken = false
-    @Published private(set) var forking: Field?
+    @Published private(set) var invalidating: Field?
     @Published var alert: (title: String, message: String)?
+
+    var canInvalidate: Bool { invalidate != nil }
 
     private let keychainManager: any KeychainManaging
     private let getTokenContainer: (AuthTokensCachePolicy) async throws -> TokenContainer
-    private let fork: (TokenContainer) async throws -> TokenContainer
+    private let invalidate: ((String) async throws -> Void)?
 
     /// - Parameters:
     ///   - getTokenContainer: Gets the token through the subscription manager with the given policy.
-    ///   - fork: Spends the refresh token of the given container once and returns the new pair, without storing anything.
+    ///   - invalidate: Invalidates the given refresh token on the server. Nil outside staging.
     init(keychainManager: any KeychainManaging,
          getTokenContainer: @escaping (AuthTokensCachePolicy) async throws -> TokenContainer,
-         fork: @escaping (TokenContainer) async throws -> TokenContainer) {
+         invalidate: ((String) async throws -> Void)?) {
         self.keychainManager = keychainManager
         self.getTokenContainer = getTokenContainer
-        self.fork = fork
+        self.invalidate = invalidate
         reload()
     }
 
-    func forceFork(_ field: Field) async {
-        guard case .found(let container) = read(field) else { return }
-        forking = field
+    func invalidateRefreshToken(_ field: Field) async {
+        guard let invalidate, case .found(let container) = read(field) else { return }
+        invalidating = field
         defer {
-            forking = nil
+            invalidating = nil
             reload()
         }
         do {
-            let minted = try await fork(container)
-            alert = ("Fork succeeded",
-                     """
-                     Spent the stored \(field.rawValue) refresh token and discarded the new pair.
-                     New refresh token issued \(minted.decodedRefreshToken.issuedAtDate.formatted(date: .omitted, time: .standard)), \
-                     expires \(minted.decodedRefreshToken.expirationDate.formatted(date: .abbreviated, time: .standard)).
-                     """)
+            try await invalidate(container.refreshToken)
+            alert = ("Token invalidated", "The server invalidated the stored \(field.rawValue) refresh token. The token stays in the keychain.")
         } catch {
-            alert = ("Fork failed", String(describing: error))
+            alert = ("Invalidation failed", String(describing: error))
         }
     }
 
@@ -126,6 +123,7 @@ struct SubscriptionTokensDebugView: View {
 
     @ObservedObject var model: SubscriptionTokensDebugViewModel
     @State private var pendingRemoval: SubscriptionTokensDebugViewModel.Field?
+    @State private var pendingInvalidation: SubscriptionTokensDebugViewModel.Field?
 
     var body: some View {
         List {
@@ -139,27 +137,33 @@ struct SubscriptionTokensDebugView: View {
                     Text(lastGetResult).font(.footnote.monospaced()).textSelection(.enabled)
                 }
             } header: {
-                Text("Get Token")
+                Text(verbatim: "Get Token")
             } footer: {
-                Text("Runs SubscriptionManager.getTokenContainer, including recovery and sign-out when the refresh is rejected.")
+                Text(verbatim: "Runs SubscriptionManager.getTokenContainer, including recovery and sign-out when the refresh is rejected.")
             }
             .disabled(model.isGettingToken)
 
             ForEach(model.tokens) { token in
-                Section(title(for: token.field)) {
+                Section {
                     details(for: token.state)
-                    if model.forking == token.field {
+                    if model.invalidating == token.field {
                         SwiftUI.ProgressView()
                     } else {
-                        Button("Force Fork (spend refresh token)") {
-                            Task { await model.forceFork(token.field) }
+                        Button("Invalidate Refresh Token", role: .destructive) {
+                            pendingInvalidation = token.field
                         }
-                        .disabled(!isFound(token.state) || model.forking != nil)
+                        .disabled(!model.canInvalidate || !isFound(token.state) || model.invalidating != nil)
                     }
                     Button("Remove From Keychain", role: .destructive) {
                         pendingRemoval = token.field
                     }
                     .disabled(isMissing(token.state))
+                } header: {
+                    Text(title(for: token.field))
+                } footer: {
+                    if !model.canInvalidate {
+                        Text(verbatim: "Invalidating works only on the staging environment.")
+                    }
                 }
             }
         }
@@ -172,6 +176,13 @@ struct SubscriptionTokensDebugView: View {
                             titleVisibility: .visible) {
             Button("Remove", role: .destructive) {
                 if let pendingRemoval { model.remove(pendingRemoval) }
+            }
+        }
+        .confirmationDialog("Invalidate the \(pendingInvalidation.map(title(for:)) ?? "") refresh token on the server?",
+                            isPresented: Binding(get: { pendingInvalidation != nil }, set: { if !$0 { pendingInvalidation = nil } }),
+                            titleVisibility: .visible) {
+            Button("Invalidate", role: .destructive) {
+                if let pendingInvalidation { Task { await model.invalidateRefreshToken(pendingInvalidation) } }
             }
         }
         .alert(model.alert?.title ?? "", isPresented: Binding(get: { model.alert != nil }, set: { if !$0 { model.alert = nil } })) {
@@ -190,11 +201,11 @@ struct SubscriptionTokensDebugView: View {
             row("Refresh token issued", dateText(container.decodedRefreshToken.issuedAtDate))
             row("Refresh token expires", dateText(container.decodedRefreshToken.expirationDate))
         case .missing:
-            Text("Not stored").foregroundColor(.secondary)
+            Text(verbatim: "Not stored").foregroundColor(.secondary)
         case .undecodable:
-            Text("Stored but can't be decoded").foregroundColor(.red)
+            Text(verbatim: "Stored but can't be decoded").foregroundColor(.red)
         case .readFailed(let error):
-            Text("Read failed: \(String(describing: error))").foregroundColor(.red)
+            Text(verbatim: "Read failed: \(String(describing: error))").foregroundColor(.red)
         }
     }
 

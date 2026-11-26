@@ -28,6 +28,21 @@ public enum KeychainErrorSource: String {
     case pir
 }
 
+/// Which subscription token a keychain item holds, as reported in pixels.
+public enum SubscriptionKeychainTokenType: String {
+    /// The token container used by the app and its extensions.
+    case main
+    /// The backup token container kept by the main app.
+    case backup
+}
+
+public extension KeychainManager.Pixel {
+    /// The subscription token the event is about, or nil when the item isn't a subscription token.
+    var tokenType: SubscriptionKeychainTokenType? {
+        SubscriptionTokenKeychainStorage.SubscriptionKeychainField(keyValue: key)?.tokenType
+    }
+}
+
 public enum KeychainErrorAuthVersion: String {
     case v1
     case v2
@@ -69,6 +84,20 @@ public final class SubscriptionTokenKeychainStorage: AuthTokenStoring {
 
         public var keyValue: String {
             "com.duckduckgo" + "." + rawValue
+        }
+
+        /// The field stored under `keyValue`, or nil when no field uses that key.
+        public init?(keyValue: String) {
+            guard let field = Self.allCases.first(where: { $0.keyValue == keyValue }) else { return nil }
+            self = field
+        }
+
+        /// The token this field holds.
+        public var tokenType: SubscriptionKeychainTokenType {
+            switch self {
+            case .tokenContainer: return .main
+            case .backupTokenContainer: return .backup
+            }
         }
     }
 

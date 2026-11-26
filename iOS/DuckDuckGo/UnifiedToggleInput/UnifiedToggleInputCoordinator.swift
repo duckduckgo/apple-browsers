@@ -1436,11 +1436,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         case .documents, .photo:
             switchModel(to: model)
             // Moving the model can change the page, so only act if this is still the same blank chat.
-            guard newChatState.isGuaranteedNewChat, currentTabUID == tab else { return }
+            guard newChatState.isGuaranteedNewChat, currentTabUID == tab, !isOnboardingLocked else { return }
+            // The sheet goes up over the input as it is: expanding first would raise the keyboard under it. Closing
+            // it, by a pick or a cancel, expands the input (`expandIfOnExpandedInputHost`).
             if hint == .documents {
-                presentFilePickerForActiveChat()
+                attachmentController.presentFilePicker()
             } else {
-                presentPhotoPickerForActiveChat()
+                attachmentController.presentPhotoPicker()
             }
         }
     }
@@ -2303,9 +2305,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         pixelReporter.reportSubmitChangeModel(modelId: modelId)
     }
 
-    /// Expands the input if needed, then presents a picker menu once the toolbar it hangs from is laid out.
-    /// Picker sheets don't wait for this: expanding raises the keyboard, which would rise under the sheet. They go up
-    /// over the input as it is, and closing them, by a pick or a cancel, expands it (`expandIfOnExpandedInputHost`).
+    /// Expands the input if needed, then presents a picker once the toolbar is laid out.
     private func presentPickerForActiveChat(_ present: @escaping () -> Void) {
         if isInputPaneExpanded {
             applyToolbarPresentation()
@@ -2349,14 +2349,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// Opens the system file picker on the active chat (FE `openFilePicker`).
     func presentFilePickerForActiveChat() {
-        guard !isOnboardingLocked else { return }
-        attachmentController.presentFilePicker()
-    }
-
-    /// Opens the photo library on the active chat. The limited picker needs no photo permission.
-    func presentPhotoPickerForActiveChat() {
-        guard !isOnboardingLocked else { return }
-        attachmentController.presentPhotoPicker()
+        presentPickerForActiveChat { [weak self] in
+            self?.attachmentController.presentFilePicker()
+        }
     }
 
     func handleModelSelection(_ modelId: String) {

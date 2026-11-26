@@ -469,6 +469,26 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("From the collapsed bar, the page's file picker request still expands the input before its sheet goes up",
+          .timeLimit(.minutes(1)))
+    func pageFilePickerExpandsFirst() async throws {
+        let events = EventLog()
+        let sut = try makeSUT(scheduleInputFocus: { focus in
+            events.append("focus")
+            focus()
+        })
+        let presenter = RecordingPresenter { events.append("picker") }
+        sut.attachmentPresentingViewController = presenter
+        try await openBlankChat(sut)
+        try #require(!sut.isInputPaneExpanded)
+
+        sut.presentFilePickerForActiveChat()
+        #expect(sut.isInputPaneExpanded)
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(events.entries == ["focus", "picker"])
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A picker hint on a model that can't take its attachment switches this chat's model silently and leaves the user's pick for new chats",
           .timeLimit(.minutes(1)), arguments: [NewChatHint.photo, .documents])
     func pickerHintModelSwitchStaysInThisChat(hint: NewChatHint) async throws {

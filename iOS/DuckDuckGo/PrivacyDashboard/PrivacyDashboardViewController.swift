@@ -87,7 +87,7 @@ final class PrivacyDashboardViewController: UIViewController {
           memoryPressureProvider: MemoryPressureProviding = AppDependencyProvider.shared.memoryPressureProvider,
           featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
-        let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
+        let toggleReportingConfiguration = ToggleReportingConfiguration.forApp(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
         privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
@@ -133,6 +133,7 @@ final class PrivacyDashboardViewController: UIViewController {
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+        webView.accessibilityIdentifier = "PrivacyDashboard.WebView"
     }
 
     public override func viewDidDisappear(_ animated: Bool) {
@@ -445,5 +446,25 @@ private extension PrivacyDashboardTheme {
         case .unspecified: self = .light
         @unknown default: self = .light
         }
+    }
+}
+
+// Keep the prompt configuration deterministic only for explicitly opted-in UI tests.
+extension ToggleReportingConfiguration {
+    static func forApp(
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        launchOptions: LaunchOptionsHandler = LaunchOptionsHandler(),
+        arguments: [String] = ProcessInfo.processInfo.arguments
+    ) -> ToggleReportingConfiguration {
+        guard launchOptions.isUITesting, arguments.contains("-uiTestProtectionFeedback") else {
+            return ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
+        }
+        return ToggleReportingConfiguration(isEnabled: true, settings: [
+            "dismissLogicEnabled": true,
+            "dismissInterval": 48.0 * 60 * 60,
+            "promptLimitLogicEnabled": true,
+            "promptInterval": 48.0 * 60 * 60,
+            "maxPromptCount": 3,
+        ])
     }
 }

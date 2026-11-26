@@ -49,4 +49,17 @@ final class BrowsingUITests: UITestCase {
             app.assertPageContains(LocalUITestWebsite.refreshedHeading)
         }
     }
+
+    func testSettingsCanBeOpenedFromNewTabMenu() {
+        app.openSettings()
+        app.dismissSettings()
+    }
+
+    func testSettingsCanBeOpenedFromWebpageMenu() throws {
+        let site = try localWebsite()
+        site.open(.browsing, in: app)
+        app.openSettings()
+        app.dismissSettings()
+        app.assertPageContains(LocalUITestWebsite.Page.browsing.title)
+    }
 }

@@ -45,6 +45,7 @@ class AutofillDebugViewController: UITableViewController {
         case resetAutofillExtensionPromos = 213
         case resetDaysSinceInstalledTo7 = 214
         case viewSaveLoginPrompts = 215
+        case clearEmailProtectionSignInState = 216
     }
 
     let defaults = AppUserDefaults()
@@ -132,6 +133,13 @@ class AutofillDebugViewController: UITableViewController {
             } else if cell.tag == Row.resetEmailProtectionInContextSignUp.rawValue {
                 EmailManager().resetEmailProtectionInContextPrompt()
                 ActionMessageView.present(message: "Email Protection InContext Sign Up reset")
+            } else if cell.tag == Row.clearEmailProtectionSignInState.rawValue {
+                do {
+                    try EmailManager().signOut()
+                    ActionMessageView.present(message: "Email Protection sign-in state cleared")
+                } catch {
+                    ActionMessageView.present(message: "Failed to clear Email Protection sign-in state")
+                }
             } else if cell.tag == Row.resetDaysSinceInstalledTo0.rawValue {
                 StatisticsUserDefaults().installDate = Date()
             } else if cell.tag == Row.resetDaysSinceInstalledTo7.rawValue {

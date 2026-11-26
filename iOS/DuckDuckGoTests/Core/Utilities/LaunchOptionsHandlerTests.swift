@@ -19,6 +19,7 @@
 
 import Foundation
 import UIKit
+import PrivacyDashboard
 import Testing
 @testable import Core
 import Persistence
@@ -347,6 +348,41 @@ final class LaunchOptionsHandlerTests {
             sut.applyUITestOverrides(featureFlagOverrideStore: userDefaults, configRolloutStore: userDefaults)
             #expect(clearCalls == (testing && clear ? 1 : 0))
             #expect(internalStore.isInternalUser)
+        }
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testProtectionFeedbackConfigurationRequiresUITestingAndOptIn() {
+        let manager = PrivacyConfigurationManagerMock()
+        let normal = ToggleReportingFeature(toggleReportingConfiguration: .init(privacyConfigurationManager: manager))
+        for (testing, optIn) in [(false, true), (true, false), (true, true)] {
+            let launchOptions = LaunchOptionsHandler(
+                environment: testing ? ["UITEST_MODE": "1"] : [:], userDefaults: userDefaults, arguments: [])
+            let configuration = ToggleReportingConfiguration.forApp(
+                privacyConfigurationManager: manager, launchOptions: launchOptions,
+                arguments: optIn ? ["-uiTestProtectionFeedback"] : [])
+            let feature = ToggleReportingFeature(toggleReportingConfiguration: configuration)
+            if testing && optIn {
+                #expect(feature.isEnabled)
+                #expect(feature.isDismissLogicEnabled)
+                #expect(feature.dismissInterval == 48 * 60 * 60)
+                #expect(feature.isPromptLimitLogicEnabled)
+                #expect(feature.maxPromptCount == 3)
+                var throttle = ToggleReportingStore(userDefaults: userDefaults)
+                throttle.dismissedAt = nil
+                throttle.promptWindowStart = nil
+                throttle.promptCount = 0
+                var reporting = ToggleReportingManager(feature: feature, store: throttle)
+                #expect(reporting.shouldShowToggleReport)
+                reporting.recordDismissal()
+                #expect(!reporting.shouldShowToggleReport)
+            } else {
+                #expect(feature.isEnabled == normal.isEnabled)
+                #expect(feature.dismissInterval == normal.dismissInterval)
+                #expect(feature.maxPromptCount == normal.maxPromptCount)
+            }
         }
     }
 

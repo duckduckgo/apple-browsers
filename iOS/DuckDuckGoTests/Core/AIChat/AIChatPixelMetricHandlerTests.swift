@@ -309,6 +309,76 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         XCTAssertEqual(Pixel.Event.aiChatSubscriptionFunnelClick.name, "m_aichat_subscription-funnel_click")
     }
 
+    // MARK: - Subscription Modal Click Tests
+
+    private static let modalSourceToExpectedOrigin: [(source: String, origin: String)] = [
+        ("activatesubscription", "funnel_duckai_ios__activatesubscription"),
+        ("aisidebar", "funnel_duckai_ios__aisidebar"),
+        ("disclaimerbanner", "funnel_duckai_ios__disclaimerbanner"),
+        ("freelabel", "funnel_duckai_ios__freelabel"),
+        ("freelimit", "funnel_duckai_ios__freelimit"),
+        ("imagegenerationlimit", "funnel_duckai_ios__imagegenerationlimit"),
+        ("modelpicker", "funnel_duckai_ios__modelpicker"),
+        ("pluslimit", "funnel_duckai_ios__pluslimit"),
+        ("promotioncard", "funnel_duckai_ios__promotioncard"),
+        ("reasoningdropdown", "funnel_duckai_ios__reasoningdropdown"),
+        ("switchmodel", "funnel_duckai_ios__switchmodel"),
+        ("voicechatdurationlimit", "funnel_duckai_ios__voicechatdurationlimit"),
+        ("voicechatlimit", "funnel_duckai_ios__voicechatlimit"),
+        ("unknown", "funnel_duckai_ios__unknown")
+    ]
+
+    private static let modalClickMetricToExpectedPixelName: [(metric: AIChatMetricName, pixelName: String)] = [
+        (.userDidClickSubscribeOnSubscribeModal, "aichat_subscription-funnel_subscribe-modal_subscribe_click"),
+        (.userDidClickUpgradeOnUpgradeToProModal, "aichat_subscription-funnel_upgrade-to-pro-modal_upgrade_click")
+    ]
+
+    func testWhenModalClickIsReportedWithKnownSourceThenItFiresOncePerTapWithThatOrigin() {
+        XCTAssertEqual(Self.modalSourceToExpectedOrigin.count, AIChatPixelMetricHandler.modalSourceToOrigin.count,
+                       "The modal source table gained or lost entries this test does not cover")
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: 7, pixelFiring: pixelKitMock)
+
+        for click in Self.modalClickMetricToExpectedPixelName {
+            for testCase in Self.modalSourceToExpectedOrigin {
+                // When
+                let countBefore = pixelKitMock.actualFireCalls.count
+                handler.firePixelWithMetric(AIChatMetric(metricName: click.metric, source: testCase.source))
+
+                // Then
+                let fired = pixelKitMock.actualFireCalls.last
+                XCTAssertEqual(pixelKitMock.actualFireCalls.count, countBefore + 1, "\(click.metric) from \(testCase.source)")
+                XCTAssertEqual(fired?.pixel.name, click.pixelName)
+                XCTAssertEqual(fired?.pixel.parameters, ["origin": testCase.origin])
+                XCTAssertEqual(fired?.frequency, .standard)
+                XCTAssertNil(fired?.additionalParameters?["delta-timestamp-minutes"])
+            }
+        }
+    }
+
+    func testWhenModalClickHasNoRecognisedSourceThenNothingFires() {
+        handler = AIChatPixelMetricHandler(timeElapsedInMinutes: nil, pixelFiring: pixelKitMock)
+
+        for click in Self.modalClickMetricToExpectedPixelName {
+            // When
+            handler.firePixelWithMetric(AIChatMetric(metricName: click.metric))
+            handler.firePixelWithMetric(AIChatMetric(metricName: click.metric, source: "not-an-entry-point"))
+            handler.firePixelWithMetric(AIChatMetric(metricName: click.metric, source: "FreeLimit"))
+        }
+
+        // Then
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
+    }
+
+    /// The modal clicks must not also be claimed by the engagement or entry-point tables, or one tap would
+    /// fire two pixels.
+    func testModalClickMetricsAreOnlyInTheModalTable() {
+        let modalKeys = Set(AIChatPixelMetricHandler.modalMetricToPixelMap.keys)
+
+        XCTAssertEqual(modalKeys, Set(Self.modalClickMetricToExpectedPixelName.map { $0.metric }))
+        XCTAssertTrue(modalKeys.isDisjoint(with: AIChatPixelMetricHandler.metricToEventMap.keys))
+        XCTAssertTrue(modalKeys.isDisjoint(with: AIChatPixelMetricHandler.funnelMetricToPixelMap.keys))
+    }
+
     // MARK: - Integration Tests
 
     func testMultiplePixelFiresWithConsistentParameters() {

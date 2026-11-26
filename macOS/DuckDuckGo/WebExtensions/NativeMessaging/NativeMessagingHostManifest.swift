@@ -122,7 +122,11 @@ enum NativeMessagingHostManifestLocator {
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         } catch {
-            Logger.webExtensions.error("❌ Cannot create \(directory.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            let nsError = error as NSError
+            Logger.webExtensions.error("""
+            ❌ Cannot create \(directory.path, privacy: .private): \
+            errorDomain=\(nsError.domain, privacy: .public) errorCode=\(nsError.code)
+            """)
         }
     }
 
@@ -172,10 +176,14 @@ enum NativeMessagingHostManifestLocator {
                     throw LocatorError.executableMissing(path: executable.path)
                 }
 
-                Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) found at \(manifestURL.path, privacy: .public)")
+                Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) found at \(manifestURL.path, privacy: .private)")
                 return (manifest, executable)
             } catch {
-                Logger.webExtensions.error("❌ Host manifest \(manifestURL.path, privacy: .public) unusable: \(error.localizedDescription, privacy: .public)")
+                let nsError = error as NSError
+                Logger.webExtensions.error("""
+                ❌ Host manifest \(manifestURL.path, privacy: .private) unusable: \
+                errorDomain=\(nsError.domain, privacy: .public) errorCode=\(nsError.code)
+                """)
                 continue
             }
         }

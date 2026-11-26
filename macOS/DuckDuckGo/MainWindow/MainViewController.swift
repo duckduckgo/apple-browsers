@@ -1405,6 +1405,7 @@ extension MainViewController: AIChatOmnibarControllerDelegate {
         /// Explicit exit: prompt classified as URL and user is navigating. Clear the current tab's duck.ai flag.
         tabCollectionViewModel.selectedTabViewModel?.addressBarSharedTextState.setDuckAIMode(false)
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+        guard !DeviceSyncCoordinator.openPairingFromAddressBarIfNeeded(for: url.absoluteString, isSuggestionSelected: false) else { return }
         browserTabViewController.loadURLInCurrentTab(url)
     }
 

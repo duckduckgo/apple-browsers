@@ -1,6 +1,6 @@
 {
     "m_mac_wide_sync_setup": {
-        "description": "Sent once per Sync setup attempt, when it ends: backing up this device, syncing with another device, or recovering with a recovery code. An attempt starts with an explicit setup action and ends on its success screen, on an error, when the user leaves the flow, or when the host in a pairing stops waiting for the joiner. An attempt still open at the next cold launch is sent as UNKNOWN app_restart, and a new attempt replaces an open one as UNKNOWN duplicated. Gated by the sendSyncSetupWideEvent sync subfeature. Spec: https://app.asana.com/1/137249556945/project/1201493110486074/task/1220704994561462",
+        "description": "Sent once per Sync setup attempt, when it ends: backing up this device, syncing with another device, or recovering with a recovery code. An attempt starts with an explicit setup action and ends on its success screen, on an error, when the user leaves the flow, or when the host in a pairing stops waiting for the joiner. An attempt still open at the next cold launch is sent as UNKNOWN app_restart with petal=randomize, so its timestamp doesn't line up with other launch pixels, and a new attempt replaces an open one as UNKNOWN duplicated. Gated by the sendSyncSetupWideEvent sync subfeature. Spec: https://app.asana.com/1/137249556945/project/1201493110486074/task/1220704994561462",
         "owners": ["pballart"],
         "triggers": ["user_interaction", "feature_lifecycle", "exception", "startup"],
         "suffixes": ["daily"],
@@ -18,6 +18,11 @@
             "wideEventUnderlyingErrorDomain",
             "wideEventUnderlyingErrorCode",
             "wideEventMetaVersion",
+            {
+                "key": "petal",
+                "description": "Routes the pixel through the PETAL timestamp-randomization pipeline. Sent only when an attempt left open is closed at the next cold launch.",
+                "enum": ["randomize"]
+            },
             {
                 "key": "meta.type",
                 "type": "string",

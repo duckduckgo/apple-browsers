@@ -67,6 +67,7 @@ public final class SyncSetupWideEventData: WideEventData {
     public private(set) var totalDuration: WideEvent.MeasuredInterval
     public private(set) var lastStepDuration: WideEvent.MeasuredInterval
     public private(set) var preparingSyncDuration: WideEvent.MeasuredInterval?
+    public private(set) var closedAtColdLaunch = false
 
     public init(existingAccount: Bool,
                 flowVersion: FlowVersion,
@@ -117,6 +118,7 @@ public final class SyncSetupWideEventData: WideEventData {
         switch trigger {
         case .appLaunch:
             guard launchID != Self.currentLaunchID else { return .keepPending }
+            closedAtColdLaunch = true
             return .complete(.unknown(reason: StatusReason.appRestart))
         }
     }
@@ -269,6 +271,17 @@ extension SyncSetupWideEventData {
         static let totalLatency = "feature.data.ext.total_latency_ms_bucketed"
         static let lastStepLatency = "feature.data.ext.last_step_latency_ms_bucketed"
         static let preparingSyncLatency = "feature.data.ext.preparing_sync_latency_ms_bucketed"
+        static let petal = "petal"
+    }
+
+    private static let petalRandomize = "randomize"
+
+    public func pixelParameters() -> [String: String] {
+        var parameters = jsonParameters().mapValues { ($0 as? String) ?? String(describing: $0) }
+        if closedAtColdLaunch {
+            parameters[Key.petal] = Self.petalRandomize
+        }
+        return parameters
     }
 
     public func jsonParameters() -> [String: Encodable] {

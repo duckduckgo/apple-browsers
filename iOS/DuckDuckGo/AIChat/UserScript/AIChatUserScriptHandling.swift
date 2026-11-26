@@ -614,6 +614,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         if simplifiedPromptBoxFeature.isAvailable {
             config.supportsCustomizeResponsesInSettings = true
         }
+        config.supportsDefaultModelSetting = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
         return config
     }
 

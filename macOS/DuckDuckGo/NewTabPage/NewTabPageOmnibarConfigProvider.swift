@@ -168,8 +168,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.allowsSubscriptionUpsellProvider = allowsSubscriptionUpsellProvider
         self.firePixel = firePixel
 
-        overLimitDefaultChangesCancellable = self.newChatDefaults?.overLimitDefaultChanges
+        defaultChangesCancellable = self.newChatDefaults?.defaultChanges
             .sink { [weak self] in self?.usageLimitsChangedSubject.send(()) }
+        // One provider serves every page, so a Fire Window's page never re-points it.
+        self.newChatDefaults?.observeUserDefaultModel(in: duckAiStorageHandlerProvider(.regular), receivingUpdatesOn: DispatchQueue.main)
 
         // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
         // NTPs update without waiting for their own toggle. The NTP's own paths notify directly.
@@ -452,7 +454,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
     private var highUsageNoticeSource: AIChatHighUsageNoticeSource?
     private var usageLimitsCancellables = Set<AnyCancellable>()
-    private var overLimitDefaultChangesCancellable: AnyCancellable?
+    private var defaultChangesCancellable: AnyCancellable?
 
     var usageLimitsPublisher: AnyPublisher<Void, Never> {
         usageLimitsChangedSubject.eraseToAnyPublisher()

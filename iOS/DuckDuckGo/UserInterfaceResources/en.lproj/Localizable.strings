@@ -487,8 +487,8 @@
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "attachment";
 
-/* Suggestion chip above the Duck.ai input on a new chat. Tapping it opens the file picker so the user can ask about a document. */
-"aichat.new-chat-hint.documents" = "Analyze files";
+/* Suggestion chip above the Duck.ai input on a new chat. Tapping it opens the file picker so the user can attach a PDF or other document for Duck.ai to summarize. */
+"aichat.new-chat-hint.documents" = "Summarize a PDF";
 
 /* Suggestion chip above the Duck.ai input on a new chat. Tapping it selects the image generation tool. */
 "aichat.new-chat-hint.image-generation" = "Create an image";

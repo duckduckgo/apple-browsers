@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
@@ -1646,6 +1647,74 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
     }
 
+    func test_newChatDefault_whenBuiltLikeTheAddressBar_tierAppliesBeforeModelsLoadAndServerDefaultAfter() async {
+        subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .failure(URLError(.notConnectedToInternet))
+        let coordinator = makeLoadingNewChatDefaultCoordinator(host: .omnibar,
+                                                               duckAiNativeStorageHandler: DuckAiNativeMemoryStorageHandler(),
+                                                               modelsService: modelsService)
+
+        await fetchModelsAndWait(coordinator)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        await fetchModelsAndWait(coordinator)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
+    func test_newChatDefault_whenBuiltLikeTheContextualSheet_overLimitDefaultApplies() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: """
+        {"notice": {"id": "weeklyReachedDegraded", "window": "weekly", "resetsAt": "2030-01-01T00:00:00Z"}, \
+        "newChatDefault": {"modelId": "gpt-5.6-terra"}}
+        """)
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let coordinator = makeLoadingNewChatDefaultCoordinator(host: .contextualChat,
+                                                               usageLimitsStore: DuckAiUsageLimitsStore(storageHandler: storage),
+                                                               modelsService: modelsService)
+
+        await fetchModelsAndWait(coordinator)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+    }
+
+    func test_newChatDefault_whenBuiltLikeTheAddressBar_userDefaultModelApplies() async throws {
+        try await assertUserDefaultModelApplies { storage, modelsService in
+            self.makeLoadingNewChatDefaultCoordinator(host: .omnibar, userDefaultModelStorage: { _ in storage }, modelsService: modelsService)
+        }
+    }
+
+    func test_newChatDefault_whenBuiltLikeTheContextualSheet_userDefaultModelApplies() async throws {
+        try await assertUserDefaultModelApplies { storage, modelsService in
+            self.makeLoadingNewChatDefaultCoordinator(host: .contextualChat, userDefaultModelStorage: { _ in storage }, modelsService: modelsService)
+        }
+    }
+
+    func test_newChatDefault_userDefaultComesFromTheStorageOfTheTabsFireState() async throws {
+        let normalStorage = DuckAiNativeMemoryStorageHandler()
+        try normalStorage.putUserDefaultModel("gpt-5.6-terra")
+        let fireStorage = DuckAiNativeMemoryStorageHandler()
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let coordinator = makeLoadingNewChatDefaultCoordinator(host: .omnibar,
+                                                               isFireTab: true,
+                                                               userDefaultModelStorage: { $0 ? fireStorage : normalStorage },
+                                                               modelsService: modelsService)
+        await fetchModelsAndWait(coordinator)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+
+        coordinator.updateIsFireTab(false)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+
+        coordinator.updateIsFireTab(true)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
     func test_newChatDefault_whenTabHasNoPick_itFollowsADefaultChangeAfterATabSwitch() {
         let coordinator = makeNewChatDefaultCoordinator()
         coordinator.activateForTab("tab-B")
@@ -1706,6 +1775,65 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         coordinator.modelStore.models = models
         coordinator.activateForTab("tab-A")
         return coordinator
+    }
+
+    private var newChatDefaultRemoteModels: [AIChatRemoteModel] {
+        ["gpt-6-luna", "gpt-5.6-terra"].map {
+            AIChatRemoteModel(id: $0, name: $0, provider: "openai", entityHasAccess: true, supportsImageUpload: false,
+                              supportedTools: [], accessTier: [])
+        }
+    }
+
+    /// Leaves tier and models to the coordinator's own `/models` fetch, as production does.
+    private func assertUserDefaultModelApplies(
+        whenBuilt makeCoordinator: (DuckAiNativeStorageHandling, AIChatModelsProviding) -> UnifiedToggleInputCoordinator,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putUserDefaultModel("gpt-5.6-terra")
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let coordinator = makeCoordinator(storage, modelsService)
+
+        await fetchModelsAndWait(coordinator)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra", file: file, line: line)
+    }
+
+    private func makeLoadingNewChatDefaultCoordinator(host: UnifiedToggleInputHost,
+                                                      isFireTab: Bool = false,
+                                                      duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                                                      usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+                                                      userDefaultModelStorage: @escaping (Bool) -> DuckAiNativeStorageHandling? = { _ in nil },
+                                                      modelsService: AIChatModelsProviding) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(
+            host: host,
+            isToggleEnabled: host == .omnibar,
+            isFireTab: isFireTab,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            modelsService: modelsService,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            usageLimitsStore: usageLimitsStore,
+            userDefaultModelStorage: userDefaultModelStorage,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewChatDefaultModel]),
+            scheduleInputFocus: { _ in })
+    }
+
+    private func fetchModelsAndWait(_ coordinator: UnifiedToggleInputCoordinator) async {
+        let updated = expectation(description: "models updated")
+        let forward = coordinator.modelStore.onModelsUpdated
+        coordinator.modelStore.onModelsUpdated = {
+            forward?()
+            updated.fulfill()
+        }
+        coordinator.fetchModels()
+        await fulfillment(of: [updated], timeout: 1)
+        coordinator.modelStore.onModelsUpdated = forward
     }
 
     private func makeAppOpenCoordinator(isFloatingUIEnabled: Bool = false,
@@ -4474,6 +4602,13 @@ private final class AppOpenModelsService: AIChatModelsProviding {
     func fetchModels() async throws -> AIChatModelsResponse {
         AIChatModelsResponse(models: models)
     }
+}
+
+@MainActor
+private final class NewChatDefaultModelsService: AIChatModelsProviding {
+    var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
+
+    func fetchModels() async throws -> AIChatModelsResponse { try result.get() }
 }
 
 // MARK: - Mock Delegate

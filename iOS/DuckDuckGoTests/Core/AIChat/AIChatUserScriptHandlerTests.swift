@@ -868,6 +868,17 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsNativePromptEditing, false)
     }
 
+    func testDefaultModelSettingSupportFollowsTheNewChatDefaultFlag() {
+        for isOn in [true, false] {
+            mockFeatureFlagger.enabledFeatureFlags = isOn ? [.aiChatNewChatDefaultModel] : []
+            aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+
+            let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+            XCTAssertEqual(configValues?.supportsDefaultModelSetting, isOn)
+        }
+    }
+
     func testWhenNativeChatInputAvailableThenPromoCardsConfigAdvertisesSupport() {
         MockDevicePlatform.isIphone = true
         mockUnifiedToggleInputFeature.isAvailable = true

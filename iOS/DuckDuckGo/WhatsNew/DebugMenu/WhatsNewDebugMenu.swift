@@ -96,6 +96,7 @@ struct WhatsNewDebugView: View {
             WhatsNewExamplePrompt {
                 isShowingExamplePrompt = false
             }
+            .ignoresSafeArea()
         }
     }
 }

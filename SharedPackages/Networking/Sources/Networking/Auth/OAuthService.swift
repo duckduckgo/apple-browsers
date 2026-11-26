@@ -74,13 +74,17 @@ public struct DefaultOAuthService: OAuthService {
 
     let baseURL: URL
     let apiService: any APIService
+    let clockSkewMonitor: ClockSkewMonitor
 
     /// Default initialiser
     /// - Parameters:
     ///   - baseURL: The API protocol + host url, used for building all API requests' URL
-    public init(baseURL: URL, apiService: any APIService) {
+    ///   - apiService: The service that sends the requests.
+    ///   - clockSkewMonitor: Measures the device clock from the `Date` header of each response.
+    public init(baseURL: URL, apiService: any APIService, clockSkewMonitor: ClockSkewMonitor = .shared) {
         self.baseURL = baseURL
         self.apiService = apiService
+        self.clockSkewMonitor = clockSkewMonitor
     }
 
     /// Extract an header from the HTTP response
@@ -116,12 +120,21 @@ public struct DefaultOAuthService: OAuthService {
         }
     }
 
-    func fetch(request: OAuthRequest?) async throws -> APIResponseV2 {
+    /// Sends `request` and checks the response's status code.
+    /// - Parameters:
+    ///   - request: The request to send.
+    ///   - measuresClockSkew: Whether to measure the device clock from the response's `Date` header. Pass false for responses that can
+    ///     come from a cache, whose `Date` is older than the response.
+    /// - Returns: The response.
+    func fetch(request: OAuthRequest?, measuresClockSkew: Bool = true) async throws -> APIResponseV2 {
         try Task.checkCancellation()
         guard let request else {
             throw OAuthServiceError.invalidRequest
         }
         let response = try await apiService.fetch(request: request.apiRequest)
+        if measuresClockSkew {
+            clockSkewMonitor.measure(response.httpResponse)
+        }
         try Task.checkCancellation()
 
         let statusCode = response.httpResponse.httpStatus
@@ -211,7 +224,7 @@ public struct DefaultOAuthService: OAuthService {
     /// - Returns: A JWTSigners that can be used to verify JWTs
     public func getJWTSigners() async throws -> JWTSigners {
         let request = OAuthRequest.jwks(baseURL: baseURL)
-        let response: String = try await fetch(request: request)
+        let response: String = try await fetch(request: request, measuresClockSkew: false).decodeBody()
         let signers = JWTSigners()
         try signers.use(jwksJSON: response)
         return signers

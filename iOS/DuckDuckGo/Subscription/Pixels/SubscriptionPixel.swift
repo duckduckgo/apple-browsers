@@ -76,8 +76,8 @@ enum SubscriptionPixel: PixelKit.Event {
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
-    case subscriptionInvalidRefreshTokenRecovered(TokenRecoveryMethod?)
-    case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
+    case subscriptionInvalidRefreshTokenRecovered(TokenRecoveryMethod?, ClockSkew?)
+    case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error, ClockSkew?)
     // Pending Transaction
     case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
     case subscriptionPendingTransactionApproved(SubscriptionPixelHandler.Source)
@@ -186,6 +186,7 @@ enum SubscriptionPixel: PixelKit.Event {
         static let freeTrialKey = "free_trial"
         static let daysSincePurchaseKey = "days_since_purchase"
         static let recoveryMethodKey = "recovery_method"
+        static let clockSkewKey = "clock_skew"
         static let notificationsPermissionKey = "notifications_permission"
     }
 
@@ -209,11 +210,14 @@ enum SubscriptionPixel: PixelKit.Event {
             var parameters = [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
             parameters[SubscriptionPixelsDefaults.tokenTypeKey] = tokenType?.rawValue
             return parameters
-        case .subscriptionInvalidRefreshTokenRecovered(let method):
-            return method.map { [SubscriptionPixelsDefaults.recoveryMethodKey: $0.rawValue] }
-        case .subscriptionAuthV2GetTokensError(let policy, let source, _):
+        case .subscriptionInvalidRefreshTokenRecovered(let method, let clockSkew):
+            var parameters = [SubscriptionPixelsDefaults.clockSkewKey: clockSkew?.rawValue ?? "unknown"]
+            parameters[SubscriptionPixelsDefaults.recoveryMethodKey] = method?.rawValue
+            return parameters
+        case .subscriptionAuthV2GetTokensError(let policy, let source, _, let clockSkew):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
-                    SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+                    SubscriptionPixelsDefaults.sourceKey: source.rawValue,
+                    SubscriptionPixelsDefaults.clockSkewKey: clockSkew?.rawValue ?? "unknown"]
         case .subscriptionVPNToolbarImpression(let isSubscriptionActive),
                 .subscriptionVPNToolbarClick(let isSubscriptionActive),
                 .subscriptionVPNAddressBarImpression(let isSubscriptionActive),
@@ -333,8 +337,10 @@ enum SubscriptionBackupTokenPixel: PixelKit.Event {
 
 /// The AuthV2 token recovery pixels that aren't about a single recovery method.
 enum SubscriptionTokenRecoveryPixel: PixelKit.Event {
-    /// The refresh was rejected again right after a successful recovery, so the recovery was deferred.
-    case deferred
+    /// The refresh was rejected again right after a successful recovery, so the recovery was deferred, with the last measured clock skew.
+    case deferred(ClockSkew?)
+
+    private static let clockSkewKey = "clock_skew"
 
     var name: String {
         switch self {
@@ -342,7 +348,12 @@ enum SubscriptionTokenRecoveryPixel: PixelKit.Event {
         }
     }
 
-    var parameters: [String: String]? { nil }
+    var parameters: [String: String]? {
+        switch self {
+        case .deferred(let clockSkew):
+            return [Self.clockSkewKey: clockSkew?.rawValue ?? "unknown"]
+        }
+    }
 
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }

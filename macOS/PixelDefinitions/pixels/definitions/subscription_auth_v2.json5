@@ -64,7 +64,7 @@
         "owners": ["federicocappelli"],
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionTokenRecoveryMethod"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionTokenRecoveryMethod", "subscriptionClockSkew"]
     },
     // Already shipped without a definition; recovery_method is new
     "m_mac_direct_privacy-pro_auth_invalid_refresh_token_recovered": {
@@ -72,14 +72,52 @@
         "owners": ["federicocappelli"],
         "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionTokenRecoveryMethod"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionTokenRecoveryMethod", "subscriptionClockSkew"]
+    },
+    // Already shipped without a definition; clock_skew is new
+    "m_mac_store_privacy-pro_auth_v2_get_tokens_error": {
+        "description": "Fired when getting the Privacy Pro auth tokens fails for any reason other than no token being stored: a refresh rejected by the auth server, a network or keychain error, or tokens that fail verification (App Store distribution)",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "subscriptionAuthSource",
+            "subscriptionAuthTokenCachePolicy",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
+            "subscriptionClockSkew"
+        ]
+    },
+    // Already shipped without a definition; clock_skew is new
+    "m_mac_direct_privacy-pro_auth_v2_get_tokens_error": {
+        "description": "Fired when getting the Privacy Pro auth tokens fails for any reason other than no token being stored: a refresh rejected by the auth server, a network or keychain error, or tokens that fail verification (direct distribution)",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "subscriptionAuthSource",
+            "subscriptionAuthTokenCachePolicy",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
+            "subscriptionClockSkew"
+        ]
     },
     "subscription_auth-recovery_deferred_macos": {
         "description": "Fired when the auth server rejects the refresh token again within a minute of a successful session recovery. The app keeps the token and skips the recovery instead of recovering in a loop",
         "owners": ["federicocappelli"],
         "triggers": ["exception"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "channel"]
+        "parameters": ["appVersion", "channel", "subscriptionClockSkew"]
     },
     // Backup token
     "subscription_auth-backup_restored_macos": {

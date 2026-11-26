@@ -315,7 +315,7 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(result, restored)
         XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.first?.expectedExternalID, "acct")
         XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
-        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered(.backup)))
+        XCTAssertTrue(recoveredPixelMethods().contains(.backup))
         XCTAssertNil(automaticSignOutPixel())
     }
 
@@ -718,7 +718,7 @@ class SubscriptionManagerTests: XCTestCase {
 
         assertGetTokensErrorPixel(policy: .localValid)
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshToken))
-        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenRecovered(.appStore)))
+        XCTAssertTrue(recoveredPixelMethods().contains(.appStore))
         XCTAssertFalse(mockPixelHandler.handledPixels.contains(.invalidRefreshTokenSignedOut))
         XCTAssertNil(automaticSignOutPixel())
     }
@@ -1531,7 +1531,7 @@ class SubscriptionManagerTests: XCTestCase {
 
     private func assertGetTokensErrorPixel(policy: AuthTokensCachePolicy) {
         XCTAssertTrue(mockPixelHandler.handledPixels.contains(where: { pixel in
-            guard case .getTokensError(let capturedPolicy, _) = pixel else { return false }
+            guard case .getTokensError(let capturedPolicy, _, _) = pixel else { return false }
             return capturedPolicy == policy
         }))
     }
@@ -1546,7 +1546,7 @@ class SubscriptionManagerTests: XCTestCase {
     /// The recovery method of every invalid-refresh-token-recovered pixel handled, in order.
     private func recoveredPixelMethods() -> [TokenRecoveryMethod?] {
         mockPixelHandler.handledPixels.compactMap { pixel in
-            if case .invalidRefreshTokenRecovered(let method) = pixel { return method }
+            if case .invalidRefreshTokenRecovered(let method, _) = pixel { return method }
             return nil
         }
     }

@@ -102,7 +102,26 @@
                 "type": "string",
                 "description": "How the session was recovered: from the backup token or by the App Store restore",
                 "enum": ["backup", "app_store"]
-            }
+            },
+            "subscriptionClockSkew"
+        ]
+    },
+    // Already shipped without a definition; clock_skew is new
+    "m_privacy-pro_auth_v2_get_tokens_error": {
+        "description": "Fired when getting the Privacy Pro auth tokens fails for any reason other than no token being stored: a refresh rejected by the auth server, a network or keychain error, or tokens that fail verification",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "subscriptionAuthSource",
+            "subscriptionAuthTokenCachePolicy",
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
+            "subscriptionClockSkew"
         ]
     },
     "subscription_auth-recovery_deferred": {
@@ -110,7 +129,7 @@
         "owners": ["federicocappelli"],
         "triggers": ["exception"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "subscriptionClockSkew"]
     },
     // Backup token
     "subscription_auth-backup_restored": {

@@ -28,6 +28,9 @@ public protocol PageTranslationBridging: AnyObject {
 }
 
 public protocol PageTranslating: Sendable {
+    func needsDownload(_ pairID: String) async -> Bool
+    /// Makes the pair ready to translate, reporting download progress from 0 to 1; only 1 when it's installed.
+    func prepare(_ pairID: String) -> AsyncThrowingStream<Double, Error>
     func translate(_ units: [PageTranslationUnit], pairID: String) async throws -> [PageTranslationUpdate]
 }
 
@@ -84,8 +87,9 @@ public final class PageTranslationSession {
     private func translate(_ offer: TranslationOffer) async {
         var bar = BarProgress()
         do {
+            let downloaded = try await prepare(offer.pairID)
             let (units, documentID) = try await bridge.extract()
-            bar = BarProgress(tracking: units)
+            bar = BarProgress(tracking: units, startingAt: downloaded ? Constants.downloadShare : 0)
             let limit = batchCharacterLimit()
             // Measuring every HTML unit takes long enough on a big page to stall scrolling, so batching runs off the main actor.
             let batches = await Task.detached { PageTranslationBatches.make(units, characterLimit: limit) }.value
@@ -104,6 +108,21 @@ public final class PageTranslationSession {
         if !bar.isFinished && !Task.isCancelled {
             progress?.translationDidFinish()
         }
+    }
+
+    /// Waits for the pair's model, showing its download on the first part of the bar.
+    /// - Returns: whether it had to download; an installed pair reports only 1.
+    private func prepare(_ pairID: String) async throws -> Bool {
+        var downloaded = false
+        for try await fraction in translator.prepare(pairID) {
+            downloaded = downloaded || fraction < 1
+            if downloaded {
+                progress?.translationDidProgress(Constants.downloadShare * fraction)
+            }
+        }
+        // A cancel ends the stream rather than throwing; the download carries on for whoever asks next.
+        try Task.checkCancellation()
+        return downloaded
     }
 
     /// - Returns: how many of the batch's translations the page wrote.
@@ -133,24 +152,39 @@ public final class PageTranslationSession {
     }
 }
 
+private extension PageTranslationSession {
+    enum Constants {
+        /// How much of the bar a download fills before the translation takes the rest.
+        static let downloadShare = 0.8
+    }
+}
+
 /// The bar tracks the visible units: it finishes once the screen is translated, and the rest of the page
 /// carries on without it. A page with nothing visible tracks all its units.
 private struct BarProgress {
 
     private let isTracked: (PageTranslationUnit) -> Bool
     private let total: Int
+    /// Where the translation's part of the bar begins, after a download's.
+    private let start: Double
     private var done = 0
 
-    init(tracking units: [PageTranslationUnit] = []) {
+    init(tracking units: [PageTranslationUnit] = [], startingAt start: Double = 0) {
         let isTracked: (PageTranslationUnit) -> Bool = units.contains(where: \.isVisible) ? { $0.isVisible } : { _ in true }
         self.isTracked = isTracked
         self.total = units.filter(isTracked).count
+        self.start = start
     }
 
     /// Never true for a page with no units: its bar finishes when the translation ends.
     var isFinished: Bool { total > 0 && done == total }
 
-    var fraction: Double { Double(done) / Double(total) }
+    /// The whole bar's fill: the translation's share of the visible units, placed after the download's part.
+    var fraction: Double {
+        let translated = Double(done) / Double(total)
+        let translationShare = 1 - start
+        return start + translationShare * translated
+    }
 
     mutating func add(_ batch: [PageTranslationUnit]) {
         done += batch.filter(isTracked).count

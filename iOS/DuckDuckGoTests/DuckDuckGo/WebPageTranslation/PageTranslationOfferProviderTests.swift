@@ -52,7 +52,7 @@ final class PageTranslationOfferProviderTests: XCTestCase {
     func testEnglishPageForGermanUserShowsBanner() async throws {
         let provider = try makeProvider(deviceLanguages: ["de-DE"])
         let decision = await provider.decision(forSample: Self.english)
-        XCTAssertEqual(decision, .banner(TranslationOffer(source: "en", target: "de", pairID: "en-de")))
+        XCTAssertEqual(decision, .banner(TranslationOffer(source: "en", target: "de", pairID: "en-de", downloadBytes: 1)))
     }
 
     func testReadsTheSampleFromTheWebView() async throws {
@@ -64,7 +64,7 @@ final class PageTranslationOfferProviderTests: XCTestCase {
 
         let provider = try makeProvider(deviceLanguages: ["en-US"])
         let decision = await provider.decision(in: webView)
-        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
+        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en", downloadBytes: 1)))
     }
 
     func testNoOfferOnASiteInTheFeatureExceptions() async throws {
@@ -77,7 +77,7 @@ final class PageTranslationOfferProviderTests: XCTestCase {
         XCTAssertNil(exceptedDecision)
         let otherPage = try await loadedFrenchPage(at: URL(string: "https://example.org/")!)
         let otherDecision = await provider.decision(in: otherPage)
-        XCTAssertEqual(otherDecision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
+        XCTAssertEqual(otherDecision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en", downloadBytes: 1)))
     }
 
     func testOffersWhenTheFlagIsOnButTheConfigHasNoPageTranslationEntry() async throws {
@@ -87,7 +87,7 @@ final class PageTranslationOfferProviderTests: XCTestCase {
 
         let page = try await loadedFrenchPage(at: URL(string: "https://example.fr/")!)
         let decision = await provider.decision(in: page)
-        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
+        XCTAssertEqual(decision, .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en", downloadBytes: 1)))
     }
 
     func testEligibility() {

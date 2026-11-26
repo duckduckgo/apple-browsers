@@ -63,6 +63,11 @@ public enum PageTranslatorError: DDGError {
 public protocol TranslationModelsProviding: Sendable {
     /// The manifest pair for a pair id and the folder its files are installed in; nil when it isn't installed.
     func installedPair(_ pairID: String) -> (pair: TranslationManifest.Pair, folder: URL)?
+    /// Downloads and installs a pair, reporting progress from 0 to 1. Callers share one download per pair,
+    /// and a caller that stops listening leaves it running.
+    func install(_ pairID: String) -> AsyncThrowingStream<Double, Error>
+    /// Whether the pair's shared download is running, for any caller.
+    func isDownloading(_ pairID: String) async -> Bool
 }
 
 /// Translates page units with an installed model. One instance is shared by all tabs, so only one
@@ -84,6 +89,28 @@ public final class PageTranslator: @unchecked Sendable {
                 loadEngine: (@Sendable (ModelSpec) throws -> TranslationEngine)? = nil) {
         self.modelsProvider = modelsProvider
         self.customLoadEngine = loadEngine
+    }
+
+    public func isInstalled(_ pairID: String) -> Bool {
+        modelsProvider.installedPair(pairID) != nil
+    }
+
+    /// Whether translating would start a new download: the pair isn't installed and no one is downloading it.
+    public func needsDownload(_ pairID: String) async -> Bool {
+        guard !isInstalled(pairID) else { return false }
+        return await !modelsProvider.isDownloading(pairID)
+    }
+
+    /// Makes a pair ready to translate, reporting progress from 0 to 1: at once when it's installed, otherwise
+    /// from its download, which every caller shares.
+    public func prepare(_ pairID: String) -> AsyncThrowingStream<Double, Error> {
+        guard !isInstalled(pairID) else {
+            return AsyncThrowingStream { continuation in
+                continuation.yield(1)
+                continuation.finish()
+            }
+        }
+        return modelsProvider.install(pairID)
     }
 
     /// Plain units come back as `text`; HTML units as `tree`, minus those TranslateKit found malformed.

@@ -3553,6 +3553,24 @@ public struct UserText {
         String(format: NSLocalizedString("translation.banner.subtitle", value: "%1$@ to %2$@", comment: "Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to"), source, target)
     }
 
+    public static func translationDownloadSheetTitle(language: String) -> String {
+        let message = NSLocalizedString("translation.download-sheet.title", value: "Download %@ language pack?", comment: "Title of the sheet asking to download what's needed to translate pages in a language on the device, e.g. Download Spanish language pack?. %@ is the page's language")
+        return message.format(arguments: language)
+    }
+
+    public static func translationDownloadSheetMessage(language: String) -> String {
+        let message = NSLocalizedString("translation.download-sheet.message", value: "This one-time download lets you translate %@ pages privately on your device.", comment: "Explains the language pack download in the translation sheet. %@ is the page's language, e.g. Spanish")
+        return message.format(arguments: language)
+    }
+
+    public static func translationDownloadSheetSize(_ size: String) -> String {
+        let message = NSLocalizedString("translation.download-sheet.size", value: "Download size: %@", comment: "Size of the language pack download in the translation sheet. %@ is a formatted file size, e.g. 23 MB")
+        return message.format(arguments: size)
+    }
+
+    public static let translationDownloadSheetButton = NSLocalizedString("translation.download-sheet.download", value: "Download and Translate", comment: "Button in the translation sheet that downloads the language pack and translates the current web page")
+    public static let translationDownloadSheetClose = NSLocalizedString("translation.download-sheet.close", value: "Close", comment: "Accessibility label of the button that closes the translation download sheet without downloading")
+
     // MARK: - OmniBar Long Press Menu
     public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")
     public static let omnibarLongPressMoveToTop = NSLocalizedString("omnibar.menu.move-to-top", value: "Move Address Bar to Top", comment: "Label for moving the address bar to the top of the screen")

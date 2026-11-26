@@ -30,23 +30,23 @@ struct TranslationOfferTests {
     @Test("an English page shows a banner for the first device language that has a pair", .timeLimit(.minutes(1)))
     func englishPageBannerTargetsFirstDeviceLanguageWithPair() {
         #expect(manifest.offerDecision(detectedLanguage: "en", deviceLanguages: ["it-IT", "de-DE", "es"])
-                == .banner(TranslationOffer(source: "en", target: "de", pairID: "en-de")))
+                == .banner(TranslationOffer(source: "en", target: "de", pairID: "en-de", downloadBytes: 0)))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("a foreign page shows a banner to English when English is a device language", .timeLimit(.minutes(1)))
     func foreignPageBannerTargetsEnglish() {
         #expect(manifest.offerDecision(detectedLanguage: "fr", deviceLanguages: ["en-GB"])
-                == .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
+                == .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en", downloadBytes: 0)))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("a page in a device language other than the first is offered in the menu only", .timeLimit(.minutes(1)))
     func pageInLaterDeviceLanguageIsMenuOnly() {
         #expect(manifest.offerDecision(detectedLanguage: "en", deviceLanguages: ["de-DE", "en-US"])
-                == .menuOnly(TranslationOffer(source: "en", target: "de", pairID: "en-de")))
+                == .menuOnly(TranslationOffer(source: "en", target: "de", pairID: "en-de", downloadBytes: 0)))
         #expect(manifest.offerDecision(detectedLanguage: "fr", deviceLanguages: ["en-GB", "fr-FR"])
-                == .menuOnly(TranslationOffer(source: "fr", target: "en", pairID: "fr-en")))
+                == .menuOnly(TranslationOffer(source: "fr", target: "en", pairID: "fr-en", downloadBytes: 0)))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -79,7 +79,7 @@ struct TranslationOfferTests {
                                            models: ["fr-en-base": pair])
 
         #expect(manifest.offerDecision(detectedLanguage: "fr", deviceLanguages: ["en-US"])
-                == .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en-base")))
+                == .banner(TranslationOffer(source: "fr", target: "en", pairID: "fr-en-base", downloadBytes: 0)))
     }
 
     @available(iOS 16, macOS 13, *)

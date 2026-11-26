@@ -1,6 +1,6 @@
 ---
 name: verify-macos-browser
-description: Prove a macOS browser change works by driving the real Debug app built from this worktree, on this Mac or in a local VM, and capturing accessibility, pixel, wide-event and log evidence. Use before opening a PR or to reproduce a bug.
+description: Prove a macOS browser change works by driving the real debug app built from this worktree (CI configuration), on this Mac or in a local VM, and capturing accessibility, pixel, wide-event and log evidence. Use before opening a PR or to reproduce a bug.
 disable-model-invocation: true
 ---
 
@@ -20,7 +20,8 @@ evidence, no verdict.
   - **On this Mac** (`--target mac`): drives their screen; tell them and wait for an OK. The process running it
     needs the Accessibility and Screen Recording grants; an agent's shell often has neither.
 - **New Mac, checkout, Xcode or macOS, or a new VM?** `bin/verify-macos-browser selftest [--target vm-1|vm-2|mac]`
-  checks each step in order and names the first that fails, why, and the fix.
+  checks each step in order and names the first that fails, why, and the fix. A new Mac also needs the signing
+  assets once (see Signing).
 - Read `features/README.md`, then `features/<feature>.md` for the area you're touching. Every entry point your
   change touches needs its own check or an `unverified` line.
 - For state, timing or geometry claims, add temporary logs with one tag (`os.Logger` with public interpolation;
@@ -92,7 +93,8 @@ other error there is INCONCLUSIVE. **PASS** needs this checkout to pass and the 
 with at least one declared `fail`; a `fail` check that passes on the base is **FAIL**: the proof doesn't reproduce
 the bug. `report.md` shows each check and screenshot Before | After; each run's evidence is in `base/` and `change/`.
 Checks match across the runs by name, with `token()` values and local ports left out. On the base a `FLAGS` entry
-its revision doesn't define is skipped, and the report says so. Different macOS versions: INCONCLUSIVE.
+its revision doesn't define is skipped, and the report says so. Different macOS versions: INCONCLUSIVE. A base older than the switch to the CI configuration writes no wide event
+validation log (see Signing), so `expect_wide_event` can't pass there.
 An element the bug removes can't be pressed on the base (an action error, INCONCLUSIVE): declare that with
 `eventually("…", lambda: mac.find(x))` inside `on_base("fail")` and press it only after.
 By hand: `git worktree add --detach <dir> <ref>`, then `$V prove <proof> --target vm-1 --checkout <dir>`.
@@ -175,8 +177,25 @@ then each `examples/*.py` must PASS.
 - `build` compiles here (one build at a time), copies the app with `tar`, checks its hashes, launches it in the VM
   and presses Debug → Skip Onboarding (`--keep-onboarding` to test onboarding). Pixels stream back over ssh.
 - ssh goes to the local network, which Claude Code's sandbox blocks: run it unsandboxed.
-- `NOT LAUNCHED` in a VM is usually AMFI: its Provisioning UDID isn't in the profile (VM-SETUP.md step 4).
-  `NOT READY` with no window: a keychain dialog waits in the VM (VM-SETUP.md step 5).
+- `NOT LAUNCHED` in a VM is usually AMFI: the app isn't signed with Developer ID (see Signing).
+  `NOT READY` with no window: a keychain dialog waits in the VM (VM-SETUP.md step 4).
+
+## Signing
+
+`build` uses the **CI** configuration, not Debug: a debug build (`DEBUG` in the app target, `.debug` bundle id and
+app groups, the same app data as Debug) signed with Developer ID and the match profile
+`match Direct com.duckduckgo.macos.browser.debug macos`. That profile has no device list, so the app runs on any Mac
+and in any VM with no device registration. The build isn't notarized. It has no quarantine attribute (built here,
+copied to a VM with `tar` over ssh), so Gatekeeper doesn't assess it.
+
+- **Setup, once per Mac:** `cd macOS && bundle exec fastlane sync_signing_ci` (read-only match). It needs read access
+  to the match repo and its passphrase, and installs the Developer ID Application certificate and private key in
+  your login keychain. `selftest` checks the result ("build signed with Developer ID").
+- Xcode builds Swift packages in release under CI. `build` sets `SPM_FORCE_DEBUG=1`, as CI does, so AppKitExtensions
+  (`isDebugBuild`: pixel dry run, AutomationServer, staging services) and WideEvent (the validation log) keep
+  `DEBUG`. Other packages' `#if DEBUG` code isn't compiled: `callingSymbol()` in Common, the 2-minute privacy
+  configuration refresh (30 minutes here), pixels' `test=1` (dry run, so none are sent).
+- Debug and CI don't share build products: the first CI build in a DerivedData is a full build.
 
 ## Stop and ask the user
 

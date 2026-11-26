@@ -35,14 +35,15 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
                          devicePlatform: DevicePlatformProviding.Type = IPhone.self,
                          isFlagOn: Bool = true,
                          featureFlagger: MockFeatureFlagger? = nil) -> UnifiedToggleInputCoordinator {
-        UnifiedToggleInputCoordinator(
+        let featureFlagger = featureFlagger ?? MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : [])
+        return UnifiedToggleInputCoordinator(
             host: host,
             isToggleEnabled: true,
             preferences: NewChatTestPreferences(),
             toggleModeStorage: NewChatTestToggleModeStorage(),
             stateStore: NewChatTestStateStore(),
-            featureFlagger: featureFlagger ?? MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : []),
-            devicePlatform: devicePlatform
+            featureFlagger: featureFlagger,
+            newChatHintsFeature: NewChatHintsFeature(featureFlagger: featureFlagger, devicePlatform: devicePlatform)
         )
     }
 

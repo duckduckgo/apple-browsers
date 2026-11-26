@@ -20,7 +20,6 @@
 import AIChat
 import BrowserServicesKit
 import Combine
-import Common
 import Core
 import DDGSync
 import FeatureFlags_iOS
@@ -178,7 +177,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// The bound page sets this on every bind, so only `unbind` clears it.
     var isAIChatPromoVisible: Bool? {
         didSet {
-            guard oldValue != isAIChatPromoVisible, featureFlagger.isFeatureOn(.newChatHints) else { return }
+            guard oldValue != isAIChatPromoVisible, newChatHintsFeature.isEnabled else { return }
             logNewChatHintsState()
         }
     }
@@ -187,7 +186,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published private(set) var newChatState = NewChatState.none
     var isGuaranteedNewChat: Bool { newChatState.isGuaranteedNewChat }
     private let newChatHintsEligibility: NewChatHintsEligibility
-    private let isIPhone: Bool
+    private let newChatHintsFeature: NewChatHintsFeatureProviding
     private var isVoiceRequestedForPage = false
     private var voiceHoldRelease: DispatchWorkItem?
     /// How long voice keeps holding hints off after it closes.
@@ -472,7 +471,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
-        devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+        newChatHintsFeature: NewChatHintsFeatureProviding? = nil,
         scheduleInputFocus: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) }
     ) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
@@ -485,7 +484,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.featureFlagger = featureFlagger
-        self.isIPhone = devicePlatform.isIphone
+        self.newChatHintsFeature = newChatHintsFeature ?? NewChatHintsFeature(featureFlagger: featureFlagger)
         self.newChatHintsEligibility = NewChatHintsEligibility(storage: duckAiNativeStorageHandler,
                                                                fireModeStorage: duckAiFireModeStorageHandler,
                                                                termsOfServiceStore: termsOfServiceStore)
@@ -1278,13 +1277,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var isAIChatPromoClear: Bool { isAIChatPromoVisible == false }
 
     private func refreshNewChatState() {
-        guard featureFlagger.isFeatureOn(.newChatHints) else {
+        guard newChatHintsFeature.isEnabled else {
             newChatState = .none
             return
         }
         let url = boundUserScript?.webView?.url
         let state = NewChatState(
-            isIPhone: isIPhone,
             isFullTabInput: host == .omnibar && isAITabState,
             isTabSelected: currentTabUID != nil && boundUserScript != nil && boundUserScriptTabUID == currentTabUID,
             // The page reports `ready` once it can take a prompt; it never sends `showChatInput` on a plain load.
@@ -1302,7 +1300,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func logNewChatHintsState() {
         let state = newChatState
         let promo = isAIChatPromoVisible.map { String($0) } ?? "nil"
-        let terms = "iPhone=\(state.isIPhone) fullTab=\(state.isFullTabInput) selected=\(state.isTabSelected) "
+        let terms = "fullTab=\(state.isFullTabInput) selected=\(state.isTabSelected) "
             + "inputReady=\(state.isInputReady) hasChat=\(state.hasChat) carriesPrompt=\(state.carriesPrompt) "
             + "voice=\(state.isVoiceHeld) editing=\(state.isEditing)"
         Logger.unifiedInputState.debug("[NewChatHints] isGuaranteedNewChat=\(state.isGuaranteedNewChat, privacy: .public) promoVisible=\(promo, privacy: .public) [\(terms, privacy: .public)]")

@@ -50,8 +50,6 @@ struct NewChatHintsInputs: Equatable {
 /// What the full-tab input knows about the chat on screen. Each exclusion is a case that
 /// looked like a new chat on Android and briefly showed hints there.
 struct NewChatState: Equatable {
-    /// Hints are an iPhone feature; iPad never shows them.
-    var isIPhone = false
     /// The input is the full-tab Duck.ai input, not the omnibar or the contextual sheet.
     var isFullTabInput = false
     /// This tab is the one on screen, and the input is bound to its page rather than the previous tab's.
@@ -70,7 +68,7 @@ struct NewChatState: Equatable {
     static let none = NewChatState()
 
     var isGuaranteedNewChat: Bool {
-        isIPhone && isFullTabInput && isTabSelected && isInputReady
+        isFullTabInput && isTabSelected && isInputReady
             && !hasChat && !carriesPrompt && !isVoiceHeld && !isEditing
     }
 }

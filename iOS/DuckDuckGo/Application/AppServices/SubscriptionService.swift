@@ -80,6 +80,9 @@ final class SubscriptionService {
     // MARK: - Resume
 
     func resume() {
-        tokenRefreshTask.refreshAndSchedule()
+        Task { [subscriptionManager, tokenRefreshTask] in
+            await subscriptionManager.restoreMissingTokenIfPossible()
+            await tokenRefreshTask.refreshAndSchedule().value
+        }
     }
 }

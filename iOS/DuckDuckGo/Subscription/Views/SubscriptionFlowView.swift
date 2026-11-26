@@ -54,6 +54,8 @@ struct SubscriptionFlowView: View {
         static let backButtonImage = "chevron.left"
     }
 
+    @Environment(\.isPaywallPresentedFromOnboarding) private var isPresentedFromOnboarding
+
     let featureFlagger: FeatureFlagger
 
     var body: some View {
@@ -190,6 +192,7 @@ struct SubscriptionFlowView: View {
         .alert(isPresented: $isPresentingError) {
             SubscriptionTransactionErrorAlert.alert(
                 for: errorMessageType,
+                isPresentedFromOnboarding: isPresentedFromOnboarding,
                 onDismiss: {
                     if errorMessageType == .activeSubscription {
                         viewModel.subscriptionFoundCancelled()

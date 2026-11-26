@@ -174,7 +174,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertFalse(cardsRefreshed)
         videoPresenter.complete(with: .done)
 
-        XCTAssertEqual(videoPresenter.presentations, [.done])
+        XCTAssertEqual(videoPresenter.presentations, [.init(entryPoint: .newTabPageCard, primaryAction: .done)])
         XCTAssertTrue(pixelHandler.fireAddedToDockPixelCalled)
         XCTAssertFalse(appStoreDockCustomizer.isAddedToDock)
         XCTAssertTrue(cardsRefreshed)

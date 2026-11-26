@@ -16,27 +16,57 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import SwiftUI
 
 // MARK: - Chart View
 
 extension BrowsersComparisonChart {
 
+    public enum RowStyle {
+        case divided
+        case alternatingBackground(Color, cornerRadius: CGFloat)
+    }
+
+    public enum AvailabilityIconStyle {
+        case standard
+        case solid(available: Color, partiallyAvailable: Color, unavailable: Color)
+    }
+
     public struct Configuration {
         var font: Font
         var allowContentToScrollUnderHeader: Bool
         var showFeatureIcons: Bool
         var showBottomDivider: Bool
+        var showHeaderDivider: Bool
+        var rowStyle: RowStyle
+        var rowHeight: CGFloat
+        var availabilityIconStyle: AvailabilityIconStyle
 
         public init(fontSize: CGFloat = 15.0,
                     fontWeight: Font.Weight = .regular,
                     allowContentToScrollUnderHeader: Bool = false,
                     showFeatureIcons: Bool = false,
-                    showBottomDivider: Bool? = nil) {
+                    showBottomDivider: Bool? = nil,
+                    showHeaderDivider: Bool = true,
+                    rowStyle: RowStyle = .divided,
+                    rowHeight: CGFloat = 50.0,
+                    availabilityIconStyle: AvailabilityIconStyle = .standard) {
             self.font = Font.system(size: fontSize, weight: fontWeight)
             self.allowContentToScrollUnderHeader = allowContentToScrollUnderHeader
             self.showFeatureIcons = showFeatureIcons
             self.showBottomDivider = showBottomDivider ?? !allowContentToScrollUnderHeader
+            self.showHeaderDivider = showHeaderDivider
+            self.rowStyle = rowStyle
+            self.rowHeight = rowHeight
+            self.availabilityIconStyle = availabilityIconStyle
+        }
+
+        var horizontalPadding: CGFloat {
+            switch rowStyle {
+            case .divided: 0
+            case .alternatingBackground: Metrics.alternatingBackgroundHorizontalPadding
+            }
         }
     }
 
@@ -53,8 +83,9 @@ public struct BrowsersComparisonChart: View {
 
     public var body: some View {
         VStack(spacing: Metrics.stackSpacing) {
-            Header(browsers: BrowsersComparisonModel.Browser.allCases)
+            Header(browsers: BrowsersComparisonModel.Browser.allCases, showDivider: configuration.showHeaderDivider)
                 .frame(height: Metrics.headerHeight)
+                .padding(.horizontal, configuration.horizontalPadding)
 
             content
         }
@@ -64,11 +95,11 @@ public struct BrowsersComparisonChart: View {
     private var content: some View {
         let content = ForEach(Array(privacyFeatures.enumerated()), id: \.element.type) { index, feature in
             let shouldDisplayDivider = index < privacyFeatures.count - 1 || configuration.showBottomDivider
-            Row(configuration: configuration, feature: feature, shouldDisplayDivider: shouldDisplayDivider)
+            Row(configuration: configuration, feature: feature, index: index, shouldDisplayDivider: shouldDisplayDivider)
         }
 
         if configuration.allowContentToScrollUnderHeader {
-            let height = CGFloat(privacyFeatures.count) * Metrics.imageContainerSize.height
+            let height = CGFloat(privacyFeatures.count) * configuration.rowHeight
              ScrollView(showsIndicators: false) {
                  // Wrap content in stack view to avoid rows height to stretch
                  VStack(spacing: Metrics.scrollableVStackSpacing) {
@@ -92,6 +123,7 @@ extension BrowsersComparisonChart {
 
     struct Header: View {
         let browsers: [BrowsersComparisonModel.Browser]
+        let showDivider: Bool
 
         var body: some View {
             HStack(alignment: .bottom) {
@@ -102,7 +134,9 @@ extension BrowsersComparisonChart {
                         .frame(width: Metrics.headerImageContainerSize.width, height: Metrics.headerImageContainerSize.height)
 
                     if index < browsers.count - 1 {
+                        // Hidden rather than removed, so the icons stay aligned with the status columns below
                         Divider()
+                            .opacity(showDivider ? 1 : 0)
                     }
                 }
             }
@@ -118,9 +152,30 @@ extension BrowsersComparisonChart {
     struct Row: View {
         let configuration: Configuration
         let feature: BrowsersComparisonModel.PrivacyFeature
+        let index: Int
         let shouldDisplayDivider: Bool
 
         var body: some View {
+            switch configuration.rowStyle {
+            case .divided:
+                content
+                    .frame(maxHeight: configuration.rowHeight)
+
+                if shouldDisplayDivider {
+                    Divider()
+                }
+            case .alternatingBackground(let color, let cornerRadius):
+                content
+                    .padding(.horizontal, configuration.horizontalPadding)
+                    .frame(height: configuration.rowHeight)
+                    .background(
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(index.isMultiple(of: 2) ? color : .clear)
+                    )
+            }
+        }
+
+        private var content: some View {
             HStack {
                 if configuration.showFeatureIcons {
                     #if os(iOS)
@@ -140,12 +195,7 @@ extension BrowsersComparisonChart {
 
                 Spacer()
 
-                BrowsersSupport(browsersSupport: feature.browsersSupport)
-            }
-            .frame(maxHeight: Metrics.imageContainerSize.height)
-
-            if shouldDisplayDivider {
-                Divider()
+                BrowsersSupport(browsersSupport: feature.browsersSupport, iconStyle: configuration.availabilityIconStyle)
             }
         }
     }
@@ -158,16 +208,46 @@ extension BrowsersComparisonChart.Row {
 
     struct BrowsersSupport: View {
         let browsersSupport: [BrowsersComparisonModel.PrivacyFeature.BrowserSupport]
+        let iconStyle: BrowsersComparisonChart.AvailabilityIconStyle
 
         var body: some View {
             ForEach(Array(browsersSupport.enumerated()), id: \.offset) { index, browserSupport in
-                Image(browserSupport.availability.image)
-                    .frame(width: BrowsersComparisonChart.Metrics.imageContainerSize.width)
+                availabilityImage(browserSupport.availability)
+                    .frame(width: BrowsersComparisonChart.Metrics.imageContainerWidth)
 
                 if index < browsersSupport.count - 1 {
                     Divider()
                 }
             }
+        }
+
+        @ViewBuilder
+        private func availabilityImage(_ availability: BrowsersComparisonModel.PrivacyFeature.Availability) -> some View {
+            switch iconStyle {
+            case .standard:
+                Image(availability.image)
+            case .solid(let availableColor, let partiallyAvailableColor, let unavailableColor):
+                switch availability {
+                case .available:
+                    solidImage(DesignSystemImages.Glyphs.Size24.checkSolid, color: availableColor)
+                case .partiallyAvailable:
+                    solidImage(DesignSystemImages.Glyphs.Size24.stopSolid, color: partiallyAvailableColor)
+                case .unavailable:
+                    solidImage(DesignSystemImages.Glyphs.Size24.crossSolid, color: unavailableColor)
+                }
+            }
+        }
+
+        private func solidImage(_ image: DesignSystemImage, color: Color) -> some View {
+            #if os(iOS)
+            Image(uiImage: image)
+                .renderingMode(.template)
+                .foregroundStyle(color)
+            #elseif os(macOS)
+            Image(nsImage: image)
+                .renderingMode(.template)
+                .foregroundStyle(color)
+            #endif
         }
     }
 
@@ -177,10 +257,11 @@ extension BrowsersComparisonChart.Row {
 
 extension BrowsersComparisonChart {
     private enum Metrics {
+        static let alternatingBackgroundHorizontalPadding: CGFloat = 8
         static let stackSpacing: CGFloat = 0.0
         static let headerHeight: CGFloat = 60
         static let headerImageContainerSize = CGSize(width: 40, height: 80)
-        static let imageContainerSize = CGSize(width: 40.0, height: 50.0)
+        static let imageContainerWidth: CGFloat = 40.0
         static let scrollableVStackSpacing: CGFloat = 0
         static let scrollableBottomDividerPadding: CGFloat = 4
     }

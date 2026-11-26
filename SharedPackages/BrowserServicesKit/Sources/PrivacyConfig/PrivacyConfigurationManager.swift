@@ -32,6 +32,10 @@ public protocol PrivacyConfigurationManaging: AnyObject {
 
     var currentConfig: Data { get }
     var updatesPublisher: AnyPublisher<Void, Never> { get }
+    /// Fires after the user turns protections off or on for a site, as soon as the change is stored and before
+    /// content blocking rules are rebuilt for it. It doesn't fire for writes that leave the list unchanged. Read
+    /// `privacyConfig.userUnprotectedDomains` for the new list.
+    var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> { get }
     var privacyConfig: PrivacyConfiguration { get }
     var internalUserDecider: InternalUserDecider { get }
 
@@ -75,6 +79,11 @@ public class PrivacyConfigurationManager: PrivacyConfigurationManaging {
     private let updatesSubject = PassthroughSubject<Void, Never>()
     public var updatesPublisher: AnyPublisher<Void, Never> {
         updatesSubject.eraseToAnyPublisher()
+    }
+
+    private let userUnprotectedDomainsSubject: PassthroughSubject<Void, Never>
+    public var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        userUnprotectedDomainsSubject.eraseToAnyPublisher()
     }
 
     private var _fetchedConfigData: ConfigurationData?
@@ -128,7 +137,11 @@ public class PrivacyConfigurationManager: PrivacyConfigurationManaging {
                 installDate: Date? = nil
     ) {
         self.embeddedDataProvider = embeddedDataProvider
-        self.localProtection = localProtection
+        let userUnprotectedDomainsSubject = PassthroughSubject<Void, Never>()
+        self.userUnprotectedDomainsSubject = userUnprotectedDomainsSubject
+        self.localProtection = ObservedDomainsProtectionStore(localProtection) {
+            userUnprotectedDomainsSubject.send()
+        }
         self.errorReporting = errorReporting
         self.internalUserDecider = internalUserDecider
         self.locale = locale

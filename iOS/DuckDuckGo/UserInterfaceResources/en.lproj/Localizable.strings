@@ -3577,6 +3577,12 @@ https://duckduckgo.com/mac";
 /* Title text for an iOS quick action that opens VPN settings */
 "network.protection.quick-action.open-vpn" = "Open VPN";
 
+/* The body of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing */
+"network.protection.signed.out.notification.body" = "Open DuckDuckGo to restore VPN connection.";
+
+/* The title of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing */
+"network.protection.signed.out.notification.title" = "DuckDuckGo VPN disconnected";
+
 /* Button title for tooltip about VPN snooze mode */
 "network.protection.snooze.tip.action" = "Learn more";
 

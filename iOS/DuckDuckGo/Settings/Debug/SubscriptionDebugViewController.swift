@@ -24,6 +24,7 @@ import BrowserServicesKit
 import FoundationExtensions
 import Subscription
 import Core
+import Common
 import VPN
 import StoreKit
 import PrivacyConfig
@@ -33,6 +34,7 @@ import UIComponents
 import Lottie
 import FeatureFlags_iOS
 import Persistence
+import PixelKit
 
 protocol SubscriptionDebugSettingsPersisting {
     var isDebugOverlayEnabled: Bool { get set }
@@ -137,6 +139,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case validateToken
         case checkEntitlements
         case getSubscription
+        case manageTokens
     }
 
     enum AppStoreRows: Int, CaseIterable {
@@ -265,6 +268,9 @@ final class SubscriptionDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Check Entitlements"
             case .getSubscription:
                 cell.textLabel?.text = "Get Subscription Details"
+            case .manageTokens:
+                cell.textLabel?.text = "Manage Tokens"
+                cell.accessoryType = .disclosureIndicator
 
             case .none:
                 break
@@ -476,6 +482,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .validateToken: validateToken()
             case .checkEntitlements: checkEntitlements()
             case .getSubscription: getSubscriptionDetails()
+            case .manageTokens: showTokenManagement()
             default: break
             }
         case .environment:
@@ -690,6 +697,23 @@ final class SubscriptionDebugViewController: UITableViewController {
                 showAlert(title: "Subscription info", message: "\(error)")
             }
         }
+    }
+
+    private func showTokenManagement() {
+        let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
+        let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType),
+                                              pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+        let subscriptionManager = subscriptionManager
+        let invalidator = StagingTokenInvalidator(environment: currentEnvironment.authEnvironment,
+                                                  apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
+        let model = SubscriptionTokensDebugViewModel(keychainManager: keychainManager,
+                                                     getTokenContainer: { policy in
+                                                         try await subscriptionManager.getTokenContainer(policy: policy)
+                                                     },
+                                                     invalidate: invalidator.map { invalidator in
+                                                         { refreshToken in try await invalidator.invalidate(refreshToken: refreshToken) }
+                                                     })
+        navigationController?.pushViewController(UIHostingController(rootView: SubscriptionTokensDebugView(model: model)), animated: true)
     }
 
     private func checkEntitlements() {

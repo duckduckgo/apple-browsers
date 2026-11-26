@@ -201,6 +201,10 @@ final class AIChatContextualSheetCoordinator {
     }
 
     private var chatStorage: DuckAiNativeStorageHandling? {
+        chatStorage(isFireTab: isFireTab)
+    }
+
+    private func chatStorage(isFireTab: Bool) -> DuckAiNativeStorageHandling? {
         isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
     }
 
@@ -1166,6 +1170,7 @@ private extension AIChatContextualSheetCoordinator {
             attachMoreTabsFeature: attachMoreTabsFeature,
             start: start,
             usageLimitsStore: duckAiUsageLimitsStore,
+            userDefaultModelStorage: { [weak self] in self?.chatStorage(isFireTab: $0) },
             floatingUIManager: floatingUIManager,
             tabAttachmentSource: tabAttachmentSource,
             duckAIWideEventInstrumentation: DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,

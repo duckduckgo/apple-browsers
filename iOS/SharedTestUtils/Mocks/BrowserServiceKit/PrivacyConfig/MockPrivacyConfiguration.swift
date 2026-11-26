@@ -97,6 +97,9 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
 
 @objc(MockPrivacyConfigurationManager)
 class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
+    var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
 
     var embeddedConfigData: PrivacyConfigurationManager.ConfigurationData {
         fatalError("not implemented")

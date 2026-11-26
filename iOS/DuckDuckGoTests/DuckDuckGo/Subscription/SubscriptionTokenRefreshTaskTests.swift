@@ -24,6 +24,7 @@ import Testing
 import Subscription
 @_spi(Testing) import Networking
 @_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
 
 struct SubscriptionTokenRefreshTaskTests {
 
@@ -41,6 +42,7 @@ struct SubscriptionTokenRefreshTaskTests {
         let notificationCenter: NotificationCenter
         let debugSettings: SubscriptionTokenRefreshDebugSettings
         let internalUser: FlagState
+        let pixels: PixelKitMock
         let refreshTask: SubscriptionTokenRefreshTask
     }
 
@@ -53,6 +55,7 @@ struct SubscriptionTokenRefreshTaskTests {
         let notificationCenter = NotificationCenter()
         let debugSettings = SubscriptionTokenRefreshDebugSettings(keyValueStore: InMemoryThrowingKeyValueStore())
         let intervals = SubscriptionTokenRefreshIntervals(debugSettings: debugSettings, isInternalUser: { internalUserState.isOn })
+        let pixels = PixelKitMock()
         let keepAlive = SubscriptionTokenKeepAlive(tokenProvider: provider,
                                                    isEnabled: { flag.isOn },
                                                    maxRefreshTokenAge: intervals.maxRefreshTokenAge,
@@ -62,10 +65,11 @@ struct SubscriptionTokenRefreshTaskTests {
                                                        scheduler: scheduler,
                                                        debugSettings: debugSettings,
                                                        retryInterval: intervals.retryInterval,
+                                                       pixelFiring: pixels,
                                                        notificationCenter: notificationCenter,
                                                        now: { now })
         return Fixture(flag: flag, provider: provider, scheduler: scheduler, notificationCenter: notificationCenter,
-                       debugSettings: debugSettings, internalUser: internalUserState, refreshTask: refreshTask)
+                       debugSettings: debugSettings, internalUser: internalUserState, pixels: pixels, refreshTask: refreshTask)
     }
 
     // MARK: - Registration
@@ -405,6 +409,106 @@ struct SubscriptionTokenRefreshTaskTests {
         await work.value
 
         #expect(fixture.scheduler.events == [.submit(now.addingTimeInterval(30))])
+    }
+
+    // MARK: - Pixel
+
+    private func pixel(_ trigger: SubscriptionTokenRefreshRun.Trigger, _ result: SubscriptionTokenRefreshPixel.Result) -> ExpectedFireCall {
+        ExpectedFireCall(pixel: SubscriptionTokenRefreshPixel.run(trigger: trigger, result: result), frequency: .standard)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A foreground refresh fires the pixel with its trigger and result", .timeLimit(.minutes(1)))
+    func pixelForegroundRefresh() async {
+        let now = issuedAt.addingTimeInterval(.days(15))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+        fixture.provider.refreshedToken = token(issuedAt: now)
+
+        await fixture.refreshTask.refreshAndSchedule(trigger: .foreground).value
+
+        #expect(fixture.pixels.actualFireCalls == [pixel(.foreground, .refreshed)])
+        let fired = fixture.pixels.actualFireCalls.first?.pixel
+        #expect(fired?.name == "subscription_auth-background-refresh_run")
+        #expect(fired?.parameters == ["trigger": "foreground", "result": "refreshed"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Foreground and sign-in runs with nothing to refresh fire nothing", .timeLimit(.minutes(1)))
+    func pixelQuietForegroundRuns() async throws {
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: issuedAt.addingTimeInterval(.days(1)))
+        fixture.refreshTask.register()
+
+        await fixture.refreshTask.refreshAndSchedule(trigger: .foreground).value
+        fixture.notificationCenter.post(name: .accountDidSignIn, object: nil)
+        try await waitUntil { fixture.debugSettings.lastRun?.trigger == .signIn }
+        fixture.provider.token = nil
+        await fixture.refreshTask.refreshAndSchedule(trigger: .foreground).value
+
+        #expect(fixture.pixels.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A failed foreground refresh fires the pixel", .timeLimit(.minutes(1)))
+    func pixelForegroundFailure() async {
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: issuedAt.addingTimeInterval(.days(16)))
+        fixture.provider.refreshError = URLError(.notConnectedToInternet)
+
+        await fixture.refreshTask.refreshAndSchedule(trigger: .foreground).value
+
+        #expect(fixture.pixels.actualFireCalls == [pixel(.foreground, .failed)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Every background run fires the pixel, including the ones with nothing to refresh", .timeLimit(.minutes(1)))
+    func pixelBackgroundRuns() async {
+        let now = issuedAt.addingTimeInterval(.days(1))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+
+        await fixture.refreshTask.handle(FakeBGTask(identifier: identifier)).value
+        fixture.provider.stateOverride = .readError
+        await fixture.refreshTask.handle(FakeBGTask(identifier: identifier)).value
+        fixture.provider.stateOverride = nil
+        fixture.provider.token = nil
+        await fixture.refreshTask.handle(FakeBGTask(identifier: identifier)).value
+
+        #expect(fixture.pixels.actualFireCalls == [pixel(.backgroundTask, .notDue),
+                                                   pixel(.backgroundTask, .failed),
+                                                   pixel(.backgroundTask, .noToken)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A background task that expires mid-refresh fires expired once and nothing for the discarded run", .timeLimit(.minutes(1)))
+    func pixelBackgroundExpiration() async {
+        let now = issuedAt.addingTimeInterval(.days(16))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+        fixture.provider.refreshedToken = token(issuedAt: now)
+        let gate = Gate()
+        fixture.provider.beforeForceRefresh = { await gate.wait() }
+        let task = FakeBGTask(identifier: identifier)
+
+        let work = fixture.refreshTask.handle(task)
+        await fixture.provider.waitForForceRefresh()
+        task.expirationHandler?()
+        await gate.open()
+        await work.value
+
+        #expect(fixture.pixels.actualFireCalls == [pixel(.backgroundTask, .expired)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("on > off > on: no pixel while off, pixels again once back on", .timeLimit(.minutes(1)))
+    func pixelFlagTransitions() async {
+        let now = issuedAt.addingTimeInterval(.days(1))
+        let fixture = makeFixture(flagOn: true, token: token(issuedAt: issuedAt), now: now)
+
+        await fixture.refreshTask.handle(FakeBGTask(identifier: identifier)).value
+        fixture.flag.isOn = false
+        await fixture.refreshTask.handle(FakeBGTask(identifier: identifier)).value
+        await fixture.refreshTask.refreshAndSchedule(trigger: .debugMenu).value
+        fixture.flag.isOn = true
+        await fixture.refreshTask.handle(FakeBGTask(identifier: identifier)).value
+
+        #expect(fixture.pixels.actualFireCalls == [pixel(.backgroundTask, .notDue), pixel(.backgroundTask, .notDue)])
     }
 
     private func waitUntil(_ condition: @escaping () -> Bool) async throws {

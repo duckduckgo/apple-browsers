@@ -20,6 +20,7 @@
 import BackgroundTasks
 import Foundation
 import os.log
+import PixelKit
 import Subscription
 
 /// Runs `SubscriptionTokenKeepAlive` from a `BGProcessingTask`, and when the app comes to the foreground or a session starts,
@@ -33,6 +34,7 @@ final class SubscriptionTokenRefreshTask {
     private let scheduler: BGTaskScheduling
     private let debugSettings: SubscriptionTokenRefreshDebugStoring?
     private let retryInterval: () -> TimeInterval
+    private let pixelFiring: PixelFiring?
     private let now: () -> Date
     private var observers: [NSObjectProtocol] = []
     private let notificationCenter: NotificationCenter
@@ -42,18 +44,21 @@ final class SubscriptionTokenRefreshTask {
     ///   - scheduler: Registers and submits the background task.
     ///   - debugSettings: Where each run is recorded for the debug menu. Nil records nothing.
     ///   - retryInterval: The delay before scheduling the task again when it expires before the run finishes.
+    ///   - pixelFiring: Fires `SubscriptionTokenRefreshPixel` for the runs it reports.
     ///   - notificationCenter: Where sign-ins, sign-outs and debug run requests are observed, and `.subscriptionTokenRefreshDidRun` is posted.
     ///   - now: The current date.
     init(keepAlive: SubscriptionTokenKeepAlive,
          scheduler: BGTaskScheduling = BGTaskScheduler.shared,
          debugSettings: SubscriptionTokenRefreshDebugStoring? = nil,
          retryInterval: @escaping () -> TimeInterval = { SubscriptionTokenKeepAlive.defaultRetryInterval },
+         pixelFiring: PixelFiring? = PixelKit.shared,
          notificationCenter: NotificationCenter = .default,
          now: @escaping () -> Date = Date.init) {
         self.keepAlive = keepAlive
         self.scheduler = scheduler
         self.debugSettings = debugSettings
         self.retryInterval = retryInterval
+        self.pixelFiring = pixelFiring
         self.notificationCenter = notificationCenter
         self.now = now
     }
@@ -132,6 +137,7 @@ final class SubscriptionTokenRefreshTask {
             work.cancel()
             if let self {
                 self.submit(earliestBeginDate: self.now().addingTimeInterval(self.retryInterval()))
+                self.pixelFiring?.fire(SubscriptionTokenRefreshPixel.run(trigger: .backgroundTask, result: .expired), frequency: .standard)
             }
             completion.complete(success: false)
         }
@@ -173,6 +179,9 @@ final class SubscriptionTokenRefreshTask {
         Logger.subscriptionTokenKeepAlive.log("Run finished, trigger: \(trigger.rawValue, privacy: .public), outcome: \(outcome.description, privacy: .public)")
         debugSettings?.lastRun = SubscriptionTokenRefreshRun(date: now(), trigger: trigger, outcome: outcome.description, nextCheck: nextCheck)
         notificationCenter.post(name: .subscriptionTokenRefreshDidRun, object: nil)
+        if let pixel = SubscriptionTokenRefreshPixel.run(trigger: trigger, outcome: outcome) {
+            pixelFiring?.fire(pixel, frequency: .standard)
+        }
     }
 }
 

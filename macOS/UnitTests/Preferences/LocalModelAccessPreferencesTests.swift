@@ -215,7 +215,7 @@ final class DownloadableLocalModelPreferencesTests {
 
         #expect(preferences.shouldShowLocalModelAccess)
         #expect(preferences.downloadableModelState == .notInstalled)
-        #expect(preferences.downloadableModelBytes == AIChatLocalModelSpec.granite.bytes)
+        #expect(preferences.downloadableModelBytes == AIChatLocalModelSpec.gemma4E2B.bytes)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -234,7 +234,7 @@ final class DownloadableLocalModelPreferencesTests {
         let preferences = makePreferences()
 
         preferences.installDownloadableModel()
-        #expect(preferences.downloadableModelState == .downloading(receivedBytes: 0, totalBytes: AIChatLocalModelSpec.granite.bytes))
+        #expect(preferences.downloadableModelState == .downloading(receivedBytes: 0, totalBytes: AIChatLocalModelSpec.gemma4E2B.bytes))
         preferences.cancelDownloadableModelInstall()
         #expect(preferences.downloadableModelState == .notInstalled)
         installer.state = .installed(URL(fileURLWithPath: "/m.gguf"))
@@ -246,7 +246,7 @@ final class DownloadableLocalModelPreferencesTests {
 }
 
 private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalModelUnloading {
-    let model = AIChatLocalModelSpec.granite.info
+    let model = AIChatLocalModelSpec.gemma4E2B.info
     var availability: AIChatLocalModelAvailability = .available
     private(set) var unloadCount = 0
 
@@ -261,7 +261,7 @@ private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalMod
 
 @MainActor
 private final class RecordingInstaller: AIChatLocalModelInstalling {
-    let spec = AIChatLocalModelSpec.granite
+    let spec = AIChatLocalModelSpec.gemma4E2B
     let isActive = false
     private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
     private(set) var userCalls: [String] = []

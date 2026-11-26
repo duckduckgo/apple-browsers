@@ -143,7 +143,7 @@ final class DownloadableLocalModelLifecycleTests {
 }
 
 private final class LifecycleInstaller: AIChatLocalModelInstalling {
-    let spec = AIChatLocalModelSpec.granite
+    let spec = AIChatLocalModelSpec.gemma4E2B
     var isActive = false
     private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
     private(set) var pauseCount = 0

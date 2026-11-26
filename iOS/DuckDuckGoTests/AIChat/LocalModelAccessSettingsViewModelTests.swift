@@ -297,7 +297,7 @@ private final class InMemoryPageSummariesModelStore: AIChatPageSummariesModelSto
 }
 
 private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalModelUnloading {
-    let model = AIChatLocalModelSpec.granite.info
+    let model = AIChatLocalModelSpec.gemma4E2B.info
     var availability: AIChatLocalModelAvailability = .available
     private(set) var unloadCount = 0
 
@@ -311,7 +311,7 @@ private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalMod
 }
 
 private final class RecordingInstaller: AIChatLocalModelInstalling {
-    let spec = AIChatLocalModelSpec.granite
+    let spec = AIChatLocalModelSpec.gemma4E2B
     let isActive = false
     private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
     private(set) var userCalls: [String] = []

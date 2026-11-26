@@ -443,10 +443,10 @@ struct AIChatLocalModelSpecTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The built-in model is Granite 4.0 1B", .timeLimit(.minutes(1)))
-    func builtInModelIsGranite() {
-        #expect(AIChatLocalModelSpec.granite.info == AIChatLocalModelInfo(id: "granite-4.0-1b", name: "Granite 4.0 1B"))
-        #expect(AIChatLocalModelSpec.granite.url.scheme == "https")
+    @Test("The built-in model is Gemma 4 E2B", .timeLimit(.minutes(1)))
+    func builtInModelIsGemma4E2B() {
+        #expect(AIChatLocalModelSpec.gemma4E2B.info == AIChatLocalModelInfo(id: "gemma-4-e2b", name: "Gemma 4 E2B"))
+        #expect(AIChatLocalModelSpec.gemma4E2B.url.scheme == "https")
     }
 }
 

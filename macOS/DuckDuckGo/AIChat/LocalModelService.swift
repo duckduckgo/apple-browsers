@@ -46,12 +46,12 @@ extension AIChatLocalModelService {
 
 extension AIChatDownloadableLocalModel {
 
-    /// The model for Macs without Apple Intelligence: the one remote config names, or Granite 4.0 1B,
+    /// The model for Macs without Apple Intelligence: the one remote config names, or Gemma 4 E2B,
     /// on the llama.cpp framework the app bundles.
     @MainActor
     static func llamaCpp(privacyConfigurationManager: PrivacyConfigurationManaging) -> AIChatDownloadableLocalModel {
         let settings = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.localModels)
-        let spec = AIChatLocalModelSpec.fromRemoteSettings(settings) ?? .granite
+        let spec = AIChatLocalModelSpec.fromRemoteSettings(settings) ?? .gemma4E2B
         let directory = URL.sandboxApplicationSupportURL.appendingPathComponent("LocalModels/LlamaCpp", isDirectory: true)
         let engine = AIChatLlamaEngine(model: spec.info, runtime: BundledLlamaRuntime()) {
             AIChatLocalModelDownloader.installedFileURL(in: directory, spec: spec)

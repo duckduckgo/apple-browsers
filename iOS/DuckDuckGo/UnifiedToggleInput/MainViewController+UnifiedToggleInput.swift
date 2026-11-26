@@ -145,6 +145,7 @@ extension MainViewController {
         newChatHintsPresenter = NewChatHintsPresenter(coordinator: coordinator,
                                                       parentView: view,
                                                       swipeOverlay: swipeTabsCoordinator?.swipeOverlayView)
+        viewCoordinator.viewsFollowingAITabCollapsedBar = newChatHintsPresenter.map { [$0.row] } ?? []
         installFloatingReturnKeyViewController()
         installDuckAIKeyboardEdgeSweep()
         installSwipeTabsGesturesForUnifiedInput()

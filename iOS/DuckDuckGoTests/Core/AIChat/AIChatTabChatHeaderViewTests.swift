@@ -357,6 +357,7 @@ private final class SpyAIChatTabChatHeaderViewDelegate: AIChatTabChatHeaderViewD
     func aiChatTabChatHeaderDidTapChatList() {}
     func aiChatTabChatHeaderDidTapUpgrade() { upgradeTappedCount += 1 }
     func aiChatTabChatHeaderDidTapClose() {}
+    func aiChatTabChatHeaderDidTapHome() {}
     func aiChatTabChatHeaderDidTapNewChat() {}
     func aiChatTabChatHeaderDidTapNewVoiceChat() {}
     func aiChatTabChatHeaderDidTapNewImage() {}

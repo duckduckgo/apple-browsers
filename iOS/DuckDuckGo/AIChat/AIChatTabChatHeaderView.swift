@@ -27,6 +27,7 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
     func aiChatTabChatHeaderDidTapChatList()
     func aiChatTabChatHeaderDidTapUpgrade()
     func aiChatTabChatHeaderDidTapClose()
+    func aiChatTabChatHeaderDidTapHome()
     func aiChatTabChatHeaderDidTapNewChat()
     func aiChatTabChatHeaderDidTapNewVoiceChat()
     func aiChatTabChatHeaderDidTapNewImage()
@@ -52,11 +53,18 @@ final class AIChatTabChatHeaderView: UIView {
         case standard
         /// No close button; every Plus menu row opens a new tab.
         case newTabActions
+        /// PoC: `newTabActions` with a home button where the close button was.
+        case newTabActionsWithHomeButton
 
-        var showsCloseButton: Bool { self == .standard }
+        var showsCloseButton: Bool { self != .newTabActions }
 
         init(featureFlagger: FeatureFlagger) {
-            self = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) ? .newTabActions : .standard
+            guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) else {
+                self = .standard
+                return
+            }
+            let showsHomeButton = UIDevice.current.userInterfaceIdiom == .phone && featureFlagger.isFeatureOn(.aiChatTabHomeButtonPoC)
+            self = showsHomeButton ? .newTabActionsWithHomeButton : .newTabActions
         }
     }
 
@@ -128,11 +136,13 @@ final class AIChatTabChatHeaderView: UIView {
         delegate?.aiChatTabChatHeaderUpgradePlateDidBecomeVisible()
     }
 
-    private lazy var closeButton: UIButton = makeIconButton(
-        image: DesignSystemImages.Glyphs.Size24.close,
-        accessibilityLabel: UserText.aiChatHeaderCloseTabAccessibilityLabel,
-        action: #selector(closeTapped)
-    )
+    private lazy var closeButton: UIButton = layout == .newTabActionsWithHomeButton
+        ? makeIconButton(image: DesignSystemImages.Glyphs.Size24.home,
+                         accessibilityLabel: UserText.aiChatHeaderNewSearchTitle,
+                         action: #selector(homeTapped))
+        : makeIconButton(image: DesignSystemImages.Glyphs.Size24.close,
+                         accessibilityLabel: UserText.aiChatHeaderCloseTabAccessibilityLabel,
+                         action: #selector(closeTapped))
 
     private lazy var chatListButton: UIButton = makeIconButton(
         image: DesignSystemImages.Glyphs.Size24.chats,
@@ -218,7 +228,7 @@ final class AIChatTabChatHeaderView: UIView {
     private func makeNewChatPlusMenu() -> UIMenu {
         switch layout {
         case .standard: makeStandardPlusMenu()
-        case .newTabActions: makeNewTabActionsPlusMenu()
+        case .newTabActions, .newTabActionsWithHomeButton: makeNewTabActionsPlusMenu()
         }
     }
 
@@ -762,6 +772,7 @@ final class AIChatTabChatHeaderView: UIView {
     }
 
     @objc private func closeTapped() { delegate?.aiChatTabChatHeaderDidTapClose() }
+    @objc private func homeTapped() { delegate?.aiChatTabChatHeaderDidTapHome() }
     @objc private func chatListTapped() { delegate?.aiChatTabChatHeaderDidTapChatList() }
     @objc private func newChatTapped() { delegate?.aiChatTabChatHeaderDidTapNewChat() }
     @objc private func tabSwitcherTapped() { delegate?.aiChatTabChatHeaderDidTapTabSwitcher() }

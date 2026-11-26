@@ -117,8 +117,9 @@ Every iOS launch passes a launch profile that sets `internalUser`, `onboardingCo
 adds keys or overrides them, as inline JSON or a `.json` file; the `ddg-ios-launch-profile` skill lists the keys. It may
 turn `onboardingCompleted` off, but the other three must stay `true`, and `tabs` is refused. The token and the other run
 values stay in the launch environment. If the app logs `LAUNCH_PROFILE_FAILED`, or no result line within 60 seconds, the
-attempt is inconclusive before any broker request, and the reason quotes the line. `launch.json` records the profile's
-source, the merged profile and the app's result line. macOS keeps its flag arguments and refuses `--launch-profile`.
+attempt is inconclusive and the reason quotes the line. A `run` stops there, before any broker request; a scheduler seed
+may already have started its scans. `launch.json` records the profile's source, the merged profile and the app's result
+line, or `result.json` does when the launch failed. macOS keeps its flag arguments and refuses `--launch-profile`.
 
 To inspect a running or stalled job, open the `snapshots/` folder the runner prints before launch (macOS writes PNGs
 directly; iOS copies them on each poll and before cleanup). Filenames give sequence, phase, action and capture point

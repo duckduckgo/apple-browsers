@@ -144,6 +144,10 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
 
         var sections = [BrowsingMenuModel.Section]()
 
+        if let translateEntry = BrowsingMenuModel.Entry(entryBuilder.makeTranslateEntry()) {
+            sections.append(BrowsingMenuModel.Section(items: [translateEntry]))
+        }
+
         // MARK: YouTube Ad Block toggle
         if let youTubeAdBlockEntry = BrowsingMenuModel.Entry(entryBuilder.makeYouTubeAdBlockToggleEntry()) {
             sections.append(BrowsingMenuModel.Section(items: [youTubeAdBlockEntry]))

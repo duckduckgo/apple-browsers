@@ -3235,6 +3235,21 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
+    var pageTranslationState: PageTranslationSession.State {
+        pageTranslationSession?.state ?? .idle
+    }
+
+    func translatePageFromMenu(_ offer: TranslationOffer) {
+        translationBannerPresenter.dismiss(animated: true)
+        translatePage(offer)
+    }
+
+    /// Reloading is the only way back: the page's original text isn't kept.
+    func showOriginalPage() {
+        cancelPageTranslation()
+        reload()
+    }
+
     private func startTranslation(_ offer: TranslationOffer) {
         guard let bridge = pageTranslationBridge, let pageTranslator else { return }
         let settings = WebPageTranslationSettings(privacyConfigurationManager: privacyConfigurationManager)

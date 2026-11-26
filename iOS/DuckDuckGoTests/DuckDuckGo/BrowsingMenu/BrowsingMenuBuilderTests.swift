@@ -250,6 +250,31 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         }
     }
 
+    func testWebsiteMenuPlacesTranslateInItsOwnFirstSectionInBothLayouts() throws {
+        for mergesActionsAndBookmarks in [false, true] {
+            let entryBuilder = MockBrowsingMenuEntryBuilder(
+                chatsEntry: nil,
+                includesBookmarkEntries: true,
+                sitePermissionsEntry: .named(MockBrowsingMenuEntryBuilder.sitePermissionsName),
+                includesYouTubeEntry: true,
+                translateEntry: .named(MockBrowsingMenuEntryBuilder.translateName)
+            )
+            let model = try XCTUnwrap(makeWebsiteMenu(
+                entryBuilder: entryBuilder,
+                mergesActionsAndBookmarks: mergesActionsAndBookmarks
+            ))
+
+            XCTAssertEqual(model.sections.first?.items.map(\.name), [MockBrowsingMenuEntryBuilder.translateName])
+        }
+    }
+
+    func testWebsiteMenuOmitsTranslateWhenEntryIsUnavailable() throws {
+        let entryBuilder = MockBrowsingMenuEntryBuilder(chatsEntry: nil, includesBookmarkEntries: true)
+        let model = try XCTUnwrap(makeWebsiteMenu(entryBuilder: entryBuilder))
+
+        XCTAssertFalse(model.sections.flatMap(\.items).contains { $0.name == MockBrowsingMenuEntryBuilder.translateName })
+    }
+
     func testWebsiteMenuPreferredDetentTracksOpenBookmarksPosition() throws {
         let scenarios: [(
             sitePermissionsEntry: BrowsingMenuEntry?,
@@ -718,6 +743,7 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
     static let internalFeedbackName = "Send Internal Feedback"
     static let openBookmarksName = "Bookmarks"
     static let sitePermissionsName = "Site Permissions"
+    static let translateName = "Translate"
 
     private let chatsEntry: BrowsingMenuEntry?
     private let internalFeedbackEntry: BrowsingMenuEntry?
@@ -725,6 +751,7 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
     private let sitePermissionsEntry: BrowsingMenuEntry?
     private let includesTabActions: Bool
     private let includesYouTubeEntry: Bool
+    private let translateEntry: BrowsingMenuEntry?
 
     init(
         chatsEntry: BrowsingMenuEntry?,
@@ -732,7 +759,8 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
         includesBookmarkEntries: Bool = false,
         sitePermissionsEntry: BrowsingMenuEntry? = nil,
         includesTabActions: Bool = false,
-        includesYouTubeEntry: Bool = false
+        includesYouTubeEntry: Bool = false,
+        translateEntry: BrowsingMenuEntry? = nil
     ) {
         self.chatsEntry = chatsEntry
         self.internalFeedbackEntry = internalFeedbackEntry
@@ -740,6 +768,7 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
         self.sitePermissionsEntry = sitePermissionsEntry
         self.includesTabActions = includesTabActions
         self.includesYouTubeEntry = includesYouTubeEntry
+        self.translateEntry = translateEntry
     }
 
     func makeShortcutsMenu() -> [BrowsingMenuEntry] { [] }
@@ -777,6 +806,7 @@ private final class MockBrowsingMenuEntryBuilder: BrowsingMenuEntryBuilding {
     func makeKeepSignInEntry() -> BrowsingMenuEntry? { nil }
     func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry? { includesYouTubeEntry ? .named("YouTube Ad Block") : nil }
     func makeSendInternalFeedbackEntry() -> BrowsingMenuEntry? { internalFeedbackEntry }
+    func makeTranslateEntry() -> BrowsingMenuEntry? { translateEntry }
 }
 
 private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {

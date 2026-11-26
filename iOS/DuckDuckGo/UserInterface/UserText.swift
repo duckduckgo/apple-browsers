@@ -3571,6 +3571,13 @@ public struct UserText {
     public static let translationDownloadSheetButton = NSLocalizedString("translation.download-sheet.download", value: "Download and Translate", comment: "Button in the translation sheet that downloads the language pack and translates the current web page")
     public static let translationDownloadSheetClose = NSLocalizedString("translation.download-sheet.close", value: "Close", comment: "Accessibility label of the button that closes the translation download sheet without downloading")
 
+    public static func translationMenuTranslate(language: String) -> String {
+        String(format: NSLocalizedString("translation.menu.translate", value: "Translate Page to %@", comment: "Browsing menu item that translates the current web page, e.g. Translate Page to English. %@ is the language it will be translated to"), language)
+    }
+
+    public static let translationMenuTranslating = NSLocalizedString("translation.menu.translating", value: "Translating…", comment: "Browsing menu item shown, disabled, while the current web page is being translated")
+    public static let translationMenuShowOriginal = NSLocalizedString("translation.menu.show-original", value: "Show Original Page", comment: "Browsing menu item that reloads a translated web page in its original language")
+
     // MARK: - OmniBar Long Press Menu
     public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")
     public static let omnibarLongPressMoveToTop = NSLocalizedString("omnibar.menu.move-to-top", value: "Move Address Bar to Top", comment: "Label for moving the address bar to the top of the screen")

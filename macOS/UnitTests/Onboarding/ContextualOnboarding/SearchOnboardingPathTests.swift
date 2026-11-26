@@ -124,6 +124,18 @@ struct SearchOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("DuckDuckGo's redirect page for a bang search isn't treated as a site visit", .timeLimit(.minutes(1)))
+    func duckDuckGoRedirectIsNotASiteVisit() async throws {
+        progress.markSeen(.tryASearch)
+        trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
+        let redirect = try #require(URL(string: "https://duckduckgo.com/l/?uddg=https%3A%2F%2Fduckduckgo.com%2F%3Fq%3Dbaby%2520ducklings%26ia%3Dimages"))
+        let tab = await Tab(content: .url(redirect, credential: nil, source: .ui))
+
+        #expect(sut.dialog(for: tab) == .none)
+        #expect(!pathStorage.blockedTrackerSeen)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Reset clears the blocked tracker flag", .timeLimit(.minutes(1)))
     func resetClearsBlockedTrackers() {
         pathStorage.blockedTrackerSeen = true

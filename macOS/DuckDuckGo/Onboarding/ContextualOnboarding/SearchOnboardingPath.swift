@@ -95,6 +95,9 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
             // Check if the URL is a DuckDuckGo search.
             if url.isDuckDuckGoSearch {
                 dialog = dialogForDuckDuckGoSearch()
+            } else if url.isDuckDuckGo, url.path == "/l" || url.path == "/l/" {
+                // The redirect a bang search goes through isn't a site visit.
+                dialog = nil
             } else {
                 // For website visit, decide dialog also based on the tracker type.
                 let trackerType = trackerMessageProvider.trackersType(privacyInfo: tab.privacyInfo)

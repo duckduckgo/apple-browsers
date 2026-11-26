@@ -86,6 +86,21 @@ struct SearchOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Skipping Fire moves to Try Duck.ai when Duck.ai is offered", .timeLimit(.minutes(1)))
+    func skippingFireMovesToTryDuckAI() {
+        let aiChatMenuConfig = MockAIChatConfig()
+        aiChatMenuConfig.shouldDisplayAnyAIChatFeature = true
+        let sut = SearchOnboardingPath(progress: progress,
+                                       storage: pathStorage,
+                                       subscriptionManager: subscriptionManager,
+                                       trackerMessageProvider: trackerProvider,
+                                       aiChatMenuConfig: aiChatMenuConfig,
+                                       aiChatPreferences: MockAIChatPreferencesStorage())
+
+        #expect(sut.gotItPressed(lastDialog: .tryFireButton) == .next(.tryDuckAI))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Only people who kept Duck.ai in the address bar end with Try Duck.ai", .timeLimit(.minutes(1)),
           arguments: [(true, true, ContextualDialogType.tryDuckAI),
                       (false, true, .highFive),

@@ -705,7 +705,7 @@ public enum FeatureFlag: String, CaseIterable {
     case declaredAgeRange
 
     /// Declared Age Range: age signal request in Sparkle builds
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220879781552636
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220932696755654
     case declaredAgeRangeSparkle
 
     /// Shows the Add to Dock instructions video in the App Store build from calls to action that only offer Add to Dock: the menu items, the New Tab Page card, and Default Browser and Dock prompts that only offer Add to Dock.

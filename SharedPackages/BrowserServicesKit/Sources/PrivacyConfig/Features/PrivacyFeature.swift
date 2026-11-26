@@ -257,7 +257,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case declaredAgeRange
 
     /// Declared Age Range: age signal request in Sparkle builds
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220879781552636
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220932696755654
     case declaredAgeRangeSparkle
 }
 

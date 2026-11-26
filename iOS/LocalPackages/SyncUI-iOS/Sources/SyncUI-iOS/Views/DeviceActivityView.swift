@@ -169,5 +169,6 @@ struct DeviceActivityView: View {
                 .animation(.easeInOut(duration: 1.0), value: isNewActivity)
         )
         .accessibilityElement(children: .combine)
+        .accessibilityValue(isNewActivity ? Text(UserText.deviceActivityNotYetReviewed) : Text(verbatim: ""))
     }
 }

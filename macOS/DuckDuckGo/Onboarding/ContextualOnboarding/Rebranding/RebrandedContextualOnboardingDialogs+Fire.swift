@@ -31,20 +31,33 @@ extension OnboardingRebranding {
         let onContentTransition: (() -> Void)?
 
         @State private var showNextScreen: Bool = false
+        @State private var showsTryDuckAI: Bool = false
 
         var body: some View {
             if showNextScreen {
-                OnboardingRebranding.OnboardingEndOfJourneyDialog(
-                    highFiveAction: viewModel.highFive,
-                    onManualDismiss: onManualDismiss
-                )
-                .transition(.opacity)
+                if showsTryDuckAI {
+                    OnboardingRebranding.OnboardingEndOfJourneyDialog(onManualDismiss: onManualDismiss) {
+                        OnboardingRebranding.OnboardingTryDuckAIDialogContent(
+                            tryDuckAIAction: viewModel.tryDuckAI,
+                            skipAction: viewModel.highFive
+                        )
+                    }
+                    .transition(.opacity)
+                } else {
+                    OnboardingRebranding.OnboardingEndOfJourneyDialog(
+                        highFiveAction: viewModel.highFive,
+                        onManualDismiss: onManualDismiss
+                    )
+                    .transition(.opacity)
+                }
             } else {
                 OnboardingBubbleView.withDismissButton(
                     tailPosition: nil,
                     onDismiss: onManualDismiss
                 ) {
                     OnboardingFireDialogContent(viewModel: viewModel) {
+                        // Skip has already moved onboarding to its ending.
+                        showsTryDuckAI = viewModel.endsWithTryDuckAI
                         onContentTransition?()
                         withAnimation(.easeInOut(duration: OnboardingRebranding.Layout.inlineTransitionDuration)) {
                             showNextScreen = true
@@ -62,9 +75,6 @@ extension OnboardingRebranding {
         fileprivate enum Layout {
             /// Vertical spacing between the primary "Try it" button and the skip button.
             static let buttonStackSpacing: CGFloat = 8
-            /// Background opacity for the skip button in its normal/pressed states.
-            static let skipButtonBackgroundOpacity: Double = 0.12
-            static let skipButtonPressedBackgroundOpacity: Double = 0.2
         }
 
         @Environment(\.onboardingTheme) private var theme
@@ -96,19 +106,24 @@ extension OnboardingRebranding {
                         viewModel.skipFireButton()
                         onSkip()
                     }
-                    .buttonStyle(OnboardingFireDialogSkipButtonStyle())
+                    .buttonStyle(OnboardingSkipButtonStyle())
                 }
             }
         }
     }
 
-    private struct OnboardingFireDialogSkipButtonStyle: ButtonStyle {
+    /// The secondary "Skip" button under a dialog's main button.
+    struct OnboardingSkipButtonStyle: ButtonStyle {
+        /// Background opacity in the normal/pressed states.
+        private static let backgroundOpacity: Double = 0.12
+        private static let pressedBackgroundOpacity: Double = 0.2
+
         @Environment(\.onboardingTheme) private var theme
 
         func makeBody(configuration: Configuration) -> some View {
             OnboardingRebranding.OnboardingStyles.CTAButtonStyle(
-                backgroundColor: Color.secondary.opacity(OnboardingFireDialogContent.Layout.skipButtonBackgroundOpacity),
-                pressedBackgroundColor: Color.secondary.opacity(OnboardingFireDialogContent.Layout.skipButtonPressedBackgroundOpacity),
+                backgroundColor: Color.secondary.opacity(Self.backgroundOpacity),
+                pressedBackgroundColor: Color.secondary.opacity(Self.pressedBackgroundOpacity),
                 foregroundColor: theme.colorPalette.textPrimary,
                 font: theme.typography.contextual.body
             ).makeBody(configuration: configuration)

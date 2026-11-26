@@ -39,7 +39,8 @@ struct SearchOnboardingPathTests {
         sut = SearchOnboardingPath(progress: progress,
                                    storage: pathStorage,
                                    subscriptionManager: subscriptionManager,
-                                   trackerMessageProvider: trackerProvider)
+                                   trackerMessageProvider: trackerProvider,
+                                   aiChatMenuConfig: MockAIChatConfig())
     }
 
     @available(iOS 16, macOS 13, *)
@@ -73,6 +74,42 @@ struct SearchOnboardingPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("After Try Duck.ai, the upsell waits for a page that isn't Duck.ai", .timeLimit(.minutes(1)))
+    func upsellWaitsForAPageThatIsNotDuckAI() async throws {
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        progress.markSeen(.tryDuckAI)
+        let duckAITab = await Tab(content: .aiChat(try #require(URL(string: "https://duck.ai/chat"))))
+        let newTab = await Tab(content: .newtab)
+
+        #expect(sut.dialog(for: duckAITab) == .none)
+        #expect(sut.dialog(for: newTab) == .next(.subscriptionUpsell))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only people who kept Duck.ai in the address bar end with Try Duck.ai", .timeLimit(.minutes(1)),
+          arguments: [(true, true, ContextualDialogType.tryDuckAI),
+                      (false, true, .highFive),
+                      (true, false, .highFive)])
+    func duckAIEnding(keptDuckAIToggle: Bool, isDuckAIAvailable: Bool, expected: ContextualDialogType) async {
+        let aiChatMenuConfig = MockAIChatConfig()
+        aiChatMenuConfig.shouldDisplayAnyAIChatFeature = isDuckAIAvailable
+        let aiChatPreferences = MockAIChatPreferencesStorage()
+        aiChatPreferences.showSearchAndDuckAIToggle = keptDuckAIToggle
+        let sut = SearchOnboardingPath(progress: progress,
+                                       storage: pathStorage,
+                                       subscriptionManager: subscriptionManager,
+                                       trackerMessageProvider: trackerProvider,
+                                       aiChatMenuConfig: aiChatMenuConfig,
+                                       aiChatPreferences: aiChatPreferences)
+        progress.markSeen(.tryASearch)
+        progress.markSeen(.defaultTrackers)
+        progress.markSeen(.tryFireButton)
+        let tab = await Tab(content: .newtab)
+
+        #expect(sut.dialog(for: tab) == .next(expected))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A site with blocked trackers saves the blocked tracker flag", .timeLimit(.minutes(1)))
     func blockedTrackersAreSaved() async throws {
         progress.markSeen(.tryASearch)
@@ -84,6 +121,18 @@ struct SearchOnboardingPathTests {
             return
         }
         #expect(pathStorage.blockedTrackerSeen)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("DuckDuckGo's redirect page for a bang search isn't treated as a site visit", .timeLimit(.minutes(1)))
+    func duckDuckGoRedirectIsNotASiteVisit() async throws {
+        progress.markSeen(.tryASearch)
+        trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
+        let redirect = try #require(URL(string: "https://duckduckgo.com/l/?uddg=https%3A%2F%2Fduckduckgo.com%2F%3Fq%3Dbaby%2520ducklings%26ia%3Dimages"))
+        let tab = await Tab(content: .url(redirect, credential: nil, source: .ui))
+
+        #expect(sut.dialog(for: tab) == .none)
+        #expect(!pathStorage.blockedTrackerSeen)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -164,10 +164,16 @@ final class AddressBarTextEditor: NSTextView {
     }
 
     override func paste(_ sender: Any?) {
-        if let string = NSPasteboard.general.string(forType: .string),
+        let pasteboard = NSPasteboard.general
+        if pasteboard.availableType(from: [.URL, .fileURL]) == nil,
+           let string = pasteboard.string(forType: .string),
            let singleLine = Self.singleLineTextForPaste(string) {
+            guard !singleLine.isEmpty else { return }
             // `super` skips the typing path, which would autocomplete the pasted text
+            breakUndoCoalescing()
             super.insertText(singleLine, replacementRange: selectedRange())
+            breakUndoCoalescing()
+            lastInputType = nil
         } else if let url = NSPasteboard.general.url {
             // Fixes an issue when url-name instead of url is pasted
             super.pasteAsPlainText(url.absoluteString)

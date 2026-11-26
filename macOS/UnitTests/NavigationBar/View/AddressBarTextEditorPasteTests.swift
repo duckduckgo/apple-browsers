@@ -47,6 +47,12 @@ struct AddressBarTextEditorPasteTests {
     }
 
     @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: ["\n", "\r\n", "  \n\t\n"])
+    func lineBreaksAndWhitespaceOnlyJoinToEmptyText(pasted: String) {
+        #expect(AddressBarTextEditor.singleLineTextForPaste(pasted) == "")
+    }
+
+    @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: ["https://duckduckgo.com", "best pizza near me"])
     func singleLineTextIsLeftToTheDefaultPaste(pasted: String) {
         #expect(AddressBarTextEditor.singleLineTextForPaste(pasted) == nil)

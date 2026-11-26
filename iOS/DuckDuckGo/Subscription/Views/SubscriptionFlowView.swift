@@ -156,7 +156,7 @@ struct SubscriptionFlowView: View {
         }
         
         .onChange(of: viewModel.state.transactionError) { value in
-            if !isPresentingError, let messageType = SubscriptionTransactionErrorAlert.displayContent(for: value, isPresentedFromOnboarding: isPresentedFromOnboarding) {
+            if !isPresentingError, let messageType = SubscriptionTransactionErrorAlert.displayContent(for: value) {
                 errorMessageType = messageType
                 isPresentingError = true
             }
@@ -192,6 +192,7 @@ struct SubscriptionFlowView: View {
         .alert(isPresented: $isPresentingError) {
             SubscriptionTransactionErrorAlert.alert(
                 for: errorMessageType,
+                isPresentedFromOnboarding: isPresentedFromOnboarding,
                 onDismiss: {
                     if errorMessageType == .activeSubscription {
                         viewModel.subscriptionFoundCancelled()

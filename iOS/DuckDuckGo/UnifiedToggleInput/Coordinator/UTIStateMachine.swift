@@ -19,6 +19,15 @@
 
 import Foundation
 
+/// Where the UTI card rests, independent of the session lifecycle in `displayState`.
+enum UTIRestingSurface: Equatable {
+    case chrome
+    /// Only while `displayState` is `.hidden`.
+    case newTabPage
+    /// The session travels back to the New Tab Page slot in its resting shape, whatever the keyboard does.
+    case returningToNewTabPage
+}
+
 /// Owns the UTI `displayState` and derives everything that is a pure function of it: the
 /// display-state booleans, the card layout, and the `UTIRenderState` snapshot pushed to the view.
 /// Non-owned inputs (mode, text state, keyboard visibility, …) are passed in per call so this stays
@@ -27,6 +36,7 @@ import Foundation
 final class UTIStateMachine {
 
     private(set) var displayState: UnifiedToggleInputDisplayState
+    private(set) var restingSurface: UTIRestingSurface = .chrome
     private let host: UnifiedToggleInputHost
     private let hidesToggleOnDuckAITab: Bool
     /// Accessories beside the contextual sheet's collapsed pill; none keeps the plain pill.
@@ -42,6 +52,40 @@ final class UTIStateMachine {
 
     func transition(to newState: UnifiedToggleInputDisplayState) {
         displayState = newState
+        switch newState {
+        case .hidden:
+            break
+        case .omnibar:
+            // A return travel is a live session whose keyboard flips keep writing `.omnibar` states; only a park needs hidden.
+            if restingSurface == .newTabPage {
+                restingSurface = .chrome
+            }
+        case .aiTab, .contextualChat:
+            // Opening Duck.ai can end a session that was travelling back to the New Tab Page.
+            restingSurface = .chrome
+        }
+    }
+
+    // MARK: - Resting surface
+
+    var isParkedOnNewTabPage: Bool {
+        restingSurface == .newTabPage
+    }
+
+    /// Returns false while a session is active, which keeps the card in the chrome.
+    @discardableResult
+    func parkOnNewTabPage() -> Bool {
+        guard displayState == .hidden else { return false }
+        restingSurface = .newTabPage
+        return true
+    }
+
+    func beginReturnToNewTabPage() {
+        restingSurface = .returningToNewTabPage
+    }
+
+    func moveToChrome() {
+        restingSurface = .chrome
     }
 
     // MARK: - Derived state (pure functions of `displayState`)
@@ -207,7 +251,7 @@ final class UTIStateMachine {
         let shouldSuppressContentOverlay = isOmnibarSession && isContentOverlaySuppressed && textState != .userTyped
         let effectiveContentVisible = isContentVisible && !shouldSuppressContentOverlay
 
-        return UTIRenderState(
+        let renderState = UTIRenderState(
             isInputVisible: isInputVisible,
             isContentVisible: effectiveContentVisible,
             cardLayout: cardLayout(forIsExpanded: isExpanded, inputMode: inputMode, isToggleEnabled: isToggleEnabled),
@@ -220,6 +264,25 @@ final class UTIStateMachine {
             isInlineDismissHidden: isAITabState || isContextualChatState,
             isAITab: isAITabState
         )
+        // Keyboard changes during the return travel re-render the session; it must keep the resting shape.
+        guard restingSurface != .chrome else { return renderState }
+        return newTabPageRestingRenderState(from: renderState, inputMode: inputMode, isToggleEnabled: isToggleEnabled)
+    }
+
+    private func newTabPageRestingRenderState(from renderState: UTIRenderState,
+                                              inputMode: TextEntryMode,
+                                              isToggleEnabled: Bool) -> UTIRenderState {
+        var restingState = renderState
+        restingState.isInputVisible = true
+        restingState.isContentVisible = false
+        restingState.cardLayout = .expanded(showsToggle: isToggleVisible(isToggleEnabled: isToggleEnabled),
+                                            showsToolbar: inputMode == .aiChat && isToggleEnabled)
+        restingState.cardPosition = .top
+        restingState.usesOmnibarMargins = false
+        restingState.inactiveAppearance = false
+        restingState.isFloatingReturnKeyVisible = false
+        restingState.isInlineDismissHidden = true
+        return restingState
     }
 
     /// Decides which card components are visible right now, based on host + display state +

@@ -380,4 +380,124 @@ final class UTIStateMachineTests: XCTestCase {
         if case .omnibar = displayState { return false }
         return true
     }
+
+    // MARK: - Resting surface
+
+    func test_restingSurface_startsInTheChrome() {
+        XCTAssertEqual(makeSUT(.hidden).restingSurface, .chrome)
+    }
+
+    func test_parkOnNewTabPage_succeedsOnlyWhileHidden() {
+        for displayState in Self.allDisplayStates {
+            let sut = makeSUT(displayState)
+
+            let didPark = sut.parkOnNewTabPage()
+
+            let expectsPark = displayState == .hidden
+            XCTAssertEqual(didPark, expectsPark, "\(displayState)")
+            XCTAssertEqual(sut.isParkedOnNewTabPage, expectsPark, "\(displayState)")
+            XCTAssertEqual(sut.restingSurface, expectsPark ? .newTabPage : .chrome, "\(displayState)")
+        }
+    }
+
+    func test_anyNonHiddenTransition_clearsPark() {
+        for displayState in Self.allDisplayStates where displayState != .hidden {
+            let sut = makeSUT(.hidden)
+            sut.parkOnNewTabPage()
+
+            sut.transition(to: displayState)
+
+            XCTAssertEqual(sut.restingSurface, .chrome, "\(displayState)")
+        }
+    }
+
+    func test_hiddenTransition_keepsPark() {
+        let sut = makeSUT(.hidden)
+        sut.parkOnNewTabPage()
+
+        sut.transition(to: .hidden)
+
+        XCTAssertEqual(sut.restingSurface, .newTabPage)
+    }
+
+    func test_returnToNewTabPage_survivesOmnibarActiveInactiveFlips() {
+        let sut = makeSUT(.omnibar(.active))
+        sut.beginReturnToNewTabPage()
+
+        sut.transition(to: .omnibar(.inactive))
+        XCTAssertEqual(sut.restingSurface, .returningToNewTabPage)
+        sut.transition(to: .omnibar(.active))
+        XCTAssertEqual(sut.restingSurface, .returningToNewTabPage)
+        sut.transition(to: .hidden)
+        XCTAssertEqual(sut.restingSurface, .returningToNewTabPage)
+        XCTAssertFalse(sut.isParkedOnNewTabPage)
+    }
+
+    func test_duckAISurfaceTransition_endsReturnToNewTabPage() {
+        for displayState: UnifiedToggleInputDisplayState in [.aiTab(.collapsed), .aiTab(.expanded),
+                                                             .contextualChat(.collapsed), .contextualChat(.expanded)] {
+            let sut = makeSUT(.omnibar(.active))
+            sut.beginReturnToNewTabPage()
+
+            sut.transition(to: displayState)
+
+            XCTAssertEqual(sut.restingSurface, .chrome, "\(displayState)")
+        }
+    }
+
+    func test_parkOnNewTabPage_acceptsAFinishedReturn() {
+        let sut = makeSUT(.omnibar(.active))
+        sut.beginReturnToNewTabPage()
+        sut.transition(to: .hidden)
+
+        XCTAssertTrue(sut.parkOnNewTabPage())
+        XCTAssertEqual(sut.restingSurface, .newTabPage)
+    }
+
+    func test_moveToChrome_isIdempotent() {
+        let sut = makeSUT(.hidden)
+        sut.parkOnNewTabPage()
+
+        sut.moveToChrome()
+        sut.moveToChrome()
+
+        XCTAssertEqual(sut.restingSurface, .chrome)
+    }
+
+    func test_computeRenderState_restingSurfaceAppliesRestingShape() {
+        for surface in [UTIRestingSurface.newTabPage, .returningToNewTabPage] {
+            let sut = makeSUT(surface == .newTabPage ? .hidden : .omnibar(.inactive))
+            if surface == .newTabPage {
+                sut.parkOnNewTabPage()
+            } else {
+                sut.beginReturnToNewTabPage()
+            }
+
+            let renderState = makeRenderState(sut, cardPosition: .bottom)
+
+            XCTAssertTrue(renderState.isInputVisible, "\(surface)")
+            XCTAssertFalse(renderState.isContentVisible, "\(surface)")
+            XCTAssertEqual(renderState.cardLayout, .expanded(showsToggle: true, showsToolbar: true), "\(surface)")
+            XCTAssertEqual(renderState.cardPosition, .top, "\(surface)")
+            XCTAssertFalse(renderState.inactiveAppearance, "\(surface)")
+            XCTAssertTrue(renderState.isInlineDismissHidden, "\(surface)")
+        }
+    }
+
+    func test_computeRenderState_hiddenInTheChromeKeepsCollapsedShape() {
+        let renderState = makeRenderState(makeSUT(.hidden), cardPosition: .top)
+
+        XCTAssertFalse(renderState.isInputVisible)
+        XCTAssertEqual(renderState.cardLayout, .collapsed)
+    }
+
+    private func makeRenderState(_ sut: UTIStateMachine, cardPosition: UnifiedToggleInputCardPosition) -> UTIRenderState {
+        sut.computeRenderState(inputMode: .aiChat,
+                               textState: .empty,
+                               cardPosition: cardPosition,
+                               isInputVisibleForKeyboard: false,
+                               isContentOverlaySuppressed: false,
+                               isToggleEnabled: true,
+                               floatingReturnKeyState: .empty)
+    }
 }

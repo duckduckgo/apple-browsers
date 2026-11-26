@@ -733,6 +733,11 @@ public enum FeatureFlag: String {
     /// Internal-only for the first version.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220647281509936
     case aiChatLocalModels
+
+    /// Shows the Ask Duck.ai row in address bar suggestions as an action: "Ask Duck.ai" over the typed query,
+    /// with the Duck.ai logo, which turns full colour when few search suggestions are left.
+    /// https://app.asana.com/0/0/1220349416195292
+    case askDuckAIRowRedesign
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -1247,6 +1252,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .disabled, source: .remoteReleasable(PageTranslationSubfeature.featureEnabled))
         case .aiChatLocalModels:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.localModels))
+        case .askDuckAIRowRedesign:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.askDuckAIRowRedesign))
         }
     }
 

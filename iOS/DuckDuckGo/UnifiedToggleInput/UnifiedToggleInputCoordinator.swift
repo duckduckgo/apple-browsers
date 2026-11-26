@@ -431,6 +431,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let duckAIWideEventFlowScope: DuckAIWideEventFlowScope?
 
     private let usageLimitsStore: DuckAiUsageLimitsStore?
+    private let userDefaultModelStorage: (_ isFireTab: Bool) -> DuckAiNativeStorageHandling?
     private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
     var onSubscriptionUpsellAvailabilityChanged: (() -> Void)?
     var onFloatingReturnKeyAvailabilityChanged: (() -> Void)?
@@ -478,6 +479,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         updatedCreateImageFeature: UpdatedCreateImageFeatureProviding = UpdatedCreateImageFeature(),
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        userDefaultModelStorage: @escaping (_ isFireTab: Bool) -> DuckAiNativeStorageHandling? = { _ in nil },
         subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         floatingUIManager: FloatingUIManaging? = nil,
@@ -534,8 +536,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             subscriptionManager: subscriptionManager,
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
             startsNewChatsOnDefault: startsNewChatsOnDefault,
-            overLimitNewChatDefaults: usageLimitsStore?.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main)
+            overLimitNewChatDefaults: usageLimitsStore?.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main),
+            userDefaultModelStorage: userDefaultModelStorage(isFireTab)
         )
+        self.userDefaultModelStorage = userDefaultModelStorage
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
@@ -2026,6 +2030,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.handler.isFireTab = isFireTab
         viewController.refreshFireMode(fireMode: isFireTab)
         contentViewController.refreshFireMode(fireMode: isFireTab)
+        modelStore.observeUserDefaultModel(in: userDefaultModelStorage(isFireTab))
     }
 
     private func transitionOmnibarToInactive() {

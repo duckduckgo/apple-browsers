@@ -483,6 +483,7 @@ final class MainCoordinator {
             }
         )
         self.webExtensionManager = webExtensionManager
+        webExtensionManager.installUserAllowlistNotifier(privacyConfigurationManager: privacyConfigurationManager)
 
         let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,

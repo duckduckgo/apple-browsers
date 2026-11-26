@@ -55,6 +55,11 @@ final class UserText {
     static let vpnEntitlementExpiredNotificationTitle = NSLocalizedString("vpn.entitlement.expired.notification.title", value: "VPN disconnected", comment: "The title of the notification when Privacy Pro subscription expired")
     static let vpnEntitlementExpiredNotificationBody = NSLocalizedString("vpn.entitlement.expired.notification.body", value: "Subscribe to DuckDuckGo to reconnect DuckDuckGo VPN.", comment: "The body of the notification when Privacy Pro subscription expired")
 
+    // MARK: - Signed Out
+
+    static let vpnSignedOutNotificationTitle = NSLocalizedString("vpn.signed.out.notification.title", value: "DuckDuckGo VPN disconnected", comment: "The title of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
+    static let vpnSignedOutNotificationBody = NSLocalizedString("vpn.signed.out.notification.body", value: "Open DuckDuckGo to restore VPN connection.", comment: "The body of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
+
     // MARK: - Connection Superseded
 
     static let vpnSupersededReconnectActionTitle = NSLocalizedString("vpn.superseded.action.reconnect.title", value: "Reconnect", comment: "The title of the `Reconnect` notification action button shown when VPN connection is replaced by another app VPN connection taking over")

@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Gradient - Desktop - Light.svg",
+      "filename" : "DefaultBrowserAndDock-Prompt-Background.svg",
       "idiom" : "universal"
     },
     {
@@ -11,12 +11,15 @@
           "value" : "dark"
         }
       ],
-      "filename" : "Gradient - Desktop - Dark.svg",
+      "filename" : "DefaultBrowserAndDock-Prompt-Background-Dark.svg",
       "idiom" : "universal"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
   }
 }

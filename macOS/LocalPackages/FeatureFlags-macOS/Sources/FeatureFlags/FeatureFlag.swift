@@ -274,6 +274,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746481
     case partnershipsHub
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219810901971905
+    case authBackupToken
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148
     case syncCreditCards
 
@@ -505,10 +508,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
-
-    /// Enables the Cookie Pop-ups Blocked promo in the promo queue.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218049727240253?focus=true
-    case promoQueueCookiePopupsBlockedPromo
 
     /// Enables the VPN toolbar upsell button and dot badge promos in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
@@ -908,6 +907,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign), category: .subscription)
         case .partnershipsHub:
             Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub), category: .subscription)
+        case .authBackupToken:
+            Config(source: .disabled, category: .subscription)
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
         case .syncIdentities:
@@ -1040,8 +1041,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .promoQueueCookiePopupsBlockedPromo:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.cookiePopupsBlockedPromo))
         case .promoQueueVPNUpsellPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
         case .promoQueueSyncSetupBookmarksPromo:

@@ -582,6 +582,12 @@ def _on_signal(signum, _frame):
     raise _Stop(signal.Signals(signum).name)
 
 
+def _catch(handler):
+    """Install `handler` for STOP_SIGNALS, except any the caller ignores (`nohup` ignores SIGHUP), so a proof started
+    to outlive its terminal still does. Returns the previous handlers, for _restore."""
+    return {s: signal.signal(s, handler) for s in STOP_SIGNALS if signal.getsignal(s) is not signal.SIG_IGN}
+
+
 def _ignore_signals():
     return {s: signal.signal(s, signal.SIG_IGN) for s in STOP_SIGNALS}
 
@@ -602,7 +608,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
     live, flags, language = getattr(mod, "LIVE", []), getattr(mod, "FLAGS", {}), getattr(mod, "LANGUAGE", env.LANGUAGE)
     started = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     results, build = [], None
-    old = {s: signal.signal(s, _on_signal) for s in STOP_SIGNALS}
+    old = _catch(_on_signal)
     try:
         try:
             build = Device.check_build_current()

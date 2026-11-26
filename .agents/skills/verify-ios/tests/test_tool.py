@@ -891,6 +891,20 @@ class HarnessTests(unittest.TestCase):
                 self.assertEqual(self.fake.cleaned, 1, "the simulator is deleted")
                 self.assertIs(signal.getsignal(sig), before)
 
+    def test_a_proof_started_with_nohup_survives_its_terminal_closing(self):
+        self.fake = FakeDevice()
+        path = os.path.join(tempfile.mkdtemp(dir=TMP), "nohup.py")
+        with open(path, "w") as f:
+            f.write('"""The terminal closes during a nohup proof."""\nimport os\nimport signal\n\n\ndef run(ios):\n'
+                    '    os.kill(os.getpid(), signal.SIGHUP)\n    ios.check("still running", True)\n')
+        before = signal.signal(signal.SIGHUP, signal.SIG_IGN)   # what nohup does
+        try:
+            code, out = harness.prove(path, ["iphone"], evidence_dir=tempfile.mkdtemp(dir=TMP), video=False)
+            self.assertIs(signal.getsignal(signal.SIGHUP), signal.SIG_IGN)
+        finally:
+            signal.signal(signal.SIGHUP, before)
+        self.assertEqual((code, out["results"][0]["status"]), (0, "pass"), out)
+
     def test_app_log_is_kept_whatever_the_outcome(self):
         outcomes = {"pass": lambda ios: ios.check("ok", True), "fail": lambda ios: ios.check("broken", False),
                     "cancelled": lambda ios: (_ for _ in ()).throw(harness._Stop("SIGINT"))}
@@ -1179,6 +1193,31 @@ class ReaperTests(unittest.TestCase):
         self.assertTrue(os.path.exists(f"{home}/state.json"))
         reap.reap(now=now)
         self.assertEqual(len(self.deleted()), 1, "once the lock is released, the next command reaps it")
+
+    def test_a_simulator_used_again_while_reaping_is_kept(self):
+        """Read commands (snapshot, find) take no lock, so the reaper checks again once it holds the lock."""
+        now = time.time()
+        key, home, _ = self.worktree("reused", env.ROOT, now - 3 * self.HOUR)
+        real_lock = reap.try_lock
+
+        def used_meanwhile(h, device):
+            env.update_state(lambda st: st["devices"][device].__setitem__("lastUsed", now), home)
+            return real_lock(h, device)
+        with mock.patch.object(reap, "try_lock", used_meanwhile):
+            self.assertEqual(reap.reap(now=now), [])
+        self.assertEqual(self.deleted(), [])
+
+    def test_a_worktree_the_reaper_cannot_see_is_not_an_orphan(self):
+        hidden = tempfile.mkdtemp(dir=TMP)
+        root = os.path.join(hidden, "worktree")
+        os.makedirs(os.path.join(root, ".git"))
+        self.worktree("hidden", root, time.time())
+        os.chmod(hidden, 0)   # no permission, as with another user's folder or an unreadable volume
+        try:
+            self.assertEqual(reap.reap(), [])
+        finally:
+            os.chmod(hidden, 0o700)
+        self.assertEqual(self.deleted(), [])
 
     def test_only_verify_ios_simulators_are_ever_picked(self):
         now = time.time()

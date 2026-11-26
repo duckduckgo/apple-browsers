@@ -108,7 +108,7 @@ def prove_against_base(path, ref, devices=None, decision_log=None, evidence_dir=
     worktree = os.path.join(env.HOME, "base", sha[:12])   # outside the checkout; its basename keys its simulators
     before = after = None
     skipped, missing = dict(status="cancelled", reason="cancelled"), "error"
-    old = {s: signal.signal(s, harness._on_signal) for s in harness.STOP_SIGNALS}
+    old = harness._catch(harness._on_signal)
     try:
         before, why = _prove_base(worktree, sha, proof, devices, f"{attempt}/before", video, log, problems)
         if before:
@@ -199,8 +199,7 @@ def _step(cmd, cwd, log, interruptible=True):
         f.flush()
         p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=f, text=True,
                              start_new_session=not interruptible)
-        handler = on_signal if interruptible else signal.SIG_IGN
-        old = {s: signal.signal(s, handler) for s in harness.STOP_SIGNALS}
+        old = harness._catch(on_signal) if interruptible else harness._ignore_signals()
         try:
             out, _ = p.communicate()
         finally:

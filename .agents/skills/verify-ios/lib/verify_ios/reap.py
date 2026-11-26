@@ -53,11 +53,23 @@ def owner(key, device, udid, base=None):
 
 def verdict(root, last_used, now, limit):
     """Why a simulator should go ("orphan" or "idle"), or None to keep it."""
-    if root and not os.path.exists(os.path.join(root, ".git")):
+    if root and _gone(root):
         return "orphan"
     if limit is not None and now - last_used > limit:
         return "idle"
     return None
+
+
+def _gone(root):
+    """True only when the worktree was removed: its .git is missing and the folder that held it is still readable.
+    A worktree the reaper can't see (no permission, an unmounted volume) is not gone."""
+    try:
+        os.stat(os.path.join(root, ".git"))
+        return False
+    except FileNotFoundError:
+        return os.access(os.path.dirname(root), os.R_OK | os.X_OK)
+    except OSError:
+        return False
 
 
 def candidates(sims, now=None, limit=None, spare=()):
@@ -101,7 +113,8 @@ def reap(spare=(), now=None):
     if os.environ.get("VERIFY_IOS_REAP") == "0":
         return []
     sims = simulators()
-    done = [_reap_one(c) for c in candidates(sims, now, idle_limit(), spare)]
+    now, limit = time.time() if now is None else now, idle_limit()
+    done = [d for d in (_reap_one(c, now, limit) for c in candidates(sims, now, limit, spare)) if d]
     for home in {d["home"] for d in done if d["why"] == "orphan" and d.get("deleted")}:
         left = [s for s in simulators() if (parse_name(s["name"]) or ("",))[0] == os.path.basename(home)]
         if not left:
@@ -109,7 +122,8 @@ def reap(spare=(), now=None):
     return [{k: d[k] for k in ("name", "why", "deleted", "busy", "problems") if k in d} for d in done]
 
 
-def _reap_one(c):
+def _reap_one(c, now, limit):
+    """Reap one candidate, or return None when it turns out to be in use again."""
     from .driver import XCUITestRunner
     sim, home, device = c["sim"], c["home"], c["device"]
     res = dict(name=sim["name"], why=c["why"], home=home, deleted=False)
@@ -118,6 +132,10 @@ def _reap_one(c):
         return dict(res, busy=True)   # another process holds it: a live proof or command; exit-75 rules apply
     problems = []
     try:
+        who = owner(c["key"], device, sim["udid"])   # again, under the lock: a lockless command may have used it since
+        res["why"] = verdict(who["root"], who["lastUsed"], now, limit)
+        if not res["why"]:
+            return None
         st = env.load_state(home)
         survivors = []
         for s in st.get("devices", {}).get(device, {}).get("started", []):   # the runner it left, by recorded identity

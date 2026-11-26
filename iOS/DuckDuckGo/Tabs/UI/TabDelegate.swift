@@ -253,6 +253,9 @@ protocol TabDelegate: AnyObject {
     /// Whether a prompt such as a notification banner, find in page, the Duck Player pill or a Dax dialog is already on screen,
     /// so the tab skips its own.
     func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool
+
+    /// The page became translated, or stopped being translated.
+    func tabDidChangePageTranslationState(_ tab: TabViewController)
 }
 
 extension TabDelegate {
@@ -288,5 +291,7 @@ extension TabDelegate {
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
 
     func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool { false }
+
+    func tabDidChangePageTranslationState(_ tab: TabViewController) {}
 
 }

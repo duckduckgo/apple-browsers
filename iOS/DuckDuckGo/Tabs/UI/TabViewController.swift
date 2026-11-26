@@ -2993,7 +2993,9 @@ extension TabViewController: PageTranslationProgress {
         progressWorker.didFinishLoading(.translation)
     }
 
-    func translationStateDidChange(_ state: PageTranslationSession.State) {}
+    func translationStateDidChange(_ state: PageTranslationSession.State) {
+        delegate?.tabDidChangePageTranslationState(self)
+    }
 }
 
 // MARK: - WKNavigationDelegate
@@ -3241,6 +3243,10 @@ extension TabViewController: WKNavigationDelegate {
 
     var pageTranslationState: PageTranslationSession.State {
         pageTranslationSession?.state ?? .idle
+    }
+
+    var isPageTranslated: Bool {
+        pageTranslationState == .partiallyTranslated || pageTranslationState == .fullyTranslated
     }
 
     func translatePageFromMenu(_ offer: TranslationOffer) {

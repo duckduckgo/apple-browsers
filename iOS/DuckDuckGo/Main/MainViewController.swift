@@ -234,7 +234,7 @@ class MainViewController: UIViewController {
     let toggleModeStorage: ToggleModeStoring
     var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
-    private var isDownloadMenuAlertVisible: Bool?
+    private var isMenuAlertVisible: Bool?
     private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
@@ -1128,7 +1128,7 @@ class MainViewController: UIViewController {
         registerForDownloadMenuAlertNotifications()
 
         decorate()
-        refreshDownloadMenuAlertState(animated: false)
+        refreshMenuAlertState(animated: false)
 
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
 
@@ -1884,13 +1884,14 @@ class MainViewController: UIViewController {
     }
 
     @objc private func downloadMenuAlertStateDidChange() {
-        refreshDownloadMenuAlertState(animated: true)
+        refreshMenuAlertState(animated: true)
     }
 
-    private func refreshDownloadMenuAlertState(animated: Bool) {
+    private func refreshMenuAlertState(animated: Bool) {
         let isVisible = AppDependencyProvider.shared.downloadManager.hasDownloadsNeedingAttention
-        let shouldAnimate = animated && isDownloadMenuAlertVisible != isVisible
-        isDownloadMenuAlertVisible = isVisible
+            || currentTab?.isPageTranslated == true
+        let shouldAnimate = animated && isMenuAlertVisible != isVisible
+        isMenuAlertVisible = isVisible
 
         viewCoordinator.menuToolbarButton.setMenuAlertVisible(isVisible, animated: shouldAnimate)
         viewCoordinator.omniBar.barView.menuButton.setMenuAlertVisible(isVisible, animated: shouldAnimate)
@@ -3627,6 +3628,7 @@ class MainViewController: UIViewController {
         observePageBackgroundColor(for: tab)
         tab.chromeDelegate = self
         tab.updateWebViewBottomAnchor(for: currentBarsVisibility)
+        refreshMenuAlertState(animated: false)
 
         if isInMinimalChromeLayout {
             tab.borderView.isBottomVisible = appSettings.currentAddressBarPosition.isBottom
@@ -8128,6 +8130,11 @@ extension MainViewController: NewTabPageControllerDelegate {
 }
 
 extension MainViewController: TabDelegate {
+
+    func tabDidChangePageTranslationState(_ tab: TabViewController) {
+        guard tab === currentTab else { return }
+        refreshMenuAlertState(animated: true)
+    }
 
     func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool {
         notificationView != nil || findInPageView?.isHidden == false || tab.isDuckPlayerPillVisible

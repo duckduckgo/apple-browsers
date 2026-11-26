@@ -328,6 +328,8 @@ final class SettingsViewModel: ObservableObject {
     // Used to automatically navigate to a specific section
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
+    /// `deepLinkTarget` is cleared after navigating, so keep whether Settings opened straight to Data Clearing.
+    private let opensAtDataClearing: Bool
 
     var afterInactivityOption: AfterInactivityOption {
         afterInactivityOptionAdapter.afterInactivityOption
@@ -388,6 +390,7 @@ final class SettingsViewModel: ObservableObject {
             aiChatSettings: aiChatSettings,
             fireproofing: legacyViewProvider.fireproofing,
             featureFlagger: featureFlagger,
+            source: opensAtDataClearing ? .deepLink : .settings,
             delegate: self
         )
     }()
@@ -1147,6 +1150,7 @@ final class SettingsViewModel: ObservableObject {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.deepLinkTarget = deepLink
+        self.opensAtDataClearing = deepLink == .dataClearing
         self.historyManager = historyManager
         self.syncPausedStateManager = syncPausedStateManager
         self.subscriptionDataReporter = subscriptionDataReporter

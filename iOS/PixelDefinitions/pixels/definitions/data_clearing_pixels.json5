@@ -126,6 +126,12 @@
                 "key": "enabled",
                 "description": "Whether the toggle was turned on",
                 "type": "boolean"
+            },
+            {
+                "key": "source",
+                "description": "How the user reached Data Clearing settings: from the Settings menu, or with Settings opened straight to Data Clearing (for example from a Fire sheet)",
+                "type": "string",
+                "enum": ["settings", "deepLink"]
             }
         ]
     },
@@ -135,7 +141,16 @@
         "owners": ["bkunat"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "source",
+                "description": "How the user reached Data Clearing settings: from the Settings menu, or with Settings opened straight to Data Clearing (for example from a Fire sheet)",
+                "type": "string",
+                "enum": ["settings", "deepLink"]
+            }
+        ]
     },
 
     "m_fire_user_action_before_completion": {

@@ -82,13 +82,15 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     // MARK: - Factory
 
-    private func makeViewModel(featureFlagger: MockFeatureFlagger = MockFeatureFlagger()) -> DataClearingSettingsViewModel {
+    private func makeViewModel(featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+                               source: DataClearingPixels.SettingsSource = .settings) -> DataClearingSettingsViewModel {
         DataClearingSettingsViewModel(
             appSettings: mockAppSettings,
             aiChatSettings: mockAIChatSettings,
             fireproofing: mockFireproofing,
             featureFlagger: featureFlagger,
             pixelFiring: pixelFiring,
+            source: source,
             delegate: mockDelegate
         )
     }
@@ -103,8 +105,20 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         let fireCall = try XCTUnwrap(pixelFiring.actualFireCalls.first)
         XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
         XCTAssertEqual(fireCall.pixel.name, "data_clearing_settings-fireproof_sites_opened")
-        XCTAssertNil(fireCall.pixel.parameters)
+        XCTAssertEqual(fireCall.pixel.parameters, ["source": "settings"])
         XCTAssertEqual(fireCall.frequency, .dailyAndCount)
+    }
+
+    func testWhenOpenedByDeepLinkThenPixelsReportDeepLinkSource() {
+        let viewModel = makeViewModel(source: .deepLink)
+        var storedValue = false
+        let binding = viewModel.aiChatsToggleBinding(Binding(get: { storedValue }, set: { storedValue = $0 }))
+
+        viewModel.openFireproofSites()
+        binding.wrappedValue = true
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.parameters),
+                       [["source": "deepLink"], ["enabled": "true", "source": "deepLink"]])
     }
 
     func testWhenAIChatsToggleChangesThenValueIsStoredAndPixelFires() throws {
@@ -116,7 +130,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
         XCTAssertFalse(storedValue)
         XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), Array(repeating: "data_clearing_settings-duckai_chats_toggled", count: 2))
-        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.parameters), [["enabled": "true"], ["enabled": "false"]])
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.parameters), [["enabled": "true", "source": "settings"], ["enabled": "false", "source": "settings"]])
         XCTAssertEqual(pixelFiring.actualFireCalls.last?.frequency, .dailyAndCount)
     }
 

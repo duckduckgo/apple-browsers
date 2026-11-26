@@ -47,6 +47,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     private let fireproofing: Fireproofing
     private let featureFlagger: FeatureFlagger
     private let pixelFiring: PixelFiring?
+    private let source: DataClearingPixels.SettingsSource
     
     // MARK: - Delegate
     
@@ -128,9 +129,11 @@ final class DataClearingSettingsViewModel: ObservableObject {
          fireproofing: Fireproofing,
          featureFlagger: FeatureFlagger,
          pixelFiring: PixelFiring? = PixelKit.shared,
+         source: DataClearingPixels.SettingsSource,
          delegate: DataClearingSettingsViewModelDelegate) {
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
+        self.source = source
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
         self.animator = FireButtonAnimator(appSettings: appSettings)
@@ -152,7 +155,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Actions
     
     func openFireproofSites() {
-        pixelFiring?.fire(DataClearingPixels.fireproofSitesOpened, frequency: .dailyAndCount)
+        pixelFiring?.fire(DataClearingPixels.fireproofSitesOpened(source: source), frequency: .dailyAndCount)
         delegate?.navigateToFireproofSites()
     }
 
@@ -160,10 +163,10 @@ final class DataClearingSettingsViewModel: ObservableObject {
     func aiChatsToggleBinding(_ binding: Binding<Bool>) -> Binding<Bool> {
         Binding(
             get: { binding.wrappedValue },
-            set: { [pixelFiring] isOn in
+            set: { [pixelFiring, source] isOn in
                 guard isOn != binding.wrappedValue else { return }
                 binding.wrappedValue = isOn
-                pixelFiring?.fire(DataClearingPixels.aiChatsToggled(enabled: isOn), frequency: .dailyAndCount)
+                pixelFiring?.fire(DataClearingPixels.aiChatsToggled(enabled: isOn, source: source), frequency: .dailyAndCount)
             }
         )
     }

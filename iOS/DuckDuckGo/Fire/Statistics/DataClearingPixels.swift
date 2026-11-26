@@ -36,10 +36,18 @@ enum DataClearingPixels {
     case confirmationSettingsTapped(source: String)
 
     /// The user turned the Duck.ai chats toggle in Data Clearing settings on or off.
-    case aiChatsToggled(enabled: Bool)
+    case aiChatsToggled(enabled: Bool, source: SettingsSource)
 
     /// The user opened Fireproof Sites from Data Clearing settings.
-    case fireproofSitesOpened
+    case fireproofSitesOpened(source: SettingsSource)
+
+    /// How the user reached Data Clearing settings.
+    enum SettingsSource: String {
+        /// From the Settings menu.
+        case settings
+        /// Settings opened straight to Data Clearing, e.g. from a Fire sheet.
+        case deepLink
+    }
 }
 
 // MARK: - Elapsed Bucket
@@ -105,7 +113,7 @@ extension DataClearingPixels: PixelKit.Event {
 
     var parameters: [String: String]? {
         switch self {
-        case .retriggerIn20s, .userActionBeforeCompletion, .fireproofSitesOpened:
+        case .retriggerIn20s, .userActionBeforeCompletion:
             return nil
         case .burnDropped(let trigger, let scope, let elapsed):
             return [
@@ -115,8 +123,10 @@ extension DataClearingPixels: PixelKit.Event {
             ]
         case .confirmationSettingsTapped(let source):
             return [ParameterNames.source: source]
-        case .aiChatsToggled(let enabled):
-            return [ParameterNames.enabled: String(enabled)]
+        case .aiChatsToggled(let enabled, let source):
+            return [ParameterNames.enabled: String(enabled), ParameterNames.source: source.rawValue]
+        case .fireproofSitesOpened(let source):
+            return [ParameterNames.source: source.rawValue]
         }
     }
 

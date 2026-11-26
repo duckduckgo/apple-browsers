@@ -178,7 +178,7 @@ class SecureVaultManagerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         XCTAssertTrue(delegate.didCallShouldPromptUserToAutofillCreditCard)
@@ -222,7 +222,7 @@ class SecureVaultManagerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         XCTAssertFalse(delegate.didCallShouldPromptUserToAutofillCreditCard)
@@ -265,7 +265,7 @@ class SecureVaultManagerTests: XCTestCase {
             XCTAssertNil(credentials)
             expect.fulfill()
         }
-        waitForExpectations(timeout: 0.1)
+        wait(for: [expect], timeout: 0.1)
     }
 
     func testWhenRequestingCredentialsWithNonEmptyUsername_ThenFillActionIsReturned() throws {
@@ -310,7 +310,7 @@ class SecureVaultManagerTests: XCTestCase {
             XCTAssertEqual(credentials!.account.username, "dax2")
             expect.fulfill()
         }
-        waitForExpectations(timeout: 0.1)
+        wait(for: [expect], timeout: 0.1)
     }
 
     func testWhenRequestingCredentialsWithDomainAndPort_ThenFillActionIsReturned() throws {
@@ -355,7 +355,7 @@ class SecureVaultManagerTests: XCTestCase {
             XCTAssertEqual(credentials!.account.username, "dax")
             expect.fulfill()
         }
-        waitForExpectations(timeout: 0.1)
+        wait(for: [expect], timeout: 0.1)
     }
 
     func testWhenRequestingCredentialsWithLocalhost_ThenFillActionIsReturned() throws {
@@ -400,7 +400,7 @@ class SecureVaultManagerTests: XCTestCase {
             XCTAssertEqual(credentials!.account.username, "dax")
             expect.fulfill()
         }
-        waitForExpectations(timeout: 0.1)
+        wait(for: [expect], timeout: 0.1)
     }
 
     func testWhenFocusingOnCreditCardFieldWithCards_AndDelegateSelectsCard_ThenCardAndFillActionReturned() {
@@ -445,7 +445,7 @@ class SecureVaultManagerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         XCTAssertTrue(delegate.didCallDidFocusFieldFor)
@@ -489,7 +489,7 @@ class SecureVaultManagerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         XCTAssertNil(resultCard)
@@ -526,7 +526,7 @@ class SecureVaultManagerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         XCTAssertTrue(delegate.didCallDidFocusFieldFor)
@@ -575,7 +575,7 @@ class SecureVaultManagerTests: XCTestCase {
                 expectation.fulfill()
             }
 
-            waitForExpectations(timeout: 1.0)
+            wait(for: [expectation], timeout: 1.0)
 
             // Then
             XCTAssertTrue(delegate.didCallDidFocusFieldFor)
@@ -621,7 +621,7 @@ class SecureVaultManagerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        wait(for: [expectation], timeout: 1.0)
 
         // Then
         XCTAssertTrue(delegate.didCallDidFocusFieldFor, "Delegate should still be called even on error")
@@ -665,7 +665,7 @@ class SecureVaultManagerTests: XCTestCase {
             expectation1.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        wait(for: [expectation1], timeout: 1.0)
 
         // Change selected card for second focus
         delegate.selectedCardId = 2
@@ -679,7 +679,7 @@ class SecureVaultManagerTests: XCTestCase {
             expectation2.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        wait(for: [expectation2], timeout: 1.0)
 
         // Then
         XCTAssertEqual(delegate.callCount, 2, "Delegate should be called twice")
@@ -725,7 +725,7 @@ class SecureVaultManagerTests: XCTestCase {
             XCTAssertEqual(credentials.first?.password, storedCredentials.password, file: file, line: line)
             expect.fulfill()
         }
-        waitForExpectations(timeout: 0.1)
+        wait(for: [expect], timeout: 0.1)
     }
 
     func testWhenRequestingAccountsWithDomainAndPort_ThenDataIsReturned() throws {
@@ -764,7 +764,7 @@ class SecureVaultManagerTests: XCTestCase {
             XCTAssertEqual(accounts.first!, account)
             expect.fulfill()
         }
-        waitForExpectations(timeout: 0.1)
+        wait(for: [expect], timeout: 0.1)
     }
 
     func testWhenRequestingCredentialsWithPasswordSubtype_ThenCredentialsAreNotFiltered() throws {
@@ -809,7 +809,7 @@ class SecureVaultManagerTests: XCTestCase {
             XCTAssertEqual(credentials!.account.username, "dax2")
             expect.fulfill()
         }
-        waitForExpectations(timeout: 0.1)
+        wait(for: [expect], timeout: 0.1)
     }
 
     // MARK: SecureVaultManager+AutofillSecureVaultDelegate Tests
@@ -960,6 +960,7 @@ class SecureVaultManagerTests: XCTestCase {
 
     // When generating an email and then changing to personal duck address input, credentials should not be autosaved (prompt should be presented instead)
     func testWhenGeneratedUsernameIsChangedToPersonalDuckAddress_ThenDataIsNotAutosaved() {
+        let testPassword = UUID().uuidString
         var incomingCredentials = AutofillUserScript.IncomingCredentials(username: "privateemail@duck.com", password: "", autogenerated: true)
         var incomingData = AutofillUserScript.DetectedAutofillData(identity: nil, credentials: incomingCredentials, creditCard: nil, trigger: .emailProtection)
         manager.autofillUserScript(mockAutofillUserScript, didRequestStoreDataForDomain: "fill.dev", data: incomingData)
@@ -974,28 +975,29 @@ class SecureVaultManagerTests: XCTestCase {
         incomingData = AutofillUserScript.DetectedAutofillData(identity: nil, credentials: incomingCredentials, creditCard: nil, trigger: .emailProtection)
         manager.autofillUserScript(mockAutofillUserScript, didRequestStoreDataForDomain: "fill.dev", data: incomingData)
 
-        incomingCredentials = AutofillUserScript.IncomingCredentials(username: "john1@duck.com", password: "QNKs6k4a-axYX@aRQW", autogenerated: true)
+        incomingCredentials = AutofillUserScript.IncomingCredentials(username: "john1@duck.com", password: testPassword, autogenerated: true)
         incomingData = AutofillUserScript.DetectedAutofillData(identity: nil, credentials: incomingCredentials, creditCard: nil, trigger: .formSubmission)
         let entries = try? manager.existingEntries(for: "fill.dev", autofillData: incomingData, backfilled: false)
 
         // Confirm autofill entries are present
         XCTAssertEqual(entries?.credentials?.account.username, "john1@duck.com")
-        XCTAssertEqual(entries?.credentials?.password, Data("QNKs6k4a-axYX@aRQW".utf8))
+        XCTAssertEqual(entries?.credentials?.password, Data(testPassword.utf8))
 
         // Confirm data prompt
-        incomingCredentials = AutofillUserScript.IncomingCredentials(username: "john1@duck.com", password: "QNKs6k4a-axYX@aRQW", autogenerated: true)
+        incomingCredentials = AutofillUserScript.IncomingCredentials(username: "john1@duck.com", password: testPassword, autogenerated: true)
         incomingData = AutofillUserScript.DetectedAutofillData(identity: nil, credentials: incomingCredentials, creditCard: nil, trigger: .formSubmission)
         manager.autofillUserScript(mockAutofillUserScript, didRequestStoreDataForDomain: "fill.dev", data: incomingData)
 
         // Prompted data should be there
         XCTAssertNotNil(secureVaultManagerDelegate.promptedAutofillData)
         XCTAssertEqual(secureVaultManagerDelegate.promptedAutofillData?.credentials?.account.username, "john1@duck.com")
-        XCTAssertEqual(secureVaultManagerDelegate.promptedAutofillData?.credentials?.password, Data("QNKs6k4a-axYX@aRQW".utf8))
+        XCTAssertEqual(secureVaultManagerDelegate.promptedAutofillData?.credentials?.password, Data(testPassword.utf8))
 
     }
 
     // When generating an email and then changing to manual input, credentials should not be autosaved (prompt should be presented instead)
     func testWhenGeneratedUsernameIsChangedToManualInput_ThenDataIsNotAutosaved() {
+        let testPassword = UUID().uuidString
         var incomingCredentials = AutofillUserScript.IncomingCredentials(username: "akla11@duck.com", password: "", autogenerated: true)
         var incomingData = AutofillUserScript.DetectedAutofillData(identity: nil, credentials: incomingCredentials, creditCard: nil, trigger: .emailProtection)
         manager.autofillUserScript(mockAutofillUserScript, didRequestStoreDataForDomain: "fill.dev", data: incomingData)
@@ -1012,7 +1014,7 @@ class SecureVaultManagerTests: XCTestCase {
         XCTAssertEqual(entries?.credentials?.account.username, "example@duck.com")
         XCTAssertEqual(entries?.credentials?.password, Data("QNKs6k212aYX@aRQW".utf8))
 
-        incomingCredentials = AutofillUserScript.IncomingCredentials(username: "john1@duck.com", password: "QNKs6k4a-axYX@aRQW", autogenerated: true)
+        incomingCredentials = AutofillUserScript.IncomingCredentials(username: "john1@duck.com", password: testPassword, autogenerated: true)
         incomingData = AutofillUserScript.DetectedAutofillData(identity: nil, credentials: incomingCredentials, creditCard: nil, trigger: .formSubmission)
         manager.autofillUserScript(mockAutofillUserScript, didRequestStoreDataForDomain: "fill.dev", data: incomingData)
 
@@ -1022,7 +1024,7 @@ class SecureVaultManagerTests: XCTestCase {
         // Prompted data should be there
         XCTAssertNotNil(secureVaultManagerDelegate.promptedAutofillData)
         XCTAssertEqual(secureVaultManagerDelegate.promptedAutofillData?.credentials?.account.username, "john1@duck.com")
-        XCTAssertEqual(secureVaultManagerDelegate.promptedAutofillData?.credentials?.password, Data("QNKs6k4a-axYX@aRQW".utf8))
+        XCTAssertEqual(secureVaultManagerDelegate.promptedAutofillData?.credentials?.password, Data(testPassword.utf8))
 
     }
 

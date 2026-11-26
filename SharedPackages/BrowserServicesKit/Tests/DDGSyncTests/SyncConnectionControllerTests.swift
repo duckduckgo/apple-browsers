@@ -170,8 +170,8 @@ final class SyncConnectionControllerTests: XCTestCase {
     private var syncService: DDGSync!
     private var delegate: MockSyncConnectionControllerDelegate!
     private var dependencies: MockSyncDependencies!
-    private static var deviceName = "TestDeviceName"
-    private static var deviceType = "TestDeviceType"
+    private static let deviceName = "TestDeviceName"
+    private static let deviceType = "TestDeviceType"
 
     @MainActor
     override func setUp() {

@@ -165,7 +165,7 @@ public final class BrowserToolInvoker {
             let decision: BrowserToolAccessRequestOutcome.Decision = switch answer {
             case .timeout: .timeout
             case .dismiss: .dismiss
-            case .never: .dontAllow
+            case .never, .dontAllow: .dontAllow
             case .withdrawn, .allowOnce, .allowForChat, .always, nil: .withdrawn
             }
             report(decision)

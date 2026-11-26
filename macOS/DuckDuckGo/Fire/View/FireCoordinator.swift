@@ -261,7 +261,14 @@ extension FireCoordinator {
             // Fallback to querying provider
             scopeVisits = await historyProvider.visits(matching: scopeQuery)
         }
-        let scopeCookieDomains = scopeVisits.lazy.compactMap(\.historyEntry?.url.host).convertedToETLDPlus1(tld: tld)
+        var scopeCookieDomains = scopeVisits.lazy.compactMap(\.historyEntry?.url.host).convertedToETLDPlus1(tld: tld)
+        if scopeQuery == .rangeFilter(.all) {
+            // "Ask about page" on a link reads pages with the user's session without recording a visit.
+            let tabDomains = windowControllersManager.allTabCollectionViewModels
+                .filter { !$0.burnerMode.isBurner }
+                .reduce(into: Set<String>()) { $0.formUnion($1.localHistoryDomains) }
+            scopeCookieDomains.formUnion(tabDomains.convertedToETLDPlus1(tld: tld))
+        }
         // The Duck.ai onboarding dialog deletes the chats only, and closes the tab so the path moves on.
         let isDuckAIOnboarding = mode == .duckAIOnboarding
 

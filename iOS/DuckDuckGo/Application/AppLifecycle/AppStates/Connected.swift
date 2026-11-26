@@ -44,16 +44,15 @@ struct Connected: ConnectedHandling {
     let appDependencies: AppDependencies
     let sceneDependencies: SceneDependencies
     let actionToHandle: AppAction?
-    let didFinishLaunchingStartTime: CFAbsoluteTime
-    /// Handed to the first foreground only. Only whether the page was drawn is passed on, not the outcome:
-    /// a background launch can draw long before the user arrives, so the foreground decides the outcome then.
-    private let drewIdleReturnNewTabPage: Bool
+    /// Draws the first screen at connect, or on the first foreground when that is deferred.
+    private var initialView: InitialViewLoader
+    /// Handed to the first foreground only. Only whether the page was drawn is passed on, not the outcome.
+    private var drewIdleReturnNewTabPage: Bool { initialView.drewIdleReturnNewTabPage }
     private let lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>
 
     init(stateContext: Launching.StateContext, actionToHandle: AppAction?, window: UIWindow,
          lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
-        didFinishLaunchingStartTime = stateContext.didFinishLaunchingStartTime
         self.actionToHandle = actionToHandle
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
 
@@ -77,17 +76,12 @@ struct Connected: ConnectedHandling {
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
-        drewIdleReturnNewTabPage = UIApplication.shared.applicationState != .background
-            && appDependencies.idleReturnEvaluator.evaluateReturn()
-            .drawsNewTabPageAtLaunch(isFeatureOn: appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageAtLaunch),
-                                     hasLaunchAction: actionToHandle != nil,
-                                     isAppLockEnabled: PrivacyUserDefaults().authenticationEnabled,
-                                     hasPageToReplace: mainCoordinator.tabManager.currentTabsModel.currentTab?.link != nil)
+        initialView = Self.makeInitialViewLoader(appDependencies: appDependencies)
         sceneDependencies = SceneDependencies(screenshotService: screenshotService,
                                               authenticationService: authenticationService,
                                               autoClearService: autoClearService)
 
-        configure(window, with: mainCoordinator, drawsIdleReturnNewTabPage: drewIdleReturnNewTabPage)
+        configure(window, with: mainCoordinator)
     }
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
@@ -96,8 +90,7 @@ struct Connected: ConnectedHandling {
     init(stateContext: Foreground.StateContext, actionToHandle: AppAction?, window: UIWindow,
          lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
-        didFinishLaunchingStartTime = 0
-        drewIdleReturnNewTabPage = false
+        initialView = Self.makeInitialViewLoader(appDependencies: stateContext.appDependencies, isReattachingWindow: true)
         self.actionToHandle = actionToHandle
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
 
@@ -128,8 +121,7 @@ struct Connected: ConnectedHandling {
     init(stateContext: Background.StateContext, actionToHandle: AppAction?, window: UIWindow,
          lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
         appDependencies = stateContext.appDependencies
-        didFinishLaunchingStartTime = 0
-        drewIdleReturnNewTabPage = false
+        initialView = Self.makeInitialViewLoader(appDependencies: stateContext.appDependencies, isReattachingWindow: true)
         self.actionToHandle = actionToHandle
         self.lastBackgroundDateStorage = lastBackgroundDateStorage
 
@@ -154,14 +146,34 @@ struct Connected: ConnectedHandling {
         configure(window, with: mainCoordinator)
     }
 
-    private func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator, drawsIdleReturnNewTabPage: Bool = false) {
+    private mutating func configure(_ window: UIWindow, with mainCoordinator: MainCoordinator) {
         ThemeManager.shared.updateUserInterfaceStyle(window: window)
         window.rootViewController = mainCoordinator.controller
         // Before the window shows, so the first frame is this screen.
-        mainCoordinator.start(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
+        initialView.loadAtConnection(hasLaunchAction: actionToHandle != nil)
         sceneDependencies.authenticationService.suspend()
         window.makeKeyAndVisible()
         window.accessibilityIdentifier = "Browser.Window.Main"
+    }
+
+    /// Makes the loader for this scene's first screen.
+    private static func makeInitialViewLoader(appDependencies: AppDependencies, isReattachingWindow: Bool = false) -> InitialViewLoader {
+        let mainCoordinator = appDependencies.mainCoordinator
+        // Scene connection can't tell a user launch from a background one, so a deferred first screen
+        // always waits for the first foreground.
+        let defersUntilForeground = !isReattachingWindow
+            && appDependencies.featureFlagger.isFeatureOn(.deferInitialViewUntilForeground)
+        return InitialViewLoader(
+            defersUntilForeground: defersUntilForeground,
+            drawsIdleReturnNewTabPage: { hasLaunchAction in
+                guard !isReattachingWindow else { return false }
+                return appDependencies.idleReturnEvaluator.evaluateReturn()
+                    .drawsNewTabPageAtLaunch(isFeatureOn: appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageAtLaunch),
+                                             hasLaunchAction: hasLaunchAction,
+                                             isAppLockEnabled: PrivacyUserDefaults().authenticationEnabled,
+                                             hasPageToReplace: mainCoordinator.tabManager.currentTabsModel.currentTab?.link != nil)
+            },
+            start: { mainCoordinator.start(drawsIdleReturnNewTabPage: $0) })
     }
 
 }
@@ -170,22 +182,25 @@ extension Connected {
 
     struct StateContext {
 
-        let didFinishLaunchingStartTime: CFAbsoluteTime
         let appDependencies: AppDependencies
         let sceneDependencies: SceneDependencies
         let drewIdleReturnNewTabPage: Bool
+        /// Set when the first screen still waits for a foreground.
+        let pendingInitialView: InitialViewLoader?
 
     }
 
     func makeStateContext(sceneDependencies: SceneDependencies) -> StateContext {
-        .init(didFinishLaunchingStartTime: didFinishLaunchingStartTime,
-              appDependencies: appDependencies,
+        .init(appDependencies: appDependencies,
               sceneDependencies: sceneDependencies,
-              drewIdleReturnNewTabPage: drewIdleReturnNewTabPage)
+              drewIdleReturnNewTabPage: drewIdleReturnNewTabPage,
+              pendingInitialView: initialView.isPending ? initialView : nil)
     }
 
-    func willEnterForeground() {
-        appDependencies.mainCoordinator.start(drawsIdleReturnNewTabPage: drewIdleReturnNewTabPage, applicationState: .inactive)
+    func loadInitialViewIfPending(actionToHandle: AppAction?) -> any ConnectedHandling {
+        var connected = self
+        connected.initialView.loadIfPending(hasLaunchAction: actionToHandle != nil)
+        return connected
     }
 
     func makeBackgroundState() -> any BackgroundHandling {

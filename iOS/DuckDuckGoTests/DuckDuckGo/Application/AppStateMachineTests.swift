@@ -73,15 +73,19 @@ final class MockConnected: ConnectedHandling {
 
     var actionToHandle: AppAction?
     var window: UIWindow
-    private(set) var willEnterForegroundCallCount = 0
+    /// The launch actions passed to each `loadInitialViewIfPending(actionToHandle:)` call.
+    private(set) var foregroundLaunchActions: [AppAction?] = []
+    /// Returned by `loadInitialViewIfPending(actionToHandle:)` in place of this instance when set.
+    var stateAfterForeground: MockConnected?
 
     init(actionToHandle: AppAction?, window: UIWindow) {
         self.actionToHandle = actionToHandle
         self.window = window
     }
 
-    func willEnterForeground() {
-        willEnterForegroundCallCount += 1
+    func loadInitialViewIfPending(actionToHandle: AppAction?) -> any ConnectedHandling {
+        foregroundLaunchActions.append(actionToHandle)
+        return stateAfterForeground ?? self
     }
 
     func makeBackgroundState() -> any BackgroundHandling {
@@ -289,19 +293,29 @@ final class ConnectedTests {
     let stateMachine = AppStateMachine(initialState: .connected(MockConnected(actionToHandle: nil, window: UIWindow())), launchBreadcrumb: .testing)
 
     @available(iOS 16, macOS 13, *)
-    @Test("Connected prepares the initial view before activation and preserves launch actions", .timeLimit(.minutes(1)))
-    func prepareInitialViewOnForeground() throws {
+    @Test("willEnterForeground passes the buffered launch action to Connected and keeps the state it returns", .timeLimit(.minutes(1)))
+    func willEnterForegroundKeepsReturnedConnectedState() throws {
         let connected = MockConnected(actionToHandle: nil, window: UIWindow())
+        let connectedAfterForeground = MockConnected(actionToHandle: nil, window: UIWindow())
+        connected.stateAfterForeground = connectedAfterForeground
         let machine = AppStateMachine(initialState: .connected(connected), launchBreadcrumb: .testing)
-        let url = URL(string: "https://duckduckgo.com")!
+        let url = try #require(URL(string: "https://duckduckgo.com"))
         machine.handle(.openURL(url))
 
-        #expect(connected.willEnterForegroundCallCount == 0)
         machine.handle(.willEnterForeground)
-        #expect(connected.willEnterForegroundCallCount == 1)
+
         #expect(machine.currentState.name == "connected")
+        let launchAction = try #require(connected.foregroundLaunchActions.first.flatMap { $0 })
+        guard case .openURL(let foregroundURL) = launchAction else {
+            Issue.record("Expected the buffered URL")
+            return
+        }
+        #expect(foregroundURL == url)
 
         machine.handle(.didBecomeActive)
+
+        #expect(connected.foregroundLaunchActions.count == 1)
+        #expect(connectedAfterForeground.foregroundLaunchActions.count == 1)
         guard case .foreground(let state) = machine.currentState else {
             Issue.record("Missing foreground state")
             return
@@ -315,12 +329,26 @@ final class ConnectedTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Background scene connection does not prepare the initial view", .timeLimit(.minutes(1)))
-    func backgroundConnectionDoesNotPrepareInitialView() {
+    @Test("didBecomeActive without willEnterForeground still gives Connected the chance to draw the first screen", .timeLimit(.minutes(1)))
+    func didBecomeActiveAloneCallsWillEnterForeground() {
         let connected = MockConnected(actionToHandle: nil, window: UIWindow())
         let machine = AppStateMachine(initialState: .connected(connected), launchBreadcrumb: .testing)
+
+        machine.handle(.didBecomeActive)
+
+        #expect(connected.foregroundLaunchActions.count == 1)
+        #expect(machine.currentState.name == "foreground")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A scene that goes to the background from Connected doesn't draw the first screen", .timeLimit(.minutes(1)))
+    func backgroundFromConnectedDoesNotDrawFirstScreen() {
+        let connected = MockConnected(actionToHandle: nil, window: UIWindow())
+        let machine = AppStateMachine(initialState: .connected(connected), launchBreadcrumb: .testing)
+
         machine.handle(.didEnterBackground)
-        #expect(connected.willEnterForegroundCallCount == 0)
+
+        #expect(connected.foregroundLaunchActions.isEmpty)
         #expect(machine.currentState.name == "background")
     }
 

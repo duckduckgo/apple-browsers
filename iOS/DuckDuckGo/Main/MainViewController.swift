@@ -577,7 +577,6 @@ class MainViewController: UIViewController {
     let profileStateManager: DBPProfileStateManaging
     let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
-    var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     private lazy var themeColorManager: SiteThemeColorManager = {
         SiteThemeColorManager(viewCoordinator: viewCoordinator,
@@ -778,7 +777,6 @@ class MainViewController: UIViewController {
         favicons: FaviconManaging,
         textZoomCoordinatorProvider: TextZoomCoordinatorProviding,
         websiteDataManager: WebsiteDataManaging,
-        appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
         aiChatSettings: AIChatSettingsProvider,
         aiChatSyncCleaner: AIChatSyncCleaning? = nil,
@@ -898,7 +896,6 @@ class MainViewController: UIViewController {
         self.favicons = favicons
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
         self.websiteDataManager = websiteDataManager
-        self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.keyValueStore = keyValueStore
@@ -1195,15 +1192,6 @@ class MainViewController: UIViewController {
 
         productSurfaceTelemetry.dailyActiveUser()
         productSurfaceTelemetry.iPadUsed(isPad: isPad)
-
-        defer {
-            if let appDidFinishLaunchingStartTime {
-                let launchTime = CFAbsoluteTimeGetCurrent() - appDidFinishLaunchingStartTime
-                PixelKit.fire(Pixel.Event.appDidShowUITime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                              options: .parameters([PixelParameters.time: String(launchTime)]))
-                self.appDidFinishLaunchingStartTime = nil /// We only want this pixel to be fired once
-            }
-        }
 
         // Always hide this, we use StyledTopBottomBorderView where needed instead
         viewCoordinator.hideToolbarSeparator()
@@ -2557,10 +2545,9 @@ class MainViewController: UIViewController {
     }
 
     /// Draws the first screen; a cold start after idle can land on the New Tab Page directly.
-    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool,
-                                 applicationState: UIApplication.State = UIApplication.shared.applicationState) {
+    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool) {
         loadViewIfNeeded()
-        guard applicationState != .background, !hasLoadedInitialView else { return }
+        guard !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
         loadInitialView(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
         hasCompletedInitialLoad = true

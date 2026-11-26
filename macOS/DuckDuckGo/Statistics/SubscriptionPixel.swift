@@ -83,7 +83,6 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionTierOptionsRequested
     case subscriptionTierOptionsSuccess(origin: String?)
     case subscriptionTierOptionsFailure(error: Error)
-    case subscriptionTierOptionsUnexpectedProTier
     // Plan Change
     case subscriptionViewAllPlansClick
     case subscriptionUpgradeClick
@@ -212,7 +211,6 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionTierOptionsRequested: return "m_mac_\(appDistribution)_subscription_tier-options_requested"
         case .subscriptionTierOptionsSuccess: return "m_mac_\(appDistribution)_subscription_tier-options_success"
         case .subscriptionTierOptionsFailure: return "m_mac_\(appDistribution)_subscription_tier-options_failure"
-        case .subscriptionTierOptionsUnexpectedProTier: return "m_mac_\(appDistribution)_subscription_tier-options_unexpected-pro-tier"
             // Plan Change
         case .subscriptionViewAllPlansClick: return "m_mac_\(appDistribution)_subscription_settings_view-all-plans_click"
         case .subscriptionUpgradeClick: return "m_mac_\(appDistribution)_subscription_settings_upgrade_click"
@@ -432,7 +430,6 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionTierOptionsRequested,
                 .subscriptionTierOptionsSuccess,
                 .subscriptionTierOptionsFailure,
-                .subscriptionTierOptionsUnexpectedProTier,
                 .subscriptionViewAllPlansClick,
                 .subscriptionUpgradeClick,
                 .subscriptionCancelPendingDowngradeClick,

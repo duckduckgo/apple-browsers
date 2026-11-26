@@ -180,7 +180,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private(set) lazy var cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate = { // swiftlint:disable:this weak_delegate
         CookiePopupsBlockedPromoDelegate(
-            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             windowControllersManager: windowControllersManager,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
@@ -418,7 +417,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitor
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
-        featureFlagger: featureFlagger,
         buttonDelegate: vpnUpsellToolbarButtonPromoDelegate
     )
     let themeManager: ThemeManager
@@ -1052,7 +1050,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
             ),
             internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger,
             pinningManager: pinningManager
         )
         tabsPreferences = TabsPreferences(
@@ -1069,7 +1066,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
-        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
+        // The flag also gates Apple Intelligence, so remote config could turn it on for everyone. The
+        // downloadable model stays internal either way. Decided at launch: a change in internal status
+        // applies after a relaunch.
+        let downloadableModel: AIChatDownloadableLocalModel? = internalUserDecider.isInternalUser
+            ? .llamaCpp(privacyConfigurationManager: privacyConfigurationManager)
+            : nil
+        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                     downloadableModel: downloadableModel)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -2417,6 +2421,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         webExtensionManager.installRemoteDisableEnforcer(
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             featureFlagger: featureFlagger
+        )
+        webExtensionManager.installUserAllowlistNotifier(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager
         )
         let nativeBitwardenRetirement = NativeBitwardenRetirement(
             isBitwardenExtensionInstalled: { [weak webExtensionManager] in

@@ -212,13 +212,6 @@
             }
         ]
     },
-    "m_subscription_tier-options_unexpected-pro-tier": {
-        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out",
-        "owners": ["SabrinaTardio"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
 
     // Plan Change Click Pixels
     "m_subscription_settings_view-all-plans_click": {

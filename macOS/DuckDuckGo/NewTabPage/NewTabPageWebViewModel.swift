@@ -90,10 +90,10 @@ final class NewTabPageWebViewModel: NSObject {
         // Each attach gets a new container, so other tab content never inherits this colour.
         Publishers.CombineLatest3(
             customizationModel.customBackgroundPublisher,
-            themeManager.themePublisher.map(\.palette.surfaceCanvas),
+            themeManager.themePublisher.map(\.palette.surfacePrimary),
             webView.publisher(for: \.effectiveAppearance).map { $0.effectiveThemeAppearance == .dark }
         )
-        .map { NewTabPageBackgroundColor.color(customBackground: $0, canvas: $1, isDark: $2) }
+        .map { NewTabPageBackgroundColor.color(customBackground: $0, surface: $1, isDark: $2) }
         .removeDuplicates()
         .combineLatest(webView.publisher(for: \.superview))
         .sink { color, container in

@@ -42,6 +42,9 @@
          name = "Infrastructure">
       </FileSystemSynchronizedGroup>
       <FileRef
+         location = "group:LlamaRuntime">
+      </FileRef>
+      <FileRef
          location = "group:LocalModels">
       </FileRef>
       <FileRef

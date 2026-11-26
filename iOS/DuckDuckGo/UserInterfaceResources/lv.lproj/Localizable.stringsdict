@@ -820,5 +820,23 @@ Es tos nobloķēju!
 			<string>%2$@ Izsekotāji</string>
 		</dict>
 	</dict>
+	<key>duckai.text-selection.word-count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@words@</string>
+		<key>words</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d vārdu</string>
+			<key>one</key>
+			<string>%1$d vārds</string>
+			<key>other</key>
+			<string>%1$d vārdi</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

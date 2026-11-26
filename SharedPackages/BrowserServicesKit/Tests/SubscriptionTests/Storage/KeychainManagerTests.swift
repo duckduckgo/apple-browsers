@@ -355,7 +355,7 @@ final class KeychainManagerTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        wait(for: [expectation], timeout: 1.0)
 
         // Then - Items should be moved to keychain
         XCTAssertEqual(mockKeychainOperations.getStoredData(for: testKey1), testData1)
@@ -595,7 +595,7 @@ final class KeychainManagerTests: XCTestCase {
         }
 
         // Then
-        waitForExpectations(timeout: 5.0)
+        wait(for: [expectation], timeout: 5.0)
     }
 
     func testEmptyDataStorage() throws {

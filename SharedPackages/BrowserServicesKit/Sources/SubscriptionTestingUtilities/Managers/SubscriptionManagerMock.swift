@@ -221,9 +221,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public var subscriptionTierOptionsResult: Result<SubscriptionTierOptions, Error>?
-    public var subscriptionTierOptionsIncludeProTierCalled: Bool?
-    public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, Error> {
-        subscriptionTierOptionsIncludeProTierCalled = includeProTier
+    public func subscriptionTierOptions() async -> Result<SubscriptionTierOptions, Error> {
         return subscriptionTierOptionsResult ?? .failure(SubscriptionTierOptionsProviderError.tierOptionsNotAvailableForPlatform)
     }
 

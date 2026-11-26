@@ -16,14 +16,39 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 
 /// Invalidates a refresh token on the staging Auth API, for debug tools that need a dead token.
 public struct StagingTokenInvalidator {
 
-    public enum Error: Swift.Error, Equatable {
+    public enum Error: DDGError {
+        /// The refresh token is empty or the request can't be built.
         case invalidRequest
+        /// The Auth API answered with a status code outside 200–299.
         case unexpectedStatusCode(Int)
+
+        public static var errorDomain: String { "com.duckduckgo.networking.StagingTokenInvalidator" }
+
+        public var errorCode: Int {
+            switch self {
+            case .invalidRequest:
+                return 1
+            case .unexpectedStatusCode:
+                return 2
+            }
+        }
+
+        public var underlyingError: (any Swift.Error)? { nil }
+
+        public var description: String {
+            switch self {
+            case .invalidRequest:
+                return "Invalid invalidate request"
+            case .unexpectedStatusCode(let statusCode):
+                return "Unexpected status code \(statusCode)"
+            }
+        }
     }
 
     private let apiService: APIService

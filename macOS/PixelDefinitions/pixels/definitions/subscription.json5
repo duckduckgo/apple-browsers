@@ -92,6 +92,7 @@
         "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             "pixelSource",
             {
                 "key": "source",
@@ -108,6 +109,7 @@
         "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             "pixelSource",
             {
                 "key": "source",
@@ -124,6 +126,7 @@
         "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             "pixelSource",
             {
                 "key": "source",
@@ -140,6 +143,7 @@
         "suffixes": ["first_daily_count"],
         "parameters": [
             "appVersion",
+            "channel",
             "pixelSource",
             {
                 "key": "source",
@@ -195,13 +199,6 @@
             }
         ]
     },
-    "m_mac_direct_subscription_tier-options_unexpected-pro-tier": {
-        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out (direct distribution)",
-        "owners": ["SabrinaTardio"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel"]
-    },
 
     // Tier Options Pixels - App Store Distribution
     "m_mac_store_subscription_tier-options_requested": {
@@ -248,13 +245,6 @@
                 "description": "Underlying error code at any depth"
             }
         ]
-    },
-    "m_mac_store_subscription_tier-options_unexpected-pro-tier": {
-        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out (App Store distribution)",
-        "owners": ["SabrinaTardio"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel"]
     },
 
     // Plan Change Click Pixels - Direct Distribution
@@ -907,13 +897,13 @@
         "description": "Fired when user clicks the subscription Next Steps card on the New Tab Page (App Store distribution)",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_direct_privacy-pro_new_tab_page_next_steps_card_clicked": {
         "description": "Fired when user clicks the subscription Next Steps card on the New Tab Page (direct distribution)",
         "owners": ["jozsef-vesza"],
         "triggers": ["other"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_store_privacy-pro_new_tab_page_next_steps_card_dismissed": {
         "description": "Fired when user dismisses the subscription Next Steps card on the New Tab Page (App Store distribution)",

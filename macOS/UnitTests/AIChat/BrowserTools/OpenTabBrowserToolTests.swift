@@ -54,7 +54,7 @@ final class OpenTabBrowserToolTests: XCTestCase {
         let tooLong = JSONValue.string("https://a.example/" + String(repeating: "a", count: BrowserToolOutputLimits.url))
 
         for url: JSONValue in ["", "duckduckgo.com", "javascript:alert(1)", "file:///etc/hosts", "duck://settings",
-                               "data:text/html,hi", "https://", 1, tooLong] {
+                               "data:text/html,hi", "https://", "https://duck.ai/chat", 1, tooLong] {
             let result = await tool.execute(arguments: ["url": url], context: context)
             XCTAssertEqual(result, .failure(.invalidArguments), "\(url)")
         }

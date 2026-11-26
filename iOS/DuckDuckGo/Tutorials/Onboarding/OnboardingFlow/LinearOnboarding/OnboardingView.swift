@@ -566,10 +566,13 @@ extension OnboardingView {
             VPNActivationContent(
                 content: content,
                 isVisible: $showBubbleContent,
-                continueAction: {
+                continueAction: { isVPNOn in
                     animateContentTransition {
-                        model.tryVPNFollowUpContinueAction()
+                        model.vpnActivationContinueAction(isVPNOn: isVPNOn)
                     }
+                },
+                failureAction: { reason in
+                    model.vpnActivationFailedAction(reason: reason)
                 }
             )
         }
@@ -580,7 +583,7 @@ extension OnboardingView {
                 isVisible: $showBubbleContent,
                 action: {
                     animateContentTransition {
-                        model.tryVPNFollowUpContinueAction()
+                        model.subscriptionReminderContinueAction()
                     }
                 }
             )

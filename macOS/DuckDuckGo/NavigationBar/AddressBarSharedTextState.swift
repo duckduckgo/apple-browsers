@@ -73,6 +73,9 @@ final class AddressBarSharedTextState: ObservableObject {
     /// paths that already work with one type at a time.
     @Published private(set) var aiChatPanelAttachments: [AIChatPanelAttachment] = []
 
+    /// The Duck.ai model and effort picked on this tab, kept until a prompt is sent. In memory only.
+    private(set) var aiChatModelPick: DuckAIModelPick = .empty
+
     /// Resets the shared state to initial values.
     /// - Parameter clearingDuckAIState: Pass `false` from tab-switch restore paths. Tab switches must not
     ///   wipe per-tab duck.ai state — that includes the prompt text, selection, interaction flag, mode,
@@ -155,6 +158,10 @@ final class AddressBarSharedTextState: ObservableObject {
         guard attachments != aiChatFileAttachments else { return }
         aiChatFileAttachments = attachments
         aiChatPanelAttachments = DuckAIPanelAttachmentReconciler.reconciled(aiChatPanelAttachments, replacingFilesWith: attachments)
+    }
+
+    func setAIChatModelPick(_ pick: DuckAIModelPick) {
+        aiChatModelPick = pick
     }
 
     func resetUserInteraction() {

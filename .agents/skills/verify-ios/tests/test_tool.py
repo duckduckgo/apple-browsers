@@ -6,10 +6,11 @@ from unittest import mock
 
 TMP = tempfile.mkdtemp(prefix="verify-ios-test-")
 os.environ["VERIFY_IOS_HOME"] = TMP   # before importing: every path below lives in this temp dir
+os.environ["VERIFY_IOS_REAP"] = "0"   # CLI runs here must never reap the Mac's real simulators; ReaperTests fake simctl
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 
-from verify_ios import compare, device, env, gallery, harness, page, steps, telemetry, video, web  # noqa: E402
+from verify_ios import compare, device, env, gallery, harness, page, reap, steps, telemetry, video, web  # noqa: E402
 from verify_ios.device import parse_locator  # noqa: E402
 
 
@@ -875,6 +876,21 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual(self.fake.cleaned, 1)
         env.DeviceLock("iphone").acquire("lock was released").release()
 
+    def test_a_proof_stopped_by_its_session_still_deletes_its_simulator(self):
+        """Stopping or closing the session that runs `prove` (SIGTERM, SIGHUP) cancels the proof like Ctrl-C does."""
+        for sig in (signal.SIGTERM, signal.SIGHUP):
+            with self.subTest(sig.name):
+                self.fake = FakeDevice()
+                path = os.path.join(tempfile.mkdtemp(dir=TMP), "stopped.py")
+                with open(path, "w") as f:
+                    f.write(f'"""The session running this proof goes away."""\nimport os\n\n\ndef run(ios):\n'
+                            f'    os.kill(os.getpid(), {int(sig)})\n    ios.check("never reached", True)\n')
+                before = signal.getsignal(sig)
+                code, out = harness.prove(path, ["iphone"], evidence_dir=tempfile.mkdtemp(dir=TMP), video=False)
+                self.assertEqual((code, out["results"][0]["status"]), (130, "cancelled"), out)
+                self.assertEqual(self.fake.cleaned, 1, "the simulator is deleted")
+                self.assertIs(signal.getsignal(sig), before)
+
     def test_app_log_is_kept_whatever_the_outcome(self):
         outcomes = {"pass": lambda ios: ios.check("ok", True), "fail": lambda ios: ios.check("broken", False),
                     "cancelled": lambda ios: (_ for _ in ()).throw(harness._Stop("SIGINT"))}
@@ -1064,6 +1080,133 @@ class SelftestTests(unittest.TestCase):
         self.assertEqual(code, 0, out)
         prove = next(c for c in calls if c[0] == "prove")
         self.assertEqual(prove[-2:], ("--evidence-dir", out_dir))
+
+
+class ReaperTests(unittest.TestCase):
+    """Simulators whose worktree is gone, or that sat idle too long, are deleted from any worktree; nothing a live
+    proof holds, and nothing that isn't a verify-ios simulator, is ever touched."""
+    HOUR = 3600
+
+    def setUp(self):
+        self.calls, self.sims = [], []
+        self.saved = (reap.run, os.environ.get("VERIFY_IOS_REAP"))
+        reap.run = self.fake_run
+        os.environ["VERIFY_IOS_REAP"] = "1"
+        self.gone = os.path.join(TMP, "removed-worktree")   # never created: its worktree was removed
+
+    def tearDown(self):
+        reap.run = self.saved[0]
+        os.environ["VERIFY_IOS_REAP"] = self.saved[1]
+
+    def fake_run(self, cmd, **_):
+        self.calls.append(cmd)
+        out = ""
+        if cmd[2:4] == ["list", "devices"]:
+            out = json.dumps({"devices": {env.RUNTIME: self.sims}})
+        elif cmd[2] == "delete":
+            self.sims = [s for s in self.sims if s["udid"] != cmd[3]]
+        return subprocess.CompletedProcess(cmd, 0, out, "")
+
+    def worktree(self, name, root, used, device="iphone"):
+        """A simulator and the state its worktree recorded (env.touch): where the worktree is, when it was last used."""
+        key = f"{name}-{abs(hash(name)) % 999999:06d}"
+        home = os.path.join(env.BASE, key)
+        env.update_state(lambda st: st.update(root=root, devices={device: dict(lastUsed=used)}), home)
+        os.makedirs(f"{home}/evidence/a-proof", exist_ok=True)
+        udid = f"UDID-{key}-{device}"
+        self.sims.append(dict(name=f"verify-ios-{key}-{device}", udid=udid, state="Booted", isAvailable=True))
+        return key, home, udid
+
+    def deleted(self):
+        return [c[3] for c in self.calls if c[2] == "delete"]
+
+    def test_a_simulator_name_maps_back_to_its_worktree_state(self):
+        d = device.Device("ipad")
+        self.assertEqual(reap.parse_name(d.name), (env.KEY, "ipad"))
+        self.assertEqual(os.path.join(env.BASE, reap.parse_name(d.name)[0]), env.HOME)
+        self.assertEqual(reap.parse_name("verify-ios-pr-review-verify-ios-7077a0-0a07df-iphone"),
+                         ("pr-review-verify-ios-7077a0-0a07df", "iphone"))
+        self.assertEqual(env.load_state()["root"], env.ROOT, "using a device records where its worktree is")
+        for other in ("iPhone 17 Pro", "verify-ios-", "verify-ios-iphone", "verify-ios-abc-watch", "my-verify-ios-abc-iphone"):
+            self.assertIsNone(reap.parse_name(other), other)
+
+    def test_an_orphan_is_deleted_with_its_state_but_not_its_evidence(self):
+        now = time.time()
+        key, home, udid = self.worktree("orphan", self.gone, now)   # used just now, but its worktree is gone
+        out = reap.reap(now=now)
+        self.assertEqual(self.deleted(), [udid])
+        self.assertEqual(out, [dict(name=f"verify-ios-{key}-iphone", why="orphan", deleted=True)])
+        self.assertEqual(sorted(os.listdir(home)), ["evidence"], "pull requests link to the evidence")
+
+    def test_a_live_worktrees_recent_simulator_is_kept(self):
+        now = time.time()
+        self.worktree("live", env.ROOT, now - 1.5 * self.HOUR)
+        self.assertEqual(reap.reap(now=now), [])
+        self.assertEqual(self.deleted(), [])
+
+    def test_an_idle_simulator_expires_and_its_worktree_keeps_its_state(self):
+        now = time.time()
+        _, home, udid = self.worktree("kept", env.ROOT, now - 2.5 * self.HOUR)
+        self.assertEqual(reap.reap(now=now)[0]["why"], "idle")
+        self.assertEqual(self.deleted(), [udid])
+        self.assertEqual(env.load_state(home)["root"], env.ROOT, "the worktree still exists: only the simulator goes")
+
+    def test_the_idle_limit_is_configurable_and_can_be_turned_off(self):
+        now = time.time()
+        self.worktree("idle", env.ROOT, now - 0.75 * self.HOUR)
+        with mock.patch.dict(os.environ, VERIFY_IOS_IDLE_HOURS="0"):
+            self.assertEqual(reap.reap(now=now), [])
+        with mock.patch.dict(os.environ, VERIFY_IOS_IDLE_HOURS="0.5"):
+            self.assertEqual(reap.reap(now=now)[0]["why"], "idle")
+
+    def test_a_held_lock_blocks_deletion(self):
+        now = time.time()
+        _, home, _ = self.worktree("busy", self.gone, now - 9 * self.HOUR)
+        os.makedirs(f"{home}/locks", exist_ok=True)
+        holder = subprocess.Popen([sys.executable, "-c", textwrap.dedent(f"""
+            import fcntl, time
+            f = open({home + '/locks/iphone.lock'!r}, 'a+'); fcntl.flock(f, fcntl.LOCK_EX); print('held', flush=True); time.sleep(30)""")],
+            stdout=subprocess.PIPE, text=True)
+        try:
+            self.assertEqual(holder.stdout.readline().strip(), "held")
+            out = reap.reap(now=now)
+        finally:
+            holder.kill()
+            holder.wait()
+            holder.stdout.close()
+        self.assertEqual(self.deleted(), [], "a live proof holds it, however old its worktree's state")
+        self.assertTrue(out[0]["busy"])
+        self.assertTrue(os.path.exists(f"{home}/state.json"))
+        reap.reap(now=now)
+        self.assertEqual(len(self.deleted()), 1, "once the lock is released, the next command reaps it")
+
+    def test_only_verify_ios_simulators_are_ever_picked(self):
+        now = time.time()
+        for name in ("iPhone 17 Pro", "verify-ios-abc-watch", "my-verify-ios-orphan-iphone", "verify-ios"):
+            self.sims.append(dict(name=name, udid=f"PERSONAL-{name}", state="Booted", isAvailable=True))
+        self.assertEqual(reap.reap(now=now + 1000 * self.HOUR), [])
+        self.assertEqual([c for c in self.calls if c[2:4] != ["list", "devices"]], [], "no simctl call but the listing")
+
+    def test_untracked_simulators_age_by_their_own_files(self):
+        """A verify-ios simulator with no state folder at all (made before worktree paths were recorded) is idle by
+        the time its own simulator files last changed, and unknown files count as long unused."""
+        self.sims.append(dict(name="verify-ios-803a95fcadd3-b74a35-ipad", udid="NO-SUCH-UDID", state="Booted",
+                              isAvailable=True))
+        self.assertEqual(reap.reap(now=time.time())[0]["why"], "idle")
+
+    def test_the_commands_own_device_is_spared(self):
+        now = time.time()
+        own = env.KEY, "iphone"
+        self.sims.append(dict(name=f"verify-ios-{own[0]}-iphone", udid="OURS", state="Booted", isAvailable=True))
+        env.update_state(lambda st: st.setdefault("devices", {}).setdefault("iphone", {}).__setitem__("lastUsed", 0))
+        self.assertEqual(reap.reap(spare={own}, now=now), [])
+        self.assertEqual(reap.reap(now=now)[0]["why"], "idle", "another worktree's command would reap it")
+
+    def test_reaping_can_be_turned_off(self):
+        self.worktree("off", self.gone, 0)
+        with mock.patch.dict(os.environ, VERIFY_IOS_REAP="0"):
+            self.assertEqual(reap.reap(), [])
+        self.assertEqual(self.calls, [])
 
 
 class CliTests(unittest.TestCase):

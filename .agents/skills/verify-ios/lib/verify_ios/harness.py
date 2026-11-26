@@ -571,7 +571,11 @@ def attempt_dir(path, root=EVIDENCE):
 
 # ---------------------------------------------------------------- prove
 class _Stop(BaseException):
-    """Ctrl-C / SIGTERM. A BaseException, so a proof's `except Exception` can't swallow it."""
+    """Ctrl-C, SIGTERM or SIGHUP (the session that ran the proof was stopped or closed). A BaseException, so a proof's
+    `except Exception` can't swallow it, and the proof's cleanup still deletes its simulators."""
+
+
+STOP_SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 
 
 def _on_signal(signum, _frame):
@@ -579,7 +583,7 @@ def _on_signal(signum, _frame):
 
 
 def _ignore_signals():
-    return {s: signal.signal(s, signal.SIG_IGN) for s in (signal.SIGINT, signal.SIGTERM)}
+    return {s: signal.signal(s, signal.SIG_IGN) for s in STOP_SIGNALS}
 
 
 def _restore(handlers):
@@ -598,7 +602,7 @@ def prove(path, devices=None, keep=False, decision_log=None, evidence_dir=None, 
     live, flags, language = getattr(mod, "LIVE", []), getattr(mod, "FLAGS", {}), getattr(mod, "LANGUAGE", env.LANGUAGE)
     started = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     results, build = [], None
-    old = {s: signal.signal(s, _on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
+    old = {s: signal.signal(s, _on_signal) for s in STOP_SIGNALS}
     try:
         try:
             build = Device.check_build_current()

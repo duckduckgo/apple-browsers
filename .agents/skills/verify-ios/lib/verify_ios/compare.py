@@ -108,12 +108,11 @@ def prove_against_base(path, ref, devices=None, decision_log=None, evidence_dir=
     worktree = os.path.join(env.HOME, "base", sha[:12])   # outside the checkout; its basename keys its simulators
     before = after = None
     skipped, missing = dict(status="cancelled", reason="cancelled"), "error"
-    old = {s: signal.signal(s, harness._on_signal) for s in (signal.SIGINT, signal.SIGTERM)}
+    old = {s: signal.signal(s, harness._on_signal) for s in harness.STOP_SIGNALS}
     try:
         before, why = _prove_base(worktree, sha, proof, devices, f"{attempt}/before", video, log, problems)
         if before:
-            signal.signal(signal.SIGINT, old[signal.SIGINT])   # harness.prove handles its own signals
-            signal.signal(signal.SIGTERM, old[signal.SIGTERM])
+            harness._restore(old)   # harness.prove handles its own signals
             code, out = harness.prove(proof, devices, evidence_dir=f"{attempt}/after", video=video)
             after, missing = out.get("evidence"), "cancelled" if code == 130 else "error"
         else:
@@ -186,13 +185,13 @@ def _prove_base(worktree, sha, proof, devices, evidence_dir, video, log, problem
 
 def _step(cmd, cwd, log, interruptible=True):
     """Run `cmd` in `cwd`, appending its command line and output to `log`; returns (exit code, stdout). The child is
-    always waited for, so it can clean up its simulators: SIGTERM is passed on to it (Ctrl-C from the terminal reaches it
+    always waited for, so it can clean up its simulators: SIGTERM and SIGHUP are passed on to it (Ctrl-C from the terminal reaches it
     directly), and a signal raises harness._Stop once it has exited. Not `interruptible`: the child runs in its own
     session, out of reach of the terminal's Ctrl-C, and signals are ignored."""
     stopped = []
 
     def on_signal(signum, _frame):
-        if signum == signal.SIGTERM and not stopped:   # Ctrl-C reaches the child from the terminal by itself
+        if signum != signal.SIGINT and not stopped:   # Ctrl-C reaches the child from the terminal by itself
             p.send_signal(signum)
         stopped.append(signum)
     with open(log, "a") as f:
@@ -201,7 +200,7 @@ def _step(cmd, cwd, log, interruptible=True):
         p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=f, text=True,
                              start_new_session=not interruptible)
         handler = on_signal if interruptible else signal.SIG_IGN
-        old = {s: signal.signal(s, handler) for s in (signal.SIGINT, signal.SIGTERM)}
+        old = {s: signal.signal(s, handler) for s in harness.STOP_SIGNALS}
         try:
             out, _ = p.communicate()
         finally:

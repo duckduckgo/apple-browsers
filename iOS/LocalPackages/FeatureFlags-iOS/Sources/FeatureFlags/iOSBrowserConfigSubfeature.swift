@@ -191,4 +191,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220874250279358
     case hardwareKeyboardMonitoring
+
+    /// Staged reminders to update an outdated app version.
+    /// https://app.asana.com/1/137249556945/project/1220860545409766/task/1220915371296356
+    case updatePrompt
 }

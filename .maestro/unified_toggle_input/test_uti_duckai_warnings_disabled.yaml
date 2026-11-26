@@ -18,7 +18,6 @@ name: test_uti_duckai_warnings_disabled
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         isInternalUser: "true"
         # Keep quoted — LaunchOptionsHandler silently ignores unquoted YAML booleans.
         ff.utiDuckAIWarnings: "false"
@@ -26,6 +25,7 @@ name: test_uti_duckai_warnings_disabled
         # Pinned off: an unaccepted ToS consent card is required, so it would take the footer slot.
         ff.duckAINativeTermsOfService: "false"
         ff.browsingMenuSheetEnabledByDefault: "true"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml

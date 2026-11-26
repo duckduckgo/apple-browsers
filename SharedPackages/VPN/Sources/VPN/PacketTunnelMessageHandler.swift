@@ -38,7 +38,7 @@ protocol TunnelLifecycleManaging: AnyObject {
     @MainActor func restartAdapter() async throws
     @MainActor func resetRegistrationKey()
     @MainActor func removeToken() async throws
-    @MainActor func handleAccessRevoked(dueTo error: Error) async
+    @MainActor func handleAccessRevoked(dueTo error: Error, notification: PacketTunnelProvider.AuthNotification) async -> Bool
 }
 
 protocol SnoozeManaging: AnyObject {
@@ -190,7 +190,12 @@ final class PacketTunnelMessageHandler {
             handleSendTestNotification(completionHandler: completionHandler)
         case .simulateSubscriptionExpirationInTunnel:
             Task { [weak self] in
-                await self?.tunnelLifecycle?.handleAccessRevoked(dueTo: PacketTunnelProvider.TunnelError.simulateSubscriptionExpiration)
+                if let tunnelLifecycle = self?.tunnelLifecycle {
+                    let error = PacketTunnelProvider.TunnelError.simulateSubscriptionExpiration
+                    if await tunnelLifecycle.handleAccessRevoked(dueTo: error, notification: .subscriptionExpired) {
+                        await tunnelLifecycle.cancelTunnel(with: error)
+                    }
+                }
                 completionHandler?(nil)
             }
         case .removeVPNConfiguration:

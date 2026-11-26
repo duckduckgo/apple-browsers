@@ -294,14 +294,19 @@ extension AutoconsentUserScript {
     }
 
     @MainActor
-    func isHeuristicActionEnabled() -> Bool? {
-        if let cohort = featureFlagger.resolveCohort(for: FeatureFlag.heuristicAction) as? FeatureFlag.HeuristicActionCohort {
-            Logger.autoconsent.debug("heuristic action cohort: \(String(describing: cohort))")
-            return cohort == .treatment
-        } else {
-            Logger.autoconsent.debug("heuristic action not enrolled")
-            return nil
+    func isHeuristicActionEnabled() -> Bool {
+        let isEnabled = featureFlagger.isFeatureOn(.heuristicAction)
+        Logger.autoconsent.debug("heuristic action enabled: \(isEnabled)")
+        return isEnabled
+    }
+
+    static let defaultHeuristicPopupSearchTimeout = 100
+
+    static func heuristicPopupSearchTimeout(from settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings) -> Int {
+        guard let timeout = settings["heuristicPopupSearchTimeout"] as? Int, timeout > 0 else {
+            return defaultHeuristicPopupSearchTimeout
         }
+        return timeout
     }
 
     @MainActor
@@ -414,7 +419,9 @@ extension AutoconsentUserScript {
                 "isMainWorld": false,
                 "enableHeuristicDetection": true,
                 "heuristicMode": consentHeuristicMode ?? "off",
-                "enableHeuristicHitTest": featureFlagger.isFeatureOn(.heuristicHitTest)
+                "enableHeuristicHitTest": featureFlagger.isFeatureOn(.heuristicHitTest),
+                "enablePopupMutationObserver": featureFlagger.isFeatureOn(.popupMutationObserver),
+                "heuristicPopupSearchTimeout": Self.heuristicPopupSearchTimeout(from: remoteConfig)
             ] as [String: Any?]
         ] as [String: Any?]
 
@@ -472,16 +479,6 @@ extension AutoconsentUserScript {
         Logger.autoconsent.debug("Cookie popup found: \(String(describing: messageData))")
         firePixel(pixel: .popupFound)
         cpmStage = .popupFound
-
-        // measure: at least one popup handled within X days
-        PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...1, value: "true")
-        PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...5, value: "true")
-        PixelKit.fireExperimentPixel(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...10, value: "true")
-        // measure: at least N popups handled within 10 days
-        PixelKit.fireExperimentPixelIfThresholdReached(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...10, threshold: 10)
-        PixelKit.fireExperimentPixelIfThresholdReached(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...10, threshold: 5)
-        PixelKit.fireExperimentPixelIfThresholdReached(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...5, threshold: 10)
-        PixelKit.fireExperimentPixelIfThresholdReached(for: AutoconsentSubfeature.heuristicAction.rawValue, metric: "popupHandledMilestone", conversionWindowDays: 0...5, threshold: 5)
 
         // Check for reload loop
         detectReloadLoop(cmpName: messageData.cmp)

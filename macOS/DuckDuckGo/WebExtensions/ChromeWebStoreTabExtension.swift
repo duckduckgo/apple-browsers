@@ -26,15 +26,16 @@ protocol ChromeWebStoreUserScriptProvider {
 }
 extension UserScripts: ChromeWebStoreUserScriptProvider {}
 
-/// Gives the tab's web view to each new `ChromeWebStoreUserScript`, so the store page learns about
-/// extension changes made outside the page, such as from the toolbar.
+/// Gives the tab's web view and the feature flag state to each new `ChromeWebStoreUserScript`, so the
+/// store page learns about extension changes made outside the page, such as from the toolbar.
 @available(macOS 15.4, *)
 final class ChromeWebStoreTabExtension {
     private weak var webView: WKWebView?
     private weak var userScript: ChromeWebStoreUserScript?
     private var cancellables = Set<AnyCancellable>()
 
-    init(scriptsPublisher: some Publisher<some ChromeWebStoreUserScriptProvider, Never>,
+    init(isFeatureEnabled: @escaping @MainActor () -> Bool,
+         scriptsPublisher: some Publisher<some ChromeWebStoreUserScriptProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>) {
 
         webViewPublisher.sink { [weak self] webView in
@@ -49,6 +50,7 @@ final class ChromeWebStoreTabExtension {
             Task { @MainActor in
                 self?.userScript = userScript
                 userScript?.webView = self?.webView
+                userScript?.isEnabled = isFeatureEnabled
             }
         }.store(in: &cancellables)
     }

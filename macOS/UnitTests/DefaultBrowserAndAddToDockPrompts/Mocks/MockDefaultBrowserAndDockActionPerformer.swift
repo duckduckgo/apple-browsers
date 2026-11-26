@@ -21,9 +21,17 @@ import Foundation
 
 final class MockDefaultBrowserAndDockActionPerformer: DefaultBrowserAndDockActionPerforming {
     var pendingPromptType: DefaultBrowserAndDockPromptType?
-    private(set) var performPendingActionsCallCount = 0
+    private(set) var performPendingActionsEntryPoints: [AddToDockVideoEntryPoint] = []
+    var performPendingActionsCallCount: Int { performPendingActionsEntryPoints.count }
 
-    func performPendingActions() {
-        performPendingActionsCallCount += 1
+    var requestsSetAsDefault = true
+    private(set) var onSetAsDefaultRequested: (() -> Void)?
+
+    func performPendingActions(from entryPoint: AddToDockVideoEntryPoint, onSetAsDefaultRequested: (() -> Void)?) {
+        performPendingActionsEntryPoints.append(entryPoint)
+        self.onSetAsDefaultRequested = onSetAsDefaultRequested
+        if requestsSetAsDefault {
+            onSetAsDefaultRequested?()
+        }
     }
 }

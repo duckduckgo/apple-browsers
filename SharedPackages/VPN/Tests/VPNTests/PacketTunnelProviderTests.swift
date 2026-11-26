@@ -26,67 +26,59 @@ final class PacketTunnelProviderTests: XCTestCase {
 
     typealias TunnelError = PacketTunnelProvider.TunnelError
 
-    private var reconnectDefaults: UserDefaults!
-    private var reconnectDefaultsSuiteName: String!
+    private var startupDefaults: UserDefaults!
+    private var startupDefaultsSuiteName: String!
 
     override func setUp() {
         super.setUp()
-        reconnectDefaultsSuiteName = "PacketTunnelProviderTests.\(UUID().uuidString)"
-        reconnectDefaults = UserDefaults(suiteName: reconnectDefaultsSuiteName)
+        startupDefaultsSuiteName = "PacketTunnelProviderTests.\(UUID().uuidString)"
+        startupDefaults = UserDefaults(suiteName: startupDefaultsSuiteName)
     }
 
     override func tearDown() {
-        reconnectDefaults.removePersistentDomain(forName: reconnectDefaultsSuiteName)
-        reconnectDefaults = nil
-        reconnectDefaultsSuiteName = nil
+        startupDefaults.removePersistentDomain(forName: startupDefaultsSuiteName)
+        startupDefaults = nil
+        startupDefaultsSuiteName = nil
         super.tearDown()
     }
 
-    func testReconnectIsAllowedByDefaultForEveryStartupMethod() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
+    func testStartupIsAllowedByDefaultForEveryStartupMethod() {
+        let startupGuard = VPNStartupGuard(defaults: startupDefaults)
 
-        XCTAssertNoThrow(try reconnectGuard.runStartValidation(startupMethod: .automaticOnDemand))
-        XCTAssertNoThrow(try reconnectGuard.runStartValidation(startupMethod: .manualByTheSystem))
-        XCTAssertNoThrow(try reconnectGuard.runStartValidation(startupMethod: .manualByMainApp))
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .automaticOnDemand), .allowed)
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByTheSystem), .allowed)
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByMainApp), .allowed)
     }
 
-    func testBlockedReconnectPersistsAcrossGuardAndDefaultsInstances() throws {
-        ReconnectGuard(defaults: reconnectDefaults).blockAutomaticReconnect()
-        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: reconnectDefaultsSuiteName))
-        let restartedGuard = ReconnectGuard(defaults: restartedDefaults)
+    func testBlockedStartupPersistsAcrossGuardAndDefaultsInstances() throws {
+        VPNStartupGuard(defaults: startupDefaults).blockStartup()
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
+        let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
 
-        XCTAssertThrowsError(try restartedGuard.runStartValidation(startupMethod: .automaticOnDemand)) { error in
-            XCTAssertEqual((error as? TunnelError)?.code, .reconnectBlocked)
-        }
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .blocked)
     }
 
-    func testBlockedReconnectRejectsSystemStartsWithoutMainAppOptions() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
-        reconnectGuard.blockAutomaticReconnect()
-        let options = StartupOptions(options: [:])
+    func testSystemStartupClearsBlockAcrossGuardAndDefaultsInstances() throws {
+        let startupGuard = VPNStartupGuard(defaults: startupDefaults)
+        startupGuard.blockStartup()
 
-        XCTAssertThrowsError(try reconnectGuard.runStartValidation(startupMethod: options.startupMethod)) { error in
-            XCTAssertEqual((error as? TunnelError)?.code, .reconnectBlocked)
-        }
-        XCTAssertThrowsError(try reconnectGuard.runStartValidation(startupMethod: .automaticOnDemand))
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByTheSystem), .allowed)
+
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
+        let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .allowed)
     }
 
-    func testManualAppValidationImmediatelyAllowsSubsequentAutomaticReconnect() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
-        reconnectGuard.blockAutomaticReconnect()
+    func testMainAppStartupClearsBlockAcrossGuardAndDefaultsInstances() throws {
+        let startupGuard = VPNStartupGuard(defaults: startupDefaults)
+        startupGuard.blockStartup()
 
-        XCTAssertNoThrow(try reconnectGuard.runStartValidation(startupMethod: .manualByMainApp))
-        let subsequentGuard = ReconnectGuard(defaults: reconnectDefaults)
-        XCTAssertNoThrow(try subsequentGuard.runStartValidation(startupMethod: .automaticOnDemand))
-        XCTAssertNoThrow(try subsequentGuard.runStartValidation(startupMethod: .manualByTheSystem))
-    }
+        XCTAssertEqual(startupGuard.prepareForStartup(startupMethod: .manualByMainApp), .allowed)
 
-    func testOtherStartSourcesCannotClearTheReconnectGuard() {
-        let reconnectGuard = ReconnectGuard(defaults: reconnectDefaults)
-        reconnectGuard.blockAutomaticReconnect()
-
-        XCTAssertThrowsError(try reconnectGuard.runStartValidation(startupMethod: .manualByTheSystem))
-        XCTAssertThrowsError(try reconnectGuard.runStartValidation(startupMethod: .automaticOnDemand))
+        let restartedDefaults = try XCTUnwrap(UserDefaults(suiteName: startupDefaultsSuiteName))
+        let restartedGuard = VPNStartupGuard(defaults: restartedDefaults)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .automaticOnDemand), .allowed)
+        XCTAssertEqual(restartedGuard.prepareForStartup(startupMethod: .manualByTheSystem), .allowed)
     }
 
     func testReconnectBlockedErrorHasItsOwnCodeForProcessBoundaries() {
@@ -167,6 +159,24 @@ final class PacketTunnelProviderTests: XCTestCase {
         XCTAssertTrue(recorder.retryOnFailure)
     }
 
+    // MARK: - Auth notifications
+
+    func testWhenTheTunnelStartsWithoutATokenThenTheSignedOutNotificationIsShown() {
+        let presenter = RecordingNotificationsPresenter()
+
+        PacketTunnelProvider.AuthNotification.signedOut.present(with: presenter)
+
+        XCTAssertEqual(presenter.shown, [.signedOut])
+    }
+
+    func testWhenTheSubscriptionExpiredThenTheEntitlementNotificationIsShown() {
+        let presenter = RecordingNotificationsPresenter()
+
+        PacketTunnelProvider.AuthNotification.subscriptionExpired.present(with: presenter)
+
+        XCTAssertEqual(presenter.shown, [.entitlement])
+    }
+
     /// Tests that `TunnelError` has the expected underlying error information.
     ///
     func testThatTunnelErrorHasTheExpectedUnderlyingErrorInformation() {
@@ -203,6 +213,61 @@ final class PacketTunnelProviderTests: XCTestCase {
         ]
         XCTAssertTrue(supersedingSources.allSatisfy { !$0.preservesFailureRecoveryDuringReassertUpdate })
     }
+
+    // MARK: - Subscription environment before the token
+
+    private func makeStartupOptions(environment: VPNSettings.SelectedEnvironment) throws -> StartupOptions {
+        let snapshot = VPNSettingsSnapshot(registrationKeyValidity: .automatic,
+                                           selectedEnvironment: environment,
+                                           selectedServer: .automatic,
+                                           selectedLocation: .nearest,
+                                           dnsSettings: .ddg(blockRiskyDomains: true),
+                                           excludeLocalNetworks: false)
+        return StartupOptions(options: [NetworkProtectionOptionKey.settings: try JSONEncoder().encode(snapshot)])
+    }
+
+    private func makeSettings(environment: VPNSettings.SelectedEnvironment) -> VPNSettings {
+        let settings = VPNSettings(defaults: startupDefaults)
+        settings.selectedEnvironment = environment
+        return settings
+    }
+
+    func testWhenTheAppSendsAnotherEnvironmentThenItIsLoaded() throws {
+        let settings = makeSettings(environment: .staging)
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: try makeStartupOptions(environment: .production), into: settings)
+
+        XCTAssertTrue(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .production)
+    }
+
+    func testWhenTheAppSendsTheSameEnvironmentThenNothingChanges() throws {
+        let settings = makeSettings(environment: .production)
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: try makeStartupOptions(environment: .production), into: settings)
+
+        XCTAssertFalse(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .production)
+    }
+
+    func testWhenTheTunnelStartsWithoutSettingsThenTheStoredEnvironmentIsKept() {
+        let settings = makeSettings(environment: .staging)
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: StartupOptions(options: [:]), into: settings)
+
+        XCTAssertFalse(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .staging)
+    }
+
+    func testWhenTheSentSettingsCannotBeDecodedThenTheStoredEnvironmentIsKept() {
+        let settings = makeSettings(environment: .staging)
+        let options = StartupOptions(options: [NetworkProtectionOptionKey.settings: Data("not json".utf8)])
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: options, into: settings)
+
+        XCTAssertFalse(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .staging)
+    }
 }
 
 private final class RetryRecordingPixelFiring: PixelKitFiring {
@@ -213,4 +278,24 @@ private final class RetryRecordingPixelFiring: PixelKitFiring {
         retryOnFailure = options.retryOnFailure
         mock.fire(event: event, frequency: frequency, options: options, onComplete: onComplete)
     }
+}
+
+private final class RecordingNotificationsPresenter: VPNNotificationsPresenting {
+    enum Notification: Equatable {
+        case entitlement
+        case signedOut
+    }
+
+    private(set) var shown: [Notification] = []
+
+    func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool) {}
+    func showStrictRoutingReminderNotification() {}
+    func showReconnectingNotification() {}
+    func showConnectionFailureNotification() {}
+    func showSnoozingNotification(duration: TimeInterval) {}
+    func showSupersededNotification() {}
+    func showTestNotification() {}
+    func showEntitlementNotification() { shown.append(.entitlement) }
+    func showDebugEventNotification(message: String) {}
+    func showSignedOutNotification() { shown.append(.signedOut) }
 }

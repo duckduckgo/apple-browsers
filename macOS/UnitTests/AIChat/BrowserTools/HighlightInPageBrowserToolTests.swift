@@ -208,12 +208,11 @@ final class HighlightInPageBrowserToolTests: XCTestCase {
         XCTAssertEqual(result, .failure(.unavailable))
     }
 
-    func testWhenCreatedThenItRequiresPermission() {
+    func testWhenCreatedThenItRunsWithoutAsking() {
         let (tool, _, _) = make(urls: ["https://a.example"])
 
         XCTAssertEqual(tool.name, "highlightInPage")
-        XCTAssertEqual(tool.permissionMode, .ask)
-        XCTAssertEqual(tool.permissionReason, "Duck.ai wants to highlight text on this page.")
+        XCTAssertEqual(tool.permissionMode, .auto)
     }
 
     // MARK: -

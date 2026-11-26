@@ -112,6 +112,7 @@ final class WebExtensionManagerTests: XCTestCase {
                              isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                              storageProvider: WebExtensionStorageProviding? = nil,
                              now: @escaping () -> Date = Date.init,
+                             scriptletConfiguration: ScriptletConfiguration? = nil,
                              bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
                                  XCTFail("Unexpected bundled extension lookup")
                                  return nil
@@ -130,6 +131,7 @@ final class WebExtensionManagerTests: XCTestCase {
             backgroundLoadRecoveryCooldown: backgroundLoadRecoveryCooldown,
             isApplicationInBackground: isApplicationInBackground,
             isCPMStableBaseURLEnabled: isCPMStableBaseURLEnabled,
+            scriptletConfiguration: scriptletConfiguration,
             bundledExtensionURL: bundledExtensionURL,
             now: now
         )
@@ -201,6 +203,73 @@ final class WebExtensionManagerTests: XCTestCase {
         try JSONSerialization.data(withJSONObject: manifest).write(to: dir.appendingPathComponent("manifest.json"))
         createdTestExtensionDirs.append(dir)
         return dir
+    }
+
+    // MARK: - Subscription events
+
+    @MainActor
+    func testWhenEmbeddedExtensionIsNotLoaded_ThenSubscriptionEventStaysQueued() {
+        let manager = makeManager()
+
+        manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
+
+        XCTAssertEqual(manager.subscriptionEventOutbox.drain().map(\.subscriptionName), ["s"])
+    }
+
+    @MainActor
+    func testWhenEmbeddedExtensionIsUnloaded_ThenSubscriptionEventStaysQueued() async throws {
+        let manager = makeManager()
+        let context = try await loadCommandRecordingEmbeddedContext(into: manager)
+        try manager.controller.unload(context)
+
+        manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
+
+        XCTAssertEqual(manager.subscriptionEventOutbox.drain().map(\.subscriptionName), ["s"])
+        XCTAssertTrue(context.performedCommands.isEmpty)
+    }
+
+    @MainActor
+    func testWhenEmbeddedExtensionIsLoaded_ThenSubscriptionEventIsQueuedAndTheEventCommandPerformed() async throws {
+        let manager = makeManager()
+        let context = try await loadCommandRecordingEmbeddedContext(into: manager)
+        defer { manager.unloadAllExtensions() }
+
+        manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
+
+        XCTAssertEqual(context.performedCommands, [WebExtensionSubscriptionEvents.commandIdentifier])
+        XCTAssertEqual(manager.subscriptionEventOutbox.drain().map(\.subscriptionName), ["s"],
+                       "The extension collects the event after the command, so it must still be queued")
+    }
+
+    @MainActor
+    func testWhenEmbeddedExtensionHasNoEventCommand_ThenSubscriptionEventStaysQueued() async throws {
+        let manager = makeManager()
+        let context = try await loadCommandRecordingEmbeddedContext(into: manager, declaresEventCommand: false)
+        defer { manager.unloadAllExtensions() }
+
+        manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
+
+        XCTAssertTrue(context.performedCommands.isEmpty)
+        XCTAssertEqual(manager.subscriptionEventOutbox.drain().map(\.subscriptionName), ["s"])
+    }
+
+    @MainActor
+    private func loadCommandRecordingEmbeddedContext(into manager: WebExtensionManager,
+                                                     declaresEventCommand: Bool = true) async throws -> CommandRecordingContext {
+        let identifier = "embedded"
+        let directory = try makeTestExtensionDirectory(embeddedType: .embedded)
+        if declaresEventCommand {
+            let manifestURL = directory.appendingPathComponent("manifest.json")
+            var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+            manifest["commands"] = [WebExtensionSubscriptionEvents.commandIdentifier: ["description": "Native events"]]
+            try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+        }
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        let context = CommandRecordingContext(for: webExtension)
+        context.uniqueIdentifier = identifier
+        try manager.controller.load(context)
+        installedExtensionStoringMock.add(makeInstalledWebExtension(uniqueIdentifier: identifier, embeddedType: .embedded))
+        return context
     }
 
     // MARK: - Background wake selection and recovery safety
@@ -1313,13 +1382,18 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenPermissionsAreDisabled_ThenDDGIdentityIsPreservedWithoutBundleLookup() async throws {
-        let manager = makeManager()
+    func testWhenPermissionsAreDisabled_ThenUnbundledManifestDoesNotSetEmbeddedIdentity() async throws {
+        var checkedBundle = false
+        let manager = makeManager(bundledExtensionURL: { _ in
+            checkedBundle = true
+            return nil
+        })
         let sourceURL = try makeTestExtensionDirectory(embeddedType: .embedded)
 
         try await manager.installExtension(from: sourceURL)
 
-        XCTAssertEqual(installedExtensionStoringMock.addedExtension?.embeddedType, .embedded)
+        XCTAssertTrue(checkedBundle)
+        XCTAssertNil(installedExtensionStoringMock.addedExtension?.embeddedType)
     }
 
     @MainActor
@@ -2135,6 +2209,38 @@ final class WebExtensionManagerTests: XCTestCase {
                        "upgrade should have uninstalled the old extension after the settle window")
     }
 
+    // MARK: - Scriptlets held until the initial load
+
+    @MainActor
+    func testWhenAdBlockerIsInstalledBeforeInitialLoad_ThenItsScriptletsInstallOnceAfterTheLoad() async throws {
+        let bundledDirectory = try makeTestExtensionDirectory(embeddedType: .adBlockingExtension)
+        let bundledURL = bundledDirectory.appendingPathExtension("zip")
+        createdTestExtensionDirs.append(bundledURL)
+        try FileManager.default.zipItem(at: bundledDirectory, to: bundledURL, shouldKeepParent: false)
+        let scriptlets = [Scriptlet(path: "script.js", relativeCachedPath: "adblock/2.0/script.js")]
+        let provider = MockScriptletProvider()
+        provider.scriptletsMap[.adBlockingExtension] = scriptlets
+        provider.versionMap[.adBlockingExtension] = "2.0"
+        let installer = MockScriptletInstaller()
+        let tracker = MockScriptletStore()
+        storageProvidingMock.mockResolveResult = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let manager = makeManager(scriptletConfiguration: ScriptletConfiguration(provider: provider,
+                                                                                 installationTracker: tracker,
+                                                                                 installer: installer,
+                                                                                 cacheRootDirectory: tracker.cacheRootDirectory),
+                                  bundledExtensionURL: { _ in bundledURL })
+
+        await manager.syncEmbeddedExtensions(enabledTypes: [.adBlockingExtension])
+        XCTAssertNotNil(manager.installedEmbeddedExtension(for: .adBlockingExtension), "precondition: installed before the load")
+        XCTAssertEqual(installer.installCallCount, 0, "scriptlets must wait for the initial load")
+
+        await manager.loadInstalledExtensions()
+
+        XCTAssertEqual(installer.installCallCount, 1)
+        XCTAssertEqual(installer.lastInstalledScriptlets, scriptlets)
+        XCTAssertEqual(tracker.installedVersion(for: .adBlockingExtension), "2.0")
+    }
+
 #if os(macOS)
     // MARK: - Bitwarden Pixels
 
@@ -2563,6 +2669,47 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
     }
 
+    @MainActor
+    func testWhenPermissionEnforcementIsTurnedOnAndOff_ThenThePermissionControllerFollows() {
+        var isEnforcementEnabled = false
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          permissionController: makePermissionController(),
+                                          isPermissionEnforcementEnabled: { isEnforcementEnabled },
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock)
+        XCTAssertNil(manager.permissionController)
+
+        isEnforcementEnabled = true
+        XCTAssertNotNil(manager.permissionController)
+
+        isEnforcementEnabled = false
+        XCTAssertNil(manager.permissionController)
+    }
+
+    @MainActor
+    func testWhenNativeMessagingIsTurnedOnAndOff_ThenTheNativeMessagingHandlerFollows() {
+        var isNativeMessagingEnabled = false
+        let host = SlowStartingNativeMessagingHandler(startupDelay: .zero)
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          nativeMessagingHandler: host,
+                                          isNativeMessagingEnabled: { isNativeMessagingEnabled })
+        XCTAssertNil(manager.nativeMessagingHandler)
+
+        isNativeMessagingEnabled = true
+        XCTAssertTrue(manager.nativeMessagingHandler === host)
+
+        isNativeMessagingEnabled = false
+        XCTAssertNil(manager.nativeMessagingHandler)
+    }
+
     /// Without the permissions system nothing is granted, so no extension can take over autofill.
     @MainActor
     func testWhenThereIsNoPermissionController_ThenNoExtensionCanTakeOverAutofill() async throws {
@@ -2593,6 +2740,81 @@ final class WebExtensionManagerTests: XCTestCase {
 
         XCTAssertThrowsError(try store.set(false, for: .passwordSavingEnabled, by: "other"))
         XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
+    }
+
+    // MARK: - Autofill Takeover While Loaded
+
+    @MainActor
+    private func makeAutofillTakeoverManager(isTakeoverEnabled: @escaping @MainActor () -> Bool = { true }) -> WebExtensionManager {
+        WebExtensionManager(configuration: configurationMock,
+                            windowTabProvider: windowTabProviderMock,
+                            storageProvider: storageProvidingMock,
+                            installationStore: installedExtensionStoringMock,
+                            permissionController: makePermissionController(),
+                            loader: webExtensionLoadingMock,
+                            lifecycleDelegate: lifecycleDelegateMock,
+                            keyValueStore: InMemoryThrowingKeyValueStore(),
+                            isAutofillTakeoverEnabled: isTakeoverEnabled)
+    }
+
+    private func install(_ identifier: String, from storeID: ChromeWebStoreID) {
+        installedExtensionStoringMock.installedExtensions.append(
+            InstalledWebExtension(uniqueIdentifier: identifier, filename: identifier, name: nil, version: nil,
+                                  storeIdentity: storeIdentity(storeID.rawValue)))
+    }
+
+    /// LastPass never turns password saving off, so being loaded is what makes it the password manager,
+    /// and unloading it, as disabling or uninstalling does, hands autofill back.
+    @MainActor
+    func testWhenLastPassIsLoadedAndUnloaded_ThenItTakesOverAutofillAndHandsItBack() async throws {
+        let manager = makeAutofillTakeoverManager()
+        install("lastpass", from: .lastPass)
+        XCTAssertNil(manager.autofillManagingIdentifier)
+
+        let context = try await loadRealContext(identifier: "lastpass", into: manager.controller)
+        XCTAssertEqual(manager.autofillManagingIdentifier, "lastpass")
+
+        try manager.controller.unload(context)
+        XCTAssertNil(manager.autofillManagingIdentifier)
+    }
+
+    @MainActor
+    func testWhenAnUnlistedPasswordManagerIsLoaded_ThenItDoesNotTakeOverAutofill() async throws {
+        let manager = makeAutofillTakeoverManager()
+        install("bitwarden", from: .bitwarden)
+
+        _ = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+
+        XCTAssertNil(manager.autofillManagingIdentifier)
+    }
+
+    /// Turning password saving off is the user's explicit choice of password manager, so it wins.
+    @MainActor
+    func testWhenAnExtensionTurnsPasswordSavingOffWhileLastPassIsLoaded_ThenThatExtensionManagesAutofill() async throws {
+        let manager = makeAutofillTakeoverManager()
+        install("lastpass", from: .lastPass)
+        install("bitwarden", from: .bitwarden)
+        _ = try await loadRealContext(identifier: "lastpass", into: manager.controller)
+        let bitwarden = try await loadRealContext(identifier: "bitwarden", into: manager.controller, permissions: ["privacy"])
+        try await manager.permissionController?.prepare(bitwarden)
+        XCTAssertEqual(manager.autofillManagingIdentifier, "lastpass")
+
+        try XCTUnwrap(manager.privacySettings).set(false, for: .passwordSavingEnabled, by: "bitwarden")
+
+        XCTAssertEqual(manager.autofillManagingIdentifier, "bitwarden")
+    }
+
+    @MainActor
+    func testWhenAutofillTakeoverIsTurnedOff_ThenALoadedLastPassDoesNotTakeOverAutofill() async throws {
+        var isTakeoverEnabled = false
+        let manager = makeAutofillTakeoverManager(isTakeoverEnabled: { isTakeoverEnabled })
+        install("lastpass", from: .lastPass)
+        _ = try await loadRealContext(identifier: "lastpass", into: manager.controller)
+        XCTAssertNil(manager.autofillManagingIdentifier)
+
+        isTakeoverEnabled = true
+
+        XCTAssertEqual(manager.autofillManagingIdentifier, "lastpass")
     }
 
     private enum UpgradeFeatureFlag: String, FeatureFlagDescribing {
@@ -2639,13 +2861,15 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     func testLaunchLoadsAllContextsBeforeWaitingForAdBlockScriptletDownload() async throws {
+        // The retired search-token extension no longer ships a bundle.
+        let shippedDescriptors = EmbeddedWebExtensionRegistry.all.filter { $0.type != .searchToken }
         for upgradeCPM in [false, true] {
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CPMLaunchScriptlets-\(UUID().uuidString)")
             createdTestExtensionDirs.append(directory)
             let storage = WebExtensionStorageProvider(extensionsDirectory: directory)
             installedExtensionStoringMock.installedExtensions = []
             var identifiers: [DuckDuckGoWebExtensionType: String] = [:]
-            for descriptor in EmbeddedWebExtensionRegistry.all {
+            for descriptor in shippedDescriptors {
                 let bundledURL = try XCTUnwrap(descriptor.bundledURL)
                 let metadata = try await WebExtensionMetadata.fromZip(at: bundledURL)
                 let identifier = UUID().uuidString
@@ -2680,12 +2904,12 @@ final class WebExtensionManagerTests: XCTestCase {
                                                 cacheRootDirectory: directory.appendingPathComponent("cache")))
             let coordinator = WebExtensionLifecycleCoordinator(manager: manager,
                                                                initialLoadGateEnabledProvider: { false },
-                                                               enabledTypesProvider: { Set(EmbeddedWebExtensionRegistry.all.map(\.type)) })
+                                                               enabledTypesProvider: { Set(shippedDescriptors.map(\.type)) })
             let launch = coordinator.loadAndSync()
             await fulfillment(of: [downloadStarted], timeout: 5)
 
             // A stalled scriptlet request must not hold back CPM or any other installed context.
-            XCTAssertEqual(manager.loadedEmbeddedExtensionTypes, Set(EmbeddedWebExtensionRegistry.all.map(\.type)))
+            XCTAssertEqual(manager.loadedEmbeddedExtensionTypes, Set(shippedDescriptors.map(\.type)))
             for (type, identifier) in identifiers where type != .embedded {
                 XCTAssertNotNil(manager.context(for: identifier), "\(type) must load before its scriptlets are fetched")
             }
@@ -2877,7 +3101,7 @@ final class WebExtensionManagerTests: XCTestCase {
     // MARK: - Extension Origin Tests
 
     @MainActor
-    func testWhenChromeWebStoreExtensionIsInstalledAndReloaded_ThenOriginUsesStoreIdentifier() async throws {
+    func testWhenChromeWebStoreExtensionIsInstalledAndReloaded_ThenOriginUsesStableInstallationIdentifier() async throws {
         let extensionURL = try createTestWebExtension()
         storageProvidingMock.resolvedExtensionURL = extensionURL
         storageProvidingMock.mockCopyResult = extensionURL
@@ -2888,7 +3112,7 @@ final class WebExtensionManagerTests: XCTestCase {
 
         let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
         let context = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
-        let expectedURL = URL(string: "webkit-extension://\(identity.id)/")
+        let expectedURL = URL(string: "webkit-extension://\(installed.uniqueIdentifier.lowercased())/")
         XCTAssertEqual(context.baseURL, expectedURL)
         XCTAssertEqual(context.uniqueIdentifier, installed.uniqueIdentifier)
         XCTAssertNotEqual(context.uniqueIdentifier, identity.id)
@@ -2900,6 +3124,61 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(restoredContext.baseURL, expectedURL)
         XCTAssertEqual(restoredContext.uniqueIdentifier, installed.uniqueIdentifier)
         manager.unloadAllExtensions()
+
+        let relaunchedManager = makeManagerWithRealLoader()
+        await relaunchedManager.loadInstalledExtensions()
+
+        let relaunchedContext = try XCTUnwrap(relaunchedManager.context(for: installed.uniqueIdentifier))
+        XCTAssertEqual(relaunchedContext.baseURL, expectedURL)
+        XCTAssertEqual(relaunchedContext.uniqueIdentifier, installed.uniqueIdentifier)
+        XCTAssertEqual(installedExtensionStoringMock.installedExtensions.first?.storeIdentity, identity)
+        relaunchedManager.unloadAllExtensions()
+    }
+
+    @MainActor
+    func testWhenChromeWebStoreExtensionManagerIsRecreated_ThenStorageIsPreserved() async throws {
+        let extensionURL = try createTestWebExtension()
+        let manifest: [String: Any] = [
+            "manifest_version": 3,
+            "name": "State Persistence Test",
+            "version": "1.0.0",
+            "permissions": ["storage"],
+            "background": ["scripts": ["background.js"], "persistent": true]
+        ]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: extensionURL.appendingPathComponent("manifest.json"))
+        try "void 0;".write(to: extensionURL.appendingPathComponent("background.js"), atomically: true, encoding: .utf8)
+        storageProvidingMock.resolvedExtensionURL = extensionURL
+        storageProvidingMock.mockCopyResult = extensionURL
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: String(repeating: "b", count: 32))
+        var manager = makeManagerWithRealLoader()
+        try await manager.installExtension(from: extensionURL, storeIdentity: identity)
+        let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
+
+        for shouldWrite in [true, false] {
+            let context = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                context.loadBackgroundContent { error in
+                    if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+                }
+            }
+            let webView = try XCTUnwrap(manager.backgroundWebView(in: context))
+            let result: Any? = try await webView.callAsyncJavaScript("""
+                if (shouldWrite) {
+                    await chrome.storage.local.set({ statePersistenceTest: "saved" });
+                    localStorage.setItem("statePersistenceTest", "saved");
+                }
+                const stored = await chrome.storage.local.get("statePersistenceTest");
+                return { extensionState: stored.statePersistenceTest, pageState: localStorage.getItem("statePersistenceTest") };
+                """, arguments: ["shouldWrite": shouldWrite], in: nil, contentWorld: .page)
+            let state = try XCTUnwrap(result as? [String: Any])
+            XCTAssertEqual(state["extensionState"] as? String, "saved")
+            XCTAssertEqual(state["pageState"] as? String, "saved")
+            manager.unloadAllExtensions()
+            if shouldWrite {
+                manager = makeManagerWithRealLoader()
+                await manager.loadInstalledExtensions()
+            }
+        }
     }
 
     @MainActor
@@ -2923,7 +3202,7 @@ final class WebExtensionManagerTests: XCTestCase {
 
         let restoredContext = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
         XCTAssertTrue(restoredContext === originalContext)
-        XCTAssertEqual(restoredContext.baseURL, URL(string: "webkit-extension://\(identity.id)/"))
+        XCTAssertEqual(restoredContext.baseURL, URL(string: "webkit-extension://\(installed.uniqueIdentifier.lowercased())/"))
         XCTAssertEqual(manager.contexts.count, 1)
         XCTAssertEqual(installedExtensionStoringMock.installedExtensions.map(\.uniqueIdentifier), [installed.uniqueIdentifier])
         XCTAssertTrue(manager.installingStoreIdentities.isEmpty)
@@ -2974,6 +3253,18 @@ final class WebExtensionManagerTests: XCTestCase {
 
         XCTAssertFalse(userScripts.contains { WebExtensionLoader.thirdPartyScriptSources.contains($0.source) })
     }
+
+#if os(macOS)
+    @MainActor
+    func testGestureScriptIsInstalledInTheIsolatedWorldBeforeExtensionsLoad() {
+        let manager = makeManager()
+        let scripts = manager.controller.configuration.webViewConfiguration.userContentController.userScripts
+        let gestureScript = scripts.first { $0.source == WebExtensionPermissionUserGestureScript.source }
+
+        XCTAssertEqual(gestureScript?.injectionTime, .atDocumentStart)
+        XCTAssertEqual(gestureScript?.isForMainFrameOnly, false)
+    }
+#endif
 
     // MARK: - Additional Helpers
 
@@ -3123,6 +3414,16 @@ private final class CapturingCPMRemovalMonitor: CPMMessagingHealthMonitoring {
     }
 }
 
+/// Records the commands the manager performs instead of sending them to the extension.
+@available(macOS 15.4, iOS 18.4, *)
+private final class CommandRecordingContext: WKWebExtensionContext {
+    var performedCommands: [String] = []
+
+    override func performCommand(_ command: WKWebExtension.Command) {
+        performedCommands.append(command.id)
+    }
+}
+
 @available(macOS 15.4, iOS 18.4, *)
 private final class DeferredCPMBackgroundContext: WKWebExtensionContext {
     var completions: [(Swift.Error?) -> Void] = []
@@ -3225,7 +3526,6 @@ final class CatalogNamingWebStore: ChromeWebStoreManaging {
         self.catalogExtensionIDs = catalogExtensionIDs
     }
 
-    var learnMoreURL: URL? { nil }
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
     func remove(identifier: String) async -> Bool { false }

@@ -400,7 +400,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             return UserText.websitePermissionsPromptSystemLocationRequired
         case .notification:
             return UserText.websitePermissionsPromptSystemNotificationsRequired
-        case .none, .popups, .externalScheme, .autoplayPolicy:
+        case .none, .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return ""
         }
     }
@@ -415,7 +415,7 @@ final class PermissionAuthorizationViewModel: ObservableObject {
             return UserText.websitePermissionsPromptSystemLocationOff
         case .notification:
             return UserText.websitePermissionsPromptSystemNotificationsOff
-        case .none, .popups, .externalScheme, .autoplayPolicy:
+        case .none, .popups, .externalScheme, .autoplayPolicy, .browserTool:
             return ""
         }
     }

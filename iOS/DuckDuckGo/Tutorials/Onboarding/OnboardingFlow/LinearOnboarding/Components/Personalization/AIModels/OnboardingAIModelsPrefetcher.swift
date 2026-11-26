@@ -25,7 +25,15 @@ import AIChat
 enum OnboardingAIProvider: String, CaseIterable {
     case anthropic
     case openai
-    case mistral
+    case tinfoil
+
+    /// Maps a model from the `/models` API or the fallback config to the provider shown in the picker.
+    /// `tinfoil` serves more than one model family, and the picker offers only its Gemma models.
+    init?(modelId: String, provider: String) {
+        guard let provider = OnboardingAIProvider(rawValue: provider) else { return nil }
+        if provider == .tinfoil, !modelId.localizedCaseInsensitiveContains("gemma") { return nil }
+        self = provider
+    }
 }
 
 struct OnboardingAIModelOption: Identifiable, Equatable {
@@ -139,7 +147,7 @@ enum OnboardingAIModelsResolver {
 extension OnboardingAIModelOption {
 
     init?(_ value: AIChatRemoteModel) {
-        guard let provider = OnboardingAIProvider(rawValue: value.provider) else { return nil }
+        guard let provider = OnboardingAIProvider(modelId: value.id, provider: value.provider) else { return nil }
         self.init(id: value.id, provider: provider, modelShortName: value.modelShortName)
     }
 

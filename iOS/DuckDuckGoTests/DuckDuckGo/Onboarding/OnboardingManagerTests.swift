@@ -459,6 +459,7 @@ struct DuckAIFireResumeCheckpointTests {
         let store: any KeyedStoring<OnboardingStoringKeys> = InMemoryKeyValueStore().keyedStoring()
         store.resumeStep = .duckAIAnswerStep
         store.resumeDuckAIQueryPrompt = "test prompt"
+        store.resumeDuckAIQueryModelID = "claude-x"
 
         let didClear = OnboardingResumeCheckpointStore.clearCompletedDuckAIAnswerStepIfNeeded(
             in: store,
@@ -468,6 +469,7 @@ struct DuckAIFireResumeCheckpointTests {
         #expect(didClear)
         #expect(store.resumeStep == nil)
         #expect(store.resumeDuckAIQueryPrompt == nil)
+        #expect(store.resumeDuckAIQueryModelID == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -1063,9 +1065,16 @@ struct OnboardingDownloadReasonFlowTests {
         let result = sut.selectDownloadReason(.vpn)
 
         // THEN
-        #expect(result == [.setDefaultBrowser, .tryVPN, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection])
+        #expect(result == [.setDefaultBrowser, .tryVPN, .tryVPNFollowUp, .searchExperienceSelection, .addressBarPositionSelection, .addToDockPromo, .appIconSelection, .duckAIQuerySelection])
         #expect(OnboardingIntroStep.tryVPN.resumeStep == .tryVPN)
         #expect(OnboardingIntroStep.tryVPN.countsTowardProgress(flow: .default))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The step after Try VPN has its own checkpoint and counts toward progress", .timeLimit(.minutes(1)))
+    func tryVPNFollowUpHasCheckpointAndCounts() {
+        #expect(OnboardingIntroStep.tryVPNFollowUp.resumeStep == .tryVPNFollowUp)
+        #expect(OnboardingIntroStep.tryVPNFollowUp.countsTowardProgress(flow: .default))
     }
 
     // MARK: - Helpers

@@ -26,6 +26,7 @@ import XCTest
 @testable import BrowserServicesKit
 @testable import UserScript
 
+@MainActor
 final class ContentScopeUserScriptTests: XCTestCase {
 
     let generatorConfig = "generatorConfig"
@@ -56,8 +57,8 @@ final class ContentScopeUserScriptTests: XCTestCase {
         return result
     }
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "", messageSecret: "", featureToggles: ContentScopeFeatureToggles(emailProtection: false, emailProtectionIncontextSignup: false, credentialsAutofill: false, identitiesAutofill: false, creditCardsAutofill: false, credentialsSaving: false, passwordGeneration: false, inlineIconCredentials: false, thirdPartyCredentialsProvider: false, unknownUsernameCategorization: false, partialFormSaves: false, passwordVariantCategorization: true, inputFocusApi: false, autocompleteAttributeSupport: false), currentCohorts: [experimentData])
         configGenerator = MockCSSPrivacyConfigGenerator()
         mockPrivacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration(),
@@ -65,10 +66,10 @@ final class ContentScopeUserScriptTests: XCTestCase {
         mockPrivacyConfigurationManager.currentConfigString = managerConfig
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         configGenerator = nil
         mockPrivacyConfigurationManager = nil
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testPrivacyConfigurationJSONGeneratorIsUsed() throws {
@@ -115,7 +116,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
         )
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
-        let message = await WKScriptMessage.mock(name: ContentScopeScriptContext.contentScopeIsolated.messagingContextName, body: mockMessageBody)
+        let message = WKScriptMessage.mock(name: ContentScopeScriptContext.contentScopeIsolated.messagingContextName, body: mockMessageBody)
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(),
@@ -137,7 +138,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
         )
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
-        let message = await WKScriptMessage.mock(name: ContentScopeScriptContext.contentScope().messagingContextName, body: mockMessageBody)
+        let message = WKScriptMessage.mock(name: ContentScopeScriptContext.contentScope().messagingContextName, body: mockMessageBody)
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(),
@@ -160,7 +161,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
                                                             privacyConfigurationJSONGenerator: configGenerator)
         let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
         contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
-        let message = await WKScriptMessage.mock(name: featureName, body: mockMessageBody(featureName: featureName))
+        let message = WKScriptMessage.mock(name: featureName, body: mockMessageBody(featureName: featureName))
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(),
@@ -318,6 +319,26 @@ final class ContentScopeUserScriptTests: XCTestCase {
         XCTAssertLessThan(try source(for: .brokerProtection).count, try source(for: .contentScopeIsolated).count)
     }
 
+    func testPageTranslationContextRunsIsolatedOnTheIsolatedHandler() {
+        // GIVEN
+        let context = ContentScopeScriptContext.pageTranslation
+
+        // THEN
+        XCTAssertTrue(context.isIsolated)
+        XCTAssertFalse(context.appliesUserUnprotectedDomains)
+        XCTAssertEqual(context.fileName, "pageTranslation")
+        XCTAssertEqual(context.messagingContextName, "contentScopeScriptsIsolated")
+    }
+
+    func testPageTranslationSourceLoads() throws {
+        let source = try source(for: .pageTranslation)
+
+        XCTAssertFalse(source.isEmpty)
+        for placeholder in ["$CONTENT_SCOPE_JSON$", "$USER_PREFERENCES$", "$WEBKIT_MESSAGING_CONFIG$"] {
+            XCTAssertFalse(source.contains(placeholder), placeholder)
+        }
+    }
+
     // MARK: - Surrogate tracker data encoding
 
     func testWhenContentScopeContextHasSurrogateTrackerDataThenItIsEncodedAsTrackerData() throws {
@@ -370,6 +391,36 @@ final class ContentScopeUserScriptTests: XCTestCase {
         )
 
         XCTAssertFalse(source.contains("\"trackerData\""), "trackerData key should never leak into non-contentScope contexts")
+    }
+
+    // MARK: - Surrogate injection argument
+
+    private func generatedSource(for scriptContext: ContentScopeScriptContext) throws -> String {
+        try ContentScopeUserScript.generateSource(
+            mockPrivacyConfigurationManager,
+            properties: properties,
+            scriptContext: scriptContext,
+            config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true),
+            privacyConfigurationJSONGenerator: nil
+        )
+    }
+
+    func testWhenScriptSurrogateInjectionIsDisabledThenArgIsTrue() throws {
+        let source = try generatedSource(for: .contentScope(disableScriptSurrogateInjection: true))
+
+        XCTAssertTrue(source.contains("\"disableScriptSurrogateInjection\":true"))
+    }
+
+    func testWhenScriptSurrogateInjectionIsNotDisabledThenArgIsAbsent() throws {
+        let source = try generatedSource(for: .contentScope())
+
+        XCTAssertFalse(source.contains("\"disableScriptSurrogateInjection\":"), "C-S-S injects surrogates when the arg is absent")
+    }
+
+    func testWhenNonContentScopeContextThenArgIsAbsent() throws {
+        let source = try generatedSource(for: .contentScopeIsolated)
+
+        XCTAssertFalse(source.contains("\"disableScriptSurrogateInjection\":"))
     }
 
     // MARK: - ContentScopeUserScript Integration Tests with aiChatDataClearing Context
@@ -430,7 +481,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
             "method": "testMethod",
             "params": [:]
         ]
-        let message = await WKScriptMessage.mock(name: "duckAiDataClearing", body: mockMessageBody)
+        let message = WKScriptMessage.mock(name: "duckAiDataClearing", body: mockMessageBody)
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(), didReceive: message)
@@ -456,7 +507,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
             "method": "testMethod",
             "params": [:]
         ]
-        let message = await WKScriptMessage.mock(name: "duckAiDataClearing", body: mockMessageBody)
+        let message = WKScriptMessage.mock(name: "duckAiDataClearing", body: mockMessageBody)
 
         // WHEN
         let result = await contentScopeScript.userContentController(WKUserContentController(), didReceive: message)

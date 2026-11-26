@@ -21,39 +21,67 @@ import Foundation
 import MaliciousSiteProtection
 import PixelKit
 
-public class MockEventMapping: EventMapping<MaliciousSiteProtection.Event> {
-    var events: [MaliciousSiteProtection.Event] = []
-    var clientSideHitParam: String?
+final class MockEventMapping: @unchecked Sendable {
+    private let lock = NSLock()
     #if os(iOS)
-    var singleDataSetUpdatePerformanceInfos: [SingleDataSetUpdatePerformanceInfo] = []
-    var singleDataSetUpdateDiskUsageInfos: [SingleDataSetUpdateDiskUsageInfo] = []
-    var aggregateDataSetPerformanceInfos: [AggregateDataSetPerformanceInfo] = []
-    var aggregateDataSetUpdateDiskUsageInfos: [AggregateDataSetUpdateDiskUsageInfo] = []
+    struct BucketedEvent: Equatable {
+        let category: ThreatKind
+        let type: DataManager.StoredDataType.Kind
+        let bucket: String
+    }
+    struct AggregateEvent: Equatable {
+        let type: DataManager.StoredDataType.Kind
+        let bucket: String
+    }
     #endif
-    var errorParam: Error?
-
-    public init() {
-        weak var weakSelf: MockEventMapping!
-        super.init { event, error, params, _ in
-            weakSelf!.events.append(event)
-            switch event {
-            case .errorPageShown:
-                weakSelf!.clientSideHitParam = params?[PixelKit.Parameters.clientSideHit]
-            #if os(iOS)
-            case .singleDataSetUpdatePerformance(let info):
-                weakSelf!.singleDataSetUpdatePerformanceInfos.append(info)
-            case .singleDataSetUpdateDiskUsage(let info):
-                weakSelf!.singleDataSetUpdateDiskUsageInfos.append(info)
-            case .aggregateDataSetUpdatePerformance(let info):
-                weakSelf!.aggregateDataSetPerformanceInfos.append(info)
-            case .aggregateDataSetUpdateDiskUsage(let info):
-                weakSelf!.aggregateDataSetUpdateDiskUsageInfos.append(info)
-            #endif
-            default:
-                break
-            }
-        }
-        weakSelf = self
+    private struct RecordedEvents {
+        var events: [MaliciousSiteProtection.Event] = []
+        var clientSideHitParam: String?
+        #if os(iOS)
+        var dataSetUpdateTimeEvents: [BucketedEvent] = []
+        var dataSetSizeEvents: [BucketedEvent] = []
+        var dataSetLoadTimeEvents: [BucketedEvent] = []
+        var aggregateUpdateTimeEvents: [AggregateEvent] = []
+        var aggregateSizeEvents: [AggregateEvent] = []
+        #endif
     }
 
+    private var recorded = RecordedEvents()
+    var events: [MaliciousSiteProtection.Event] { lock.withLock { recorded.events } }
+    var clientSideHitParam: String? { lock.withLock { recorded.clientSideHitParam } }
+    #if os(iOS)
+    var dataSetUpdateTimeEvents: [BucketedEvent] { lock.withLock { recorded.dataSetUpdateTimeEvents } }
+    var dataSetSizeEvents: [BucketedEvent] { lock.withLock { recorded.dataSetSizeEvents } }
+    var dataSetLoadTimeEvents: [BucketedEvent] { lock.withLock { recorded.dataSetLoadTimeEvents } }
+    var aggregateUpdateTimeEvents: [AggregateEvent] { lock.withLock { recorded.aggregateUpdateTimeEvents } }
+    var aggregateSizeEvents: [AggregateEvent] { lock.withLock { recorded.aggregateSizeEvents } }
+    #endif
+
+    func makeMapping() -> EventMapping<MaliciousSiteProtection.Event> {
+        EventMapping { [self] event, _, params, _ in
+            lock.withLock { record(event, params: params) }
+        }
+    }
+
+    private func record(_ event: MaliciousSiteProtection.Event, params: [String: String]?) {
+        recorded.events.append(event)
+        switch event {
+        case .errorPageShown:
+            recorded.clientSideHitParam = params?[PixelKit.Parameters.clientSideHit]
+        #if os(iOS)
+        case .dataSetUpdateTime(let category, let type, let bucket):
+            recorded.dataSetUpdateTimeEvents.append(BucketedEvent(category: category, type: type, bucket: bucket.rawValue))
+        case .dataSetSize(let category, let type, let bucket):
+            recorded.dataSetSizeEvents.append(BucketedEvent(category: category, type: type, bucket: bucket.rawValue))
+        case .dataSetLoadTime(let category, let type, let bucket):
+            recorded.dataSetLoadTimeEvents.append(BucketedEvent(category: category, type: type, bucket: bucket.rawValue))
+        case .dataSetAggregateUpdateTime(let type, let bucket):
+            recorded.aggregateUpdateTimeEvents.append(AggregateEvent(type: type, bucket: bucket.rawValue))
+        case .dataSetAggregateSize(let type, let bucket):
+            recorded.aggregateSizeEvents.append(AggregateEvent(type: type, bucket: bucket.rawValue))
+        #endif
+        default:
+            break
+        }
+    }
 }

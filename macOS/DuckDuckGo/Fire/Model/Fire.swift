@@ -197,6 +197,7 @@ final class Fire: FireProtocol {
     let aiChatHistoryCleaner: AIChatHistoryCleaning
     let dataClearingPixelsReporter: DataClearingPixelsReporter
     var dataClearingWideEventService: DataClearingWideEventService?
+    private let replacementPinnedTabFactory: @MainActor (TabContent) -> Tab
 
     private var dispatchGroup: DispatchGroup?
 
@@ -351,7 +352,10 @@ final class Fire: FireProtocol {
          aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
          dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
          dataClearingWideEventService: DataClearingWideEventService? = nil,
-         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer()
+         tabCleanupPreparer: TabCleanupPreparing = TabCleanupPreparer(),
+         replacementPinnedTabFactory: @escaping @MainActor (TabContent) -> Tab = { @MainActor content in
+             Tab(content: content, shouldLoadInBackground: true)
+         }
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -387,6 +391,7 @@ final class Fire: FireProtocol {
         self.dataClearingPixelsReporter = dataClearingPixelsReporter
         self.dataClearingWideEventService = dataClearingWideEventService
         self.tabCleanupPreparer = tabCleanupPreparer
+        self.replacementPinnedTabFactory = replacementPinnedTabFactory
     }
 
     @MainActor
@@ -1062,7 +1067,7 @@ final class Fire: FireProtocol {
         var firstError: Error?
 
         func replacementPinnedTab(from pinnedTab: AnyTab) -> Tab {
-            return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
+            return replacementPinnedTabFactory(pinnedTab.content.loadedFromCache())
         }
 
         func selectPinnedTabIfNeeded(in tabCollectionViewModel: TabCollectionViewModel) {

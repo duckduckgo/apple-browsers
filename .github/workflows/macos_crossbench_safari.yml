@@ -370,6 +370,12 @@ jobs:
     timeout-minutes: 60
 
     steps:
+      - name: Remove TSVs left by earlier runs
+        # This self-hosted runner keeps its workspace between runs. Without this,
+        # a missing artifact makes the insert below reuse another run's TSV.
+        working-directory: .
+        run: rm -f clickhouse-*.tsv
+
       - name: Download ClickHouse rows TSV
         # A cancelled or early-failed benchmark job may never have uploaded this;
         # that is not a reason to skip the attempts insert below.

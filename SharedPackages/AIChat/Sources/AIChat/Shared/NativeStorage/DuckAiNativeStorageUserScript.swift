@@ -32,6 +32,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     public weak var broker: UserScriptMessageBroker?
     public let featureName: String = "duckAiNativeStorage"
     public let messageOriginPolicy: MessageOriginPolicy
+    public let messageFramePolicy: MessageFramePolicy
 
     private static let unavailableFireModeHandler: DuckAiNativeStorageHandling = NullDuckAiNativeStorageHandler()
 
@@ -75,11 +76,13 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     public init(
         handler: DuckAiNativeStorageHandling,
         originRules: [HostnameMatchingRule],
+        framePolicy: MessageFramePolicy = .secureMainFrame,
         pixelFiring: DuckAiNativeStoragePixelFiring = NullDuckAiNativeStoragePixelFiring()
     ) {
         self.diskHandler = handler
         self.pixelFiring = pixelFiring
         self.messageOriginPolicy = .only(rules: originRules)
+        self.messageFramePolicy = framePolicy
         super.init()
         Logger.aiChat.debug("[NativeStorage] Created with origin rules: \(originRules.map { String(describing: $0) }.joined(separator: ", "))")
     }

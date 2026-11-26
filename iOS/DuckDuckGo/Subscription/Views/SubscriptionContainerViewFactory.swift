@@ -71,6 +71,8 @@ enum SubscriptionContainerViewFactory {
                                     performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding,
                                     onboardingKeyValueStore: ThrowingKeyValueStoring?,
                                     meetsPIRLocaleRequirement: @escaping () -> Bool,
+                                    subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding,
+                                    onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
                                     onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
 
         let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
@@ -122,11 +124,11 @@ enum SubscriptionContainerViewFactory {
                                                                        isExpirationReminderFeatureEnabled: {
                                                                            featureFlagger.isFeatureOn(.subscriptionExpirationReminderNotification)
                                                                        },
-                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
-                                                                           featureFlagger: featureFlagger)),
+                                                                       subscriptionExperimentAttributionProvider: subscriptionExperimentAttributionProvider),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: onboardingKeyValueStore,
             meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+            onFlowEvent: onFlowEvent,
             onRequestDuckAIChat: onRequestDuckAIChat
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -150,6 +152,8 @@ enum SubscriptionContainerViewFactory {
                                    performanceOptimizedPaywallsProvider: any PerformanceOptimizedPaywallsProviding,
                                    onboardingKeyValueStore: ThrowingKeyValueStoring?,
                                    meetsPIRLocaleRequirement: @escaping () -> Bool,
+                                   subscriptionExperimentAttributionProvider: any SubscriptionExperimentAttributionProviding,
+                                   onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
                                    onRequestDuckAIChat: ((String?) -> Bool)? = nil) -> some View {
         if let redirectURLComponents,
            SubscriptionPurchaseFlowPath.isPlansPath(redirectURLComponents.path) {
@@ -178,6 +182,8 @@ enum SubscriptionContainerViewFactory {
                                 performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
                                 onboardingKeyValueStore: onboardingKeyValueStore,
                                 meetsPIRLocaleRequirement: meetsPIRLocaleRequirement,
+                                subscriptionExperimentAttributionProvider: subscriptionExperimentAttributionProvider,
+                                onFlowEvent: onFlowEvent,
                                 onRequestDuckAIChat: onRequestDuckAIChat)
         }
     }
@@ -230,7 +236,8 @@ enum SubscriptionContainerViewFactory {
                                                        subFeature: subscriptionPagesUseSubscriptionFeature,
                                                        dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
                                                        onboardingKeyValueStore: nil,
-                                                       meetsPIRLocaleRequirement: { false })
+                                                       meetsPIRLocaleRequirement: { false },
+                                                       onFlowEvent: nil)
         viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .restore, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
@@ -302,7 +309,8 @@ enum SubscriptionContainerViewFactory {
                                                                            featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
-            meetsPIRLocaleRequirement: { false }
+            meetsPIRLocaleRequirement: { false },
+            onFlowEvent: nil
         )
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel, featureFlagger: featureFlagger)
             .environmentObject(navigationCoordinator)
@@ -354,7 +362,8 @@ enum SubscriptionContainerViewFactory {
                                                                            featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
-            meetsPIRLocaleRequirement: { false }
+            meetsPIRLocaleRequirement: { false },
+            onFlowEvent: nil
         )
     }
 
@@ -406,7 +415,8 @@ enum SubscriptionContainerViewFactory {
                                                                            featureFlagger: featureFlagger)),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
             onboardingKeyValueStore: nil,
-            meetsPIRLocaleRequirement: { false }
+            meetsPIRLocaleRequirement: { false },
+            onFlowEvent: nil
         )
 
         viewModel.email.setEmailFlowMode(emailFlow)

@@ -60,6 +60,11 @@ struct SubscriptionOnboardingViewFactory {
         flow.instrumentation.stepShown(section)
     }
 
+    func completeAndCloseProgress() {
+        flow.sectionDidComplete(.progress)
+        flow.sectionDidRequestClose(.progress)
+    }
+
     private func content(for section: SubscriptionOnboardingSection) -> AnyView {
         let title = flow.title(for: section)
         let navigationButton = flow.navigationButton(for: section)
@@ -145,10 +150,7 @@ struct SubscriptionOnboardingViewFactory {
                     flow.isPresentingPIR = true
                 },
                 onPIRPresentationChanged: { flow.reportPIRPresentation($0) },
-                onNext: {
-                    flow.sectionDidComplete(.progress)
-                    flow.finish()
-                }))
+                onNext: completeAndCloseProgress))
 
         case .pir:
             // `.pir` is excluded from `activationSections`, so it never enters `path` and this is unreachable.

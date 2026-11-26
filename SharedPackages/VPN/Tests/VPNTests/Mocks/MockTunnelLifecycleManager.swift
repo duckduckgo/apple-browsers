@@ -38,6 +38,7 @@ final class MockTunnelLifecycleManager: TunnelLifecycleManaging {
 
     private(set) var handleAccessRevokedCalled = false
     private(set) var handleAccessRevokedError: Error?
+    private(set) var handleAccessRevokedNotification: PacketTunnelProvider.AuthNotification?
 
     func cancelTunnel(with error: Error) async {
         cancelTunnelCalled = true
@@ -63,8 +64,10 @@ final class MockTunnelLifecycleManager: TunnelLifecycleManaging {
         removeTokenCalled = true
     }
 
-    func handleAccessRevoked(dueTo error: Error) async {
+    func handleAccessRevoked(dueTo error: Error, notification: PacketTunnelProvider.AuthNotification) async -> Bool {
         handleAccessRevokedCalled = true
         handleAccessRevokedError = error
+        handleAccessRevokedNotification = notification
+        return true
     }
 }

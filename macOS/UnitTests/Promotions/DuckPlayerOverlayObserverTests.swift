@@ -26,7 +26,6 @@ import XCTest
 final class DuckPlayerOverlayObserverTests: XCTestCase {
 
     private var windowControllersManager: WindowControllersManagerMock!
-    private var featureFlagger: MockFeatureFlagger!
     private var persistor: DuckPlayerPreferencesPersistorMock!
     private var privacyConfigManager: MockPrivacyConfigurationManager!
     private var stateChangedSubject: PassthroughSubject<Void, Never>!
@@ -42,9 +41,6 @@ final class DuckPlayerOverlayObserverTests: XCTestCase {
         stateChangedSubject = PassthroughSubject<Void, Never>()
         windowControllersManager = WindowControllersManagerMock()
         windowControllersManager.stateChanged = stateChangedSubject.eraseToAnyPublisher()
-
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.promoQueueDuckPlayerOverlayPromo]
 
         let privacyConfig = MockPrivacyConfiguration()
         privacyConfig.isFeatureEnabledCheck = { feature, _ in feature == .duckPlayer }
@@ -69,7 +65,6 @@ final class DuckPlayerOverlayObserverTests: XCTestCase {
         cancellables = nil
         duckPlayer = nil
         windowControllersManager = nil
-        featureFlagger = nil
         persistor = nil
         privacyConfigManager = nil
         stateChangedSubject = nil
@@ -79,8 +74,7 @@ final class DuckPlayerOverlayObserverTests: XCTestCase {
     private func makeSUT() -> DuckPlayerOverlayObserver {
         DuckPlayerOverlayObserver(
             duckPlayer: duckPlayer,
-            windowControllersManager: windowControllersManager,
-            featureFlagger: featureFlagger
+            windowControllersManager: windowControllersManager
         )
     }
 
@@ -176,13 +170,6 @@ final class DuckPlayerOverlayObserverTests: XCTestCase {
         )
 
         XCTAssertFalse(makeSUT().isVisible)
-    }
-
-    // MARK: - The kill switch
-
-    func testWhenPromoFeatureFlagIsOffThenNotVisibleRegardlessOfState() {
-        featureFlagger.enabledFeatureFlags = []
-        XCTAssertFalse(makeSUT().isVisible, "The promo's own kill switch must stop the queue observing the overlay")
     }
 
     // MARK: - Reacting to changes

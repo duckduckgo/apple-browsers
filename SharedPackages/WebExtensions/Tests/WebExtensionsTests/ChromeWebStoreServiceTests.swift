@@ -1044,7 +1044,6 @@ private final class StoreCatalogMock: ChromeWebStoreCatalogProviding {
     var allowed = true
     var extensionIDs: [String] = []
     var catalogEntries: [String: ExtensionsCatalogSubfeature] = [:]
-    var learnMoreURL: URL?
     func contains(_ identifier: String) -> Bool { allowed }
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? { catalogEntries[identifier] }
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }

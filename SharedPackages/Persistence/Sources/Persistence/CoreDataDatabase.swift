@@ -27,7 +27,7 @@ public protocol CoreDataStoring {
     var model: NSManagedObjectModel { get }
     var coordinator: NSPersistentStoreCoordinator { get }
 
-    func loadStore(completion: @escaping (NSManagedObjectContext?, Swift.Error?) -> Void)
+    func loadStore(completion: @escaping @Sendable (NSManagedObjectContext?, Swift.Error?) -> Void)
 
     func makeContext(concurrencyType: NSManagedObjectContextConcurrencyType, name: String?) -> NSManagedObjectContext
 }
@@ -89,7 +89,7 @@ public class CoreDataDatabase: CoreDataStoring {
         self.container.persistentStoreDescriptions = [description]
     }
 
-    public func loadStore(completion: @escaping (NSManagedObjectContext?, Swift.Error?) -> Void = { _, _ in }) {
+    public func loadStore(completion: @escaping @Sendable (NSManagedObjectContext?, Swift.Error?) -> Void = { _, _ in }) {
 
         do {
             try FileManager.default.createDirectory(at: containerLocation, withIntermediateDirectories: true)
@@ -109,8 +109,8 @@ public class CoreDataDatabase: CoreDataStoring {
             context.name = "Migration"
             context.performAndWait {
                 completion(context, nil)
-                self.storeLoadedCondition.resolve()
             }
+            self.storeLoadedCondition.resolve()
         }
     }
 

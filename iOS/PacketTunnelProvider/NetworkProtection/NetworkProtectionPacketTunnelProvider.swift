@@ -492,21 +492,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let loopDetector = ConnectionFailureLoopDetector(store: loopDetectorStore)
 
-        let wideEvent = WideEvent(useMockRequests: {
-#if DEBUG || REVIEW || ALPHA
-            true
-#else
-            false
-#endif
-        }(),
+        let wideEvent = WideEvent(isDevMode: !BuildFlags.isProductionBuild,
                                   featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
         self.wideEvent = wideEvent
 
         let sessionHealth = DefaultVPNSessionHealthInstrumentation(
             wideEvent: wideEvent,
             extensionType: .app,
-            processStartedAt: processStartedAt,
-            isTelemetryEnabled: { settings.sessionHealthTelemetryEnabled })
+            processStartedAt: processStartedAt)
 
         // Align Subscription environment to the VPN environment
         var subscriptionEnvironment = SubscriptionEnvironment.default
@@ -610,6 +603,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    wireGuardInterface: DefaultWireGuardInterface(),
                    keychainType: .dataProtection(.unspecified),
                    tokenHandlerProvider: tokenHandler,
+                   tokenSource: .fromKeychain,
                    debugEvents: Self.networkProtectionDebugEvents(controllerErrorStore: errorStore),
                    providerEvents: Self.packetTunnelProviderEvents(loopDetector: loopDetector),
                    settings: settings,

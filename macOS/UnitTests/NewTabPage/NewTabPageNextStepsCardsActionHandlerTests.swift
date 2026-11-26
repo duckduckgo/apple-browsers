@@ -18,7 +18,6 @@
 
 import BrowserServicesKit
 import FeatureFlags_macOS
-import PixelExperimentKit
 @_spi(Testing) import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 import PrivacyConfigTestsUtils
@@ -37,6 +36,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
     private var navigator: MockNavigator!
     private var syncLauncher: MockSyncLauncher!
     private var pixelFiring: PixelKitMock!
+    private var videoPresenter: CapturingAddToDockVideoPresenter!
 
     @MainActor override func setUp() {
         capturingDefaultBrowserProvider = CapturingDefaultBrowserProvider()
@@ -50,12 +50,13 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         navigator = MockNavigator()
         syncLauncher = MockSyncLauncher()
         pixelFiring = PixelKitMock()
+        videoPresenter = CapturingAddToDockVideoPresenter()
 
-        actionHandler = makeActionHandler(featureFlagger: MockFeatureFlagger())
+        actionHandler = makeActionHandler()
     }
 
     @MainActor
-    private func makeActionHandler(featureFlagger: FeatureFlagger) -> NewTabPageNextStepsCardsActionHandler {
+    private func makeActionHandler(featureFlagger: FeatureFlagger = MockFeatureFlagger()) -> NewTabPageNextStepsCardsActionHandler {
         NewTabPageNextStepsCardsActionHandler(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
             dockCustomizer: dockCustomizer,
@@ -66,14 +67,12 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
             newTabPageNavigator: navigator,
             syncLauncher: syncLauncher,
             pixelFiring: pixelFiring,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            videoPresenter: videoPresenter
         )
     }
 
     override func tearDown() {
-        PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(),
-                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
-                                        fire: { _, _, _ in })
         actionHandler = nil
         capturingDefaultBrowserProvider = nil
         capturingDataImportProvider = nil
@@ -84,6 +83,7 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         navigator = nil
         syncLauncher = nil
         pixelFiring = nil
+        videoPresenter = nil
     }
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserCardThenItPresentsTheDefaultBrowserPrompt() {
@@ -154,54 +154,6 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
         XCTAssertNotNil(syncLauncher.capturedCompletion)
     }
 
-    @MainActor
-    func testSetupCardsReportDayZeroMetricsForBothCohorts() {
-        for cohort in [FeatureFlag.OnboardingNonBlockingCohort.control, .treatment] {
-            let flags = MockFeatureFlagger(resolveCohortStub: cohort)
-            flags.allActiveExperiments = [
-                MacOSBrowserConfigSubfeature.onboardingNonBlockingV2.rawValue: ExperimentData(
-                    parentID: PrivacyFeature.macOSBrowserConfig.rawValue,
-                    cohortID: cohort.rawValue, enrollmentDate: Date())
-            ]
-            var events: [PixelKit.Event] = []
-            PixelKit.configureExperimentKit(featureFlagger: flags,
-                                            eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
-                                            fire: { event, _, _ in events.append(event) })
-            let handler = makeActionHandler(featureFlagger: flags)
-
-            handler.performAction(for: .bringStuff, refreshCardsAction: nil)
-            handler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
-
-            XCTAssertTrue(capturingDataImportProvider.showImportWindowCalled)
-            XCTAssertTrue(dockCustomizer.isAddedToDock)
-            XCTAssertEqual(events.count, 2)
-            for metric in ["importRequested", "addToDockRequested"] {
-                let matching = events.filter { $0.parameters?["metric"] == metric }
-                XCTAssertEqual(Set(matching.compactMap { $0.parameters?["conversionWindowDays"] }), ["0"])
-                XCTAssertTrue(matching.allSatisfy { $0.parameters?["value"] == "true" })
-            }
-            XCTAssertFalse(flags.didCallResolveCohort)
-        }
-    }
-
-    @MainActor
-    func testSetupCardsDoNotEnrollOrReportExperimentMetricsForUnenrolledUsers() {
-        let flags = MockFeatureFlagger()
-        var events: [PixelKit.Event] = []
-        PixelKit.configureExperimentKit(featureFlagger: flags,
-                                        eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()),
-                                        fire: { event, _, _ in events.append(event) })
-        let handler = makeActionHandler(featureFlagger: flags)
-
-        handler.performAction(for: .bringStuff, refreshCardsAction: nil)
-        handler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
-
-        XCTAssertTrue(events.isEmpty)
-        XCTAssertFalse(flags.didCallResolveCohort)
-        XCTAssertTrue(capturingDataImportProvider.showImportWindowCalled)
-        XCTAssertTrue(dockCustomizer.isAddedToDock)
-    }
-
     // MARK: - Pixel Tests
 
     @MainActor func testWhenAskedToPerformActionForDefaultBrowserThenItFiresPixels() {
@@ -209,6 +161,41 @@ final class NewTabPageNextStepsCardsActionHandlerTests: XCTestCase {
 
         XCTAssertTrue(pixelHandler.fireDefaultBrowserRequestedPixelCalled)
         XCTAssertEqual(pixelHandler.fireNextStepsCardClickedPixelCalledWith, .defaultApp)
+    }
+
+    @MainActor func testWhenAppStoreBuildCanShowVideoThenDockActionPresentsVideoWithDonePrimaryAction() {
+        let appStoreDockCustomizer = DockCustomizerMock()
+        appStoreDockCustomizer.supportsAddingToDock = false
+        dockCustomizer = appStoreDockCustomizer
+        let handler = makeActionHandler(featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.appStoreAddToDockOnlyCTA.rawValue: true]))
+        var cardsRefreshed = false
+
+        handler.performAction(for: .addAppToDockMac, refreshCardsAction: { cardsRefreshed = true })
+        XCTAssertFalse(cardsRefreshed)
+        videoPresenter.complete(with: .done)
+
+        XCTAssertEqual(videoPresenter.presentations, [.init(entryPoint: .newTabPageCard, primaryAction: .done)])
+        XCTAssertTrue(pixelHandler.fireAddedToDockPixelCalled)
+        XCTAssertFalse(appStoreDockCustomizer.isAddedToDock)
+        XCTAssertTrue(cardsRefreshed)
+    }
+
+    @MainActor func testWhenAppStoreBuildCannotShowVideoThenDockActionPresentsNothing() {
+        let appStoreDockCustomizer = DockCustomizerMock()
+        appStoreDockCustomizer.supportsAddingToDock = false
+        dockCustomizer = appStoreDockCustomizer
+        let handler = makeActionHandler(featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.appStoreAddToDockOnlyCTA.rawValue: false]))
+
+        handler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+
+        XCTAssertTrue(videoPresenter.presentations.isEmpty)
+    }
+
+    @MainActor func testWhenDMGBuildThenDockActionDoesNotPresentVideo() {
+        actionHandler.performAction(for: .addAppToDockMac, refreshCardsAction: nil)
+
+        XCTAssertTrue(videoPresenter.presentations.isEmpty)
+        XCTAssertTrue(dockCustomizer.isAddedToDock)
     }
 
     @MainActor func testWhenAskedToPerformActionForDockThenItFiresPixels() {

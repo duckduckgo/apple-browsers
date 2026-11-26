@@ -25,6 +25,7 @@ protocol SubscriptionOnboardingInstrumenting {
     func stepShown(_ section: SubscriptionOnboardingSection)
     func stepCompleted(_ section: SubscriptionOnboardingSection)
     func stepSkipped(_ section: SubscriptionOnboardingSection)
+    func stepClosed(_ section: SubscriptionOnboardingSection)
 }
 
 // MARK: - Pixel vocabulary
@@ -77,6 +78,10 @@ struct SubscriptionOnboardingInstrumentation: SubscriptionOnboardingInstrumentin
 
     func stepSkipped(_ section: SubscriptionOnboardingSection) {
         fire(.subscriptionOnboardingStepSkipped(step: section.pixelStepName, entryPoint: entryPoint.pixelValue))
+    }
+
+    func stepClosed(_ section: SubscriptionOnboardingSection) {
+        fire(.subscriptionOnboardingStepClosed(step: section.pixelStepName, entryPoint: entryPoint.pixelValue))
     }
 
     private func fire(_ pixel: SubscriptionPixel) {

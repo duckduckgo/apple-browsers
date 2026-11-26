@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0322CFF4BD0A08EC26D3DFD7 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = E59994348B609380F6349489 /* WideEvent */; };
+		04CF7A0DE37F204EE912B270 /* WebExtensionsTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = E6A0F47EFD7E0E7B21606696 /* WebExtensionsTestSupport */; };
 		08355A13D28C7D20D863D8DE /* AIChatDebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 052E3BE94C5927500125A19C /* AIChatDebugServer */; };
 		0A13924A522BDE2329EAE4C4 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = E2E9392DAE76D4A028C3D79E /* WideEvent */; };
 		0B4522CBE78E3ACA916DF169 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 02CEB1343E11D5F92293C1F5 /* WideEvent */; };
@@ -22,6 +23,7 @@
 		1E7D3C302F2232620099611C /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7D3C2F2F2232620099611C /* WebExtensions */; };
 		1E7D3C322F2232690099611C /* WebExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 1E7D3C312F2232690099611C /* WebExtensions */; };
 		1EA7B8D32B7E078C000330A4 /* SubscriptionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1EA7B8D22B7E078C000330A4 /* SubscriptionUI */; };
+		233101AEAA1CEE34AA841FD9 /* WebExtensionsTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = C9B3BF2C0FDEE22288261E72 /* WebExtensionsTestSupport */; };
 		23F31642A4C5168A6538E6FD /* EventHub in Frameworks */ = {isa = PBXBuildFile; productRef = F07A89FE5A0959D49AF0E27F /* EventHub */; };
 		315E395F2F86A37000D2289D /* DebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 315E395E2F86A37000D2289D /* DebugServer */; };
 		316AC7892DC28DDA003D9770 /* UIComponents in Frameworks */ = {isa = PBXBuildFile; productRef = 316AC7882DC28DDA003D9770 /* UIComponents */; };
@@ -170,6 +172,7 @@
 		4BF97AD12B43C43F00EB4240 /* NetworkProtectionIPC in Frameworks */ = {isa = PBXBuildFile; productRef = 4BF97AD02B43C43F00EB4240 /* NetworkProtectionIPC */; };
 		4BF97AD32B43C43F00EB4240 /* NetworkProtectionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4BF97AD22B43C43F00EB4240 /* NetworkProtectionUI */; };
 		517D1CC5BBC997B1D17DA1AC /* (null) in Sources */ = {isa = PBXBuildFile; };
+		548936935367B1D7D3E186AB /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 75060B0FCC045AA3E1FBFD6B /* ZIPFoundation */; };
 		5641734B2CFE168700F4B716 /* PixelExperimentKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5641734A2CFE168700F4B716 /* PixelExperimentKit */; };
 		5641734D2CFE169400F4B716 /* PixelExperimentKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5641734C2CFE169400F4B716 /* PixelExperimentKit */; };
 		5FFB5A9B02EB884EACEB7FFD /* (null) in Sources */ = {isa = PBXBuildFile; };
@@ -277,6 +280,7 @@
 		880C1ABF57058209BA6D7676 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 5AE9295C2BD02B4D08BA79E4 /* WideEvent */; };
 		8974DAC582F9B4F81E026EAA /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 2B6E79CFC9F345A68F8AD44B /* WideEvent */; };
 		8D6186F0686CC9257F2B7DD1 /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = CA57AD4FC8F1853F05E21997 /* WideEvent */; };
+		94A93A9FC8E5055953B4F971 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 9A8B4B015C6759D3F71FE70B /* ZIPFoundation */; };
 		9D84E42C2CD4E66F0046CD8B /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4072CD4E66F0046CD8B /* Common */; };
 		9D84E42D2CD4E66F0046CD8B /* PixelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4042CD4E66F0046CD8B /* PixelKit */; };
 		9D84E42F2CD4E66F0046CD8B /* AppKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4062CD4E66F0046CD8B /* AppKitExtensions */; };
@@ -1132,6 +1136,7 @@
 				8D6186F0686CC9257F2B7DD1 /* WideEvent in Frameworks */,
 				FD8C554D30455000D23DB903 /* EventHub in Frameworks */,
 				3706FE88293F661700E42796 /* OHHTTPStubs in Frameworks */,
+				548936935367B1D7D3E186AB /* ZIPFoundation in Frameworks */,
 				A7B000072F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
 				845F57072E97BFF100C7F78A /* SharedTestUtilities in Frameworks */,
 				379C68E130933649007A52B1 /* DesignResourcesKit in Frameworks */,
@@ -1178,6 +1183,7 @@
 				845F570B2E97BFF900C7F78A /* SharedTestUtilities in Frameworks */,
 				84B49F0D2CB10F0900FF08BB /* OHHTTPStubs in Frameworks */,
 				37EACB142EF53F62002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
+				233101AEAA1CEE34AA841FD9 /* WebExtensionsTestSupport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1220,6 +1226,7 @@
 				845F57032E97BFE600C7F78A /* SharedTestUtilities in Frameworks */,
 				B6AE39F529374AEC00C37AA4 /* OHHTTPStubsSwift in Frameworks */,
 				37EACB102EF53F4C002C06F9 /* PrivacyConfigTestsUtils in Frameworks */,
+				04CF7A0DE37F204EE912B270 /* WebExtensionsTestSupport in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1523,6 +1530,7 @@
 				C5401A7B1CC72C4B1A8C3390 /* WideEvent in Frameworks */,
 				35F0EEDB46C5B99058C0A95A /* EventHub in Frameworks */,
 				B6DA44172616C13800DD1EC2 /* OHHTTPStubs in Frameworks */,
+				94A93A9FC8E5055953B4F971 /* ZIPFoundation in Frameworks */,
 				A7B000042F6A000100000001 /* SnapshotTestingSupport in Frameworks */,
 				845F56FF2E97BFD100C7F78A /* SharedTestUtilities in Frameworks */,
 				379C68DF30933642007A52B1 /* DesignResourcesKit in Frameworks */,
@@ -1693,6 +1701,7 @@
 				3706FA7A293F65D500E42796 /* Sources */,
 				3706FCA6293F65D500E42796 /* Frameworks */,
 				3706FCB1293F65D500E42796 /* Resources */,
+				7E0AAAEEF41C0645F3FC4C39 /* Embed llama.cpp */,
 				7BC3E4672D6E03BA009787CD /* Make /Applications symlink, remove app on Clean build */,
 				4BBA2D272B6AC09D00F6A470 /* Embed Login Items */,
 			);
@@ -1814,6 +1823,7 @@
 			packageProductDependencies = (
 				CA57AD4FC8F1853F05E21997 /* WideEvent */,
 				3706FDD6293F661700E42796 /* OHHTTPStubs */,
+				75060B0FCC045AA3E1FBFD6B /* ZIPFoundation */,
 				3706FDD8293F661700E42796 /* OHHTTPStubsSwift */,
 				CA7335A53836D5A56E2F5B4A /* EventHub */,
 				A7B000062F6A000100000001 /* SnapshotTestingSupport */,
@@ -1880,6 +1890,7 @@
 				CC55B23C2E82BF4D0032E8BD /* BrowserServicesKitTestsUtils */,
 				9F33033B2E8E606400D6F0C9 /* RemoteMessagingTestsUtils */,
 				37EACB132EF53F62002C06F9 /* PrivacyConfigTestsUtils */,
+				C9B3BF2C0FDEE22288261E72 /* WebExtensionsTestSupport */,
 			);
 			productName = "Integration Tests";
 			productReference = 3706FEB2293F662100E42796 /* Integration Tests App Store.xctest */;
@@ -1970,6 +1981,7 @@
 				CC55B23A2E82BF430032E8BD /* BrowserServicesKitTestsUtils */,
 				9F0F46A12E865BEC00A9FC4D /* RemoteMessagingTestsUtils */,
 				37EACB0F2EF53F4C002C06F9 /* PrivacyConfigTestsUtils */,
+				E6A0F47EFD7E0E7B21606696 /* WebExtensionsTestSupport */,
 			);
 			productName = "Integration Tests";
 			productReference = 4B1AD89D25FC27E200261379 /* Integration Tests.xctest */;
@@ -1983,6 +1995,7 @@
 				4B2537572A11BE7300610219 /* Frameworks */,
 				B6BD8F0A2A260E5900B6A41F /* embed libswift_Concurrency.dylib */,
 				56F5C54E2B8F5FDB00E012C7 /* Resources */,
+				4A0A6182E9C227CDD795E808 /* Set system extension bundle version */,
 			);
 			buildRules = (
 			);
@@ -2155,6 +2168,7 @@
 				7B2E365B2D6DEFBB00A08CB7 /* Sources */,
 				7B2E365C2D6DEFBB00A08CB7 /* Frameworks */,
 				7B2E365D2D6DEFBB00A08CB7 /* Resources */,
+				9936E0FDA887B234AAC2C2F5 /* Set system extension bundle version */,
 			);
 			buildRules = (
 			);
@@ -2344,6 +2358,7 @@
 				AA585D7A248FD31100E9A3E2 /* Sources */,
 				AA585D7B248FD31100E9A3E2 /* Frameworks */,
 				AA585D7C248FD31100E9A3E2 /* Resources */,
+				614CBCD846D239004675247E /* Embed llama.cpp */,
 				B6F2C8722A7A4C7D000498CF /* Make /Applications symlink, remove app on Clean build */,
 				4B2D065D2A11D2AE00DE1F49 /* Embed Login Items */,
 			);
@@ -2468,6 +2483,7 @@
 			packageProductDependencies = (
 				083E8F2C1E9FFCBA04A4C9EB /* WideEvent */,
 				B6DA44162616C13800DD1EC2 /* OHHTTPStubs */,
+				9A8B4B015C6759D3F71FE70B /* ZIPFoundation */,
 				B6DA44182616C13800DD1EC2 /* OHHTTPStubsSwift */,
 				A7B000062F6A000100000001 /* SnapshotTestingSupport */,
 				9DC5FACA2C6B8E050011F068 /* AppKitExtensions */,
@@ -2611,6 +2627,7 @@
 				FCFC00012F00000000040001 /* XCLocalSwiftPackageReference "../SharedPackages/PixelKit" */,
 				FA57C0DE0000000000000015 /* XCLocalSwiftPackageReference "../SharedPackages/HangMetrics" */,
 				B6DA44152616C13800DD1EC2 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
+				E17D805D4496E81BAE16F0EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				B6EC37F529B5DAAC001ACE79 /* XCRemoteSwiftPackageReference "swifter" */,
 				B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */,
 				F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */,
@@ -2893,6 +2910,26 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ \"${CONFIGURATION}\" == \"Release\" && \"${PRODUCT_NAME}\" != \"DuckDuckGo\" ]]; then\n    echo \"PRODUCT_NAME must be equal to \\\"DuckDuckGo\\\" (is \\\"${PRODUCT_NAME}\\\")\"\n    echo \"See ManualAppStoreRelease.xcconfig for instructions.\"\n    exit 1\nfi\n";
 		};
+		4A0A6182E9C227CDD795E808 /* Set system extension bundle version */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Set system extension bundle version";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/set_system_extension_bundle_version.sh\"\n";
+		};
 		4B2D065C2A11D23600DE1F49 /* Copy Assets */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -2949,6 +2986,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Embeds login items for the App Store build.\n\n# Skip login item embedding for release builds until they're ready to go live.\nif [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Alpha\" ]; then\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_RELEASE_PRODUCT_NAME}\"\nelse\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_PRODUCT_NAME}\"\nfi\n\nVPN_AGENT_NAME=\"${AGENT_PRODUCT_NAME}\"\n\nif [ -z \"$VPN_AGENT_NAME\" ]; then\n    echo \"VPN_AGENT_NAME is empty.\"\n    exit 1\nelif [ -z \"$PIR_AGENT_NAME\" ]; then\n    echo \"PIR_AGENT_NAME is empty.\"\n    exit 1\nelse\n    echo \"Both VPN_AGENT_NAME and PIR_AGENT_NAME are set.\"\n    echo \"VPN_AGENT_NAME is set to '$VPN_AGENT_NAME'.\"\n    echo \"PIR_AGENT_NAME is set to '$PIR_AGENT_NAME'.\"\nfi\n\nVPN_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${VPN_AGENT_NAME}.app\")\nPIR_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${PIR_AGENT_NAME}.app\")\nAGENT_DESTINATION=\"${CONFIGURATION_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Library/LoginItems\"\n    \n# Make sure that Library/LoginItems exists before copying\nmkdir -p \"$AGENT_DESTINATION\"\n    \necho \"Copying VPN agent from $VPN_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$VPN_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n    \necho \"Copying Personal Information Removal agent from $PIR_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$PIR_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n";
+		};
+		614CBCD846D239004675247E /* Embed llama.cpp */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed llama.cpp";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/embed_llama_framework.sh\"\n";
 		};
 		6A8856B31B2BC5078B61ED81 /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -3042,6 +3098,45 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [[ \"${CONFIGURATION}\" != \"Debug\" ]] || [ \"$ENABLE_PREVIEWS\" = \"YES\" ] || [[ \"${DEPLOYMENT_LOCATION}\" != \"YES\" ]]; then\n    # run only for Debug builds with DEPLOYMENT_LOCATION=YES\n    exit 0\nfi\n\n# if Xcode created real Applications directory inside BUILT_PRODUCTS_DIR \nif [[ ! -L ${BUILT_PRODUCTS_DIR}/Applications ]]; then\n    # we only get here on clean build, remove an existing app in /Applications/DEBUG on clean build\n    echo \"rm -rf /${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n    rm -rf \"/${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n\n    # create /Applications/DEBUG dir\n    echo \"mkdir -p /${INSTALL_PATH}\"\n    mkdir -p \"/${INSTALL_PATH}\"\n\n    # move the app bundle to /Applications/DEBUG\n    echo \"mv ${DSTROOT}/${INSTALL_PATH}/${PRODUCT_NAME}.app /${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n    mv \"${DSTROOT}/${INSTALL_PATH}/${PRODUCT_NAME}.app\" \"/${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n\n    # rm ${BUILT_PRODUCTS_DIR}/Applications directory created by Xcode\n    echo \"rm -rf ${BUILT_PRODUCTS_DIR}/Applications\" \n    rm -rf \"${BUILT_PRODUCTS_DIR}/Applications\"\n    # create ${BUILT_PRODUCTS_DIR}/Applications symlink to /Applications\n    echo \"ln -s /Applications ${BUILT_PRODUCTS_DIR}/Applications\"\n    ln -s /Applications \"${BUILT_PRODUCTS_DIR}/Applications\"\nelse\n    echo \"/Applications symlink 👌\"\nfi\n";
+		};
+		7E0AAAEEF41C0645F3FC4C39 /* Embed llama.cpp */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed llama.cpp";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/embed_llama_framework.sh\"\n";
+		};
+		9936E0FDA887B234AAC2C2F5 /* Set system extension bundle version */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Set system extension bundle version";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/set_system_extension_bundle_version.sh\"\n";
 		};
 		B6BD8F0A2A260E5900B6A41F /* embed libswift_Concurrency.dylib */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4722,6 +4817,14 @@
 			traits = (
 			);
 		};
+		E17D805D4496E81BAE16F0EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.9.20;
+			};
+		};
 		F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/BareBonesBrowser.git";
@@ -5395,6 +5498,11 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = WideEvent;
 		};
+		75060B0FCC045AA3E1FBFD6B /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E17D805D4496E81BAE16F0EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
 		7B00997C2B6508B700FE7C31 /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkProtectionProxy;
@@ -5799,6 +5907,11 @@
 			package = 55EE0BC98B362A2A48B16BD0 /* XCLocalSwiftPackageReference "../SharedPackages/EventHub" */;
 			productName = EventHub;
 		};
+		9A8B4B015C6759D3F71FE70B /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E17D805D4496E81BAE16F0EA /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
 		9D84E3FF2CD4E66F0046CD8B /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OHHTTPStubs;
@@ -6051,6 +6164,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Freemium;
 		};
+		C9B3BF2C0FDEE22288261E72 /* WebExtensionsTestSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WebExtensionsTestSupport;
+		};
 		CA57AD4FC8F1853F05E21997 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WideEvent;
@@ -6130,6 +6247,10 @@
 		E59994348B609380F6349489 /* WideEvent */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WideEvent;
+		};
+		E6A0F47EFD7E0E7B21606696 /* WebExtensionsTestSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WebExtensionsTestSupport;
 		};
 		EC2E83ED38F4FAB06EE3D557 /* EventHub */ = {
 			isa = XCSwiftPackageProductDependency;

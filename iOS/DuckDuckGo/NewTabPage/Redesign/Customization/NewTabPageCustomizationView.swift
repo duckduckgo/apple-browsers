@@ -28,6 +28,8 @@ struct NewTabPageCustomizationView: View {
         static let headerMinHeight: CGFloat = 56
         static let headerTopPadding: CGFloat = 16
         static let closeButtonIconPadding: CGFloat = 4
+        static let themeTileSpacing: CGFloat = 12
+        static let themeRowInset: CGFloat = 8
     }
 
     @ObservedObject var model: NewTabPageCustomizationModel
@@ -41,6 +43,10 @@ struct NewTabPageCustomizationView: View {
             List {
                 sectionsSection
                 keyboardSection
+                if model.isIdleReturnSettingsVisible {
+                    afterInactivitySection
+                }
+                themeSection
                 allSettingsSection
             }
             .compactSectionSpacingIfAvailable()
@@ -83,10 +89,42 @@ struct NewTabPageCustomizationView: View {
             NewTabPageCustomizationRow(title: UserText.sectionTitleFavorites,
                                        image: DesignSystemImages.Glyphs.Size24.bookmarkFavorite,
                                        control: .toggle($model.isFavoritesSectionVisible))
+            if model.isIdleReturnSettingsVisible {
+                NewTabPageCustomizationRow(title: UserText.settingsReturnToShortcutLabel,
+                                           image: DesignSystemImages.Glyphs.Size16.returnTo,
+                                           control: .toggle($model.isReturnToLastTabEnabled))
+            }
+        }
+    }
 
-            NewTabPageCustomizationRow(title: UserText.newTabPageCustomizationMessages,
-                                       image: DesignSystemImages.Glyphs.Size24.chat,
-                                       control: .toggle($model.isMessagesSectionVisible))
+    private var afterInactivitySection: some View {
+        Section(footer: Text(model.afterInactivityFooterText)) {
+            SettingsPickerCellView(label: UserText.settingsAfterInactivityLabel,
+                                   options: AfterInactivityOption.allCases,
+                                   selectedOption: $model.afterInactivityOption)
+
+            if model.afterInactivityOption == .newTab {
+                SettingsPickerCellView(label: UserText.settingsAfterInactivityIntervalLabel,
+                                       options: AfterInactivityIdleInterval.allCases,
+                                       selectedOption: $model.afterInactivityIdleInterval)
+            }
+        }
+    }
+
+    private var themeSection: some View {
+        Section {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Metrics.themeTileSpacing) {
+                    ForEach(NewTabPageTheme.allCases, id: \.self) { theme in
+                        NewTabPageThemeTile(theme: theme, isSelected: model.theme == theme) {
+                            model.theme = theme
+                        }
+                    }
+                }
+                .padding(Metrics.themeRowInset)
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
         }
     }
 
@@ -103,6 +141,38 @@ struct NewTabPageCustomizationView: View {
                                        image: DesignSystemImages.Glyphs.Size24.settings,
                                        control: .button { model.selectAllSettings() })
         }
+    }
+}
+
+private struct NewTabPageThemeTile: View {
+
+    private enum Metrics {
+        static let tileSize = CGSize(width: 96, height: 160)
+        static let cornerRadius: CGFloat = 8
+        static let selectionBorderWidth: CGFloat = 3
+        static let selectionBorderGap: CGFloat = 3
+    }
+
+    let theme: NewTabPageTheme
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            Image(uiImage: theme.tileImage)
+                .resizable()
+                .frame(width: Metrics.tileSize.width, height: Metrics.tileSize.height)
+                .clipShape(RoundedRectangle(cornerRadius: Metrics.cornerRadius))
+                .padding(Metrics.selectionBorderGap + Metrics.selectionBorderWidth)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Metrics.cornerRadius + Metrics.selectionBorderGap + Metrics.selectionBorderWidth)
+                        .strokeBorder(Color(designSystemColor: .accentPrimary), lineWidth: Metrics.selectionBorderWidth)
+                        .opacity(isSelected ? 1 : 0)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(theme.title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -147,6 +217,7 @@ private struct NewTabPageCustomizationRow: View {
             if let image {
                 Image(uiImage: image)
                     .foregroundColor(Color(designSystemColor: .icons))
+                    .frame(width: 24)
                     .alignmentGuide(.firstTextBaseline, computeValue: iconBaseline)
                     .accessibilityHidden(true)
             }
@@ -161,8 +232,4 @@ private struct NewTabPageCustomizationRow: View {
         // Center each glyph on the first line's capital letters as text size changes.
         dimensions[VerticalAlignment.center] + UIFont.daxBodyRegular().capHeight / 2
     }
-}
-
-#Preview {
-    NewTabPageCustomizationView(model: NewTabPageCustomizationModel(), onClose: {})
 }

@@ -39,6 +39,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     let subscriptionUserDefaults: UserDefaults
     let wideEvent: WideEventManaging
     let subscriptionSelectionHandler: SubscriptionSelectionHandler?
+    let makeTokensDebugModel: (@MainActor () -> SubscriptionTokensDebugViewModel)?
+    private var tokensWindow: NSWindow?
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -52,7 +54,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 subscriptionManager: any SubscriptionManager,
                 subscriptionUserDefaults: UserDefaults,
                 wideEvent: WideEventManaging,
-                subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil) {
+                subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil,
+                makeTokensDebugModel: (@MainActor () -> SubscriptionTokensDebugViewModel)? = nil) {
         self.currentEnvironment = currentEnvironment
         self.updateServiceEnvironment = updateServiceEnvironment
         self.updatePurchasingPlatform = updatePurchasingPlatform
@@ -63,6 +66,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         self.subscriptionUserDefaults = subscriptionUserDefaults
         self.wideEvent = wideEvent
         self.subscriptionSelectionHandler = subscriptionSelectionHandler
+        self.makeTokensDebugModel = makeTokensDebugModel
         super.init(title: "Subscription", action: nil, keyEquivalent: "")
         self.submenu = makeSubmenu()
     }
@@ -75,6 +79,9 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         menu.addItem(NSMenuItem(title: "Show Account Details", action: #selector(showAccountDetails), target: self))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Validate Token", action: #selector(validateToken), target: self))
+        if makeTokensDebugModel != nil {
+            menu.addItem(NSMenuItem(title: "Manage Tokens…", action: #selector(showTokenManagement), target: self))
+        }
         menu.addItem(NSMenuItem(title: "Check Entitlements", action: #selector(checkEntitlements), target: self))
         menu.addItem(NSMenuItem(title: "Get Subscription Details", action: #selector(getSubscriptionDetails), target: self))
         menu.addItem(.separator())
@@ -264,6 +271,23 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         }
     }
 
+    @MainActor
+    @objc
+    func showTokenManagement() {
+        if let tokensWindow {
+            tokensWindow.makeKeyAndOrderFront(nil)
+            return
+        }
+        guard let makeTokensDebugModel else { return }
+        let window = NSWindow(contentViewController: NSHostingController(rootView: SubscriptionTokensDebugView(model: makeTokensDebugModel())))
+        window.title = "Subscription Tokens"
+        window.isReleasedWhenClosed = false
+        window.delegate = self
+        window.center()
+        tokensWindow = window
+        window.makeKeyAndOrderFront(nil)
+    }
+
     @objc
     func checkEntitlements() {
         Task {
@@ -340,15 +364,19 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     private func askAndUpdateServiceEnvironment(to newServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment) {
         let alert = makeAlert(title: "Are you sure you want to change the environment to \(newServiceEnvironment.description.capitalized)",
                               message: """
-                              Please make sure you have manually removed your current active Subscription and reset all related features.
-                              You may also need to change environment of related features.
+                              You will be signed out of your subscription. The VPN uses the same environment as the subscription.
                               This setting IS persisted between app runs. This action will close the app, do you want to proceed?
                               """,
                               buttonNames: ["Yes", "No"])
         let response = alert.runModal()
         guard case .alertFirstButtonReturn = response else { return }
-        updateServiceEnvironment(newServiceEnvironment)
-        closeTheApp()
+        Task { @MainActor in
+            if newServiceEnvironment != currentEnvironment.serviceEnvironment {
+                await subscriptionManager.signOut(notifyUI: true)
+            }
+            updateServiceEnvironment(newServiceEnvironment)
+            NSApp.perform(#selector(NSApplication.terminate(_:)), with: self, afterDelay: 0)
+        }
     }
 
     // MARK: - Custom base subscription URL
@@ -516,5 +544,13 @@ extension SubscriptionDebugMenu: NSMenuDelegate {
     public func menuWillOpen(_ menu: NSMenu) {
         purchasePlatformItem?.submenu = makePurchasePlatformSubmenu()
         regionOverrideItem?.submenu = makeRegionOverrideItemSubmenu()
+    }
+}
+
+extension SubscriptionDebugMenu: NSWindowDelegate {
+
+    public func windowWillClose(_ notification: Notification) {
+        guard (notification.object as? NSWindow) === tokensWindow else { return }
+        tokensWindow = nil
     }
 }

@@ -25,7 +25,7 @@ class TabBarTests: UITestCase {
         app = XCUIApplication.setUp()
 
         app.openNewWindow()
-        resetPinnedTabs()
+        app.resetPinnedTabs()
     }
 
     func testClosesChildTabIsSelected_whenSibilingTabIsClosed() {
@@ -157,12 +157,6 @@ class TabBarTests: UITestCase {
     }
 
     // MARK: - Utilities
-
-    private func resetPinnedTabs() {
-        app.debugMenu.click()
-        app.menuItems["MainMenu.resetData"].hover()
-        app.menuItems["Reset Pinned Tabs"].clickAfterExistenceTestSucceeds()
-    }
 
     private func moveToRightEndTab() {
         let toolbar = app.toolbars.firstMatch

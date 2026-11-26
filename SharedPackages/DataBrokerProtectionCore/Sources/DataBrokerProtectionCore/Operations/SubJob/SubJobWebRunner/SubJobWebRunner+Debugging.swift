@@ -21,6 +21,7 @@ import Foundation
 public enum DebugEventKind: String {
     case actionPayload = "Action"
     case actionResponse = "Response"
+    case snapshot = "Snapshot"
     case actionRetry = "Retry"
     case challenge = "Challenge"
     case wait = "Wait"
@@ -61,3 +62,23 @@ public extension SubJobWebRunning {
         ])
     }
 }
+
+#if DEBUG
+extension SubJobWebRunning {
+    /// Only debug-runner jobs capture snapshots; scheduler jobs in the same process never take this path.
+    var capturesDebugSnapshots: Bool {
+        DebugActionSnapshots.isEnabled && stageCalculator is DebugEventReporting
+    }
+
+    @MainActor
+    func captureDebugSnapshot(_ moment: DebugActionSnapshots.Moment, action: Action?) async {
+        guard let snapshots = DebugActionSnapshots.current, let reporter = stageCalculator as? DebugEventReporting,
+              let handler = webViewHandler as? DataBrokerProtectionWebViewHandler, let step = actionsHandler?.stepType,
+              let action else { return }
+        let file = await handler.captureSnapshot(using: snapshots, step: step, action: action.actionType, moment: moment)
+        reporter.recordDebugEvent(kind: .snapshot, actionType: action.actionType, details: DebugHelper.prettyPrintedJSON(from: [
+            "actionId": action.id, "moment": moment.rawValue, "file": file ?? "", "step": step.rawValue
+        ]))
+    }
+}
+#endif

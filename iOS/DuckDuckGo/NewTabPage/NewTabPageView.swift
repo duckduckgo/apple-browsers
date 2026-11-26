@@ -266,10 +266,7 @@ private extension NewTabPageView {
         if layoutConfiguration.expandsEscapeHatchToAvailableWidth {
             return .infinity
         }
-        if UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular {
-            return Metrics.escapeHatchMaximumWidthPad
-        }
-        return Metrics.messageMaximumWidth
+        return Self.escapeHatchMaximumWidth(horizontalSizeClass: horizontalSizeClass)
     }
 
     @ViewBuilder
@@ -365,6 +362,16 @@ private struct NewTabPageScrollToTop: ViewModifier {
                 }
             }
         }
+    }
+}
+
+extension NewTabPageView {
+
+    /// The escape hatch's width cap in the standard layout. Banners over a page, like the translation banner, match it.
+    static func escapeHatchMaximumWidth(horizontalSizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        UIDevice.current.userInterfaceIdiom == .pad && horizontalSizeClass == .regular
+            ? Metrics.escapeHatchMaximumWidthPad
+            : Metrics.messageMaximumWidth
     }
 }
 

@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 import WebExtensions
 import WebKit
 
@@ -25,11 +26,17 @@ import WebKit
 final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     private let windowProvider: () -> NSWindow?
     private let themeManager: ThemeManager
+    private let nativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol
     private var pendingPrompt: Task<Void, Never>?
 
-    init(windowProvider: @escaping () -> NSWindow?, themeManager: ThemeManager) {
+    init(
+        windowProvider: @escaping () -> NSWindow?,
+        themeManager: ThemeManager,
+        nativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol
+    ) {
         self.windowProvider = windowProvider
         self.themeManager = themeManager
+        self.nativeMessagingAlertPresenter = nativeMessagingAlertPresenter
     }
 
     func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
@@ -47,12 +54,26 @@ final class WebExtensionPermissionPrompt: WebExtensionPermissionPrompting {
     }
 
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
-        // Nothing to warn the user about, so nothing to ask: the alert would list no permissions above an Allow button.
+        let asksForUnavailablePermissions = !permissions.unavailablePermissions.isEmpty
+
+        // Unavailable permissions are never asked for: they're taken out of the request before it gets here and are
+        // only explained. If nothing else needs a warning, there's nothing to ask, so the rest is granted.
         if WebExtensionPermissionFormatter.messages(for: permissions).isEmpty {
+            if asksForUnavailablePermissions {
+                await enqueue { [nativeMessagingAlertPresenter] in
+                    await nativeMessagingAlertPresenter.explain(context)
+                }
+            }
             return .granted
         }
 
         let alert = makeAlert(for: context.webExtension, permissions: permissions)
+        if asksForUnavailablePermissions, let stack = alert.accessoryView as? NSStackView {
+            let note = NSTextField(wrappingLabelWithString: UserText.webExtensionNativeMessagingUnavailablePermission)
+            note.textColor = NSColor(designSystemColor: .textSecondary, palette: themeManager.designColorPalette)
+            note.preferredMaxLayoutWidth = 380
+            stack.addArrangedSubview(note)
+        }
         return await present(alert) == .alertFirstButtonReturn ? .granted : .denied
     }
 

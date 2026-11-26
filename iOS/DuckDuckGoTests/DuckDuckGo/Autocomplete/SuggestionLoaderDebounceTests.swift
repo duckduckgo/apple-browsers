@@ -159,7 +159,7 @@ final class SuggestionLoaderDebounceTests: XCTestCase {
     func testReturningToSameQueryRejectsResponseFromEarlierFetch() async {
         let dataSource = DeferredSuggestionDataSource()
         let loader = DuckAIURLSuggestionsLoader(dataSource: dataSource,
-                                                 featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.suggestionDebounce200ms]))
+                                                 featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.debounceLogic2026]))
         loader.fetch(query: "weather")
         loader.fetch(query: "forecast")
         loader.fetch(query: "weather")
@@ -273,7 +273,7 @@ final class SuggestionLoaderDebounceTests: XCTestCase {
         let reset: () -> Void
 
         init(duckAI: Bool, enabled: Bool) {
-            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.suggestionDebounce200ms] : [])
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.debounceLogic2026] : [])
             if duckAI {
                 let loader = DuckAIURLSuggestionsLoader(dataSource: dataSource, featureFlagger: featureFlagger)
                 loader.subscribeToTextChanges(text, scheduler: scheduler)

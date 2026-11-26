@@ -156,6 +156,7 @@ public struct DebugModeRun: Encodable {
         case running
         case awaitingEmailConfirmation
         case confirmed
+        case optsOutInParent
         case failed
     }
 

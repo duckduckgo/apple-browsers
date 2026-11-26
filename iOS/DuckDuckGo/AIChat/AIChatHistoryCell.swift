@@ -52,10 +52,38 @@ final class AIChatHistoryCell: UITableViewCell {
         fatalError("init(coder:) is not supported.")
     }
 
+    /// Set only by the iPad sidebar, which draws rows on the column instead of grouped cards.
+    private var sidebarRowIsCurrentChat: Bool?
+
     override func prepareForReuse() {
         super.prepareForReuse()
         titleLabel.text = nil
         iconImageView.image = nil
+    }
+
+    func applySidebarAppearance(isCurrentChat: Bool) {
+        sidebarRowIsCurrentChat = isCurrentChat
+        selectedBackgroundView = nil
+        separatorInset = UIEdgeInsets(top: 0, left: .greatestFiniteMagnitude, bottom: 0, right: 0)
+        setNeedsUpdateConfiguration()
+    }
+
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        super.updateConfiguration(using: state)
+        guard let isCurrentChat = sidebarRowIsCurrentChat else { return }
+        let isMarked = isCurrentChat && !state.isEditing
+        var background = UIBackgroundConfiguration.clear()
+        background.cornerRadius = 12
+        background.backgroundInsets = NSDirectionalEdgeInsets(top: 1, leading: 8, bottom: 1, trailing: 8)
+        if isMarked {
+            background.backgroundColor = UIColor(designSystemColor: .accentPrimary)
+        } else if state.isHighlighted && !state.isEditing {
+            background.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+        }
+        backgroundConfiguration = background
+        let foreground = UIColor(designSystemColor: isMarked ? .accentContentPrimary : .textPrimary)
+        titleLabel.textColor = foreground
+        iconImageView.tintColor = isMarked ? foreground : UIColor(designSystemColor: .icons)
     }
 
     private func setupViews() {

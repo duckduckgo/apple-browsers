@@ -457,7 +457,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         signalEdgeIfDraggedPastIt(scrollView)
 
         switch state {
-        case .idle: break
+        case .idle: return
 
         case .starting(let startPosition):
             let offset = startPosition.x - scrollView.contentOffset.x
@@ -504,6 +504,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 state = .starting(startPosition)
             }
         }
+        if let tab = tabsModel?.currentTab, tab.link != nil {
+            liveTabControllerProvider(tab)?.updateSitePermissionDialogVisibility()
+        }
+        liveDestinationController?.updateSitePermissionDialogVisibility()
     }
 
     private func prepareFloatingSwipe(offset: CGFloat) {
@@ -1425,7 +1429,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         chromePreview = nil
         teardownAuxiliarySwipeSnapshots()
         if let tab = tabsModel?.currentTab, tab.link != nil {
-            liveTabControllerProvider(tab)?.fireSitePermissionDialogImpressionIfVisible()
+            liveTabControllerProvider(tab)?.updateSitePermissionDialogVisibility()
         }
     }
 

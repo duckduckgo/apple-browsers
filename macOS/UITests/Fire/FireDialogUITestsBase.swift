@@ -38,8 +38,10 @@ extension FireDialogUITests {
         app.enforceSingleWindow()
 
         // Reset fireproof sites
-        app.debugMenu.click()
-        app.debugMenu.menuItems["Reset Fireproof Sites"].click()
+        app.revealDebugMenuItem(
+            XCUIApplication.AccessibilityIdentifiers.debugMenuResetFireproofSites,
+            in: XCUIApplication.AccessibilityIdentifiers.debugMenuResetData
+        ).clickAfterExistenceTestSucceeds()
 
         // Clear state
         app.fireButton.click()
@@ -61,16 +63,13 @@ extension FireDialogUITests {
     // MARK: - Helper Methods
 
     func populateFakeHistoryFromDebugMenu(file: StaticString = #file, line: UInt = #line) {
-        // Open Debug menu -> History submenu -> Populate fake history
-        app.debugMenu.click()
-
-        let historySubmenu = app.menuItems["History"]
-        XCTAssertTrue(historySubmenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "History submenu should exist", file: file, line: line)
-        historySubmenu.hover()
-
-        // Click the first populate option (10 visits per day)
-        XCTAssertTrue(app.populateFakeHistory10MenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Populate fake history menu item should exist", file: file, line: line)
-        app.populateFakeHistory10MenuItem.click()
+        let populateHistory = app.revealDebugMenuItem(
+            XCUIApplication.AccessibilityIdentifiers.populateFakeHistory10MenuItem,
+            in: XCUIApplication.AccessibilityIdentifiers.debugMenuHistory
+        )
+        XCTAssertTrue(populateHistory.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Populate fake history menu item should exist", file: file, line: line)
+        populateHistory.click()
 
         // Wait a moment for history to be populated (async operation)
         Thread.sleep(forTimeInterval: 3.0)

@@ -65,15 +65,15 @@ final class DuckAIURLSuggestionsLoader {
         where P.Output == String, P.Failure == Never {
         textPublisher
             .removeDuplicates(by: { [featureFlagger] previous, current in
-                featureFlagger.isFeatureOn(.suggestionDebounce200ms) && previous == current
+                featureFlagger.isFeatureOn(.debounceLogic2026) && previous == current
             })
             .handleEvents(receiveOutput: { [weak self] text in
-                guard let self, self.featureFlagger.isFeatureOn(.suggestionDebounce200ms) else { return }
+                guard let self, self.featureFlagger.isFeatureOn(.debounceLogic2026) else { return }
                 self.latestQuery = text
             })
             .debounceSuggestions(using: featureFlagger, scheduler: scheduler)
             .removeDuplicates(by: { [featureFlagger] previous, current in
-                !featureFlagger.isFeatureOn(.suggestionDebounce200ms) && previous == current
+                !featureFlagger.isFeatureOn(.debounceLogic2026) && previous == current
             })
             .sink { [weak self] request in
                 self?.fetch(query: request.query, includeRemoteSuggestions: request.includeRemoteSuggestions)
@@ -86,7 +86,7 @@ final class DuckAIURLSuggestionsLoader {
     }
 
     func fetch(query: String, includeRemoteSuggestions: Bool = true) {
-        let usesSeparateDebounce = featureFlagger.isFeatureOn(.suggestionDebounce200ms)
+        let usesSeparateDebounce = featureFlagger.isFeatureOn(.debounceLogic2026)
         latestQuery = query
         let fetchID = UUID()
         self.fetchID = fetchID

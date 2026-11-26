@@ -33,7 +33,7 @@ final class FavoritesUITests: UITestCase {
 
     func testWhenPageIsFavoritedThenItCanBeOpenedFromNewTabAndRemoved() throws {
         let site = try localWebsite()
-        let favorite = app.buttons["Favorites.Item"].firstMatch
+        let favorite = app.buttons["\(LocalUITestWebsite.Page.first.title). Favorite"].firstMatch
         let favoriteSuggestion = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "Autocomplete.Suggestions.ListItem.Favorite-"))
             .firstMatch

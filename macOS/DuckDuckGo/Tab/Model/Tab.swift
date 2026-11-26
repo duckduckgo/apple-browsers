@@ -120,7 +120,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     private(set) var userContentController: UserContentController?
     private(set) var specialPagesUserScript: SpecialPagesUserScript?
-    private(set) var onboardingActionsManager: OnboardingActionsManager?
 
     @MainActor
     convenience init(id: String? = nil,
@@ -325,7 +324,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.webExtensionManagerProvider = webExtensionManagerProvider
 
         self.specialPagesUserScript = SpecialPagesUserScript()
-        self.onboardingActionsManager = specialPagesUserScript?.withAllSubfeatures()
+        specialPagesUserScript?.withAllSubfeatures()
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
         configuration.applyStandardConfiguration(featureFlagger: featureFlagger,
                                                  contentBlocking: privacyFeatures.contentBlocking,
@@ -623,9 +622,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     var contentChangeEnabled = true
-
-    /// Called before an actual tab close, never for moves or internal replacement.
-    var onClose: (@MainActor () -> Void)?
 
     var isLazyLoadingInProgress = false
 
@@ -1031,13 +1027,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             return
         }
 
-        let onboarding = NonBlockingOnboarding(featureFlagger: Application.appDelegate.featureFlagger)
-        let updater = Application.appDelegate.onboardingContextualDialogsManager
-        if onboarding.isNonBlocking {
-            onboarding.initializeContextualOnboarding(updater)
-        } else {
-            updater.state = .notStarted
-        }
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
         setContent(.onboarding)
     }
 
@@ -1255,6 +1245,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         invalidateInteractionStateData()
 
         self.history?.clearNavigationHistory(keepingCurrent: keepingCurrent)
+        self.pageContext?.linkedPageDomains = []
     }
 
     private var webViewCancellables = Set<AnyCancellable>()
@@ -1554,9 +1545,6 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func didStart(_ navigation: Navigation) {
-        if navigation.url.isHttpOrHttps, navigation.navigationAction.navigationType != .alternateHtmlLoad {
-            Application.appDelegate.windowControllersManager.recordBrowsingBeforeOnboardingCompletion()
-        }
         delegate?.tabDidStartNavigation(self)
         permissions.tabDidStartNavigation()
         userInteractionDialog = nil

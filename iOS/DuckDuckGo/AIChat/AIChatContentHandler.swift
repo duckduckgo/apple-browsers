@@ -40,6 +40,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     @MainActor func willHandOff(_ payload: AIChatPayload)
     /// Whether the page holds a handed-off prompt behind its own Terms of Service card.
     @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
+    @MainActor var isAIChatPromoVisible: Bool? { get set }
+    @MainActor var aiChatStatusOnPage: AIChatStatusValue? { get set }
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)
     func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
@@ -71,6 +73,8 @@ protocol AIChatUserScriptProviding: AnyObject {
     func submitToggleSidebarAction()
     @MainActor
     func submitOpenChatProtectionAction()
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome?
 }
 
 extension AIChatUserScriptProviding {
@@ -181,6 +185,11 @@ protocol AIChatContentHandling: AnyObject {
     /// Submits a chat-protection action, opening the "All chats are private" page.
     @MainActor
     func submitOpenChatProtectionAction()
+
+    /// Asks the page to open a chat in place, without a reload.
+    /// - Returns: the page's answer, or `nil` when it can't take the request or doesn't answer in time.
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome?
 
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
@@ -300,6 +309,8 @@ final class AIChatContentHandler: AIChatContentHandling {
     @MainActor
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
         let replacedTermsOfServiceState = self.userScript?.isTermsOfServiceShownOnPage
+        let replacedPromoVisibility = self.userScript?.isAIChatPromoVisible
+        let replacedStatus = self.userScript?.aiChatStatusOnPage
         self.userScript?.cleanUpForReplacement()
         self.userScript = userScript
         self.userScript?.delegate = self
@@ -320,6 +331,12 @@ final class AIChatContentHandler: AIChatContentHandling {
         // Rebuilt user scripts replace this one under a page that already took its handoff and won't ask again.
         if let replacedTermsOfServiceState {
             userScript.isTermsOfServiceShownOnPage = replacedTermsOfServiceState
+        }
+        if let replacedPromoVisibility {
+            userScript.isAIChatPromoVisible = replacedPromoVisibility
+        }
+        if let replacedStatus {
+            userScript.aiChatStatusOnPage = replacedStatus
         }
         if let unannouncedHandoff {
             announceHandoff(unannouncedHandoff)
@@ -461,6 +478,11 @@ final class AIChatContentHandler: AIChatContentHandling {
     @MainActor
     func submitOpenChatProtectionAction() {
         userScript?.submitOpenChatProtectionAction()
+    }
+
+    @MainActor
+    func openChat(chatId: String) async -> AIChatOpenChatOutcome? {
+        await userScript?.openChat(chatId: chatId)
     }
 
     func submitPageContext(_ context: AIChatPageContextData?) {

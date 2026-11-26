@@ -33,11 +33,14 @@ final class RulesCompilationMonitor {
 
     private let isOnboarding = !DefaultTutorialSettings().hasSeenOnboarding
 
+    /// Resolved at fire time, so the shared monitor picks up `PixelKit.setUp` whenever it ran.
+    private let pixelFiring: () -> (any PixelKitFiring)?
     private var didReport = false
     private var waitStart: TimeInterval?
     private var waiters: Set<String> = []
 
-    private init() {
+    init(pixelFiring: @escaping () -> (any PixelKitFiring)? = { PixelKit.shared }) {
+        self.pixelFiring = pixelFiring
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(applicationWillTerminate(_:)),
                                                name: UIApplication.willTerminateNotification,
@@ -109,10 +112,10 @@ final class RulesCompilationMonitor {
 
     private func reportWaitTime(_ waitTime: TimeInterval, result: Pixel.Event.CompileRulesResult) {
         didReport = true
-        PixelKit.fire(Pixel.Event.compilationResult(result: result,
-                                             waitTime: Pixel.Event.BucketAggregation(number: waitTime),
-                                             appState: isOnboarding ? .onboarding : .regular),
-                      options: .parameters([Const.waitTime: String(waitTime)]))
+        pixelFiring()?.fire(Pixel.Event.compilationResult(result: result,
+                                                          waitTime: Pixel.Event.BucketAggregation(number: waitTime),
+                                                          appState: isOnboarding ? .onboarding : .regular),
+                            options: .parameters([Const.waitTime: String(waitTime)]))
     }
 
 }

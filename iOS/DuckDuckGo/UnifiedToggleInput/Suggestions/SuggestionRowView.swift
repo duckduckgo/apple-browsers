@@ -35,6 +35,8 @@ struct SuggestionRowView: View {
     /// Carries the 🔥 button's global frame so the iPad popover can anchor the delete confirmation to it.
     let onFire: (CGRect) -> Void
 
+    static let titleLeadingInset: CGFloat = Metrics.iconSize + Metrics.iconTextSpacing
+
     @State private var fireButtonFrame: CGRect = .zero
 
     private var titleColor: Color { Color(designSystemColor: isSelected ? .accentContentPrimary : .textPrimary) }

@@ -1061,6 +1061,9 @@ final class BrowserToolbarView: UIView {
         return hasEmbeddedOmnibar ? Self.floatingEmbeddedBottomMargin : Self.floatingStandaloneBottomMargin
     }
 
+    /// The floating glass, the embedded address bar included. The chrome morph transforms it.
+    var capsuleView: UIView { chromeContainer }
+
     var visibleCapsuleRect: CGRect {
         guard isFloatingStyleEnabled else { return bounds }
         let shadowSpill = materialBackgroundView.layer.shadowRadius + materialBackgroundView.layer.shadowOffset.height

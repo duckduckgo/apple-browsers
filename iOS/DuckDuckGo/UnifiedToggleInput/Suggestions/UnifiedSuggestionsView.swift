@@ -31,6 +31,7 @@ struct UnifiedSuggestionsView: View {
     var usesScrollableEscapeHatch = true
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
+    var embedsRedesignedModules = false
     var mode: TextEntryMode = .search
     var escapeHatch: EscapeHatchModel?
     var syncPromo: AnyView?
@@ -70,6 +71,16 @@ struct UnifiedSuggestionsView: View {
         }
     }
 
+    /// The page draws its own escape hatch while it shows the search modules.
+    private var showsFocusedLayerEscapeHatch: Bool { !showsRedesignedSearchModules || embedsRedesignedModules }
+
+    private var embeddedModules: RedesignedFocusedSearchModulesView.EmbeddedModules? {
+        guard embedsRedesignedModules else { return nil }
+        return .init(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
+                     messagesModel: favoritesPresentation.viewController?.messagesModel,
+                     isVisible: showsRedesignedSearchModules)
+    }
+
     /// The active typing states (the search / duck.ai suggestion lists); recents and empty states aren't.
     private var isTypingList: Bool {
         if case .list(let kind) = viewModel.content { return kind == .search || kind == .duckAI }
@@ -83,17 +94,19 @@ struct UnifiedSuggestionsView: View {
         ZStack {
             listLayer
             if usesRedesignedNewTabPageLayout {
-                RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
-                                                   messagesModel: favoritesPresentation.viewController?.messagesModel,
-                                                   showsSearchModules: !usesScrollableEscapeHatch || showsRedesignedSearchModules,
+                RedesignedFocusedSearchModulesView(embeddedModules: embeddedModules,
                                                    recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
                                                    escapeHatch: escapeHatch,
+                                                   showsEscapeHatch: showsFocusedLayerEscapeHatch,
                                                    syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
                                                    isAddressBarAtBottom: isAddressBarAtBottom,
                                                    contentTopInset: viewModel.contentTopInset,
                                                    usesScrollableEscapeHatch: usesScrollableEscapeHatch,
-                                                   onEscapeHatchGeometryChange: { viewModel.setEmbeddedEscapeHatchGeometry($0) })
-                    .background(usesScrollableEscapeHatch ? Color.clear : Color(designSystemColor: .background))
+                                                   // The hidden hatch has no logo to place, so it reports no geometry.
+                                                   onEscapeHatchGeometryChange: { [showsFocusedLayerEscapeHatch] geometry in
+                                                       viewModel.setEmbeddedEscapeHatchGeometry(showsFocusedLayerEscapeHatch ? geometry : nil)
+                                                   })
+                    .background(usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout ? Color.clear : Color(designSystemColor: .background))
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
                     .opacity(showsEmbeddedContent ? 1 : 0)
@@ -121,13 +134,13 @@ struct UnifiedSuggestionsView: View {
         showsEmbeddedContent && fadesOutLeavingLogo ? FocusedContentFade.afterLogoFadeOut : nil
     }
 
-    /// The redesigned page swaps the logo and the incoming content at once.
+    /// The New Tab Page swaps the logo and the incoming content at once.
     private var fadesOutLeavingLogo: Bool {
-        viewModel.waitsForLogoFadeOut && !usesRedesignedNewTabPageLayout
+        viewModel.waitsForLogoFadeOut && !viewModel.isOverRedesignedNewTabPage
     }
 
     private var isWaitingForLeavingLogo: Bool {
-        !usesRedesignedNewTabPageLayout && viewModel.logoModeChange?.source != nil
+        !viewModel.isOverRedesignedNewTabPage && viewModel.logoModeChange?.source != nil
             && (viewModel.isPreparingLogoModeChange || fadesOutLeavingLogo)
     }
 
@@ -149,7 +162,8 @@ struct UnifiedSuggestionsView: View {
                                isAddressBarAtBottom: isAddressBarAtBottom,
                                isVisible: isShowingList,
                                isFadingOut: viewModel.isFadingOut,
-                               animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout)
+                               animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout,
+                               usesCardSurface: usesRedesignedNewTabPageLayout)
             .if(usesScrollableEscapeHatch) {
                 $0.safeAreaInset(edge: .top, spacing: 0) {
                     Color.clear.frame(height: viewModel.contentTopInset)
@@ -182,10 +196,11 @@ struct UnifiedSuggestionsView: View {
             let geometry = viewModel.logoLayout(in: viewport)
             let destinationShowsLogo = viewModel.isShowingLogo && (geometry.hatchLayout == nil || geometry.hatchLayout?.visibleFrame != nil)
             let source = viewModel.logoModeChange?.source
-            let isPreparingLogo = !usesRedesignedNewTabPageLayout && viewModel.isPreparingLogoModeChange && source != nil
+            let isPreparingLogo = !viewModel.isOverRedesignedNewTabPage && viewModel.isPreparingLogoModeChange && source != nil
             let isFadingLogo = viewModel.logoModeChange?.isFadingOut == true
-            let retainedSource = !usesRedesignedNewTabPageLayout && (isPreparingLogo || isFadingLogo || !destinationShowsLogo) ? source : nil
+            let retainedSource = !viewModel.isOverRedesignedNewTabPage && (isPreparingLogo || isFadingLogo || !destinationShowsLogo) ? source : nil
             let showsLogo = (isPreparingLogo || (viewModel.isShowingLogo && !isFadingLogo)) && !viewModel.isFireTab && !viewModel.isLandscape
+                && !viewModel.isOverRedesignedNewTabPage
             let targetCenterY = retainedSource?.frame.midY ?? geometry.centerY
             let offsetY = targetCenterY - frame.midY
             let offsetX = viewModel.physicalLogoCenterX.map { (retainedSource?.frame.midX ?? $0) - frame.midX } ?? 0
@@ -193,7 +208,7 @@ struct UnifiedSuggestionsView: View {
             let hatchLayout = geometry.hatchLayout.map { layout in
                 var layout = layout
                 layout.retainedFrame = retainedSource?.frame
-                layout.animatesVisibility = !usesRedesignedNewTabPageLayout && retainedSource == nil
+                layout.animatesVisibility = !viewModel.isOverRedesignedNewTabPage && retainedSource == nil
                 return layout
             }
             let logo = FocusedDaxLogoView(progress: retainedSource?.progress ?? viewModel.logoModel.progress,
@@ -230,7 +245,7 @@ struct UnifiedSuggestionsView: View {
                 .animation(!showsLogo && fadesOutLeavingLogo ? FocusedContentFade.fadeOut : nil, value: showsLogo)
                 // A logo held back for the keyboard fades in once it settles.
                 .opacity(viewModel.isLogoRevealDeferred ? 0 : 1)
-                .animation(usesRedesignedNewTabPageLayout || viewModel.isLogoRevealDeferred || animation == nil ? nil : FocusedContentFade.fadeIn,
+                .animation(viewModel.isOverRedesignedNewTabPage || viewModel.isLogoRevealDeferred || animation == nil ? nil : FocusedContentFade.fadeIn,
                            value: viewModel.isLogoRevealDeferred)
                 // On dismiss it fades out (the NTP content takes over) — a separate opacity so the
                 // toggle's instant show/hide above is unaffected.

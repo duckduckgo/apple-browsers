@@ -37,35 +37,37 @@ public class MockRemoteMessagingConfigFetcher: RemoteMessagingConfigFetching {
 }
 
 public extension RemoteMessageResponse.JsonRemoteMessagingConfig {
-    static let empty: Self = .init(version: 0, messages: [], rules: [])
+    static var empty: Self { .init(version: 0, messages: [], rules: []) }
 
-    static let smallMessage: Self = .init(
-        version: 0,
-        messages: [
-            RemoteMessageResponse.JsonRemoteMessage(
-                id: "1",
-                surfaces: ["new_tab_page"],
-                content: RemoteMessageResponse.JsonContent(
-                    messageType: "small",
-                    titleText: "Small Message",
-                    descriptionText: "Small Message Description",
-                    listItems: nil,
-                    placeholder: nil,
-                    imageUrl: nil,
-                    actionText: nil,
-                    action: nil,
-                    primaryActionText: nil,
-                    primaryAction: nil,
-                    secondaryActionText: nil,
-                    secondaryAction: nil
-                ),
-                translations: nil,
-                matchingRules: nil,
-                exclusionRules: nil,
-                metrics: nil,
-                displayConditions: nil
-            )
-        ],
-        rules: []
-    )
+    static var smallMessage: Self {
+        .init(
+            version: 0,
+            messages: [
+                RemoteMessageResponse.JsonRemoteMessage(
+                    id: "1",
+                    surfaces: ["new_tab_page"],
+                    content: RemoteMessageResponse.JsonContent(
+                        messageType: "small",
+                        titleText: "Small Message",
+                        descriptionText: "Small Message Description",
+                        listItems: nil,
+                        placeholder: nil,
+                        imageUrl: nil,
+                        actionText: nil,
+                        action: nil,
+                        primaryActionText: nil,
+                        primaryAction: nil,
+                        secondaryActionText: nil,
+                        secondaryAction: nil
+                    ),
+                    translations: nil,
+                    matchingRules: nil,
+                    exclusionRules: nil,
+                    metrics: nil,
+                    displayConditions: nil
+                )
+            ],
+            rules: []
+        )
+    }
 }

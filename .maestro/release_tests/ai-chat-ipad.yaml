@@ -15,9 +15,9 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         isInternalUser: ${INTERNAL_USER_MODE}
         ff.iPadAIToggle: "true"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # AI Features should expose shortcut settings and mode options on iPad
 - tapOn:

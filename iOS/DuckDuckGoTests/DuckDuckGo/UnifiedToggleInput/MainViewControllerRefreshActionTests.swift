@@ -157,6 +157,20 @@ final class MainViewControllerRefreshActionTests: XCTestCase {
         )
     }
 
+    func test_aiTab_promptAutoSubmittedByURL_showsCollapsedWithoutExpand() {
+        let inputs = makeInputs(
+            tabIsAITab: true,
+            tabURL: nil,
+            tabLinkURL: URL(string: "https://duck.ai/?q=hello&prompt=1"),
+            coordinatorIsAITabState: false,
+            coordinatorHasSubmittedPrompt: false
+        )
+        XCTAssertEqual(
+            MainViewController.decideRefreshAction(for: inputs),
+            .refreshAITab(.showCollapsed(expandAfterRefresh: false))
+        )
+    }
+
     func test_aiTab_voiceModeRequested_showsCollapsedWithoutExpand() {
         let inputs = makeInputs(
             tabIsAITab: true,

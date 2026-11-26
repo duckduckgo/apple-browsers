@@ -31,6 +31,8 @@ public protocol WideEventManaging {
     func updateFlow<T: WideEventData>(_ data: T)
     func updateFlow<T: WideEventData>(globalID: String, update: (inout T) -> Void)
     func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock)
+    /// `options` apply to the two GET pixels only, not the POST.
+    func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, options: PixelKit.Options, onComplete: @escaping PixelKit.CompletionBlock)
     func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus) async throws -> Bool
     func discardFlow<T: WideEventData>(_ data: T)
     func getFlowData<T: WideEventData>(_ type: T.Type, globalID: String) -> T?
@@ -79,14 +81,15 @@ public final class WideEvent: WideEventManaging {
     }
 
     public convenience init(
-        useMockRequests: Bool = false,
+        useMockRequests: Bool = AppVersion.runType != .normal,
+        isDevMode: Bool = false,
         storage: WideEventStoring = WideEventUserDefaultsStorage(),
         failureEventMapping: EventMapping<WideEventFailureEvent>? = WideEventFailureEvent.eventMapping,
         featureFlagProvider: WideEventFeatureFlagProviding
     ) {
         self.init(
             storage: storage,
-            sender: DefaultWideEventSender(useMockRequests: useMockRequests),
+            sender: DefaultWideEventSender(useMockRequests: useMockRequests, isDevMode: isDevMode),
             sampler: DefaultWideEventSampler(),
             failureEventMapping: failureEventMapping,
             featureFlagProvider: featureFlagProvider
@@ -200,6 +203,10 @@ public final class WideEvent: WideEventManaging {
     // MARK: - Flow Completion
 
     public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, onComplete: @escaping PixelKit.CompletionBlock = { _, _ in }) {
+        completeFlow(data, status: status, options: .default, onComplete: onComplete)
+    }
+
+    public func completeFlow<T: WideEventData>(_ data: T, status: WideEventStatus, options: PixelKit.Options, onComplete: @escaping PixelKit.CompletionBlock) {
         guard getFlowData(T.self, globalID: data.globalData.id) != nil else {
             Self.logger.info("Attempted to complete non-existent wide event '\(T.metadata.pixelName, privacy: .public)' with global ID: \(data.globalData.id, privacy: .public)")
             onComplete(false, nil)
@@ -213,7 +220,7 @@ public final class WideEvent: WideEventManaging {
             let current: T = try storage.load(globalID: data.globalData.id)
             storage.delete(current)
 
-            sender.send(current, status: status, featureFlagProvider: featureFlagProvider, onComplete: onComplete)
+            sender.send(current, status: status, featureFlagProvider: featureFlagProvider, options: options, onComplete: onComplete)
 
             Self.logger.info("Completed wide event flow: \(T.metadata.pixelName, privacy: .public) with global ID: \(data.globalData.id, privacy: .public)")
         } catch {

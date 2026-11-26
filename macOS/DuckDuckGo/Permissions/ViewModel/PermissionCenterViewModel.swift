@@ -548,7 +548,8 @@ final class PermissionCenterViewModel: ObservableObject {
         }
 
         // Also include persisted permissions that aren't in usedPermissions
-        for permissionType in permissionManager.persistedPermissionTypes(forDomain: domain) where !removedPermissions.contains(permissionType) {
+        for permissionType in permissionManager.persistedPermissionTypes(forDomain: domain)
+        where !removedPermissions.contains(permissionType) && !permissionType.isBrowserTool {
             addPermission(permissionType, toExternal: &externalSchemePermissions, toOther: &otherPermissions)
         }
 

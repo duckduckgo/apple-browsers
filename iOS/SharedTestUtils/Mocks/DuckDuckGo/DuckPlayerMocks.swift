@@ -630,6 +630,8 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var toolbarHeight: CGFloat = 0.0
 
+    var isToolbarParked: Bool = false
+
     var barsMaxHeight: CGFloat = 30
 
     var currentBarsVisibilityOverride: CGFloat?

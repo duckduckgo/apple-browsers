@@ -26,6 +26,17 @@ import Testing
 @Suite("CompleteDownloadRowViewModel", .serialized)
 final class CompleteDownloadRowViewModelTests {
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Formats the file size with the injected locale", .timeLimit(.minutes(1)))
+    func formatsFileSizeWithInjectedLocale() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).pdf")
+        try Data(count: 2_500_000).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        #expect(CompleteDownloadRowViewModel(fileURL: url, locale: Locale(identifier: "en_US")).fileSize == "2.5 MB")
+        #expect(CompleteDownloadRowViewModel(fileURL: url, locale: Locale(identifier: "es_ES")).fileSize == "2,5 MB")
+    }
+
     @available(iOS 17, *)
     @Test("Returns a prepared event for a single-VEVENT .ics file", .timeLimit(.minutes(1)))
     func preparesEventForSingleVEvent() throws {

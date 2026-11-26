@@ -132,9 +132,10 @@ extension Preferences {
                 }
             }
             .sheet(isPresented: isPresentingAddToDockDemoVideo) {
-                PreferencesVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
-                                      videoSize: DockPreferencesModel.demoVideoSize,
-                                      isPresented: isPresentingAddToDockDemoVideo)
+                AddToDockVideoSheet(videoURL: DockPreferencesModel.demoVideoURL,
+                                    videoSize: DockPreferencesModel.demoVideoSize,
+                                    isPresented: isPresentingAddToDockDemoVideo,
+                                    onAction: dockModel.videoSheetButtonClicked)
             }
         }
     }

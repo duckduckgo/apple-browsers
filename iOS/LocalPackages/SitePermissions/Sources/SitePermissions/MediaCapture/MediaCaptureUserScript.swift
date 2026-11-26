@@ -78,8 +78,8 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
             return (["decision": MediaCaptureBridgeDecision.deny.rawValue], nil)
         }
 
-        // A retained document must return to WebKit's behavior on rollback, including contexts
-        // the custom flow does not support. Check the flag before applying its eligibility rules.
+        // Without site permissions (iOS 15), every request returns to WebKit's behavior, including
+        // contexts the custom flow does not support. Check this before applying its eligibility rules.
         guard delegate.isMediaCapturePermissionHandlingEnabled else {
             return (["decision": MediaCaptureBridgeDecision.bypass.rawValue], nil)
         }

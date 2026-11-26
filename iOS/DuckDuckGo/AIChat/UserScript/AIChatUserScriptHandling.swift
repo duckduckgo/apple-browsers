@@ -176,6 +176,10 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func willHandOff(_ payload: AIChatPayload)
     /// Whether the page holds a handed-off prompt behind its own Terms of Service card.
     @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
+    /// What the page last said about its promos (`aiChatPromoVisibility`), `nil` until it says anything.
+    @MainActor var isAIChatPromoVisible: Bool? { get set }
+    /// What the page last said about its response state (`responseState`), `nil` until it says anything.
+    @MainActor var aiChatStatusOnPage: AIChatStatusValue? { get set }
     func setOpenLinkHandler(_ handler: ((URL) -> Void)?)
     @MainActor func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
@@ -201,6 +205,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     func openFilePicker(params: Any, message: UserScriptMessage) async -> Encodable?
     func disableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func aiChatPromoVisibility(params: Any, message: UserScriptMessage) async -> Encodable?
     func focusChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func editPrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     func cancelEdit(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -248,6 +253,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let syncHandler: AIChatSyncHandling
     private let bonusHandler: AIChatBonusHandling
     private let featureFlagger: FeatureFlagger
+    private let simplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
@@ -271,6 +277,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var termsOfServicePageLoadState: DuckAiTermsOfServicePageLoadState = .unknown
     @MainActor var isTermsOfServiceShownOnPage = false {
         didSet { inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage }
+    }
+    @MainActor var isAIChatPromoVisible: Bool? {
+        didSet { inputBoxHandler?.isAIChatPromoVisible = isAIChatPromoVisible }
+    }
+    /// The page reports a state only when it changes, so a returning input box needs the last one.
+    @MainActor var aiChatStatusOnPage: AIChatStatusValue? {
+        didSet {
+            guard let aiChatStatusOnPage else { return }
+            inputBoxHandler?.aiChatStatus = aiChatStatusOnPage
+        }
     }
 
     private var isAttachmentPrivacyEnabled: Bool {
@@ -331,6 +347,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: keyValueStore)
         self.promptHandler = promptHandler
         self.devicePlatform = devicePlatform
+        self.simplifiedPromptBoxFeature = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger, devicePlatform: devicePlatform)
         self.aichatContextualModeFeature = aichatContextualModeFeature
         self.unifiedToggleInputFeature = unifiedToggleInputFeature
         self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
@@ -541,6 +558,16 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         return (supportsFullMode, supportsContextualMode, supportsNativeChatInput)
     }
 
+    /// With its native chat input on, iPad hands the page's header to native in every display mode.
+    private var isIPadNativeChatInputOn: Bool {
+        !devicePlatform.isIphone && unifiedToggleInputFeature.isFullTabChatInputAvailable
+    }
+
+    /// The iPad native chat list reads chats from native storage, so it needs that flag as well as the native input.
+    private var isIPadNativeChatListOn: Bool {
+        isIPadNativeChatInputOn && featureFlagger.isFeatureOn(.aiChatNativeStorage)
+    }
+
     /// iPad's contextual sheet and sidebar always use the native input; its full-tab chat does once the iPad flag is on.
     private var isNativeChatInputAvailable: Bool {
         unifiedToggleInputFeature.isFullTabChatInputAvailable || displayMode == .contextual
@@ -577,7 +604,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: supportsTabContexts,
-            supportsAIChatFullMode: supportsFullMode,
+            supportsAIChatFullMode: supportsFullMode || isIPadNativeChatInputOn,
             supportsAIChatContextualMode: supportsContextualMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
@@ -598,6 +625,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsCanonicalChatFormat: true
         )
         config.supportsResponseStateReporting = true
+        config.supportsiPadNativeChatList = isIPadNativeChatListOn
+        if simplifiedPromptBoxFeature.isAvailable {
+            config.supportsCustomizeResponsesInSettings = true
+        }
+        config.supportsDefaultModelSetting = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
         return config
     }
 
@@ -622,7 +654,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: params, options: [])
             let decodedStatus = try JSONDecoder().decode(AIChatStatus.self, from: jsonData)
-            inputBoxHandler?.aiChatStatus = decodedStatus.status
+            aiChatStatusOnPage = decodedStatus.status
             chatStatusHandler?(decodedStatus.status)
             if let attachments = decodedStatus.attachments {
                 inputBoxHandler?.attachmentUsage = attachments
@@ -734,6 +766,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {
         self.inputBoxHandler = inputBoxHandler
         self.inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage
+        self.inputBoxHandler?.isAIChatPromoVisible = isAIChatPromoVisible
+        if let aiChatStatusOnPage {
+            self.inputBoxHandler?.aiChatStatus = aiChatStatusOnPage
+        }
     }
 
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {
@@ -768,30 +804,28 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return OpenKeyboardResponse(success: false, error: "WebView not available")
         }
 
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.main.async {
-                let javascript = """
-                (function() {
-                    try {
-                        const element = document.querySelector('\(cssSelector)');
-                        element?.focus?.();
-                        return true;
-                    } catch (error) {
-                        console.error('Error focusing element:', error);
-                        return false;
-                    }
-                })();
-                """
+        return await focusElement(matching: cssSelector, in: webView)
+    }
 
-                webView.evaluateJavaScript(javascript) { _, error in
-                    if let error = error {
-                        Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
-                        continuation.resume(returning: OpenKeyboardResponse(success: false, error: "JavaScript execution failed"))
-                    } else {
-                        continuation.resume(returning: OpenKeyboardResponse(success: true))
-                    }
-                }
-            }
+    /// The selector is passed as a script argument, never interpolated into the source, so page-supplied text cannot run as code.
+    @MainActor
+    private func focusElement(matching selector: String, in webView: WKWebView) async -> OpenKeyboardResponse {
+        let javascript = """
+        try {
+            document.querySelector(selector)?.focus?.();
+            return true;
+        } catch (error) {
+            console.error('Error focusing element:', error);
+            return false;
+        }
+        """
+
+        do {
+            _ = try await webView.callAsyncJavaScript(javascript, arguments: ["selector": selector], in: nil, contentWorld: .page)
+            return OpenKeyboardResponse(success: true)
+        } catch {
+            Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
+            return OpenKeyboardResponse(success: false, error: "JavaScript execution failed")
         }
     }
 
@@ -911,6 +945,25 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor
     func enableChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
         inputBoxHandler?.isSubmitBlockedByRecoveryCard = false
+        return nil
+    }
+
+    // MARK: - Promo Visibility
+
+    private struct PromoVisibility: Decodable {
+        let visible: Bool
+    }
+
+    /// Only the full-tab input shows new chat hints, so the contextual sheet's page is ignored.
+    @MainActor
+    func aiChatPromoVisibility(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard displayMode == .fullTab else { return nil }
+        guard let visibility: PromoVisibility = DecodableHelper.decode(from: params) else {
+            Logger.aiChat.debug("[NewChatHints] aiChatPromoVisibility ignored: unreadable params")
+            return nil
+        }
+        Logger.aiChat.debug("[NewChatHints] aiChatPromoVisibility visible=\(visibility.visible, privacy: .public)")
+        isAIChatPromoVisible = visibility.visible
         return nil
     }
 

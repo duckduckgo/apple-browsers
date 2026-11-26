@@ -36,8 +36,8 @@ tags:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         currentAppVariant: ${APP_VARIANT}
         isRunningUITests: true
-        "ff.alwaysShowKeyboardOnNewTabPage": "false"
         isInternalUser: "true"
+- runFlow: ../shared/dismiss_launch_keyboard.yaml
 
 # Enable the Search/Duck.ai mode toggle via AI Features -> "Search & Duck.ai".
 - tapOn:

@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import PixelKit
+@testable import PixelKit
 @testable import WideEvent
 import Foundation
 
@@ -76,10 +76,13 @@ final class WideEventSenderTests: XCTestCase {
         )
     }
 
-    private func makeSender(pixelKitProvider: (() -> PixelKit?)? = nil, storage: WideEventStoring? = nil) -> DefaultWideEventSender {
+    private func makeSender(pixelKitProvider: (() -> PixelKit?)? = nil,
+                            isDevMode: Bool = false,
+                            storage: WideEventStoring? = nil) -> DefaultWideEventSender {
         return DefaultWideEventSender(
             pixelKitProvider: pixelKitProvider ?? { PixelKit.shared },
             postRequestHandler: mockPostRequestHandler,
+            isDevMode: isDevMode,
             storage: storage ?? WideEventUserDefaultsStorage(userDefaults: testDefaults)
         )
     }
@@ -226,6 +229,57 @@ final class WideEventSenderTests: XCTestCase {
             if case .invalidFlowState = error {
             } else {
                 XCTFail("Expected invalidFlowState error")
+            }
+        }
+    }
+
+    // MARK: - Retry Tests
+
+    func testSendQueuesFailedPixelsForRetryWhenRequested() {
+        let store = InMemoryPixelRetryQueueStore()
+        let queued = XCTestExpectation(description: "Failed pixels queued")
+        queued.expectedFulfillmentCount = 2
+        store.onAppend = { queued.fulfill() }
+
+        let pixelKit = makeFailingPixelKit(retryQueueStore: store)
+        let sender = makeSender(pixelKitProvider: { pixelKit })
+
+        sender.send(makeTestData(), status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider(), options: .withRetry) { _, _ in }
+
+        wait(for: [queued], timeout: 5.0)
+
+        XCTAssertTrue(store.items.allSatisfy { $0.pixelName.contains("wide_sender_test_event") })
+    }
+
+    func testSendDoesNotQueueFailedPixelsForRetryByDefault() {
+        let store = InMemoryPixelRetryQueueStore()
+        let pixelKit = makeFailingPixelKit(retryQueueStore: store)
+        let sender = makeSender(pixelKitProvider: { pixelKit })
+
+        let expectation = XCTestExpectation(description: "Send completed")
+        sender.send(makeTestData(), status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { success, _ in
+            XCTAssertFalse(success)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+
+        XCTAssertTrue(store.items.isEmpty)
+    }
+
+    private func makeFailingPixelKit(retryQueueStore: PixelRetryQueueStoring) -> PixelKit {
+        PixelKit(dryRun: false,
+                 appVersion: "1.0.0",
+                 source: "test-suite",
+                 session: "test",
+                 channel: nil,
+                 defaultHeaders: [:],
+                 pixelCalendar: nil,
+                 dateGenerator: Date.init,
+                 defaults: testDefaults,
+                 retryQueueStore: retryQueueStore) { _, _, _, _, _, onComplete in
+            DispatchQueue.main.async {
+                onComplete(false, nil)
             }
         }
     }
@@ -748,6 +802,74 @@ final class WideEventSenderTests: XCTestCase {
         let global = json?["global"] as? [String: Any]
         XCTAssertNil(global?["is_first_daily_occurrence"])
     }
+
+    // MARK: - Dev Mode Tests
+
+    func testPOSTRequestIncludesDevModeAsBooleanWhenDevModeEnabled() {
+        let sender = makeSender(isDevMode: true)
+
+        let app = sendAndCapturePOSTAppSection(with: sender)
+
+        XCTAssertEqual(app?["dev_mode"] as? Bool, true)
+    }
+
+    func testPOSTRequestOmitsDevModeWhenDevModeDisabled() {
+        let sender = makeSender(isDevMode: false)
+
+        let app = sendAndCapturePOSTAppSection(with: sender)
+
+        XCTAssertNotNil(app)
+        XCTAssertNil(app?["dev_mode"])
+    }
+
+    func testPOSTRequestOmitsDevModeByDefault() {
+        let sender = DefaultWideEventSender(
+            pixelKitProvider: { PixelKit.shared },
+            postRequestHandler: mockPostRequestHandler,
+            storage: WideEventUserDefaultsStorage(userDefaults: testDefaults)
+        )
+
+        let app = sendAndCapturePOSTAppSection(with: sender)
+
+        XCTAssertNotNil(app)
+        XCTAssertNil(app?["dev_mode"])
+    }
+
+    func testPixelsNeverIncludeDevModeWhenDevModeEnabled() {
+        let sender = makeSender(isDevMode: true)
+
+        _ = sendAndCapturePOSTAppSection(with: sender)
+
+        XCTAssertEqual(capturedPixels.count, 2)
+        for pixel in capturedPixels {
+            XCTAssertNil(pixel.parameters["app.dev_mode"])
+        }
+    }
+
+    #if os(macOS)
+    func testPOSTRequestOmitsVerificationTopicFromAppName() {
+        let data = makeTestData()
+        data.appData.name = "DuckDuckGo - verify-test-topic"
+
+        let app = sendAndCapturePOSTAppSection(with: makeSender(isDevMode: true), data: data)
+
+        XCTAssertEqual(app?["name"] as? String, "DuckDuckGo")
+    }
+    #endif
+
+    private func sendAndCapturePOSTAppSection(with sender: DefaultWideEventSender, data: SenderTestWideEventData? = nil) -> [String: Any]? {
+        let expectation = XCTestExpectation(description: "Request sent")
+        sender.send(data ?? makeTestData(), status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+
+        XCTAssertEqual(capturedPOSTRequests.count, 1)
+        guard let body = capturedPOSTRequests.first?.body else { return nil }
+        let json = try? JSONSerialization.jsonObject(with: body, options: []) as? [String: Any]
+        return json?["app"] as? [String: Any]
+    }
 }
 
 // MARK: - Test Wide Event Data Types
@@ -793,6 +915,38 @@ final class SenderTestWideEventData: WideEventData {
 
         params["feature.data.ext.test_eligible"] = testEligible
         return params
+    }
+}
+
+// MARK: - In-Memory Retry Queue Store
+
+final class InMemoryPixelRetryQueueStore: PixelRetryQueueStoring {
+    private let lock = NSLock()
+    private var storage: [PixelRetryQueueItem] = []
+
+    var onAppend: (() -> Void)?
+
+    var items: [PixelRetryQueueItem] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+
+    func append(_ items: [PixelRetryQueueItem]) throws {
+        lock.lock()
+        storage += items
+        lock.unlock()
+        onAppend?()
+    }
+
+    func remove(itemsWithIDs ids: Set<UUID>) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        storage.removeAll { ids.contains($0.id) }
+    }
+
+    func storedItems() throws -> [PixelRetryQueueItem] {
+        items
     }
 }
 

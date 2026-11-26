@@ -39,18 +39,21 @@ final class VPNService: NSObject {
     private let subscriptionManager: any SubscriptionManager
     private let application: UIApplication
     private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let onboardingVPNExperimentMetrics: OnboardingVPNDownloadReasonExperimentMetrics
     init(mainCoordinator: MainCoordinator,
          subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          application: UIApplication = UIApplication.shared,
          notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
          notificationServiceManager: NotificationServiceManaging,
          onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         onboardingVPNExperimentMetrics: OnboardingVPNDownloadReasonExperimentMetrics,
     ) {
         self.mainCoordinator = mainCoordinator
         self.subscriptionManager = subscriptionManager
         self.application = application
         self.notificationServiceManager = notificationServiceManager
         self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.onboardingVPNExperimentMetrics = onboardingVPNExperimentMetrics
 
         notificationCenter.delegate = notificationServiceManager
 
@@ -61,7 +64,7 @@ final class VPNService: NSObject {
         subscribeToVPNConfigurationChanges()
     }
 
-    // MARK: - Subscription-onboarding experiment metric
+    // MARK: - Experiment metrics
 
     private func subscribeToVPNConfigurationChanges() {
         tunnelController.configurationInstalledPublisher
@@ -73,6 +76,9 @@ final class VPNService: NSObject {
 
     private func reportVPNActivatedExperimentMetricIfNeeded() async {
         let wasAlreadyActivated = onboardingActivationRecorder.recordVPNActivatedIfNeeded()
+        if !wasAlreadyActivated {
+            onboardingVPNExperimentMetrics.fireVPNActivated()
+        }
         SubscriptionOnboardingExperiment.fireVPNActivatedMetricIfNeeded(
             isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
             isAlreadyActivated: wasAlreadyActivated)
@@ -88,6 +94,10 @@ final class VPNService: NSObject {
 
         Task {
             await stopAndRemoveVPNIfNotAuthenticated()
+
+            if await tunnelController.isTunnelUp {
+                onboardingVPNExperimentMetrics.fireVPNUse()
+            }
 
             if #available(iOS 17.0, *) {
                 await VPNSnoozeLiveActivityManager().endSnoozeActivityIfNecessary()
@@ -125,13 +135,14 @@ final class VPNService: NSObject {
     }
 
     private func stopAndRemoveVPNIfNotAuthenticated() async {
-        // Only remove the VPN if the user is not authenticated, and it's installed:
-        guard !subscriptionManager.isUserAuthenticated, await tunnelController.isInstalled else {
-            return
-        }
-
-        await tunnelController.stop()
-        await tunnelController.removeVPN(reason: .didBecomeActiveCheck)
+        let tunnelController = tunnelController
+        let remover = VPNSignedOutRemover(subscriptionManager: subscriptionManager,
+                                          isVPNInstalled: { await tunnelController.isInstalled },
+                                          stopAndRemoveVPN: {
+            await tunnelController.stop()
+            await tunnelController.removeVPN(reason: .didBecomeActiveCheck)
+        })
+        await remover.removeVPNIfSignedOut()
     }
 
     // MARK: - Suspend

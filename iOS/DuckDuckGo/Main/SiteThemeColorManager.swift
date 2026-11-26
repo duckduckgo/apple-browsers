@@ -151,14 +151,16 @@ final class SiteThemeColorManager {
             statusBackgroundColor = newColor
         }
         viewCoordinator.setStandardStatusBackgroundColor(statusBackgroundColor)
+        // A tab hosting the iPad chat input keeps the chat's color, or the loading page reads as a second surface.
+        let pageColor = tabViewController?.fullTabChatInputPageColor ?? newColor
         if isFloatingUIEnabled {
             // nil = WebKit's page-derived color (what the glass policy reads); still never the site theme color (#6554).
             tabViewController?.webView?.underPageBackgroundColor = nil
         } else {
-            tabViewController?.webView?.underPageBackgroundColor = newColor
-            tabViewController?.webView?.scrollView.backgroundColor = newColor
+            tabViewController?.webView?.underPageBackgroundColor = pageColor
+            tabViewController?.webView?.scrollView.backgroundColor = pageColor
         }
-        tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
+        tabViewController?.pullToRefreshViewAdapter?.backgroundColor = pageColor
     }
 
 }

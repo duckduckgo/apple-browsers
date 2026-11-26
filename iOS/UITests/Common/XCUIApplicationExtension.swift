@@ -93,6 +93,14 @@ extension XCUIApplication {
         item.tap()
     }
 
+    /// The New Tab page raises the keyboard a moment after the app opens onto it. Waits for that keyboard before
+    /// dismissing it, so the dismissal can't finish first and leave the keyboard to cover the next toolbar tap.
+    /// Use right after a launch that lands on the New Tab page with the New Tab keyboard setting on.
+    func dismissLaunchKeyboard(file: StaticString = #filePath, line: UInt = #line) {
+        _ = keyboards.firstMatch.waitForExistence(timeout: UITestTimeouts.elementExistence)
+        dismissAddressBarEditing(file: file, line: line)
+    }
+
     func dismissAddressBarEditing(file: StaticString = #filePath, line: UInt = #line) {
         let timeout: TimeInterval = 20
         let startedAt = ProcessInfo.processInfo.systemUptime

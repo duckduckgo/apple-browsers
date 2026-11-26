@@ -21,8 +21,8 @@ import CoreData
 import Foundation
 import XCTest
 
-public struct ModifiedAtConstraint {
-    var check: (Date?) -> Void
+public struct ModifiedAtConstraint: Sendable {
+    let check: @Sendable (Date?) -> Void
 
     public static func `nil`(file: StaticString = #file, line: UInt = #line) -> ModifiedAtConstraint {
         ModifiedAtConstraint { date in
@@ -57,7 +57,7 @@ public struct ModifiedAtConstraint {
     }
 }
 
-public enum BookmarkTreeNode {
+public enum BookmarkTreeNode: Sendable {
     case bookmark(id: String, name: String?, url: String?, favoritedOn: [FavoritesFolderID], modifiedAt: Date?, isDeleted: Bool, isStub: Bool, isOrphaned: Bool, modifiedAtConstraint: ModifiedAtConstraint?)
     case folder(id: String, name: String?, children: [BookmarkTreeNode], modifiedAt: Date?, isDeleted: Bool, isStub: Bool, isOrphaned: Bool, lastChildrenArrayReceivedFromSync: [String]?, modifiedAtConstraint: ModifiedAtConstraint?)
 
@@ -211,7 +211,7 @@ public struct BookmarkTreeBuilder {
     }
 }
 
-public struct BookmarkTree {
+public struct BookmarkTree: Sendable {
 
     public init(modifiedAt: Date? = nil, modifiedAtConstraint: ModifiedAtConstraint? = nil, lastChildrenArrayReceivedFromSync: [String]? = nil, @BookmarkTreeBuilder builder: () -> [BookmarkTreeNode]) {
         self.modifiedAt = modifiedAt
@@ -342,71 +342,115 @@ public extension BookmarkEntity {
     }
 }
 
+// Read managed objects on their context queue, including relationships that can fire faults.
+private struct BookmarkSnapshot: Sendable {
+    let uuid: String?
+    let title: String?
+    let url: String?
+    let isStub: Bool
+    let isFolder: Bool
+    let isPendingDeletion: Bool
+    let visibleChildCount: Int
+    let childCount: Int?
+    let favoritedOn: Set<FavoritesFolderID>
+    let modifiedAt: Date?
+    let lastChildrenArrayReceivedFromSync: [String]?
+
+    init(_ entity: BookmarkEntity) {
+        uuid = entity.uuid
+        title = entity.title
+        url = entity.url
+        isStub = entity.isStub
+        isFolder = entity.isFolder
+        isPendingDeletion = entity.isPendingDeletion
+        visibleChildCount = entity.childrenArray.count
+        childCount = entity.children?.count
+        favoritedOn = Set(entity.favoritedOn)
+        modifiedAt = entity.modifiedAt
+        lastChildrenArrayReceivedFromSync = entity.lastChildrenArrayReceivedFromSync
+    }
+
+    static func subtree(_ root: BookmarkEntity) -> [Self] {
+        var result = [Self]()
+        var queue = [root]
+        var visited = Set<NSManagedObjectID>()
+        var index = 0
+        while index < queue.count {
+            let entity = queue[index]
+            index += 1
+            guard visited.insert(entity.objectID).inserted else {
+                XCTFail("Cycle in bookmark tree at \(entity.uuid ?? "<no UUID>")")
+                break
+            }
+            result.append(Self(entity))
+            if entity.isFolder, let children = entity.children?.array as? [BookmarkEntity] {
+                queue.append(contentsOf: children)
+            }
+        }
+        return result
+    }
+}
+
 public extension XCTestCase {
     func assertEquivalent(withTimestamps: Bool = true, withLastChildrenArrayReceivedFromSync: Bool = true, _ bookmarkEntity: BookmarkEntity, _ tree: BookmarkTree, file: StaticString = #file, line: UInt = #line) {
+        guard let sourceContext = bookmarkEntity.managedObjectContext else {
+            XCTFail("The bookmark must belong to a managed object context", file: file, line: line)
+            return
+        }
+        let rootID = bookmarkEntity.objectID
+        let actualRoot = sourceContext.performAndWait {
+            let root = sourceContext.registeredObject(for: rootID) as? BookmarkEntity
+            return root.map(BookmarkSnapshot.subtree)
+        }
+        guard let actualRoot else {
+            XCTFail("The root bookmark must be registered in its context", file: file, line: line)
+            return
+        }
+
         let context = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-        context.persistentStoreCoordinator = bookmarkEntity.managedObjectContext?.persistentStoreCoordinator
+        context.persistentStoreCoordinator = sourceContext.persistentStoreCoordinator
 
         let orphansContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
-        orphansContext.persistentStoreCoordinator = bookmarkEntity.managedObjectContext?.persistentStoreCoordinator
+        orphansContext.persistentStoreCoordinator = sourceContext.persistentStoreCoordinator
 
-        var orphans: [BookmarkEntity] = []
-        var expectedRootFolder: BookmarkEntity! = nil
-        var expectedOrphans: [BookmarkEntity] = []
-        var modifiedAtConstraints: [String: ModifiedAtConstraint] = [:]
-
-        orphansContext.performAndWait {
-            orphans = BookmarkUtils.fetchOrphanedEntities(orphansContext)
+        let actualOrphans = orphansContext.performAndWait {
+            BookmarkUtils.fetchOrphanedEntities(orphansContext).map(BookmarkSnapshot.subtree)
         }
-
-        context.performAndWait {
+        let (expectedTrees, constraints) = context.performAndWait {
             context.deleteAll(matching: BookmarkEntity.fetchRequest())
             BookmarkUtils.prepareFoldersStructure(in: context)
-            (expectedRootFolder, expectedOrphans, modifiedAtConstraints) = tree.createEntitiesForCheckingModifiedAt(in: context)
+            let (root, orphans, constraints) = tree.createEntitiesForCheckingModifiedAt(in: context)
+            return (([root] + orphans).map(BookmarkSnapshot.subtree), constraints)
         }
 
-        let thisFolder = bookmarkEntity
-        XCTAssertEqual(expectedRootFolder.uuid, thisFolder.uuid, "root folder uuid mismatch", file: file, line: line)
-        if withLastChildrenArrayReceivedFromSync {
-            XCTAssertEqual(expectedRootFolder.lastChildrenArrayReceivedFromSync, thisFolder.lastChildrenArrayReceivedFromSync, "root folder lastChildrenArrayReceivedFromSync mismatch", file: file, line: line)
-        }
-
-        var expectedTreeQueue: [BookmarkEntity] = [[expectedRootFolder], expectedOrphans].flatMap { $0 }
-        var thisTreeQueue: [BookmarkEntity] = [[thisFolder], orphans].flatMap { $0 }
-
-        while !expectedTreeQueue.isEmpty {
-            guard !thisTreeQueue.isEmpty else {
-                XCTFail("No more children in the tree, while \(expectedTreeQueue.count) (ids: \(expectedTreeQueue.compactMap(\.uuid))) still expected", file: file, line: line)
-                return
-            }
-            let expectedNode = expectedTreeQueue.removeFirst()
-            let thisNode = thisTreeQueue.removeFirst()
-
-            let thisUUID = thisNode.uuid ?? "<no local UUID>"
-
-            XCTAssertEqual(expectedNode.uuid, thisNode.uuid, "uuid mismatch", file: file, line: line)
-            XCTAssertEqual(expectedNode.title, thisNode.title, "title mismatch for \(thisUUID)", file: file, line: line)
-            XCTAssertEqual(expectedNode.url, thisNode.url, "url mismatch for \(thisUUID)", file: file, line: line)
-            XCTAssertEqual(expectedNode.isStub, thisNode.isStub, "stub mismatch for \(thisUUID)", file: file, line: line)
-            XCTAssertEqual(expectedNode.isFolder, thisNode.isFolder, "isFolder mismatch for \(thisUUID)", file: file, line: line)
-            XCTAssertEqual(expectedNode.isPendingDeletion, thisNode.isPendingDeletion, "isPendingDeletion mismatch for \(thisUUID)", file: file, line: line)
-            XCTAssertEqual(expectedNode.childrenArray.count, thisNode.childrenArray.count, "children count mismatch for \(thisUUID)", file: file, line: line)
-            XCTAssertEqual(Set(expectedNode.favoritedOn), Set(thisNode.favoritedOn), "favoritedOn mismatch for \(thisUUID)", file: file, line: line)
-            if withTimestamps {
-                if let modifiedAtConstraint = modifiedAtConstraints[thisUUID] {
-                    modifiedAtConstraint.check(thisNode.modifiedAt)
-                } else {
-                    XCTAssertEqual(expectedNode.modifiedAt, thisNode.modifiedAt, "modifiedAt mismatch for \(thisUUID)", file: file, line: line)
+        let actualTrees = [actualRoot] + actualOrphans
+        XCTAssertEqual(actualOrphans.map { $0.first?.uuid }, expectedTrees.dropFirst().map { $0.first?.uuid },
+                       "orphan bookmark IDs mismatch", file: file, line: line)
+        for (expected, actual) in zip(expectedTrees, actualTrees) {
+            XCTAssertEqual(expected.count, actual.count, "node count mismatch", file: file, line: line)
+            for (expectedNode, thisNode) in zip(expected, actual) {
+                let thisUUID = thisNode.uuid ?? "<no local UUID>"
+                XCTAssertEqual(expectedNode.uuid, thisNode.uuid, "uuid mismatch", file: file, line: line)
+                XCTAssertEqual(expectedNode.title, thisNode.title, "title mismatch for \(thisUUID)", file: file, line: line)
+                XCTAssertEqual(expectedNode.url, thisNode.url, "url mismatch for \(thisUUID)", file: file, line: line)
+                XCTAssertEqual(expectedNode.isStub, thisNode.isStub, "stub mismatch for \(thisUUID)", file: file, line: line)
+                XCTAssertEqual(expectedNode.isFolder, thisNode.isFolder, "isFolder mismatch for \(thisUUID)", file: file, line: line)
+                XCTAssertEqual(expectedNode.isPendingDeletion, thisNode.isPendingDeletion, "isPendingDeletion mismatch for \(thisUUID)", file: file, line: line)
+                XCTAssertEqual(expectedNode.visibleChildCount, thisNode.visibleChildCount, "children count mismatch for \(thisUUID)", file: file, line: line)
+                XCTAssertEqual(expectedNode.favoritedOn, thisNode.favoritedOn, "favoritedOn mismatch for \(thisUUID)", file: file, line: line)
+                if withTimestamps {
+                    if let constraint = constraints[thisUUID] {
+                        constraint.check(thisNode.modifiedAt)
+                    } else {
+                        XCTAssertEqual(expectedNode.modifiedAt, thisNode.modifiedAt, "modifiedAt mismatch for \(thisUUID)", file: file, line: line)
+                    }
                 }
-            }
-
-            if expectedNode.isFolder {
-                if withLastChildrenArrayReceivedFromSync {
-                    XCTAssertEqual(expectedNode.lastChildrenArrayReceivedFromSync, thisNode.lastChildrenArrayReceivedFromSync, "lastChildrenArrayReceivedFromSync mismatch for \(thisUUID)", file: file, line: line)
+                if expectedNode.isFolder {
+                    XCTAssertEqual(expectedNode.childCount, thisNode.childCount, "children count mismatch for \(thisUUID)", file: file, line: line)
+                    if withLastChildrenArrayReceivedFromSync {
+                        XCTAssertEqual(expectedNode.lastChildrenArrayReceivedFromSync, thisNode.lastChildrenArrayReceivedFromSync, "lastChildrenArrayReceivedFromSync mismatch for \(thisUUID)", file: file, line: line)
+                    }
                 }
-                XCTAssertEqual(expectedNode.children?.count, thisNode.children?.count, "children count mismatch for \(thisUUID)", file: file, line: line)
-                expectedTreeQueue.append(contentsOf: (expectedNode.children?.array as? [BookmarkEntity]) ?? [])
-                thisTreeQueue.append(contentsOf: (thisNode.children?.array as? [BookmarkEntity]) ?? [])
             }
         }
     }

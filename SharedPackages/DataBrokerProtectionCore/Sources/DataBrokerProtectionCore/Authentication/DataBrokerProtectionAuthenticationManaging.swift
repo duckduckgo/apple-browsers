@@ -57,6 +57,12 @@ public final class DataBrokerProtectionAuthenticationManager: DataBrokerProtecti
         self.subscriptionManager = subscriptionManager
     }
 
+    #if DEBUG
+    public var debugSubscriptionManager: DataBrokerProtectionSubscriptionManager? {
+        subscriptionManager as? DataBrokerProtectionSubscriptionManager
+    }
+    #endif
+
     public func hasValidEntitlement() async throws -> Bool {
         try await subscriptionManager.hasValidEntitlement()
     }

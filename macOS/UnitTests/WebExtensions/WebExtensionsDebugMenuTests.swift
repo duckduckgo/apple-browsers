@@ -85,7 +85,6 @@ final class WebExtensionsDebugMenuTests: XCTestCase {
     private final class Store: ChromeWebStoreManaging {
         var canCheckForUpdates = false
         var catalogExtensionIDs: [String] = []
-        var learnMoreURL: URL?
         var checkCount = 0
         var onCheck: (() -> Void)?
 

@@ -21,7 +21,7 @@ import Combine
 import FeatureFlags_macOS
 import Foundation
 import History
-import Persistence
+import PixelKit
 import PrivacyConfig
 import WebKit
 
@@ -33,12 +33,14 @@ final class AIChatBrowserToolsService {
     let invoker: BrowserToolInvoker
     let permissions: BrowserToolPermissionStoring
     let clientToolPermissions: ClientToolPermissionCoordinator
+    let permissionPrompts: BrowserToolPermissionPromptPresenter
 
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pushers = NSHashTable<AnyObject>.weakObjects()
     private var lastClientToolsConfiguration: ClientToolsConfiguration?
     private var featureFlagChanges: AnyCancellable?
+    private var fireBurns: AnyCancellable?
 
     /// Whether browser tools are enabled by the parent feature flag.
     var isEnabled: Bool { configuration.isEnabled }
@@ -47,21 +49,30 @@ final class AIChatBrowserToolsService {
     init(featureFlagger: FeatureFlagger,
          windowControllersManager: WindowControllersManagerProtocol,
          historyCoordinator: HistoryCoordinating,
-         permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
+         bookmarkManager: BookmarkManager,
+         permissionManager: PermissionManagerProtocol,
          tools: [any BrowserTool]? = nil) {
-        let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
-        let catalog = BrowserToolCatalog(tools: tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
-                                                                           historyCoordinator: historyCoordinator),
-                                         configuration: configuration)
-        let permissions = BrowserToolPermissionStore(storage: permissionStorage)
+        let tools = tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
+                                               historyCoordinator: historyCoordinator,
+                                               bookmarkManager: bookmarkManager)
+        let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger,
+                                                            askToolNames: Set(tools.filter { $0.permissionMode == .ask }.map(\.name)))
+        let catalog = BrowserToolCatalog(tools: tools, configuration: configuration)
+        let permissions = BrowserToolSitePermissions(permissionManager: permissionManager)
         let clientToolPermissions = ClientToolPermissionCoordinator(permissions: permissions)
+        let instrumentation = BrowserToolsPixelInstrumentation(pixelFiring: PixelKit.shared)
+        clientToolPermissions.instrumentation = instrumentation
         self.configuration = configuration
         self.windowControllersManager = windowControllersManager
         self.catalog = catalog
         self.permissions = permissions
         self.clientToolPermissions = clientToolPermissions
-        self.invoker = BrowserToolInvoker(catalog: catalog,
-                                          clientToolPermissions: clientToolPermissions)
+        self.permissionPrompts = BrowserToolPermissionPromptPresenter(windowControllersManager: windowControllersManager) { prompt, decision, prompter in
+            clientToolPermissions.respond(to: prompt, decision: decision, from: prompter)
+        }
+        let invoker = BrowserToolInvoker(catalog: catalog, clientToolPermissions: clientToolPermissions)
+        invoker.instrumentation = instrumentation
+        self.invoker = invoker
         self.lastClientToolsConfiguration = Self.clientToolsConfiguration(for: catalog)
         self.featureFlagChanges = featureFlagger.updatesPublisher.sink { [weak self] in
             Task { @MainActor in
@@ -70,9 +81,17 @@ final class AIChatBrowserToolsService {
         }
     }
 
+    /// `requestAccess` grants last for a chat until quit; the Fire Button clears them too.
+    func revokeChatGrants(whenBurning burns: AnyPublisher<Fire.BurningData?, Never>) {
+        fireBurns = burns.compactMap { $0 }.sink { [weak self] _ in
+            Task { @MainActor in self?.clientToolPermissions.revokeChatGrants() }
+        }
+    }
+
     /// Registration order determines the order of the advertised capabilities.
     private static func defaultTools(windowControllersManager: WindowControllersManagerProtocol,
-                                     historyCoordinator: HistoryCoordinating) -> [any BrowserTool] {
+                                     historyCoordinator: HistoryCoordinating,
+                                     bookmarkManager: BookmarkManager) -> [any BrowserTool] {
         let reader = BrowserToolPageContentReader(windowControllersManager: windowControllersManager)
         return [
             ListOpenTabsBrowserTool(windowControllersManager: windowControllersManager),
@@ -80,7 +99,13 @@ final class AIChatBrowserToolsService {
             SearchHistoryBrowserTool(historyCoordinator: historyCoordinator),
             ReadTabContentBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
             FindInPageBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
-            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter())
+            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter()),
+            PinTabBrowserTool(windowControllersManager: windowControllersManager),
+            OpenTabBrowserTool(windowControllersManager: windowControllersManager),
+            CloseTabsBrowserTool(windowControllersManager: windowControllersManager),
+            BookmarkTabBrowserTool(windowControllersManager: windowControllersManager, bookmarkManager: bookmarkManager),
+            SearchDownloadsBrowserTool(),
+            SearchBookmarksBrowserTool(bookmarkManager: bookmarkManager)
         ]
     }
 
@@ -148,19 +173,26 @@ protocol AIChatBrowserToolsPushing: AnyObject {
 final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
 
     private let featureFlagger: FeatureFlagger
+    private let askToolNames: Set<String>
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, askToolNames: Set<String>) {
         self.featureFlagger = featureFlagger
+        self.askToolNames = askToolNames
     }
 
     var isEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatBrowserTools)
     }
 
+    var isRequestAccessEnabled: Bool {
+        isEnabled && featureFlagger.isFeatureOn(.aiChatBrowserToolRequestAccess)
+    }
+
     func isToolEnabled(named name: String) -> Bool {
         guard isEnabled,
               let subfeature = AIChatBrowserToolsSubfeature(rawValue: name),
               let flag = Self.featureFlag(for: subfeature) else { return false }
+        if askToolNames.contains(name), !featureFlagger.isFeatureOn(.websitePermissionsPrompts) { return false }
         return featureFlagger.isFeatureOn(flag)
     }
 
@@ -173,6 +205,13 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .readTabContent: .aiChatBrowserToolReadTabContent
         case .findInPage: .aiChatBrowserToolFindInPage
         case .highlightInPage: .aiChatBrowserToolHighlightInPage
+        case .pinTab: .aiChatBrowserToolPinTab
+        case .openTab: .aiChatBrowserToolOpenTab
+        case .closeTabs: .aiChatBrowserToolCloseTabs
+        case .bookmarkTab: .aiChatBrowserToolBookmarkTab
+        case .searchDownloads: .aiChatBrowserToolSearchDownloads
+        case .searchBookmarks: .aiChatBrowserToolSearchBookmarks
+        case .requestAccess: nil // Not a tool: see `isRequestAccessEnabled`.
         }
     }
 }

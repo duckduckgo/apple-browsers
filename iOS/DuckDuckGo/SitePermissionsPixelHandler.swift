@@ -42,6 +42,8 @@ private struct SitePermissionsPixel: PixelKit.Event {
             name = "permission_dialog_impression_\(type.rawValue)"
         case .permissionDialogClick(let type, let selection):
             name = "permission_dialog_click_\(type.rawValue)_\(selection.rawValue)"
+        case .permissionDialogClosedWithoutChoice(let type, _, _, _):
+            name = "debug_permission_dialog_closed_without_choice_\(type.rawValue)"
         case .permissionSystemPromptResult(let type, let result):
             name = "permission_system_prompt_result_\(type.rawValue)_\(result.rawValue)"
         case .permissionReminderDialog(let type, let action):
@@ -73,6 +75,8 @@ private struct SitePermissionsPixel: PixelKit.Event {
         switch event {
         case .permissionCenterChanged(_, let from, _):
             return ["from": from.rawValue]
+        case .permissionDialogClosedWithoutChoice(_, let reason, let visibleFor, let frame):
+            return ["reason": reason.rawValue, "visible_for": visibleFor.rawValue, "frame": frame.rawValue]
         default:
             return nil
         }

@@ -228,9 +228,8 @@ final class WindowsManagerPopupTests: XCTestCase {
             pinnedTabsManagerProvider: provider,
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false),
             internalUserDecider: MockInternalUserDecider(),
-            featureFlagger: flags,
             pinningManager: MockPinningManager())
-        let (controller, model) = makeWindowController(tabs: tabs, featureFlagger: flags, windowControllersManager: manager)
+        let (controller, model) = makeWindowController(tabs: tabs, windowControllersManager: manager)
         return (controller, model, manager, flags)
     }
 
@@ -267,7 +266,6 @@ final class WindowsManagerPopupTests: XCTestCase {
 
     @MainActor
     private func makeWindowController(tabs: [Tab],
-                                      featureFlagger: MockFeatureFlagger? = nil,
                                       windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) -> (MainWindowController, TabCollectionViewModel) {
         let tabCollectionViewModel = TabCollectionViewModel(
             tabCollection: TabCollection(tabs: tabs),
@@ -284,7 +282,6 @@ final class WindowsManagerPopupTests: XCTestCase {
             mainViewController: mainViewController,
             fireViewModel: Application.appDelegate.fireCoordinator.fireViewModel,
             themeManager: MockThemeManager(),
-            featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager
         )
         windowController.window = window

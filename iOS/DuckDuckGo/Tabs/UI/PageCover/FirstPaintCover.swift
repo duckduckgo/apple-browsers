@@ -19,12 +19,14 @@
 
 import UIKit
 import WebKit
+import os
 import DesignResourcesKit
 
 /// Hides the previous page after a typed search or URL until the new page first paints.
 ///
 /// Choreography: the outgoing input panel's snapshot fades off the cover while the cover moves to the
 /// expected page colour; once real content paints, the page fades in over a matching background.
+/// A results page that reports its first result on screen takes over in one frame, with no fade to wait for.
 @MainActor
 final class FirstPaintCover {
 
@@ -37,6 +39,19 @@ final class FirstPaintCover {
         /// A results page has laid out; waiting for its first result, which its tabs row fills in alongside.
         case awaitingContent
     }
+
+    private enum Reveal: String {
+        /// The page may still be filling in, so it fades in.
+        case fade
+        /// The page has drawn its content; any fade only delays it.
+        case cut
+        /// Teardown: gone at once, with no debug hold.
+        case immediate
+    }
+
+    /// For Instruments: submit, commit, results drawn and cover removed, with the cover on or off.
+    /// Dynamic tracing stays off until Instruments records, so nothing extra runs for users.
+    static let signposter = OSSignposter(subsystem: "com.duckduckgo.mobile.ios.SearchSubmit", category: .dynamicTracing)
 
     /// How the cover takes over from the input panel that is leaving.
     struct Handoff {
@@ -53,7 +68,7 @@ final class FirstPaintCover {
         var isContentReady: ContentCheck?
     }
 
-    /// Reports whether the covered page shows its content yet.
+    /// Calls back once: true once the covered page has drawn its content, false if it gives up first.
     typealias ContentCheck = (_ completion: @escaping @MainActor (Bool) -> Void) -> Void
 
     /// Returns a closure that cancels the scheduled action.
@@ -73,9 +88,11 @@ final class FirstPaintCover {
         static let meaningfulPaintGrace: TimeInterval = 0.3
         /// Caps the wait for a results page's first result after first layout; a page may have none.
         static let contentGrace: TimeInterval = 2
-        static let contentPollInterval: TimeInterval = 0.1
+        /// A results page finishes loading just before its script draws the results; a page with none is lifted after this.
+        static let contentAfterFinishGrace: TimeInterval = 0.3
 
-        static let revealDuration: TimeInterval = 0.18
+        /// Short, so a fast load isn't held back by the fade.
+        static let revealDuration: TimeInterval = 0.1
         static let exitDuration: TimeInterval = 0.15
         static let colorHandoffDuration: TimeInterval = 0.25
         static let reducedMotionScale: Double = 0.5
@@ -107,7 +124,6 @@ final class FirstPaintCover {
     private var contentCheck: ContentCheck?
     /// Moves on with every arm, so a content answer for an earlier load can't lift a later cover.
     private var armGeneration = 0
-    private var cancelContentPoll: (() -> Void)?
 
     /// The navigation the cover waits for; anything else belongs to the previous page.
     private enum CoveredNavigation {
@@ -131,7 +147,6 @@ final class FirstPaintCover {
     func arm(in container: UIView, above webView: UIView, handoff: Handoff = Handoff(), contentTop: CGFloat = 0) {
         stopAnimators()
         cancelDebugHold()
-        cancelContentPolling()
         armedAt = CACurrentMediaTime()
         armGeneration += 1
         contentCheck = handoff.isContentReady
@@ -189,7 +204,7 @@ final class FirstPaintCover {
         guard isAwaitingStart, pendingPolicyDecisions > 0 else { return }
         pendingPolicyDecisions -= 1
         if allowed && isSameDocument {
-            reveal(animated: true)
+            reveal(.fade)
         } else if pendingPolicyDecisions == 0 {
             restartTimeout(after: Constants.noNavigationGrace)
         }
@@ -218,7 +233,7 @@ final class FirstPaintCover {
             if let contentCheck, events & Constants.meaningfulContent != 0 || hasLaidOut {
                 awaitContent(contentCheck)
             } else if events & Constants.meaningfulContent != 0 {
-                reveal(animated: true)
+                reveal(.fade)
             } else if phase == .awaitingPaint, hasLaidOut {
                 phase = .awaitingMeaningfulPaint
                 restartTimeout(after: Constants.meaningfulPaintGrace)
@@ -229,7 +244,8 @@ final class FirstPaintCover {
     /// The covered page finished loading; whatever it shows now is as good as it gets.
     func didFinish(_ navigation: AnyObject?) {
         guard [.awaitingPaint, .awaitingMeaningfulPaint, .awaitingContent].contains(phase), isCovered(navigation) else { return }
-        reveal(animated: true)
+        guard phase != .awaitingContent else { return restartTimeout(after: Constants.contentAfterFinishGrace) }
+        reveal(.fade)
     }
 
     func navigationDidFail(_ error: Error, navigation: AnyObject?) {
@@ -237,17 +253,17 @@ final class FirstPaintCover {
         let nsError = error as NSError
         // Cancelled covers re-issued SERP requests and replaced navigations; a newer load will follow.
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
-        reveal(animated: true)
+        reveal(.fade)
     }
 
     /// Ends the cover now, e.g. on stop, process termination or tab teardown.
     func cancel() {
         guard isCovering || fadeAnimator != nil else { return }
-        reveal(animated: false)
+        reveal(.immediate)
     }
 
     /// Keeps the cover up as long again as the load took (times the slowdown), so its stages are visible.
-    private func holdForDebugSlowdown() -> Bool {
+    private func holdForDebugSlowdown(then transition: Reveal) -> Bool {
         guard Self.debugSlowdown > 1 else { return false }
         if cancelHold != nil { return true }
         guard let armedAt else { return false }
@@ -257,7 +273,7 @@ final class FirstPaintCover {
         cancelTimeout = nil
         cancelHold = scheduler(hold) { [weak self] in
             self?.cancelHold = nil
-            self?.reveal(animated: true)
+            self?.reveal(transition)
         }
         return true
     }
@@ -267,32 +283,20 @@ final class FirstPaintCover {
         cancelHold = nil
     }
 
-    /// Asks the page until its content is in, or until the grace runs out.
+    /// The page reports once its first result is drawn; a page that never gets there is lifted by the grace or finishing.
     private func awaitContent(_ check: @escaping ContentCheck) {
         phase = .awaitingContent
+        Self.signposter.emitEvent("Waiting for results")
         restartTimeout(after: Constants.contentGrace)
-        pollContent(check)
-    }
-
-    private func pollContent(_ check: @escaping ContentCheck) {
         let generation = armGeneration
         check { [weak self] isReady in
-            guard let self, self.isAwaitingContent(armedIn: generation) else { return }
-            guard !isReady else { return self.reveal(animated: true) }
-            self.cancelContentPoll = self.scheduler(Constants.contentPollInterval) { [weak self] in
-                guard let self, self.isAwaitingContent(armedIn: generation) else { return }
-                self.pollContent(check)
-            }
+            guard let self, isReady, self.isAwaitingContent(armedIn: generation) else { return }
+            self.reveal(.cut)
         }
     }
 
     private func isAwaitingContent(armedIn generation: Int) -> Bool {
         phase == .awaitingContent && armGeneration == generation
-    }
-
-    private func cancelContentPolling() {
-        cancelContentPoll?()
-        cancelContentPoll = nil
     }
 
     private var isAwaitingStart: Bool {
@@ -306,17 +310,17 @@ final class FirstPaintCover {
         return coveredID == ObjectIdentifier(navigation)
     }
 
-    private func reveal(animated: Bool) {
-        if animated, holdForDebugSlowdown() { return }
+    private func reveal(_ transition: Reveal) {
+        Self.signposter.emitEvent("Reveal", "\(transition.rawValue, privacy: .public)")
+        if transition != .immediate, holdForDebugSlowdown(then: transition) { return }
         cancelDebugHold()
-        cancelContentPolling()
         phase = .idle
         coveredNavigation = .notStarted
         cancelTimeout?()
         cancelTimeout = nil
 
         guard let view = coverView else { return }
-        guard animated else {
+        guard transition == .fade else {
             stopAnimators()
             removeCover(view)
             return
@@ -343,12 +347,13 @@ final class FirstPaintCover {
         skeletonView = nil
         view.removeFromSuperview()
         view.alpha = 1
+        Self.signposter.emitEvent("Cover removed")
     }
 
     private func restartTimeout(after delay: TimeInterval) {
         cancelTimeout?()
         cancelTimeout = scheduler(delay) { [weak self] in
-            self?.reveal(animated: true)
+            self?.reveal(.fade)
         }
     }
 

@@ -146,6 +146,7 @@ final class PixelRetryQueue {
 
         do {
             try store.append([item])
+            logger.info("Queued pixel \(pixelName, privacy: .public) for retry")
         } catch {
             logger.error("Failed to persist pixel \(pixelName, privacy: .public) for retry: \(error.localizedDescription, privacy: .public)")
         }
@@ -229,7 +230,8 @@ final class PixelRetryQueue {
             parameters[Parameters.retriedPixel] = "1"
 
             dispatchGroup.enter()
-            underlyingFireRequest(item.pixelName, item.headers, parameters, item.allowedQueryReservedCharacters, false) { success, _ in
+            underlyingFireRequest(item.pixelName, item.headers, parameters, item.allowedQueryReservedCharacters, false) { [logger] success, _ in
+                logger.info("Retried pixel \(item.pixelName, privacy: .public): \(success ? "sent" : "failed", privacy: .public)")
                 if success {
                     idsAccessQueue.sync { _ = idsToRemove.insert(item.id) }
                 }

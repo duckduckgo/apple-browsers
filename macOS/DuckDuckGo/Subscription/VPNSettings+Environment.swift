@@ -22,14 +22,13 @@ import Subscription
 
 public extension VPNSettings {
 
-    /// Align VPN environment to the Subscription environment
+    /// Sets the VPN environment to the subscription environment.
+    /// - Parameter subscriptionEnvironment: The subscription environment the VPN follows.
     func alignTo(subscriptionEnvironment: SubscriptionEnvironment) {
         switch subscriptionEnvironment.serviceEnvironment {
         case .production:
-            // Do nothing for a production subscription, as it can be used for both VPN environments.
-            break
+            self.selectedEnvironment = .production
         case .staging:
-            // If using a staging subscription, force the staging VPN environment as it is not compatible with anything else.
             self.selectedEnvironment = .staging
         }
     }

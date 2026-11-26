@@ -92,21 +92,64 @@ extension MainViewController {
         return (vertical == nil || vertical == "web") && !items.contains { $0.name == "iax" || $0.name == "iaxm" }
     }
 
+    /// The input panel as it looked at submit, captured before it hides.
+    struct FirstPaintCoverExit {
+        var snapshot: UIView?
+        var windowFrame: CGRect = .zero
+    }
+
+    /// A submit waiting for its load to be requested.
+    struct PendingFirstPaintCover {
+        let url: URL
+        let exit: FirstPaintCoverExit
+    }
+
+    /// The New Tab Page has no old page to hide, but the outline still helps; a same-document load never repaints.
+    static func coversSubmit(isAITab: Bool, isSameDocument: Bool) -> Bool {
+        !isAITab && !isSameDocument
+    }
+
+    /// Arms the cover saved at submit; call right after the load is requested, before WebKit reports anything.
+    /// Building it after the request, in the same pass, means the cover never holds up the network.
+    func armPendingFirstPaintCover(on tab: TabViewController) {
+        guard let pending = pendingFirstPaintCover else { return }
+        pendingFirstPaintCover = nil
+        // A New Tab Page tab was just attached: lay out now so the cover reads the web view's real width and content top.
+        tab.view.layoutIfNeeded()
+        armFirstPaintCover(on: tab, for: pending.url, exit: pending.exit)
+    }
+
     private func prepareFirstPaintCover(forSubmitting url: URL) {
+        FirstPaintCover.signposter.emitEvent("Submit")
+        pendingFirstPaintCover = nil
         // Other schemes, such as mailto:, never load in the tab.
         guard Self.coversSearchSubmit(isLargeWidth: AppWidthObserver.shared.isLargeWidth, featureFlagger: featureFlagger),
               let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
-              let tab = currentTab, tab.link != nil, !tab.isAITab,
-              !Self.isSameDocument(url, as: tab.url),
               aiBoundaryDecision(for: url) == .loadInPlace else { return }
 
-        var handoff = FirstPaintCover.Handoff()
+        let tab = currentTab
+        guard Self.coversSubmit(isAITab: tab?.isAITab == true, isSameDocument: Self.isSameDocument(url, as: tab?.url)) else { return }
+        // Capture the panel now, before it hides; the cover itself is built once the load is requested.
+        pendingFirstPaintCover = PendingFirstPaintCover(url: url, exit: captureFirstPaintCoverExit())
+        // Only for the load this submit starts; a submit that goes elsewhere mustn't arm a later one.
+        DispatchQueue.main.async { [weak self] in self?.pendingFirstPaintCover = nil }
+    }
+
+    private func captureFirstPaintCoverExit() -> FirstPaintCoverExit {
+        var exit = FirstPaintCoverExit()
         let panel: UIView? = viewCoordinator.unifiedInputContentContainer
         if let panel, panel.window != nil, !panel.isHidden, panel.alpha > 0,
            let snapshot = panel.snapshotView(afterScreenUpdates: false) {
-            handoff.exitSnapshot = snapshot
-            handoff.exitSnapshotWindowFrame = panel.convert(panel.bounds, to: nil)
+            exit.snapshot = snapshot
+            exit.windowFrame = panel.convert(panel.bounds, to: nil)
         }
+        return exit
+    }
+
+    private func armFirstPaintCover(on tab: TabViewController, for url: URL, exit: FirstPaintCoverExit) {
+        var handoff = FirstPaintCover.Handoff()
+        handoff.exitSnapshot = exit.snapshot
+        handoff.exitSnapshotWindowFrame = exit.windowFrame
         handoff.destinationColor = expectedPageBackgroundColor(for: url)
         handoff.showsSearchResultsSkeleton = Self.showsSearchResultsSkeleton(for: url)
         if handoff.showsSearchResultsSkeleton {
@@ -115,7 +158,7 @@ extension MainViewController {
             // Holding for the first result keeps the half-built tabs row from flashing in over the remembered one.
             handoff.isContentReady = { [weak tab] completion in
                 guard let tab else { return completion(true) }
-                tab.checkSearchResultsShowing(completion: completion)
+                tab.waitForSearchResults(timeout: FirstPaintCover.Constants.contentGrace, completion: completion)
             }
         }
         tab.coverPageUntilFirstPaint(handoff: handoff)

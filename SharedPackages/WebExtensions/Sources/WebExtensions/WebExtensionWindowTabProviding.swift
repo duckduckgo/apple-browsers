@@ -17,6 +17,9 @@
 //
 
 import WebKit
+#if os(macOS)
+import AppKit
+#endif
 
 /// Provides platform-specific window and tab operations for web extensions.
 /// This protocol abstracts the platform-specific implementations needed by WKWebExtensionControllerDelegate.
@@ -46,10 +49,18 @@ public protocol WebExtensionWindowTabProviding: AnyObject {
     /// Shows the browser's counterpart of a Chrome page, such as `chrome://password-manager/settings`.
     /// - Returns: `false` when the browser has no counterpart, which is the default.
     func openChromePage(_ url: URL, for context: WKWebExtensionContext) -> Bool
+
+#if os(macOS)
+    var lastActiveWindowForDownload: NSWindow? { get }
+#endif
 }
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionWindowTabProviding {
 
     func openChromePage(_ url: URL, for context: WKWebExtensionContext) -> Bool { false }
+
+#if os(macOS)
+    var lastActiveWindowForDownload: NSWindow? { nil }
+#endif
 }

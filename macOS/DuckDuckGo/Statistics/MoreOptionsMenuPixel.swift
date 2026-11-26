@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AppUpdaterShared
 import Foundation
+import Persistence
 import PixelKit
 
 /**
@@ -81,8 +83,8 @@ enum MoreOptionsMenuPixel: PixelKit.Event {
     /// Event Trigger: Any action in Help menu is clicked
     case helpActionClicked
 
-    /// Event Trigger: Update action is clicked
-    case updateActionClicked
+    /// Event Trigger: An update entry point is clicked
+    case updateActionClicked(promptSurface: UpdatePromptSurface)
 
     /// Event Trigger: Settings action is clicked
     case settingsActionClicked
@@ -131,7 +133,12 @@ enum MoreOptionsMenuPixel: PixelKit.Event {
     }
 
     var parameters: [String: String]? {
-        nil
+        switch self {
+        case .updateActionClicked(let promptSurface):
+            return ["promptSurface": promptSurface.rawValue]
+        default:
+            return nil
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
@@ -158,4 +165,22 @@ enum MoreOptionsMenuPixel: PixelKit.Event {
         }
     }
 
+}
+
+/// Fires the update click pixel and remembers the surface, so the update success pixel can name it after the update.
+struct UpdateClickReporter {
+
+    private let pixelFiring: (any PixelKitFiring)?
+    private let attribution: UpdatePromptAttribution
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         settings: any ThrowingKeyedStoring<UpdateControllerSettings> = UserDefaults.standard.throwingKeyedStoring()) {
+        self.pixelFiring = pixelFiring
+        self.attribution = UpdatePromptAttribution(settings: settings)
+    }
+
+    func reportClick(on surface: UpdatePromptSurface) {
+        pixelFiring?.fire(MoreOptionsMenuPixel.updateActionClicked(promptSurface: surface), frequency: .daily)
+        attribution.recordClick(on: surface)
+    }
 }

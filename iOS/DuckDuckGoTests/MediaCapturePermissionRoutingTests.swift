@@ -74,22 +74,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertNil(sut.sitePermissionsState.coordinator)
     }
 
-    func testWhenFlagChangesAfterLaunchThenGeolocationSetupUsesLaunchAvailability() {
-        for featureEnabled in [false, true] {
-            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : [])
-            let sut = makeSUT(featureFlagger: featureFlagger)
-            defer { sut.closeSitePermissions() }
-            featureFlagger.enabledFeatureFlags = featureEnabled ? [] : [.sitePermissions]
-            featureFlagger.triggerUpdate()
-            let userScript = GeolocationUserScript(installImmediately: true)
-
-            sut.configureSitePermissionsGeolocation(with: userScript)
-
-            XCTAssertEqual(userScript.delegate is GeolocationProvider, featureEnabled)
-            XCTAssertEqual(sut.sitePermissionsState.coordinator != nil, featureEnabled)
-        }
-    }
-
     func testWhenPermissionRemovalUndoOutlivesPageThenOnlySavedDecisionsAreRestored() throws {
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
         for fireTab in [false, true] {
@@ -271,7 +255,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertNil(releasedTab)
     }
 
-    func testFlagOnRoutesOrdinaryCaptureTypesUsingCommittedTopLevelSite() async {
+    func testWhenEnabledThenOrdinaryCaptureTypesRouteUsingCommittedTopLevelSite() async {
         let scenarios: [(WKMediaCaptureType, Set<SitePermissionType>)] = [
             (.camera, [.camera]),
             (.microphone, [.microphone]),
@@ -414,7 +398,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         }
     }
 
-    func testFlagOnPreservesDuckAIHostMatrixWithoutConstructingCoordinator() throws {
+    func testWhenEnabledThenOnlyDuckAIMainFrameMicrophoneIsGrantedWithoutConstructingCoordinator() throws {
         let sut = makeSUT()
         var didRequestDependencies = false
         sut.sitePermissionsDependenciesProvider = {
@@ -428,23 +412,25 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
         for host in hosts {
             for captureType in captureTypes {
-                for audioStatus in audioStatuses {
-                    try Phase3AVCaptureAuthorizationStatusStub.withAudioStatus(audioStatus) {
-                        var decisions = [WKPermissionDecision]()
+                for isMainFrame in [true, false] {
+                    for audioStatus in audioStatuses {
+                        try Phase3AVCaptureAuthorizationStatusStub.withAudioStatus(audioStatus) {
+                            var decisions = [WKPermissionDecision]()
 
-                        requestPermission(on: sut,
-                                          originHost: host,
-                                          captureType: captureType,
-                                          decisionHandler: { decisions.append($0) })
+                            requestPermission(on: sut,
+                                              originHost: host,
+                                              captureType: captureType,
+                                              isMainFrame: isMainFrame,
+                                              decisionHandler: { decisions.append($0) })
 
-                        let consultsAudio = captureType != .camera
-                        let expectedDecision: WKPermissionDecision = consultsAudio && audioStatus == .authorized
-                            ? .grant
-                            : (consultsAudio ? .deny : .prompt)
-                        let expectedMediaTypes: [AVMediaType] = consultsAudio ? [.audio] : []
-                        let message = "\(host) \(captureType) with audio status \(audioStatus)"
-                        XCTAssertEqual(decisions, [expectedDecision], message)
-                        XCTAssertEqual(Phase3AVCaptureAuthorizationStatusStub.requestedMediaTypes, expectedMediaTypes, message)
+                            let isEligible = host != "subdomain.duckduckgo.com" && captureType == .microphone && isMainFrame
+                            // Ineligible requests take the normal path, which denies without a bridge preapproval.
+                            let expectedDecision: WKPermissionDecision = isEligible && audioStatus == .authorized ? .grant : .deny
+                            let expectedMediaTypes: [AVMediaType] = isEligible ? [.audio] : []
+                            let message = "\(host) \(captureType) mainFrame: \(isMainFrame) with audio status \(audioStatus)"
+                            XCTAssertEqual(decisions, [expectedDecision], message)
+                            XCTAssertEqual(Phase3AVCaptureAuthorizationStatusStub.requestedMediaTypes, expectedMediaTypes, message)
+                        }
                     }
                 }
             }
@@ -453,7 +439,60 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertFalse(didRequestDependencies)
     }
 
-    func testFlagOffPreservesLegacyRoutingForReplacedWebView() throws {
+    func testDuckAIMicrophoneAutoGrantEligibilityIsLimitedToHTTPSMainFrameMicrophoneOnExactHosts() {
+        func isEligible(_ protocolName: String = "https",
+                        _ host: String = "duck.ai",
+                        isMainFrame: Bool = true,
+                        _ permissionTypes: Set<SitePermissionType>? = [.microphone]) -> Bool {
+            TabViewController.isDuckAIMicrophoneAutoGrantEligible(protocolName: protocolName,
+                                                                  host: host,
+                                                                  isMainFrame: isMainFrame,
+                                                                  permissionTypes: permissionTypes)
+        }
+
+        XCTAssertTrue(isEligible())
+        XCTAssertTrue(isEligible("HTTPS", "Duck.AI"))
+        XCTAssertTrue(isEligible("https", "duckduckgo.com"))
+
+        XCTAssertFalse(isEligible("http"))
+        XCTAssertFalse(isEligible("https", "subdomain.duckduckgo.com"))
+        XCTAssertFalse(isEligible("https", "subdomain.duck.ai"))
+        XCTAssertFalse(isEligible("https", "duck.ai.example"))
+        XCTAssertFalse(isEligible(isMainFrame: false))
+        XCTAssertFalse(isEligible("https", "duck.ai", [.camera]))
+        XCTAssertFalse(isEligible("https", "duck.ai", [.camera, .microphone]))
+        XCTAssertFalse(isEligible("https", "duck.ai", nil))
+    }
+
+    func testDuckAIBridgeBypassesOnlyMainFrameMicrophoneAndPromptsForCamera() async {
+        let committedURL = URL(string: "https://duck.ai/chat")!
+        let scenarios: [(WKMediaCaptureType, Bool, Bool)] = [
+            (.microphone, true, false),
+            (.microphone, false, true),
+            (.camera, true, true),
+            (.cameraAndMicrophone, true, true)
+        ]
+
+        for (captureType, isMainFrame, expectsPrompt) in scenarios {
+            let sut = makeSUT(committedURL: committedURL)
+            var didPrompt = false
+            sut.sitePermissionsPromptHandlerOverride = { _, completion in
+                didPrompt = true
+                completion(.denyOnce)
+            }
+
+            let decision = await makeBridgeRequestTask(on: sut,
+                                                       originURL: URL(string: "https://duck.ai")!,
+                                                       captureType: captureType,
+                                                       isMainFrame: isMainFrame).value
+
+            let message = "\(captureType) mainFrame: \(isMainFrame)"
+            XCTAssertEqual(didPrompt, expectsPrompt, message)
+            XCTAssertEqual(decision, expectsPrompt ? .deny : .bypass, message)
+        }
+    }
+
+    func testWhenUnsupportedOSThenReplacedWebViewKeepsLegacyRouting() throws {
         let sut = makeSUT(featureEnabled: false)
         let tabDelegate = MockTabDelegate()
         sut.delegate = tabDelegate
@@ -471,6 +510,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                               webView: staleWebView,
                               originHost: "duck.ai",
                               captureType: .microphone,
+                              isMainFrame: true,
                               decisionHandler: { decisions.append($0) })
         }
 
@@ -478,37 +518,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
     }
 
-    func testDisabledLaunchInstallsBridgeButRemoteActivationStillBypasses() async {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        // The fake's content-blocking publisher never emits assets.
-        let sut = makeSUT(featureFlagger: featureFlagger)
-        let scripts = sut.webView.configuration.userContentController.userScripts
-        let expectedSource = MediaCaptureUserScript().makeWKUserScriptSync().source
-        let mediaCaptureScripts = scripts.filter { $0.source == expectedSource }
-        XCTAssertEqual(mediaCaptureScripts.count, 1)
-        XCTAssertEqual(mediaCaptureScripts.first?.injectionTime, .atDocumentStart)
-        XCTAssertEqual(mediaCaptureScripts.first?.isForMainFrameOnly, false)
-
-        let disabledDecision = await requestPermissionThroughBridge(on: sut,
-                                                                     originHost: "top-level.example",
-                                                                     captureType: .camera)
-        XCTAssertEqual(disabledDecision, .bypass)
-
-        featureFlagger.enabledFeatureFlags = [.sitePermissions]
-        featureFlagger.triggerUpdate()
-        var didPrompt = false
-        sut.sitePermissionsPromptHandlerOverride = { _, completion in
-            didPrompt = true
-            completion(.allowOnce)
-        }
-        let enabledDecision = await requestPermissionThroughBridge(on: sut,
-                                                                    originHost: "top-level.example",
-                                                                    captureType: .camera)
-        XCTAssertFalse(didPrompt)
-        XCTAssertEqual(enabledDecision, .bypass)
-    }
-
-    func testFlagOnRejectsBridgeRequestBeforeMainFrameCommit() async {
+    func testWhenEnabledThenBridgeRequestIsRejectedBeforeMainFrameCommit() async {
         let sut = makeSUT(hasCommittedMainFrame: false)
         var didPrompt = false
         sut.sitePermissionsPromptHandlerOverride = { _, _ in
@@ -659,82 +669,11 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertFalse(didPrompt)
     }
 
-    func testRemoteDisablePreservesPendingPromptAndDeniesReplayedBridgeRequest() async {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let sut = makeSUT(featureFlagger: featureFlagger)
-        let userScript = MediaCaptureUserScript()
-        sut.configureSitePermissionsMediaCapture(with: userScript)
-        var promptCompletion: ((SitePermissionPromptDecision) -> Void)?
-        let promptExpectation = expectation(description: "Site prompt presented")
-        sut.sitePermissionsPromptHandlerOverride = { _, completion in
-            promptCompletion = completion
-            promptExpectation.fulfill()
-        }
-        let requestID = "0123456789abcdef0123456789abcdef:1"
-        let originalRequest = makeBridgeRequestTask(on: sut,
-                                                    originHost: "top-level.example",
-                                                    captureType: .camera,
-                                                    requestID: requestID)
-        await fulfillment(of: [promptExpectation], timeout: 1)
-
-        featureFlagger.enabledFeatureFlags = []
-        featureFlagger.triggerUpdate()
-        XCTAssertNotNil(sut.sitePermissionsState.coordinator)
-        promptCompletion?(.denyOnce)
-        let originalDecision = await originalRequest.value
-        XCTAssertEqual(originalDecision, .deny)
-        sut.sitePermissionsPromptHandlerOverride = { _, completion in completion(.denyOnce) }
-        let flagOffDecision = await requestPermissionThroughBridge(on: sut,
-                                                                   originHost: "top-level.example",
-                                                                   captureType: .camera)
-        XCTAssertEqual(flagOffDecision, .deny)
-        XCTAssertTrue(userScript.delegate === sut)
-
-        featureFlagger.enabledFeatureFlags = [.sitePermissions]
-        featureFlagger.triggerUpdate()
-        sut.sitePermissionsPromptHandlerOverride = { _, completion in
-            completion(.denyOnce)
-        }
-        let replayDecision = await makeBridgeRequestTask(on: sut,
-                                                         originHost: "top-level.example",
-                                                         captureType: .camera,
-                                                         requestID: requestID).value
-        XCTAssertEqual(replayDecision, .deny)
-    }
-
-    func testFlagOffRetainsExistingDocumentHandlerAcrossNavigationForBackForwardCache() async {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let sut = makeSUT(featureFlagger: featureFlagger)
-        var userScript: MediaCaptureUserScript? = MediaCaptureUserScript()
-        weak let retainedUserScript = userScript
-        sut.configureSitePermissionsMediaCapture(with: userScript)
-
-        featureFlagger.enabledFeatureFlags = []
-        sut.configureSitePermissionsMediaCapture(with: nil)
-        userScript = nil
-        XCTAssertNotNil(retainedUserScript)
-        XCTAssertTrue(retainedUserScript?.delegate === sut)
-
-        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
-        sut.webView(sut.webView,
-                    didFailProvisionalNavigation: nil,
-                    withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotConnectToHost))
-        XCTAssertNotNil(retainedUserScript)
-
-        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
-        sut.webView(sut.webView, didCommit: nil)
-        XCTAssertNotNil(retainedUserScript)
-        XCTAssertTrue(retainedUserScript?.delegate === sut)
-
-        sut.closeSitePermissions()
-        XCTAssertNil(retainedUserScript)
-    }
-
     func testWebContentProcessTerminationRetainsHandlerForReinjectedNewDocument() async throws {
         let sut = makeSUT()
         var userScript: MediaCaptureUserScript? = MediaCaptureUserScript()
         weak let retainedUserScript = userScript
-        sut.configureSitePermissionsMediaCapture(with: userScript)
+        sut.configureSitePermissionsMediaCapture(with: try XCTUnwrap(userScript))
         userScript = nil
 
         sut.webViewWebContentProcessDidTerminate(sut.webView)
@@ -763,27 +702,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         )
 
         XCTAssertTrue(didPrompt)
-        XCTAssertEqual(decision, .deny)
-    }
-
-    func testFlagTurningOffWhilePromptIsVisiblePreservesUserDenial() async {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let sut = makeSUT(featureFlagger: featureFlagger)
-        var promptCompletion: ((SitePermissionPromptDecision) -> Void)?
-        let promptExpectation = expectation(description: "Site prompt presented")
-        sut.sitePermissionsPromptHandlerOverride = { _, completion in
-            promptCompletion = completion
-            promptExpectation.fulfill()
-        }
-        let request = makeBridgeRequestTask(on: sut,
-                                            originHost: "top-level.example",
-                                            captureType: .camera)
-        await fulfillment(of: [promptExpectation], timeout: 1)
-
-        featureFlagger.enabledFeatureFlags = []
-        promptCompletion?(.denyOnce)
-        let decision = await request.value
-
         XCTAssertEqual(decision, .deny)
     }
 
@@ -1402,105 +1320,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(locationManager.stopUpdatingCallCount, 1)
     }
 
-    func testFlagOffPreservesPendingGeolocationPromptAndItsCompletion() async throws {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let locationManager = MockLocationManager()
-        let systemPermissionClient = SystemPermissionClient(
-            locationManager: locationManager,
-            avAuthorizationStatus: { _ in .authorized },
-            avRequestAccess: { _, completion in completion(true) },
-            notificationCenter: NotificationCenter()
-        )
-        let sut = makeSUT(featureFlagger: featureFlagger, systemPermissionClient: systemPermissionClient)
-        defer { sut.closeSitePermissions() }
-        let userScript = GeolocationUserScript(installImmediately: true)
-        sut.configureSitePermissionsGeolocation(with: userScript)
-        let delegate = try XCTUnwrap(userScript.delegate)
-        let frame = geolocationFrame(on: sut.webView,
-                                     originURL: URL(string: "https://top-level.example/frame")!)
-        let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
-        let resultTask = Task { @MainActor in
-            await delegate.geolocationUserScript(userScript,
-                                                 getCurrentPositionWith: .init(timeout: 2),
-                                                 constraints: constraints,
-                                                 in: frame)
-        }
-        for _ in 0..<100 where sut.children.compactMap({
-            $0 as? UIHostingController<SitePermissionDialogView>
-        }).isEmpty {
-            await Task.yield()
-        }
-        let hostingController = try XCTUnwrap(sut.children.compactMap {
-            $0 as? UIHostingController<SitePermissionDialogView>
-        }.first)
-
-        featureFlagger.enabledFeatureFlags = []
-        featureFlagger.triggerUpdate()
-
-        XCTAssertTrue(hostingController.parent === sut)
-        XCTAssertTrue(userScript.delegate === delegate)
-        hostingController.rootView.onAction(.allowOnce)
-        for _ in 0..<100 where locationManager.startUpdatingCallCount == 0 {
-            await Task.yield()
-        }
-        guard locationManager.startUpdatingCallCount == 1 else {
-            XCTFail("Flag rollback must preserve the location prompt completion")
-            return
-        }
-        XCTAssertEqual(delegate.geolocationUserScript(userScript,
-                                                      permissionStatusID: "status-after-rollback",
-                                                      constraints: constraints,
-                                                      permissionStateIn: frame), .granted)
-
-        locationManager.send(CLLocation(latitude: 52.2297, longitude: 21.0122))
-        guard case .success(let position) = await resultTask.value else {
-            XCTFail("Expected the existing document's location request to finish after rollback")
-            return
-        }
-        XCTAssertEqual(position.coordinates.latitude, 52.2297)
-        XCTAssertEqual(locationManager.stopUpdatingCallCount, 1)
-    }
-
-    func testDisablingGeolocationRetainsHandlerAcrossNavigationAndRetiresItOnProcessReplacement() throws {
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.sitePermissions])
-        let sut = makeSUT(featureFlagger: featureFlagger)
-        defer { sut.closeSitePermissions() }
-        let userScript = GeolocationUserScript(installImmediately: true)
-        sut.configureSitePermissionsGeolocation(with: userScript)
-        let frameInfo = WKFrameInfo.mock(isMainFrame: false,
-                                         securityOrigin: MockWKSecurityOrigin.new(url: URL(string: "https://top-level.example/frame")!),
-                                         webView: sut.webView)
-        let frame = GeolocationFrame(frameInfo)
-        let activationHandler = try XCTUnwrap(userScript.activationHandler)
-        XCTAssertNotNil(userScript.delegate)
-        XCTAssertTrue(activationHandler(frame))
-        XCTAssertNotNil(sut.makeGeolocationSitePermissionContext(for: frame))
-
-        featureFlagger.enabledFeatureFlags = []
-        featureFlagger.triggerUpdate()
-        sut.configureSitePermissionsGeolocation(with: nil)
-        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
-        XCTAssertNotNil(userScript.delegate)
-
-        let downloadHandoffError = NSError(domain: "WebKitErrorDomain", code: 102)
-        sut.webView(sut.webView, didFailProvisionalNavigation: nil, withError: downloadHandoffError)
-        XCTAssertNotNil(userScript.delegate)
-        XCTAssertTrue(activationHandler(frame))
-        XCTAssertNotNil(sut.makeGeolocationSitePermissionContext(for: frame))
-
-        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
-        sut.webView(sut.webView, didCommit: nil)
-        XCTAssertNotNil(userScript.delegate)
-        XCTAssertNotNil(userScript.activationHandler)
-        XCTAssertTrue(activationHandler(frame))
-        XCTAssertNotNil(sut.makeGeolocationSitePermissionContext(for: frame))
-
-        sut.webViewWebContentProcessDidTerminate(sut.webView)
-        XCTAssertNil(userScript.delegate)
-        XCTAssertNil(userScript.activationHandler)
-        XCTAssertNil(sut.makeGeolocationSitePermissionContext(for: frame))
-    }
-
     func testPreparingForDataClearingCancelsActiveGeolocationRequest() async throws {
         let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
@@ -1681,6 +1500,198 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         ])
     }
 
+    func testVisibleDialogRemovedWithoutChoiceReportsReasonVisibleTimeAndFrame() async throws {
+        func navigate(to url: String) -> (TabViewController) -> Void {
+            return { sut in
+                (sut.webView as? SitePermissionURLWebView)?.fixedURL = URL(string: url)!
+                sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+            }
+        }
+        let cases: [(name: String,
+                     isMainFrame: Bool,
+                     remove: (TabViewController) -> Void,
+                     reason: SitePermissionsEvent.DialogCloseReason)] = [
+            ("reload", true, navigate(to: "https://top-level.example/path"), .navigationReload),
+            ("same site", false, navigate(to: "https://www.top-level.example/other"), .navigationSameSite),
+            ("cross site", true, navigate(to: "https://other.example/"), .navigationCrossSite),
+            ("process", false, { $0.sitePermissionsWebContentProcessDidTerminate($0.webView) }, .processTerminated),
+            ("data clearing", true, { $0.prepareSitePermissionsForDataClearing() }, .dataCleared),
+            ("tab close", false, { $0.closeSitePermissions() }, .tabClosed)
+        ]
+
+        for testCase in cases {
+            var events = [SitePermissionsEvent]()
+            var uptime: TimeInterval = 100
+            let impression = expectation(description: "Impression: \(testCase.name)")
+            let sut = makeSUT(eventHandler: { event in
+                events.append(event)
+                if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+            })
+            sut.sitePermissionsUptimeProvider = { uptime }
+
+            let request = makeBridgeRequestTask(on: sut,
+                                                originHost: "top-level.example",
+                                                captureType: .camera,
+                                                isMainFrame: testCase.isMainFrame)
+            await fulfillment(of: [impression], timeout: 1)
+            uptime += 7
+            testCase.remove(sut)
+            _ = await request.value
+            sut.closeSitePermissions()
+
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .camera),
+                .permissionDialogClosedWithoutChoice(type: .camera,
+                                                     reason: testCase.reason,
+                                                     visibleFor: .fiveToThirtySeconds,
+                                                     frame: testCase.isMainFrame ? .main : .iframe)
+            ], testCase.name)
+        }
+    }
+
+    func testDialogVisibleDurationExcludesHiddenIntervalsAcrossAppearanceAndSwipeUpdates() async throws {
+        for useAppearance in [false, true] {
+            for resume in [false, true] {
+                var events = [SitePermissionsEvent]()
+                var uptime: TimeInterval = 100
+                var isVisible = true
+                let impression = expectation(description: "Dialog impression")
+                let sut = makeSUT(eventHandler: { event in
+                    events.append(event)
+                    if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+                })
+                sut.sitePermissionsUptimeProvider = { uptime }
+                sut.sitePermissionsDialogVisibilityOverride = { isVisible }
+                let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+                await fulfillment(of: [impression], timeout: 1)
+                let host = try XCTUnwrap(sut.children.compactMap { $0 as? UIHostingController<SitePermissionDialogView> }.first)
+
+                uptime += 2
+                if useAppearance {
+                    host.viewWillDisappear(false)
+                    host.viewWillDisappear(false)
+                } else {
+                    isVisible = false
+                    sut.updateSitePermissionDialogVisibility()
+                    sut.updateSitePermissionDialogVisibility()
+                }
+                uptime += 40
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                sut.updateSitePermissionDialogVisibility()
+                uptime += 40
+                if resume {
+                    isVisible = true
+                    host.viewWillAppear(false)
+                    host.viewDidAppear(false)
+                    sut.updateSitePermissionDialogVisibility()
+                    uptime += 4
+                }
+
+                sut.closeSitePermissions()
+                _ = await request.value
+                uptime += 100
+                host.viewWillAppear(false)
+                host.viewDidAppear(false)
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                sut.closeSitePermissions()
+
+                XCTAssertEqual(events, [
+                    .permissionDialogImpression(type: .camera),
+                    .permissionDialogClosedWithoutChoice(type: .camera,
+                                                         reason: .tabClosed,
+                                                         visibleFor: resume ? .fiveToThirtySeconds : .oneToFiveSeconds,
+                                                         frame: .iframe)
+                ], "appearance: \(useAppearance), resume: \(resume)")
+            }
+        }
+    }
+
+    func testDialogVisibleDurationExcludesInactiveIntervals() async throws {
+        for resume in [false, true] {
+            var events = [SitePermissionsEvent]()
+            var uptime: TimeInterval = 100
+            let impression = expectation(description: "Dialog impression")
+            let sut = makeSUT(eventHandler: { event in
+                events.append(event)
+                if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+            })
+            sut.sitePermissionsUptimeProvider = { uptime }
+            let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+            await fulfillment(of: [impression], timeout: 1)
+
+            uptime += 0.2
+            NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
+            uptime += 40
+            NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
+            sut.updateSitePermissionDialogVisibility()
+            if resume {
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+                uptime += 0.2
+            }
+            sut.closeSitePermissions()
+            _ = await request.value
+            NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .camera),
+                .permissionDialogClosedWithoutChoice(type: .camera,
+                                                     reason: .tabClosed,
+                                                     visibleFor: .lessThanOneSecond,
+                                                     frame: .iframe)
+            ], "resume: \(resume)")
+        }
+    }
+
+    func testGeolocationDialogReportsCurrentNativeFrameClassificationWhenIdentityIsReused() async throws {
+        for isMainFrame in [true, false] {
+            var events = [SitePermissionsEvent]()
+            let impression = expectation(description: "Impression; isMainFrame: \(isMainFrame)")
+            let systemPermissionClient = SystemPermissionClient(
+                locationManager: MockLocationManager(),
+                avAuthorizationStatus: { _ in .authorized },
+                avRequestAccess: { _, completion in completion(true) },
+                notificationCenter: NotificationCenter()
+            )
+            let sut = makeSUT(systemPermissionClient: systemPermissionClient,
+                              committedURL: URL(string: "https://www.example.com/page")!,
+                              eventHandler: { event in
+                                  events.append(event)
+                                  if event == .permissionDialogImpression(type: .geolocation) { impression.fulfill() }
+                              })
+            sut.sitePermissionsUptimeProvider = { 100 }
+            let userScript = GeolocationUserScript(installImmediately: true)
+            sut.configureSitePermissionsGeolocation(with: userScript)
+            let delegate = try XCTUnwrap(userScript.delegate)
+            let originURL = URL(string: "https://www.example.com/frame")!
+            let nativeFrame = MockWKFrameInfoObject(isMainFrame: false,
+                                                    securityOrigin: MockWKSecurityOrigin.new(url: originURL),
+                                                    webView: sut.webView,
+                                                    request: URLRequest(url: originURL))
+            let iframeContext = try XCTUnwrap(sut.makeGeolocationSitePermissionContext(for: GeolocationFrame(nativeFrame.frameInfo)))
+            nativeFrame.isMainFrame = isMainFrame
+            let frame = GeolocationFrame(nativeFrame.frameInfo)
+            XCTAssertEqual(frame.requestingFrameID, iframeContext.requestingFrameID)
+            let constraints = GeolocationRequestConstraints(isSecureContext: true, isSandboxed: false, isPolicyAllowed: true)
+            let request = Task { @MainActor in
+                await delegate.geolocationUserScript(userScript, getCurrentPositionWith: .init(), constraints: constraints, in: frame)
+            }
+            await fulfillment(of: [impression], timeout: 1)
+
+            sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+            _ = await request.value
+            sut.closeSitePermissions()
+
+            XCTAssertEqual(events, [
+                .permissionDialogImpression(type: .geolocation),
+                .permissionDialogClosedWithoutChoice(type: .geolocation,
+                                                     reason: .navigationReload,
+                                                     visibleFor: .lessThanOneSecond,
+                                                     frame: isMainFrame ? .main : .iframe)
+            ], "isMainFrame: \(isMainFrame)")
+        }
+    }
+
     func testPermissionDialogImpressionWaitsUntilTabIsVisibleAndSkipsDialogsRemovedWhileHidden() async throws {
         var events = [SitePermissionsEvent]()
         var isVisible = false
@@ -1711,7 +1722,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         // The removed dialog stays uncounted even once the tab becomes visible.
         isVisible = true
         removedHostingController.viewDidAppear(false)
-        sut.fireSitePermissionDialogImpressionIfVisible()
+        sut.updateSitePermissionDialogVisibility()
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
@@ -1767,7 +1778,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
 
         hostingController.viewDidAppear(false)
-        sut.fireSitePermissionDialogImpressionIfVisible()
+        sut.updateSitePermissionDialogVisibility()
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         await withCheckedContinuation { continuation in
             DispatchQueue.main.async { continuation.resume() }
@@ -2330,7 +2341,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
     private func makeSUT(featureEnabled: Bool = true,
                          fireTab: Bool = false,
-                         featureFlagger providedFeatureFlagger: MockFeatureFlagger? = nil,
                          hasCommittedMainFrame: Bool = true,
                          systemAuthorizationStatus: AVAuthorizationStatus = .authorized,
                          systemPermissionClient: SystemPermissionClient? = nil,
@@ -2341,14 +2351,13 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
                          eventHandler: @escaping (SitePermissionsEvent) -> Void = { _ in },
                          revokePermissionsInOtherTabs: @escaping (SitePermissionKey, Set<SitePermissionType>, String) -> Void = { _, _, _ in }
     ) -> TabViewController {
-        let featureFlagger = providedFeatureFlagger
-            ?? MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : [])
+        let featureFlagger = MockFeatureFlagger()
         let locationManager = MockLocationManager()
         locationManager.authorizationStatusValue = .denied
         let sut = TabViewController.fake(
             customWebView: { SitePermissionURLWebView(url: committedURL, configuration: $0) },
             featureFlagger: featureFlagger,
-            sitePermissionsEnabled: featureFlagger.isFeatureOn(.sitePermissions),
+            sitePermissionsEnabled: featureEnabled,
             fireTab: fireTab
         )
         let dependencies = SitePermissionsDependencies(
@@ -2522,7 +2531,7 @@ private extension AVCaptureDevice {
 }
 
 private final class SitePermissionURLWebView: WKWebView {
-    private let fixedURL: URL
+    var fixedURL: URL
     private var cameraCaptureStateValue = WKMediaCaptureState.none
     private(set) var requestedCameraCaptureStates = [WKMediaCaptureState]()
 

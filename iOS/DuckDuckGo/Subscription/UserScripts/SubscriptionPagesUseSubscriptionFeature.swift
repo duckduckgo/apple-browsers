@@ -68,6 +68,7 @@ private struct Handlers {
     // Notification permission & scheduling (expiration reminder experiment)
     static let getUserSettings = "getUserSettings"
     static let requestNotificationsPermission = "requestNotificationsPermission"
+    static let showNotificationsDeniedDialog = "showNotificationsDeniedDialog"
     // Pixels related events
     static let subscriptionsMonthlyPriceClicked = "subscriptionsMonthlyPriceClicked"
     static let subscriptionsYearlyPriceClicked = "subscriptionsYearlyPriceClicked"
@@ -102,7 +103,6 @@ public enum SubscriptionTransactionStatus: String {
 public struct GetFeatureConfigurationResponse: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool = true
-    let usePaidDuckAi: Bool
     let useAlternateStripePaymentFlow: Bool
     let useGetSubscriptionTierOptions: Bool = true
 }
@@ -126,6 +126,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var onAppStoreTransactionCompleted: ((_ isFreeTrial: Bool) -> Void)? { get set }
     var onShowFeatureInfo: ((SubscriptionEntitlement) -> Void)? { get set }
     var onRequestCancellation: (() -> Void)? { get set }
+    var onShowNotificationsDeniedDialog: ((_ daysBeforeCancel: Int) async -> NotificationsDeniedDialogAction)? { get set }
 
     func with(broker: UserScriptMessageBroker)
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler?
@@ -156,6 +157,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func requestNotificationsPermission(params: Any, original: WKScriptMessage) async -> Encodable?
 
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async
+    func pushNotificationsPermissionChanged(into webView: WKWebView?) async -> DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionStatus?
     func restoreAccountFromAppStorePurchase() async throws
     func cleanup()
 }
@@ -242,6 +244,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     var onAppStoreTransactionCompleted: ((_ isFreeTrial: Bool) -> Void)?
     var onShowFeatureInfo: ((SubscriptionEntitlement) -> Void)?
     var onRequestCancellation: (() -> Void)?
+    var onShowNotificationsDeniedDialog: ((_ daysBeforeCancel: Int) async -> NotificationsDeniedDialogAction)?
 
     struct FeatureSelection: Codable {
         let productFeature: SubscriptionEntitlement
@@ -308,6 +311,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         case Handlers.getAccessToken: return getAccessToken
         case Handlers.getUserSettings: return getUserSettings
         case Handlers.requestNotificationsPermission: return requestNotificationsPermission
+        case Handlers.showNotificationsDeniedDialog: return showNotificationsDeniedDialog
         default:
             Logger.subscription.error("Unhandled web message: \(methodName)")
             return nil
@@ -420,7 +424,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         return GetFeatureConfigurationResponse(
-            usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
             useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
         )
     }
@@ -442,16 +445,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         tierEventReporter.reportTierOptionsRequested()
 
-        let subscriptionTierOptionsResponse = await subscriptionManager.subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+        let subscriptionTierOptionsResponse = await subscriptionManager.subscriptionTierOptions()
 
         switch subscriptionTierOptionsResponse {
         case .success(let subscriptionTierOptions):
-            // Check if Pro tier was unexpectedly returned
-            let hasProTier = subscriptionTierOptions.products.contains { $0.tier == .pro }
-            if hasProTier && !subscriptionFeatureAvailability.isProTierPurchaseEnabled {
-                tierEventReporter.reportTierOptionsUnexpectedProTier()
-            }
-
             tierEventReporter.reportTierOptionsSuccess()
 
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
@@ -513,7 +510,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         let purchaseIsFreeTrial: Bool
 
         // 4: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
-        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id, includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled) {
+        switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
         case .success(let result):
             Logger.subscription.log("Subscription purchased successfully")
             purchaseTransactionJWS = result.transactionJWS
@@ -612,6 +609,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             fireFreemiumUpsellPixel()
             setTransactionStatus(.idle)
             NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
+            NotificationCenter.default.post(name: .userDidStartNewSubscription, object: self)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 
             if let purchaseWideEventData {
@@ -874,6 +872,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     enum SubscribeActionName: String {
         case onPurchaseUpdate
+        case onNotificationsPermissionChanged
     }
 
     @MainActor
@@ -883,6 +882,16 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         }
 
         pushAction(method: .onPurchaseUpdate, webView: webView, params: purchaseUpdate)
+    }
+
+    func pushNotificationsPermissionChanged(into webView: WKWebView?) async -> NotificationsPermissionStatus? {
+        guard isExpirationReminderFeatureEnabled() else { return nil }
+        let permission = Self.permissionStatus(from: await userNotificationCenter.authorizationStatus())
+        if let webView {
+            let event = NotificationsPermissionChangedEvent(notificationsPermission: permission)
+            pushAction(method: .onNotificationsPermissionChanged, webView: webView, params: event)
+        }
+        return permission
     }
 
     func pushAction(method: SubscribeActionName, webView: WKWebView, params: Encodable) {
@@ -933,6 +942,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         onAppStoreTransactionCompleted = nil
         onShowFeatureInfo = nil
         onRequestCancellation = nil
+        onShowNotificationsDeniedDialog = nil
     }
 
     private func fireFreemiumUpsellPixel() {
@@ -946,11 +956,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 extension DefaultSubscriptionPagesUseSubscriptionFeature {
 
     enum NotificationsPermissionStatus: String, Encodable {
-        case granted, denied, notDetermined
+        case granted, denied, notDetermined, provisional
     }
 
     struct UserSettingsResponse: Encodable {
         let notificationsPermission: NotificationsPermissionStatus
+        var notificationsDeniedDialog: Bool?
     }
 
     struct NotificationsPermissionResponse: Encodable {
@@ -961,9 +972,29 @@ extension DefaultSubscriptionPagesUseSubscriptionFeature {
         let daysBeforeCancel: Int
     }
 
+    struct NotificationsDeniedDialogResponse: Encodable {
+        let action: NotificationsDeniedDialogAction
+    }
+
+    struct NotificationsPermissionChangedEvent: Encodable {
+        let notificationsPermission: NotificationsPermissionStatus
+    }
+
     func getUserSettings(params: Any, original: WKScriptMessage) async -> Encodable? {
         let status = await userNotificationCenter.authorizationStatus()
-        return UserSettingsResponse(notificationsPermission: Self.permissionStatus(from: status))
+        return UserSettingsResponse(notificationsPermission: Self.permissionStatus(from: status),
+                                    notificationsDeniedDialog: isExpirationReminderFeatureEnabled() && onShowNotificationsDeniedDialog != nil ? true : nil)
+    }
+
+    func showNotificationsDeniedDialog(params: Any, original: WKScriptMessage) async -> Encodable? {
+        guard isExpirationReminderFeatureEnabled(),
+              let preference: ScheduleNotificationPreference = CodableHelper.decode(from: params),
+              preference.daysBeforeCancel > 0,
+              let onShowNotificationsDeniedDialog else {
+            return NotificationsDeniedDialogResponse(action: .notNow)
+        }
+        let action = await onShowNotificationsDeniedDialog(preference.daysBeforeCancel)
+        return NotificationsDeniedDialogResponse(action: action)
     }
 
     func requestNotificationsPermission(params: Any, original: WKScriptMessage) async -> Encodable? {
@@ -986,17 +1017,21 @@ extension DefaultSubscriptionPagesUseSubscriptionFeature {
         }
     }
 
-    /// Any status that requires a Settings change to become `.authorized` is reported as `.denied`.
-    /// `.provisional` is bucketed with `.denied` because there's no programmatic upgrade path.
-    /// iOS won't show a prompt from `requestAuthorization` when state is `.provisional`.
+    /// Any status that requires a Settings change to become `.authorized` is reported as `.denied`,
+    /// except `.provisional`, which is reported separately even though it also needs a Settings change.
     private static func permissionStatus(from status: UNAuthorizationStatus) -> NotificationsPermissionStatus {
         switch status {
         case .authorized, .ephemeral: return .granted
         case .notDetermined: return .notDetermined
-        case .denied, .provisional: return .denied
+        case .provisional: return .provisional
+        case .denied: return .denied
         @unknown default: return .denied
         }
     }
+}
+
+enum NotificationsDeniedDialogAction: String, Encodable {
+    case openSettings, notNow
 }
 
 // MARK: - Wide Pixel
@@ -1044,4 +1079,10 @@ extension Pixel {
         )
     }
 
+}
+
+extension NSNotification.Name {
+    /// A purchase started a new subscription. Unlike `.userDidPurchaseSubscription`, plan changes and restores of an
+    /// existing subscription don't post it.
+    static let userDidStartNewSubscription = Notification.Name("com.duckduckgo.subscription.userDidStartNewSubscription")
 }

@@ -10,6 +10,7 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
+      - 'scripts/check-swift-concurrency-warnings.py'
       - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
@@ -42,10 +43,6 @@ on:
         required: true
       APPLE_GH_RO_PAT:
         required: true
-      BITRISE_BUILD_CACHE_AUTH_TOKEN:
-        required: true
-      BITRISE_BUILD_CACHE_WORKSPACE_ID:
-        required: true
       MATCH_PASSWORD:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
@@ -69,6 +66,7 @@ jobs:
         .xcode-version
         SharedPackages/**
         iOS/**
+        scripts/check-swift-concurrency-warnings.py
         scripts/translation-pr-checks/**
 
   shellcheck:
@@ -112,10 +110,6 @@ jobs:
     env:
       RUNS_ON: image:osx-27-edge,general-purpose # keep this in sync with runs-on above
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
-
-    outputs:
-      commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
-      pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
 
@@ -181,8 +175,6 @@ jobs:
       uses: ./.github/actions/bitrise-build-cache
       with:
         enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Select iOS Simulator
       id: select-simulator
@@ -232,7 +224,7 @@ jobs:
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          | tee xcodebuild.log \
+          2>&1 | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
 
     - name: Compute Compilation Cache hash
@@ -252,6 +244,10 @@ jobs:
       with:
         path: iOS/DerivedData/CompilationCache.noindex
         key: xcode-compilation-cache-ios-unit-tests-${{ steps.compilation-cache-hash.outputs.hash }}
+
+    - name: Scan app build for strict concurrency warnings
+      if: ${{ !cancelled() && steps.run-unit-tests.outcome == 'success' }}
+      run: python3 ../scripts/check-swift-concurrency-warnings.py xcodebuild.log --package-roots LocalPackages ../SharedPackages
 
     - name: Process test results
       if: always()
@@ -340,13 +336,6 @@ jobs:
       with:
         pixel-name: m_ci_apple_status_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
 
-    - name: Fetch latest commit author and PR reviewers
-      if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
-      id: fetch_commit_author
-      uses: ./.github/actions/fetch-commit-info
-      with:
-        github-token: ${{ github.token }}
-
   release-build:
 
     name: Make Release Build
@@ -430,8 +419,6 @@ jobs:
       uses: ./.github/actions/bitrise-build-cache
       with:
         enabled: ${{ vars.BITRISE_BUILD_CACHE_ENABLED }}
-        token: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-        workspace-id: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
 
     - name: Select iOS Simulator
       id: select-simulator
@@ -631,8 +618,6 @@ jobs:
           action: create-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
-          commit-author: ${{ needs.unit-tests.outputs.commit_author }}
-          pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.APPLE_GH_RO_PAT }}
 
   close-asana-task:

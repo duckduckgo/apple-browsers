@@ -113,6 +113,7 @@ public extension DesignSystemImages {
             public static var qr: DesignSystemImage { .init(resource: .QR_12) }
             public static var reload: DesignSystemImage { .init(resource: .reload12) }
             public static var reloadSmall: DesignSystemImage { .init(resource: .reloadSmall12) }
+            public static var replay: DesignSystemImage { .init(resource: .replay12) }
             public static var save: DesignSystemImage { .init(resource: .save12) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind12) }
             public static var sendPlane: DesignSystemImage { .init(resource: .sendPlane12) }
@@ -258,6 +259,7 @@ public extension DesignSystemImages {
             public static var feedback: DesignSystemImage { .init(resource: .feedback16) }
             public static var feedbackAlert: DesignSystemImage { .init(resource: .feedbackAlert16) }
             public static var feedbackBlank: DesignSystemImage { .init(resource: .feedbackBlank16) }
+            public static var file: DesignSystemImage { .init(resource: .file16) }
             public static var findInPage: DesignSystemImage { .init(resource: .findInPage16) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch16) }
             public static var findSearchGradientColor: DesignSystemImage { .init(resource: .findSearchGradientColor16) }
@@ -463,6 +465,7 @@ public extension DesignSystemImages {
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility24) }
             public static var profileBlocked: DesignSystemImage { .init(resource: .profileBlocked24) }
             public static var add: DesignSystemImage { .init(resource: .add24) }
+            public static var addCircle: DesignSystemImage { .init(resource: .addCircle24) }
             public static var addition: DesignSystemImage { .init(resource: .addition24) }
             public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop24) }
             public static var addressBarBottom: DesignSystemImage { .init(resource: .addressBarPositionBottom24) }
@@ -474,6 +477,7 @@ public extension DesignSystemImages {
             public static var aiModelClaude: DesignSystemImage { .init(resource: .aiModelClaude24) }
             public static var aiModelMistral: DesignSystemImage { .init(resource: .aiModelMistral24) }
             public static var aiModelOpenAI: DesignSystemImage { .init(resource: .aiModelOpenAI24) }
+            public static var aiModelOSS: DesignSystemImage { .init(resource: .aiModelOSS24) }
             public static var aiChatSettings: DesignSystemImage { .init(resource: .aiSettings24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }
@@ -528,6 +532,7 @@ public extension DesignSystemImages {
             public static var covid: DesignSystemImage { .init(resource: .covid24) }
             public static var creditCard: DesignSystemImage { .init(resource: .creditCard24) }
             public static var crossRecolorable: DesignSystemImage { .init(resource: .crossRecolorable24) }
+            public static var crossSolid: DesignSystemImage { .init(resource: .crossSolid24) }
             public static var crossSolidSmall: DesignSystemImage { .init(resource: .crossSolidSmall24) }
             public static var cut: DesignSystemImage { .init(resource: .cut24) }
             public static var deviceAll: DesignSystemImage { .init(resource: .deviceAll24) }
@@ -643,6 +648,7 @@ public extension DesignSystemImages {
             public static var sheetOpen: DesignSystemImage { .init(resource: .sheetOpen24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
+            public static var stopSolid: DesignSystemImage { .init(resource: .stopSolid24) }
             public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }
@@ -661,6 +667,7 @@ public extension DesignSystemImages {
             public static var textSelect: DesignSystemImage { .init(resource: .textSelect24) }
             public static var thinking: DesignSystemImage { .init(resource: .thinking24) }
             public static var timer: DesignSystemImage { .init(resource: .timer24) }
+            public static var translate: DesignSystemImage { .init(resource: .translate24) }
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }
             public static var unpin: DesignSystemImage { .init(resource: .unpin24) }

@@ -20,7 +20,6 @@ import AppKit
 import Combine
 import Foundation
 import Persistence
-import PrivacyConfig
 
 struct BookmarkToolbarPromoSettings: StoringKeys {
     let didShowLegacyPopover = StorageKey<Bool>(UserDefaultsKeys.bookmarksBarPromptShown, assertionHandler: { _ in })
@@ -30,7 +29,6 @@ struct BookmarkToolbarPromoSettings: StoringKeys {
 /// bookmarks bar after the user creates their first bookmark or imports bookmarks.
 final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
 
-    private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
     private let storage: KeyedStorage<BookmarkToolbarPromoSettings>
 
@@ -38,26 +36,16 @@ final class BookmarkToolbarPromoDelegate: InternalPromoDelegate {
     private weak var presentedMainViewController: MainViewController?
     private var pendingPresentation: DispatchWorkItem?
 
-    init(featureFlagger: FeatureFlagger,
-         windowControllersManager: WindowControllersManagerProtocol,
+    init(windowControllersManager: WindowControllersManagerProtocol,
          storage: KeyedStorage<BookmarkToolbarPromoSettings>? = nil) {
-        self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
         self.storage = storage ?? KeyedStorage(storage: UserDefaults.standard)
     }
 
-    var isEligible: Bool {
-        featureFlagger.isFeatureOn(.promoQueueBookmarkToolbarPromo)
-    }
+    var isEligible: Bool { true }
 
     var isEligiblePublisher: AnyPublisher<Bool, Never> {
-        featureFlagger.updatesPublisher
-            .map { [featureFlagger] _ in
-                featureFlagger.isFeatureOn(.promoQueueBookmarkToolbarPromo)
-            }
-            .prepend(isEligible)
-            .removeDuplicates()
-            .eraseToAnyPublisher()
+        Just(true).eraseToAnyPublisher()
     }
 
     @MainActor

@@ -31,10 +31,11 @@ final class WatchdogDetectionStateTests: XCTestCase {
 
     private func nextState(
         _ current: WatchdogDetectionState,
+        sinceLastTick: TimeInterval = 0.5,
         sinceLastHeartbeat: TimeInterval,
         sinceHangStarted: TimeInterval
     ) -> WatchdogDetectionState {
-        .nextState(currentState: current, settings: settings, secondsSinceLastHeartbeat: sinceLastHeartbeat, secondsSinceHangStarted: sinceHangStarted)
+        .nextState(currentState: current, settings: settings, secondsSinceLastTick: sinceLastTick, secondsSinceLastHeartbeat: sinceLastHeartbeat, secondsSinceHangStarted: sinceHangStarted)
     }
 
     // MARK: - Boundary Conditions
@@ -44,6 +45,24 @@ final class WatchdogDetectionStateTests: XCTestCase {
         XCTAssertEqual(nextState(.responsive, sinceLastHeartbeat: settings.minimumHangDuration, sinceHangStarted: 0), .responsive)
         XCTAssertEqual(nextState(.hanging, sinceLastHeartbeat: 5.0, sinceHangStarted: settings.maximumHangDuration), .hanging)
         XCTAssertEqual(nextState(.timeout, sinceLastHeartbeat: 6.0, sinceHangStarted: 10), .timeout)
+    }
+
+    // MARK: - Late Ticks
+
+    func testLateTickWithStaleHeartbeatStaysResponsive() {
+        let state = nextState(.responsive, sinceLastTick: 3.0, sinceLastHeartbeat: 3.0, sinceHangStarted: 0)
+        XCTAssertEqual(state, .responsive)
+    }
+
+    func testLateTickKeepsCurrentState() {
+        XCTAssertEqual(nextState(.hanging, sinceLastTick: 3.0, sinceLastHeartbeat: 0.3, sinceHangStarted: 4.0), .hanging)
+        XCTAssertEqual(nextState(.hanging, sinceLastTick: 3.0, sinceLastHeartbeat: 6.0, sinceHangStarted: 6.0), .hanging)
+        XCTAssertEqual(nextState(.recovery(after: .hanging, heartbeatCount: 1), sinceLastTick: 3.0, sinceLastHeartbeat: 3.0, sinceHangStarted: 4.0), .recovery(after: .hanging, heartbeatCount: 1))
+    }
+
+    func testTickAtLateThresholdStillDetectsHang() {
+        let state = nextState(.responsive, sinceLastTick: settings.checkInterval * 2, sinceLastHeartbeat: 3.0, sinceHangStarted: 0)
+        XCTAssertEqual(state, .hanging)
     }
 
     // MARK: - Full Lifecycle: Hang -> Recovery -> Responsive

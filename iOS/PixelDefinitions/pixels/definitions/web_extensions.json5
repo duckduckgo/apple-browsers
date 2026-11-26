@@ -225,48 +225,6 @@
         ],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
-    "search-token_web_extension_installed": {
-        "description": "The search token web extension was installed.",
-        "owners": ["hassaanelgarem"],
-        "triggers": ["other"],
-        "suffixes": [
-            ["daily", "platform", "form_factor"],
-            ["platform", "form_factor"]
-        ],
-        "parameters": ["appVersion"]
-    },
-    "search-token_web_extension_upgraded": {
-        "description": "The search token web extension was upgraded to a new version.",
-        "owners": ["hassaanelgarem"],
-        "triggers": ["other"],
-        "suffixes": [
-            ["daily", "platform", "form_factor"],
-            ["platform", "form_factor"]
-        ],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "from_version",
-                "type": "string",
-                "description": "The previous version of the search token extension before upgrade"
-            },
-            {
-                "key": "to_version",
-                "type": "string",
-                "description": "The new version of the search token extension after upgrade"
-            }
-        ]
-    },
-    "search-token_web_extension_install_error": {
-        "description": "The search token web extension failed to install.",
-        "owners": ["hassaanelgarem"],
-        "triggers": ["exception"],
-        "suffixes": [
-            ["daily", "platform", "form_factor"],
-            ["platform", "form_factor"]
-        ],
-        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
-    },
     "m_web_extension_ad_blocking_settings_open": {
         "description": "Fires when the user opens the YouTube Ad Blocking settings screen.",
         "owners": ["miasma13"],
@@ -528,16 +486,6 @@
         ],
         "parameters": ["appVersion"]
     },
-    "search-token_web_extension_not_loaded": {
-        "description": "The search token web extension was expected to be loaded but was not.",
-        "owners": ["hassaanelgarem"],
-        "triggers": ["exception"],
-        "suffixes": [
-            ["daily", "platform", "form_factor"],
-            ["platform", "form_factor"]
-        ],
-        "parameters": ["appVersion"]
-    },
     "web_extension_ad_blocking_scriptlets_not_fetched": {
         "description": "Fires when the ad-blocking extension is expected but its scriptlets have not been fetched.",
         "owners": ["miasma13"],
@@ -561,6 +509,12 @@
         "triggers": ["feature_lifecycle", "exception"],
         "parameters": [
             "appVersion",
+            {
+                "key": "last_stage",
+                "type": "string",
+                "enum": ["none", "background_received", "config_read", "settings_checked", "site_checked", "response_sent"],
+                "description": "Optional: present only while the cpmInitProgress subfeature is on. Furthest init step the extension reported for the silent tab's page: the background received init, read its configuration, read the user setting, checked the site, or answered the page's init (response_sent). None means no step was reported or attributable to the tab. Marks travel over the same native channel that can fail, so none cannot distinguish a lost report from an init that never started. A mark is never counted as an answer. Temporary: removed when the investigation of failures after the background wakes is closed."
+            },
             {
                 "key": "tabs",
                 "type": "string",

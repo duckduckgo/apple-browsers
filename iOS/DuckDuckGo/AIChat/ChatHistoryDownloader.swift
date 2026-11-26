@@ -23,7 +23,8 @@ import Foundation
 /// Call off the main thread — image-generation exports do storage reads, base64 decoding,
 /// and zip writing.
 protocol ChatHistoryDownloading {
-    func downloadChat(chatId: String) throws -> URL
+    /// `modelDisplays` is read by the caller when the export starts; unknown ids fall back to the raw model id.
+    func downloadChat(chatId: String, modelDisplays: [String: ModelDisplay]) throws -> URL
 }
 
 struct ChatHistoryDownloader: ChatHistoryDownloading {
@@ -40,24 +41,18 @@ struct ChatHistoryDownloader: ChatHistoryDownloading {
     private let storageHandler: DuckAiNativeStorageHandling?
     private let exporter: ChatExporter
     private let writer: ChatExportWriting
-    /// Snapshot lookup taken at construction time. The exporter's `rawIdFallback` kicks in
-    /// for any model id that's not in this dict, so an empty dict still produces a usable
-    /// header — just without provider attribution.
-    private let modelDisplays: [String: ModelDisplay]
 
     init(
         storageHandler: DuckAiNativeStorageHandling?,
         exporter: ChatExporter = ChatExporter(),
-        writer: ChatExportWriting = ChatExportWriter(),
-        modelDisplays: [String: ModelDisplay] = [:]
+        writer: ChatExportWriting = ChatExportWriter()
     ) {
         self.storageHandler = storageHandler
         self.exporter = exporter
         self.writer = writer
-        self.modelDisplays = modelDisplays
     }
 
-    func downloadChat(chatId: String) throws -> URL {
+    func downloadChat(chatId: String, modelDisplays: [String: ModelDisplay]) throws -> URL {
         guard let storageHandler else { throw DownloadError.storageUnavailable }
         guard let record = try storageHandler.getChat(chatId: chatId) else {
             throw DownloadError.chatNotFound

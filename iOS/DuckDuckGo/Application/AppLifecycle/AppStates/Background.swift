@@ -35,8 +35,9 @@ struct Background: BackgroundHandling {
     private let appDependencies: AppDependencies
     private let sceneDependencies: SceneDependencies
     private let didTransitionFromLaunching: Bool
-    /// Passed on to the next foreground, for a launch that drew the page but went to the background first.
-    private let drewIdleReturnNewTabPage: Bool
+    /// Passed on to the next foreground, which records the page: drawn by a launch that went to the background first,
+    /// or by a warm return's `willLeave`.
+    private var drewIdleReturnNewTabPage: Bool
     private var services: AppServices { appDependencies.services }
 
     init(stateContext: Connected.StateContext, lastBackgroundDateStorage: any ThrowingKeyedStoring<IdleReturnLastBackgroundDateKeys>) {
@@ -104,12 +105,23 @@ extension Background {
     /// By default, resume any services in the `onTransition()` method of the `Foreground` state.
     /// Use this method to resume **UI related tasks** that need to be completed promptly, preventing UI glitches when the user first sees the app.
     /// This ensures that the app remains smooth as it enters the foreground.
-    func willLeave() {
+    func willLeave(actionToHandle: AppAction?) -> any BackgroundHandling {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
         
         ThemeManager.shared.updateUserInterfaceStyle()
+        var background = self
+        let mainCoordinator = appDependencies.mainCoordinator
+        if mainCoordinator.drawsNewTabPageForIdleReturnOnForeground(
+            outcome: appDependencies.idleReturnEvaluator.evaluateReturn(),
+            isFeatureOn: appDependencies.featureFlagger.isFeatureOn(.idleReturnNewTabPageOnForeground),
+            hasLaunchAction: actionToHandle != nil,
+            isTabClearingEnabled: sceneDependencies.autoClearService.isTabClearingEnabled) {
+            mainCoordinator.drawNewTabPageForIdleReturnOnForeground()
+            background.drewIdleReturnNewTabPage = true
+        }
         sceneDependencies.autoClearService.resume()
         services.systemSettingsPiPTutorialService.resume()
+        return background
     }
 
     /// Called when the app transitions from launching or foreground to background

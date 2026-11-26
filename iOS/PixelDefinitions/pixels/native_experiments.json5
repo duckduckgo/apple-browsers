@@ -2,11 +2,31 @@
     // This file defines pixels sent by the native experiments framework
     "defaultSuffixes": [],
     "activeExperiments": {
-        "onboardingFlowByDownloadReasonExperiment": {
+        "onboardingVPNDownloadReasonExperiment": {
             "cohorts": ["control", "treatment"],
             "metrics": {
                 "onboarding_completed": {
                     "description": "User reached the end-of-journey dialog (onboarding completed)",
+                    "enum": [""]
+                },
+                "download_reason_onboarding_completed_search": {
+                    "description": "User in the 'search' download-reason segment reached the end-of-journey dialog (onboarding completed)",
+                    "enum": [""]
+                },
+                "download_reason_onboarding_completed_ai-chat": {
+                    "description": "User in the 'ai-chat' download-reason segment reached the end-of-journey dialog (onboarding completed)",
+                    "enum": [""]
+                },
+                "download_reason_onboarding_completed_no-ai": {
+                    "description": "User in the 'no-ai' download-reason segment reached the end-of-journey dialog (onboarding completed)",
+                    "enum": [""]
+                },
+                "download_reason_onboarding_completed_ad-blocking": {
+                    "description": "User in the 'ad-blocking' download-reason segment reached the end-of-journey dialog (onboarding completed)",
+                    "enum": [""]
+                },
+                "download_reason_onboarding_completed_vpn": {
+                    "description": "User in the 'vpn' download-reason segment reached the end-of-journey dialog (onboarding completed)",
                     "enum": [""]
                 },
                 "download_reason_selected_search": {
@@ -25,20 +45,116 @@
                     "description": "User selected the 'ad-blocking' download reason",
                     "enum": [""]
                 },
+                "download_reason_selected_vpn": {
+                    "description": "User selected the 'vpn' download reason",
+                    "enum": [""]
+                },
+                "download_reason_app_use_search": {
+                    "description": "App use retention for the 'search' download-reason segment on D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
+                "download_reason_app_use_ai-chat": {
+                    "description": "App use retention for the 'ai-chat' download-reason segment on D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
+                "download_reason_app_use_no-ai": {
+                    "description": "App use retention for the 'no-ai' download-reason segment on D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
+                "download_reason_app_use_ad-blocking": {
+                    "description": "App use retention for the 'ad-blocking' download-reason segment on D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
+                "download_reason_app_use_vpn": {
+                    "description": "App use retention for the 'vpn' download-reason segment on D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
                 "download_reason_search_retention_search": {
-                    "description": "D5-7 search retention for the 'search' download-reason segment",
+                    "description": "Search retention (searches and Duck.ai prompts) for the 'search' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7 and D8-14",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 },
                 "download_reason_search_retention_ai-chat": {
-                    "description": "D5-7 search retention for the 'ai-chat' download-reason segment",
+                    "description": "Search retention (searches and Duck.ai prompts) for the 'ai-chat' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7 and D8-14",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 },
                 "download_reason_search_retention_no-ai": {
-                    "description": "D5-7 search retention for the 'no-ai' download-reason segment",
+                    "description": "Search retention (searches and Duck.ai prompts) for the 'no-ai' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7 and D8-14",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 },
                 "download_reason_search_retention_ad-blocking": {
-                    "description": "D5-7 search retention for the 'ad-blocking' download-reason segment",
+                    "description": "Search retention (searches and Duck.ai prompts) for the 'ad-blocking' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7 and D8-14",
+                    "enum": ["1", "4", "6", "11", "21", "30"]
+                },
+                "download_reason_search_retention_vpn": {
+                    "description": "Search retention (searches and Duck.ai prompts) for the 'vpn' download-reason segment: 1 search on D0, D1, D5-7 and D8-14, and 4+ searches on D5-7 and D8-14",
+                    "enum": ["1", "4", "6", "11", "21", "30"]
+                },
+                "download_reason_search_only_search": {
+                    "description": "Searches without Duck.ai prompts for the 'search' download-reason segment, with the same windows as download_reason_search_retention_search",
+                    "enum": ["1", "4", "6", "11", "21", "30"]
+                },
+                "download_reason_search_only_ai-chat": {
+                    "description": "Searches without Duck.ai prompts for the 'ai-chat' download-reason segment, with the same windows as download_reason_search_retention_ai-chat",
+                    "enum": ["1", "4", "6", "11", "21", "30"]
+                },
+                "download_reason_search_only_no-ai": {
+                    "description": "Searches without Duck.ai prompts for the 'no-ai' download-reason segment, with the same windows as download_reason_search_retention_no-ai",
+                    "enum": ["1", "4", "6", "11", "21", "30"]
+                },
+                "download_reason_search_only_ad-blocking": {
+                    "description": "Searches without Duck.ai prompts for the 'ad-blocking' download-reason segment, with the same windows as download_reason_search_retention_ad-blocking",
+                    "enum": ["1", "4", "6", "11", "21", "30"]
+                },
+                "download_reason_search_only_vpn": {
+                    "description": "Searches without Duck.ai prompts for the 'vpn' download-reason segment, with the same windows as download_reason_search_retention_vpn",
+                    "enum": ["1", "4", "6", "11", "21", "30"]
+                },
+                "download_reason_ai_prompt_search": {
+                    "description": "Sent a Duck.ai prompt, for the 'search' download-reason segment, on D0, D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
+                "download_reason_ai_prompt_ai-chat": {
+                    "description": "Sent a Duck.ai prompt, for the 'ai-chat' download-reason segment, on D0, D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
+                "download_reason_ai_prompt_no-ai": {
+                    "description": "Sent a Duck.ai prompt, for the 'no-ai' download-reason segment, on D0, D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
+                "download_reason_ai_prompt_ad-blocking": {
+                    "description": "Sent a Duck.ai prompt, for the 'ad-blocking' download-reason segment, on D0, D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
+                "download_reason_ai_prompt_vpn": {
+                    "description": "Sent a Duck.ai prompt, for the 'vpn' download-reason segment, on D0, D1, D5-7 and D8-14",
+                    "enum": ["1"]
+                },
+                "search_only": {
+                    "description": "Searches without Duck.ai prompts, with the same thresholds and windows as the standard search metric",
+                    "enum": ["1", "4", "6", "11", "21", "30"]
+                },
+                "set_default": {
+                    "description": "User tapped 'Set as default' in onboarding (D0)",
+                    "enum": [""]
+                },
+                "vpn_activated": {
+                    "description": "A VPN configuration was installed, from any entry point, on D0-7",
+                    "enum": ["1"]
+                },
+                "vpn_use": {
+                    "description": "The app came to the foreground with the VPN connected on D8-14",
+                    "enum": ["1"]
+                },
+                "subscribed": {
+                    "description": "User purchased a new subscription (trial or paid, any entry point) on D0-4. Restores and plan changes don't count",
+                    "enum": ["1"]
+                },
+                "subscriber_app_use": {
+                    "description": "App use retention on D5-7, sent only by users who subscribed on D0-4",
+                    "enum": ["1"]
+                },
+                "subscriber_search": {
+                    "description": "Search retention (searches and Duck.ai prompts) on D5-7, sent only by users who subscribed on D0-4",
                     "enum": ["1", "4", "6", "11", "21", "30"]
                 }
             }

@@ -87,6 +87,8 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
 
     func makeBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: ParentFolderType) {}
 
+    func makeBookmarks(for websitesInfo: [WebsiteInfo], isFavorite: Bool, index: Int?, parent: BookmarkFolder?) {}
+
     func makeFolder(named title: String, parent: BookmarkFolder?, completion: @escaping (Result<BookmarkFolder, Error>) -> Void) {}
 
     var removeBookmarkCalled = false

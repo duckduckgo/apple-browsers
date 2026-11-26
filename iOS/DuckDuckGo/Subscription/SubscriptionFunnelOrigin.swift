@@ -50,6 +50,9 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1212891971534036
     case newTabMenu = "funnel_appmenu_ios"
 
+    /// User entered the funnel via the VPN menu item in the Duck.ai tab app menu.
+    case aiChatMenu = "funnel_appmenu_ios__chat"
+
     /// User entered the funnel by tapping a gated model in the Unified Toggle Input model picker from the address bar.
     /// https://app.asana.com/1/137249556945/project/1207260194172075/task/1213994750860310
     case addressBarModelPicker = "funnel_addressbar_ios__modelpicker"
@@ -119,6 +122,15 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/task/1216395339071576
     case duckAIVoiceChatDurationLimit = "funnel_duckai_ios__voicechatdurationlimit"
 
+    /// Frontend-reported: the upgrade prompt shown when switching to a gated model mid-chat. Only reaches
+    /// pixels as the source of a subscribe / upgrade-to-Pro modal click.
+    /// https://app.asana.com/1/137249556945/task/1217475599862970
+    case duckAISwitchModel = "funnel_duckai_ios__switchmodel"
+
+    /// Frontend-reported: a subscribe / upgrade-to-Pro modal the frontend could not attribute to an entry point.
+    /// https://app.asana.com/1/137249556945/task/1217475599862970
+    case duckAIUnknown = "funnel_duckai_ios__unknown"
+
     // MARK: - Win-Back Offer Origins
     
     /// User entered via win-back offer launch prompt
@@ -168,7 +180,8 @@ extension SubscriptionFunnelOrigin {
         switch self {
         case .newTabMenu:
             return .newTabPage
-        case .addressBarModelPicker,
+        case .aiChatMenu,
+                .addressBarModelPicker,
                 .addressBarReasoningPicker,
                 .addressBarUsageLimit,
                 .duckAIModelPicker,
@@ -184,7 +197,9 @@ extension SubscriptionFunnelOrigin {
                 .duckAISettings,
                 .duckAIDisclaimerBanner,
                 .duckAIVoiceChatLimit,
-                .duckAIVoiceChatDurationLimit:
+                .duckAIVoiceChatDurationLimit,
+                .duckAISwitchModel,
+                .duckAIUnknown:
             return .duckAI
         case .onboarding,
                 .skippedOnboarding:

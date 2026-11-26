@@ -422,6 +422,32 @@ final class AIChatTabExtensionTests: XCTestCase {
         XCTAssertEqual(pixelFiring.actualFireCalls.map(\.frequency), [.dailyAndCount])
     }
 
+    // MARK: - Script replacement
+
+    /// Content-blocking updates replace the script while a local summary runs. Its output reaches the
+    /// page through the script that has the page's web view, so the new one needs it straight away.
+    func testWhenScriptsAreReplacedThenTheNewScriptGetsTheWebViewStraightAway() {
+        let webViews = PassthroughSubject<WKWebView, Never>()
+        tabExtension = AIChatTabExtension(scriptsPublisher: scripts,
+                                          webViewPublisher: webViews,
+                                          contentPublisher: content,
+                                          isLoadedInSidebar: false,
+                                          isTabBurner: false,
+                                          featureDiscovery: MockFeatureDiscovery(),
+                                          featureFlagger: MockFeatureFlagger(),
+                                          duckAiNativeStorageHandler: nil,
+                                          burnerDuckAiStorageRegistry: nil,
+                                          preferencesStorage: preferencesStorage,
+                                          pixelFiring: pixelFiring)
+        let webView = WKWebView()
+        webViews.send(webView)
+        let userScript = AIChatUserScript(handler: MockAIChatUserScriptHandler(), urlSettings: AIChatMockDebugSettings())
+
+        scripts.send(MockAIChatScriptsProvider(aiChatUserScript: userScript))
+
+        XCTAssertTrue(userScript.webView === webView)
+    }
+
     // MARK: - Chat source fallback
 
     func testThatTheChatGetsTheDirectNavigationAsItsFallbackSource() {
@@ -529,6 +555,46 @@ final class AIChatTabExtensionTests: XCTestCase {
         XCTAssertEqual(firedVias, ["history"])
     }
 
+    // MARK: - Sidebar links
+
+    func testWhenALinkIsClickedInTheSidebarThenItOpensInASelectedTab() {
+        for switchToNewTabWhenOpened in [false, true] {
+            let behavior = AIChatTabExtension.sidebarLinkOpenBehavior(isMiddleButtonClick: false, modifierFlags: [],
+                                                                      switchToNewTabWhenOpened: switchToNewTabWhenOpened)
+            XCTAssertEqual(behavior, .newTab(selected: true))
+        }
+    }
+
+    func testWhenALinkIsCommandClickedInTheSidebarThenItOpensInABackgroundTab() {
+        let behavior = AIChatTabExtension.sidebarLinkOpenBehavior(isMiddleButtonClick: false, modifierFlags: .command,
+                                                                  switchToNewTabWhenOpened: false)
+        XCTAssertEqual(behavior, .newTab(selected: false))
+    }
+
+    func testWhenALinkIsMiddleClickedInTheSidebarThenItOpensInABackgroundTab() {
+        let behavior = AIChatTabExtension.sidebarLinkOpenBehavior(isMiddleButtonClick: true, modifierFlags: [],
+                                                                  switchToNewTabWhenOpened: false)
+        XCTAssertEqual(behavior, .newTab(selected: false))
+    }
+
+    func testWhenALinkIsCommandShiftClickedInTheSidebarThenItOpensInASelectedTab() {
+        let behavior = AIChatTabExtension.sidebarLinkOpenBehavior(isMiddleButtonClick: false, modifierFlags: [.command, .shift],
+                                                                  switchToNewTabWhenOpened: false)
+        XCTAssertEqual(behavior, .newTab(selected: true))
+    }
+
+    func testWhenNewTabsAreSelectedOnOpenThenACommandClickInTheSidebarSelectsTheTab() {
+        let behavior = AIChatTabExtension.sidebarLinkOpenBehavior(isMiddleButtonClick: false, modifierFlags: .command,
+                                                                  switchToNewTabWhenOpened: true)
+        XCTAssertEqual(behavior, .newTab(selected: true))
+    }
+
+    func testWhenALinkIsCommandOptionClickedInTheSidebarThenItOpensInANewWindow() {
+        let behavior = AIChatTabExtension.sidebarLinkOpenBehavior(isMiddleButtonClick: false, modifierFlags: [.command, .option],
+                                                                  switchToNewTabWhenOpened: false)
+        XCTAssertEqual(behavior, .newWindow(selected: false))
+    }
+
     private func attachChatUserScript() -> MockAIChatUserScriptHandler {
         let handler = MockAIChatUserScriptHandler()
         let userScript = AIChatUserScript(handler: handler, urlSettings: AIChatMockDebugSettings())
@@ -558,7 +624,7 @@ final class AIChatTabExtensionMock: TabExtension, AIChatProtocol {
     func setAIChatNativeHandoffData(payload: AIChatPayload) {}
     func setAIChatRestorationData(_ data: AIChatRestorationData?) {}
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {}
-    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {}
+    func submitAIChatPageContext(_ pageContext: PageContextResponse) {}
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {}
     func requestOpenSettings() {}
     func noteAddressBarSuggestionNavigation(to url: URL) {}
@@ -569,6 +635,7 @@ final class AIChatTabExtensionMock: TabExtension, AIChatProtocol {
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var pageContextAddedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { Empty().eraseToAnyPublisher() }
+    var responseReceivedPublisher: AnyPublisher<Void, Never> { Empty().eraseToAnyPublisher() }
 
     func getPublicProtocol() -> AIChatProtocol { self }
 

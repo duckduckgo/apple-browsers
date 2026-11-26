@@ -75,14 +75,15 @@ final class AIChatPreferences: ObservableObject {
         subscribeToSERPSettingsChanges()
     }
 
-    /// Apple Intelligence can be turned on or off in System Settings while the pane is open. Called by
-    /// the pane, because the service lives on the main actor and this init may not.
+    /// Apple Intelligence can be turned on or off in System Settings while the pane is open, and the
+    /// downloadable model's download moves on. Called by the pane, because the service lives on the
+    /// main actor and this init may not.
     @MainActor
     func observeLocalModelAvailability() {
         guard localModelAvailabilityCancellable == nil else { return }
-        localModelAvailabilityCancellable = localModelService?.availabilityPublisher
-            .dropFirst()
-            .receive(on: DispatchQueue.main)
+        localModelAvailabilityCancellable = localModelService?.changesPublisher
+            // A download reports progress for every megabyte; the row doesn't need more than a few updates a second.
+            .throttle(for: .milliseconds(250), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
@@ -162,16 +163,44 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
 
-    /// Only where Apple Intelligence is ready. Elsewhere a downloaded model will take its place.
+    /// Where Apple Intelligence is ready, or where the downloadable model can run instead.
     @MainActor
     var shouldShowLocalModelAccess: Bool {
-        guard let localModelService, featureFlagger.isFeatureOn(.aiChatLocalModels) else { return false }
-        return localModelService.availability.isAvailable
+        guard let localModelService, featureFlagger.isFeatureOn(.aiChatLocalModels),
+              let state = localModelService.currentState else { return false }
+        return state != .unsupported
     }
 
     @MainActor
     var localModelName: String {
         localModelService?.model.name ?? ""
+    }
+
+    /// The downloadable model's install state, or nil when Settings shows Apple Intelligence.
+    @MainActor
+    var downloadableModelState: AIChatLocalModelInstallState? {
+        guard let localModelService, localModelService.activeEngineKind == .llama else { return nil }
+        return localModelService.installer?.state
+    }
+
+    @MainActor
+    var downloadableModelBytes: Int64 {
+        localModelService?.installer?.spec.bytes ?? 0
+    }
+
+    @MainActor
+    func installDownloadableModel() {
+        localModelService?.installDownloadableModel()
+    }
+
+    @MainActor
+    func cancelDownloadableModelInstall() {
+        localModelService?.cancelDownloadableModelInstall()
+    }
+
+    @MainActor
+    func uninstallDownloadableModel() {
+        localModelService?.uninstallDownloadableModel()
     }
 
     var isLocalModelOn: Bool {
@@ -181,11 +210,20 @@ final class AIChatPreferences: ObservableObject {
     @MainActor
     func turnOnLocalModel() async {
         guard await confirmLocalModelTurnOn() else { return }
-        pageSummariesModel = .appleIntelligence
+        selectLocalModel(.appleIntelligence)
     }
 
+    @MainActor
     func turnOffLocalModel() {
-        pageSummariesModel = .duckAI
+        selectLocalModel(.duckAI)
+    }
+
+    /// The service saves the choice and sends the pixel. Setting the property as well keeps the pane
+    /// from waiting for the store's publisher; the store ignores the repeated value.
+    @MainActor
+    private func selectLocalModel(_ model: AIChatPageSummariesModel) {
+        localModelService?.select(model, source: .settings)
+        pageSummariesModel = model
     }
 
     var shouldShowDuckAiSettingsLink: Bool {

@@ -476,6 +476,10 @@ extension OnboardingView {
                 toggleSettingsPersonalizationView(content: content, action: model.adBlockingContinueAction)
             case let .tryVPNDialog(content):
                 tryVPNView(content: content)
+            case let .vpnActivationDialog(content):
+                vpnActivationView(content: content)
+            case let .subscriptionReminderDialog(content):
+                subscriptionReminderView(content: content)
             case let .setDefaultBrowserDialog(content):
                 setDefaultBrowserView(content: content)
             case let .aiIntroDialog(content):
@@ -545,10 +549,41 @@ extension OnboardingView {
             TryVPNContent(
                 content: content,
                 isVisible: $showBubbleContent,
-                primaryAction: model.tryVPNAction,
+                primaryAction: {
+                    model.tryVPNAction { advance in
+                        animateContentTransition(action: advance)
+                    }
+                },
                 secondaryAction: {
                     animateContentTransition {
                         model.skipTryVPNAction()
+                    }
+                }
+            )
+        }
+
+        private func vpnActivationView(content: OnboardingVPNActivationContent) -> some View {
+            VPNActivationContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                continueAction: { isVPNOn in
+                    animateContentTransition {
+                        model.vpnActivationContinueAction(isVPNOn: isVPNOn)
+                    }
+                },
+                failureAction: { reason in
+                    model.vpnActivationFailedAction(reason: reason)
+                }
+            )
+        }
+
+        private func subscriptionReminderView(content: OnboardingSubscriptionReminderContent) -> some View {
+            SubscriptionReminderContent(
+                content: content,
+                isVisible: $showBubbleContent,
+                action: {
+                    animateContentTransition {
+                        model.subscriptionReminderContinueAction()
                     }
                 }
             )
@@ -687,6 +722,10 @@ extension OnboardingView {
             case let .keepDuckAIDialog(content):
                 return content.daxAnimation
             case let .tryVPNDialog(content):
+                return content.daxAnimation
+            case let .vpnActivationDialog(content):
+                return content.daxAnimation
+            case let .subscriptionReminderDialog(content):
                 return content.daxAnimation
             case .setDefaultBrowserDialog(let content):
                 return content.daxAnimation
@@ -864,7 +903,8 @@ private extension OnboardingView {
             )
         case .downloadReasonDialog,
              .aiSearchSettingsDialog, .aiModelDialog,
-             .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog, .tryVPNDialog:
+             .toggleInputModeDialog, .keepDuckAIDialog, .adBlockingDialog, .tryVPNDialog,
+             .vpnActivationDialog, .subscriptionReminderDialog:
             return BubbleBackedDialogConfiguration(
                 tailOffset: tailLeadingOffset,
                 tailDirection: .leading,

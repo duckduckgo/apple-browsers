@@ -18,7 +18,9 @@
 //
 
 import XCTest
+import Testing
 import Core
+import Onboarding
 import SubscriptionTestingUtilities
 import FeatureFlags_iOS
 @testable import DuckDuckGo
@@ -42,7 +44,8 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             subscriptionManager: mockSubscriptionManager,
             pixelFiring: pixelKitMock,
-            statisticsStore: mockStatisticsStore
+            statisticsStore: mockStatisticsStore,
+            downloadReasonProvider: { nil }
         )
     }
 
@@ -216,6 +219,54 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
         XCTAssertEqual(
             components.queryItems?.first(where: { $0.name == "featurePage" })?.value,
             "duckai"
+        )
+    }
+}
+
+@Suite("Onboarding subscription promotion - download reason")
+struct OnboardingSubscriptionPromotionDownloadReasonTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The promotion is hidden for users who chose VPN as their download reason", .timeLimit(.minutes(1)))
+    func promotionIsHiddenForVPNReason() {
+        // GIVEN
+        let sut = makeSUT(downloadReason: .vpn)
+
+        // WHEN
+        let result = sut.shouldDisplay
+
+        // THEN
+        #expect(!result)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "The promotion still shows for the other download reasons",
+        .timeLimit(.minutes(1)),
+        arguments: [nil, .browserPrivately, .privateAIChat, .noAI, .blockAds] as [OnboardingDownloadReason?]
+    )
+    func promotionShowsForOtherReasons(downloadReason: OnboardingDownloadReason?) {
+        // GIVEN
+        let sut = makeSUT(downloadReason: downloadReason)
+
+        // WHEN
+        let result = sut.shouldDisplay
+
+        // THEN
+        #expect(result)
+    }
+
+    private func makeSUT(downloadReason: OnboardingDownloadReason?) -> OnboardingSubscriptionPromotionHelper {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [FeatureFlag.privacyProOnboardingPromotion]
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        return OnboardingSubscriptionPromotionHelper(
+            featureFlagger: featureFlagger,
+            subscriptionManager: subscriptionManager,
+            pixelFiring: nil,
+            statisticsStore: MockStatisticsStore(),
+            downloadReasonProvider: { downloadReason }
         )
     }
 }

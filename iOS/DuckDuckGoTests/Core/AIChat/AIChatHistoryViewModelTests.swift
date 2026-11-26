@@ -20,6 +20,7 @@
 import Combine
 import XCTest
 import AIChat
+import PrivacyConfig
 @testable import DuckDuckGo
 @testable import Core
 
@@ -141,6 +142,32 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         sut.openChatProtection()
 
         XCTAssertTrue(delegate.didRequestChatProtection)
+    }
+
+    func testOpenDuckAISettings_notifiesDelegateAndRecordsWhereItWasOpened() {
+        let instrumentation = MockAIChatHistoryInstrumentation()
+        let sut = makeSUT(chats: [], instrumentation: instrumentation)
+        let delegate = MockDelegate()
+        sut.delegate = delegate
+
+        sut.openDuckAISettings(source: .headerButton)
+
+        XCTAssertTrue(delegate.didRequestDuckAISettings)
+        XCTAssertEqual(instrumentation.duckAISettingsSources, [.headerButton])
+    }
+
+    func testShowsDuckAISettingsButton_followsSimplifiedPromptBoxFlag() {
+        let flagOn = makeSUT(chats: [], featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [
+            .aiChatHistoryMultiselect, .unifiedToggleInputSimplifiedPromptBox
+        ]))
+        let flagOff = makeSUT(chats: [], featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatHistoryMultiselect]))
+        let redesignOff = makeSUT(chats: [], featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [
+            .unifiedToggleInputSimplifiedPromptBox
+        ]))
+
+        XCTAssertTrue(flagOn.showsDuckAISettingsButton)
+        XCTAssertFalse(flagOff.showsDuckAISettingsButton)
+        XCTAssertFalse(redesignOff.showsDuckAISettingsButton, "The button sits next to the overflow menu, which only the redesign has")
     }
 
     func testChatId_forValidIndexPath_returnsChatId() {
@@ -305,6 +332,31 @@ final class AIChatHistoryViewModelTests: XCTestCase {
                        "totalChatCount must reflect all chats so the Fire confirmation can't understate the delete scope during a search")
     }
 
+    func testStoredChatIds_listEveryChat_whileASearchFiltersTheRows() {
+        let sut = makeSUT(chats: [
+            chat(id: "a", title: "alpha", pinned: true),
+            chat(id: "b", title: "beta", pinned: false)
+        ])
+
+        sut.updateQuery("alpha")
+        waitForDebounce()
+
+        XCTAssertEqual(sut.pinned.count + sut.recent.count, 1)
+        XCTAssertEqual(sut.storedChatIds, ["a", "b"])
+    }
+
+    func testStoredChatIds_areUnknownAfterAFailedRead() {
+        let reader = MockChatHistoryReader(chats: [chat(id: "p1", pinned: true)])
+        let sut = AIChatHistoryViewModel(reader: reader)
+        processMainQueue()
+        XCTAssertEqual(sut.storedChatIds, ["p1"])
+
+        reader.subject.send(completion: .failure(NSError(domain: "test", code: 1)))
+        processMainQueue()
+
+        XCTAssertNil(sut.storedChatIds, "A failed read says nothing about which chats exist, so it must not read as every chat deleted")
+    }
+
     func testDownloadChat_onSuccess_notifiesDelegateWithWrittenFilename() {
         let downloader = StubDownloader()
         downloader.stubbedResult = .success(URL(fileURLWithPath: "/tmp/duck.ai_2026-01-01_00-00-00.txt"))
@@ -319,6 +371,21 @@ final class AIChatHistoryViewModelTests: XCTestCase {
 
         XCTAssertEqual(downloader.requestedChatIds, ["r1"])
         XCTAssertEqual(delegate.exportedFilenames, ["duck.ai_2026-01-01_00-00-00.txt"])
+    }
+
+    func testDownloadChat_readsModelNamesWhenTheExportStarts_notWhenTheListWasBuilt() {
+        let downloader = StubDownloader()
+        let queue = DispatchQueue(label: "test.download")
+        var catalog: [String: ModelDisplay] = [:]
+        let sut = makeSUT(chats: [chat(id: "r1", pinned: false)], downloader: downloader,
+                          modelDisplays: { catalog }, mutationQueue: queue)
+
+        // The models arrive after the list was built, as they do for the long-lived iPad sidebar.
+        catalog = ["gpt-5-mini": ModelDisplay(fullName: "GPT-5 mini", shortName: "GPT-5 mini", providerPossessive: "OpenAI's")]
+        sut.downloadChat(chatId: "r1")
+        queue.sync { }
+
+        XCTAssertEqual(downloader.receivedModelDisplays.first?.keys.sorted(), ["gpt-5-mini"])
     }
 
     func testDownloadChat_onFailure_notifiesFailureAndNotSuccess() {
@@ -688,16 +755,20 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         chats: [DuckAiChat],
         fireExecutor: FireExecuting? = MockChatHistoryFireExecutor(),
         downloader: ChatHistoryDownloading? = nil,
+        modelDisplays: @escaping () -> [String: ModelDisplay] = { [:] },
         pinner: ChatPinning? = nil,
         source: AIChatHistorySource = .browserMenu,
         isFireMode: Bool = false,
         mutationQueue: DispatchQueue = .main,
-        instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation()
+        instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation(),
+        featureFlagger: FeatureFlagger? = nil
     ) -> AIChatHistoryViewModel {
         let sut = AIChatHistoryViewModel(
             reader: MockChatHistoryReader(chats: chats),
+            featureFlagger: featureFlagger ?? AppDependencyProvider.shared.featureFlagger,
             fireExecutor: fireExecutor,
             downloader: downloader,
+            modelDisplays: modelDisplays,
             pinner: pinner,
             source: source,
             isFireMode: isFireMode,
@@ -745,6 +816,8 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func viewModelDidExportChats(count: Int) { exportedChatCounts.append(count) }
         func viewModelDidFailExport() { didFailExport = true }
         func viewModelDidRequestChatProtection() { didRequestChatProtection = true }
+        private(set) var didRequestDuckAISettings = false
+        func viewModelDidRequestDuckAISettings() { didRequestDuckAISettings = true }
         func viewModelWillClose() {}
     }
 
@@ -786,9 +859,11 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         /// Chat ids in this set throw `chatNotFound`; all others resolve to `stubbedResult`.
         var failingChatIds: Set<String> = []
         private(set) var requestedChatIds: [String] = []
+        private(set) var receivedModelDisplays: [[String: ModelDisplay]] = []
 
-        func downloadChat(chatId: String) throws -> URL {
+        func downloadChat(chatId: String, modelDisplays: [String: ModelDisplay]) throws -> URL {
             requestedChatIds.append(chatId)
+            receivedModelDisplays.append(modelDisplays)
             if failingChatIds.contains(chatId) {
                 throw ChatHistoryDownloader.DownloadError.chatNotFound
             }
@@ -825,6 +900,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         private(set) var chatProtectionTappedCount = 0
         private(set) var editModeEnteredCount = 0
         private(set) var newChatTappedCount = 0
+        private(set) var duckAISettingsSources: [AIChatHistorySettingsSource] = []
         private(set) var loadFailedErrors: [Error] = []
         private(set) var pinToggleFailedErrors: [Error] = []
         private(set) var downloadFailedErrors: [Error] = []
@@ -845,6 +921,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func chatProtectionTapped() { chatProtectionTappedCount += 1 }
         func editModeEntered() { editModeEnteredCount += 1 }
         func newChatTapped() { newChatTappedCount += 1 }
+        func duckAISettingsTapped(source: AIChatHistorySettingsSource) { duckAISettingsSources.append(source) }
         func loadFailed(error: Error) { loadFailedErrors.append(error) }
         func pinToggleFailed(error: Error) { pinToggleFailedErrors.append(error) }
         func downloadFailed(error: Error) { downloadFailedErrors.append(error) }

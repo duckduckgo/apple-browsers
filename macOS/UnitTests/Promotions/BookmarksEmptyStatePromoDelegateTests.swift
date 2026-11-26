@@ -18,7 +18,6 @@
 
 import Combine
 @testable import DDGSync
-import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
@@ -27,7 +26,6 @@ import XCTest
 @MainActor
 final class BookmarksEmptyStatePromoDelegateTests: XCTestCase {
 
-    private var featureFlagger: MockFeatureFlagger!
     private var bookmarksChanged: PassthroughSubject<Void, Never>!
     private var dataImportCompleted: PassthroughSubject<Void, Never>!
     private var syncService: MockDDGSyncing!
@@ -37,8 +35,6 @@ final class BookmarksEmptyStatePromoDelegateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.promoQueueBookmarksEmptyStatePromo]
         bookmarksChanged = PassthroughSubject()
         dataImportCompleted = PassthroughSubject()
         syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
@@ -52,14 +48,12 @@ final class BookmarksEmptyStatePromoDelegateTests: XCTestCase {
         syncService = nil
         dataImportCompleted = nil
         bookmarksChanged = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
     // Refreshes eligibility once, as `PromoService` does before reading it.
     private func makeSUT() -> BookmarksEmptyStatePromoDelegate {
         let sut = BookmarksEmptyStatePromoDelegate(
-            featureFlagger: featureFlagger,
             hasTopLevelEntitiesProvider: { [unowned self] in hasTopLevelEntities },
             bookmarksChangedPublisher: bookmarksChanged.eraseToAnyPublisher(),
             dataImportCompletedPublisher: dataImportCompleted.eraseToAnyPublisher(),
@@ -111,12 +105,6 @@ final class BookmarksEmptyStatePromoDelegateTests: XCTestCase {
 
     func testWhenThereAreTopLevelBookmarksOrFoldersThenNotEligible() {
         hasTopLevelEntities = true
-
-        XCTAssertFalse(makeSUT().isEligible)
-    }
-
-    func testWhenKillSwitchIsOffThenNotEligible() {
-        featureFlagger.enabledFeatureFlags = []
 
         XCTAssertFalse(makeSUT().isEligible)
     }

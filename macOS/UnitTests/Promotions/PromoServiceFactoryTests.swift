@@ -134,6 +134,28 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
+    func testFactoryCreatesDeclaredAgePromoWithCorrectConfiguration() async {
+        let promo = await PromoServiceFactory.declaredAge(dependencies: dependencies)
+
+        XCTAssertEqual(promo.id, "declared-age")
+        XCTAssertEqual(promo.triggers, [.windowBecameKey, .declaredAgeBecameEligible])
+        XCTAssertEqual(promo.initiated, .app)
+        XCTAssertEqual(promo.promoType.severity, .high)
+        XCTAssertNil(promo.promoType.timeoutInterval)
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertFalse(promo.respectsGlobalCooldown)
+        XCTAssertFalse(promo.setsGlobalCooldown)
+        XCTAssertTrue(promo.canShowDuringOnboarding)
+        XCTAssertTrue(promo.showsOverVisiblePromos)
+        XCTAssertNotNil(promo.delegate)
+    }
+
+    func testDeclaredAgePromoHasTopPriority() async {
+        let promos = await PromoServiceFactory.makeAllPromos(dependencies: dependencies)
+
+        XCTAssertEqual(promos.first?.id, "declared-age")
+    }
+
     func testFactoryCreatesSubscriptionPromoWithCorrectConfiguration() {
         let promo = PromoServiceFactory.subscriptionPromo(delegate: FireWindowSubscriptionPromoDelegate())
 
@@ -197,7 +219,9 @@ extension PromoServiceFactoryTests {
             notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
             uiHosting: { nil },
             isOnboardingCompletedProvider: { true },
-            dockCustomization: DockCustomizerMock()
+            dockCustomization: DockCustomizerMock(),
+            addToDockVideoFeatureFlagger: MockFeatureFlagger(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter()
         )
         let windowControllersManager = WindowControllersManagerMock()
         return PromoDependencies(
@@ -218,7 +242,6 @@ extension PromoServiceFactoryTests {
             syncBookmarksAdapter: nil,
             pinningManager: MockPinningManager(),
             cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 keyValueStore: InMemoryThrowingKeyValueStore(),
                 windowControllersManager: windowControllersManager,
                 cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
@@ -239,8 +262,7 @@ extension PromoServiceFactoryTests {
                         privacyConfigurationManager: MockPrivacyConfigurationManager(),
                         internalUserDecider: featureFlagger.internalUserDecider
                     ),
-                    windowControllersManager: windowControllersManager,
-                    featureFlagger: featureFlagger
+                    windowControllersManager: windowControllersManager
                 )
             }(),
             updateController: nil,
@@ -248,12 +270,10 @@ extension PromoServiceFactoryTests {
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
             quitSurveyPromoObserver: QuitSurveyPromoObserver(),
             vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
             ),
             vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
             ),
@@ -275,7 +295,6 @@ extension PromoServiceFactoryTests {
                 recordResult: { _, _ in }
             ),
             bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 hasTopLevelEntitiesProvider: { false },
                 bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
@@ -283,7 +302,6 @@ extension PromoServiceFactoryTests {
                 recordResult: { _, _ in }
             ),
             autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 isAnyCategoryEmptyProvider: { true },
                 dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
                 syncService: nil,

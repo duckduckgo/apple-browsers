@@ -87,6 +87,8 @@ final class NativeMessagingHostSession {
         process.standardInput = inputPipe
         process.standardOutput = outputPipe
         process.standardError = errorPipe
+        // A host that dies before reading would otherwise kill the browser with SIGPIPE on our next write.
+        inputPipe.fileHandleForWriting.disableSIGPIPE()
     }
 
     // MARK: - Lifecycle
@@ -383,5 +385,13 @@ final class NativeMessagingHostSession {
         // 0 is EOF. A read error also ends the host's output.
         guard count > 0 else { return nil }
         return Data(buffer[..<count])
+    }
+}
+
+private extension FileHandle {
+
+    /// Makes writes fail with `EPIPE` instead of raising `SIGPIPE` when the reader is gone.
+    func disableSIGPIPE() {
+        _ = fcntl(fileDescriptor, F_SETNOSIGPIPE, 1)
     }
 }

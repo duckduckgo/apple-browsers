@@ -50,6 +50,7 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
     private let isPrivateWindow: Bool
     private let selectedTabProvider: () -> WKWebExtensionTab?
     private let pixelFiring: (any PixelKitFiring)?
+    private let nativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol?
     private var buttons = Set<ExtensionButton>()
     private var updateCancellable: AnyCancellable?
     private var actionCancellable: AnyCancellable?
@@ -70,8 +71,10 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
          container: NSStackView,
          isPrivateWindow: Bool = false,
          selectedTabProvider: @escaping () -> WKWebExtensionTab? = { nil },
-         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
+         nativeMessagingAlertPresenter: NativeMessagingAlertPresenterProtocol? = nil) {
          self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.nativeMessagingAlertPresenter = nativeMessagingAlertPresenter
         self.selectedTabProvider = selectedTabProvider
         self.pixelFiring = pixelFiring
         self.appThemeManager = themeManager
@@ -316,8 +319,16 @@ final class WebExtensionNavigationBarUpdater: NSObject, ThemeUpdateListening {
 
         if action?.isEnabled != false {
             fireToolbarClickedPixel(identifier: identifier)
+            webExtensionManagerProvider()?.recordUserGesture(for: context)
         }
+
+        // WebKit only presents the popup for an action performed during the click, so the explanation follows it.
         context.performAction(for: selectedTab)
+        if let nativeMessagingAlertPresenter {
+            Task { @MainActor in
+                await nativeMessagingAlertPresenter.explainOnActionClick(context)
+            }
+        }
     }
 
     private func fireToolbarClickedPixel(identifier: String) {

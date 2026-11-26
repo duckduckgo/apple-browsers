@@ -44,6 +44,10 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
         XCTAssertEqual(sut.featureName, "duckAiNativeStorage")
     }
 
+    func testMessagesAreOnlyAcceptedFromHTTPSMainFrameByDefault() {
+        XCTAssertEqual(sut.messageFramePolicy, .secureMainFrame)
+    }
+
     func testWhenAllMessageNamesThenHandlerReturnsNonNil() {
         for message in DuckAiNativeStorageUserScriptMessages.allCases {
             let handler = sut.handler(forMethodNamed: message.rawValue)
@@ -358,10 +362,16 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
 
 // MARK: - Test helpers
 
-final class MockDuckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring {
-    var firedEvents: [DuckAiNativeStorageEvent] = []
+// Setup can fire an event on the database queue while the test reads the recorded events.
+final class MockDuckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring, @unchecked Sendable {
+    private let lock = NSLock()
+    private var events: [DuckAiNativeStorageEvent] = []
 
-    func fire(_ event: DuckAiNativeStorageEvent) { firedEvents.append(event) }
+    var firedEvents: [DuckAiNativeStorageEvent] { lock.withLock { events } }
+
+    func fire(_ event: DuckAiNativeStorageEvent) {
+        lock.withLock { events.append(event) }
+    }
 }
 
 // MARK: - Mock

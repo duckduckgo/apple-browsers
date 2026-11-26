@@ -70,14 +70,19 @@
                     "no_webview",
                     "post_failed",
                     "tab_evicted",
-                    "document_unavailable"
+                    "document_unavailable",
+                    "certificate_error",
+                    "http_error",
+                    "navigation_failed",
+                    "redirect_blocked",
+                    "unsupported_url"
                 ]
             },
             {
                 "key": "trigger",
                 "description": "What initiated the extraction attempt.",
                 "type": "string",
-                "enum": ["auto", "navigation", "user_request", "tab_content"]
+                "enum": ["auto", "navigation", "user_request", "tab_content", "link"]
             },
             {
                 "key": "latency",
@@ -118,7 +123,24 @@
                 "key": "trigger",
                 "description": "What initiated the extraction attempt.",
                 "type": "string",
-                "enum": ["auto", "navigation", "user_request", "tab_content"]
+                "enum": ["auto", "navigation", "user_request", "tab_content", "link"]
+            }
+        ]
+    },
+    "aichat_link_ask_about_page_macos": {
+        "description": "Fired when the user picks Ask about page in a link's context menu, to attach the linked page to the Duck.ai sidebar",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "link_type",
+                "description": "Where the link sits: serp for a link on DuckDuckGo search results, other for a link on any other page.",
+                "type": "string",
+                "enum": ["serp", "other"]
             }
         ]
     },

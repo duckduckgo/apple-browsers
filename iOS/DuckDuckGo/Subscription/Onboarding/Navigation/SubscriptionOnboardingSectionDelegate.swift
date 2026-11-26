@@ -23,4 +23,5 @@ protocol SubscriptionOnboardingSectionDelegate: AnyObject {
     /// - Returns: whether the chat was actually launched.
     func sectionDidRequestDuckAIChat(modelID: String?) -> Bool
     func sectionDidRequestAdvance()
+    func sectionDidRequestClose(_ section: SubscriptionOnboardingSection)
 }

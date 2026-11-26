@@ -26,6 +26,10 @@ import PrivacyConfig
 /// Nothing it runs is saved to the PIR database.
 public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
 
+    #if DEBUG
+    public let settings: DataBrokerProtectionSettings
+    #endif
+
     public let debugEmailConfirmationStore = DebugEmailConfirmationStore()
     let captchaService: CaptchaService
     let privacyConfigManager: PrivacyConfigurationManaging
@@ -44,24 +48,60 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
 
     let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let emailConfirmationEvents: EmailConfirmationEvents
-    private let vault: any DataBrokerProtectionSecureVault
+    private let loadStoredBrokerResources: () throws -> [BrokerResource]
     private let contentBlocking: DBPWebViewContentBlocking?
 
     public var emailConfirmationStore: EmailConfirmationSupporting {
         debugEmailConfirmationStore
     }
 
-    public init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
-                featureFlagger: DBPFeatureFlagging,
-                privacyConfigManager: PrivacyConfigurationManaging,
-                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                vault: any DataBrokerProtectionSecureVault,
-                settings dbpSettings: DataBrokerProtectionSettings,
-                contentBlocking: DBPWebViewContentBlocking? = nil) {
+    public convenience init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                            featureFlagger: DBPFeatureFlagging,
+                            privacyConfigManager: PrivacyConfigurationManaging,
+                            pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                            vault: any DataBrokerProtectionSecureVault,
+                            settings: DataBrokerProtectionSettings,
+                            contentBlocking: DBPWebViewContentBlocking? = nil) {
+        self.init(authenticationManager: authenticationManager,
+                  featureFlagger: featureFlagger,
+                  privacyConfigManager: privacyConfigManager,
+                  pixelHandler: pixelHandler,
+                  loadStoredBrokerResources: vault.fetchAllBrokerResources,
+                  settings: settings,
+                  contentBlocking: contentBlocking)
+    }
+
+    #if DEBUG
+    public convenience init(standaloneAuthenticationManager authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                            featureFlagger: DBPFeatureFlagging,
+                            privacyConfigManager: PrivacyConfigurationManaging,
+                            pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                            settings: DataBrokerProtectionSettings) {
+        self.init(authenticationManager: authenticationManager,
+                  featureFlagger: featureFlagger,
+                  privacyConfigManager: privacyConfigManager,
+                  pixelHandler: pixelHandler,
+                  loadStoredBrokerResources: { [] },
+                  settings: settings,
+                  contentBlocking: nil)
+    }
+    #endif
+
+    private init(authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                 featureFlagger: DBPFeatureFlagging,
+                 privacyConfigManager: PrivacyConfigurationManaging,
+                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                 loadStoredBrokerResources: @escaping () throws -> [BrokerResource],
+                 settings dbpSettings: DataBrokerProtectionSettings,
+                 contentBlocking: DBPWebViewContentBlocking?) {
+        #if DEBUG
+        let dbpSettings = dbpSettings.isolatedDebugSettingsForLaunch()
+        self.settings = dbpSettings
+        #endif
         self.featureFlagger = featureFlagger
         self.privacyConfigManager = privacyConfigManager
         self.pixelHandler = pixelHandler
-        self.vault = vault
+        self.loadStoredBrokerResources = loadStoredBrokerResources
         self.contentBlocking = contentBlocking
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
@@ -108,7 +148,7 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
     }
 
     public func storedBrokerResources() throws -> [BrokerResource] {
-        try vault.fetchAllBrokerResources()
+        try loadStoredBrokerResources()
     }
 
     public func brokerProfileQueryData(for broker: DataBroker, profile: DataBrokerProtectionProfile) -> [BrokerProfileQueryData] {

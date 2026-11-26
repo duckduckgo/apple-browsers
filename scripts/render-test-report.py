@@ -5,13 +5,15 @@ Reads a JUnit XML file (authoritative for counts and the failure list) and
 an optional crash details JSON produced by inject-xcresult-crashes-into-junit.py
 (provides expandable details for crashed tests).
 
-Emits three HTML tables under an <h2> title:
+Emits these sections under an <h2> title:
 
   1. Counts    - total / passed / failed / skipped (always).
   2. Failures  - one row per non-crash failure (omitted when empty).
   3. Crashes   - one row per crash with an inline <details> containing
                  process, signal, source location, and top stack frames
                  (omitted when empty).
+  4. Passed on retry - tests with a failed attempt followed by a pass
+                       (when --report-retries is enabled).
 
 Designed to run every test job (success and failure) so the counts table is
 always present. mikepenz/action-junit-report is configured with
@@ -36,6 +38,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--junit", required=True, help="path to JUnit XML")
     parser.add_argument("--title", required=True, help="heading shown above the report")
+    parser.add_argument("--report-retries", action="store_true", help="list tests that passed on retry")
     parser.add_argument("--crash-details-json",
                         help="optional path to the JSON crash details file written by "
                              "inject-xcresult-crashes-into-junit.py")
@@ -51,18 +54,21 @@ def main() -> int:
         print(f"JUnit file {junit} not found; skipping report.", file=sys.stderr)
         return 0
 
-    totals, failures, junit_crashes = _collect(junit)
+    totals, failures, junit_crashes, passed_on_retry = _collect(junit)
     crashes = _merge_crashes(junit_crashes, _load_crash_details_file(args.crash_details_json))
 
-    html_doc = _render(args.title, totals, failures, crashes)
+    html_doc = _render(args.title, totals, failures, crashes, passed_on_retry if args.report_retries else [])
     with open(summary_path, "a") as f:
         f.write(html_doc)
+    if args.report_retries and (output_path := os.environ.get("GITHUB_OUTPUT")):
+        with open(output_path, "a") as f:
+            f.write(f"passed-on-retry={'true' if passed_on_retry else 'false'}\n")
     return 0
 
 
 # ---------- JUnit parsing ----------
 
-def _collect(junit_path: Path) -> tuple[dict, list[dict], list[dict]]:
+def _collect(junit_path: Path) -> tuple[dict, list[dict], list[dict], list[str]]:
     # Group testcase attempts by (classname, name) so retries from
     # `-retry-tests-on-failure` / `-test-iterations` collapse to one row
     # per unique test. A test is considered passed if any attempt passed,
@@ -86,21 +92,22 @@ def _collect(junit_path: Path) -> tuple[dict, list[dict], list[dict]]:
     total = passed = failed = skipped_count = 0
     failures: list[dict] = []
     crashes: list[dict] = []
+    passed_on_retry: list[str] = []
     for (class_name, test_name), attempts in groups.items():
         total += 1
         any_passed = any(a["failure_message"] is None and not a["skipped"] for a in attempts)
         only_skipped = all(a["skipped"] for a in attempts)
+        first_fail = next((a for a in attempts if a["failure_message"] is not None), None)
         if any_passed:
             passed += 1
+            last = attempts[-1]
+            if first_fail is not None and last["failure_message"] is None and not last["skipped"]:
+                passed_on_retry.append(f"{class_name}.{test_name}")
             continue
         if only_skipped:
             skipped_count += 1
             continue
         failed += 1
-        first_fail = next(
-            (a for a in attempts if a["failure_message"] is not None),
-            None,
-        )
         msg = first_fail["failure_message"] if first_fail else ""
         row = {"class_name": class_name, "test_name": test_name}
         if msg.startswith(CRASH_PREFIX):
@@ -116,7 +123,7 @@ def _collect(junit_path: Path) -> tuple[dict, list[dict], list[dict]]:
         "failed": failed,
         "skipped": skipped_count,
     }
-    return totals, failures, crashes
+    return totals, failures, crashes, passed_on_retry
 
 
 def _clean_reason(s: str) -> str:
@@ -183,7 +190,7 @@ def _pop_matching_crash_detail(crash_details: list[dict], jc: dict) -> dict | No
 
 # ---------- HTML ----------
 
-def _render(title: str, totals: dict, failures: list[dict], crashes: list[dict]) -> str:
+def _render(title: str, totals: dict, failures: list[dict], crashes: list[dict], passed_on_retry: list[str]) -> str:
     parts = [f"<h2>{html.escape(title)}</h2>", ""]
     parts.append(_counts_table(totals))
     parts.append("")
@@ -193,6 +200,11 @@ def _render(title: str, totals: dict, failures: list[dict], crashes: list[dict])
     if crashes:
         parts.append(_crashes_table(crashes))
         parts.append("")
+    if passed_on_retry:
+        parts.append(f"<h3>Passed on retry ({len(passed_on_retry)})</h3>")
+        parts.append("<ul>")
+        parts.extend(f"<li><code>{html.escape(name)}</code></li>" for name in passed_on_retry)
+        parts.append("</ul>")
     return "\n".join(parts) + "\n"
 
 

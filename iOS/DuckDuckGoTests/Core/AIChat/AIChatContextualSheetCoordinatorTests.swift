@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import AIChat
+@testable import AIChat
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
@@ -30,7 +30,7 @@ import WebKit
 final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
-    func testRetainedContextualSourceSurvivesTabLeaveAndParkingButClearActiveChatDetachesIt() async throws {
+    func testContextualDepartureCancelsPermissionButKeepsBindingUntilClearActiveChat() async throws {
         let fixture = BrowserToolsBridgeFixture()
         defer { fixture.cleanUp() }
         sut.browserToolsOwner = fixture.owner
@@ -41,21 +41,23 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let sheet = try XCTUnwrap(sut.sheetViewController)
         sheet.loadViewIfNeeded()
         let webController = try XCTUnwrap(sut.browserToolsWebViewController)
+        webController.browserToolsPermissionPresenter = fixture.presenter
+        sut.browserToolsPermissionPresenter = fixture.presenter
         webController.configureContentHandler(with: fixture.script)
         fixture.script.webView = fixture.webView
-        guard case .granted(let performExecution) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+        guard case .granted(_, let performExecution) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
         }
         sut.tabWillLeaveScreen()
         sut.parkSurfaceForResize(animated: false)
         sut.tabDidReturnToScreen(presentedFrom: host)
         XCTAssertTrue(sut.sheetViewController === sheet)
         let retained = await performExecution { .success([:]) }
-        XCTAssertEqual(retained, .success([:]))
+        XCTAssertNil(retained)
         let allowed = await fixture.invoke()
         XCTAssertEqual(allowed, fixture.success)
-        guard case .granted(let performAfterClearing) = try await fixture.authorizeListing() else {
-            return XCTFail("Expected automatic authorization")
+        guard case .granted(_, let performAfterClearing) = try await fixture.authorizeListing() else {
+            return XCTFail("Expected native authorization")
         }
         sut.clearActiveChat()
         let cancelled = await performAfterClearing {
@@ -139,12 +141,14 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     private final class MockDelegate: AIChatContextualSheetCoordinatorDelegate {
         var didRequestToLoadURLs: [URL] = []
+        var onLoad: (() -> Void)?
         var didRequestExpandURLs: [URL] = []
         var openSettingsCallCount = 0
         var openSyncSettingsCallCount = 0
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL) {
             didRequestToLoadURLs.append(url)
+            onLoad?()
         }
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoadClosingSheet url: URL) -> Bool {
@@ -243,6 +247,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var sidebarDismissals: [UIViewController] = []
         var sidebarDetachments: [UIViewController] = []
         var modalPresentationCount = 0
+        var onDismiss: (() -> Void)?
         private weak var slidingOutViewController: UIViewController?
 
         func presentContextualSidebar(_ viewController: UIViewController, animated: Bool, coversPage: Bool) {
@@ -260,6 +265,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
             sidebarDismissals.append(viewController)
+            onDismiss?()
             guard !holdsDismissals || !animated else {
                 slidingOutViewController = viewController
                 return
@@ -488,7 +494,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let sheet = try XCTUnwrap(sut.sheetViewController)
         XCTAssertEqual(sut.sessionState.chipState, .placeholder)
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?", termsAccepted: false)
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "What does this mean?", termsAccepted: false, localTask: nil)
 
         XCTAssertEqual(mockSelectionJourneyInstrumentation.promptSubmittedCount, 1)
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
@@ -504,7 +510,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             return
         }
 
-        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page", termsAccepted: false)
+        sut.aiChatContextualSheetViewController(sheet, didSubmitPrompt: "Summarize this page", termsAccepted: false, localTask: nil)
 
         XCTAssertEqual(mockDelegate.submittedPromptOrigins, [.contextualChat])
     }
@@ -516,7 +522,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         let sheet = try XCTUnwrap(sut.sheetViewController)
         var submittedTermsAccepted: [Bool] = []
         let cancellable = sut.sessionState.effects.sink { effect in
-            if case .submitPrompt(_, _, let termsAccepted) = effect { submittedTermsAccepted.append(termsAccepted) }
+            if case .submitPrompt(_, _, let termsAccepted, _) = effect { submittedTermsAccepted.append(termsAccepted) }
         }
         defer { cancellable.cancel() }
 
@@ -524,6 +530,39 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
                                             didSelectQuickAction: .summarizePage)
 
         XCTAssertEqual(submittedTermsAccepted, [false])
+    }
+
+    /// Without the input host the prompt reaches the web view through a sheet effect, after the tap has returned.
+    @MainActor
+    func testWhenTheSummarizePageChipIsTappedInTheBasicInputThenTheSubmitEffectIsMarkedAsASummary() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        var localTasks: [AIChatLocalModelTask?] = []
+        let cancellable = sut.sessionState.effects.sink { effect in
+            if case .submitPrompt(_, _, _, let localTask) = effect { localTasks.append(localTask) }
+        }
+        defer { cancellable.cancel() }
+
+        sheet.contextualInputViewController(AIChatContextualInputViewController(voiceSearchHelper: MockVoiceSearchHelper()),
+                                            didSelectQuickAction: .summarizePage)
+
+        XCTAssertEqual(localTasks, [.summarize])
+    }
+
+    @MainActor
+    func testWhenAPromptIsTypedInTheBasicInputThenTheSubmitEffectIsNotMarked() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        var localTasks: [AIChatLocalModelTask?] = []
+        let cancellable = sut.sessionState.effects.sink { effect in
+            if case .submitPrompt(_, _, _, let localTask) = effect { localTasks.append(localTask) }
+        }
+        defer { cancellable.cancel() }
+
+        sheet.contextualInputViewController(AIChatContextualInputViewController(voiceSearchHelper: MockVoiceSearchHelper()),
+                                            didSubmitPrompt: "Summarize this page.")
+
+        XCTAssertEqual(localTasks, [nil])
     }
 
     @MainActor
@@ -1626,6 +1665,328 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertEqual(sheet?.surfaceStyle, .sheet)
         XCTAssertFalse(sut.hasParkedSurface)
         XCTAssertTrue(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testResizeAdaptsImmediatelyWhileNativeAlertWithdrawalIsPending() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let presenter = MockAIChatNativePermissionPresenter()
+        presenter.autoAnswer = nil
+        presenter.holdDismissal = true
+        sut.browserToolsPermissionPresenter = presenter
+        let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
+        XCTAssertTrue(presenter.present(prompt) { _ in XCTFail("Resize must not grant permission") })
+        host.canPresentContextualSidebar = false
+
+        sut.parkSurfaceForResize(animated: false)
+        XCTAssertTrue(sut.hasParkedSurface)
+        XCTAssertTrue(host.sidebarDetachments.first === sheet)
+        XCTAssertNil(sheet.parent)
+        XCTAssertEqual(host.modalPresentationCount, 0)
+        XCTAssertFalse(presenter.withdrawals.isEmpty)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        sut.adaptSurface(toPresenter: host, animated: false)
+        XCTAssertEqual(host.modalPresentationCount, 1)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        presenter.completeDismissal()
+        XCTAssertFalse(presenter.isPresentingPermission)
+        XCTAssertEqual(host.sidebarDetachments.count, 1)
+        XCTAssertEqual(host.modalPresentationCount, 1)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testBrowserToolsOffWithoutAlertKeepsSurfaceChangesImmediate() async throws {
+        try await assertInactivePermissionKeepsSurfaceChangesImmediate(enabled: false)
+    }
+
+    @MainActor
+    func testBrowserToolsOnWithoutAlertKeepsSurfaceChangesImmediate() async throws {
+        try await assertInactivePermissionKeepsSurfaceChangesImmediate(enabled: true)
+    }
+
+    @MainActor
+    private func assertInactivePermissionKeepsSurfaceChangesImmediate(enabled: Bool) async throws {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: enabled ? [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs] : [])
+        defer { fixture.cleanUp() }
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        mockFeatureFlagger.enabledFeatureFlags = enabled ? [.aiChatBrowserTools] : []
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        sut.browserToolsPermissionPresenter = fixture.presenter
+
+        sut.parkSurfaceForResize(animated: false)
+        XCTAssertTrue(host.sidebarDetachments.first === sheet)
+        XCTAssertNil(sheet.parent)
+        sut.adaptSurface(toPresenter: host, animated: false)
+        XCTAssertTrue(sheet.parent === host)
+        var completionCount = 0
+        sut.dismissSheet(animated: false) { completionCount += 1 }
+        XCTAssertEqual(completionCount, 1)
+        XCTAssertTrue(host.sidebarDismissals.first === sheet)
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertTrue(fixture.presenter.withdrawals.isEmpty)
+
+        await sut.presentSheet(from: host)
+        var events: [String] = []
+        host.onDismiss = { events.append("dismiss") }
+        mockDelegate.onLoad = { events.append("load") }
+        let url = URL(string: "https://example.com/inline")!
+        sut.aiChatContextualSheetViewController(sheet, didRequestToLoad: url)
+        XCTAssertEqual(events, ["dismiss", "load"])
+        XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
+    }
+
+    @MainActor
+    func testActivePermissionDoesNotDelayCloseAfterBrowserToolsTurnsOff() async throws {
+        let fixture = BrowserToolsBridgeFixture()
+        defer { fixture.cleanUp() }
+        sut.browserToolsService = fixture.service
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let presenter = holdNativePermission()
+        fixture.flags.enabledFeatureFlags = []
+        mockFeatureFlagger.enabledFeatureFlags.removeAll { $0 == .aiChatBrowserTools }
+        var completionCount = 0
+
+        sut.dismissSheet(animated: false) { completionCount += 1 }
+
+        XCTAssertEqual(host.sidebarDismissals.count, 1)
+        XCTAssertEqual(completionCount, 1)
+        XCTAssertFalse(presenter.withdrawals.isEmpty)
+        presenter.completeDismissal()
+        XCTAssertEqual(host.sidebarDismissals.count, 1)
+        XCTAssertEqual(completionCount, 1)
+    }
+
+    @MainActor
+    func testSidebarCanLeaveAgainAfterImmediateReturnWhilePermissionWithdrawalIsPending() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let presenter = holdNativePermission()
+        sut.tabWillLeaveScreen()
+        sut.tabDidReturnToScreen(presentedFrom: host)
+        XCTAssertTrue(sheet.parent === host)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        sut.tabWillLeaveScreen()
+        XCTAssertEqual(host.sidebarDetachments.count, 2)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(sut.hasParkedSurface)
+        XCTAssertNil(sheet.parent)
+
+        presenter.completeDismissal()
+
+        XCTAssertEqual(host.sidebarDetachments.count, 2)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(sut.hasParkedSurface)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertNil(sheet.parent)
+    }
+
+    @MainActor
+    func testTabReturnRestoresImmediatelyWhilePermissionWithdrawalIsPending() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let presenter = holdNativePermission()
+        sut.tabWillLeaveScreen()
+
+        sut.tabDidReturnToScreen(presentedFrom: host)
+        XCTAssertEqual(host.sidebarDetachments.count, 1)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(sut.sheetViewController?.parent === host)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        presenter.completeDismissal()
+
+        XCTAssertEqual(host.sidebarDetachments.count, 1)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertFalse(sut.hasParkedSurface)
+        XCTAssertTrue(sut.sheetViewController?.parent === host)
+    }
+
+    @MainActor
+    func testClosingParkedChatCompletesOnceWhileNativeAlertWithdrawalIsPending() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let presenter = holdNativePermission()
+        sut.parkSurfaceForResize(animated: false)
+        var completionCount = 0
+
+        sut.dismissSheet(animated: false) { completionCount += 1 }
+        XCTAssertNil(sheet.parent)
+        XCTAssertEqual(completionCount, 1)
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        sut.adaptSurface(toPresenter: host, animated: false)
+        presenter.completeDismissal()
+        presenter.completeDismissal()
+
+        XCTAssertNil(sheet.parent)
+        XCTAssertEqual(host.sidebarDetachments.count, 1)
+        XCTAssertEqual(host.sidebarPresentations.count, 1)
+        XCTAssertEqual(completionCount, 1)
+        XCTAssertEqual(mockSelectionJourneyInstrumentation.dismissalCount, 1)
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertFalse(sut.hasParkedSurface)
+    }
+
+    @MainActor
+    func testPresenterReplacementWithdrawsOldPermissionWithoutDelayingAdaptation() async throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let presenter = holdNativePermission()
+
+        sheet.loadViewIfNeeded()
+        XCTAssertFalse(sut.browserToolsPermissionPresenter === presenter)
+        XCTAssertFalse(presenter.withdrawals.isEmpty)
+        sut.parkSurfaceForResize(animated: false)
+        XCTAssertEqual(host.sidebarDetachments.count, 1)
+        sut.adaptSurface(toPresenter: host, animated: false)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(sheet.parent === host)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        presenter.completeDismissal()
+
+        XCTAssertEqual(host.sidebarDetachments.count, 1)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(sheet.parent === host)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testActivePermissionDoesNotDelayURLClosingSidebarThenForwarding() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let presenter = holdNativePermission()
+        let url = URL(string: "https://example.com/deferred")!
+
+        sut.aiChatContextualSheetViewController(sheet, didRequestToLoad: url)
+        XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
+        XCTAssertEqual(host.sidebarDismissals.count, 1)
+        XCTAssertFalse(presenter.withdrawals.isEmpty)
+        presenter.completeDismissal()
+
+        XCTAssertEqual(host.sidebarDismissals.count, 1)
+        XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
+        XCTAssertFalse(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testInactiveOldURLForwardsWithoutBlockingNewPermissionAdmission() async throws {
+        let fixture = BrowserToolsBridgeFixture(enabledFlags: [])
+        defer { fixture.cleanUp() }
+        sut.browserToolsOwner = fixture.owner
+        sut.browserToolsService = fixture.service
+        sut.browserToolScopeFactory = { [weak fixture] in fixture?.makeScope() }
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockFeatureFlagger.enabledFeatureFlags.removeAll { $0 == .aiChatBrowserTools }
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let oldSheet = try XCTUnwrap(sut.sheetViewController)
+        sut.clearActiveChat()
+        await sut.presentSheet(from: host, opensOntoSubmittedChat: true)
+        let newSheet = try XCTUnwrap(sut.sheetViewController)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1180, height: 820))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        host.view.addSubview(newSheet.view)
+        let presenter = try XCTUnwrap(sut.browserToolsPermissionPresenter)
+        XCTAssertTrue(presenter.isSurfaceAvailable)
+        let url = URL(string: "https://example.com/old")!
+
+        sut.aiChatContextualSheetViewController(oldSheet, didRequestToLoad: url)
+        fixture.flags.enabledFeatureFlags = [.aiChatBrowserTools, .aiChatBrowserToolListOpenTabs]
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatBrowserTools)
+
+        XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
+        XCTAssertTrue(presenter.isSurfaceAvailable)
+        XCTAssertTrue(sut.sheetViewController === newSheet)
+        XCTAssertTrue(sut.isSheetPresented)
+    }
+
+    @MainActor
+    func testOldSheetDismissAndURLDoNotWithdrawReplacementPermission() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let oldSheet = try XCTUnwrap(sut.sheetViewController)
+        sut.clearActiveChat()
+        await sut.presentSheet(from: host)
+        let newSheet = try XCTUnwrap(sut.sheetViewController)
+        let presenter = holdNativePermission()
+
+        sut.aiChatContextualSheetViewControllerDidRequestDismiss(oldSheet)
+        let url = URL(string: "https://example.com/old")!
+        sut.aiChatContextualSheetViewController(oldSheet, didRequestToLoad: url)
+
+        XCTAssertEqual(mockDelegate.didRequestToLoadURLs, [url])
+        XCTAssertTrue(presenter.withdrawals.isEmpty)
+        XCTAssertTrue(presenter.isPresentingPermission)
+        XCTAssertTrue(newSheet.parent === host)
+        XCTAssertTrue(sut.isSheetPresented)
+        presenter.completeDismissal()
+    }
+
+    @MainActor
+    func testReopenedChatIsUnaffectedByPreviousPermissionWithdrawal() async throws {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+        let presenter = holdNativePermission()
+
+        sut.dismissSheet(animated: false)
+        XCTAssertNil(sheet.parent)
+        XCTAssertFalse(sut.isSheetPresented)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        await sut.presentSheet(from: host)
+        XCTAssertTrue(sheet.parent === host)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(presenter.isPresentingPermission)
+
+        presenter.completeDismissal()
+
+        XCTAssertTrue(sheet.parent === host)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertEqual(host.sidebarDismissals.count, 1)
+    }
+
+    @MainActor
+    private func holdNativePermission() -> MockAIChatNativePermissionPresenter {
+        mockFeatureFlagger.enabledFeatureFlags.append(.aiChatBrowserTools)
+        let presenter = MockAIChatNativePermissionPresenter()
+        presenter.autoAnswer = nil
+        presenter.holdDismissal = true
+        sut.browserToolsPermissionPresenter = presenter
+        let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
+        XCTAssertTrue(presenter.present(prompt) { _ in XCTFail("Leaving must not grant permission") })
+        return presenter
     }
 
     @MainActor

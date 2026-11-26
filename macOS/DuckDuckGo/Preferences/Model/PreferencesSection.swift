@@ -329,6 +329,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
 enum PreferencesScrollAnchor: Hashable {
     case top
     case permissions
+    case browserToolPermissions
 }
 
 struct PreferencesDestination: Hashable {
@@ -339,6 +340,10 @@ struct PreferencesDestination: Hashable {
 
     static var aiChat: PreferencesDestination {
         PreferencesDestination(pane: .aiChat, scrollAnchor: nil)
+    }
+
+    static var browserToolPermissions: PreferencesDestination {
+        PreferencesDestination(pane: .aiChat, scrollAnchor: .browserToolPermissions)
     }
 
     static var generalPermissions: PreferencesDestination {

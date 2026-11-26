@@ -30,7 +30,7 @@ final class ChatHistoryDownloaderTests: XCTestCase {
         let writer = SpyChatExportWriter()
         let downloader = ChatHistoryDownloader(storageHandler: nil, writer: writer)
 
-        XCTAssertThrowsError(try downloader.downloadChat(chatId: "anything")) { error in
+        XCTAssertThrowsError(try downloader.downloadChat(chatId: "anything", modelDisplays: [:])) { error in
             XCTAssertEqual(error as? ChatHistoryDownloader.DownloadError, .storageUnavailable)
         }
         XCTAssertEqual(writer.writtenPayloads.count, 0)
@@ -41,7 +41,7 @@ final class ChatHistoryDownloaderTests: XCTestCase {
         let writer = SpyChatExportWriter()
         let downloader = ChatHistoryDownloader(storageHandler: storage, writer: writer)
 
-        XCTAssertThrowsError(try downloader.downloadChat(chatId: "missing")) { error in
+        XCTAssertThrowsError(try downloader.downloadChat(chatId: "missing", modelDisplays: [:])) { error in
             XCTAssertEqual(error as? ChatHistoryDownloader.DownloadError, .chatNotFound)
         }
     }
@@ -55,7 +55,7 @@ final class ChatHistoryDownloaderTests: XCTestCase {
         let writer = SpyChatExportWriter()
         let downloader = ChatHistoryDownloader(storageHandler: storage, writer: writer)
 
-        XCTAssertThrowsError(try downloader.downloadChat(chatId: "c1")) { error in
+        XCTAssertThrowsError(try downloader.downloadChat(chatId: "c1", modelDisplays: [:])) { error in
             guard case .fileDecodeFailed(let uuid) = error as? ChatHistoryDownloader.DownloadError else {
                 XCTFail("Expected .fileDecodeFailed, got \(error)"); return
             }
@@ -83,7 +83,7 @@ final class ChatHistoryDownloaderTests: XCTestCase {
         let writer = SpyChatExportWriter()
         let downloader = ChatHistoryDownloader(storageHandler: storage, writer: writer)
 
-        _ = try downloader.downloadChat(chatId: "c1")
+        _ = try downloader.downloadChat(chatId: "c1", modelDisplays: [:])
 
         XCTAssertEqual(writer.writtenPayloads.count, 1)
         guard case .text(let content) = writer.writtenPayloads[0] else {
@@ -112,7 +112,7 @@ final class ChatHistoryDownloaderTests: XCTestCase {
         let writer = SpyChatExportWriter()
         let downloader = ChatHistoryDownloader(storageHandler: storage, writer: writer)
 
-        _ = try downloader.downloadChat(chatId: "c1")
+        _ = try downloader.downloadChat(chatId: "c1", modelDisplays: [:])
 
         XCTAssertEqual(writer.writtenPayloads.count, 1)
         guard case .zip(let content, let images) = writer.writtenPayloads[0] else {
@@ -140,7 +140,7 @@ final class ChatHistoryDownloaderTests: XCTestCase {
         let writer = SpyChatExportWriter()
         let downloader = ChatHistoryDownloader(storageHandler: storage, writer: writer)
 
-        _ = try downloader.downloadChat(chatId: "c1")
+        _ = try downloader.downloadChat(chatId: "c1", modelDisplays: [:])
 
         guard case .zip(_, let images) = writer.writtenPayloads.first else {
             XCTFail("Expected `.zip` payload"); return
@@ -165,19 +165,16 @@ final class ChatHistoryDownloaderTests: XCTestCase {
         try storage.putChat(chatId: "c1", data: Data(json.utf8))
 
         let writer = SpyChatExportWriter()
-        let downloader = ChatHistoryDownloader(
-            storageHandler: storage,
-            writer: writer,
-            modelDisplays: [
-                "gpt-5-mini": ModelDisplay(
-                    fullName: "GPT-5 mini",
-                    shortName: "GPT-5 mini",
-                    providerPossessive: "OpenAI's"
-                )
-            ]
-        )
+        let downloader = ChatHistoryDownloader(storageHandler: storage, writer: writer)
+        let modelDisplays = [
+            "gpt-5-mini": ModelDisplay(
+                fullName: "GPT-5 mini",
+                shortName: "GPT-5 mini",
+                providerPossessive: "OpenAI's"
+            )
+        ]
 
-        _ = try downloader.downloadChat(chatId: "c1")
+        _ = try downloader.downloadChat(chatId: "c1", modelDisplays: modelDisplays)
 
         guard case .text(let content) = writer.writtenPayloads.first else {
             XCTFail("Expected `.text` payload"); return
@@ -207,7 +204,7 @@ final class ChatHistoryDownloaderTests: XCTestCase {
         // provider attribution.
         let downloader = ChatHistoryDownloader(storageHandler: storage, writer: writer)
 
-        _ = try downloader.downloadChat(chatId: "c1")
+        _ = try downloader.downloadChat(chatId: "c1", modelDisplays: [:])
 
         guard case .text(let content) = writer.writtenPayloads.first else {
             XCTFail("Expected `.text` payload"); return

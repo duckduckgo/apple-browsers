@@ -114,16 +114,25 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     /// The one resolver-driven host that serves both surfaces; its container pinned directly in
     /// `contentContainerView`.
-    var usesRedesignedNewTabPageLayout = false {
+    var redesignedFocusedSurface: RedesignedFocusedSurface? {
         didSet {
-            guard oldValue != usesRedesignedNewTabPageLayout else { return }
-            unifiedSuggestionsHost?.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
-            if isViewLoaded {
+            guard oldValue != redesignedFocusedSurface else { return }
+            unifiedSuggestionsHost?.setRedesignedFocusedSurface(redesignedFocusedSurface)
+            if (oldValue == .newTabPage) != usesRedesignedNewTabPageLayout, isViewLoaded {
+                applyBackgroundColor()
                 view.setNeedsLayout()
                 applyRequestedContentInset()
             }
         }
     }
+
+    var usesRedesignedNewTabPageLayout: Bool { redesignedFocusedSurface == .newTabPage }
+
+    var onRedesignedSearchModulesVisibilityChange: ((Bool) -> Void)? {
+        didSet { unifiedSuggestionsHost?.onSearchModulesVisibilityChange = onRedesignedSearchModulesVisibilityChange }
+    }
+
+    var isShowingRedesignedSearchModules: Bool { unifiedSuggestionsHost?.isShowingRedesignedSearchModules ?? false }
 
     private var unifiedSuggestionsHost: UnifiedSuggestionsHost?
     private var unifiedSuggestionsContainerView: UIView?
@@ -146,9 +155,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private lazy var aiChatSyncPromoViewModel: AIChatSyncPromoViewModel? =
         syncPromoManager.map { AIChatSyncPromoViewModel(syncPromoManager: $0,
                                                         recentModalPromptStatusProvider: recentModalPromptStatusProvider) }
-    private lazy var syncPromoView = AnyView(AIChatSyncPromoView(
-        onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
-        onCloseTap: { [weak self] in self?.handleSyncPromoClose() }))
+    private var syncPromoView: AnyView {
+        AnyView(AIChatSyncPromoView(
+            onCTATap: { [weak self] in self?.handleSyncPromoCTATap() },
+            onCloseTap: { [weak self] in self?.handleSyncPromoClose() },
+            usesNewTabPageCardBackground: usesRedesignedNewTabPageLayout))
+    }
     private var isContentActive = false
     /// Fires on each focus to force a fresh content resolve before the host is shown, so the prior
     /// session's stale content (a suggestion list, a logo at the wrong mark) is never flashed.
@@ -606,8 +618,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         }
     }
 
+    private func applyBackgroundColor() {
+        view.backgroundColor = usesRedesignedNewTabPageLayout ? .clear : Metrics.backgroundColor
+    }
+
     private func setupView() {
-        view.backgroundColor = Metrics.backgroundColor
+        applyBackgroundColor()
         setUpContentContainer()
         setUpSwipeDownGesture()
         modeSwitchSwipeController.install(on: view)
@@ -641,7 +657,11 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// Routes the swipe through the coordinator (like a toggle tap) so the toggle UI, content, and
     /// the Dax morph all update — a raw `setToggleState` doesn't propagate the switch at all.
     private lazy var modeSwitchSwipeController = ModeSwitchSwipeGestureController { [weak self] targetMode in
-        guard let self, switchBarHandler.currentToggleState != targetMode else { return }
+        self?.switchMode(to: targetMode)
+    }
+
+    func switchMode(to targetMode: TextEntryMode) {
+        guard switchBarHandler.currentToggleState != targetMode else { return }
         delegate?.unifiedInputEditingStateDidChangeMode(targetMode)
     }
 
@@ -687,7 +707,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
         let customizationStore = NewTabPageCustomizationStore()
         let hasFavorites: () -> Bool = { [weak self] in
-            let isVisible = self?.usesRedesignedNewTabPageLayout != true || customizationStore.isFavoritesSectionVisible
+            let usesRedesignedFavorites = self?.redesignedFocusedSurface != nil
+            let isVisible = !usesRedesignedFavorites || customizationStore.isFavoritesSectionVisible
             return isVisible && !dependencies.favoritesViewModel.favorites.isEmpty
         }
         let hasMessages: () -> Bool = {
@@ -742,15 +763,23 @@ final class UnifiedInputContentContainerViewController: UIViewController {
                 case .website(let url): self?.delegate?.unifiedInputEditingStateDidRequestTextUpdate(url.absoluteString)
                 default: break
                 }
-            }
+            },
+            favoritesSectionVisibilityPublisher: customizationStore.favoritesVisibilityPublisher
         )
 
         let host = UnifiedSuggestionsHost(config: config, usesScrollableEscapeHatch: usesScrollableEscapeHatch)
         host.setEscapeHatch(escapeHatchModel)
-        host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
+        host.setRedesignedFocusedSurface(redesignedFocusedSurface)
+        host.onSearchModulesVisibilityChange = onRedesignedSearchModulesVisibilityChange
         host.onContentChanged = { [weak self] in
-            self?.updateFocusedContent()
-            self?.refreshVisibleContent(animateContentUpdates: true)
+            guard let self else { return }
+            // Each update rebuilds the host and forces a layout. Off screen, defer it to the next activation's refresh.
+            guard isContentActive else {
+                markNeedsVisibleRefresh()
+                return
+            }
+            updateFocusedContent()
+            refreshVisibleContent(animateContentUpdates: true)
         }
 
         let containerView = UIView()

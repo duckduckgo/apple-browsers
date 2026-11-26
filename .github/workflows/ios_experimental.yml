@@ -22,7 +22,7 @@ jobs:
   build-experimental:
     runs-on: xcode-27
     name: Build Experimental
-    timeout-minutes: 30
+    timeout-minutes: 60
     
     concurrency:
       group: ios-experimental-build-${{ github.ref }}
@@ -141,6 +141,8 @@ jobs:
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 60
+        FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 2
       run: |
         app_version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
         bundle exec fastlane increment_build_number_for_version version:$app_version app_identifier:"com.duckduckgo.mobile.ios.experimental"

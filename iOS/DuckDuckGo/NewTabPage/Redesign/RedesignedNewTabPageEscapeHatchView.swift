@@ -30,6 +30,7 @@ struct RedesignedNewTabPageEscapeHatchView: View {
             RedesignedEscapeHatchView(model: escapeHatch)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, Metrics.horizontalPadding)
+                .padding(.bottom, Metrics.bottomPadding)
         }
     }
 }
@@ -134,5 +135,6 @@ struct RedesignedEscapeHatchView: View {
 
 private enum Metrics {
     static let horizontalPadding: CGFloat = 16
+    static let bottomPadding: CGFloat = 20
     static let collapseDuration: Double = 0.25
 }

@@ -26,6 +26,40 @@ import XCTest
 @MainActor
 final class GeolocationProviderTests: XCTestCase {
 
+    func testPermissionRequestsUseCurrentFrameClassificationForReusedContext() async throws {
+        var contexts = [SitePermissionRequestContext]()
+        var classifications = [Bool]()
+        let harness = try Harness(requestPermission: { context, isMainFrame, completion in
+            contexts.append(context)
+            classifications.append(isMainFrame)
+            completion(.deny(systemBlocks: []))
+        })
+
+        for isMainFrame in [false, true] {
+            _ = await harness.provider.requestCurrentPosition(context: harness.context, isMainFrame: isMainFrame)
+        }
+
+        XCTAssertEqual(contexts, [harness.context, harness.context])
+        XCTAssertEqual(classifications, [false, true])
+    }
+
+    func testWatchPreservesFrameClassificationWhileWaitingForAuthorizationAndTabActivation() throws {
+        for isMainFrame in [false, true] {
+            var classifications = [Bool]()
+            let harness = try Harness(reportsInitialAuthorization: false, requestPermission: { _, frameIsMain, completion in
+                classifications.append(frameIsMain)
+                completion(.deny(systemBlocks: []))
+            })
+            harness.provider.setIsActive(false)
+            harness.provider.startWatch(withID: "watch", context: harness.context, isMainFrame: isMainFrame) { _ in true }
+            harness.locationManager.delegate?.locationManagerDidChangeAuthorization?(harness.locationManager)
+            XCTAssertTrue(classifications.isEmpty)
+
+            harness.provider.setIsActive(true)
+            XCTAssertEqual(classifications, [isMainFrame])
+        }
+    }
+
     func testWhenReadingsArriveTogetherThenCurrentLocationRequestUsesNewestAndStopsUpdates() async throws {
         let harness = try Harness()
         let task = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
@@ -87,7 +121,7 @@ final class GeolocationProviderTests: XCTestCase {
     func testWhenAccuracyModeChangesThenCurrentLocationRequestWaitsForNewReading() async throws {
         for cachedHighAccuracy in [false, true] {
             var permissionRequestCount = 0
-            let harness = try Harness(requestPermission: { _, completion in
+            let harness = try Harness(requestPermission: { _, _, completion in
                 permissionRequestCount += 1
                 completion(.grant)
             })
@@ -315,7 +349,7 @@ final class GeolocationProviderTests: XCTestCase {
         var permissionCoordinator: SitePermissionsCoordinator?
         var promptCount = 0
         let harness = try Harness(
-            requestPermission: { context, completion in
+            requestPermission: { context, _, completion in
                 permissionCoordinator?.request(
                     SitePermissionRequest(context: context, permissionTypes: [.location]),
                     promptHandler: { _, respond in
@@ -397,7 +431,7 @@ final class GeolocationProviderTests: XCTestCase {
             var permissionCoordinator: SitePermissionsCoordinator?
             var promptCount = 0
             let harness = try Harness(
-                requestPermission: { context, completion in
+                requestPermission: { context, _, completion in
                     permissionCoordinator?.request(
                         SitePermissionRequest(context: context, permissionTypes: [.location]),
                         promptHandler: { _, respond in
@@ -478,7 +512,7 @@ final class GeolocationProviderTests: XCTestCase {
 
     func testWhenPermissionIsGrantedWhileTabIsHiddenThenWatchStaysPausedUntilCancelled() throws {
         var permissionCompletion: ((SitePermissionResolution) -> Void)?
-        let harness = try Harness(requestPermission: { _, completion in
+        let harness = try Harness(requestPermission: { _, _, completion in
             permissionCompletion = completion
         })
         var activity = [SitePermissionCaptureState]()
@@ -532,7 +566,7 @@ final class GeolocationProviderTests: XCTestCase {
     func testWhenCurrentLocationRequestIsDeniedThenPermissionStatusUpdates() async throws {
         var queryState = GeolocationPermissionState.prompt
         let harness = try Harness(
-            requestPermission: { _, completion in
+            requestPermission: { _, _, completion in
                 queryState = .denied
                 completion(.deny(systemBlocks: []))
             },
@@ -553,7 +587,7 @@ final class GeolocationProviderTests: XCTestCase {
     func testWhenWatchIsAllowedThenPermissionStatusUpdates() throws {
         var queryState = GeolocationPermissionState.prompt
         let harness = try Harness(
-            requestPermission: { _, completion in
+            requestPermission: { _, _, completion in
                 queryState = .granted
                 completion(.grant)
             },
@@ -575,7 +609,7 @@ final class GeolocationProviderTests: XCTestCase {
         var queryState = GeolocationPermissionState.granted
         var permissionRequestCount = 0
         let harness = try Harness(
-            requestPermission: { _, completion in
+            requestPermission: { _, _, completion in
                 permissionRequestCount += 1
                 completion(.grant)
             },
@@ -614,7 +648,7 @@ final class GeolocationProviderTests: XCTestCase {
         for removePermission in [false, true] {
             var permissionCoordinator: SitePermissionsCoordinator?
             let harness = try Harness(
-                requestPermission: { context, completion in
+                requestPermission: { context, _, completion in
                     permissionCoordinator?.request(
                         SitePermissionRequest(context: context, permissionTypes: [.location]),
                         promptHandler: { _, _ in XCTFail("Saved Allow must not prompt") },
@@ -686,7 +720,7 @@ final class GeolocationProviderTests: XCTestCase {
     func testWhenPageIsCancelledOrClosedThenOverlappingRequestsIgnoreLatePermissionResponses() async throws {
         for closeTab in [false, true] {
             var permissionCompletions = [(SitePermissionResolution) -> Void]()
-            let harness = try Harness(requestPermission: { _, completion in
+            let harness = try Harness(requestPermission: { _, _, completion in
                 permissionCompletions.append(completion)
             })
             var watchResults = [GeolocationPositionResult]()
@@ -738,7 +772,7 @@ final class GeolocationProviderTests: XCTestCase {
         let secondProvider = GeolocationProvider(
             systemPermissionClient: harness.systemPermissionClient,
             contextProvider: { _ in nil },
-            requestPermission: { _, completion in completion(.grant) },
+            requestPermission: { _, _, completion in completion(.grant) },
             queryPermission: { _ in .granted }
         )
         let secondContext = SitePermissionRequestContext(tabID: "second-tab",
@@ -797,7 +831,7 @@ final class GeolocationProviderTests: XCTestCase {
 
     func testWhenPageActivityIsCancelledThenPendingRequestFinishesAndLatePermissionReplyIsIgnored() async throws {
         var permissionCompletion: ((SitePermissionResolution) -> Void)?
-        let harness = try Harness(requestPermission: { _, completion in
+        let harness = try Harness(requestPermission: { _, _, completion in
             permissionCompletion = completion
         })
         let task = Task { await harness.provider.requestCurrentPosition(context: harness.context) }
@@ -843,7 +877,7 @@ final class GeolocationProviderTests: XCTestCase {
     }
 
     func testWhenWatchIsDeniedThenItReportsAnErrorAndRemovesItsRequestContext() throws {
-        let harness = try Harness(requestPermission: { _, completion in completion(.deny(systemBlocks: [])) })
+        let harness = try Harness(requestPermission: { _, _, completion in completion(.deny(systemBlocks: [])) })
         var results = [GeolocationPositionResult]()
 
         harness.provider.startWatch(withID: "denied", context: harness.context) {
@@ -859,7 +893,7 @@ final class GeolocationProviderTests: XCTestCase {
 
     func testCoreLocationDenialTerminatesAuthorizedRequestsAndStopsSharedManager() async throws {
         var permissionRequestCount = 0
-        let harness = try Harness(requestPermission: { _, completion in
+        let harness = try Harness(requestPermission: { _, _, completion in
             permissionRequestCount += 1
             completion(.grant)
         })
@@ -887,7 +921,7 @@ final class GeolocationProviderTests: XCTestCase {
     func testWhenLocationIsUnknownThenRequestsKeepWaitingForTheNextReading() async throws {
         // Core Location uses locationUnknown for a temporary lack of readings, not a failed request.
         var permissionRequestCount = 0
-        let harness = try Harness(requestPermission: { _, completion in
+        let harness = try Harness(requestPermission: { _, _, completion in
             permissionRequestCount += 1
             completion(.grant)
         })
@@ -938,7 +972,7 @@ final class GeolocationProviderTests: XCTestCase {
 
     func testWhenTabReturnsThenHighAccuracyWatchResumesWithoutPromptOrOldReading() throws {
         var permissionRequestCount = 0
-        let harness = try Harness(requestPermission: { _, completion in
+        let harness = try Harness(requestPermission: { _, _, completion in
             permissionRequestCount += 1
             completion(.grant)
         })
@@ -1001,7 +1035,7 @@ final class GeolocationProviderTests: XCTestCase {
 
     func testWhenTabIsHiddenThenItWaitsBeforeAskingPermissionOrDeliveringLocation() async throws {
         var permissionRequestCount = 0
-        let harness = try Harness(requestPermission: { _, completion in
+        let harness = try Harness(requestPermission: { _, _, completion in
             permissionRequestCount += 1
             completion(.grant)
         })
@@ -1030,7 +1064,7 @@ final class GeolocationProviderTests: XCTestCase {
 
     func testWhenPermissionReplyArrivesWhileTabIsHiddenThenDeliveryWaitsUntilTabIsVisible() throws {
         var permissionCompletion: ((SitePermissionResolution) -> Void)?
-        let harness = try Harness(requestPermission: { _, completion in
+        let harness = try Harness(requestPermission: { _, _, completion in
             permissionCompletion = completion
         })
         var results = [GeolocationPositionResult]()
@@ -1089,7 +1123,7 @@ final class GeolocationProviderTests: XCTestCase {
 
     func testWhenRequestsArriveBeforeCoreLocationReportsAuthorizationThenPermissionWaitsForTheReport() async throws {
         var permissionRequestCount = 0
-        let harness = try Harness(reportsInitialAuthorization: false, requestPermission: { _, completion in
+        let harness = try Harness(reportsInitialAuthorization: false, requestPermission: { _, _, completion in
             permissionRequestCount += 1
             completion(.grant)
         })
@@ -1148,7 +1182,7 @@ private final class Harness {
         provider = GeolocationProvider(
             systemPermissionClient: systemPermissionClient,
             contextProvider: { _ in nil },
-            requestPermission: requestPermission ?? { _, completion in completion(.grant) },
+            requestPermission: requestPermission ?? { _, _, completion in completion(.grant) },
             queryPermission: queryPermission
         )
     }

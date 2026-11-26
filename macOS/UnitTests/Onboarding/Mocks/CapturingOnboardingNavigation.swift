@@ -17,12 +17,10 @@
 //
 
 import Foundation
-import WebKit
 @testable import DuckDuckGo_Privacy_Browser
 
 class CapturingOnboardingNavigation: OnboardingNavigating {
     var tab: Tab?
-    var onboardingSourceTab: Tab?
     var focusOnAddressBarCalled = false
     var showImportDataViewCalled = false
     var replaceTabCalled = false
@@ -32,19 +30,6 @@ class CapturingOnboardingNavigation: OnboardingNavigating {
     func replaceTabWith(_ tab: Tab) {
         self.tab = tab
         replaceTabCalled = true
-    }
-
-    func onboardingTab(for webView: WKWebView?) -> Tab? {
-        guard let source = onboardingSourceTab, let webView,
-              source.webView === webView, case .onboarding = source.content else { return nil }
-        return source
-    }
-
-    func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool {
-        guard onboardingSourceTab === source, case .onboarding = source.content else { return false }
-        onboardingSourceTab = nil
-        replaceTabWith(tab)
-        return true
     }
 
     func focusOnAddressBar() {
@@ -63,19 +48,6 @@ class CapturingOnboardingNavigation: OnboardingNavigating {
     func updatePreventUserInteraction(prevent: Bool) {
         updatePreventUserInteractionCalled = true
         preventUserInteraction = prevent
-    }
-
-    var onboardingOnClose: (@MainActor () -> Void)?
-    var onboardingOnSkipInPlace: (@MainActor () -> Void)?
-
-    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
-                               onSkipInPlace: @escaping @MainActor () -> Void) {
-        onboardingOnClose = { [weak self] in
-            guard let source = self?.onboardingSourceTab else { return }
-            onClose(source)
-            self?.onboardingSourceTab = nil
-        }
-        onboardingOnSkipInPlace = onSkipInPlace
     }
 
 }

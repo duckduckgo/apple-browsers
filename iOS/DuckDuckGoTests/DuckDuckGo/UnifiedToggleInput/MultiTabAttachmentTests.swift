@@ -1014,6 +1014,7 @@ final class MultiTabAttachmentPageTests: XCTestCase {
         let page = try XCTUnwrap(controller.makeMultiTabAttachmentPage())
         page.loadIfNeeded()
         XCTAssertEqual(page.state()?.isLoading, true)
+        XCTAssertEqual(page.state()?.isInitialRequestPending, true)
         XCTAssertEqual(webView.reloadCount, 0)
     }
 
@@ -1023,6 +1024,7 @@ final class MultiTabAttachmentPageTests: XCTestCase {
         let page = try XCTUnwrap(controller.makeMultiTabAttachmentPage())
         XCTAssertNil(webView.url)
         XCTAssertFalse(webView.isLoading)
+        XCTAssertEqual(page.state()?.isInitialRequestPending, true)
         XCTAssertEqual(page.state()?.isLoading, true)
         page.loadIfNeeded()
         XCTAssertEqual(webView.reloadCount, 0)

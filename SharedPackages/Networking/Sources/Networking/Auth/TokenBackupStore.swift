@@ -1,0 +1,203 @@
+//
+//  TokenBackupStore.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import os.log
+import FoundationExtensions
+import Common
+
+/// Keeps the backup token container, an independent token pair forked from the current one, and decides when it must be renewed.
+struct TokenBackupStore {
+
+    private static let signOutCutoffKey = "com.duckduckgo.subscription.signOutCutoff"
+
+    private let storage: any AuthTokenStoring
+    private let userDefaults: UserDefaults
+    private let maxAge: TimeInterval
+    private let now: @Sendable () -> Date
+    private let eventMapping: EventMapping<OAuthClientBackupEvent>?
+
+    /// - Parameters:
+    ///   - storage: Where the backup token container is read from and saved to.
+    ///   - userDefaults: Where the cut-off recorded at the last sign-out is kept.
+    ///   - maxAge: How long after its refresh token was issued a backup is renewed.
+    ///   - now: The current date, used to measure the backup's age.
+    ///   - eventMapping: Receives `OAuthClientBackupEvent.storageFailed` for every failed read, write or delete of `storage`.
+    init(storage: any AuthTokenStoring,
+         userDefaults: UserDefaults,
+         maxAge: TimeInterval = .days(14),
+         now: @escaping @Sendable () -> Date = { Date() },
+         eventMapping: EventMapping<OAuthClientBackupEvent>? = nil) {
+        self.storage = storage
+        self.userDefaults = userDefaults
+        self.maxAge = maxAge
+        self.now = now
+        self.eventMapping = eventMapping
+    }
+
+    /// The cut-off recorded at the last sign-out. A backup whose refresh token was issued at or before it is never used.
+    /// Nil if no sign-out was recorded.
+    var signOutCutoff: Date? {
+        userDefaults.object(forKey: Self.signOutCutoffKey) as? Date
+    }
+
+    /// Records the cut-off for a sign-out happening now: the newest issue date among the refresh tokens of `current` and of the stored backup,
+    /// both measured by the auth server's clock. When neither is available, the previous cut-off is kept, unless `currentReadFailed`,
+    /// in which case the current date is recorded. Storage failures are reported with the `.signOut` action.
+    /// - Parameters:
+    ///   - current: The current token container, or nil when none is stored or it can't be read.
+    ///   - currentReadFailed: Whether reading the current token container failed.
+    func recordSignOut(current: TokenContainer?, currentReadFailed: Bool) {
+        let newestIssueDate = [current, storedBackup(action: .signOut)].compactMap { $0?.decodedRefreshToken.issuedAtDate }.max()
+        guard let cutoff = newestIssueDate ?? (currentReadFailed ? now() : nil) else {
+            Logger.OAuthClient.log("No token stored at sign-out, keeping the previous sign-out cut-off")
+            return
+        }
+        Logger.OAuthClient.log("Recording the sign-out cut-off: \(cutoff, privacy: .public)")
+        userDefaults.set(cutoff, forKey: Self.signOutCutoffKey)
+    }
+
+    /// Whether a refresh of `primary` should also mint a new backup. Expiry and age are both measured with `now`.
+    /// Storage failures are reported with the `.renewal` action.
+    /// - Parameter primary: The token container about to be refreshed.
+    /// - Returns: `true` when there is no backup, or the stored one is expired, belongs to another account than `primary`,
+    ///   or was issued more than `maxAge` ago. `false` when the backup is still usable or reading it fails.
+    func needsRenewal(for primary: TokenContainer) -> Bool {
+        let backup: TokenContainer?
+        do {
+            backup = try storage.getTokenContainer()
+        } catch {
+            Logger.OAuthClient.error("Failed to read the backup token, skipping renewal: \(String(describing: error), privacy: .public)")
+            reportStorageError(error, action: .renewal, operation: .read)
+            return false
+        }
+        guard let backup else { return true }
+        let now = now()
+        if backup.decodedRefreshToken.expirationDate <= now { return true }
+        if backup.decodedAccessToken.externalID != primary.decodedAccessToken.externalID { return true }
+        return now.timeIntervalSince(backup.decodedRefreshToken.issuedAtDate) > maxAge
+    }
+
+    /// Returns the stored backup when it can be used to restore a session: it belongs to the expected account, its refresh token was issued
+    /// after `signOutCutoff`, and it hasn't expired. Expiry is measured with `now`. Storage failures are reported with the `.restore` action.
+    /// - Parameter expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
+    /// - Returns: The stored backup token container.
+    /// - Throws: `TokenBackupError.unavailable` when no backup is stored, `TokenBackupError.readFailed` when reading it fails,
+    ///   `TokenBackupError.undecodable` when the stored item can't be decoded, otherwise the reason the backup was rejected.
+    ///   An undecodable or rejected backup is deleted; one that is missing or can't be read is left as it is.
+    func usableBackup(expectedExternalID: String?) throws(TokenBackupError) -> TokenContainer {
+        let stored: TokenContainerReadResult
+        do {
+            stored = try storage.readTokenContainer()
+        } catch {
+            Logger.OAuthClient.error("Failed to read the backup token: \(String(describing: error), privacy: .public)")
+            reportStorageError(error, action: .restore, operation: .read)
+            throw .readFailed(underlying: error)
+        }
+        let backup: TokenContainer
+        switch stored {
+        case .found(let tokenContainer):
+            backup = tokenContainer
+        case .missing:
+            throw .unavailable
+        case .undecodable:
+            Logger.OAuthClient.log("Backup token can't be decoded, deleting it")
+            remove(action: .restore)
+            throw .undecodable
+        }
+
+        let rejection: TokenBackupError?
+        if let expectedExternalID, backup.decodedAccessToken.externalID != expectedExternalID {
+            rejection = .accountMismatch
+        } else if let signOutCutoff, backup.decodedRefreshToken.issuedAtDate <= signOutCutoff {
+            rejection = .predatesSignOut
+        } else if backup.decodedRefreshToken.expirationDate <= now() {
+            rejection = .expired
+        } else {
+            rejection = nil
+        }
+
+        if let rejection {
+            Logger.OAuthClient.log("Backup token rejected: \(rejection.description, privacy: .public)")
+            remove(action: .restore)
+            throw rejection
+        }
+        return backup
+    }
+
+    /// The stored backup token container, or nil when none is stored or reading it fails.
+    /// - Parameter action: The client action reading the backup, reported when reading fails.
+    func storedBackup(action: TokenBackupAction) -> TokenContainer? {
+        do {
+            return try storage.getTokenContainer()
+        } catch {
+            Logger.OAuthClient.error("Failed to read the backup token: \(String(describing: error), privacy: .public)")
+            reportStorageError(error, action: action, operation: .read)
+            return nil
+        }
+    }
+
+    /// Deletes the stored backup when it belongs to another account than `tokenContainer`. A backup that can't be read is left as it is.
+    /// Storage failures are reported with the `.signIn` action.
+    /// - Parameter tokenContainer: The new current token container.
+    func removeIfForAnotherAccount(than tokenContainer: TokenContainer) {
+        guard let backup = storedBackup(action: .signIn),
+              backup.decodedAccessToken.externalID != tokenContainer.decodedAccessToken.externalID else { return }
+        Logger.OAuthClient.log("Deleting the backup token of another account")
+        remove(action: .signIn)
+    }
+
+    /// Whether `backup` is still the stored backup.
+    /// - Parameters:
+    ///   - backup: A backup token container read earlier.
+    ///   - action: The client action checking the backup, reported when reading fails.
+    /// - Returns: `true` when the stored backup has the same refresh token as `backup`; `false` when it differs, is missing or can't be read.
+    func isStored(_ backup: TokenContainer, action: TokenBackupAction) -> Bool {
+        storedBackup(action: action)?.refreshToken == backup.refreshToken
+    }
+
+    /// Stores `backup`, replacing any previous one. A failure is logged and reported.
+    /// - Parameters:
+    ///   - backup: The new backup token container.
+    ///   - action: The client action storing the backup, reported when saving fails.
+    /// - Throws: The storage error when saving fails.
+    func save(_ backup: TokenContainer, action: TokenBackupAction) throws {
+        do {
+            try storage.saveTokenContainer(backup)
+        } catch {
+            Logger.OAuthClient.error("Failed to save the backup token: \(String(describing: error), privacy: .public)")
+            reportStorageError(error, action: action, operation: .write)
+            throw error
+        }
+    }
+
+    /// Deletes the backup token container. A failure is logged, reported and otherwise ignored.
+    /// - Parameter action: The client action deleting the backup, reported when deleting fails.
+    func remove(action: TokenBackupAction) {
+        do {
+            try storage.saveTokenContainer(nil)
+        } catch {
+            Logger.OAuthClient.error("Failed to delete the backup token: \(String(describing: error), privacy: .public)")
+            reportStorageError(error, action: action, operation: .delete)
+        }
+    }
+
+    private func reportStorageError(_ error: Error, action: TokenBackupAction, operation: TokenBackupStorageOperation) {
+        eventMapping?.fire(.storageFailed(action, operation, error))
+    }
+}

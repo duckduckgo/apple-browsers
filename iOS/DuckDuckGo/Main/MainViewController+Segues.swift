@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Combine
 import Common
 import FoundationExtensions
 import Core
@@ -110,7 +111,8 @@ extension MainViewController {
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             onboardingManager: onboardingManager,
             keyValueStore: keyValueStore,
-            adBlockingAvailability: adBlockingAvailability
+            adBlockingAvailability: adBlockingAvailability,
+            subscriptionManager: subscriptionManager
         )
         let controller = OnboardingIntroFactory.makeController(
             viewModel: viewModel,
@@ -531,7 +533,9 @@ extension MainViewController {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             aiChatBonusMessageLog: userScriptsDependencies.aiChatBonusOffer.messageLog,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
-                                                            promoCoordinationCooldownResetter: promoCoordinationService)
+                                                            promoCoordinationCooldownResetter: promoCoordinationService,
+                                                            translationModels: translationModels,
+                                                            aiChatLocalModel: userScriptsDependencies.aiChatLocalModel)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings)
@@ -581,6 +585,7 @@ extension MainViewController {
                                                   adBlockingAvailability: adBlockingAvailability,
                                                   sitePermissionsEnabled: tabManager.isSitePermissionsEnabled)
 
+        settingsViewModel.browserToolsService = tabManager.browserToolsService
         settingsViewModel.configureSitePermissions(
             store: tabManager.sitePermissionsStore,
             favicons: tabManager.sitePermissionsFavicons,
@@ -667,7 +672,9 @@ extension MainViewController {
             aiChatBonusMessageLog: self.userScriptsDependencies.aiChatBonusOffer.messageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
             promoCoordinationCooldownResetter: self.promoCoordinationService,
-            daxGreetingDebugging: self.daxGreetingService))
+            translationModels: self.translationModels,
+            daxGreetingDebugging: self.daxGreetingService,
+            aiChatLocalModel: self.userScriptsDependencies.aiChatLocalModel))
 
         let closeButton = UIBarButtonItem(barButtonSystemItem: .close, target: debug, action: #selector(DebugScreensViewController.dismissSelf))
         debug.navigationItem.rightBarButtonItem = closeButton
@@ -795,25 +802,55 @@ class SettingsUINavigationController: UINavigationController {
 
 }
 
-final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigationController {
+/// A navigation controller that hosts the subscription purchase flow.
+protocol SubscriptionFlowNavigationStyling: UINavigationController {}
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+extension SubscriptionFlowNavigationStyling {
 
+    /// Matches the bar to the flow's surface and adds a close button that dismisses the flow.
+    func applySubscriptionFlowStyle() {
         let surfaceColor = UIColor(designSystemColor: .surface)
         view.backgroundColor = surfaceColor
         navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
         navigationBar.isTranslucent = false
         navigationBar.barTintColor = surfaceColor
         navigationBar.backgroundColor = surfaceColor
-        viewControllers.first?.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close,
-                                                                                  target: self,
-                                                                                  action: #selector(dismissSubscriptionFlow))
+        viewControllers.first?.navigationItem.leftBarButtonItem = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { [weak self] _ in
+            self?.dismiss(animated: true)
+        })
     }
 
-    @objc
-    private func dismissSubscriptionFlow() {
-        dismiss(animated: true)
+}
+
+final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigationController, SubscriptionFlowNavigationStyling {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        applySubscriptionFlowStyle()
+    }
+}
+
+/// Hosts the subscription paywall over the onboarding: closes once a purchase completes and reports when it's gone.
+final class OnboardingSubscriptionFlowNavigationController: UINavigationController, SubscriptionFlowNavigationStyling {
+
+    var onDismiss: (() -> Void)?
+    private var purchaseCancellable: AnyCancellable?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        applySubscriptionFlowStyle()
+        purchaseCancellable = NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.dismiss(animated: true)
+            }
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        guard isBeingDismissed else { return }
+        onDismiss?()
+        onDismiss = nil
     }
 }
 

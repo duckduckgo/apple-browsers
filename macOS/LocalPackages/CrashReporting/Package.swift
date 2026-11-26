@@ -48,6 +48,7 @@ let package = Package(
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug)),
             ]
         ),
@@ -64,6 +65,7 @@ let package = Package(
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug)),
             ]
         ),
@@ -92,14 +94,16 @@ let package = Package(
             path: "Tests/CrashReportingTests",
             resources: [
                 .process("DuckDuckGo-ExampleCrash.ips"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "AppStoreCrashCollectionTests",
             dependencies: [
                 "AppStoreCrashCollection",
             ],
-            path: "Tests/AppStoreCrashCollectionTests"
+            path: "Tests/AppStoreCrashCollectionTests",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         )
     ]
 )

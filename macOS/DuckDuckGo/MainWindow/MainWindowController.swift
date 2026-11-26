@@ -40,7 +40,6 @@ final class MainWindowController: NSWindowController {
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
-    private let featureFlagger: FeatureFlagger?
     private weak var windowControllersManager: WindowControllersManager?
 
     private(set) var lastWindowDidBecomeKeyTimestamp: TimeInterval = 0
@@ -58,7 +57,6 @@ final class MainWindowController: NSWindowController {
          fireWindowOpenTrigger: FireWindowOpenTrigger? = nil,
          fireViewModel: FireViewModel,
          themeManager: ThemeManaging,
-         featureFlagger: FeatureFlagger? = nil,
          windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) {
 
         // Compute initial window frame
@@ -80,7 +78,6 @@ final class MainWindowController: NSWindowController {
         fireWindowSession?.addWindow(window)
 
         self.themeManager = themeManager
-        self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
 
         super.init(window: window)
@@ -168,41 +165,14 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
-    /// Automation runs and overridden onboarding would enrol without being real first runs.
-    private var isEligibleForNonBlockingExperiment: Bool {
-        let launchOptions = LaunchOptionsHandler()
-        guard !launchOptions.isAutomationSession,
-              case .notOverridden = launchOptions.onboardingStatus else { return false }
-        return true
-    }
-
     private func startOnboardingIfNeeded() {
         guard shouldShowOnboarding, let selectedTab = mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab else {
             return
         }
 
-        let experiment = featureFlagger.map(OnboardingNonBlockingExperiment.init)
-        if isEligibleForNonBlockingExperiment {
-            experiment?.enroll()
-        }
-        let isNonBlocking = experiment?.isNonBlocking == true
-        if isNonBlocking, windowControllersManager?.hasOnboardingTab == true {
-            return
-        }
-
         selectedTab.startOnboarding()
-        configureOnboardingInteraction(for: selectedTab, isNonBlocking: isNonBlocking)
-    }
-
-    private func configureOnboardingInteraction(for tab: Tab, isNonBlocking: Bool) {
-        if isNonBlocking {
-            // Track the source before selection can change or the page can be closed.
-            windowControllersManager?.setOnboardingTab(tab)
-            tab.onboardingActionsManager?.installNonBlockingHandlers()
-        } else {
-            // Lock immediately to avoid flicker while the onboarding script loads.
-            userInteraction(prevented: true)
-        }
+        // Lock immediately to avoid flicker while the onboarding script loads.
+        windowControllersManager?.setUserInteractionLock(.locked())
     }
 
     private func subscribeToResolutionChange() {
@@ -342,19 +312,10 @@ final class MainWindowController: NSWindowController {
             }
     }
 
-    func userInteraction(prevented: Bool, forBurning: Bool = false) {
-        mainViewController.userInteraction(prevented: prevented)
+    func userInteraction(lock: UserInteractionLock) {
+        mainViewController.userInteraction(lock: lock)
 
-        NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !prevented }
-
-        guard forBurning else { return }
-        if prevented {
-            window?.styleMask.remove(.closable)
-            mainViewController.view.makeMeFirstResponder()
-        } else {
-            window?.styleMask.update(with: .closable)
-            mainViewController.adjustFirstResponder()
-        }
+        NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !lock.isLocked }
     }
 
     private func moveTabBarView(toTitlebarView: Bool) {

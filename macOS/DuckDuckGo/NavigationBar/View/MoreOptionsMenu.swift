@@ -89,6 +89,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let freemiumDBPPresenter: FreemiumDBPPresenter
     private let appearancePreferences: AppearancePreferences
     private let dockCustomizer: DockCustomization
+    private let addToDockMenuAction: AddToDockMenuAction
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let featureFlagger: FeatureFlagger
     private let freeTrialBadgePersistor: FreeTrialBadgePersisting
@@ -144,7 +145,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          isFireWindowDefault: Bool = NSApp.delegateTyped.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
          syncDeviceButtonModel: SyncDeviceButtonModel = SyncDeviceButtonModel(),
          freeTrialBadgePersistor: FreeTrialBadgePersisting = FreeTrialBadgePersistor(keyValueStore: UserDefaults.standard),
-         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager) {
+         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
+         addToDockMenuAction: AddToDockMenuAction) {
+
+        self.addToDockMenuAction = addToDockMenuAction
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -210,8 +214,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
-        if dockCustomizer.supportsAddingToDock,
-           dockCustomizer.isAddedToDock == false {
+        if addToDockMenuAction.canShowMenuItem {
 
             if dockCustomizer.shouldShowNotification {
                 let addToDockMenuItem = NSMenuItem(action: #selector(addToDock(_:)))
@@ -297,8 +300,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: NSMenuItem) {
-        guard dockCustomizer.supportsAddingToDock, dockCustomizer.addToDock() else { return }
-        PixelKit.fire(GeneralPixel.userAddedToDockFromMoreOptionsMenu, frequency: .dailyAndStandard)
+        addToDockMenuAction.perform(from: .moreOptionsMenu)
     }
 
     @MainActor
@@ -534,15 +536,22 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return false
         }
 
-        let style: UpdateBannerView.Style = switch menuPrompt {
-        case .row: .row(title: updateController.updateBannerRowTitle)
-        case .card: .card
+        let style: UpdateBannerView.Style
+        let surface: UpdatePromptSurface
+        switch menuPrompt {
+        case .row:
+            style = .row(title: updateController.updateBannerRowTitle)
+            surface = .menuRow
+        case .card:
+            style = .card
+            surface = .menuCard
         }
 
         let banner = UpdateBannerView(style: style,
                                       version: update.version,
                                       buttonTitle: updateController.updateBannerButtonTitle) { [weak self] in
             self?.cancelTracking()
+            UpdateClickReporter().reportClick(on: surface)
             updateController.runUpdateFromPrompt()
         }
 
@@ -852,7 +861,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     override func performActionForItem(at index: Int) {
         if let item = item(at: index), item == updateMenuItem {
-            PixelKit.fire(MoreOptionsMenuPixel.updateActionClicked, frequency: .daily)
+            UpdateClickReporter().reportClick(on: .menuItem)
         }
         super.performActionForItem(at: index)
     }
@@ -1503,7 +1512,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         if features.contains(.dataBrokerProtection) {
             addItem(dataBrokerProtectionItem)
         }
-        if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+        if features.contains(.paidAIChat) {
             addItem(paidAIChatItem)
         }
         if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {

@@ -31,6 +31,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         case sendPixel
         case reportCpmCoverage
         case refreshCpmDashboardState
+        case cpmInitProgress
         case showCpmAnimation
         case cookiePopupHandled
         case isFeatureEnabled
@@ -47,19 +48,23 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
     private let autoconsentPreferences: AutoconsentPreferencesProviding
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring?
     private weak var delegate: AutoconsentMessageHandlerDelegate?
+    private let isAppleSurrogateRedirectionEnabled: @MainActor () -> Bool
 
     public var handledFeatureName: String { "autoconsent" }
 
+    /// - Parameter isAppleSurrogateRedirectionEnabled: The app's answer for `trackerProtection.appleSurrogateRedirection`.
     public init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring? = nil,
-        delegate: AutoconsentMessageHandlerDelegate? = nil
+        delegate: AutoconsentMessageHandlerDelegate? = nil,
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool = { false }
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         self.delegate = delegate
+        self.isAppleSurrogateRedirectionEnabled = isAppleSurrogateRedirectionEnabled
     }
 
     public func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {
@@ -76,6 +81,8 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
             return handleReportCpmCoverage(message.params)
         case .refreshCpmDashboardState:
             return await handleRefreshCpmDashboardState(message.params, extensionIdentifier: message.extensionIdentifier)
+        case .cpmInitProgress:
+            return await handleCpmInitProgress(message.params, extensionIdentifier: message.extensionIdentifier)
         case .showCpmAnimation:
             return handleShowCpmAnimation(message.params)
         case .cookiePopupHandled:
@@ -83,7 +90,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         case .isFeatureEnabled:
             return handleIsFeatureEnabled(message.params)
         case .isSubFeatureEnabled:
-            return handleIsSubFeatureEnabled(message.params)
+            return await handleIsSubFeatureEnabled(message.params)
         case .getResourceIfNew:
             return handleGetResourceIfNew(message.params)
         case .isAutoconsentSettingEnabled:
@@ -153,6 +160,22 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         return .success(Self.successResponse)
     }
 
+    /// A best-effort progress mark for one main-frame init. Unknown stages and marks without a page are
+    /// ignored, never an error, so a newer extension cannot make an older app answer with failures. Marks are
+    /// ignored too while the `cpmInitProgress` subfeature is off; the extension learns the flag from the settings.
+    private func handleCpmInitProgress(_ params: [String: Any]?, extensionIdentifier: String) async -> WebExtensionMessageResult {
+        guard privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AutoconsentSubfeature.cpmInitProgress),
+              let stageName = params?["stage"] as? String,
+              let stage = CPMInitStage(rawValue: stageName),
+              let urlString = params?["url"] as? String,
+              let url = URL(string: urlString),
+              url.host != nil else {
+            return .success(Self.successResponse)
+        }
+        await cpmMessagingHealthMonitor?.handle(.initProgress(url: url, stage: stage, extensionIdentifier: extensionIdentifier))
+        return .success(Self.successResponse)
+    }
+
     private func handleShowCpmAnimation(_ params: [String: Any]?) -> WebExtensionMessageResult {
         guard
             let topUrlString = params?["topUrl"] as? String,
@@ -207,7 +230,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         return .success(["enabled": isEnabled])
     }
 
-    private func handleIsSubFeatureEnabled(_ params: [String: Any]?) -> WebExtensionMessageResult {
+    private func handleIsSubFeatureEnabled(_ params: [String: Any]?) async -> WebExtensionMessageResult {
         guard
             let featureName = params?["featureName"] as? String,
             let subfeatureName = params?["subfeatureName"] as? String
@@ -220,6 +243,14 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         guard let feature = PrivacyFeature(rawValue: featureName) else {
             Logger.webExtensions.error("❌ Unknown feature name: \(featureName)")
             return .success(["enabled": false])
+        }
+
+        // Only this one tracker protection subfeature is exposed. Checking arbitrary subfeatures could assign the
+        // user to an experiment cohort as a side effect.
+        if feature == .trackerProtection, subfeatureName == TrackerProtectionConfigSubfeature.appleSurrogateRedirection.rawValue {
+            // The answer reads WKWebExtensionController.extensionContexts, which is main-actor only, but
+            // message handlers run off the main thread.
+            return .success(["enabled": await isAppleSurrogateRedirectionEnabled()])
         }
 
         guard feature == .autoconsent else {

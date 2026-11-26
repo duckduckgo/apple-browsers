@@ -170,7 +170,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             reapplyFilterIfNeeded()
             return
         }
-        if !featureFlagger.isFeatureOn(.suggestionDebounce200ms) {
+        if !featureFlagger.isFeatureOn(.debounceLogic2026) {
             cancelInFlightRequests()
         }
         model.query = query
@@ -244,7 +244,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     }
 
     private func requestSuggestions(query: String, includeRemoteSuggestions: Bool = true) {
-        let usesSeparateDebounce = featureFlagger.isFeatureOn(.suggestionDebounce200ms)
+        let usesSeparateDebounce = featureFlagger.isFeatureOn(.debounceLogic2026)
         model.selection = nil
         if usesSeparateDebounce { cancelInFlightRequests() }
         let fetchID = UUID()

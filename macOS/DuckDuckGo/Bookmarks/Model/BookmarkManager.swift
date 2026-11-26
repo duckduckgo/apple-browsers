@@ -36,6 +36,7 @@ protocol BookmarkManager: AnyObject {
     func getBookmarkFolder(withId id: String) -> BookmarkFolder?
     @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int?, parent: BookmarkFolder?, completion: @escaping (Error?) -> Void) -> Bookmark?
     func makeBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: ParentFolderType)
+    func makeBookmarks(for websitesInfo: [WebsiteInfo], isFavorite: Bool, index: Int?, parent: BookmarkFolder?)
     func makeFolder(named title: String, parent: BookmarkFolder?, completion: @escaping (Result<BookmarkFolder, Error>) -> Void)
     func remove(bookmark: Bookmark, undoManager: UndoManager?)
     func remove(folder: BookmarkFolder, undoManager: UndoManager?)
@@ -263,6 +264,38 @@ final class LocalBookmarkManager: BookmarkManager {
         bookmarkStore.saveBookmarks(for: websitesInfo, inNewFolderNamed: folderName, withinParentFolder: parent)
         loadBookmarks()
         requestSync()
+    }
+
+    func makeBookmarks(for websitesInfo: [WebsiteInfo], isFavorite: Bool, index: Int?, parent: BookmarkFolder?) {
+        guard list != nil else { return }
+
+        var bookmarks = [Bookmark]()
+        for websiteInfo in websitesInfo where !isUrlBookmarked(url: websiteInfo.url) {
+            let bookmark = Bookmark(
+                id: UUID().uuidString,
+                url: websiteInfo.url.absoluteString,
+                title: websiteInfo.title,
+                isFavorite: isFavorite,
+                parentFolderUUID: parent?.id
+            )
+            list?.insert(bookmark)
+            bookmarks.append(bookmark)
+        }
+        guard !bookmarks.isEmpty else { return }
+
+        let entitiesAtIndices = bookmarks.enumerated().map { offset, bookmark -> (entity: BaseBookmarkEntity, index: Int?, indexInFavoritesArray: Int?) in
+            (bookmark, index.map { $0 + offset }, nil)
+        }
+        bookmarkStore.save(entitiesAtIndices: entitiesAtIndices) { [weak self] error in
+            if error != nil {
+                bookmarks.forEach { self?.list?.remove($0) }
+                return
+            }
+
+            self?.foldersStore.lastBookmarkSingleTabFolderIdUsed = parent?.id
+            self?.loadBookmarks()
+            self?.requestSync()
+        }
     }
 
     @MainActor

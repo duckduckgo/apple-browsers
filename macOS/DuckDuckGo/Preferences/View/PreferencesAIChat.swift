@@ -204,19 +204,31 @@ extension Preferences {
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)
 
+                PreferencesBrowserToolPermissionsView()
+                    .visibility(model.shouldShowAIFeatures ? .visible : .gone)
+
                 if isLocalModelAccessShown {
-                    PreferencePaneSection(UserText.localModelAccessSettingsTitle, spacing: 8) {
+                    PreferencePaneSection(UserText.localModelSettingsSectionTitle, spacing: 8) {
                         VStack(alignment: .leading, spacing: 0) {
-                            TextMenuItemCaption(UserText.localModelAccessSettingsCaption)
+                            TextMenuItemCaption(UserText.localModelSettingsSectionCaption)
                             TextButton(UserText.learnMore) {
                                 model.openLocalModelLearnMore()
                             }
                             .accessibilityIdentifier("Preferences.AIChat.localModelAccessLearnMore")
                         }
-                        LocalModelAccessRow(modelName: model.localModelName,
-                                            isOn: model.isLocalModelOn,
-                                            turnOn: { Task { await model.turnOnLocalModel() } },
-                                            turnOff: model.turnOffLocalModel)
+                        if let installState = model.downloadableModelState {
+                            DownloadableLocalModelRow(modelName: model.localModelName,
+                                                      totalBytes: model.downloadableModelBytes,
+                                                      state: installState,
+                                                      install: model.installDownloadableModel,
+                                                      cancel: model.cancelDownloadableModelInstall,
+                                                      uninstall: model.uninstallDownloadableModel)
+                        } else {
+                            LocalModelAccessRow(modelName: model.localModelName,
+                                                isOn: model.isLocalModelOn,
+                                                turnOn: { Task { await model.turnOnLocalModel() } },
+                                                turnOff: { model.turnOffLocalModel() })
+                        }
                     }
                 }
 
@@ -256,17 +268,23 @@ private struct LocalModelAccessRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            AppleIntelligenceGlyph(size: 20)
+            icon
+                .frame(width: 20, height: 20)
             VStack(alignment: .leading, spacing: 2) {
-                Text(modelName)
-                    .font(.system(size: 13))
-                    .foregroundColor(color(.textPrimary))
-                Text(UserText.localModelAccessSettingsAppleIntelligenceCaption)
+                HStack(spacing: 6) {
+                    Text(UserText.localModelSettingsSystemAITitle)
+                        .font(.system(size: 13))
+                        .foregroundColor(color(.textPrimary))
+                    Text(isOn ? UserText.localModelSettingsActive : UserText.localModelSettingsAvailable)
+                        .font(.system(size: 13))
+                        .foregroundColor(color(.textSecondary))
+                }
+                Text(String(format: UserText.localModelSettingsModelCaption, modelName))
                     .font(.system(size: 11))
                     .foregroundColor(color(.textSecondary))
             }
             Spacer()
-            Button(isOn ? UserText.localModelAccessTurnOff : UserText.localModelAccessTurnOn) {
+            Button(isOn ? UserText.localModelDisconnect : UserText.localModelConnect) {
                 isOn ? turnOff() : turnOn()
             }
             .accessibilityIdentifier("Preferences.AIChat.localModelAccessButton")
@@ -275,6 +293,121 @@ private struct LocalModelAccessRow: View {
         .padding(.vertical, 12)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(color(.surfaceSecondary)))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(color(.containerBorderPrimary), lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        if isOn {
+            Image(nsImage: DesignSystemImages.Glyphs.Size20.checkSolid)
+                .foregroundColor(color(.statusGreen))
+        } else {
+            AppleIntelligenceGlyph(size: 20)
+        }
+    }
+
+    private func color(_ color: DesignSystemColor) -> Color {
+        Color(designSystemColor: color, palette: themeManager.designColorPalette)
+    }
+}
+
+/// The model for Macs without Apple Intelligence: Install, then progress with a stop button, then Uninstall.
+private struct DownloadableLocalModelRow: View {
+
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+    let modelName: String
+    let totalBytes: Int64
+    let state: AIChatLocalModelInstallState
+    let install: () -> Void
+    let cancel: () -> Void
+    let uninstall: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            icon
+                .frame(width: 20, height: 20)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(UserText.localModelSettingsLocalAITitle)
+                        .font(.system(size: 13))
+                        .foregroundColor(color(.textPrimary))
+                    Text(sizeLabel)
+                        .font(.system(size: 13))
+                        .foregroundColor(color(.textSecondary))
+                }
+                detail
+            }
+            Spacer(minLength: 16)
+            action
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(color(.surfaceSecondary)))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(color(.containerBorderPrimary), lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        if state.isInstalled {
+            Image(nsImage: DesignSystemImages.Glyphs.Size20.checkSolid)
+                .foregroundColor(color(.statusGreen))
+        } else {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.downloads)
+                .foregroundColor(color(.iconsPrimary))
+        }
+    }
+
+    private var sizeLabel: String {
+        if case .downloading(let received, let total) = state {
+            return String(format: UserText.localModelSettingsProgressFormat, Self.formatted(received), Self.formatted(total))
+        }
+        return String(format: UserText.localModelSettingsSizeFormat, Self.formatted(totalBytes))
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        switch state {
+        case .downloading(let received, let total):
+            ProgressView(value: Double(received), total: Double(max(total, 1)))
+                .progressViewStyle(.linear)
+                .tint(color(.accentPrimary))
+                .frame(maxWidth: 280)
+        case .failed(let error):
+            Text(error == .diskFull ? UserText.localModelSettingsDiskFull : UserText.localModelSettingsDownloadFailed)
+                .font(.system(size: 11))
+                .foregroundColor(color(.textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+        case .notInstalled, .installed:
+            Text(String(format: UserText.localModelSettingsModelCaption, modelName))
+                .font(.system(size: 11))
+                .foregroundColor(color(.textSecondary))
+        }
+    }
+
+    @ViewBuilder
+    private var action: some View {
+        switch state {
+        case .notInstalled:
+            Button(UserText.localModelSettingsInstall, action: install)
+                .accessibilityIdentifier("Preferences.AIChat.downloadableModel.install")
+        case .downloading:
+            Button(action: cancel) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size20.closeSolid)
+                    .foregroundColor(color(.iconsTertiary))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(UserText.localModelSettingsCancelDownload)
+            .accessibilityIdentifier("Preferences.AIChat.downloadableModel.cancel")
+        case .installed:
+            Button(UserText.localModelSettingsUninstall, action: uninstall)
+                .accessibilityIdentifier("Preferences.AIChat.downloadableModel.uninstall")
+        case .failed:
+            Button(UserText.localModelSettingsTryAgain, action: install)
+                .accessibilityIdentifier("Preferences.AIChat.downloadableModel.tryAgain")
+        }
+    }
+
+    private static func formatted(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
     private func color(_ color: DesignSystemColor) -> Color {

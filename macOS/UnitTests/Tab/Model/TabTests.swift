@@ -1018,6 +1018,10 @@ private final class StubWebExtensionManager: WebExtensionManaging {
     func extensionPermissions(for identifier: String) -> [String] { [] }
     func extensionMatchPatterns(for identifier: String) -> [String] { [] }
     func hasAccessToPrivateData(for identifier: String) -> Bool? { nil }
+    @MainActor func hasHitNativeMessagingLimitation(identifier: String) -> Bool { false }
+    @MainActor func isNativeMessagingAlertSuppressed(identifier: String) -> Bool { false }
+    @MainActor func suppressNativeMessagingAlert(identifier: String) {}
+    @MainActor func pixelExtension(identifier: String) -> WebExtensionPixelExtension { .other }
     func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     func extensionContext(for url: URL) -> WKWebExtensionContext? { context }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }

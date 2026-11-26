@@ -29,6 +29,7 @@ import DesignResourcesKitIcons
 import FeatureFlags_macOS
 import FoundationExtensions
 import History
+import Networking
 import OSLog
 import Persistence
 import PixelKit
@@ -229,7 +230,7 @@ final class MainMenu: NSMenu {
 
     private let featureFlagger: FeatureFlagger
     private let isLazyMenuRebuild: Bool
-    private let dockCustomizer: DockCustomization
+    private let addToDockMenuAction: AddToDockMenuAction
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSuggestionsReader: AIChatSuggestionsReading
@@ -259,6 +260,7 @@ final class MainMenu: NSMenu {
          recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization,
+         addToDockVideoPresenter: AddToDockVideoPresenting,
          defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          aiChatSuggestionsReader: AIChatSuggestionsReading,
@@ -281,7 +283,9 @@ final class MainMenu: NSMenu {
         self.appearancePreferences = appearancePreferences
         self.privacyConfigurationManager = privacyConfigurationManager
         self.appVersion = appVersion
-        self.dockCustomizer = dockCustomizer
+        self.addToDockMenuAction = AddToDockMenuAction(dockCustomization: dockCustomizer,
+                                                       featureFlagger: featureFlagger,
+                                                       videoPresenter: addToDockVideoPresenter)
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSuggestionsReader = aiChatSuggestionsReader
@@ -642,7 +646,7 @@ final class MainMenu: NSMenu {
     override func update() {
         super.update()
 
-        addToDockMenuItem.isHidden = !dockCustomizer.supportsAddingToDock || dockCustomizer.isAddedToDock
+        addToDockMenuItem.isHidden = !addToDockMenuAction.canShowMenuItem
         setAsDefaultMenuItem.isHidden = defaultBrowserPreferences.isDefault
 
         // To be safe, hide the NetP shortcut menu item by default.
@@ -1218,7 +1222,25 @@ final class MainMenu: NSMenu {
                                   subscriptionManager: Application.appDelegate.subscriptionManager,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
                                   wideEvent: Application.appDelegate.wideEvent,
-                                  subscriptionSelectionHandler: subscriptionSelectionHandler)
+                                  subscriptionSelectionHandler: subscriptionSelectionHandler,
+                                  makeTokensDebugModel: {
+                                      // The App Store VPN runs as an app extension and keeps its token in the data protection keychain, not the System keychain.
+                                      let vpnSystemExtensionBundleID = AppVersion.isAppStoreBuild ? nil : Bundle.main.object(forInfoDictionaryKey: "SYSEX_BUNDLE_ID") as? String
+                                      let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
+                                      let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorage.defaultAttributes(keychainType: keychainType),
+                                                                            pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+                                      let subscriptionManager = Application.appDelegate.subscriptionManager
+                                      let invalidator = StagingTokenInvalidator(environment: currentEnvironment.authEnvironment,
+                                                                                apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
+                                      return SubscriptionTokensDebugViewModel(keychainManager: keychainManager,
+                                                                              getTokenContainer: { policy in
+                                                                                  try await subscriptionManager.getTokenContainer(policy: policy)
+                                                                              },
+                                                                              invalidate: invalidator.map { invalidator in
+                                                                                  { refreshToken in try await invalidator.invalidate(refreshToken: refreshToken) }
+                                                                              },
+                                                                              vpnSystemExtensionBundleID: vpnSystemExtensionBundleID)
+                                  })
 
             NSMenuItem(title: "TipKit") {
                 NSMenuItem(title: "Reset", action: #selector(AppDelegate.resetTipKit))

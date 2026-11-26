@@ -91,6 +91,7 @@ final class UnifiedToggleInputViewController: UIViewController {
     /// The collapsed AI-tab fire button. Exposed for onboarding highlight and enable/disable targeting.
     var aiTabFireButton: UIButton { inputBarView.aiTabFireButton }
     var aiTabMenuButton: UIButton { inputBarView.aiTabMenuButton }
+    var aiTabChatsButton: UIButton { inputBarView.aiTabChatsButton }
 
     /// Dims the input bar for the fire-education onboarding step without affecting the fire button.
     func setOnboardingDimmed(_ dimmed: Bool) {
@@ -334,6 +335,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.selectedReasoningMode = newValue }
     }
 
+    var usesSimplifiedPromptBox: Bool {
+        get { inputBarView.usesSimplifiedPromptBox }
+        set { inputBarView.usesSimplifiedPromptBox = newValue }
+    }
+
     var isToolsButtonHidden: Bool {
         get { inputBarView.isToolsButtonHidden }
         set { inputBarView.isToolsButtonHidden = newValue }
@@ -528,6 +534,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func refreshFireMode(fireMode: Bool) {
         inputBarView.refreshFireMode(fireMode: fireMode)
+    }
+
+    func setUsesNewTabPageCardBackground(_ usesNewTabPageCardBackground: Bool) {
+        inputBarView.usesNewTabPageCardBackground = usesNewTabPageCardBackground
     }
 
     // MARK: - Page-Context Chip

@@ -20,7 +20,7 @@ import Foundation
 import WebKit
 
 /// Protocol defining the interface for managing web extensions.
-public protocol WebExtensionManaging: AnyObject {
+public protocol WebExtensionManaging: AnyObject, NativeMessagingLimitationProviding {
 
     /// Shared Chrome Web Store service, available only when installation is supported.
     @available(macOS 15.4, iOS 18.4, *)
@@ -29,6 +29,11 @@ public protocol WebExtensionManaging: AnyObject {
     /// The set of currently loaded extension contexts.
     @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
+
+    /// Records genuine browser UI interaction with an extension, for app permission requests.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func recordUserGesture(for context: WKWebExtensionContext)
 
     /// The set of embedded extension types currently loaded into the controller.
     @available(macOS 15.4, iOS 18.4, *)
@@ -229,12 +234,6 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func scriptletDebugInfo() -> [ScriptletDebugInfo]
 
-    /// Wakes the search-token extension's background worker so it re-pulls the live token
-    /// and refreshes its DNR session rule. No-op when the extension isn't loaded.
-    @available(macOS 15.4, iOS 18.4, *)
-    @MainActor
-    func performSearchTokenRefresh()
-
     /// Returns the shared startup task before a main-frame navigation, including idle wakes.
     /// Its identity stays stable while the same WebKit operation is pending.
     @available(macOS 15.4, iOS 18.4, *)
@@ -248,6 +247,9 @@ public protocol WebExtensionManaging: AnyObject {
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionManaging {
+    @MainActor
+    func recordUserGesture(for context: WKWebExtensionContext) {}
+
     // Preserve lightweight test and platform-specific conformers that do not own embedded content.
     @MainActor
     var isCPMUpgradeBeforeLoadEnabled: Bool { false }
@@ -309,13 +311,6 @@ public extension WebExtensionManaging {
             .first { $0.extensionType == .adBlockingExtension }?
             .cachedVersion
     }
-
-    @MainActor
-    func performSearchTokenRefresh() {
-        guard let context = loadedExtensions.first(where: { $0.duckDuckGoWebExtensionType == .searchToken }),
-              let command = context.commands.first(where: { $0.id == "refresh-token" }) else { return }
-        context.performCommand(command)
-    }
 }
 
 #if os(macOS)
@@ -328,6 +323,7 @@ public extension WebExtensionManaging {
             .filter(\.needsChromeCompatibility)
             .sorted(by: { $0.uniqueIdentifier < $1.uniqueIdentifier })
         for context in contexts where context.performCommand(for: event) {
+            recordUserGesture(for: context)
             return true
         }
         return false

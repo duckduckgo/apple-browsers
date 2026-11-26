@@ -7,6 +7,7 @@ on:
       - '**/AGENTS.md'
       - '**/CLAUDE.md'
       - '.claude/skills/**'
+      - '.agents/skills/**'
       - 'REVIEW*.md'
       - 'scripts/agent-context-check/**'
       - '.github/workflows/agent_context_check.yml'

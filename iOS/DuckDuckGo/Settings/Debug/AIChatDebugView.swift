@@ -31,13 +31,20 @@ struct AIChatDebugView: View {
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let aiChatBonusMessageLog: AIChatBonusMessageLog?
     private let featureFlagger: FeatureFlagger?
+    private let tabManager: TabManager?
+    private let aiChatLocalModel: AIChatLocalModelDependencies?
+    @State private var localModelEngine = LocalModelEngineOverridePersistor().current
 
     init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
-         featureFlagger: FeatureFlagger? = nil) {
+         featureFlagger: FeatureFlagger? = nil,
+         tabManager: TabManager? = nil,
+         aiChatLocalModel: AIChatLocalModelDependencies? = nil) {
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.aiChatBonusMessageLog = aiChatBonusMessageLog
         self.featureFlagger = featureFlagger
+        self.tabManager = tabManager
+        self.aiChatLocalModel = aiChatLocalModel
     }
 
     var body: some View {
@@ -59,7 +66,46 @@ struct AIChatDebugView: View {
                     Text(verbatim: "Duck.ai Boost Offer")
                 }
             }
+            if let tabManager {
+                Section(header: Text(verbatim: "Browser Tools")) {
+                    NavigationLink(destination: BrowserToolsDebugView(tabManager: tabManager)) {
+                        Text(verbatim: "Browser Tools")
+                    }
+                }
+            }
 #endif
+
+            if let aiChatLocalModel {
+                // Shows the prompt without needing a Duck.ai page that asks for access.
+                Section(header: Text(verbatim: "Local Model")) {
+                    // Back to a device that never set up local summaries, so the pop-up shows again whichever engine is active.
+                    Button {
+                        aiChatLocalModel.service.optOut()
+                        aiChatLocalModel.service.uninstallDownloadableModel()
+                    } label: {
+                        Text(verbatim: "Reset Local Summaries Opt-In")
+                    }
+                    // The active engine's pop-up, Turn On or Install, and nothing once that engine is set up.
+                    Button {
+                        showLocalModelAccessPrompt(aiChatLocalModel)
+                    } label: {
+                        Text(verbatim: "Show Local Model Access Pop-Up")
+                    }
+                    // The downloaded model stays when switching away, so switching back is instant.
+                    Picker(selection: localModelEngineBinding) {
+                        ForEach(LocalModelEngineOverride.allCases, id: \.self) { engine in
+                            Text(verbatim: engine.title).tag(engine)
+                        }
+                    } label: {
+                        Text(verbatim: "On-Device Model Engine")
+                    }
+                    Button(role: .destructive) {
+                        aiChatLocalModel.service.uninstallDownloadableModel()
+                    } label: {
+                        Text(verbatim: "Delete Downloaded Model")
+                    }
+                }
+            }
 
             Section(header: Text(verbatim: "Message Policy Hostname"),
                     footer: Text(verbatim: "Stored Hostname: \(viewModel.enteredHostname)")) {
@@ -115,6 +161,23 @@ struct AIChatDebugView: View {
             }
         }
         .navigationTitle("AI Chat")
+    }
+
+    private var localModelEngineBinding: Binding<LocalModelEngineOverride> {
+        Binding(get: { localModelEngine },
+                set: { engine in
+                    localModelEngine = engine
+                    LocalModelEngineOverridePersistor().current = engine
+                })
+    }
+
+    private func showLocalModelAccessPrompt(_ localModel: AIChatLocalModelDependencies) {
+        Task { @MainActor in
+            let window = UIApplication.shared.firstKeyWindow
+            _ = try? await localModel.service.requestAccess { request in
+                await localModel.accessPrompt.ask(in: window, request: request)
+            }
+        }
     }
 }
 

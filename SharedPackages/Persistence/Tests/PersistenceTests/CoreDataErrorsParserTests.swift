@@ -93,7 +93,7 @@ final class CoreDataErrorsParserTests {
         db.loadStore()
     }
 
-    deinit {
+    isolated deinit {
         try? db.tearDown(deleteStores: true)
     }
 

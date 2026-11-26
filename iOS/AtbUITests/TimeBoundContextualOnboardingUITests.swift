@@ -150,7 +150,6 @@ final class TimeBoundContextualOnboardingUITests: XCTestCase {
             "-ff.contextualOnboardingTimeLimit", "true",
             "-ff.onboardingDuckAIFlow", "false",
             "-ff.newTabPageRedesign", "true",
-            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-ff.slideToDelete", "false",
             "-contextualOnboardingMaxDays", "7",
             "-contextualOnboardingMaxAppOpens", String(maxAppOpens),

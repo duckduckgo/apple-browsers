@@ -262,28 +262,28 @@ final class YouTubeAdBlockingPreferencesTests: XCTestCase {
 
     // MARK: - Sponsor Skipping
 
-    private func makeSponsorBlockSUT(flagOn: Bool) -> YouTubeAdBlockingPreferences {
+    private func makeSegmentSkipSUT(flagOn: Bool) -> YouTubeAdBlockingPreferences {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub[FeatureFlag.sponsorBlock.rawValue] = flagOn
+        featureFlagger.featuresStub[FeatureFlag.segmentSkip.rawValue] = flagOn
         return YouTubeAdBlockingPreferences(settings: defaults.keyedStoring(),
                                             featureFlagger: featureFlagger,
-                                            sponsorBlockPreferences: SponsorBlockPreferences(store: defaults))
+                                            segmentSkipPreferences: SegmentSkipPreferences(store: defaults))
     }
 
-    func testSponsorBlockAvailabilityFollowsTheFeatureFlag() {
-        XCTAssertTrue(makeSponsorBlockSUT(flagOn: true).isSponsorBlockAvailable)
-        XCTAssertFalse(makeSponsorBlockSUT(flagOn: false).isSponsorBlockAvailable)
+    func testSegmentSkipAvailabilityFollowsTheFeatureFlag() {
+        XCTAssertTrue(makeSegmentSkipSUT(flagOn: true).isSegmentSkipAvailable)
+        XCTAssertFalse(makeSegmentSkipSUT(flagOn: false).isSegmentSkipAvailable)
     }
 
-    func testSponsorBlockSettingsPersistThroughTheSharedStore() {
-        sut = makeSponsorBlockSUT(flagOn: true)
-        XCTAssertTrue(sut.sponsorBlockEnabled)
-        XCTAssertEqual(sut.sponsorBlockSkipMode, .manual)
+    func testSegmentSkipSettingsPersistThroughTheSharedStore() {
+        sut = makeSegmentSkipSUT(flagOn: true)
+        XCTAssertTrue(sut.segmentSkipEnabled)
+        XCTAssertEqual(sut.segmentSkipMode, .manual)
 
-        sut.sponsorBlockEnabled = false
-        sut.sponsorBlockSkipMode = .auto
+        sut.segmentSkipEnabled = false
+        sut.segmentSkipMode = .auto
 
-        let shared = SponsorBlockPreferences(store: defaults)
+        let shared = SegmentSkipPreferences(store: defaults)
         XCTAssertFalse(shared.isEnabled)
         XCTAssertEqual(shared.skipMode, .auto)
     }

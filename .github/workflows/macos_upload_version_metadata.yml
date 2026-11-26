@@ -1,6 +1,8 @@
 name: macOS - Upload Version Metadata
 
 on:
+  schedule:
+    - cron: '20 * * * *'
   workflow_dispatch:
     inputs:
       is_critical:
@@ -36,6 +38,10 @@ on:
         required: true
       APPLE_API_KEY_BASE64:
         required: true
+      APPLE_GH_RO_PAT:
+        required: false
+      ASANA_ACCESS_TOKEN:
+        required: false
 
 defaults:
   run:
@@ -43,11 +49,12 @@ defaults:
 
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.dry_run && 'dry-run' || 'upload' }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 jobs:
   upload-metadata:
     name: Upload Release Metadata to CDN
+    if: github.event_name != 'schedule' || vars.MACOS_AUTOMATIC_VERSION_METADATA == '1'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -90,3 +97,63 @@ jobs:
           bundle exec fastlane upload_appstore_version_metadata \
             is_critical:"$IS_CRITICAL" \
             dry_run:"$DRY_RUN"
+
+  report-failure:
+    name: Report Failure
+    needs: upload-metadata
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      # The schedule runs hourly, so report a failure only once: skip it when the previous run failed and
+      # its report succeeded. If reporting failed too, try again.
+      - name: Check whether the failure was already reported
+        id: previous-run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          read -r run_id conclusion < <(gh run list \
+            --repo "${{ github.repository }}" \
+            --workflow macos_upload_version_metadata.yml \
+            --event schedule \
+            --branch "${{ github.ref_name }}" \
+            --limit 20 \
+            --json databaseId,status,conclusion \
+            --jq "map(select(.databaseId != ${{ github.run_id }} and .status == \"completed\" and .conclusion != \"cancelled\"))[0] // {} | \"\\(.databaseId // \"\") \\(.conclusion // \"\")\"")
+          report=""
+          if [[ "$conclusion" == "failure" ]]; then
+            report=$(gh run view "$run_id" \
+              --repo "${{ github.repository }}" \
+              --json jobs \
+              --jq '.jobs[] | select(.name == "Report Failure") | .conclusion')
+          fi
+          echo "Previous scheduled run: ${conclusion:-none}, failure report: ${report:-none}"
+          echo "reported=$([[ "$report" == "success" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve Asana assignee
+        id: asana-assignee
+        if: steps.previous-run.outputs.reported != 'true'
+        continue-on-error: true  # Fall back to an unassigned task if the lookup fails.
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: get-asana-user-id
+          github-username: frosty
+          github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
+
+      - name: Create Asana task
+        if: steps.previous-run.outputs.reported != 'true'
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: ${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
+          asana-task-name: GH Workflow Failure - macOS Upload Version Metadata
+          asana-task-assignee: ${{ steps.asana-assignee.outputs.asanaUserId }}
+          asana-task-description: The scheduled macOS App Store version metadata upload has failed. Later failures won't be reported until a run succeeds. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

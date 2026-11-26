@@ -407,7 +407,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     convenience init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
                      featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
                      userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-                     sponsorBlockPreferences: SponsorBlockPreferences,
+                     segmentSkipPreferences: SegmentSkipPreferences,
                      floatingUIManager: FloatingUIManaging? = nil) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
             isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
@@ -415,7 +415,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.init(settings: settings,
                   featureFlagger: featureFlagger,
                   nativeUIPresenter: DuckPlayerNativeUIPresenter(userScriptsDependencies: userScriptsDependencies,
-                                                                 sponsorBlockPreferences: sponsorBlockPreferences,
+                                                                 segmentSkipPreferences: segmentSkipPreferences,
                                                                  floatingUIManager: floatingUIManager))
     }
 

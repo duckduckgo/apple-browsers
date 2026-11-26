@@ -32,6 +32,7 @@ import RemoteMessaging
 import ScreenTimeDataCleaner
 import WebExtensions
 import FeatureFlags_iOS
+import WebPageTranslation
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -173,6 +174,19 @@ struct Launching: LaunchingHandling {
             }
         )
 
+        // The flag also gates Apple Intelligence, so remote config could turn it on for everyone. The
+        // downloadable model stays internal either way. Decided at launch: a change in internal status
+        // applies after a relaunch.
+        let downloadableModel = featureFlagger.internalUserDecider.isInternalUser
+            ? DownloadableLlamaModel(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
+            : nil
+        let localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                        storage: AIChatSettings(featureFlagger: featureFlagger),
+                                                        downloadableModel: downloadableModel?.model)
+        let aiChatLocalModel = AIChatLocalModelDependencies(service: localModelService,
+                                                            accessPrompt: LocalModelAccessPrompt(),
+                                                            downloadableModelLifecycle: downloadableModel?.lifecycle)
+
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
                                                             sync: syncService.sync,
@@ -185,7 +199,8 @@ struct Launching: LaunchingHandling {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
                                                             adBlockingAvailability: adBlockingAvailability,
-                                                            aiChatBonusOffer: aiChatBonusOffer)
+                                                            aiChatBonusOffer: aiChatBonusOffer,
+                                                            aiChatLocalModel: aiChatLocalModel)
         launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.
@@ -199,6 +214,12 @@ struct Launching: LaunchingHandling {
             consentStore: appKeyValueFileStoreService.keyValueFilesStore
         )
 
+        let translationModels = Self.makeTranslationModels(featureFlagger: featureFlagger)
+        WebPageTranslationCapability.resolve(translationModels: translationModels)
+        if let translationModels {
+            Task { _ = await translationModels.refreshManifest() }
+        }
+
         let freemiumPIRDebugSettings = FreemiumPIRDebugSettings(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared,
                                     contentBlocking: contentBlockingService.common,
@@ -206,7 +227,7 @@ struct Launching: LaunchingHandling {
                                     onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
                                         keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let configurationService = RemoteConfigurationService()
-        let crashCollectionService = CrashCollectionService(featureFlagger: featureFlagger)
+        let crashCollectionService = CrashCollectionService()
         let launchTimeMetricsService = LaunchTimeMetricsService()
         let hangMetricsService = HangMetricsService()
         let statisticsService = StatisticsService()
@@ -270,7 +291,10 @@ struct Launching: LaunchingHandling {
                                                             idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                             aiChatBonusStateProvider: aiChatBonusService,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
-        let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
+        let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+                                                      featureFlagger: featureFlagger,
+                                                      onboardingVPNExperimentMetrics: .live,
+                                                      notificationCenter: .default)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
@@ -359,7 +383,7 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
-        let usageContextProvider = UsageContextProvider()
+        let usageContextProvider = UsageContextProvider(featureFlagger: featureFlagger)
         mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                               syncService: syncService,
                                               contentBlockingService: contentBlockingService,
@@ -399,7 +423,8 @@ struct Launching: LaunchingHandling {
                                               onboardingManager: onboardingManager,
                                               eventHub: eventHubService.eventHub,
                                               usageContextProvider: usageContextProvider,
-                                              promptExposureReporter: promptExposureReporter
+                                              promptExposureReporter: promptExposureReporter,
+                                              translationModels: translationModels
         )
         launchBreadcrumb.mark(.mainCoordinator)
 
@@ -423,7 +448,8 @@ struct Launching: LaunchingHandling {
         let vpnService = VPNService(mainCoordinator: mainCoordinator,
                                     notificationServiceManager: notificationServiceManager,
                                     onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
-                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
+                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore),
+                                    onboardingVPNExperimentMetrics: .live)
         let aiChatService = AIChatService(
             aiChatSettings: aiChatSettings,
             aiChatBonusService: aiChatBonusService,
@@ -502,6 +528,7 @@ struct Launching: LaunchingHandling {
                 await dbpService.prepareSecureVaultResourcesAtLaunch()
 #if DEBUG
                 await dbpService.startDebugServerIfRequestedAtLaunch()
+                await dbpService.seedProfileIfRequestedAtLaunch()
 #endif
                 taskContext.finish()
             }
@@ -597,6 +624,26 @@ struct Launching: LaunchingHandling {
             Logger.aiChat.error("[NativeStorage] Handler init failed: \(error)")
             return nil
         }
+    }
+
+    /// Nil when web page translation is off, or when its store or models folder can't be opened:
+    /// translation is then unavailable rather than failing launch.
+    private static func makeTranslationModels(featureFlagger: FeatureFlagger) -> TranslationModels? {
+        guard featureFlagger.isFeatureOn(.pageTranslation) else {
+            return nil
+        }
+
+        guard let applicationSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        // Translation gets its own store, so its cached manifest never shares a file with app settings.
+        guard let keyValueStore = try? KeyValueFileStore(location: applicationSupport, name: "WebPageTranslationStore") else {
+            return nil
+        }
+
+        let modelsDirectory = applicationSupport.appendingPathComponent("WebPageTranslation")
+        return try? TranslationModels(directory: modelsDirectory, keyValueStore: keyValueStore)
     }
 
     private func logAppLaunchTime() {

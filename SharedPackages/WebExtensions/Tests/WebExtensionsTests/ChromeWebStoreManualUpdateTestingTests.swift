@@ -168,7 +168,7 @@ final class ChromeWebStoreManualUpdateTestingTests: XCTestCase {
     private func makeManager(updateApplicationPolicy: ((WebExtensionManager) -> (@MainActor (String) -> Bool))? = nil,
                              activityUpdates: AnyPublisher<Void, Never>? = nil) -> WebExtensionManager {
         let manager = testing.makeManager(configuration: WebExtensionConfigurationProvidingMock(), windowTabProvider: WebExtensionWindowTabProvidingMock(),
-                                          permissionPrompter: NoPrompt(), enforcesPermissions: false, presenter: NoPresenter(),
+                                          permissionPrompter: ApprovingPrompt(), presenter: NoPresenter(),
                                           updateApplicationPolicy: updateApplicationPolicy, updateApplicationActivityUpdates: activityUpdates)
         managers.append(manager)
         return manager
@@ -188,10 +188,9 @@ final class ChromeWebStoreManualUpdateTestingTests: XCTestCase {
 
 @available(macOS 15.4, *)
 @MainActor
-private struct NoPrompt: WebExtensionPermissionPrompting {
+private struct ApprovingPrompt: WebExtensionPermissionPrompting {
     func confirmInstallation(of webExtension: WKWebExtension, permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
-        XCTFail("This test uses legacy implicit consent")
-        return .denied
+        .granted(privateDataAccess: false)
     }
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult { .denied }
 }

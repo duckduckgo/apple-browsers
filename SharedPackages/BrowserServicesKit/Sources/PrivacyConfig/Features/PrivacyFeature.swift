@@ -21,6 +21,7 @@ import Foundation
 /// Features whose `rawValue` should be the key to access their corresponding `PrivacyConfigurationData.PrivacyFeature` object
 public enum PrivacyFeature: String {
     case contentBlocking
+    case trackerProtection
     case duckPlayer
     case fingerprintingTemporaryStorage
     case fingerprintingBattery
@@ -70,7 +71,7 @@ public enum PrivacyFeature: String {
     case contentScopeExperiments
     case macOSBrowserConfig
     case iOSBrowserConfig
-    case sponsorBlock
+    case segmentSkip
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case delayedWebviewPresentation
@@ -93,6 +94,7 @@ public enum PrivacyFeature: String {
     case adBlockingExtension
     case eventHub
     case aiChatBrowserTools
+    case pageTranslation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -203,10 +205,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212762049862432?focus=true
     case memoryUsageReporting
 
-    /// Failsafe flag for disabling call stack tree depth limiting in crash collector
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
-    case crashCollectionLimitCallStackTreeDepth
-
     /// Ctrl+click compatibility fix to preserve right click behavior
     case controlClickFix
 
@@ -227,12 +225,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Option to install Chrome extension during onboarding (DMG only)
     case onboardingChromeExtension
 
-    /// Allows browsing before completing onboarding.
-    case onboardingAsync
-
-    /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlockingV2
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220508765107909
     case onboardingSearchOrChat
 
@@ -248,6 +240,25 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Page Signals: Extended Site Breakage Diagostics
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
     case pageSignals
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220580902953934
+    case fastTrackingParameterFilter
+
+    /// Shows the Add to Dock instructions video in the App Store build from calls to action that only offer Add to Dock: the menu items, the New Tab Page card, and Default Browser and Dock prompts that only offer Add to Dock.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220563610417806
+    case appStoreAddToDockOnlyCTA
+
+    /// Shows the Add to Dock instructions video before Set as Default in the App Store build, from Default Browser and Dock prompts that offer both actions.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220622522685112
+    case appStoreBothDefaultBrowserAndDockCTA
+
+    /// Declared Age Range: age signal request
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220879781552636
+    case declaredAgeRange
+
+    /// Declared Age Range: age signal request in Sparkle builds
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220932696755654
+    case declaredAgeRangeSparkle
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -418,6 +429,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220139278590013
     case unifiedToggleInputKeyboardEdgeSweep
 
+    /// Shows chips for what Duck.ai can do above the native input on a blank new chat (iPhone).
+    /// https://app.asana.com/0/0/1218264470262324/f
+    case newChatHints
+    /// Simplifies the Duck.ai prompt box on iPhone: one ⊕ menu holds the attachments and tools, the tools button
+    /// and Customize Responses leave the input, and Chats gets a Duck.ai Settings button.
+    /// https://app.asana.com/0/0/1220262271015348/f
+    case unifiedToggleInputSimplifiedPromptBox
+
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     case iPadAttachmentPrivacy
 
@@ -466,6 +485,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables handing a PDF tab to Duck.ai as page context (bytes instead of markdown)
     case pdfPageContext
+
+    /// "Ask about page" in the context menu of links on DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case askAboutSerpPage
+
+    /// "Ask about page" in the context menu of links on any page other than DuckDuckGo search results.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220825665863928
+    case askAboutLinkedPage
 
     /// Attaches page context to the sidebar by default; a manual remove lasts across navigation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219574855267767?focus=true
@@ -629,6 +656,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// iOS only. Pulling up past the bottom of a Duck.ai chat opens a new chat in a new tab.
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1220098815607998
     case swipeUpNewChat
+
+    /// New Duck.ai chats start on the default model and effort instead of the last one picked.
+    /// https://app.asana.com/1/137249556945/task/1220520342210072
+    case newChatDefaultModel
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -658,6 +689,34 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Paints previously-found matches on a page.
     case highlightInPage
+
+    /// Pins open tabs in the owner tab's window.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case pinTab
+
+    /// Opens a URL in a new tab.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case openTab
+
+    /// Closes open tabs in the owner tab's window.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case closeTabs
+
+    /// Bookmarks an open tab, optionally into a folder path.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case bookmarkTab
+
+    /// Searches completed downloads by file name and source URL.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case searchDownloads
+
+    /// Searches bookmarks by title, URL and folder, optionally within a folder path.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217165044799340
+    case searchBookmarks
+
+    /// One prompt for the browser tools a chat expects to use, granted for that chat.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1220527012152895
+    case requestAccess
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -716,10 +775,6 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Toggle for the Copy VPN Diagnostics button in VPN settings/status.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215794369750045
     case showCopyDiagnosticsButton
-
-    /// VPN Session Health Telemetry
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218245909089002?focus=true
-    case sessionHealthTelemetry
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -753,6 +808,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
     case improvedPairingFlow
+
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1220380918806338
+    case sendSyncSetupWideEvent
 }
 
 public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
@@ -764,7 +822,11 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case filterlist
     case heuristicAction
     case heuristicHitTest
+    case popupMutationObserver
     case cookiePopupOptInDialog
+    /// The extension reports how far each page's init got, and the app puts the last step in the breakage pixel.
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1220422645861893?focus=true
+    case cpmInitProgress
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
@@ -774,13 +836,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchaseStripe
     case useUnifiedFeedback
     case privacyProOnboardingPromotion
-    case paidAIChat
     case supportsAlternateStripePaymentFlow
     case stripeProductsByPlanCountry
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
-    case allowProTierPurchase
     case freeTrialConversionWideEvent
     case subscriptionPromoForReinstallers
     case subscriptionExpirationReminderNotification
@@ -791,7 +851,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionOnboardingPaidSubsOct2026
     case subscriptionOnboardingFreeTrialsNov2026
     case subscriptionOnboardingPaidSubsNov2026
-    case onboardingSubscriptionUpsellExperiment
 
     /// Gates the server-rendered first paywall.
     case performanceOptimizedPaywalls
@@ -809,6 +868,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// iOS onboarding experiment that adds VPN as a download reason.
     case onboardingVPNDownloadReasonExperiment
+
+    /// Gates the AuthV2 backup token: when off, the main apps neither create, renew nor restore from it.
+    /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1219771272198496
+    /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1219810901971905
+    case authBackupToken
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -821,8 +885,8 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case nativeUI // Use Duckplayer's native UI
 }
 
-public enum SponsorBlockPrivacySubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .sponsorBlock }
+public enum SegmentSkipPrivacySubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .segmentSkip }
     case mvpEnabled
 }
 
@@ -890,6 +954,15 @@ public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
     case tdsNextExperiment030
 }
 
+/// Subfeatures of the `trackerProtection` feature, which configures the content-scope-scripts tracker protection (surrogates).
+/// Named with `Config` to avoid clashing with `TrackerProtectionSubfeature`, the content-scope-scripts message handler.
+public enum TrackerProtectionConfigSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .trackerProtection }
+
+    /// Serve surrogates from the embedded web extension instead of content-scope-scripts.
+    case appleSurrogateRedirection
+}
+
 public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
@@ -949,8 +1022,6 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
-    /// Controls permission prompts and persistence on macOS.
-    case permissions
     /// Controls Chrome Web Store update discovery on macOS.
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1220303318554449
     case updateDiscovery
@@ -972,8 +1043,6 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Failsafe for upgrading only CPM before launch load and carrying its origin to the replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
     case cpmUpgradeBeforeLoad
-    /// Controls native messaging between web extensions and host apps on macOS.
-    case nativeMessaging
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
@@ -1011,47 +1080,11 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
-    case bookmarkToolbarPromo
-
-    /// Kill switch for the Sync Favicons ("Download Missing Icons?") promo.
-    case syncFaviconsPromo
-
-    /// Kill switch for the Autofill Toolbar Pinning ("Add passwords shortcut?") promo.
-    case autofillToolbarPinningPromo
-
-    /// Kill switch for the Cookie Pop-ups Blocked promo.
-    case cookiePopupsBlockedPromo
-
-    /// Kill switch for observing the Duck Player ("Watch in Duck Player?") overlay.
-    case duckPlayerOverlayPromo
-
-    /// Kill switch for the "Update available" promo.
-    case updateAvailablePromo
-
-    /// Kill switch for the "Browser updated" promo.
-    case browserUpdatedPromo
-
-    /// Kill switch for the VPN toolbar upsell button and dot badge promos.
-    case vpnUpsellPromo
-
     /// Kill switch for the "Sync your bookmarks" promo.
     case syncSetupBookmarksPromo
 
     /// Kill switch for the "Sync your autofill data" promo.
     case syncSetupAutofillPromo
-
-    /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
-    case bookmarksBarSyncPromo
-
-    /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
-    case bookmarkAddedSyncPromo
-
-    /// Kill switch for the import/sync promo on the Bookmarks "No bookmarks yet" empty state.
-    case bookmarksEmptyStatePromo
-
-    /// Kill switch for the import/sync promo on the Passwords panel empty states.
-    case autofillEmptyStatePromo
 
     /// Kill switch for the default browser win-back modal.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220012766503746?focus=true
@@ -1100,6 +1133,13 @@ public enum PageContextSubfeature: String, PrivacySubfeature {
     case featureEnabled
 }
 
+public enum PageTranslationSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .pageTranslation }
+
+    /// On-device web page translation (iOS).
+    case featureEnabled
+}
+
 public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .tabSwitcherTrackerCount }
 
@@ -1110,6 +1150,9 @@ public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extensionManagement }
 
     case isLaunchedExtensions
+    /// Enables web extensions for internal users on macOS, independently of `isLaunchedExtensions`.
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1220747893847476
+    case isLaunchedExtensionsInternal
 }
 
 public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature {

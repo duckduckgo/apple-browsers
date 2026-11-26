@@ -510,7 +510,11 @@ struct Launching: LaunchingHandling {
                                wideEventService: wideEventService,
                                aiChatService: aiChatService,
                                applicationShortcutItemsService: applicationShortcutItemsService,
-                               eventHubService: eventHubService
+                               eventHubService: eventHubService,
+                               updatePromptService: UpdatePromptService(
+                                   storage: appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring(),
+                                   featureFlagger: featureFlagger
+                               )
         )
 
         // Clean up wide event data at launch

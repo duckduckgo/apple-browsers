@@ -62,6 +62,7 @@ struct AppServices {
     let aiChatService: AIChatService
     let applicationShortcutItemsService: ApplicationShortcutItemsService
     let eventHubService: EventHubService
+    let updatePromptService: UpdatePromptService
 
 }
 

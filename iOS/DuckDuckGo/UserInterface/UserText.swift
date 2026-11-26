@@ -2353,6 +2353,8 @@ public struct UserText {
     public static let autocompleteSearchDuckDuckGo = NSLocalizedString("autocomplete.history.search.duckduckgo", value: "Search DuckDuckGo", comment: "Subtitle for search history items")
     public static let autocompleteSwitchToTab = NSLocalizedString("autocomplete.switch.to.tab", value: "Switch to Tab", comment: "Switch to tab hint")
 
+    public static let autocompleteAskDuckAITitle = NSLocalizedString("autocomplete.ask-duckai.title", value: "Ask Duck.ai", comment: "Title of the Ask Duck.ai row in address bar suggestions; the user's typed query is shown under it.")
+
     // It's the same and unlikely to change/be different but putting a placeholder in case it ever does
     public static let autocompleteAskAIChat = UserText.searchInputFieldPlaceholderDuckAI
 

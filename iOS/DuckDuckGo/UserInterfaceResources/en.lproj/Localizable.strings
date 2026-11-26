@@ -829,6 +829,9 @@
 /* No comment provided by engineer. */
 "autoclear.on" = "On";
 
+/* Title of the Ask Duck.ai row in address bar suggestions; the user's typed query is shown under it. */
+"autocomplete.ask-duckai.title" = "Ask Duck.ai";
+
 /* Subtitle for search history items */
 "autocomplete.history.search.duckduckgo" = "Search DuckDuckGo";
 

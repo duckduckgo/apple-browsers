@@ -1690,11 +1690,6 @@ extension MainViewController: UnifiedToggleInputDelegate {
         unifiedToggleInputCoordinator?.startVoiceSessionInCurrentChat()
     }
 
-    /// At the top: the keyboard is usually up when the button is tapped, and it covers the bottom toast.
-    func unifiedToggleInputDidTapUnavailableAIVoiceChat(message: String) {
-        ActionMessageView.present(message: message, presentationLocation: .top)
-    }
-
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
         // Coordinator-resolved: empty = untouched prefill (open Duck.ai, no prompt), else submit as the prompt.
         openUnifiedToggleInputAIShortcutChat(prompt: prefilledText.trimmingWhitespace())

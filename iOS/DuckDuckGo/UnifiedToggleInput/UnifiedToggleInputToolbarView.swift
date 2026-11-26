@@ -27,7 +27,7 @@ enum UnifiedToggleInputVoiceButton: Equatable {
     /// The send arrow instead, disabled until the user types.
     case hidden
     case available
-    /// The voice glyph in the inactive fill; a tap shows `message`, the page's reason.
+    /// The voice glyph in the inactive fill; VoiceOver reads `message`, the page's reason, as the hint.
     case unavailable(message: String)
 }
 
@@ -941,7 +941,7 @@ private extension UnifiedToggleInputToolbarView {
         setNeedsLayout()
     }
 
-    /// Still tappable, so a tap can say why voice can't continue this chat.
+    /// Still tappable, so taps on it are counted.
     private func applyAIVoiceChatUnavailableStyle() {
         submitButton.applySubmitStyle(isActive: false, isFireTab: isFireTab, activeForeground: .white)
     }

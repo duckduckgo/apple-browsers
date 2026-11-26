@@ -38,8 +38,6 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     /// Voice continues the bound chat: the host checks the microphone, then calls the coordinator's
     /// `startVoiceSessionInCurrentChat()`.
     func unifiedToggleInputDidRequestAIVoiceChatInCurrentChat()
-    /// `message` is the page's reason voice can't continue this chat.
-    func unifiedToggleInputDidTapUnavailableAIVoiceChat(message: String)
     func unifiedToggleInputDidRequestAIChat(prefilledText: String)
     func unifiedToggleInputDidChangeHeight()
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode)
@@ -78,5 +76,4 @@ extension UnifiedToggleInputDelegate {
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {}
     func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {}
     func unifiedToggleInputDidRequestAIVoiceChatInCurrentChat() {}
-    func unifiedToggleInputDidTapUnavailableAIVoiceChat(message: String) {}
 }

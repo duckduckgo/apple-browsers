@@ -3165,14 +3165,14 @@ private extension UnifiedToggleInputCoordinator {
             .store(in: &cancellables)
     }
 
-    /// A chat with messages continues by voice, or says why it can't; anything else starts a new voice chat as before.
+    /// A chat with messages continues by voice when the page allows it; anything else starts a new voice chat as before.
+    /// A tap while unavailable only counts: how to show the page's reason on touch is an open design question.
     private func handleAIVoiceChatTap() {
         switch (hasSubmittedPrompt, toolbarVoiceButton) {
-        case (true, .unavailable(let message)):
+        case (true, .unavailable):
             if case .unavailable(let reason, _) = voiceInChatAvailability {
                 pixelReporter.reportVoiceInChatUnavailableTapped(reason: reason)
             }
-            delegate?.unifiedToggleInputDidTapUnavailableAIVoiceChat(message: message)
         case (true, .available):
             reportVoiceStarted()
             delegate?.unifiedToggleInputDidRequestAIVoiceChatInCurrentChat()

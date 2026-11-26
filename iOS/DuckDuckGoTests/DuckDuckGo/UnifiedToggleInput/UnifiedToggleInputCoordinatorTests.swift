@@ -4734,8 +4734,6 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     func unifiedToggleInputDidRequestAIVoiceChat() { didRequestAIVoiceChatCount += 1 }
     var didRequestAIVoiceChatInCurrentChatCount = 0
     func unifiedToggleInputDidRequestAIVoiceChatInCurrentChat() { didRequestAIVoiceChatInCurrentChatCount += 1 }
-    var unavailableVoiceMessages: [String] = []
-    func unifiedToggleInputDidTapUnavailableAIVoiceChat(message: String) { unavailableVoiceMessages.append(message) }
     var didRequestAIChatPrefilledText: String?
     func unifiedToggleInputDidRequestAIChat(prefilledText: String) {
         didRequestAIChatCount += 1
@@ -4967,7 +4965,7 @@ extension UnifiedToggleInputCoordinatorTests {
         }
     }
 
-    func testTapWhileUnavailableShowsThePagesReasonAndStartsNothing() {
+    func testTapWhileUnavailableCountsTheTapAndStartsNothing() {
         let pixelKit = PixelKitMock()
         let coordinator = makeVoiceInChatCoordinator(pixelKit: pixelKit)
         let webView = VoicePushRecordingWebView()
@@ -4978,7 +4976,6 @@ extension UnifiedToggleInputCoordinatorTests {
         coordinator.viewController.handler.aiVoiceChatButtonTapped()
         coordinator.startVoiceSessionInCurrentChat()
 
-        XCTAssertEqual(mockDelegate.unavailableVoiceMessages, [Self.filesMessage])
         XCTAssertEqual(mockDelegate.didRequestAIVoiceChatCount, 0)
         XCTAssertEqual(mockDelegate.didRequestAIVoiceChatInCurrentChatCount, 0)
         XCTAssertTrue(pixelKit.actualFireCalls.filter { $0.pixel.name == Pixel.Event.unifiedToggleInputVoiceTapped.name }.isEmpty)

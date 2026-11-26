@@ -213,6 +213,9 @@ extension DebugScreensViewModel {
                     remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler
                 )
             }),
+            .view(title: "Update Prompt", { d in
+                UpdatePromptDebugView(keyValueStore: d.keyValueStore)
+            }),
             .view(title: "Next Steps Dismissal", { d in
                 SettingsNextStepsDebugView(keyValueStore: d.keyValueStore)
             }),

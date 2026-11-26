@@ -75,6 +75,31 @@ struct PageTranslationSessionTests {
             continuation?.resume()
             continuation = nil
         }
+
+        /// The pair is installed unless a test gives `prepare` a download to report: `downloadProgress`, then
+        /// `downloadError` or the end, or a download held open with `holdsDownload` until the session stops listening.
+        var downloadProgress: [Double] = []
+        var downloadError: Error?
+        var holdsDownload = false
+        private(set) var stoppedListening = false
+        private(set) var isDownloadHeld = false
+
+        func prepare(_ pairID: String) -> AsyncThrowingStream<Double, Error> {
+            AsyncThrowingStream { continuation in
+                guard !downloadProgress.isEmpty || downloadError != nil || holdsDownload else {
+                    continuation.yield(1)
+                    continuation.finish()
+                    return
+                }
+                downloadProgress.forEach { continuation.yield($0) }
+                if holdsDownload {
+                    continuation.onTermination = { [weak self] _ in self?.stoppedListening = true }
+                    isDownloadHeld = true
+                    return
+                }
+                continuation.finish(throwing: downloadError)
+            }
+        }
     }
 
     private final class ProgressSpy: PageTranslationProgress {
@@ -214,6 +239,58 @@ struct PageTranslationSessionTests {
 
         #expect(bridge.applied.count == 1)
         #expect(progress.events == ["start"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a download fills the first 80% of the bar, then the visible part the rest", .timeLimit(.minutes(1)))
+    func downloadThenTranslateProgress() async {
+        bridge.units = units(visible: Set(1...5))
+        translator.downloadProgress = [0.5, 1]
+        let session = makeSession()
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(progress.events == ["start", "0.4", "0.8", "1.0", "finish"])
+        #expect(bridge.applied.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("cancelling during the download stops the session without finishing the bar", .timeLimit(.minutes(1)))
+    func cancelDuringDownloadStopsTheSession() async {
+        bridge.units = units(visible: [5])
+        translator.downloadProgress = [0.5]
+        translator.holdsDownload = true
+        let session = makeSession()
+
+        session.start(offer)
+        // Stops when the time limit cancels the test, so a session that never downloads fails instead of hanging.
+        while (!translator.isDownloadHeld || progress.events.count < 2) && !Task.isCancelled {
+            await Task.yield()
+        }
+        session.cancel()
+        await waitUntilDone(session)
+
+        #expect(translator.stoppedListening)
+        #expect(translator.calls.isEmpty)
+        #expect(bridge.applied.isEmpty)
+        #expect(progress.events == ["start", "0.4"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("a failed download ends the translation and finishes the bar", .timeLimit(.minutes(1)))
+    func downloadFailureFinishesQuietly() async {
+        bridge.units = units(visible: [5])
+        translator.downloadProgress = [0.5]
+        translator.downloadError = PageTranslatorError.notInstalled("fr-en-base")
+        let session = makeSession()
+
+        session.start(offer)
+        await waitUntilDone(session)
+
+        #expect(translator.calls.isEmpty)
+        #expect(bridge.applied.isEmpty)
+        #expect(progress.events == ["start", "0.4", "finish"])
     }
 
     @available(iOS 16, macOS 13, *)

@@ -1093,7 +1093,8 @@ class MainViewController: UIViewController {
                                                               suggestionTrayDependencies: suggestionTrayDependencies,
                                                               appSettings: appSettings,
                                                               mobileCustomization: mobileCustomization,
-                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                              duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                              duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         viewCoordinator.navigationBarContainer.allowsOverflowHitTesting = true
         viewCoordinator.navigationBarCollectionView.allowsOverflowHitTesting = true
@@ -1308,7 +1309,8 @@ class MainViewController: UIViewController {
                                                       appSettings: appSettings,
                                                       daxEasterEggPresenter: daxEasterEggPresenter,
                                                       mobileCustomization: mobileCustomization,
-                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                                                      duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                      duckAiFireModeStorageHandler: duckAiFireModeStorageHandler)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,

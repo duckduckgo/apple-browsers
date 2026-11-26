@@ -220,7 +220,6 @@ extension PromoServiceFactoryTests {
             syncBookmarksAdapter: nil,
             pinningManager: MockPinningManager(),
             cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 keyValueStore: InMemoryThrowingKeyValueStore(),
                 windowControllersManager: windowControllersManager,
                 cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),

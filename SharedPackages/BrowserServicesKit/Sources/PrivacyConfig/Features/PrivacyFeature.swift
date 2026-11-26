@@ -864,6 +864,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
 
     /// iOS onboarding experiment that adds VPN as a download reason.
     case onboardingVPNDownloadReasonExperiment
+
+    /// Gates the AuthV2 backup token: when off, the main apps neither create, renew nor restore from it.
+    /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1219771272198496
+    /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1219810901971905
+    case authBackupToken
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -1070,9 +1075,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
-
-    /// Kill switch for the Cookie Pop-ups Blocked promo.
-    case cookiePopupsBlockedPromo
 
     /// Kill switch for the VPN toolbar upsell button and dot badge promos.
     case vpnUpsellPromo

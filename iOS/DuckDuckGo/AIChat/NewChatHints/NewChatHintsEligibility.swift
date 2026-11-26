@@ -23,7 +23,6 @@ import Foundation
 
 /// Hints are for returning users: someone who has sent a Duck.ai prompt and accepted the Terms of Service,
 /// and who hasn't ignored them often enough to reach the cap.
-/// The web app records the first prompt in its native storage, so a fresh install sees its own first-run pills instead.
 struct NewChatHintsEligibility {
 
     static let promptConversion = "duckai_prompt"

@@ -20,7 +20,6 @@
 import AIChat
 import BrowserServicesKit
 import Combine
-import Common
 import Core
 import DDGSync
 import FeatureFlags_iOS
@@ -182,7 +181,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             if isAIChatPromoVisible == true, let currentTabUID {
                 newChatHintsUsage.promoShown(tab: currentTabUID)
             }
-            if featureFlagger.isFeatureOn(.newChatHints) {
+            if newChatHintsFeature.isEnabled {
                 logNewChatHintsState()
             }
             refreshNewChatState()
@@ -197,10 +196,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     @Published private(set) var newChatState = NewChatState.none
     var isGuaranteedNewChat: Bool { newChatState.isGuaranteedNewChat }
     private let newChatHintsEligibility: NewChatHintsEligibility
-    private let isIPhone: Bool
+    private let newChatHintsFeature: NewChatHintsFeatureProviding
     private var isVoiceRequestedForPage = false
     private var voiceHoldRelease: DispatchWorkItem?
-    /// How long voice keeps holding hints off after it closes.
     var newChatVoiceHoldAfterClose: TimeInterval = 1
 
     /// The bound page sets this on every bind, so only `unbind` clears it.
@@ -487,7 +485,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
-        devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+        newChatHintsFeature: NewChatHintsFeatureProviding? = nil,
         newChatHintsUsage: NewChatHintsUsage? = nil,
         scheduleInputFocus: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) }
     ) {
@@ -501,8 +499,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.featureFlagger = featureFlagger
-        self.isIPhone = devicePlatform.isIphone
-        let newChatHintsUsage = newChatHintsUsage ?? NewChatHintsUsage(isFeatureEnabled: { featureFlagger.isFeatureOn(.newChatHints) })
+        let newChatHintsFeature = newChatHintsFeature ?? NewChatHintsFeature(featureFlagger: featureFlagger)
+        self.newChatHintsFeature = newChatHintsFeature
+        let newChatHintsUsage = newChatHintsUsage ?? NewChatHintsUsage(isFeatureEnabled: { newChatHintsFeature.isEnabled })
         self.newChatHintsUsage = newChatHintsUsage
         self.newChatHintsEligibility = NewChatHintsEligibility(storage: duckAiNativeStorageHandler,
                                                                fireModeStorage: duckAiFireModeStorageHandler,
@@ -756,7 +755,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.refreshNewChatState() }
             .store(in: &cancellables)
-        // The remote config can turn the hints on or off while a blank chat is open.
         featureFlagger.updatesPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.refreshNewChatState() }
@@ -1301,15 +1299,17 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         newChatHintsEligibility.isEligibleUser(isFireTab: viewController.handler.isFireTab)
     }
 
-    /// The page on this tab said no promo is showing. Silence counts as not clear.
     var isAIChatPromoClear: Bool { isAIChatPromoVisible == false }
 
     /// Runs with the flag off too: `aichat_new_chat_shown` counts new chats either way.
     private func refreshNewChatState() {
         defer { refreshNewChatHints() }
+        guard newChatHintsFeature.isSupported else {
+            newChatState = .none
+            return
+        }
         let url = boundUserScript?.webView?.url
         let state = NewChatState(
-            isIPhone: isIPhone,
             isFullTabInput: host == .omnibar && isAITabState,
             isTabSelected: currentTabUID != nil && boundUserScript != nil && boundUserScriptTabUID == currentTabUID,
             // The page reports `ready` once it can take a prompt; it never sends `showChatInput` on a plain load.
@@ -1460,7 +1460,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func logNewChatHintsState() {
         let state = newChatState
         let promo = isAIChatPromoVisible.map { String($0) } ?? "nil"
-        let terms = "iPhone=\(state.isIPhone) fullTab=\(state.isFullTabInput) selected=\(state.isTabSelected) "
+        let terms = "fullTab=\(state.isFullTabInput) selected=\(state.isTabSelected) "
             + "inputReady=\(state.isInputReady) hasChat=\(state.hasChat) carriesPrompt=\(state.carriesPrompt) "
             + "voice=\(state.isVoiceHeld) editing=\(state.isEditing)"
         Logger.unifiedInputState.debug("[NewChatHints] isGuaranteedNewChat=\(state.isGuaranteedNewChat, privacy: .public) promoVisible=\(promo, privacy: .public) [\(terms, privacy: .public)]")

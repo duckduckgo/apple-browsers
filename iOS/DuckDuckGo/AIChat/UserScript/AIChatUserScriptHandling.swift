@@ -278,11 +278,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor var isTermsOfServiceShownOnPage = false {
         didSet { inputBoxHandler?.isTermsOfServiceShownOnPage = isTermsOfServiceShownOnPage }
     }
-    /// Per page: the tab or contextual sheet clears it when a new document commits, since that page reports its promos again.
     @MainActor var isAIChatPromoVisible: Bool? {
         didSet { inputBoxHandler?.isAIChatPromoVisible = isAIChatPromoVisible }
     }
-    /// Per page, like the promo value: the page reports a state only when it changes, so a returning input box needs the last one.
+    /// The page reports a state only when it changes, so a returning input box needs the last one.
     @MainActor var aiChatStatusOnPage: AIChatStatusValue? {
         didSet {
             guard let aiChatStatusOnPage else { return }

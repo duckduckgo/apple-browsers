@@ -62,6 +62,7 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         let terms = DuckAiTermsOfServiceStore(keyValueStore: UserDefaults(suiteName: "NewChatHintsCoordinatorTests-\(UUID().uuidString)")!)
         terms.recordAcceptedOnWeb()
         let flagger = featureFlagger ?? MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : [])
+        let feature = NewChatHintsFeature(featureFlagger: flagger, devicePlatform: IPhone.self)
         return UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
@@ -73,9 +74,9 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
             usageLimitsStore: usageLimitsStore,
             featureFlagger: flagger,
             termsOfServiceStore: terms,
-            devicePlatform: IPhone.self,
+            newChatHintsFeature: feature,
             newChatHintsUsage: NewChatHintsUsage(capStore: capStore, pixelFiring: pixels,
-                                                 isFeatureEnabled: { flagger.isFeatureOn(.newChatHints) })
+                                                 isFeatureEnabled: { feature.isEnabled })
         )
     }
 

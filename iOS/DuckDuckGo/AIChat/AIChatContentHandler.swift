@@ -40,9 +40,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     @MainActor func willHandOff(_ payload: AIChatPayload)
     /// Whether the page holds a handed-off prompt behind its own Terms of Service card.
     @MainActor var isTermsOfServiceShownOnPage: Bool { get set }
-    /// What the page last said about its promos, `nil` until it says anything.
     @MainActor var isAIChatPromoVisible: Bool? { get set }
-    /// What the page last said about its response state, `nil` until it says anything.
     @MainActor var aiChatStatusOnPage: AIChatStatusValue? { get set }
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
     func setPageContextProvider(_ provider: PageContextAsyncProvider?)

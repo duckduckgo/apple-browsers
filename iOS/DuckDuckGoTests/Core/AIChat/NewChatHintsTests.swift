@@ -59,20 +59,19 @@ struct NewChatHintsInputsTests {
 @Suite("New chat state")
 struct NewChatStateTests {
 
-    private static let blankNewChat = NewChatState(isIPhone: true,
-                                                   isFullTabInput: true,
+    private static let blankNewChat = NewChatState(isFullTabInput: true,
                                                    isTabSelected: true,
                                                    isInputReady: true)
 
     @available(iOS 16, macOS 13, *)
-    @Test("A blank, settled, full-tab chat on the selected iPhone tab is a new chat", .timeLimit(.minutes(1)))
+    @Test("A blank, settled, full-tab chat on the selected tab is a new chat", .timeLimit(.minutes(1)))
     func blankNewChat() {
         #expect(Self.blankNewChat.isGuaranteedNewChat)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Each missing requirement rules it out", .timeLimit(.minutes(1)),
-          arguments: [\NewChatState.isIPhone, \.isFullTabInput, \.isTabSelected, \.isInputReady])
+          arguments: [\NewChatState.isFullTabInput, \.isTabSelected, \.isInputReady])
     func missingRequirement(term: WritableKeyPath<NewChatState, Bool>) {
         var state = Self.blankNewChat
         state[keyPath: term] = false

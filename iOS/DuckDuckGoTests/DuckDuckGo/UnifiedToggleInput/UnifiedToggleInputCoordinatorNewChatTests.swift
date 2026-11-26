@@ -34,21 +34,21 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     private func makeSUT(host: UnifiedToggleInputHost = .omnibar,
                          devicePlatform: DevicePlatformProviding.Type = IPhone.self,
                          isFlagOn: Bool = true) -> UnifiedToggleInputCoordinator {
-        UnifiedToggleInputCoordinator(
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : [])
+        return UnifiedToggleInputCoordinator(
             host: host,
             isToggleEnabled: true,
             preferences: NewChatTestPreferences(),
             toggleModeStorage: NewChatTestToggleModeStorage(),
             stateStore: NewChatTestStateStore(),
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : []),
-            devicePlatform: devicePlatform
+            featureFlagger: featureFlagger,
+            newChatHintsFeature: NewChatHintsFeature(featureFlagger: featureFlagger, devicePlatform: devicePlatform)
         )
     }
 
     /// The input holds its tab's script weakly, as the tab owns it.
     private let script = makeTestUserScript()
 
-    /// The Duck.ai tab is on screen with a blank chat, and the page is ready for a prompt.
     private func openBlankChat(_ sut: UnifiedToggleInputCoordinator, hasExistingChat: Bool = false) {
         sut.activateForTab("tab-A")
         sut.bindToTab(script, hasExistingChat: hasExistingChat)

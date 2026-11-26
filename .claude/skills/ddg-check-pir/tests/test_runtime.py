@@ -778,12 +778,12 @@ class LifecycleTests(unittest.TestCase):
         self.assertFalse(any(c[0] == "xcodebuild" and c[-1] == "build" for c, _ in self.tools.calls))
 
     def test_user_launch_profile_is_merged_over_the_base_profile(self):
-        instance = self.make_runtime(launch_profile={"onboardingCompleted": False, "featureFlags": {"x": True},
+        instance = self.make_runtime(launch_profile={"privacyConfigURL": "https://example.com/config.json", "featureFlags": {"x": True},
                                                      "featureFlags.y": False, "internalUser": True})
         instance.build()
         launched = instance.launch()
         command = next(c for c, _ in self.tools.calls if c[:3] == ["xcrun", "simctl", "launch"])
-        expected = {**runtime.IOS_LAUNCH_PROFILE, "onboardingCompleted": False, "featureFlags.x": True, "featureFlags.y": False}
+        expected = {**runtime.IOS_LAUNCH_PROFILE, "privacyConfigURL": "https://example.com/config.json", "featureFlags.x": True, "featureFlags.y": False}
         self.assertEqual(json.loads(command[command.index("-launchProfile") + 1]), expected)
         self.assertNotIn("isRunningUITests", command)
         self.assertEqual(launched["launchProfile"]["merged"], expected)
@@ -817,14 +817,15 @@ class LaunchProfileTests(unittest.TestCase):
         self.assertEqual(runtime.ios_launch_profile(), runtime.IOS_LAUNCH_PROFILE)
 
     def test_nested_and_dotted_user_keys_override_the_base(self):
-        merged = runtime.ios_launch_profile({"onboardingCompleted": False, "featureFlags": {"a": True, "b": {}},
+        merged = runtime.ios_launch_profile({"privacyConfigURL": "https://example.com/config.json", "featureFlags": {"a": True, "b": {}},
                                              "settings.theme": "dark"})
-        self.assertEqual(merged, {**runtime.IOS_LAUNCH_PROFILE, "onboardingCompleted": False, "featureFlags.a": True,
+        self.assertEqual(merged, {**runtime.IOS_LAUNCH_PROFILE, "privacyConfigURL": "https://example.com/config.json", "featureFlags.a": True,
                                   "featureFlags.b": {}, "settings.theme": "dark"})
 
     def test_required_entries_and_tabs_are_rejected(self):
         for profile, message in (([], "JSON object"),
                                  ({"internalUser": False}, "internalUser true"),
+                                 ({"onboardingCompleted": False}, "onboardingCompleted true"),
                                  ({"featureFlags": {"dbpCustomWebViewUserAgent": False}}, "dbpCustomWebViewUserAgent true"),
                                  ({"featureFlags.dbpExtractedProfileRefresh": 1}, "dbpExtractedProfileRefresh true"),
                                  ({"tabs": ["https://example.com"]}, "tabs"),

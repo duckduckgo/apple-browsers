@@ -342,10 +342,10 @@ class WorkflowTests(unittest.TestCase):
     def test_selftest_only_reads_native_endpoints_and_reports_owned_cleanup(self):
         self.auth_diagnostics["pirEndpoint"] = "https://dbp-staging.duckduckgo.com"
         args = pir.parser().parse_args(["selftest", "--platform", "ios", "--evidence-dir", str(self.directory / "evidence"),
-                                        "--launch-profile", '{"onboardingCompleted": false}'])
+                                        "--launch-profile", '{"privacyConfigURL": "https://example.com/config.json"}'])
         result = self.execute_args(args)
         self.assertEqual(result["status"], "pass", result)
-        self.assertEqual(self.instances[-1].kwargs["launch_profile"], {"onboardingCompleted": False})
+        self.assertEqual(self.instances[-1].kwargs["launch_profile"], {"privacyConfigURL": "https://example.com/config.json"})
         self.assertTrue(result["cleanup"]["stopped"])
         self.assertEqual(result["brokerRequests"], 0)
         self.assertFalse(self.instances[-1].snapshots_enabled)
@@ -424,9 +424,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result["launch"]["launchProfile"]["source"], source)
         self.assertEqual(json.loads((Path(result["evidence"]) / "launch.json").read_text())["launchProfile"]["source"], source)
         self.assertIn(pir.shlex.join(["--launch-profile", str(profile.resolve())]), result["rerun"])
-        inline = '{"onboardingCompleted": false}'
+        inline = '{"privacyConfigURL": "https://example.com/config.json"}'
         result = self.execute("--launch-profile", inline)
-        self.assertEqual(result["launch"]["launchProfile"]["source"], dict(inline={"onboardingCompleted": False}))
+        self.assertEqual(result["launch"]["launchProfile"]["source"], dict(inline={"privacyConfigURL": "https://example.com/config.json"}))
         self.assertIn(pir.shlex.join(["--launch-profile", inline]), result["rerun"])
 
     def test_rejected_launch_profile_is_inconclusive_with_profile_and_line_in_evidence(self):
@@ -456,8 +456,8 @@ class WorkflowTests(unittest.TestCase):
             with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, message):
                 pir.execute(self.args("--check-config", "--launch-profile", profile), self.Runtime)
         self.assertEqual(self.instances, [])
-        valid = pir.execute(self.args("--check-config", "--launch-profile", '{"onboardingCompleted": false}'), self.Runtime)
-        self.assertEqual(valid["launchProfile"], dict(inline={"onboardingCompleted": False}))
+        valid = pir.execute(self.args("--check-config", "--launch-profile", '{"privacyConfigURL": "https://example.com/config.json"}'), self.Runtime)
+        self.assertEqual(valid["launchProfile"], dict(inline={"privacyConfigURL": "https://example.com/config.json"}))
         self.assertFalse((self.directory / "evidence").exists())
 
     def test_optout_can_use_existing_subscription_without_injected_token(self):

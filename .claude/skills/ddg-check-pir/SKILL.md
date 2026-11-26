@@ -109,9 +109,8 @@ running. Don't point another debug client at an attempt in progress.
 
 Cleanup stops the owned app or agent even with `--keep`, which only keeps the simulator. It cannot undo a broker request.
 
-iOS commands take `--launch-profile <json|path>`: `ddg-ios-launch-profile` keys merged over a base keeping
-`internalUser` and both `dbp*` flags `true`, without `tabs`. A `LAUNCH_PROFILE_FAILED` or missing result line is
-inconclusive.
+iOS commands take `--launch-profile <json|path>`: `ddg-ios-launch-profile` keys over a fixed base (internal user, no
+onboarding, `dbp*` flags), without `tabs`. A `LAUNCH_PROFILE_FAILED` or missing result line is inconclusive.
 
 To inspect a running or stalled job, open the `snapshots/` folder the runner prints before launch (macOS writes PNGs
 directly; iOS copies them on each poll and before cleanup). Filenames give sequence, phase, action and capture point

@@ -34,7 +34,7 @@ MACOS_FLAG_ARGUMENTS = ["isRunningUITests", "-ff.dbpCustomWebViewUserAgent", "tr
                         "-ff.dbpExtractedProfileRefresh", "true"]
 IOS_LAUNCH_PROFILE = {"internalUser": True, "onboardingCompleted": True,
                       "featureFlags.dbpCustomWebViewUserAgent": True, "featureFlags.dbpExtractedProfileRefresh": True}
-REQUIRED_LAUNCH_PROFILE_KEYS = ("internalUser", "featureFlags.dbpCustomWebViewUserAgent",
+REQUIRED_LAUNCH_PROFILE_KEYS = ("internalUser", "onboardingCompleted", "featureFlags.dbpCustomWebViewUserAgent",
                                 "featureFlags.dbpExtractedProfileRefresh")
 LAUNCH_PROFILE_PREFIX = "LAUNCH_PROFILE_"
 LAUNCH_PROFILE_TIMEOUT = 60

@@ -3535,15 +3535,18 @@ public struct UserText {
     }
 
     public static func translationDownloadSheetTitle(language: String) -> String {
-        String(format: NSLocalizedString("translation.download-sheet.title", value: "Download %@ language pack?", comment: "Title of the sheet asking to download what's needed to translate pages in a language on the device, e.g. Download Spanish language pack?. %@ is the page's language"), language)
+        let message = NSLocalizedString("translation.download-sheet.title", value: "Download %@ language pack?", comment: "Title of the sheet asking to download what's needed to translate pages in a language on the device, e.g. Download Spanish language pack?. %@ is the page's language")
+        return message.format(arguments: language)
     }
 
     public static func translationDownloadSheetMessage(language: String) -> String {
-        String(format: NSLocalizedString("translation.download-sheet.message", value: "This one-time download lets you translate %@ pages privately on your device.", comment: "Explains the language pack download in the translation sheet. %@ is the page's language, e.g. Spanish"), language)
+        let message = NSLocalizedString("translation.download-sheet.message", value: "This one-time download lets you translate %@ pages privately on your device.", comment: "Explains the language pack download in the translation sheet. %@ is the page's language, e.g. Spanish")
+        return message.format(arguments: language)
     }
 
     public static func translationDownloadSheetSize(_ size: String) -> String {
-        String(format: NSLocalizedString("translation.download-sheet.size", value: "Download size: %@", comment: "Size of the language pack download in the translation sheet. %@ is a formatted file size, e.g. 23 MB"), size)
+        let message = NSLocalizedString("translation.download-sheet.size", value: "Download size: %@", comment: "Size of the language pack download in the translation sheet. %@ is a formatted file size, e.g. 23 MB")
+        return message.format(arguments: size)
     }
 
     public static let translationDownloadSheetButton = NSLocalizedString("translation.download-sheet.download", value: "Download and Translate", comment: "Button in the translation sheet that downloads the language pack and translates the current web page")

@@ -1601,6 +1601,21 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         cancellable.cancel()
     }
 
+    func testWhenUserDefaultChanges_ThenPagesAreToldToDropTheirPicksOnMain() async throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        let provider = try makeNewChatDefaultProvider(persistor: MockAIChatPreferencesPersisting(), storage: storage)
+        let told = expectation(description: "pages told to drop their picks")
+        let cancellable = provider.userDefaultModelChangesPublisher.sink {
+            XCTAssertTrue(Thread.isMainThread)
+            told.fulfill()
+        }
+
+        DispatchQueue.global().async { try? storage.putUserDefaultModel("luna") }
+
+        await fulfillment(of: [told], timeout: 1)
+        cancellable.cancel()
+    }
+
     func testWhenUserDefaultIsSet_ThenItAppliesOutsideDuckAiModeFromRegularStorage() throws {
         let storage = try DuckAiNativeStorageHandler(.memory())
         try storage.putUserDefaultModel("luna")

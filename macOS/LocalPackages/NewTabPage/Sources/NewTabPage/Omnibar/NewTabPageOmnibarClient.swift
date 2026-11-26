@@ -30,6 +30,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case getSuggestions = "omnibar_getSuggestions"
         case submitSearch = "omnibar_submitSearch"
         case onConfigUpdate = "omnibar_onConfigUpdate"
+        case onUserDefaultModelChange = "omnibar_onUserDefaultModelChange"
         case openSuggestion = "omnibar_openSuggestion"
         case submitChat = "omnibar_submitChat"
         case getAiChats = "omnibar_getAiChats"
@@ -121,6 +122,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             .sink { [weak self] _ in
                 Task { @MainActor in
                     await self?.refreshModelsAndNotify()
+                }
+            }
+            .store(in: &cancellables)
+
+        configProvider.userDefaultModelChangesPublisher
+            .sink { [weak self] in
+                Task { @MainActor in
+                    self?.pushMessage(named: MessageName.onUserDefaultModelChange.rawValue, params: nil)
                 }
             }
             .store(in: &cancellables)

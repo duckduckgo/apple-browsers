@@ -362,6 +362,7 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     @MainActor
     func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome { .handled }
     var usageLimitsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
+    var userDefaultModelChangesPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
     @MainActor var showAttachmentPrivacyDisclaimer: Bool { false }
     @MainActor
     func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {}

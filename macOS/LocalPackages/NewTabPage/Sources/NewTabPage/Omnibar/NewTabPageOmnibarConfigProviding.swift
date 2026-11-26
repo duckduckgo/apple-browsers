@@ -58,6 +58,9 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     /// `selectedReasoningEffort` are then the new-chat default, and web reports picks instead of writing them.
     var isModelPickPerTab: Bool { get }
 
+    /// Emits when the user changes their default model in Duck.ai settings, so every tab drops its pick.
+    var userDefaultModelChangesPublisher: AnyPublisher<Void, Never> { get }
+
     /// The model Create Image switches a tab to when the tab's model can't create images.
     @MainActor
     var preferredImageGenerationModelId: String? { get }

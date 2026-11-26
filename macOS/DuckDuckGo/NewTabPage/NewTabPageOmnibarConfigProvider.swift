@@ -102,6 +102,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     /// The persisted global pick; with new chats on the default, none, as each New Tab Page tab keeps its own.
     private let modelPick: DuckAIPublishingModelPickStoring
     let isModelPickPerTab: Bool
+    let userDefaultModelChangesPublisher: AnyPublisher<Void, Never>
     /// Set while new chats start on the default.
     private let newChatDefaults: AIChatNewChatDefaultSource?
     private let searchPreferences: SearchPreferences
@@ -158,6 +159,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.isModelPickPerTab = startsNewChatsOnDefault
         self.modelPick = startsNewChatsOnDefault ? WebKeptModelPickStore() : PersistedModelPickStore(preferences: aiChatPreferencesPersistor)
         self.newChatDefaults = startsNewChatsOnDefault ? newChatDefaults : nil
+        // One provider serves every page, so a Fire Window's page never re-points it.
+        let userDefaultModel = startsNewChatsOnDefault ? duckAiStorageHandlerProvider(.regular).map(DuckAiUserDefaultModelStore.init(storage:)) : nil
+        self.userDefaultModelChangesPublisher = userDefaultModel?.changes.receive(on: DispatchQueue.main).eraseToAnyPublisher()
+            ?? Empty().eraseToAnyPublisher()
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
@@ -173,8 +178,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
         defaultChangesCancellable = self.newChatDefaults?.defaultChanges
             .sink { [weak self] in self?.usageLimitsChangedSubject.send(()) }
-        // One provider serves every page, so a Fire Window's page never re-points it.
-        self.newChatDefaults?.observeUserDefaultModel(in: duckAiStorageHandlerProvider(.regular), receivingUpdatesOn: DispatchQueue.main)
+        self.newChatDefaults?.observeUserDefaultModel(userDefaultModel, receivingUpdatesOn: DispatchQueue.main)
 
         // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
         // NTPs update without waiting for their own toggle. The NTP's own paths notify directly.

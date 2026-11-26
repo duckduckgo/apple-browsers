@@ -69,6 +69,10 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
     }
 
     var isModelPickPerTab: Bool = false
+    let userDefaultModelChangesSubject = PassthroughSubject<Void, Never>()
+    var userDefaultModelChangesPublisher: AnyPublisher<Void, Never> {
+        userDefaultModelChangesSubject.eraseToAnyPublisher()
+    }
 
     @MainActor
     var preferredImageGenerationModelId: String?

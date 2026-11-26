@@ -717,6 +717,10 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220301490819843
     case idleReturnNewTabPageOnForeground
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220873927852212
+    /// Kill switch: keeps what the user opened while launch waits for App Lock or Automatically Delete Data.
+    case idleReturnLaunchWaitProtection
+
     /// Holds a background task assertion during `didFinishLaunching`, so iOS doesn't suspend the app mid-launch
     /// while it holds a lock on a shared App Group database (0xdead10cc).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220262683074513
@@ -1237,6 +1241,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageAtLaunch))
         case .idleReturnNewTabPageOnForeground:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnNewTabPageOnForeground))
+        case .idleReturnLaunchWaitProtection:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.idleReturnLaunchWaitProtection))
         case .launchBackgroundTask:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.launchBackgroundTask))
         case .hardwareKeyboardMonitoring:

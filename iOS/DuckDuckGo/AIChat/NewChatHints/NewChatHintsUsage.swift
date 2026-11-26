@@ -85,11 +85,13 @@ final class NewChatHintsUsage {
 
     var isCapReached: Bool { capStore.isReached }
 
-    /// A tab is on a guaranteed new chat. Counts it once, until it leaves that chat.
-    func newChatShown(tab: TabUID, isFireTab: Bool) {
-        guard newChats[tab] == nil else { return }
+    /// A tab is on a guaranteed new chat. Counts it once, until it leaves that chat. Returns whether this started it.
+    @discardableResult
+    func newChatShown(tab: TabUID, isFireTab: Bool) -> Bool {
+        guard newChats[tab] == nil else { return false }
         newChats[tab] = NewChat(isFireTab: isFireTab)
         fire(.newChatShown(isFeatureEnabled: isFeatureEnabled()))
+        return true
     }
 
     /// `hints` are on screen, in this order. Fires once per new chat.

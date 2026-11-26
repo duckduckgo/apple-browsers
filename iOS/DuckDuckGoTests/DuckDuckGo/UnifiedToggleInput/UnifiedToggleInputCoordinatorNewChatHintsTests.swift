@@ -338,17 +338,20 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A new chat started in place counts as a new chat, not the one it replaced", .timeLimit(.minutes(1)))
+    @Test("A new chat started in place counts as a new chat, and the hints still on screen count as shown in it",
+          .timeLimit(.minutes(1)))
     func newChatInPlaceCountsAgain() async throws {
         let sut = try makeSUT()
         try await openBlankChat(sut)
         sut.newChatHintsDidAppear(sut.newChatHints)
 
         sut.startNewChat()
+        #expect(sut.newChatHints == tabOrder)
         submitPrompt(sut)
 
         #expect(fired("aichat_new_chat_shown").count == 2)
-        #expect(fired("aichat_new_chat_first_prompt_sent").map { $0?["hints_shown"] } == ["false"])
+        #expect(fired("aichat_new_chat_hints_shown").count == 2)
+        #expect(fired("aichat_new_chat_first_prompt_sent").map { $0?["hints_shown"] } == ["true"])
     }
 
     @available(iOS 16, macOS 13, *)

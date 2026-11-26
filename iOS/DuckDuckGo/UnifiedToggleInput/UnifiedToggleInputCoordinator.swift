@@ -1337,8 +1337,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             publishNewChatHints([])
             return
         }
+        var isChatStarted = false
         if state.isGuaranteedNewChat {
-            newChatHintsUsage.newChatShown(tab: tab, isFireTab: viewController.handler.isFireTab)
+            isChatStarted = newChatHintsUsage.newChatShown(tab: tab, isFireTab: viewController.handler.isFireTab)
         } else if state.isFullTabInput, state.hasChat || state.carriesPrompt {
             newChatHintsUsage.leftNewChat(tab: tab)
         }
@@ -1359,7 +1360,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             isDraftEmpty: true,
             availableHints: NewChatHint.displayOrder.filter(canOfferNewChatHint)
         )
-        publishNewChatHints(inputs.visibleHints)
+        let hints = inputs.visibleHints
+        // New Chat in place starts a chat under hints already on screen; the row only reports a changed list.
+        if isChatStarted, !hints.isEmpty, hints == newChatHints {
+            newChatHintsDidAppear(hints)
+        }
+        publishNewChatHints(hints)
     }
 
     /// `tab` is on screen showing something other than Duck.ai, so any new chat it had is over. Not called for a tab

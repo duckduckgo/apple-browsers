@@ -126,6 +126,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private var customizeResponsesChangeObserver: NSObjectProtocol?
     private var attachmentPrivacyChangeObserver: NSObjectProtocol?
 
+    @MainActor
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
@@ -171,7 +172,8 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         defaultChangesCancellable = self.newChatDefaults?.defaultChanges
             .sink { [weak self] in self?.usageLimitsChangedSubject.send(()) }
         // One provider serves every page, so a Fire Window's page never re-points it.
-        self.newChatDefaults?.observeUserDefaultModel(in: duckAiStorageHandlerProvider(.regular), receivingUpdatesOn: DispatchQueue.main)
+        observeUserDefaultModel(in: duckAiStorageHandlerProvider(.regular))
+        endPickWhenAnotherTabShowsTheNewTabPage()
 
         // Address-bar Customize Responses changes (modal or toggle) post this; re-push config so open
         // NTPs update without waiting for their own toggle. The NTP's own paths notify directly.
@@ -345,7 +347,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     func chatSubmitted() {
-        modelPick.promptSent()
+        modelPick.endPick()
     }
 
     var isReasoningEffortEnabled: Bool {
@@ -455,6 +457,43 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private var highUsageNoticeSource: AIChatHighUsageNoticeSource?
     private var usageLimitsCancellables = Set<AnyCancellable>()
     private var defaultChangesCancellable: AnyCancellable?
+    private var userDefaultModelChangesCancellable: AnyCancellable?
+    private var newTabPageTabIDsSincePickEnded: Set<String> = []
+    private var newTabPageTabsCancellable: AnyCancellable?
+
+    /// Every page shares one pick, so it ends once the page shows for a tab it hasn't shown on since.
+    @MainActor
+    private func endPickWhenAnotherTabShowsTheNewTabPage() {
+        guard newChatDefaults != nil, let windowControllersManager else { return }
+        newTabPageTabIDsSincePickEnded = Self.newTabPageTabIDsShown(in: windowControllersManager)
+        newTabPageTabsCancellable = windowControllersManager.tabsChanged
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self, weak windowControllersManager] in
+                guard let self, let windowControllersManager else { return }
+                let shownTabIDs = Self.newTabPageTabIDsShown(in: windowControllersManager)
+                guard !shownTabIDs.isSubset(of: newTabPageTabIDsSincePickEnded) else { return }
+                modelPick.endPick()
+                newTabPageTabIDsSincePickEnded = shownTabIDs
+            }
+    }
+
+    @MainActor
+    private static func newTabPageTabIDsShown(in windowControllersManager: WindowControllersManagerProtocol) -> Set<String> {
+        Set(windowControllersManager.allTabCollectionViewModels.compactMap { tabs in
+            guard let tab = tabs.selectedTabViewModel?.tab, case .newtab = tab.content else { return nil }
+            return tab.uuid
+        })
+    }
+
+    /// Every page shares one pick, so a new user default ends it and all pages start on that default.
+    private func observeUserDefaultModel(in storage: DuckAiNativeStorageHandling?) {
+        guard let newChatDefaults, let storage else { return }
+        let userDefaultModel = DuckAiUserDefaultModelStore(storage: storage)
+        newChatDefaults.observeUserDefaultModel(userDefaultModel, receivingUpdatesOn: DispatchQueue.main)
+        userDefaultModelChangesCancellable = userDefaultModel.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.modelPick.endPick() }
+    }
 
     var usageLimitsPublisher: AnyPublisher<Void, Never> {
         usageLimitsChangedSubject.eraseToAnyPublisher()

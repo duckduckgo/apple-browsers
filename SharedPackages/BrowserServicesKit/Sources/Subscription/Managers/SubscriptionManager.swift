@@ -278,6 +278,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     private let isAuthV2WideEventEnabled: () -> Bool
     private let authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting?
     private let tierOptionsProvider: SubscriptionTierOptionsProviding
+    /// The device clock's skew from the auth server's, measured by the auth service from its responses.
+    public let clockSkewMonitor: ClockSkewMonitor
     private let invalidTokenRecoveryInterval: TimeInterval
     private let uptime: () -> TimeInterval
     private let recoveryLock = NSLock()
@@ -297,9 +299,11 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 authV2TokenRefreshInstrumentation: AuthV2TokenRefreshInstrumenting? = nil,
                 isStripeProductsByPlanCountryEnabled: @escaping () -> Bool = { true },
                 tierOptionsProvider: SubscriptionTierOptionsProviding? = nil,
+                clockSkewMonitor: ClockSkewMonitor = .shared,
                 invalidTokenRecoveryInterval: TimeInterval = .minutes(1),
                 uptime: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
         self._storePurchaseManager = storePurchaseManager
+        self.clockSkewMonitor = clockSkewMonitor
         self.invalidTokenRecoveryInterval = invalidTokenRecoveryInterval
         self.uptime = uptime
         self.oAuthClient = oAuthClient
@@ -740,7 +744,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             throw SubscriptionManagerError.noTokenAvailable
         } catch let tokenRequestError {
             // Any other failure: report it, then handle the server rejections
-            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, tokenRequestError))
+            pixelHandler.handle(pixel: SubscriptionPixelType.getTokensError(policy, tokenRequestError, clockSkewMonitor.current))
             Logger.subscriptionTokensManagement.error("Getting token \(policy, privacy: .public) failed: \(tokenRequestError, privacy: .public)")
 
             switch tokenRequestError {
@@ -783,7 +787,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                                                                          report: &recoveryReport)
                     updateCachedUserEntitlements(recoveredTokenContainer.decodedAccessToken.subscriptionEntitlements)
                     updateCachedIsUserAuthenticated(true)
-                    pixelHandler.handle(pixel: .invalidRefreshTokenRecovered(recoveryReport?.recoveredBy))
+                    pixelHandler.handle(pixel: .invalidRefreshTokenRecovered(recoveryReport?.recoveredBy, clockSkewMonitor.current))
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .succeeded,
                                                                                     method: recoveryReport?.recoveredBy,
                                                                                     backupOutcome: BackupRecoveryOutcome(recoveryReport?.result(of: .backup)),
@@ -794,7 +798,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                     // A recovery succeeded moments ago and its token was rejected again: keep the session and fail this request
                     // instead of recovering in a loop
                     Logger.subscriptionTokensManagement.error("Refresh rejected again right after a recovery, keeping the token and deferring the recovery")
-                    pixelHandler.handle(pixel: .invalidRefreshTokenRecoveryDeferred)
+                    pixelHandler.handle(pixel: .invalidRefreshTokenRecoveryDeferred(clockSkewMonitor.current))
                     authV2TokenRefreshInstrumentation?.completeInvalidTokenRecovery(outcome: .notAttempted,
                                                                                     method: nil,
                                                                                     backupOutcome: .notAttempted,

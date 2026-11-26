@@ -215,6 +215,25 @@ final class AIChatLocalModelDownloaderTests {
         #expect(try Data(contentsOf: installedURL) == model)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Only a running request counts as active, not a pause or a wait to retry", .timeLimit(.minutes(1)))
+    func activeOnlyWhileARequestRuns() async {
+        StubModelServer.respond { _ in .init(status: 200, body: Data(), error: URLError(.networkConnectionLost)) }
+        let downloader = makeDownloader(retryDelays: [100])
+        #expect(!downloader.isActive)
+
+        downloader.install()
+        #expect(downloader.isActive)
+
+        await waitUntil { !downloader.isActive }
+        #expect(downloader.state.isDownloading)
+        #expect(!downloader.isActive)
+
+        downloader.pause()
+        #expect(downloader.state.isDownloading)
+        #expect(!downloader.isActive)
+    }
+
     // MARK: - Failing
 
     @available(iOS 16, macOS 13, *)
@@ -355,14 +374,60 @@ final class AIChatLocalModelDownloaderTests {
     func installRemovesOtherModels() async throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let otherModel = directory.appendingPathComponent("\(String(repeating: "a", count: 64)).gguf")
-        try Data([1, 2, 3]).write(to: otherModel)
         StubModelServer.respond { _ in .init(status: 200, body: self.model) }
         let downloader = makeDownloader()
+        try Data([1, 2, 3]).write(to: otherModel)
 
         downloader.install()
         await waitUntil { downloader.state.isInstalled }
 
         #expect(!FileManager.default.fileExists(atPath: otherModel.path))
+    }
+
+    private static let graniteSHA256 = "227e78e2fb9a3e5699190be0ce0885fd2ea72a242ed1bf718c2148c45dd090b5"
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A retired model's files are deleted at launch; another model's and this one's partial download stay", .timeLimit(.minutes(1)))
+    func launchDeletesRetiredModels() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let retiredModel = directory.appendingPathComponent("\(Self.graniteSHA256).gguf")
+        let retiredPart = directory.appendingPathComponent("\(Self.graniteSHA256).gguf.part")
+        let otherModel = directory.appendingPathComponent("\(String(repeating: "a", count: 64)).gguf")
+        try Data([1, 2, 3]).write(to: retiredModel)
+        try Data([1]).write(to: retiredPart)
+        try Data([1, 2, 3]).write(to: otherModel)
+        try writePart(model.prefix(300))
+        defaults.set(spec.sha256, forKey: AIChatLocalModelDownloader.installRequestKey)
+
+        let downloader = makeDownloader()
+
+        #expect(!FileManager.default.fileExists(atPath: retiredModel.path))
+        #expect(!FileManager.default.fileExists(atPath: retiredPart.path))
+        #expect(FileManager.default.fileExists(atPath: otherModel.path))
+        #expect(FileManager.default.fileExists(atPath: partURL.path))
+        #expect(downloader.state == .downloading(receivedBytes: 300, totalBytes: Int64(model.count)))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A retired model that remote config names again keeps its file", .timeLimit(.minutes(1)))
+    func retiredModelInUseIsKept() throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let graniteFile = directory.appendingPathComponent("\(Self.graniteSHA256).gguf")
+        try Data([1, 2, 3]).write(to: graniteFile)
+        let granite = AIChatLocalModelSpec(id: "granite-4.0-1b",
+                                           name: "Granite 4.0 1B",
+                                           bytes: 3,
+                                           url: URL(string: "https://models.example/granite.gguf")!,
+                                           sha256: Self.graniteSHA256)
+
+        let downloader = AIChatLocalModelDownloader(spec: granite,
+                                                    directory: directory,
+                                                    session: .makeLocalModelDownloads(protocolClasses: [StubModelServer.self]),
+                                                    defaults: defaults,
+                                                    networkAvailable: networkAvailable.eraseToAnyPublisher())
+
+        #expect(FileManager.default.fileExists(atPath: graniteFile.path))
+        #expect(downloader.state.isInstalled)
     }
 
     /// Remote config can switch models, which leaves the earlier model's files behind.
@@ -424,10 +489,10 @@ struct AIChatLocalModelSpecTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The built-in model is Granite 4.0 1B", .timeLimit(.minutes(1)))
-    func builtInModelIsGranite() {
-        #expect(AIChatLocalModelSpec.granite.info == AIChatLocalModelInfo(id: "granite-4.0-1b", name: "Granite 4.0 1B"))
-        #expect(AIChatLocalModelSpec.granite.url.scheme == "https")
+    @Test("The built-in model is Gemma 4 E2B", .timeLimit(.minutes(1)))
+    func builtInModelIsGemma4E2B() {
+        #expect(AIChatLocalModelSpec.gemma4E2B.info == AIChatLocalModelInfo(id: "gemma-4-e2b", name: "Gemma 4 E2B"))
+        #expect(AIChatLocalModelSpec.gemma4E2B.url.scheme == "https")
     }
 }
 

@@ -23,6 +23,8 @@ import LlamaRuntime
 public protocol AIChatLlamaRuntime: AnyObject {
     /// llama.cpp can run on this device and ships with the app.
     var isSupported: Bool { get }
+    /// Opens llama.cpp without loading a model. Throws `LlamaRuntimeError`.
+    func openLibrary() throws
     /// Throws `LlamaRuntimeError`.
     func loadModel(at fileURL: URL, contextSize: Int) throws -> AIChatLlamaLoadedModel
 }
@@ -43,22 +45,37 @@ public protocol AIChatLlamaLoadedModel: AnyObject {
 public final class BundledLlamaRuntime: AIChatLlamaRuntime {
 
     private let libraryURL: URL?
+    private let minimumPhysicalMemory: UInt64
+    private let physicalMemory: UInt64
 
-    public init(libraryURL: URL? = LlamaLibrary.bundledLibraryURL) {
+    /// - Parameter minimumPhysicalMemory: Devices with less RAM than this are left out.
+    public init(libraryURL: URL? = LlamaLibrary.bundledLibraryURL,
+                minimumPhysicalMemory: UInt64 = 0,
+                physicalMemory: UInt64 = ProcessInfo.processInfo.physicalMemory) {
         self.libraryURL = libraryURL
+        self.minimumPhysicalMemory = minimumPhysicalMemory
+        self.physicalMemory = physicalMemory
     }
 
     public var isSupported: Bool {
-        guard LlamaLibrary.isSupportedSystem, let libraryURL else { return false }
+        guard LlamaLibrary.isSupportedSystem, physicalMemory >= minimumPhysicalMemory, let libraryURL else { return false }
         return FileManager.default.fileExists(atPath: libraryURL.path)
     }
 
+    public func openLibrary() throws {
+        _ = try library()
+    }
+
     public func loadModel(at fileURL: URL, contextSize: Int) throws -> AIChatLlamaLoadedModel {
+        let model = try LlamaModel(library: library(), fileURL: fileURL)
+        return LoadedLlamaModel(model: model, context: try model.makeContext(size: contextSize))
+    }
+
+    private func library() throws -> LlamaLibrary {
         guard let libraryURL else {
             throw LlamaRuntimeError.libraryUnavailable("The app has no bundled llama.cpp")
         }
-        let model = try LlamaModel(library: LlamaLibrary.load(at: libraryURL), fileURL: fileURL)
-        return LoadedLlamaModel(model: model, context: try model.makeContext(size: contextSize))
+        return try LlamaLibrary.load(at: libraryURL)
     }
 }
 

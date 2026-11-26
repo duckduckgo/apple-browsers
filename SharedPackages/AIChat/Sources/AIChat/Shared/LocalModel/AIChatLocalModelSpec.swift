@@ -42,14 +42,14 @@ public struct AIChatLocalModelSpec: Codable, Equatable, Sendable {
 
     var fileName: String { "\(sha256).gguf" }
 
-    /// IBM's Granite 4.0 1B, Q4_0, pinned to one commit of IBM's repository, used until remote
+    /// Google's Gemma 4 E2B, Q4_0, pinned to one commit of ggml-org's repository, used until remote
     /// config names a model.
-    public static let granite = AIChatLocalModelSpec(
-        id: "granite-4.0-1b",
-        name: "Granite 4.0 1B",
-        bytes: 974_984_960,
-        url: URL(string: "https://huggingface.co/ibm-granite/granite-4.0-1b-GGUF/resolve/b27c2fe3f211b7f44e80fa620177aea371099aaa/granite-4.0-1b-Q4_0.gguf")!,
-        sha256: "227e78e2fb9a3e5699190be0ce0885fd2ea72a242ed1bf718c2148c45dd090b5"
+    public static let gemma4E2B = AIChatLocalModelSpec(
+        id: "gemma-4-e2b",
+        name: "Gemma 4 E2B",
+        bytes: 2_841_481_184,
+        url: URL(string: "https://huggingface.co/ggml-org/gemma-4-E2B-it-GGUF/resolve/2a8538c2e2d4687953a86c422c7c623cfd022880/gemma-4-E2B-it-Q4_0.gguf")!,
+        sha256: "8e30dff3ac4c8434c49a7036fa15564bdbb6044e42bf04550bf1a096ad7e6a52"
     )
 
     /// The model in remote config's `localModels` settings, or nil when there's none or it isn't

@@ -28,11 +28,14 @@ struct AIChatLlamaEngineTests {
     private let fileURL = URL(fileURLWithPath: "/models/granite.gguf")
     private let request = AIChatLocalRunRequest(requestId: "r1", task: .summarize, instruction: "Summarize this page.", content: "Mallards are ducks.")
 
-    private func makeEngine(idleUnloadDelay: TimeInterval = 300, fileURL: URL?? = nil) -> AIChatLlamaEngine {
+    private func makeEngine(idleUnloadDelay: TimeInterval = 300,
+                            availableMemory: UInt64? = nil,
+                            fileURL: URL?? = nil) -> AIChatLlamaEngine {
         let url = fileURL ?? self.fileURL
         return AIChatLlamaEngine(model: AIChatLocalModelInfo(id: "granite-4.0-1b", name: "Granite 4.0 1B"),
                                  runtime: runtime,
                                  idleUnloadDelay: idleUnloadDelay,
+                                 availableMemory: { availableMemory },
                                  modelFileURL: { url })
     }
 
@@ -176,6 +179,26 @@ struct AIChatLlamaEngineTests {
         #expect(error?.code == .modelUnavailable)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Too little free memory is out_of_memory, without loading", .timeLimit(.minutes(1)))
+    func tooLittleMemoryIsOutOfMemory() async {
+        let engine = makeEngine(availableMemory: AIChatLlamaEngine.minimumAvailableMemory - 1)
+
+        let error = await #expect(throws: AIChatLocalModelEngineError.self) {
+            _ = try await collect(engine.run(request))
+        }
+        #expect(error?.code == .outOfMemory)
+        #expect(runtime.loadCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Enough free memory, or no limit at all, loads the model", .timeLimit(.minutes(1)), arguments: [AIChatLlamaEngine.minimumAvailableMemory, nil])
+    func enoughMemoryLoads(availableMemory: UInt64?) async throws {
+        _ = try await collect(makeEngine(availableMemory: availableMemory).run(request))
+
+        #expect(runtime.loadCount == 1)
+    }
+
     // MARK: - Memory
 
     @available(iOS 16, macOS 13, *)
@@ -214,6 +237,42 @@ struct AIChatLlamaEngineTests {
         #expect(runtime.loadCount == 2)
     }
 
+    /// iOS refuses GPU work from an app in the background, which ends a run with `decodeFailed`.
+    @available(iOS 16, macOS 13, *)
+    @Test("A failed GPU step mid-answer ends the run as unknown, frees the model, and the next run loads it again", .timeLimit(.minutes(1)))
+    func failedGPUStepFreesTheModel() async throws {
+        let engine = makeEngine()
+        runtime.model.output = ["The mallard"]
+        runtime.model.generateError = .decodeFailed(-3)
+
+        var texts: [String] = []
+        let error = await #expect(throws: AIChatLocalModelEngineError.self) {
+            for try await event in engine.run(request) {
+                if case .text(let text) = event { texts.append(text) }
+            }
+        }
+        #expect(texts == ["The mallard"])
+        #expect(error?.code == .unknown)
+        #expect(!engine.isModelLoaded)
+
+        runtime.model.generateError = nil
+        _ = try await collect(engine.run(request))
+        #expect(runtime.loadCount == 2)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("prepare opens llama.cpp without loading a model", .timeLimit(.minutes(1)))
+    func prepareOpensTheLibrary() {
+        let engine = makeEngine()
+
+        engine.prepare()
+
+        // Reading `isModelLoaded` waits for the engine's queue, so `prepare` has run by the next line.
+        #expect(!engine.isModelLoaded)
+        #expect(runtime.openLibraryCount == 1)
+        #expect(runtime.loadCount == 0)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("A device llama.cpp can't run on isn't eligible", .timeLimit(.minutes(1)))
     func unsupportedDeviceIsNotEligible() {
@@ -230,12 +289,18 @@ struct AIChatLlamaEngineTests {
 private final class FakeLlamaRuntime: AIChatLlamaRuntime, @unchecked Sendable {
     private let lock = NSLock()
     private var _loadCount = 0
+    private var _openLibraryCount = 0
 
     var isSupported = true
     var loadError: LlamaRuntimeError?
     let model = FakeLoadedLlamaModel()
 
     var loadCount: Int { lock.locked { _loadCount } }
+    var openLibraryCount: Int { lock.locked { _openLibraryCount } }
+
+    func openLibrary() throws {
+        lock.locked { _openLibraryCount += 1 }
+    }
 
     func loadModel(at fileURL: URL, contextSize: Int) throws -> AIChatLlamaLoadedModel {
         lock.locked { _loadCount += 1 }
@@ -263,6 +328,8 @@ private final class FakeLoadedLlamaModel: AIChatLlamaLoadedModel, @unchecked Sen
     var contextSize = 8_192
     var output: [String] = ["Hello"]
     var waitsForStop = false
+    /// Thrown after `output` is written, like a GPU step failing partway through an answer.
+    var generateError: LlamaRuntimeError?
 
     var tokenizeCalls: [TokenizeCall] { lock.locked { _tokenizeCalls } }
     var lastPrompt: [LlamaToken] { lock.locked { _lastPrompt } }
@@ -297,6 +364,7 @@ private final class FakeLoadedLlamaModel: AIChatLlamaLoadedModel, @unchecked Sen
             throw CancellationError()
         }
         output.forEach(onText)
+        if let generateError { throw generateError }
         return output.count
     }
 

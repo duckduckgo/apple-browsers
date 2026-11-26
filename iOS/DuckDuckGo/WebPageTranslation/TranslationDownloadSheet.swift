@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
@@ -47,7 +48,7 @@ enum TranslationDownloadSheet {
     static func makeController(for offer: TranslationOffer, onDownload: @escaping () -> Void) -> UIViewController {
         let view = TranslationDownloadSheetView(text: text(for: offer, locale: .current), onDownload: onDownload)
         let controller = TranslationDownloadSheetController(rootView: view)
-        controller.modalPresentationStyle = .pageSheet
+        controller.modalPresentationStyle = DevicePlatform.isIpad ? .formSheet : .pageSheet
         controller.disableSafeArea()
         controller.view.backgroundColor = UIColor(designSystemColor: .backgroundSheets)
         if let sheet = controller.sheetPresentationController {
@@ -58,10 +59,13 @@ enum TranslationDownloadSheet {
             } else {
                 sheet.detents = [.medium()]
             }
+            sheet.prefersEdgeAttachedInCompactHeight = true
+            sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
             if #unavailable(iOS 26) {
                 sheet.preferredCornerRadius = SheetMetrics.cornerRadius
             }
         }
+        controller.updatePreferredContentSize()
         return controller
     }
 }
@@ -81,11 +85,35 @@ final class TranslationDownloadSheetController: UIHostingController<TranslationD
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updatePreferredContentSize()
         guard #available(iOS 16, *) else { return }
         let height = sizeThatFits(in: CGSize(width: view.bounds.width, height: .greatestFiniteMagnitude)).height
         guard height != lastHeight else { return }
         lastHeight = height
         sheetPresentationController?.invalidateDetents()
+    }
+
+    private var preferredWidth: CGFloat? {
+        if DevicePlatform.isIpad {
+            return Constants.iPadWidth
+        }
+        guard let window = view.window ?? presentingViewController?.view.window else { return nil }
+        return window.bounds.width > window.bounds.height ? window.bounds.height : nil
+    }
+
+    func updatePreferredContentSize() {
+        let width = preferredWidth
+        if #available(iOS 17, *), !DevicePlatform.isIpad {
+            sheetPresentationController?.prefersPageSizing = width == nil
+        }
+        let size = width.map { CGSize(width: $0, height: sizeThatFits(in: CGSize(width: $0, height: .greatestFiniteMagnitude)).height) } ?? .zero
+        if preferredContentSize != size {
+            preferredContentSize = size
+        }
+    }
+
+    private enum Constants {
+        static let iPadWidth: CGFloat = 375
     }
 }
 

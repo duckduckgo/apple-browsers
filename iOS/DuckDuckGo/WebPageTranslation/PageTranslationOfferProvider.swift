@@ -76,10 +76,11 @@ final class PageTranslationOfferProvider {
         }
     }
 
-    /// The offer to show as a banner; nil when there's none, or when the tab moved to another page while detecting.
-    func bannerOffer(in webView: WKWebView) async -> TranslationOffer? {
-        let url = webView.url
-        guard case .banner(let offer) = await decision(in: webView), webView.url == url else {
+    /// The offer to show as a banner; nil when there's none, or when the tab left the page while detecting.
+    /// - Parameter isSamePage: whether the tab is still on the page detection started on. A URL change within the
+    ///   page, such as `replaceState`, doesn't leave it.
+    func bannerOffer(in webView: WKWebView, isSamePage: () -> Bool) async -> TranslationOffer? {
+        guard case .banner(let offer) = await decision(in: webView), isSamePage() else {
             return nil
         }
         return offer

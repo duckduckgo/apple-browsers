@@ -878,8 +878,8 @@ class TabViewController: UIViewController {
     private var pageTranslationBridge: PageTranslationBridge?
     /// Made on the first Translate, for the current bridge.
     private var pageTranslationSession: PageTranslationSession?
-    /// The page the running translation is for, so a URL change can tell an in-page link from leaving the page.
-    private var pageTranslationURL: URL?
+    /// Counts main-frame loads, so work started on a page can tell the tab has left it; pushState and replaceState don't count.
+    private var pageLoads = 0
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -2169,11 +2169,6 @@ class TabViewController: UIViewController {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL, isNavigationError: lastError != nil)
         }
 
-        // An in-page link only changes the fragment; any other change, such as an in-page app's route, leaves the page.
-        if let newURL, let pageTranslationURL, !Self.isSamePage(newURL, as: pageTranslationURL) {
-            cancelPageTranslation()
-        }
-
         guard let newURL = newURL else { return }
 
         if url == nil {
@@ -3175,8 +3170,9 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
+        let pageLoad = pageLoads
         Task { [weak self, weak webView] in
-            guard let webView, let offer = await provider.bannerOffer(in: webView) else { return }
+            guard let webView, let offer = await provider.bannerOffer(in: webView, isSamePage: { self?.pageLoads == pageLoad }) else { return }
             self?.showTranslationBanner(offer)
         }
     }
@@ -3217,25 +3213,13 @@ extension TabViewController: WKNavigationDelegate {
                                                                        batchCharacterLimit: { settings.batchCharacterLimit },
                                                                        progress: self)
         pageTranslationSession = session
-        pageTranslationURL = webView.url
         session.start(offer)
-    }
-
-    /// The same URL apart from its fragment.
-    static func isSamePage(_ url: URL, as page: URL) -> Bool {
-        func withoutFragment(_ url: URL) -> URL? {
-            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            components?.fragment = nil
-            return components?.url
-        }
-        return withoutFragment(url) == withoutFragment(page)
     }
 
     /// Stops the page's translation, if any, and clears its bar; a bar that a page load has taken over stays.
     private func cancelPageTranslation() {
         pageTranslationSession?.cancel()
         pageTranslationSession = nil
-        pageTranslationURL = nil
         progressWorker.didCancelLoading(.translation)
     }
 
@@ -3352,6 +3336,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         if webView === self.webView {
             firstPaintCover.didStartNavigation(navigation)
+            pageLoads += 1
             translationBannerPresenter.dismiss(animated: false)
             cancelPageTranslation()
         }

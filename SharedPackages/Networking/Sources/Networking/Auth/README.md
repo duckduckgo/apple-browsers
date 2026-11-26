@@ -28,6 +28,12 @@ A Swift implementation of the subset of OAuth 2.0 that DuckDuckGo's subscription
   - [Classifying a failed restore](#classifying-a-failed-restore)
 - [Events](#events)
 - [How the apps use it](#how-the-apps-use-it)
+- [Background refresh](#background-refresh)
+  - [When it runs](#when-it-runs)
+  - [What a run does](#what-a-run-does)
+  - [The authBackgroundTokenRefresh flag](#the-authbackgroundtokenrefresh-flag)
+  - [Limits](#limits)
+  - [Debugging](#debugging)
 - [Public API](#public-api)
 - [Security and other considerations](#security-and-other-considerations)
 - [Testing and mocks](#testing-and-mocks)
@@ -157,7 +163,7 @@ When the access token has expired or expires within 45 seconds, `.localValid` re
 5. If the session changed while the request ran, the new pair is discarded and the container stored at that point is returned. See [Sessions and concurrency](#sessions-and-concurrency).
 6. If the backup needs renewal, a new one is minted in the background. See [Renewal](#renewal).
 
-Refreshing happens on demand. Nothing in this framework refreshes on a schedule; on iOS the app refreshes in the background when the refresh token gets old (see [How the apps use it](#how-the-apps-use-it)).
+Refreshing happens on demand. Nothing in this framework refreshes on a schedule; on iOS the app refreshes in the background when the refresh token gets old (see [Background refresh](#background-refresh)).
 
 ### Expiration
 
@@ -331,8 +337,67 @@ The client never signs anyone out on its own. Deciding what a rejection means fo
 - The strategies live in `TokenRecovery/`: `TokenRecoveryCoordinator` runs `BackupTokenRecovery` and `AppStoreTokenRecovery` in order and stops at the first success.
 - After a missing-token restore fails for a reason that isn't `.permanent`, `BackupTokenRecovery` skips further missing-token restores for 5 minutes.
 - Both apps call `restoreMissingTokenIfPossible()` when they become active, so a lost token comes back without waiting for a request.
-- On iOS, `SubscriptionTokenKeepAlive` refreshes the token in the background once its refresh token is 15 days old, behind the `authBackgroundTokenRefresh` flag, so a session the app doesn't use renews before it expires.
+- On iOS, the token is refreshed in the background once its refresh token is 15 days old, so a session the app doesn't use renews before it expires. See [Background refresh](#background-refresh).
 - Explicit sign-out (`signOut`) calls `logout()`. Automatic sign-outs call `removeLocalAccount(includingBackup:)` and never contact the server, so they don't revoke the backup.
+
+## Background refresh
+
+A refresh token lives 30 days and is replaced on every refresh. A token that's never refreshed expires, and the user has to sign in again. Refreshes happen when the app needs a token, so a user who doesn't open the app for 30 days loses the session. On iOS, the app refreshes the token once its refresh token is 15 days old, even when the app isn't opened.
+
+| Type | Where | Role |
+|---|---|---|
+| `SubscriptionTokenKeepAlive` | `BrowserServicesKit/Subscription` | Decides whether a refresh is due, and refreshes. Platform independent. |
+| `SubscriptionTokenRefreshTask` | iOS app | Runs the keep-alive and schedules the next run as a `BGProcessingTask`. |
+| `SubscriptionTokenRefreshIntervals` | iOS app | Resolves the intervals: debug overrides for internal users, the defaults for everyone else. |
+| `SubscriptionTokenRefreshDebugSettings` | iOS app | Stores the debug overrides and the record of the last run. |
+
+### When it runs
+
+- **Background task**: `com.duckduckgo.app.subscriptionTokenRefresh`, a `BGProcessingTaskRequest` that needs network. It is scheduled no earlier than the date the next refresh is due, and rescheduled after every run.
+- **Foreground**: each time the app becomes active, after `restoreMissingTokenIfPossible()`, so a restored session is checked too.
+- **Sign-in**: on `.accountDidSignIn`, to schedule the task for the new session.
+- **Debug menu**: on request. See [Debugging](#debugging).
+
+Sign-out (`.accountDidSignOut`) cancels the scheduled task.
+
+### What a run does
+
+`SubscriptionTokenKeepAlive.refreshIfNeeded()`:
+
+1. Returns `.disabled` when the flag is off, without reading anything.
+2. Returns `.noToken` when `localTokenState()` isn't `.present` or the stored container can't be read.
+3. Reads the stored container with `.local`. The refresh is due when the refresh token's `issuedAtDate` plus the maximum age (15 days) has passed.
+4. Not due: returns `.notDue` with the due date.
+5. Due: refreshes with `.localForceRefresh` through `SubscriptionManager.getTokenContainer`, so a rejected refresh goes through the usual recovery and sign-out handling. It returns:
+   - `.refreshed` with the new refresh token's due date;
+   - `.noToken` when the session ended during the refresh (`noTokenAvailable`);
+   - `.failed` with a retry date 6 hours later, for any other error.
+
+The task then schedules the background task for `nextCheckDate`, or cancels it when the outcome is `.disabled` or `.noToken`. A background run completes with `success: false` only when the outcome is `.failed`. If iOS expires the task first, the run is cancelled, the task is scheduled again after the retry interval, and it completes with `success: false`.
+
+At 15 days the backup is older than its 14-day renewal age, so the refresh renews the backup too. See [Renewal](#renewal).
+
+### The authBackgroundTokenRefresh flag
+
+`isEnabled` is read at the start of every run, so a change applies without a restart:
+
+- **Off**: a run does nothing and cancels the scheduled task. A task that already launched completes without refreshing.
+- **Back on**: the next foreground, sign-in or launched task checks the token and schedules again.
+- **Sign-out** cancels the task whatever the flag says, so a session that ended while the flag was off is never refreshed when it comes back on.
+
+### Limits
+
+- iOS decides when a processing task actually runs, usually while the device is charging, on Wi-Fi and idle. A device that rarely meets those conditions may still reach 30 days without a refresh.
+- macOS has no background task that starts an app that isn't running, so it has no background refresh. A session there survives only if the browser, or a process that shares its token, refreshes within 30 days.
+
+### Debugging
+
+- **Logs**: subsystem `Subscription`, category `TokenKeepAlive`. They cover every decision with the refresh token's dates, every schedule and cancel, and each run's trigger and outcome.
+- **Debug screen**: Settings > Debug > Subscription > Background Token Refresh. It shows the flag, the last run and the pending task. It sets shorter intervals (applied from the next run, for internal users only), runs the keep-alive now, and resets to the defaults.
+- **Launch the task now**: pause in the debugger after a `Background task scheduled for` log, run the following, then resume:
+  ```
+  e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.duckduckgo.app.subscriptionTokenRefresh"]
+  ```
 
 ## Public API
 

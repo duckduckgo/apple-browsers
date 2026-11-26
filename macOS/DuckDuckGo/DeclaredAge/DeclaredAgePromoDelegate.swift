@@ -45,7 +45,6 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
         self.requester = requester
         self.isReinstall = reinstallUserDetection.isReinstallingUser
         self.featureFlagger = featureFlagger
-        // Sparkle has its own flag so it can be rolled out without touching App Store builds.
         self.featureFlag = buildType.isSparkleBuild ? .declaredAgeRangeSparkle : .declaredAgeRange
         self.notificationCenter = notificationCenter
         self.windowProvider = windowProvider

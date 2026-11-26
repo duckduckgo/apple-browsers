@@ -66,7 +66,6 @@ final class PromoRegistryTests: XCTestCase {
             syncBookmarksAdapter: nil,
             pinningManager: MockPinningManager(),
             cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 keyValueStore: InMemoryThrowingKeyValueStore(),
                 windowControllersManager: windowControllersManager,
                 cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),

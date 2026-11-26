@@ -180,7 +180,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private(set) lazy var cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate = { // swiftlint:disable:this weak_delegate
         CookiePopupsBlockedPromoDelegate(
-            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             windowControllersManager: windowControllersManager,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,

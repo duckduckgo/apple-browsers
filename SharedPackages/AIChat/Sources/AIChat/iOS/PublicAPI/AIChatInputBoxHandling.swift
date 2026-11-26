@@ -47,7 +47,7 @@ public protocol AIChatInputBoxHandling {
     var isTermsOfServiceShownOnPage: Bool { get set }
 
     /// What the page last said about its promos (`aiChatPromoVisibility`): `nil` until it says anything, which
-    /// counts as a promo that may still appear. Kept for the page, so a new chat on it doesn't clear it.
+    /// counts as a promo that may still appear.
     var isAIChatPromoVisible: Bool? { get set }
 
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { get }

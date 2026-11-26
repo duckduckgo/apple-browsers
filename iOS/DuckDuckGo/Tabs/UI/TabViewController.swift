@@ -3061,8 +3061,7 @@ extension TabViewController: WKNavigationDelegate {
 
         url = webView.url
 
-        // A new document reports its promos and response state again. Cleared here, before any of its scripts run:
-        // the page's own load messages can arrive after its first promo report.
+        // Before any of the new page's scripts run: its load messages can arrive after its first promo report.
         userScripts?.aiChatUserScript.isAIChatPromoVisible = nil
         userScripts?.aiChatUserScript.aiChatStatusOnPage = nil
 

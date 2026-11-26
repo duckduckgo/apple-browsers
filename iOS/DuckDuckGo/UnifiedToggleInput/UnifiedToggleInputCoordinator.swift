@@ -182,14 +182,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
     }
 
-    /// What this input knows about the chat on screen. Hints show only on a guaranteed new chat.
     @Published private(set) var newChatState = NewChatState.none
     var isGuaranteedNewChat: Bool { newChatState.isGuaranteedNewChat }
     private let newChatHintsEligibility: NewChatHintsEligibility
     private let newChatHintsFeature: NewChatHintsFeatureProviding
     private var isVoiceRequestedForPage = false
     private var voiceHoldRelease: DispatchWorkItem?
-    /// How long voice keeps holding hints off after it closes.
     var newChatVoiceHoldAfterClose: TimeInterval = 1
 
     /// The bound page sets this on every bind, so only `unbind` clears it.
@@ -728,7 +726,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToAttachmentUsageChanges()
         subscribeToSubscriptionChanges()
         subscribeToAppLifecycle()
-        // The remote config can turn the hints on or off while a blank chat is open.
         featureFlagger.updatesPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.refreshNewChatState() }
@@ -1273,7 +1270,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         newChatHintsEligibility.isEligibleUser(isFireTab: viewController.handler.isFireTab)
     }
 
-    /// The page on this tab said no promo is showing. Silence counts as not clear.
     var isAIChatPromoClear: Bool { isAIChatPromoVisible == false }
 
     private func refreshNewChatState() {

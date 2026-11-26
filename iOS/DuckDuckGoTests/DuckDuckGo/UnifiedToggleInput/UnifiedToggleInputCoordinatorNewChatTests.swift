@@ -50,7 +50,6 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     /// The input holds its tab's script weakly, as the tab owns it.
     private let script = makeTestUserScript()
 
-    /// The Duck.ai tab is on screen with a blank chat, and the page is ready for a prompt.
     private func openBlankChat(_ sut: UnifiedToggleInputCoordinator, hasExistingChat: Bool = false) {
         sut.activateForTab("tab-A")
         sut.bindToTab(script, hasExistingChat: hasExistingChat)

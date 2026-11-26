@@ -26,19 +26,16 @@ enum NewChatHint: CaseIterable {
     case imageGeneration
 }
 
-/// Everything that decides which hints show. Any one term being false hides them all.
 struct NewChatHintsInputs: Equatable {
     /// Has sent a Duck.ai prompt before and accepted the Terms of Service.
     var isEligibleUser = false
-    /// See `NewChatState.isGuaranteedNewChat`.
     var isGuaranteedNewChat = false
-    /// The page said no promo is showing on this tab. No message yet means not clear.
+    /// No message from the page yet means not clear.
     var isPromoClear = false
     /// The footer isn't showing the "type @" tip. Other footer messages leave the hints alone.
     var isTypeAtTipHidden = false
     /// No text, no attachments and no selected tool.
     var isDraftEmpty = false
-    /// The hints the available models can serve, in this tab's order.
     var availableHints: [NewChatHint] = []
 
     var visibleHints: [NewChatHint] {
@@ -47,10 +44,7 @@ struct NewChatHintsInputs: Equatable {
     }
 }
 
-/// What the full-tab input knows about the chat on screen. Each exclusion is a case that
-/// looked like a new chat on Android and briefly showed hints there.
 struct NewChatState: Equatable {
-    /// The input is the full-tab Duck.ai input, not the omnibar or the contextual sheet.
     var isFullTabInput = false
     /// This tab is the one on screen, and the input is bound to its page rather than the previous tab's.
     var isTabSelected = false

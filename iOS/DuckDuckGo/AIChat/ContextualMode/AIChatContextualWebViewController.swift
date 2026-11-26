@@ -687,7 +687,6 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         guard webView === self.webView else { return }
         browserToolsScript?.browserToolsDocumentDidCommit()
-        // New Chat loads a new document in this web view, and that page reports its promos and response state again.
         aiChatUserScript?.isAIChatPromoVisible = nil
         aiChatUserScript?.aiChatStatusOnPage = nil
     }

@@ -587,8 +587,6 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
         // Back on the start state, so the next prompt is a first prompt again and reports itself.
         hasDeliveredFirstPrompt = false
         clearAttachedContext()
-        // The old chat's state ends here, not when the new document commits: a quick action submits before that commit,
-        // and the bind it triggers hands the input whatever this page last reported.
         currentUserScript?.isAIChatPromoVisible = nil
         currentUserScript?.aiChatStatusOnPage = nil
         if startsPreSubmit, let currentUserScript {

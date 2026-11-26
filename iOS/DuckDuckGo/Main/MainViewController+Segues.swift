@@ -583,7 +583,9 @@ extension MainViewController {
                                                   whatsNewCoordinator: whatsNewCoordinator,
                                                   darkReaderFeatureSettings: darkReaderFeatureSettings,
                                                   adBlockingAvailability: adBlockingAvailability,
-                                                  sitePermissionsEnabled: tabManager.isSitePermissionsEnabled)
+                                                  sitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
+                                                  wideEvent: wideEvent,
+                                                  expirationReminderScheduler: subscriptionExpirationReminderScheduler)
 
         settingsViewModel.browserToolsService = tabManager.browserToolsService
         settingsViewModel.configureSitePermissions(

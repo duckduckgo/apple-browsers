@@ -247,9 +247,9 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                                                       featureFlagger: featureFlagger,
                                                       locale: locale,
                                                       instrumentation: withdrawalInstrumentation)
-        self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
+        self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionPagesUseSubscriptionFeatureDependencies.make(
             subscriptionManager: subscriptionManager,
-            wideEvent: wideEvent)
+            wideEvent: wideEvent).subscriptionFlowsExecuter
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies, featureFlagger: featureFlagger)

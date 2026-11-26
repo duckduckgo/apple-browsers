@@ -33,9 +33,9 @@ final class SubscriptionContainerViewModel: ObservableObject {
     let email: SubscriptionEmailViewModel
 
     init(subscriptionManager: SubscriptionManager,
-         initialURL: URL? = nil,
-         flowType: SubscriptionFlowType = .firstPurchase,
-         isInternalUser: Bool = false,
+         initialURL: URL,
+         flowType: SubscriptionFlowType,
+         isInternalUser: Bool,
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
@@ -49,7 +49,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
         subFeature.cleanup()
         self.subFeature = subFeature
 
-        self.flow = SubscriptionFlowViewModel(initialURL: initialURL ?? subscriptionManager.url(for: .purchase),
+        self.flow = SubscriptionFlowViewModel(initialURL: initialURL,
                                               flowType: flowType,
                                               isInternalUser: isInternalUser,
                                               userScript: userScript,

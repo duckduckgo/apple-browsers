@@ -57,6 +57,7 @@ import WebKit
 import WidgetKit
 import FeatureFlags_iOS
 import WebPageTranslation
+import WideEvent
 
 struct StartupOnboardingDecision {
     let shouldShowOnboarding: Bool
@@ -333,6 +334,8 @@ class MainViewController: UIViewController {
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
+    let wideEvent: WideEventManaging
+    let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
     private(set) var isSelectingTabBySwipe = false
     private let longPressBarMenuBuilder = LongPressBarMenuBuilder()
     let idleReturnEligibilityManager: IdleReturnEligibilityManaging
@@ -831,9 +834,13 @@ class MainViewController: UIViewController {
         usageContextProvider: UsageContextProviding,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
         promptExposureReporter: PromptExposureReporting,
+        wideEvent: WideEventManaging,
+        subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling,
         translationModels: TranslationModels? = nil
     ) {
         self.pixelFiring = pixelFiring
+        self.wideEvent = wideEvent
+        self.subscriptionExpirationReminderScheduler = subscriptionExpirationReminderScheduler
         self.translationModels = translationModels
         self.usageContextProvider = usageContextProvider
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -4937,25 +4944,29 @@ class MainViewController: UIViewController {
             featureFlagger: featureFlagger
         )
         let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: keyValueStore)
-        let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makePurchaseFlowV2(
-            redirectURLComponents: redirectURLComponents,
-            navigationCoordinator: subscriptionNavigationCoordinator,
+        let context = SubscriptionFlowContext(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-            subscriptionDataReporter: subscriptionDataReporter,
             userScriptsDependencies: userScriptsDependencies,
-            tld: AppDependencyProvider.shared.storageCache.tld,
-            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            internalUserDecider: userScriptsDependencies.internalUserDecider,
             dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
-            wideEvent: AppDependencyProvider.shared.wideEvent,
+            wideEvent: wideEvent,
             featureFlagger: featureFlagger,
+            expirationReminderScheduler: subscriptionExpirationReminderScheduler)
+        let purchaseDependencies = SubscriptionPurchaseDependencies(
+            subscriptionDataReporter: subscriptionDataReporter,
+            tld: AppDependencyProvider.shared.storageCache.tld,
             isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
             performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
             onboardingKeyValueStore: includesPostPurchaseOnboarding ? keyValueStore : nil,
             meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
                 dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
             },
-            onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
+            onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false })
+        let viewController = UIHostingController(rootView: SubscriptionContainerViewFactory.makeView(
+            for: .makePlanOrSubscribeFlow(redirectURLComponents: redirectURLComponents, dependencies: purchaseDependencies),
+            context: context,
+            navigationCoordinator: subscriptionNavigationCoordinator
         ))
         viewController.view.backgroundColor = UIColor(designSystemColor: .surface)
         return viewController

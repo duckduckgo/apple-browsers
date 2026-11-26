@@ -81,6 +81,7 @@ final class MainCoordinator {
     private let daxGreetingActivity: DaxGreetingActivityStore
     private let daxDialogs: DaxDialogs
     private let wideEvent: WideEventManaging
+    private let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
     private let eventHub: EventHubManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
 
@@ -149,6 +150,7 @@ final class MainCoordinator {
          sharedSecureVault: (any AutofillSecureVault)? = nil,
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
          wideEvent: WideEventManaging,
+         subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling,
          onboardingManager: OnboardingManaging,
          eventHub: EventHubManaging,
          usageContextProvider: UsageContextProviding,
@@ -166,6 +168,7 @@ final class MainCoordinator {
         self.promoCoordinationService = promoCoordinationService
         self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
+        self.subscriptionExpirationReminderScheduler = subscriptionExpirationReminderScheduler
         self.eventHub = eventHub
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
@@ -359,6 +362,8 @@ final class MainCoordinator {
                                         promoCoordinationService: promoCoordinationService,
                                         usageContextProvider: usageContextProvider,
                                         promptExposureReporter: promptExposureReporter,
+                                        wideEvent: wideEvent,
+                                        subscriptionExpirationReminderScheduler: subscriptionExpirationReminderScheduler,
                                         translationModels: translationModels)
 
         onboardingTimeLimitCancellable = daxDialogs.isDismissedPublisher

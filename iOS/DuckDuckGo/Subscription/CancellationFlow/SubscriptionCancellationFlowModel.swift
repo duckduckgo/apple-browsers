@@ -126,7 +126,7 @@ struct SubscriptionCancellationFlowView: View {
     let featureFlagger: FeatureFlagger
 
     var body: some View {
-        SubscriptionContainerView(currentView: .subscribe, viewModel: containerViewModel, featureFlagger: featureFlagger)
+        SubscriptionContainerView(currentView: .subscriptionFlowView, viewModel: containerViewModel, featureFlagger: featureFlagger)
             .subscriptionOnboardingInfoSheet(item: $model.featureInfoItem)
     }
 }

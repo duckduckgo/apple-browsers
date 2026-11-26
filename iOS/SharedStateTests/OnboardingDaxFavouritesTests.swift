@@ -19,6 +19,7 @@
 
 import XCTest
 @_spi(Testing) import Persistence
+@_spi(Testing) import WideEvent
 import Bookmarks
 import DDGSync
 import History
@@ -36,6 +37,11 @@ import Combine
 import PrivacyConfig
 import AIChat
 import AIChatTestingUtilities
+
+private final class MockSubscriptionExpirationReminderSchedulerForMainVC: SubscriptionExpirationReminderScheduling {
+    func scheduleReminder(daysBeforeCancel: Int) async {}
+    func scheduleReminder(timeBeforeCancel: TimeInterval) async {}
+}
 
 private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibilityManaging {
     func isFeatureAvailable() -> Bool { false }
@@ -228,7 +234,9 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
                 onboardingManager: OnboardingManagerMock(),
                 usageContextProvider: UsageContextProvider(),
-                promptExposureReporter: MockPromptExposureReporter()
+                promptExposureReporter: MockPromptExposureReporter(),
+                wideEvent: WideEventMock(),
+                subscriptionExpirationReminderScheduler: MockSubscriptionExpirationReminderSchedulerForMainVC()
             )
         }
         sut = makeHost(homePageConfiguration)

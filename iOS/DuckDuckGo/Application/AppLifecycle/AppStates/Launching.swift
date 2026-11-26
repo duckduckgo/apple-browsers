@@ -409,6 +409,7 @@ struct Launching: LaunchingHandling {
                                               whatsNewRepository: whatsNewRepository,
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
                                               wideEvent: AppDependencyProvider.shared.wideEvent,
+                                              subscriptionExpirationReminderScheduler: AppDependencyProvider.shared.subscriptionExpirationReminderScheduler,
                                               onboardingManager: onboardingManager,
                                               eventHub: eventHubService.eventHub,
                                               usageContextProvider: usageContextProvider,

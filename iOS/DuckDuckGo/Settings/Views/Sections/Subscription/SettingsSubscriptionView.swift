@@ -51,14 +51,9 @@ struct SettingsSubscriptionView: View {
     @State var isShowingSubscription = false
     
     var subscriptionRestoreViewV2: some View {
-        SubscriptionContainerViewFactory.makeRestoreFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                                                           subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                                                           userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-                                                           internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                           wideEvent: AppDependencyProvider.shared.wideEvent,
-                                                           dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-                                                           featureFlagger: settingsViewModel.featureFlagger)
+        SubscriptionContainerViewFactory.makeView(for: .restore,
+                                                  context: settingsViewModel.subscriptionFlowContext,
+                                                  navigationCoordinator: subscriptionNavigationCoordinator)
     }
 
     private var manageSubscriptionView: some View {

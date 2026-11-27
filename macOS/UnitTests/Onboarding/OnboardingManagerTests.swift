@@ -598,9 +598,31 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertTrue(firedEvents.isEmpty)
     }
 
-    func testSearchOrChatStep_FiresNoSharedPixels() {
+    func testSearchOrChatStep_FiresShownPixel_AndNothingOnCompletion() {
         manager.stepShown(step: .searchOrChat)
         manager.stepCompleted(step: .searchOrChat)
+
+        XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.searchChatToggle(.shown)])
+    }
+
+    func testSubmitQuery_FiresSearchChatToggleClick_FromModeAndSource() {
+        let cases: [(OnboardingUserScript.SubmitQuery, OnboardingSharedPixelEvent.SuggestionOrCustomToggleEvent.Value)] = [
+            (.init(mode: .search, query: "best pizza", source: .typed), .customSearch),
+            (.init(mode: .search, query: "best pizza", source: .suggestion), .suggestedSearch),
+            (.init(mode: .duckAi, query: "Plan a day in London", source: .typed), .customChat),
+            (.init(mode: .duckAi, query: "Plan a day in London", source: .suggestion), .suggestedChat)
+        ]
+        for (query, value) in cases {
+            onboardingSharedPixelHandler.reset()
+
+            manager.submitQuery(query)
+
+            XCTAssertEqual(onboardingSharedPixelHandler.eventsReceived, [.searchChatToggle(.clicked(value))], "\(query)")
+        }
+    }
+
+    func testSubmitQuery_EmptyQuery_FiresNoPixel() {
+        manager.submitQuery(.init(mode: .duckAi, query: "   ", source: .typed))
 
         XCTAssertTrue(onboardingSharedPixelHandler.eventsReceived.isEmpty)
     }

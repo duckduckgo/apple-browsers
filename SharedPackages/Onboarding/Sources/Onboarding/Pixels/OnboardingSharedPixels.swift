@@ -230,7 +230,7 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
 
     // Contextual onboarding events
     case search(SuggestedOrCustomEvent)
-    case searchChatToggle(SuggestionOrCustomToggleEvent) // iOS only
+    case searchChatToggle(SuggestionOrCustomToggleEvent)
     case searchResults(EngagementEvent)
     case visitSite(SuggestedOrCustomEvent)
     case trackersBlocked(EngagementEvent)

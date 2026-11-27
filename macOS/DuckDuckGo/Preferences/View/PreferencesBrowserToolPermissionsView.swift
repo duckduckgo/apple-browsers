@@ -349,15 +349,17 @@ struct TranslatePagesRow: View {
         Menu {
             if let systemCode, let name = TranslatePagesLanguages.name(of: systemCode) {
                 Toggle(isOn: .constant(true)) {
-                    Text("\(name)  \(UserText.translatePagesSettingsSystemLanguage)")
+                    Text(verbatim: "\(name)  \(UserText.translatePagesSettingsSystemLanguage)")
                 }
                 .disabled(true)
                 Divider()
             }
             ForEach(TranslatePagesLanguages.menuCodes(excluded: model.translateExcludedLanguages, systemCode: systemCode), id: \.self) { code in
-                Toggle(TranslatePagesLanguages.name(of: code) ?? code, isOn: Binding(
+                Toggle(isOn: Binding(
                     get: { model.translateExcludedLanguages.contains(code) },
-                    set: { model.setTranslate(languageCode: code, excluded: $0) }))
+                    set: { model.setTranslate(languageCode: code, excluded: $0) })) {
+                    Text(verbatim: TranslatePagesLanguages.name(of: code) ?? code)
+                }
             }
         } label: {
             Text(summary)

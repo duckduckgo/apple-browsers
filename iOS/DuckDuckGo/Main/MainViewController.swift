@@ -366,6 +366,7 @@ class MainViewController: UIViewController {
     /// Where voice search was opened from outside the address bar, e.g. a widget; nil when opened in-app.
     private var voiceSearchEntrySource: AIChatEntryPointSource?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
+    let syncSetupAttemptTracker: SyncSetupAttemptTracker
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
     let pixelFiring: (any PixelKitFiring)?
@@ -761,6 +762,7 @@ class MainViewController: UIViewController {
         lastTabShortcutAdapter: LastTabShortcutAdapter,
         lastActiveTabStore: LastActiveTabStoring = LastActiveTabStore(),
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
+        syncSetupAttemptTracker: SyncSetupAttemptTracker,
         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
         favicons: FaviconManaging,
@@ -884,6 +886,7 @@ class MainViewController: UIViewController {
             completeOrphanedFlowsOnInit: true
         )
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
+        self.syncSetupAttemptTracker = syncSetupAttemptTracker
         self.fireproofing = fireproofing
         self.favicons = favicons
         self.textZoomCoordinatorProvider = textZoomCoordinatorProvider
@@ -8860,7 +8863,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestSettingsToSync(_ tab: TabViewController) {
-        segueToSettingsSync()
+        segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.aiChat)
     }
 
     func tabDidRequestSettingsToDataClearing(_ tab: TabViewController) {
@@ -10218,7 +10221,7 @@ extension MainViewController: AIChatContentHandlingDelegate {
     }
 
     func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: any AIChatContentHandling) {
-        segueToSettingsSync()
+        segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.aiChat)
     }
 
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:

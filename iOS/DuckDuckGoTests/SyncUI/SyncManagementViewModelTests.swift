@@ -156,6 +156,8 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
 
     var isUserAuthenticationPromptNeeded: Bool { false }
 
+    func startSyncSetupAttempt(for continuation: SyncSettingsViewModel.PreservedAccountContinuation) {}
+
     func authenticateUser() async throws {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }

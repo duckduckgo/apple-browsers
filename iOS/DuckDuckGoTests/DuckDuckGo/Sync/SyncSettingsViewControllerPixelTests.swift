@@ -29,6 +29,7 @@ import FoundationExtensions
 import SyncUI_iOS
 import SecureStorage
 @_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import AVFoundation
 
 @Suite("Sync Settings scan-flow pixels", .serialized)
@@ -82,6 +83,33 @@ final class SyncSettingsViewControllerPixelTests {
             $0.pixel.name == Pixel.Event.syncSetupScanQRScreenShown.name &&
             $0.additionalParameters == [
                 "source": "test_source",
+                "my_kind": "ddg",
+                "flow_version": "v1",
+                "ui_version": "v2",
+                "camera_permission": "authorized"
+            ]
+        })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Sources added for the sync-setup wide event are left out of the classic pixels",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            SyncSettingsViewController.SourceConstants.settingsPage,
+            SyncSettingsViewController.SourceConstants.remoteMessage,
+            SyncSettingsViewController.SourceConstants.aiChat,
+            SyncSettingsViewController.SourceConstants.aiChatHistory,
+            SyncSettingsViewController.SourceConstants.passwordsImportPromotion
+          ])
+    func wideEventOnlySourcesAreLeftOutOfClassicPixels(source: String) {
+        cameraAuthorization.authorizationStatus = .authorized
+        let vc = makeViewController(source: source, enabledFeatureFlags: [])
+
+        vc.scanQRCodeScreenShown()
+
+        #expect(pixelKitMock.actualFireCalls.contains {
+            $0.pixel.name == Pixel.Event.syncSetupScanQRScreenShown.name &&
+            $0.additionalParameters == [
                 "my_kind": "ddg",
                 "flow_version": "v1",
                 "ui_version": "v2",
@@ -448,7 +476,8 @@ final class SyncSettingsViewControllerPixelTests {
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             pixelFiring: pixelKitMock,
             cameraAuthorization: cameraAuthorization,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
     }
 

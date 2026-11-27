@@ -23,8 +23,11 @@ import Combine
 @testable import DDGSync
 
 final class MockDDGSyncing: DDGSyncing {
-    func createConnectionController(deviceName: String, deviceType: String, delegate: any SyncConnectionControllerDelegate) -> SyncConnectionControlling {
-        MockSyncConnectionControlling()
+    var connectionControllerAttemptTracker: SyncSetupAttemptTracker?
+
+    func createConnectionController(deviceName: String, deviceType: String, delegate: any SyncConnectionControllerDelegate, attemptTracker: SyncSetupAttemptTracker?) -> SyncConnectionControlling {
+        connectionControllerAttemptTracker = attemptTracker
+        return MockSyncConnectionControlling()
     }
     
     func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {

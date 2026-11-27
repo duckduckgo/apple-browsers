@@ -156,7 +156,10 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     /**
      Creates controller to manage connecting to another device
      */
-    func createConnectionController(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate) -> SyncConnectionControlling
+    func createConnectionController(deviceName: String,
+                                    deviceType: String,
+                                    delegate: SyncConnectionControllerDelegate,
+                                    attemptTracker: SyncSetupAttemptTracker?) -> SyncConnectionControlling
 
     /**
      Sends this device's public key to the server encrypted using supplied key

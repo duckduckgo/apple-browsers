@@ -44,6 +44,16 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         static let aiChatPromotion = "promotion_ai_chat"
         static let bookmarksAnotherDevicePromotion = "promotion_bookmarks_multi_device"
         static let passwordsAnotherDevicePromotion = "promotion_passwords_multi_device"
+        static let passwordsImportPromotion = "promotion_passwords_import"
+        static let settingsPage = "settings_page"
+        static let remoteMessage = "remote_message"
+        static let aiChat = "ai_chat"
+        static let aiChatHistory = "ai_chat_history"
+
+        static let sourcesWithoutClassicPixelValue: Set<String> = [
+            passwordsImportPromotion, settingsPage, remoteMessage, aiChat, aiChatHistory
+        ]
+        static let syncRecoveryPromptContextName = "sync_recovery_prompt"
     }
 
     enum AutoRestorePromptSource: String {
@@ -53,7 +63,10 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     }
 
     lazy var authenticator = Authenticator()
-    lazy var connectionController: SyncConnectionControlling = syncService.createConnectionController(deviceName: deviceName, deviceType: deviceType, delegate: self)
+    lazy var connectionController: SyncConnectionControlling = syncService.createConnectionController(deviceName: deviceName,
+                                                                                                     deviceType: deviceType,
+                                                                                                     delegate: self,
+                                                                                                     attemptTracker: syncSetupAttemptTracker)
 
     let syncService: DDGSyncing
     let syncBookmarksAdapter: SyncBookmarksAdapter
@@ -72,6 +85,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     let pixelFiring: (any PixelKitFiring)?
     let cameraAuthorization: SyncCameraAuthorizing
     let syncPromoStorage: any KeyedStoring<SyncPromoStorageKeys>
+    let syncSetupAttemptTracker: SyncSetupAttemptTracker
 
     var isSyncEnabled: Bool {
         syncService.account != nil
@@ -102,6 +116,20 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     let viewModel: SyncSettingsViewModel
 
     var source: String?
+
+    var classicPixelSource: String? {
+        guard let source, !SourceConstants.sourcesWithoutClassicPixelValue.contains(source) else { return nil }
+        return source
+    }
+
+    var syncSetupContextName: String? {
+        switch source {
+        case SourceConstants.startSyncFlow, SourceConstants.startBackupFlow:
+            return SourceConstants.syncRecoveryPromptContextName
+        default:
+            return source
+        }
+    }
     var scanSetupSource: SyncSetupSource?
     var scanScreenCameraPermission: SyncCameraPermissionPixelValue?
     var pairingInfo: PairingInfo?
@@ -116,7 +144,11 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
 
     var onConfirmAndDeleteAllData: (() -> Void)?
 
-    let syncUIVersion = "v2"
+    let syncSetupUIVersion: SyncSetupWideEventData.UIVersion = .v2
+
+    var syncUIVersion: String {
+        syncSetupUIVersion.rawValue
+    }
 
     var uiVersionParameters: [String: String] {
         [PixelParameters.uiVersion: syncUIVersion]
@@ -124,7 +156,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
 
     private var sourcePixelParameters: [String: String] {
         var parameters = uiVersionParameters
-        parameters[PixelParameters.source] = source
+        parameters[PixelParameters.source] = classicPixelSource
         return parameters
     }
 
@@ -142,7 +174,8 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
         cameraAuthorization: SyncCameraAuthorizing = SyncCameraAuthorization(),
-        syncPromoStorage: any KeyedStoring<SyncPromoStorageKeys> = UserDefaults.app.keyedStoring()
+        syncPromoStorage: any KeyedStoring<SyncPromoStorageKeys> = UserDefaults.app.keyedStoring(),
+        syncSetupAttemptTracker: SyncSetupAttemptTracker
     ) {
         self.syncService = syncService
         self.syncBookmarksAdapter = syncBookmarksAdapter
@@ -156,6 +189,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         self.pixelFiring = pixelFiring
         self.cameraAuthorization = cameraAuthorization
         self.syncPromoStorage = syncPromoStorage
+        self.syncSetupAttemptTracker = syncSetupAttemptTracker
 
         let viewModel = SyncSettingsViewModel(
             isOnDevEnvironment: { syncService.serverEnvironment == .development },
@@ -995,7 +1029,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                                           peerKind: String? = nil,
                                           myRole: String? = nil,
                                           pairingV2FailureContext: PairingV2FailureContext? = nil) -> [String: String] {
-        var parameters = source.map { [PixelParameters.source: $0] } ?? [PixelParameters.source: setupSource.rawValue]
+        var parameters = [PixelParameters.source: classicPixelSource ?? setupSource.rawValue]
         parameters[PixelParameters.uiVersion] = syncUIVersion
         parameters[SyncSetupPixelParameter.myKind] = SyncSetupPixelValue.ddg
         parameters[SyncSetupPixelParameter.codeType] = codeType

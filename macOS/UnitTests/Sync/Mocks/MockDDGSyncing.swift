@@ -23,7 +23,7 @@ import Combine
 @testable import DDGSync
 
 class MockDDGSyncing: DDGSyncing {
-    func createConnectionController(deviceName: String, deviceType: String, delegate: any SyncConnectionControllerDelegate) -> any SyncConnectionControlling {
+    func createConnectionController(deviceName: String, deviceType: String, delegate: any SyncConnectionControllerDelegate, attemptTracker: SyncSetupAttemptTracker?) -> any SyncConnectionControlling {
         MockSyncConnectionControlling()
     }
 

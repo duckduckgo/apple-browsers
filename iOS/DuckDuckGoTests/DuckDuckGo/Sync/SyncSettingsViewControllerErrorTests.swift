@@ -24,6 +24,7 @@ import Combine
 @testable import DDGSync
 @_spi(Testing) import Persistence
 @_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import Common
 import FoundationExtensions
 import SyncUI_iOS
@@ -81,7 +82,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
     }
 
@@ -425,7 +427,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
 
         spyVC.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: false)
@@ -444,7 +447,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
         spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
 
@@ -465,7 +469,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
         spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
         spyVC.onPresent = { [weak spyVC] _ in
@@ -492,7 +497,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
         spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
         let confirmationTask = Task { @MainActor in
@@ -752,7 +758,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
 
         spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: false)
@@ -770,7 +777,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
 
         spyVC.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
@@ -791,7 +799,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             syncPausedStateManager: errorHandler,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
         spyVC.viewModel.connectingSheetPhase = .connecting(isRecovery: false)
         syncAutoRestoreHandler.isAutoRestoreFeatureEnabled = true
@@ -903,7 +912,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
             pixelFiring: pixelFiring,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
     }
 
@@ -1135,7 +1145,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             source: source,
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: syncPromoStorage
+            syncPromoStorage: syncPromoStorage,
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
     }
 
@@ -1150,7 +1161,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             source: source,
             featureFlagger: MockFeatureFlagger(),
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
     }
 
@@ -1182,7 +1194,8 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             pairingInfo: try XCTUnwrap(PairingInfo(url: pairingURL)),
             featureFlagger: featureFlagger,
             syncAutoRestoreHandler: syncAutoRestoreHandler,
-            syncPromoStorage: MockKeyValueStore().keyedStoring()
+            syncPromoStorage: MockKeyValueStore().keyedStoring(),
+            syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false })
         )
     }
 

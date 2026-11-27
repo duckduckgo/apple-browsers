@@ -258,6 +258,12 @@ class MainViewController: UIViewController {
         appOpenKeyboardRequestID = UUID()
     }
 
+    func retractStagedNewTabPageFocusAndCancelPendingAppOpenKeyboard() {
+        // The retract comes first because the cancel drops the staged flag it needs.
+        retractStagedNewTabPageFocus()
+        cancelPendingAppOpenKeyboard()
+    }
+
     /// After a Face ID unlock, iOS keeps the app inactive for up to about 2 s while its Face ID indicator goes away.
     /// The unlocked page can take focus during that time; iOS shows the keyboard once the app is active.
     private var isFinishingAppLockUnlock = false
@@ -2004,9 +2010,7 @@ class MainViewController: UIViewController {
     }
 
     @objc private func onAppDidEnterBackground() {
-        // Before the cancel, which drops the staged flag the retract needs.
-        retractStagedNewTabPageFocus()
-        cancelPendingAppOpenKeyboard()
+        retractStagedNewTabPageFocusAndCancelPendingAppOpenKeyboard()
         if newTabPagePresentation.hasPresentedPage, let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -3015,8 +3019,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
-        retractStagedNewTabPageFocus()
-        cancelPendingAppOpenKeyboard()
+        retractStagedNewTabPageFocusAndCancelPendingAppOpenKeyboard()
         newTabPagePresentation.cancel()
         isAfterIdlePresentationPending = false
         let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true

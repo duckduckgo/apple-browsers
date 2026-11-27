@@ -440,6 +440,7 @@ final class LaunchActionHandlerTests {
         #expect(!keyboardPresenter.hasCompletedAuthentication)
         #expect(!keyboardPresenter.isAfterIdleReturn)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 0)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -459,6 +460,7 @@ final class LaunchActionHandlerTests {
 
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 1)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 0)
     }
 
     @available(iOS 16, *)
@@ -494,6 +496,7 @@ final class LaunchActionHandlerTests {
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
         #expect(keyboardPresenter.isAfterIdleReturn)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 0)
     }
 
     @available(iOS 16, *)
@@ -515,6 +518,7 @@ final class LaunchActionHandlerTests {
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
         #expect(!keyboardPresenter.isAfterIdleReturn)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 0)
     }
 
     @available(iOS 16, *)
@@ -584,18 +588,7 @@ final class LaunchActionHandlerTests {
         #expect(idleReturnDelegate.releaseHeldNewTabPageCalled)
         #expect(!idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
-    }
-
-    @available(iOS 16, *)
-    @Test("A launch action retracts a New Tab Page staged focused before the action arrived", .timeLimit(.minutes(1)))
-    func launchActionRetractsStagedFocus() {
-        let handler = makeHandler()
-
-        handler.handleLaunchAction(.openURL(URL(string: "https://example.com")!))
-        handler.handleLaunchAction(.handleShortcutItem(UIApplicationShortcutItem(type: "shortcut", localizedTitle: "Shortcut")))
-        handler.handleLaunchAction(.handleUserActivity(NSUserActivity(activityType: "activity")))
-
-        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 3)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 1)
     }
 
     @available(iOS 16, *)

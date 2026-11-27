@@ -155,6 +155,11 @@ final class JWECompactCodec {
                                  additionalAuthenticatedData: Data(components.protectedHeader.utf8))
     }
 
+    func protectedKeyID(in token: String) throws -> String? {
+        let components = try decodeCompactToken(token)
+        return try decodeRSAOAEP256ProtectedHeader(components.protectedHeader).kid
+    }
+
     private func decodeDirectProtectedHeader(_ encodedHeader: String) throws -> DirectProtectedHeader {
         guard let protectedHeaderData = Base64URL.decode(encodedHeader),
               let protectedHeader = try? JSONDecoder().decode(DirectProtectedHeader.self, from: protectedHeaderData),

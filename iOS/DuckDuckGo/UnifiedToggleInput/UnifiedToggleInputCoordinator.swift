@@ -933,8 +933,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             syncInputModeFromExternalSource(state.toggleMode)
         }
 
-        attachmentsRetainedForDismiss = nil
-        restoreAttachments(state.attachments)
+        if isParkedOnNewTabPage {
+            // The resting card stays empty; the draft comes back when the input is focused, as after Back.
+            viewController.removeAllAttachments()
+            attachmentsRetainedForDismiss = state.attachments.isEmpty ? nil : state.attachments
+        } else {
+            attachmentsRetainedForDismiss = nil
+            restoreAttachments(state.attachments)
+        }
         synchronizeTabAttachmentPreparations()
 
         // Always sync the live model store from per-tab state — including nil values —
@@ -2064,6 +2070,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func beginReturnToNewTabPage(inputMode restingMode: TextEntryMode) {
+        guard isOmnibarSession else { return }
         stateMachine.beginReturnToNewTabPage()
         setInitialInputMode(effectiveInputMode(for: isToggleEnabled ? restingMode : .search))
     }

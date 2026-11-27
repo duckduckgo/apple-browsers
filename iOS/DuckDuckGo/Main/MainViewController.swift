@@ -1694,6 +1694,7 @@ class MainViewController: UIViewController {
     var latestKeyboardFrame: CGRect = .zero
     var lastShownKeyboardHeight: CGFloat = 0
     var bottomInputHoldKeyboardObserver: NSObjectProtocol?
+    var bottomInputHoldTimeout: DispatchWorkItem?
     /// The full on-screen keyboard was up, not just the bar iPadOS shows above a hardware keyboard.
     private var isOnScreenKeyboardShown = false
     private static let onScreenKeyboardMinimumHeight: CGFloat = 150

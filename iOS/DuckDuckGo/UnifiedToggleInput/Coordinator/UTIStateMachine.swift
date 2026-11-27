@@ -80,7 +80,9 @@ final class UTIStateMachine {
         return true
     }
 
+    /// Only an omnibar session can travel back; a Duck.ai tab that already took over stays in the chrome.
     func beginReturnToNewTabPage() {
+        guard isOmnibarSession else { return }
         restingSurface = .returningToNewTabPage
     }
 

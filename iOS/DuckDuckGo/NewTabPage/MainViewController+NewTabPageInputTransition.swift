@@ -128,9 +128,11 @@ extension MainViewController {
             self?.releaseBottomInputHold(heldBy: .focus)
         }
         // A hardware keyboard or a refused focus never shows the software keyboard, which would leave the hold in place.
-        DispatchQueue.main.asyncAfter(deadline: .now() + InlineNTPTransitionMetrics.bottomInputHoldKeyboardTimeout) { [weak self] in
+        let timeout = DispatchWorkItem { [weak self] in
             self?.releaseBottomInputHold(heldBy: .focus)
         }
+        bottomInputHoldTimeout = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + InlineNTPTransitionMetrics.bottomInputHoldKeyboardTimeout, execute: timeout)
     }
 
     /// Releases only while `transition` still owns the hold.
@@ -167,6 +169,8 @@ extension MainViewController {
     private func removeBottomInputHoldKeyboardObserver() {
         bottomInputHoldKeyboardObserver.map(NotificationCenter.default.removeObserver)
         bottomInputHoldKeyboardObserver = nil
+        bottomInputHoldTimeout?.cancel()
+        bottomInputHoldTimeout = nil
     }
 
     func dismissInlineNewTabPageInput(coordinator: UnifiedToggleInputCoordinator,

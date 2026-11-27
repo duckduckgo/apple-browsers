@@ -1770,8 +1770,8 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDismissDestination() -> UTIDismissDestination {
-        // Same predicate placement parks on, so skipping the fade and parking cannot disagree.
-        if !isIPadFullTabChatInput, redesignedNewTabPageSlotIfHosted != nil {
+        // The same predicate the dismiss animation picks its inline path on, so the two stay in step.
+        if !isIPadFullTabChatInput, newTabPageInputPresentation.transition == .inlineInput {
             return .newTabPageRestingCard
         }
         let tab = tabManager.currentTabsModel.currentTab

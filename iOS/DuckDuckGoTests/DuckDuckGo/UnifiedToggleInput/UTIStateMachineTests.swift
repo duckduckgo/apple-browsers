@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import XCTest
 @testable import DuckDuckGo
 
@@ -383,13 +384,10 @@ final class UTIStateMachineTests: XCTestCase {
 
     // MARK: - Resting surface
 
-    func test_restingSurface_startsInTheChrome() {
-        XCTAssertEqual(makeSUT(.hidden).restingSurface, .chrome)
-    }
-
     func test_parkOnNewTabPage_succeedsOnlyWhileHidden() {
         for displayState in Self.allDisplayStates {
             let sut = makeSUT(displayState)
+            XCTAssertEqual(sut.restingSurface, .chrome, "\(displayState) before parking")
 
             let didPark = sut.parkOnNewTabPage()
 
@@ -445,6 +443,17 @@ final class UTIStateMachineTests: XCTestCase {
         }
     }
 
+    func test_beginReturnToNewTabPage_isIgnoredOutsideAnOmnibarSession() {
+        for displayState: UnifiedToggleInputDisplayState in [.hidden, .aiTab(.collapsed), .aiTab(.expanded),
+                                                             .contextualChat(.collapsed), .contextualChat(.expanded)] {
+            let sut = makeSUT(displayState)
+
+            sut.beginReturnToNewTabPage()
+
+            XCTAssertEqual(sut.restingSurface, .chrome, "\(displayState)")
+        }
+    }
+
     func test_parkOnNewTabPage_acceptsAFinishedReturn() {
         let sut = makeSUT(.omnibar(.active))
         sut.beginReturnToNewTabPage()
@@ -452,16 +461,6 @@ final class UTIStateMachineTests: XCTestCase {
 
         XCTAssertTrue(sut.parkOnNewTabPage())
         XCTAssertEqual(sut.restingSurface, .newTabPage)
-    }
-
-    func test_moveToChrome_isIdempotent() {
-        let sut = makeSUT(.hidden)
-        sut.parkOnNewTabPage()
-
-        sut.moveToChrome()
-        sut.moveToChrome()
-
-        XCTAssertEqual(sut.restingSurface, .chrome)
     }
 
     func test_computeRenderState_restingSurfaceAppliesRestingShape() {
@@ -484,6 +483,16 @@ final class UTIStateMachineTests: XCTestCase {
         }
     }
 
+    func test_computeRenderState_restingSurfaceShowsTheToolbarOnlyInDuckAIModeWithTheToggleOn() {
+        let sut = makeSUT(.hidden)
+        sut.parkOnNewTabPage()
+
+        XCTAssertEqual(makeRenderState(sut, cardPosition: .top, inputMode: .search).cardLayout,
+                       .expanded(showsToggle: true, showsToolbar: false))
+        XCTAssertEqual(makeRenderState(sut, cardPosition: .top, inputMode: .aiChat, isToggleEnabled: false).cardLayout,
+                       .expanded(showsToggle: false, showsToolbar: false))
+    }
+
     func test_computeRenderState_hiddenInTheChromeKeepsCollapsedShape() {
         let renderState = makeRenderState(makeSUT(.hidden), cardPosition: .top)
 
@@ -491,13 +500,16 @@ final class UTIStateMachineTests: XCTestCase {
         XCTAssertEqual(renderState.cardLayout, .collapsed)
     }
 
-    private func makeRenderState(_ sut: UTIStateMachine, cardPosition: UnifiedToggleInputCardPosition) -> UTIRenderState {
-        sut.computeRenderState(inputMode: .aiChat,
+    private func makeRenderState(_ sut: UTIStateMachine,
+                                 cardPosition: UnifiedToggleInputCardPosition,
+                                 inputMode: TextEntryMode = .aiChat,
+                                 isToggleEnabled: Bool = true) -> UTIRenderState {
+        sut.computeRenderState(inputMode: inputMode,
                                textState: .empty,
                                cardPosition: cardPosition,
                                isInputVisibleForKeyboard: false,
                                isContentOverlaySuppressed: false,
-                               isToggleEnabled: true,
+                               isToggleEnabled: isToggleEnabled,
                                floatingReturnKeyState: .empty)
     }
 }

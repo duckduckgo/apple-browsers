@@ -30,7 +30,7 @@ struct SyncPairingURLInstruction: View {
 
     var body: some View {
         let font = UIFont.systemFont(ofSize: fontSize, weight: .semibold)
-        Text(format, replacing: "%@", with: pill(font: font).withBaselineOffset(font.descender - 2))
+        Text(format, replacing: "%@", with: pill(font: font).withBaselineOffset(font.descender - 4))
             .font(.subheadline)
             .foregroundColor(Color(designSystemColor: .textSecondary))
             .multilineTextAlignment(.center)
@@ -43,12 +43,12 @@ struct SyncPairingURLInstruction: View {
             .font: font,
             .foregroundColor: UIColor(designSystemColor: .textPrimary)
         ])
-        let size = CGSize(width: ceil(text.size().width) + 12, height: ceil(font.lineHeight) + 4)
+        let size = CGSize(width: ceil(text.size().width) + 12, height: ceil(font.lineHeight) + 8)
         return UIGraphicsImageRenderer(size: size).image { _ in
             UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light).performAsCurrent {
                 UIColor(designSystemColor: .decorationTertiary).setFill()
                 UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 8).fill()
-                text.draw(at: CGPoint(x: 6, y: 2))
+                text.draw(at: CGPoint(x: 6, y: 4))
             }
         }
     }

@@ -362,6 +362,16 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1214995978971487?focus=true
     case aiChatTabHideToggle
 
+    /// PoC, do not merge: a home button in the Duck.ai tab header that opens a new Search tab.
+    /// Off for everyone; internal users switch it on in Debug → Feature Flags.
+    /// https://app.asana.com/1/137249556945/task/1220858810758844
+    case aiChatTabHomeButtonPoC
+
+    /// PoC, do not merge: shows the Search↔Duck.ai toggle in a Duck.ai tab's input, overriding
+    /// `aiChatTabHideToggle`. Read once per launch, so changing it needs an app restart.
+    /// https://app.asana.com/1/137249556945/task/1220858810758844
+    case aiChatTabShowTogglePoC
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216049537026986
     case aiChatContextualUnifiedToggleInput
 
@@ -1036,6 +1046,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.updatedCreateImage))
         case .aiChatTabHideToggle:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.aiChatTabHideToggle))
+        case .aiChatTabHomeButtonPoC, .aiChatTabShowTogglePoC:
+            Config(source: .disabled)
         case .aiChatContextualUnifiedToggleInput:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .aiChatBrowserToolRequestAccess:

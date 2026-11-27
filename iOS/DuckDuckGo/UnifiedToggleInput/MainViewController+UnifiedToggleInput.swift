@@ -61,6 +61,11 @@ extension MainViewController {
         case aiTabChatChromeHidden
     }
 
+    /// PoC: iPhone only. Read with the coordinator's other launch-time inputs, so a change needs a restart.
+    private var showsToggleOnDuckAITabPoC: Bool {
+        UIDevice.current.userInterfaceIdiom == .phone && featureFlagger.isFeatureOn(.aiChatTabShowTogglePoC)
+    }
+
     func setUpUnifiedToggleInputIfNeeded() {
         // Idempotent: callable from viewDidLoad, MainCoordinator.startOnboardingFlowIfNotSeenBefore,
         // and onboardingCompleted — first call that passes the gates wins.
@@ -83,7 +88,7 @@ extension MainViewController {
             isToggleEnabled: initialToggleEnabled,
             isFireTab: isCurrentTabFireTab(),
             // iPad hosts the input only on Duck.ai tabs, where a Search mode would have no suggestions surface.
-            hidesToggleOnDuckAITab: isIPadFullTabChatInput || unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
+            hidesToggleOnDuckAITab: isIPadFullTabChatInput || (unifiedToggleInputFeature.isToggleHiddenOnDuckAITab && !showsToggleOnDuckAITabPoC),
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
             preferences: aiChatPreferences,
             toggleModeStorage: toggleModeStorage,
@@ -1944,6 +1949,15 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     /// Force-search NTP. Override mode without committing — preserved toggle preference must survive.
     func aiChatTabChatHeaderDidTapNewSearch() {
         fireHeaderPlusMenuPixel(.newSearch)
+        openNewSearchTabFromAIChatTabHeader()
+    }
+
+    /// PoC: the header's home button takes the Plus menu's New Search path, without its menu pixel.
+    func aiChatTabChatHeaderDidTapHome() {
+        openNewSearchTabFromAIChatTabHeader()
+    }
+
+    private func openNewSearchTabFromAIChatTabHeader() {
         recordUserOpenedTab()
         recordDuckAISessionPendingExit(.searchStarted)
         newTabTransitions.open {

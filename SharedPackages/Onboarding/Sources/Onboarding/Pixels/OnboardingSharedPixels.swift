@@ -230,13 +230,13 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
 
     // Contextual onboarding events
     case search(SuggestedOrCustomEvent)
-    case searchChatToggle(SuggestionOrCustomToggleEvent) // iOS only
+    case searchChatToggle(SuggestionOrCustomToggleEvent)
     case searchResults(EngagementEvent)
     case visitSite(SuggestedOrCustomEvent)
     case trackersBlocked(EngagementEvent)
     case fireButton(EngagementEvent)
     case end(EngagementEvent)
-    case endTryDuckAI(EngagementEvent) // iOS only — the Try Duck.ai end-of-journey dialog
+    case endTryDuckAI(EngagementEvent) // The Try Duck.ai end-of-journey dialog
     case subscriptionPromo(EngagementEvent)
     case timeLimit(TimeLimitReason) // iOS only
 

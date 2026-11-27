@@ -28,6 +28,7 @@ struct OnboardingDuckAIPathWindowRestorerTests {
     private let onboarding = FakeDuckAIOnboarding()
     private let window = CapturingDuckAIOnboardingWindow()
     let windowDidOpen = PassthroughSubject<DuckAIOnboardingWindow, Never>()
+    private let pixelReporter = CapturingDuckAIPathReporter()
 
     private func makeRestorer(isDuckAIAvailable: Bool = true,
                               clearDuckAIChats: @escaping () async -> Void = {}) -> OnboardingDuckAIPathWindowRestorer {
@@ -35,7 +36,8 @@ struct OnboardingDuckAIPathWindowRestorerTests {
                                            onboarding: onboarding,
                                            isDuckAIAvailable: { isDuckAIAvailable },
                                            clearDuckAIChats: clearDuckAIChats,
-                                           aiChatURL: { URL(string: "https://duck.ai")! })
+                                           aiChatURL: { URL(string: "https://duck.ai")! },
+                                           pixelReporter: pixelReporter)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -48,6 +50,7 @@ struct OnboardingDuckAIPathWindowRestorerTests {
 
         #expect(window.contents.isEmpty)
         #expect(onboarding.fallBackCount == 0)
+        #expect(pixelReporter.events.isEmpty)
         withExtendedLifetime(restorer) {}
     }
 
@@ -61,6 +64,7 @@ struct OnboardingDuckAIPathWindowRestorerTests {
         #expect(window.contents == [.newtab])
         #expect(onboarding.fallBackCount == 1)
         #expect(onboarding.restartCount == 0)
+        #expect(pixelReporter.events == ["searchFallback"])
         withExtendedLifetime(restorer) {}
     }
 
@@ -74,6 +78,7 @@ struct OnboardingDuckAIPathWindowRestorerTests {
 
         #expect(window.contents == [.newtab])
         #expect(onboarding.fallBackCount == 1)
+        #expect(pixelReporter.events == ["searchFallback"])
         withExtendedLifetime(restorer) {}
     }
 
@@ -93,6 +98,7 @@ struct OnboardingDuckAIPathWindowRestorerTests {
         #expect(contentsWhenCleared == [Tab.TabContent.none])
         #expect(onboarding.restartCount == 1)
         #expect(onboarding.fallBackCount == 0)
+        #expect(pixelReporter.events == ["chatReopened"])
         guard case .aiChat(let url, _) = reopened else {
             Issue.record("Expected a Duck.ai tab")
             return
@@ -127,5 +133,17 @@ private final class CapturingDuckAIOnboardingWindow: DuckAIOnboardingWindow {
     func replaceTabs(with tab: Tab) {
         contents.append(tab.content)
         onReplace?(tab.content)
+    }
+}
+
+private final class CapturingDuckAIPathReporter: OnboardingDuckAIPathReporting {
+    private(set) var events: [String] = []
+
+    func measureDuckAIChatReopened() {
+        events.append("chatReopened")
+    }
+
+    func measureDuckAIPathSearchFallback() {
+        events.append("searchFallback")
     }
 }

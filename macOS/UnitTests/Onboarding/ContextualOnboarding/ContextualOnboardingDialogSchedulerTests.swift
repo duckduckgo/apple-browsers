@@ -288,7 +288,7 @@ extension ContextualOnboardingDialogSchedulerTests {
         scheduler.firstDuckAIAnswerReceived()
         timer.fireAll()
 
-        #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
+        #expect(sent.updates == [.hide, .show(.thatsDuckAI, trigger: .answer)])
         #expect(provider.dialogTypeForTabCallCount == 1)
     }
 
@@ -302,8 +302,21 @@ extension ContextualOnboardingDialogSchedulerTests {
 
         timer.fireAll()
 
-        #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
+        #expect(sent.updates == [.hide, .show(.thatsDuckAI, trigger: .timeout)])
         #expect(provider.dialogTypeForTabCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A dialog other than That's Duck.ai! after the wait carries no trigger", .timeLimit(.minutes(1)))
+    func otherDialogAfterWaitHasNoTrigger() async throws {
+        provider.nextDialog = .subscriptionUpsell
+        let tab = try await duckAITab()
+        let scheduler = makeScheduler()
+        scheduler.navigationDidFinish(in: tab)
+
+        scheduler.firstDuckAIAnswerReceived()
+
+        #expect(sent.updates == [.hide, .show(.subscriptionUpsell)])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -317,7 +330,7 @@ extension ContextualOnboardingDialogSchedulerTests {
 
         scheduler.firstDuckAIAnswerReceived()
 
-        #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
+        #expect(sent.updates == [.hide, .show(.thatsDuckAI, trigger: .timeout)])
         #expect(provider.dialogTypeForTabCallCount == 1)
     }
 

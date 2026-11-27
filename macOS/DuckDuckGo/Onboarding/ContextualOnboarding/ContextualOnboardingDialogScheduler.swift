@@ -22,10 +22,18 @@ import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
+/// What ended the wait for Duck.ai's first answer before "That's Duck.ai!".
+enum ThatsDuckAITrigger: String {
+    /// Duck.ai's first answer arrived.
+    case answer
+    /// The answer didn't arrive in time.
+    case timeout
+}
+
 /// What a tab view should do with the contextual onboarding dialog it shows.
 enum ContextualOnboardingDialogUpdate: Equatable {
-    /// Show this dialog, replacing any dialog on screen.
-    case show(ContextualDialogType)
+    /// Show this dialog, replacing any dialog on screen; `trigger` is set when it follows the wait for Duck.ai's first answer.
+    case show(ContextualDialogType, trigger: ThatsDuckAITrigger? = nil)
     /// Remove the dialog on screen, if any.
     case hide
 }
@@ -90,8 +98,7 @@ final class ContextualOnboardingDialogScheduler {
 
     /// Duck.ai's first answer arrived in the tab on screen.
     func firstDuckAIAnswerReceived() {
-        // To do: pixel (dialog triggered by the first answer)
-        askAfterFirstDuckAIAnswer()
+        askAfterFirstDuckAIAnswer(trigger: .answer)
     }
 
     /// The window became key; `displayed` is the dialog on screen, if any.
@@ -141,19 +148,20 @@ final class ContextualOnboardingDialogScheduler {
     private func waitForFirstDuckAIAnswer(in tab: Tab) {
         tabWaitingForFirstDuckAIAnswer = tab
         firstDuckAIAnswerFailsafe = runAfter(Self.firstDuckAIAnswerFailsafeDelay) { [weak self] in
-            // To do: pixel (dialog triggered by the failsafe)
-            self?.askAfterFirstDuckAIAnswer()
+            self?.askAfterFirstDuckAIAnswer(trigger: .timeout)
         }
     }
 
-    private func askAfterFirstDuckAIAnswer() {
+    private func askAfterFirstDuckAIAnswer(trigger: ThatsDuckAITrigger) {
         guard let tab = tabWaitingForFirstDuckAIAnswer else { return }
         stopWaitingForFirstDuckAIAnswer()
         guard canShowDialog() else {
             onUpdate(.hide)
             return
         }
-        send(dialogProvider.dialogTypeForTab(tab))
+        let dialog = dialogProvider.dialogTypeForTab(tab)
+        // Onboarding can pick another dialog here, such as the upsell, which the trigger doesn't describe.
+        send(dialog, trigger: dialog == .thatsDuckAI ? trigger : nil)
     }
 
     private func stopWaitingForFirstDuckAIAnswer() {
@@ -179,12 +187,12 @@ final class ContextualOnboardingDialogScheduler {
         return !isInPopUpWindow()
     }
 
-    private func send(_ dialog: ContextualDialogType?) {
+    private func send(_ dialog: ContextualDialogType?, trigger: ThatsDuckAITrigger? = nil) {
         guard let dialog else {
             onUpdate(.hide)
             return
         }
         wasDismissed = false
-        onUpdate(.show(dialog))
+        onUpdate(.show(dialog, trigger: trigger))
     }
 }

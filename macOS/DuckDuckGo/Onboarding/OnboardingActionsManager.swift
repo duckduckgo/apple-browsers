@@ -248,13 +248,13 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager, pinningManager: pinningManager),
             aiChatPreferencesStorage: DefaultAIChatPreferencesStorage(),
             featureFlagger: featureFlagger,
-            onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
+            onboardingSharedPixelHandler: OnboardingVariantPixelHandler(handler: OnboardingSharedPixelHandler(
                 platform: .macOS,
                 installTypeProvider: {
                     reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall
                 },
                 installDateProvider: installDateProvider
-             ),
+             )),
             chromeExtensionInstaller: chromeExtensionInstaller
         )
     }
@@ -323,7 +323,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             goToAddressBar()
             return
         }
-        // To do: pixel (path chosen, from mode and source)
+        onboardingSharedPixelHandler.fire(.searchChatToggle(.clicked(.init(query))))
         switch query.mode {
         case .search:
             // Before the tab changes, so the results page already gets the search path's dialogs.
@@ -474,7 +474,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             let value: OnboardingSharedPixelEvent.SearchExperienceEvent.Value = aiChatPreferencesStorage.showSearchAndDuckAIToggle ? .searchPlusDuckAI : .searchOnly
             pixel = .searchExperience(.clicked(value))
         case .searchOrChat:
-            // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
+            // Measured on submit, from the query's mode and source.
             pixel = nil
         }
         if let pixel {
@@ -503,8 +503,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         case .addressBarMode:
             pixel = .searchExperience(.shown)
         case .searchOrChat:
-            // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
-            pixel = nil
+            pixel = .searchChatToggle(.shown)
         }
         if let pixel {
             onboardingSharedPixelHandler.fire(pixel)
@@ -566,7 +565,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private func fireOnboardingFinishedPixels() {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
-        fireSharedPixelOnStepCompletion(for: .addressBarMode)
+        // The page reports the address bar step itself when the search or chat step follows it.
+        if !isStepActive(.searchOrChat) {
+            fireSharedPixelOnStepCompletion(for: .addressBarMode)
+        }
         chromeExtensionExperiment.fireMetric(.onboardingCompleted)
 
         let togglePixel: AIChatPixel = aiChatPreferencesStorage.showSearchAndDuckAIToggle
@@ -575,4 +577,15 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         PixelKit.fire(togglePixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
+}
+
+private extension OnboardingSharedPixelEvent.SuggestionOrCustomToggleEvent.Value {
+    init(_ query: OnboardingUserScript.SubmitQuery) {
+        switch (query.mode, query.source) {
+        case (.duckAi, .typed): self = .customChat
+        case (.duckAi, .suggestion): self = .suggestedChat
+        case (.search, .typed): self = .customSearch
+        case (.search, .suggestion): self = .suggestedSearch
+        }
+    }
 }

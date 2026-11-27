@@ -140,5 +140,33 @@
         "triggers": ["other"],
         "suffixes": ["daily_standard"],
         "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
+    },
+    "onboarding_thats-duckai_trigger_macos": {
+        "description": "Fired on the contextual onboarding Duck.ai path when the \"That's Duck.ai!\" dialog shows, with what ended the wait before it: Duck.ai's first answer, or the timeout.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["impression"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "trigger",
+                "type": "string",
+                "description": "What ended the wait: Duck.ai's first answer, or the timeout",
+                "enum": ["answer", "timeout"]
+            }
+        ]
+    },
+    "onboarding_duckai-chat_reopened_macos": {
+        "description": "Fired when a window opens while the contextual onboarding Duck.ai path waits for Fire (for example after a relaunch), and the app reopens the onboarding chat with the user's prompt.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "onboarding_duckai-path_search-fallback_macos": {
+        "description": "Fired when a window opens while the contextual onboarding Duck.ai path waits for Fire, but Duck.ai is off or the prompt is gone, so onboarding continues on the search path instead.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

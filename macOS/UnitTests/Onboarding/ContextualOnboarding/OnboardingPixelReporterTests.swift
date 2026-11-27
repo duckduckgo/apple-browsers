@@ -329,9 +329,61 @@ final class OnboardingPixelReporterTests: XCTestCase {
         ])
     }
 
-    func test_WhenGotItPressed_OnTryFireButtonDialog_ThenEndShownEventSent() {
+    func test_WhenGotItPressed_OnTryFireButtonDialog_ThenEndShownAndOnboardingFinishedSent() {
+        onboardingState.lastDialog = .highFive
+
         reporter.measureGotItPressed(dialogType: .tryFireButton)
+
         XCTAssertEqual(sharedPixelHandler.eventsReceived, [.end(.shown)])
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFinished.name)
+    }
+
+    func test_WhenGotItPressed_OnTryFireButtonDialog_AndEndingIsTryDuckAI_ThenTryDuckAIShownAndOnboardingFinishedSent() {
+        onboardingState.lastDialog = .tryDuckAI
+
+        reporter.measureGotItPressed(dialogType: .tryFireButton)
+
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.endTryDuckAI(.shown)])
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFinished.name)
+    }
+
+    func test_ThatsDuckAIDialog_ReportsAsTheFireButtonStep() {
+        reporter.measureDialogShown(dialogType: .thatsDuckAI)
+        reporter.measureDialogManuallyDismissed(dialogType: .thatsDuckAI)
+        reporter.measureDialogDismissed(dialogType: .thatsDuckAI)
+        reporter.measureGotItPressed(dialogType: .thatsDuckAI)
+
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.fireButton(.shown)])
+        XCTAssertNil(eventSent)
+    }
+
+    func test_DuckAIPathMoments_SendTheirMacOSPixels() {
+        reporter.measureThatsDuckAITriggered(by: .timeout)
+        XCTAssertEqual(eventSent?.name, "onboarding_thats-duckai_trigger_macos")
+        XCTAssertEqual(eventSent?.parameters, ["trigger": "timeout"])
+
+        reporter.measureDuckAIChatReopened()
+        XCTAssertEqual(eventSent?.name, "onboarding_duckai-chat_reopened_macos")
+
+        reporter.measureDuckAIPathSearchFallback()
+        XCTAssertEqual(eventSent?.name, "onboarding_duckai-path_search-fallback_macos")
+        XCTAssertEqual(frequency, .standard)
+    }
+
+    func test_TryDuckAIDialog_ReportsShownEngageAndDismiss() {
+        reporter.measureDialogShown(dialogType: .tryDuckAI)
+        reporter.measureTryDuckAIPressed()
+        reporter.measureGotItPressed(dialogType: .tryDuckAI)
+        reporter.measureDialogManuallyDismissed(dialogType: .tryDuckAI)
+        reporter.measureDialogDismissed(dialogType: .tryDuckAI)
+
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [
+            .endTryDuckAI(.shown),
+            .endTryDuckAI(.clicked(.engage)),
+            .endTryDuckAI(.clicked(.dismiss)),
+            .endTryDuckAI(.clicked(.dismiss))
+        ])
+        XCTAssertNil(eventSent)
     }
 
     func test_WhenGotItPressed_OnFinalDialog_ThenEndClickedEngageEventSent() {

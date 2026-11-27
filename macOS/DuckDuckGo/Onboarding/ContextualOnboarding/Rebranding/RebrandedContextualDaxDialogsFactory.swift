@@ -96,6 +96,10 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
         onboardingPixelReporter.measureDialogShown(dialogType: type)
+        // Here rather than in the bubble view, which SwiftUI may build more than once.
+        if type == .highFive || type == .tryDuckAI {
+            onboardingPixelReporter.measureLastDialogShown()
+        }
         return AnyView(
             ContextualDialogView(
                 type: type,
@@ -123,7 +127,6 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .tryFireButton:
             return AnyView(tryFireButtonDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         case .highFive:
-            onboardingPixelReporter.measureLastDialogShown()
             return AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .tryDuckAI:
             return AnyView(tryDuckAIDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
@@ -280,13 +283,13 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                                             onDismiss: onDismiss,
                                             onGotItPressed: onGotItPressed,
                                             onFireButtonPressed: onFireButtonPressed,
-                                            onTryDuckAI: Self.tryDuckAIAction(delegate: delegate, onDismiss: onDismiss))
+                                            onTryDuckAI: Self.tryDuckAIAction(delegate: delegate, onboardingPixelReporter: onboardingPixelReporter, onDismiss: onDismiss))
     }
 
     private func tryDuckAIDialog(delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {
         OnboardingRebranding.OnboardingEndOfJourneyDialog(onManualDismiss: onManualDismiss) {
             OnboardingRebranding.OnboardingTryDuckAIDialogContent(
-                tryDuckAIAction: Self.tryDuckAIAction(delegate: delegate, onDismiss: onDismiss),
+                tryDuckAIAction: Self.tryDuckAIAction(delegate: delegate, onboardingPixelReporter: onboardingPixelReporter, onDismiss: onDismiss),
                 skipAction: {
                     onDismiss()
                     onGotItPressed()
@@ -296,8 +299,11 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     /// Opens Duck.ai without moving onboarding on, so the upsell waits for a page that isn't Duck.ai.
-    static func tryDuckAIAction(delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void) -> () -> Void {
+    static func tryDuckAIAction(delegate: any OnboardingNavigationDelegate,
+                                onboardingPixelReporter: OnboardingDialogsReporting,
+                                onDismiss: @escaping () -> Void) -> () -> Void {
         {
+            onboardingPixelReporter.measureTryDuckAIPressed()
             onDismiss()
             delegate.navigateFromOnboarding(to: AIChatRemoteSettings().aiChatURL)
         }

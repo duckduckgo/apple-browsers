@@ -124,14 +124,36 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertNil(find(OnboardingRebranding.OnboardingEndOfJourneyDialogContent.self, in: result))
     }
 
+    func testWhenRebrandedEndingIsShownThenOnboardingFinishedIsMeasuredWithShown() {
+        for ending in [ContextualDialogType.highFive, .tryDuckAI] {
+            // GIVEN
+            reporter = CapturingOnboardingPixelReporter()
+            let factory = RebrandedContextualDaxDialogsFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
+
+            // WHEN building only the content, as SwiftUI may do again
+            _ = factory.makeBubbleView(for: ending, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+            // THEN
+            XCTAssertFalse(reporter.measureLastDialogShownCalled, "\(ending)")
+
+            // WHEN
+            _ = factory.makeView(for: ending, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+            // THEN
+            XCTAssertTrue(reporter.measureLastDialogShownCalled, "\(ending)")
+            XCTAssertEqual(reporter.shownDialog, ending)
+        }
+    }
+
     func testWhenTryDuckAIThenTheDialogClosesAndDuckAIOpens() {
         // GIVEN
         var dismissed = false
 
         // WHEN
-        RebrandedContextualDaxDialogsFactory.tryDuckAIAction(delegate: delegate, onDismiss: { dismissed = true })()
+        RebrandedContextualDaxDialogsFactory.tryDuckAIAction(delegate: delegate, onboardingPixelReporter: reporter, onDismiss: { dismissed = true })()
 
         // THEN
+        XCTAssertTrue(reporter.measureTryDuckAIPressedCalled)
         XCTAssertTrue(dismissed)
         XCTAssertTrue(delegate.didNavigateToCalled)
         XCTAssertEqual(delegate.capturedUrlString, AIChatRemoteSettings().aiChatURL.absoluteString)
@@ -480,6 +502,7 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var gotItPressedDialog: ContextualDialogType?
     var subscriptionUpsellAcceptedCalled = false
     var subscriptionUpsellDeclinedCalled = false
+    var measureTryDuckAIPressedCalled = false
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -533,6 +556,13 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
     func measureSubscriptionUpsellDeclined() {
         subscriptionUpsellDeclinedCalled = true
+    }
+
+    func measureTryDuckAIPressed() {
+        measureTryDuckAIPressedCalled = true
+    }
+
+    func measureThatsDuckAITriggered(by trigger: ThatsDuckAITrigger) {
     }
 }
 extension CapturingOnboardingNavigationDelegate: OnboardingNavigationDelegate {}

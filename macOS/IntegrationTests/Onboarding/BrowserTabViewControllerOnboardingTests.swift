@@ -428,6 +428,18 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertTrue(delegate.didCallHighlightFireButton)
     }
 
+    func testWhenThatsDuckAIIsShownAfterTheWaitThenPixelReporterMeasuresTheTrigger() throws {
+        // GIVEN
+        dialogProvider.dialog = .thatsDuckAI
+
+        // WHEN no answer arrives, the 2-second failsafe shows the dialog
+        tab.navigateFromOnboarding(to: try XCTUnwrap(URL(string: "https://duck.ai")))
+
+        // THEN
+        wait(for: [expectation], timeout: 5.0)
+        XCTAssertEqual(pixelReporter.thatsDuckAITrigger, .timeout)
+    }
+
     func testWhenThatsDuckAIIsShownThenAskDelegateToHighlightFireButton() throws {
         // GIVEN
         dialogProvider.dialog = .thatsDuckAI
@@ -817,6 +829,7 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var manuallyDismissedDialog: ContextualDialogType?
     var shownDialog: ContextualDialogType?
     var gotItPressedDialog: ContextualDialogType?
+    var thatsDuckAITrigger: ThatsDuckAITrigger?
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -870,6 +883,13 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     }
 
     func measureSubscriptionUpsellDeclined() {
+    }
+
+    func measureTryDuckAIPressed() {
+    }
+
+    func measureThatsDuckAITriggered(by trigger: ThatsDuckAITrigger) {
+        thatsDuckAITrigger = trigger
     }
 }
  private class DockCustomizerMock: DockCustomization {

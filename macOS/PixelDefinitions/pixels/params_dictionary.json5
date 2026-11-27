@@ -511,6 +511,12 @@
         "description": "Bucketed days since install during onboarding",
         "enum": ["0", "1-3", "4-10", "11-28", "28+"]
     },
+    "onboardingVariantSearchExperience": {
+        "key": "variant_search_experience",
+        "type": "string",
+        "description": "Whether the user searched or chatted at the onboarding 'Try a search or AI chat' step, whatever their Search & Duck.ai choice (the search_plus_duckai prefix is historical). Sent on every onboarding pixel after that choice.",
+        "enum": ["search_plus_duckai-search", "search_plus_duckai-chat"]
+    },
     "nextStepsDaysSinceInstall": {
         "key": "daysSinceInstall",
         "type": "integer",

@@ -114,4 +114,41 @@ class LinkTests: XCTestCase {
         let result = primay.merge(with: secondary)
         XCTAssertNil(result.title)
     }
+
+    // MARK: - Decoding
+
+    func testWhenArchivedAndRestoredThenTitleUrlLocalPathAndDisplayTitleArePreserved() throws {
+        let localPath = URL(fileURLWithPath: "/tmp/page.html")
+        let link = Link(title: Constants.title, url: Constants.wwwUrl, localPath: localPath)
+
+        let data = try NSKeyedArchiver.archivedData(withRootObject: link, requiringSecureCoding: false)
+        let restored = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Link)
+
+        XCTAssertEqual(restored, link)
+        XCTAssertEqual(restored.title, Constants.title)
+        XCTAssertEqual(restored.url, Constants.wwwUrl)
+        XCTAssertEqual(restored.localFileURL, localPath)
+        XCTAssertEqual(restored.displayTitle, link.displayTitle)
+    }
+
+    func testWhenArchiveHasNoUrlThenDecodingReturnsNil() throws {
+        let decoder = try makeDecoder(values: ["title": Constants.title])
+
+        XCTAssertNil(Link(coder: decoder))
+    }
+
+    func testWhenArchiveHasNonUrlValueForUrlThenDecodingReturnsNil() throws {
+        let decoder = try makeDecoder(values: ["title": Constants.title, "url": Constants.url.absoluteString])
+
+        XCTAssertNil(Link(coder: decoder))
+    }
+
+    private func makeDecoder(values: [String: Any]) throws -> NSKeyedUnarchiver {
+        let archiver = NSKeyedArchiver(requiringSecureCoding: false)
+        values.forEach { archiver.encode($0.value, forKey: $0.key) }
+        archiver.finishEncoding()
+        let unarchiver = try NSKeyedUnarchiver(forReadingFrom: archiver.encodedData)
+        unarchiver.requiresSecureCoding = false
+        return unarchiver
+    }
 }

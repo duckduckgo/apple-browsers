@@ -114,6 +114,19 @@ class TabTests: XCTestCase {
         XCTAssertTrue(tab?.isDesktop ?? false)
     }
 
+    func testWhenArchivedLinkHasNoUrlThenTabRestoresWithoutLink() throws {
+        let archiver = NSKeyedArchiver(requiringSecureCoding: false)
+        archiver.setClassName(NSStringFromClass(Tab.self), for: TabArchiveStub.self)
+        archiver.setClassName(NSStringFromClass(Link.self), for: LinkWithoutURLArchiveStub.self)
+        archiver.encode(TabArchiveStub(uid: "restored", link: LinkWithoutURLArchiveStub()), forKey: NSKeyedArchiveRootObjectKey)
+        archiver.finishEncoding()
+
+        let restoredTab = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(archiver.encodedData) as? Tab)
+
+        XCTAssertEqual(restoredTab.uid, "restored")
+        XCTAssertNil(restoredTab.link)
+    }
+
     /// The marker survives repeated reads so a provisional load replaced before it commits keeps the
     /// restoration attribution; only a commit ends it.
     func testDecodedTabKeepsPendingSessionRestorationUntilCleared() throws {
@@ -872,6 +885,43 @@ private class CoderStub: NSCoder {
         return (properties[key] as? Int) ?? 0
     }
 
+}
+
+/// Archived under `Tab`'s class name to write a tab whose link entry is not decodable.
+@objc(TabTestsTabArchiveStub)
+private class TabArchiveStub: NSObject, NSCoding {
+
+    private let uid: String
+    private let link: NSObject
+
+    init(uid: String, link: NSObject) {
+        self.uid = uid
+        self.link = link
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    func encode(with coder: NSCoder) {
+        coder.encode(uid, forKey: Tab.NSCodingKeys.uid)
+        coder.encode(link, forKey: Tab.NSCodingKeys.link)
+    }
+}
+
+/// Archived under `Link`'s class name with a title but no URL.
+@objc(TabTestsLinkWithoutURLArchiveStub)
+private class LinkWithoutURLArchiveStub: NSObject, NSCoding {
+
+    override init() {}
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    func encode(with coder: NSCoder) {
+        coder.encode("A title", forKey: "title")
+    }
 }
 
 private class MockTabObserver: NSObject, TabObserver {

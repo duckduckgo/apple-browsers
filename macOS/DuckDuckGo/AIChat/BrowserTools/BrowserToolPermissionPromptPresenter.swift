@@ -202,11 +202,12 @@ final class BrowserToolPermissionPromptPresenter {
 
     func localModelPromptDidClose() {
         localModelPromptWindow = nil
+        refresh()
     }
 
     // A tool prompt waiting on the offer's own tab would show there first, so it holds that tab's button too.
     private func promptHoldingDuckAIButton(of collection: TabCollectionViewModel, for tabID: TabIdentifier) -> TranslateOfferSuppressor? {
-        if let localModelPromptWindow, localModelPromptWindow === windowController(for: collection)?.window {
+        if showsLocalModelPrompt(collection) {
             return .localModel
         }
         let shownID = shown[ObjectIdentifier(collection)]?.requestID
@@ -306,7 +307,13 @@ final class BrowserToolPermissionPromptPresenter {
 
     private func oldestRequest(selectedIn collection: TabCollectionViewModel) -> Request? {
         guard let selectedTabID = collection.selectedTabViewModel?.tab.uuid else { return nil }
-        return requests.first { $0.collection === collection && $0.ownerTabID == selectedTabID }
+        // An offer on a tab switched to under the local-model prompt waits until that prompt closes.
+        let holdsOffers = showsLocalModelPrompt(collection)
+        return requests.first { $0.collection === collection && $0.ownerTabID == selectedTabID && !(holdsOffers && $0.translateOfferLanguageCode != nil) }
+    }
+
+    private func showsLocalModelPrompt(_ collection: TabCollectionViewModel) -> Bool {
+        localModelPromptWindow != nil && localModelPromptWindow === windowController(for: collection)?.window
     }
 
     private func show(_ request: Request, in collection: TabCollectionViewModel, key: ObjectIdentifier) {

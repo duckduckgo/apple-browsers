@@ -60,6 +60,7 @@ public struct SimplifiedSyncSettingsView: View {
         .environmentObject(model)
         .onChange(of: model.isSyncEnabled) { isEnabled in
             if !isEnabled {
+                model.isDeviceActivityPresented = false
                 selectedDevice = nil
             }
         }
@@ -596,7 +597,7 @@ extension SimplifiedSyncSettingsView {
         if model.isDeviceActivityAvailable,
            let deviceActivityViewModel = model.deviceActivityViewModel {
             Section {
-                NavigationLink(destination: DeviceActivityView(model: deviceActivityViewModel)) {
+                NavigationLink(destination: DeviceActivityView(model: deviceActivityViewModel), isActive: $model.isDeviceActivityPresented) {
                     Label(title: {
                         Text(UserText.deviceActivityTitle)
                             .daxBodyRegular()

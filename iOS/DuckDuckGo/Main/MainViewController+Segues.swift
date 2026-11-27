@@ -451,20 +451,24 @@ extension MainViewController {
                                    syncAutoRestoreHandler: syncAutoRestoreHandler)
     }
 
-    func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
+    func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil, showDeviceActivity: Bool = false) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
         let launchSync: (SettingsViewModel) -> Void = { settingsViewModel in
             if let source {
-                settingsViewModel.shouldPresentSyncViewWithSource(source, animated: false)
+                settingsViewModel.shouldPresentSyncViewWithSource(source, animated: false, showDeviceActivity: showDeviceActivity)
             } else {
-                settingsViewModel.presentLegacyView(.sync(pairingInfo), animated: false)
+                settingsViewModel.presentLegacyView(.sync(pairingInfo, showDeviceActivity: showDeviceActivity), animated: false)
             }
         }
 
         if let navigationController = presentedViewController as? UINavigationController,
            navigationController.viewControllers.first is SettingsHostingController {
+            if showDeviceActivity, let syncController = navigationController.viewControllers.compactMap({ $0 as? SyncSettingsViewController }).first {
+                syncController.showDeviceActivity()
+                return
+            }
             launchSettings(completion: launchSync)
             return
         }

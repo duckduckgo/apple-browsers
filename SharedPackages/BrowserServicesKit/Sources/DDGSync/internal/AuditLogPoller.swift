@@ -17,13 +17,18 @@
 //
 
 import Foundation
+import Combine
+import CryptoKit
 import FoundationExtensions
 import Persistence
+import os.log
 
 /// Tracks forward progress independently of the Device Activity screen's history cursor and review date.
 final class AuditLogPoller {
     private enum Constants {
         static let pageSize = 100
+        // The server rebuild retains its newest 100 raw entries. Keep only enough IDs to recognize that replay.
+        static let recentEventLimit = 100
         static let pageDelayNanoseconds: UInt64 = 2_000_000_000
     }
 
@@ -32,6 +37,10 @@ final class AuditLogPoller {
     private let canPoll: (SyncAccount) throws -> Bool
     private let initializeReviewState: (AuditLogPage, SyncAccount) throws -> Void
     private let onError: (Error) -> Void
+    private let notify: (SyncLoginNotification) async -> Void
+    private let reviewedThrough: (String) throws -> Date?
+    private let stateDidChangeSubject = PassthroughSubject<Void, Never>()
+    var stateDidChange: AnyPublisher<Void, Never> { stateDidChangeSubject.eraseToAnyPublisher() }
     private let sleep: (UInt64) async throws -> Void
     private let lock = NSLock()
     // Keep checkpoint writes ordered with logout cleanup; callbacks may re-enter cancellation or cleanup.
@@ -43,17 +52,21 @@ final class AuditLogPoller {
          canPoll: @escaping (SyncAccount) throws -> Bool,
          initializeReviewState: @escaping (AuditLogPage, SyncAccount) throws -> Void,
          onError: @escaping (Error) -> Void,
+         notify: @escaping (SyncLoginNotification) async -> Void,
+         reviewedThrough: @escaping (String) throws -> Date?,
          sleep: @escaping (UInt64) async throws -> Void = { try await Task.sleep(nanoseconds: $0) }) {
         self.accountManager = accountManager
         self.keyValueStore = keyValueStore
         self.canPoll = canPoll
         self.initializeReviewState = initializeReviewState
         self.onError = onError
+        self.notify = notify
+        self.reviewedThrough = reviewedThrough
         self.sleep = sleep
     }
 
-    static func cursorKey(for accountID: String) -> String {
-        "com.duckduckgo.sync.audit-log.cursor.\(accountID)"
+    static func checkpointKey(for accountID: String) -> String {
+        "com.duckduckgo.sync.audit-log.checkpoint.\(accountID)"
     }
 
     /// Returns false when polling is disabled or another caller already owns a poll.
@@ -118,29 +131,75 @@ final class AuditLogPoller {
     func clearState(for accountID: String) throws {
         cancel()
         try checkpointLock.withLock {
-            try keyValueStore.removeObject(forKey: Self.cursorKey(for: accountID))
+            try keyValueStore.removeObject(forKey: Self.checkpointKey(for: accountID))
         }
+        stateDidChangeSubject.send()
+    }
+
+    func pendingEvents(for accountID: String) throws -> [SyncLoginEvent] {
+        try checkpointLock.withLock { try checkpoint(for: accountID).pendingEvents }
+    }
+
+    func dismissEvents(withIDs ids: Set<String>, for accountID: String) throws {
+        try updatePendingEvents(for: accountID) { ids.contains($0.id) }
+    }
+
+    func removeReviewedEvents(through date: Date, for accountID: String) throws {
+        try updatePendingEvents(for: accountID) { $0.occurredAt <= date }
+    }
+
+    private func updatePendingEvents(for accountID: String, removing shouldRemove: (SyncLoginEvent) -> Bool) throws {
+        let changed = try checkpointLock.withLock {
+            var value = try checkpoint(for: accountID)
+            let count = value.pendingEvents.count
+            value.pendingEvents.removeAll(where: shouldRemove)
+            guard value.pendingEvents.count != count else { return false }
+            try persist(value, for: accountID)
+            return true
+        }
+        if changed { stateDidChangeSubject.send() }
+    }
+
+    private func checkpoint(for accountID: String) throws -> AuditLogCheckpoint {
+        guard let data = try keyValueStore.object(forKey: Self.checkpointKey(for: accountID)) as? Data else {
+            return AuditLogCheckpoint()
+        }
+        do {
+            return try JSONDecoder().decode(AuditLogCheckpoint.self, from: data)
+        } catch let error as DecodingError {
+            Logger.sync.error("Discarding unreadable audit-log checkpoint: \(String(reflecting: error), privacy: .private)")
+            // No checkpoint format has shipped. Reinitialize silently instead of migrating old drafts or replaying history.
+            try keyValueStore.removeObject(forKey: Self.checkpointKey(for: accountID))
+            return AuditLogCheckpoint()
+        }
+    }
+
+    private func persist(_ value: AuditLogCheckpoint, for accountID: String) throws {
+        try keyValueStore.set(JSONEncoder().encode(value), forKey: Self.checkpointKey(for: accountID))
     }
 
     private func poll(for account: SyncAccount) async throws {
         try checkCanPoll(account)
-        guard var cursor = try keyValueStore.object(forKey: Self.cursorKey(for: account.userId)) as? String else {
+        guard var cursor = try checkpointLock.withLock({ try checkpoint(for: account.userId).cursor }) else {
             try await initialize(for: account)
             return
         }
 
+        let startingCursor = cursor
+        var entries = [AuditLogEntryDecodingResult]()
         do {
             while true {
                 try checkCanPoll(account)
                 let page = try await accountManager.fetchAuditLog(for: account, cursor: .after(cursor), limit: Constants.pageSize)
                 if page.entries.isEmpty {
-                    // Commit only when the whole poll succeeds. A failure repeats all pages on the next sync.
-                    try save(page, for: account, isInitialPage: false)
+                    try await process(entries, startingCursor: startingCursor, finalPage: page, for: account)
                     return
                 }
                 let nextCursor = try afterCursor(in: page)
                 guard nextCursor != cursor else { throw AuditLogError.nonAdvancingAfterCursor }
                 cursor = nextCursor
+                // Forward cursors advance toward newer events; prepend each newest-first page.
+                entries.insert(contentsOf: page.entries, at: 0)
                 try await sleep(Constants.pageDelayNanoseconds)
             }
         } catch AuditLogError.invalidCursor {
@@ -153,10 +212,33 @@ final class AuditLogPoller {
     private func initialize(for account: SyncAccount) async throws {
         try checkCanPoll(account)
         let page = try await accountManager.fetchAuditLog(for: account, cursor: nil, limit: Constants.pageSize)
-        try save(page, for: account, isInitialPage: true)
+        try save(page, for: account, isInitialPage: true, processedIDs: page.entries.map(\.id))
     }
 
-    private func save(_ page: AuditLogPage, for account: SyncAccount, isInitialPage: Bool) throws {
+    private func process(_ entries: [AuditLogEntryDecodingResult], startingCursor: String,
+                         finalPage: AuditLogPage, for account: SyncAccount) async throws {
+        try checkCanPoll(account)
+        let recentIDs = try checkpointLock.withLock { Set(try checkpoint(for: account.userId).recentEventIDs) }
+        let reviewDate = try reviewedThrough(account.userId)
+        var processor = AuditLogEventProcessor()
+        let events = processor.process(entries).compactMap { event -> SyncLoginEvent? in
+            guard event.kind == .synced, event.device.id != account.deviceId,
+                  !recentIDs.contains(event.id), reviewDate.map({ event.occurredAt > $0 }) ?? true else { return nil }
+            return SyncLoginEvent(id: event.id, occurredAt: event.occurredAt,
+                                  deviceName: event.device.name)
+        }
+        if !events.isEmpty {
+            // Stable across checkpoint failures, even if more events arrive before the next attempt.
+            let digest = SHA256.hash(data: Data("\(account.userId)\u{0}\(startingCursor)".utf8))
+                .map { String(format: "%02x", $0) }.joined()
+            await notify(SyncLoginNotification(identifier: "sync-login-\(digest)", accountID: account.userId, events: events))
+        }
+        // Scheduling is best effort. An interruption after delivery but before this write can repeat the alert.
+        try save(finalPage, for: account, isInitialPage: false, newEvents: events, processedIDs: entries.map(\.id))
+    }
+
+    private func save(_ page: AuditLogPage, for account: SyncAccount, isInitialPage: Bool,
+                      newEvents: [SyncLoginEvent] = [], processedIDs: [String]) throws {
         let cursor = try afterCursor(in: page)
         try checkCanPoll(account)
         try checkpointLock.withLock {
@@ -164,8 +246,21 @@ final class AuditLogPoller {
             if isInitialPage { try initializeReviewState(page, account) }
             // Initialization may synchronously cancel polling or remove the account.
             try Task.checkCancellation()
-            try keyValueStore.set(cursor, forKey: Self.cursorKey(for: account.userId))
+            // Re-read under the same lock used by dismissal, so an in-flight poll cannot restore dismissed events.
+            var value = try checkpoint(for: account.userId)
+            var pendingIDs = Set(value.pendingEvents.map(\.id))
+            value.pendingEvents.append(contentsOf: newEvents.filter { pendingIDs.insert($0.id).inserted })
+            if let date = try reviewedThrough(account.userId) {
+                value.pendingEvents.removeAll { $0.occurredAt <= date }
+            }
+            var recentIDs = Set<String>()
+            value.recentEventIDs = Array((processedIDs + value.recentEventIDs)
+                .filter { recentIDs.insert($0).inserted }.prefix(Constants.recentEventLimit))
+            value.cursor = cursor
+            try Task.checkCancellation()
+            try persist(value, for: account.userId)
         }
+        stateDidChangeSubject.send()
     }
 
     private func afterCursor(in page: AuditLogPage) throws -> String {

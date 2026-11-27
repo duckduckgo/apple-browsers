@@ -274,6 +274,21 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func setAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws
 
     /**
+     Publishes pending login activity for the current account on the main queue, including dismissal and review updates.
+     */
+    var pendingLoginEventsPublisher: AnyPublisher<[SyncLoginEvent], Never> { get }
+
+    /**
+     Returns pending login activity for the current account.
+     */
+    func pendingLoginEvents() throws -> [SyncLoginEvent]
+
+    /**
+     Dismisses the displayed events without marking activity as reviewed or dismissing newer arrivals.
+     */
+    func dismissPendingLoginEvents(withIDs ids: Set<String>) throws
+
+    /**
      Updated the device name.
      */
     func updateDeviceName(_ name: String) async throws -> [RegisteredDevice]

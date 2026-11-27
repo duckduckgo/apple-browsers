@@ -188,7 +188,13 @@ final class MockDDGSyncing: DDGSyncing {
     }
 
     func pollAuditLog() async throws -> Bool { false }
-    func isAuditLogPollingAvailable(forAccountID accountID: String?) throws -> Bool { false }
+    var isAuditLogPollingAvailableStub = false
+    var isAuditLogPollingAvailableError: Error?
+
+    func isAuditLogPollingAvailable(forAccountID accountID: String?) throws -> Bool {
+        if let error = isAuditLogPollingAvailableError { throw error }
+        return isAuditLogPollingAvailableStub && (accountID == nil || account?.userId == accountID)
+    }
 
     @MainActor
     func makeAuditLogReader() throws -> any SyncAuditLogReading {
@@ -201,6 +207,10 @@ final class MockDDGSyncing: DDGSyncing {
 
     private var auditLogReviewStates = [String: SyncAuditLogReviewState]()
     var auditLogReviewStateError: Error?
+
+    var pendingLoginEventsPublisher: AnyPublisher<[SyncLoginEvent], Never> { Just([]).eraseToAnyPublisher() }
+    func pendingLoginEvents() throws -> [SyncLoginEvent] { [] }
+    func dismissPendingLoginEvents(withIDs ids: Set<String>) throws {}
 
     func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState? {
         if let auditLogReviewStateError { throw auditLogReviewStateError }

@@ -55,18 +55,12 @@ public protocol SyncAuditLogReading: AnyObject {
 /// Reads one account's history for one screen visit. API order defines login boundaries, including same-second events.
 @MainActor
 final class SyncAuditLogReader: SyncAuditLogReading {
-    private enum DeviceInfoCandidate {
-        case readable(name: String, type: String)
-        case unreadable
-    }
-
     private let account: SyncAccount
     private let fetchPage: (SyncAccount, String?) async throws -> AuditLogPage
     private var beforeCursor: String?
     private var hasMore = true
     private var visitedCursors = Set<String>()
-    private var processedEventIDs = Set<String>()
-    private var pendingDeviceInfo = [String: DeviceInfoCandidate]()
+    private var processor = AuditLogEventProcessor()
 
     init(account: SyncAccount, fetchPage: @escaping (SyncAccount, String?) async throws -> AuditLogPage) {
         self.account = account
@@ -78,8 +72,40 @@ final class SyncAuditLogReader: SyncAuditLogReading {
         try Task.checkCancellation()
         let page = try await fetchPage(account, beforeCursor)
         try Task.checkCancellation()
+        let events = processor.process(page.entries)
+        if let nextCursor = page.before, nextCursor != beforeCursor, visitedCursors.insert(nextCursor).inserted {
+            beforeCursor = nextCursor
+        } else {
+            hasMore = false
+            processor = AuditLogEventProcessor()
+        }
+        return SyncAuditLogPage(events: events, hasMore: hasMore)
+    }
+}
+
+public struct SyncAuditLogReviewState: Codable, Sendable, Equatable {
+    public let reviewedThrough: Date?
+    public let isInitialized: Bool
+
+    public init(reviewedThrough: Date?, isInitialized: Bool) {
+        self.reviewedThrough = reviewedThrough
+        self.isInitialized = isInitialized
+    }
+}
+
+/// Consumes decoded entries in newest-first API order, retaining device-info candidates across pages.
+struct AuditLogEventProcessor {
+    private enum DeviceInfoCandidate {
+        case readable(name: String, type: String)
+        case unreadable
+    }
+
+    private var processedEventIDs = Set<String>()
+    private var pendingDeviceInfo = [String: DeviceInfoCandidate]()
+
+    mutating func process(_ entries: [AuditLogEntryDecodingResult]) -> [SyncAuditLogEvent] {
         var events = [SyncAuditLogEvent]()
-        for result in page.entries {
+        for result in entries {
             guard case .decoded(let event) = result, processedEventIDs.insert(event.id).inserted else { continue }
             switch event.type {
             case .deviceInfoAdded:
@@ -97,22 +123,38 @@ final class SyncAuditLogReader: SyncAuditLogReading {
                 events.append(SyncAuditLogEvent(id: event.id, kind: .removed, occurredAt: event.occurredAt, device: event.device))
             }
         }
-        if let nextCursor = page.before, nextCursor != beforeCursor, visitedCursors.insert(nextCursor).inserted {
-            beforeCursor = nextCursor
-        } else {
-            hasMore = false
-            pendingDeviceInfo.removeAll()
-        }
-        return SyncAuditLogPage(events: events, hasMore: hasMore)
+        return events
     }
 }
 
-public struct SyncAuditLogReviewState: Codable, Sendable, Equatable {
-    public let reviewedThrough: Date?
-    public let isInitialized: Bool
+/// A pending login represented by the Sync settings card; IDs are retained only until dismissal or review.
+public struct SyncLoginEvent: Codable, Sendable, Equatable, Identifiable {
+    public let id: String
+    public let occurredAt: Date
+    public let deviceName: String
 
-    public init(reviewedThrough: Date?, isInitialized: Bool) {
-        self.reviewedThrough = reviewedThrough
-        self.isInitialized = isInitialized
+    public init(id: String, occurredAt: Date, deviceName: String) {
+        self.id = id
+        self.occurredAt = occurredAt
+        self.deviceName = deviceName
     }
+}
+
+/// All eligible logins from one completed forward poll, delivered as one system notification.
+public struct SyncLoginNotification: Sendable {
+    public let identifier: String
+    public let accountID: String
+    public let events: [SyncLoginEvent]
+
+    public init(identifier: String, accountID: String, events: [SyncLoginEvent]) {
+        self.identifier = identifier
+        self.accountID = accountID
+        self.events = events
+    }
+}
+
+struct AuditLogCheckpoint: Codable {
+    var cursor: String?
+    var pendingEvents: [SyncLoginEvent] = []
+    var recentEventIDs: [String] = []
 }

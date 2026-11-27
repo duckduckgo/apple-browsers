@@ -144,6 +144,11 @@ final class SyncService {
                 })
             }
 
+        sync.loginNotificationHandler = { [weak sync] notification in
+            guard let sync else { return }
+            let presenter = await SyncLoginNotificationService(syncService: sync, featureFlagger: featureFlagger)
+            await presenter.deliver(notification)
+        }
         sync.initializeIfNeeded()
         // Sync holds no background task during a background launch, so a sync operation suspended mid-write to the
         // App Group can get the app killed (0xdead10cc). `applicationState` reads `.background` here on every launch,

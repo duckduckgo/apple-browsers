@@ -43,15 +43,17 @@ final class AuditLogPollerTests: XCTestCase {
                        canPoll: { [unowned self] _ in self.isEnabled },
                        initializeReviewState: { [unowned self] page, _ in self.initializedPages.append(page) },
                        onError: { [unowned self] in self.errors.append($0) },
+                       notify: { _ in }, reviewedThrough: { _ in nil },
                        sleep: sleep ?? { [unowned self] in self.delays.append($0) })
     }
 
     private func cursor(for account: SyncAccount = .mock) throws -> String? {
-        try store.object(forKey: AuditLogPoller.cursorKey(for: account.userId)) as? String
+        guard let data = try store.object(forKey: AuditLogPoller.checkpointKey(for: account.userId)) as? Data else { return nil }
+        return try JSONDecoder().decode(AuditLogCheckpoint.self, from: data).cursor
     }
 
     private func setCursor(_ cursor: String = "saved") throws {
-        try store.set(cursor, forKey: AuditLogPoller.cursorKey(for: SyncAccount.mock.userId))
+        try store.set(JSONEncoder().encode(AuditLogCheckpoint(cursor: cursor)), forKey: AuditLogPoller.checkpointKey(for: SyncAccount.mock.userId))
     }
 
     func testFirstPollStoresHeadWithoutFollowingHistoricalPages() async throws {
@@ -225,7 +227,7 @@ final class AuditLogPollerTests: XCTestCase {
                                    keyValueStore: store,
                                    canPoll: { _ in throw expectedError },
                                    initializeReviewState: { _, _ in XCTFail("Polling should not start") },
-                                   onError: { [unowned self] in self.errors.append($0) })
+                                   onError: { [unowned self] in self.errors.append($0) }, notify: { _ in }, reviewedThrough: { _ in nil })
 
         XCTAssertNil(poller.startPolling(for: .mock))
         XCTAssertTrue(accountManager.fetchAuditLogCalls.isEmpty)
@@ -238,7 +240,7 @@ final class AuditLogPollerTests: XCTestCase {
                                    keyValueStore: store,
                                    canPoll: { _ in throw expectedError },
                                    initializeReviewState: { _, _ in XCTFail("Polling should not start") },
-                                   onError: { _ in XCTFail("The awaiting caller reports the error") })
+                                   onError: { _ in XCTFail("The awaiting caller reports the error") }, notify: { _ in }, reviewedThrough: { _ in nil })
         do {
             _ = try await poller.pollIfNeeded(for: .mock)
             XCTFail("Expected the eligibility error")
@@ -259,7 +261,7 @@ final class AuditLogPollerTests: XCTestCase {
                                        return true
                                    },
                                    initializeReviewState: { _, _ in XCTFail("Cancelled polling should not initialize review state") },
-                                   onError: { _ in XCTFail("Cancellation should not report an error") })
+                                   onError: { _ in XCTFail("Cancellation should not report an error") }, notify: { _ in }, reviewedThrough: { _ in nil })
         currentPoller = poller
 
         try? await poller.startPolling(for: .mock)?.value
@@ -274,7 +276,7 @@ final class AuditLogPollerTests: XCTestCase {
                                    keyValueStore: store,
                                    canPoll: { _ in true },
                                    initializeReviewState: { _, _ in currentPoller?.cancel() },
-                                   onError: { _ in XCTFail("Cancellation should not report an error") })
+                                   onError: { _ in XCTFail("Cancellation should not report an error") }, notify: { _ in }, reviewedThrough: { _ in nil })
         currentPoller = poller
 
         try? await poller.startPolling(for: .mock)?.value
@@ -292,7 +294,7 @@ final class AuditLogPollerTests: XCTestCase {
                                        self.isEnabled = false
                                        try currentPoller?.clearState(for: account.userId)
                                    },
-                                   onError: { _ in XCTFail("Cancellation should not report an error") })
+                                   onError: { _ in XCTFail("Cancellation should not report an error") }, notify: { _ in }, reviewedThrough: { _ in nil })
         currentPoller = poller
 
         try? await poller.startPolling(for: .mock)?.value

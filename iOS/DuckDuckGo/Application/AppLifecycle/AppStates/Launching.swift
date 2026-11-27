@@ -443,7 +443,10 @@ struct Launching: LaunchingHandling {
         )
         let notificationServiceManager = NotificationServiceManager(
             mainCoordinator: mainCoordinator,
-            inactivityStateStore: inactivityStateStore
+            inactivityStateStore: inactivityStateStore,
+            handleAppAction: { action in
+                (UIApplication.shared.delegate as? AppDelegate)?.appStateMachine.handle(action)
+            }
         )
 
         let vpnService = VPNService(mainCoordinator: mainCoordinator,

@@ -966,6 +966,14 @@ extension MainCoordinator: UserActivityHandling {
 
     @discardableResult
     func handleUserActivity(_ userActivity: NSUserActivity) -> Bool {
+        if userActivity.activityType == SyncLoginNotificationService.activityType {
+            guard let accountID = userActivity.userInfo?[SyncLoginNotificationService.accountIDKey] as? String,
+                  SyncLoginNotificationService.canOpenActivity(for: accountID, syncService: controller.syncService, featureFlagger: featureFlagger) else {
+                return false
+            }
+            controller.segueToSettingsSync(showDeviceActivity: true)
+            return true
+        }
         if dataImportUserActivityHandler == nil {
             dataImportUserActivityHandler = makeDataImportUserActivityHandler()
         }

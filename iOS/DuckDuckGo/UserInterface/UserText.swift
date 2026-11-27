@@ -1411,6 +1411,11 @@ public struct UserText {
 
     // MARK: Sync
 
+    // Sync login notifications
+    public static let syncLoginNotificationTitle = NotLocalizedString("sync.login-notification.title", value: "Sync & Backup Activity", comment: "Title of the local notification for new Sync logins")
+    public static let syncLoginNotificationBody = NotLocalizedString("sync.login-notification.body", value: "A new device has been added to Sync & Backup.", comment: "Notification for one new Sync login")
+    public static let syncLoginNotificationPluralBody = NotLocalizedString("sync.login-notification.plural-body", value: "New devices have been added to Sync & Backup.", comment: "Notification for multiple new Sync logins in one poll")
+
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value: "Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")
     public static let syncDeleteAllConfirmAction = NSLocalizedString("sync.delete.all.confirm.action", value: "Delete Server Data", comment: "Caption for a button to delete Sync server data")
     public static let syncRemoveDeviceTitle = NSLocalizedString("sync.remove-device.title", value: "Remove Device?", comment: "Title of the dialog to remove device from Sync")

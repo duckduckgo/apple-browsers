@@ -66,6 +66,15 @@ public struct UserText {
     // Recovery Section
     static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
 
+    // Sync notification settings
+    static let syncNotificationsTitle = NotLocalizedString("sync.notifications.title", bundle: Bundle.module, value: "Notify on New Connections", comment: "Sync notification permission card title")
+    static let syncNotificationsSettingLabel = NotLocalizedString("sync.notifications.setting.label", bundle: Bundle.module, value: "Notify on New Connections", comment: "Sync notification setting label")
+    static let syncNotificationsDescription = NotLocalizedString("sync.notifications.description", bundle: Bundle.module, value: "Get notified whenever a new device is added to Sync & Backup.", comment: "Explains Sync notifications")
+    static let syncNotificationsEnable = NotLocalizedString("sync.notifications.enable", bundle: Bundle.module, value: "Enable Notifications", comment: "Button requesting notification permission")
+    static let syncNotificationsSettingsTitle = NotLocalizedString("sync.notifications.settings.title", bundle: Bundle.module, value: "Requires notification permission for DuckDuckGo", comment: "Title shown when notification permission was denied")
+    static let syncNotificationsSettingsMessage = NotLocalizedString("sync.notifications.settings.message", bundle: Bundle.module, value: "Enable notifications for DuckDuckGo in system Settings to turn on New Device Notifications.", comment: "Explains how to enable Sync notifications after permission was denied")
+    static let syncNotificationsOpenSettings = NotLocalizedString("sync.notifications.settings.open", bundle: Bundle.module, value: "Go to Settings…", comment: "Opens app notification settings")
+
     // Device Activity
     static let deviceActivityNotYetReviewed = NotLocalizedString("sync.device.activity.not.yet.reviewed", bundle: Bundle.module, value: "Not yet reviewed", comment: "Accessibility value for an unreviewed device activity row")
     static let deviceActivityTitle = NotLocalizedString("sync.device.activity.title", bundle: Bundle.module, value: "Device Activity", comment: "Sync device activity screen and settings row title")

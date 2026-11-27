@@ -26,6 +26,7 @@ import TipKit
 struct SyncSettingsTip: Tip {
     enum Kind: Sendable {
         case newDevices(Set<String>)
+        case notificationPermission
     }
 
     let kind: Kind
@@ -38,6 +39,8 @@ struct SyncSettingsTip: Tip {
         case .newDevices(let eventIDs):
             // A later batch must remain eligible after the user closes an earlier alert.
             return "com.duckduckgo.sync.newDevices." + eventIDs.sorted().joined(separator: ",")
+        case .notificationPermission:
+            return "com.duckduckgo.sync.notificationPermission"
         }
     }
 
@@ -47,6 +50,7 @@ struct SyncSettingsTip: Tip {
     var image: Image? {
         let icon = switch kind {
         case .newDevices: DesignSystemImages.Glyphs.Size24.deviceAll
+        case .notificationPermission: DesignSystemImages.Glyphs.Size24.bellNotification
         }
         // TipView shares its tint between the icon and action. Keep the icon's accent color.
         let tintedIcon = UIGraphicsImageRenderer(size: icon.size).image { _ in

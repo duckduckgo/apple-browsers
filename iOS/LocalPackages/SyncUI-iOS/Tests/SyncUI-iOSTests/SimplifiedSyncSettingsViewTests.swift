@@ -177,4 +177,72 @@ final class SimplifiedSyncSettingsViewTests {
             testName: "testDeviceActivitySettingsSnapshots-\(isAvailable ? "Enabled" : "Disabled")"
         )
     }
+    @available(iOS 16, macOS 13, *)
+    @Test("Sync notification permissions", .timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func testSyncNotificationSettingsSnapshots(isAuthorized: Bool, isLargeText: Bool) async throws {
+        let provider = MockSyncNotificationSettingsProvider(status: isAuthorized ? .authorized : .provisional)
+        let notificationModel = SyncNotificationSettingsViewModel(provider: provider)
+        await notificationModel.refresh()
+        let activityModel = DeviceActivityViewModel(accountIdentifier: { "snapshot-account" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [], hasMore: false) }
+        })
+        let model = SyncSettingsViewModel.preview(isSyncEnabled: true,
+                                                 devices: [.thisDevice, .desktop, .otherMobile],
+                                                 autoRestoreProvider: .enabled,
+                                                 deviceActivityViewModel: activityModel,
+                                                 notificationSettingsViewModel: notificationModel)
+        model.isDeviceActivityAvailable = true
+        model.areSyncNotificationsAvailable = true
+        let configurations = SnapshotDevice.defaultIOSDevices.flatMap { device in
+            SnapshotAppearance.allCases.map { appearance in
+                SnapshotImageConfiguration(appearance: appearance, device: device,
+                                           size: CGSize(width: device.size.width, height: isLargeText ? 4000 : 1900))
+            }
+        }
+        try await assertTipSnapshot(
+            matching: NavigationStack {
+                SimplifiedSyncSettingsView(model: model)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .environment(\.sizeCategory, isLargeText ? .accessibilityExtraExtraExtraLarge : .large)
+            },
+            strategy: .custom(configurations),
+            size: .screen,
+            testName: "testSyncNotificationSettingsSnapshots-\(isAuthorized ? "Enabled" : "Provisional")\(isLargeText ? "-LargeText" : "")"
+        )
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("New-device activity appears above notification permissions", .timeLimit(.minutes(1)))
+    func testNewDeviceAndPermissionCardsSnapshot() async throws {
+        let provider = MockSyncNotificationSettingsProvider(status: .provisional)
+        let notificationModel = SyncNotificationSettingsViewModel(provider: provider)
+        await notificationModel.refresh()
+        let activityModel = DeviceActivityViewModel(accountIdentifier: { "snapshot-account" }, makePageFetcher: {
+            { DeviceActivityPage(entries: [], hasMore: false) }
+        })
+        let model = SyncSettingsViewModel.preview(isSyncEnabled: true,
+                                                 devices: [.thisDevice, .desktop, .otherMobile],
+                                                 autoRestoreProvider: .enabled,
+                                                 deviceActivityViewModel: activityModel,
+                                                 notificationSettingsViewModel: notificationModel)
+        model.isDeviceActivityAvailable = true
+        model.areSyncNotificationsAvailable = true
+        model.pendingLoginEvents = [.init(id: "new-device", deviceName: "Dave’s iPhone")]
+        let configurations = SnapshotDevice.defaultIOSDevices.flatMap { device in
+            SnapshotAppearance.allCases.map { appearance in
+                SnapshotImageConfiguration(appearance: appearance, device: device,
+                                           size: CGSize(width: device.size.width, height: 1800))
+            }
+        }
+        try await assertTipSnapshot(
+            matching: NavigationStack {
+                SimplifiedSyncSettingsView(model: model)
+                    .navigationBarTitleDisplayMode(.inline)
+            },
+            strategy: .custom(configurations),
+            size: .screen,
+            testName: "testNewDeviceAndPermissionCardsSnapshot"
+        )
+    }
+
 }

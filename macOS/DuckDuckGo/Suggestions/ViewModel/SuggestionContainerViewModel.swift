@@ -163,6 +163,7 @@ final class SuggestionContainerViewModel {
     }
 
     func selectRow(at rowIndex: Int) {
+        isSelectionAutocompleted = false
         guard rowIndex >= 0, rowIndex < numberOfRows else {
             Logger.general.error("SuggestionContainerViewModel: Row index out of bounds")
             if selectedRowIndex != nil {
@@ -187,6 +188,7 @@ final class SuggestionContainerViewModel {
     }
 
     func clearRowSelection() {
+        isSelectionAutocompleted = false
         guard selectedRowIndex != nil || selectionIndex != nil else { return }
         selectedRowIndex = nil
         selectionIndex = nil
@@ -202,6 +204,7 @@ final class SuggestionContainerViewModel {
 
     private(set) var userStringValue: String?
 
+    private(set) var isSelectionAutocompleted = false
     var isTopSuggestionSelectionExpected = false
 
     private enum IgnoreTopSuggestionError: Error {
@@ -237,6 +240,7 @@ final class SuggestionContainerViewModel {
                     return
                 }
                 self.select(at: 0)
+                self.isSelectionAutocompleted = true
             }
     }
 
@@ -302,6 +306,7 @@ final class SuggestionContainerViewModel {
 
     /// Selects a suggestion by its index (for backward compatibility)
     func select(at index: Int) {
+        isSelectionAutocompleted = false
         guard index >= 0, index < numberOfSuggestions else {
             Logger.general.error("SuggestionContainerViewModel: Index out of bounds")
             selectionIndex = nil

@@ -177,4 +177,20 @@ extension DeviceSyncCoordinator {
         }
         self.init(syncService: syncService, syncPausedStateManager: errorHandler)
     }
+
+    @MainActor
+    static func openPairingFromAddressBarIfNeeded(for query: String, isSuggestionSelected: Bool) -> Bool {
+        guard let syncService = NSApp.delegateTyped.syncService,
+              SyncPairingURL(addressBarQuery: query,
+                             isSuggestionSelected: isSuggestionSelected,
+                             syncService: syncService,
+                             featureFlagger: Application.appDelegate.featureFlagger) != nil,
+              let coordinator = DeviceSyncCoordinator() else { return false }
+
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
+        Task { @MainActor in
+            await coordinator.syncWithAnotherDevicePressed(source: nil)
+        }
+        return true
+    }
 }

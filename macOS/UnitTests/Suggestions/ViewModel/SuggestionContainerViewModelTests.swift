@@ -81,6 +81,33 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     // MARK: - Tests
 
     @MainActor
+    func testAutomaticCompletionIsDistinguishedFromSelectingTheSameRow() throws {
+        suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: true)
+        suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil)
+
+        XCTAssertNotNil(suggestionContainerViewModel.selectedSuggestionViewModel)
+        XCTAssertTrue(suggestionContainerViewModel.isSelectionAutocompleted)
+
+        let row = try XCTUnwrap(suggestionContainerViewModel.selectedRowIndex)
+        suggestionContainerViewModel.selectRow(at: row)
+
+        XCTAssertNotNil(suggestionContainerViewModel.selectedSuggestionViewModel)
+        XCTAssertFalse(suggestionContainerViewModel.isSelectionAutocompleted)
+    }
+
+    @MainActor
+    func testClearingAutomaticCompletionResetsItsOrigin() {
+        suggestionContainerViewModel.setUserStringValue("duck", userAppendedStringToTheEnd: true)
+        suggestionLoadingMock.completion?(SuggestionResult.aSuggestionResult, nil)
+        XCTAssertTrue(suggestionContainerViewModel.isSelectionAutocompleted)
+
+        suggestionContainerViewModel.clearSelection()
+
+        XCTAssertFalse(suggestionContainerViewModel.isSelectionAutocompleted)
+        XCTAssertNil(suggestionContainerViewModel.selectedSuggestionViewModel)
+    }
+
+    @MainActor
     func testWhenSelectionIndexIsNilThenSelectedSuggestionViewModelIsNil() {
         let suggestionContainer = SuggestionContainer(
             historyProvider: HistoryProviderMock(),

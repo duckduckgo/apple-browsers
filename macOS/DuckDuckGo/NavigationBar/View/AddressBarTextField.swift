@@ -477,6 +477,8 @@ final class AddressBarTextField: NSTextField {
     func addressBarEnterPressed() {
         let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
         let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let isSuggestionSelected = selectedSuggestion != nil && suggestionContainerViewModel?.isSelectionAutocompleted != true
+        guard !openSyncPairingIfNeeded(for: stringValueWithoutSuffix, isSuggestionSelected: isSuggestionSelected) else { return }
         let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
         suggestionContainerViewModel?.clearUserStringValue()
 
@@ -490,6 +492,13 @@ final class AddressBarTextField: NSTextField {
         navigate(suggestion: selectedSuggestion)
 
         hideSuggestionWindow()
+    }
+
+    private func openSyncPairingIfNeeded(for query: String, isSuggestionSelected: Bool) -> Bool {
+        guard DeviceSyncCoordinator.openPairingFromAddressBarIfNeeded(for: query, isSuggestionSelected: isSuggestionSelected) else { return false }
+        hideSuggestionWindow()
+        window?.makeFirstResponder(nil)
+        return true
     }
 
     /// Called from MainViewController when user presses Shift/Control + Enter (keyboard shortcut)
@@ -922,6 +931,7 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
+        guard !openSyncPairingIfNeeded(for: pasteboardString, isSuggestionSelected: false) else { return }
         tabCollectionViewModel?.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(pasteboardString))
     }
 

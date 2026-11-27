@@ -17,12 +17,10 @@
 //  limitations under the License.
 //
 
-import Core
 import DDGSync
 import FeatureFlags_iOS
 import Foundation
 import PrivacyConfig
-import Persistence
 import UserNotifications
 import os.log
 
@@ -38,26 +36,26 @@ final class SyncLoginNotificationService {
     private let syncService: DDGSyncing
     private let featureFlagger: FeatureFlagger
     private let notificationCenter: UNUserNotificationCenterRepresentable
-    private let settingsStorage: any KeyedStoring<SyncNotificationSettingsStorageKeys>
+    private let settings: any SyncNotificationSettingsReading
 
     init(syncService: DDGSyncing,
          featureFlagger: FeatureFlagger,
          notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
-         settingsStorage: any KeyedStoring<SyncNotificationSettingsStorageKeys> = UserDefaults.app.keyedStoring()) {
+         settings: (any SyncNotificationSettingsReading)? = nil) {
         self.syncService = syncService
         self.featureFlagger = featureFlagger
         self.notificationCenter = notificationCenter
-        self.settingsStorage = settingsStorage
+        self.settings = settings ?? SyncNotificationSettings(notificationCenter: notificationCenter)
     }
 
     func deliver(_ notification: SyncLoginNotification) async {
         do {
             guard !notification.events.isEmpty, try canDeliver(for: notification.accountID) else { return }
-            var status = await notificationCenter.authorizationStatus()
+            var status = await settings.authorizationStatus()
             if status == .notDetermined {
                 guard try canDeliver(for: notification.accountID), !Task.isCancelled else { return }
                 _ = try await notificationCenter.requestAuthorization(options: [.provisional, .alert])
-                status = await notificationCenter.authorizationStatus()
+                status = await settings.authorizationStatus()
             }
             // Quiet delivery remains enabled by default, while the settings toggle requires full permission.
             guard status == .authorized || status == .provisional,
@@ -80,7 +78,7 @@ final class SyncLoginNotificationService {
     private func canDeliver(for accountID: String) throws -> Bool {
         guard featureFlagger.isFeatureOn(.syncLoginAuditLog),
               featureFlagger.isFeatureOn(.syncLoginNotification),
-              settingsStorage.isEnabled ?? true else { return false }
+              settings.isEnabled else { return false }
         return try syncService.isAuditLogPollingAvailable(forAccountID: accountID)
     }
 

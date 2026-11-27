@@ -34,13 +34,25 @@ struct SyncNotificationSettingsStorageKeys: StoringKeys {
 }
 
 @MainActor
-final class SyncNotificationSettings: SyncNotificationSettingsProviding {
+protocol SyncNotificationSettingsReading: AnyObject {
+    var isEnabled: Bool { get }
+    func authorizationStatus() async -> UNAuthorizationStatus
+}
+
+@MainActor
+final class SyncNotificationSettings: SyncNotificationSettingsProviding, SyncNotificationSettingsReading {
+    static let didChange = Notification.Name("SyncNotificationSettingsDidChange")
+    private let changes: NotificationCenter
     private let storage: any KeyedStoring<SyncNotificationSettingsStorageKeys>
     private let notificationCenter: UNUserNotificationCenterRepresentable
 
     var isEnabled: Bool {
         get { storage.isEnabled ?? true }
-        set { storage.isEnabled = newValue }
+        set {
+            guard isEnabled != newValue else { return }
+            storage.isEnabled = newValue
+            changes.post(name: Self.didChange, object: nil)
+        }
     }
 
     var isPermissionCardDismissed: Bool {
@@ -49,7 +61,9 @@ final class SyncNotificationSettings: SyncNotificationSettingsProviding {
     }
 
     init(storage: any KeyedStoring<SyncNotificationSettingsStorageKeys> = UserDefaults.app.keyedStoring(),
-         notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current()) {
+         notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
+         changes: NotificationCenter = .default) {
+        self.changes = changes
         self.storage = storage
         self.notificationCenter = notificationCenter
     }
@@ -59,6 +73,7 @@ final class SyncNotificationSettings: SyncNotificationSettingsProviding {
     }
 
     func requestAuthorization() async throws {
+        defer { changes.post(name: Self.didChange, object: nil) }
         _ = try await notificationCenter.requestAuthorization(options: [.alert])
     }
 

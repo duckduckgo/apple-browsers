@@ -42,6 +42,7 @@ public final class SyncSetupAttemptTracker {
     private let isEnabled: () -> Bool
     private let now: () -> Date
     private var attempt: SyncSetupWideEventData?
+    private var supportedFlowVersion: SyncSetupWideEventData.FlowVersion?
     private struct ErrorOnScreen {
         let error: SyncConnectionError
         let underlyingError: Error?
@@ -74,6 +75,7 @@ public final class SyncSetupAttemptTracker {
                                              startedAt: now(),
                                              contextData: WideEventContextData(name: entryPoint))
         self.attempt = attempt
+        supportedFlowVersion = flowVersion
         wideEvent.startFlow(attempt)
     }
 
@@ -83,6 +85,32 @@ public final class SyncSetupAttemptTracker {
 
     public func switchMode(to mode: SetupMode) {
         update { $0.setupMode = mode }
+    }
+
+    func recordPeer(role: SyncSetupWideEventData.Role, kind: SyncSetupWideEventData.PeerKind) {
+        update {
+            $0.role = role
+            $0.peerKind = kind
+        }
+    }
+
+    func recordConnectMethod(_ method: SyncSetupWideEventData.ConnectMethod) {
+        update { $0.connectMethod = method }
+    }
+
+    func recordRecoveryCodeEntered(connectMethod: SyncSetupWideEventData.ConnectMethod) {
+        update {
+            $0.connectMethod = connectMethod
+            $0.role = nil
+            $0.peerKind = nil
+            if let supportedFlowVersion {
+                $0.flowVersion = supportedFlowVersion
+            }
+        }
+    }
+
+    func recordFlowVersion(_ version: SyncSetupWideEventData.FlowVersion) {
+        update { $0.flowVersion = version }
     }
 
     public func recordDeviceAuthShown() {

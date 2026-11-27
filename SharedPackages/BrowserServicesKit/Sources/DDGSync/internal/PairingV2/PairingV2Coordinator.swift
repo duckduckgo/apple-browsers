@@ -30,6 +30,7 @@ protocol PairingV2ConfirmationDelegate: AnyObject {
     /// Notifies the app that Pairing V2 created a local account before preparing a recovery code.
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async
     func pairingV2CoordinatorDidSendJoinReport(_ report: PairingV2JoinReport) async
+    func pairingV2CoordinatorDidChangeState(_ state: PairingV2State, negotiatedVersion: PairingV2ProtocolVersion) async
 }
 
 /// Pairing V2 timing defaults and remote configuration bounds.
@@ -82,6 +83,7 @@ final class PairingV2Coordinator {
     private var recoveryCodeWaitDeadlineDate: Date?
     private var hasRecoveryCodeWaitDeadlinePassed = false
     private var hasReportedJoinStatus = false
+    private var lastReportedState: PairingV2State = .idle
     private(set) var completedRegisteredDevices: [RegisteredDevice]?
     private(set) var pendingRecoveryKey: SyncCode.RecoveryKey?
     private(set) var negotiatedVersion: PairingV2ProtocolVersion = .v2
@@ -211,6 +213,7 @@ final class PairingV2Coordinator {
                case .recoveryCodeResponse(let response) = applicationMessage {
                 // The peer may release its code before the local user confirms. Keep it while continuing to receive other messages.
                 pendingRecoveryCode = pendingRecoveryCode ?? response
+                try await execute(stateMachine.handle(.receivedRecoveryCodeConfirmed))
             } else {
                 try await handle(applicationMessage, onStateChange: onStateChange)
             }
@@ -394,9 +397,25 @@ final class PairingV2Coordinator {
     }
 
     private func execute(_ commands: [PairingV2Command]) async throws {
+        let stateForCommands = state
+        await reportStateChange()
+        guard state == stateForCommands else {
+            return
+        }
         for command in commands {
             try await execute(command)
         }
+    }
+
+    private func reportStateChange() async {
+        guard state != lastReportedState else {
+            return
+        }
+        lastReportedState = state
+        if case .failed = state {
+            return
+        }
+        await confirmationDelegate?.pairingV2CoordinatorDidChangeState(state, negotiatedVersion: negotiatedVersion)
     }
 
     // swiftlint:disable:next cyclomatic_complexity

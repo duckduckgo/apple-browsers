@@ -78,6 +78,12 @@ private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDele
     func pairingV2CoordinatorDidSendJoinReport(_ report: PairingV2JoinReport) async {
         sentJoinReports.append(report)
     }
+
+    var didChangeStateHandler: ((PairingV2State) async -> Void)?
+
+    func pairingV2CoordinatorDidChangeState(_ state: PairingV2State, negotiatedVersion: PairingV2ProtocolVersion) async {
+        await didChangeStateHandler?(state)
+    }
 }
 
 private actor PairingV2CoordinatorTestGate {
@@ -980,6 +986,49 @@ final class PairingV2CoordinatorTests: XCTestCase {
         } catch let error as SyncError {
             XCTAssertEqual(error, .pollingDidTimeOut)
         }
+    }
+
+    func testWhenCancelledWhileReportingStateChangeThenSkipsTheStaleCommands() async throws {
+        let dependencies = MockSyncDependencies()
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let syncService = DDGSync(dataProvidersSource: MockDataProvidersSource(), dependencies: dependencies)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        let messageCrypto = PairingV2MessageCrypto()
+        let peerKeyPair = try makePeerKeyPair()
+        let confirmationDelegate = PairingV2ConfirmationDelegateMock()
+        let coordinator = makeCoordinator(syncService: syncService,
+                                          messageExchanger: messageExchanger,
+                                          messageCrypto: messageCrypto,
+                                          confirmationDelegate: confirmationDelegate,
+                                          advertisedVersion: .v2Point1)
+        confirmationDelegate.didChangeStateHandler = { [weak coordinator] state in
+            guard case .hostWaitingForConfirmation = state else { return }
+            await coordinator?.cancel()
+        }
+
+        let payload = try await coordinator.startPresenting()
+        messageExchanger.fetchMessagesStub = try encryptedPeerMessages(
+            [
+                .hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey, version: "2.1")),
+                .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest,
+                                           name: "Peer",
+                                           kind: .ddg))
+            ],
+            recipientPublicKey: payload.publicKey,
+            peerKeyPair: peerKeyPair,
+            messageCrypto: messageCrypto
+        )
+        try? await coordinator.pollOnce()
+
+        let sentMessages = try decryptedSentMessages(from: messageExchanger,
+                                                     peerPrivateKey: peerKeyPair.privateKey,
+                                                     messageCrypto: messageCrypto)
+        XCTAssertEqual(coordinator.state, .failed(.cancelled))
+        XCTAssertTrue(confirmationDelegate.allowPeerToJoinCalls.isEmpty)
+        XCTAssertFalse(sentMessages.contains { message in
+            if case .recoveryCodeAwaitingConfirmation = message { return true }
+            return false
+        })
     }
 
     func testWhenV21PeerCancelsWhileConfirmationIsPendingThenDismissesAndNeverReleasesRecoveryCode() async throws {

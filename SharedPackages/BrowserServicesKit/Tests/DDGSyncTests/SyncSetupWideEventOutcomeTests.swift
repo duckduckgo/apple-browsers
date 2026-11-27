@@ -52,6 +52,7 @@ struct SyncSetupWideEventOutcomeTests {
 
         Case(.pairingV2SessionTimedOut(timeoutStage: .waitingForPeerHello), .cancelled, "session_timeout", timeoutStage: "waiting_for_peer_hello"),
         Case(.pairingV2SessionTimedOut(timeoutStage: .waitingForConfirmation), .cancelled, "session_timeout", timeoutStage: "waiting_for_confirmation"),
+        Case(.pairingV2SessionTimedOut(timeoutStage: .waitingForHostConfirmation), .cancelled, "session_timeout", timeoutStage: "waiting_for_confirmation"),
         Case(.pairingV2SessionTimedOut(timeoutStage: .waitingForPeerStatus), .failure, "session_timeout", timeoutStage: "waiting_for_peer_status"),
         Case(.pairingV2SessionTimedOut(timeoutStage: .waitingForRecoveryCode), .failure, "session_timeout", timeoutStage: "waiting_for_recovery_code"),
         Case(.pairingV2SessionTimedOut(timeoutStage: .loggingIn), .failure, "session_timeout", timeoutStage: "logging_in"),

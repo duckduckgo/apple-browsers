@@ -71,19 +71,22 @@ struct PairingV2Session: Equatable {
     let peerStatus: PairingV2PeerStatus?
     let purpose: String
     let hasReceivedHello: Bool
+    let hasHostConfirmed: Bool
 
     init(localClient: PairingV2LocalClient,
          peerChannelID: String?,
          localChannelID: String? = nil,
          peerStatus: PairingV2PeerStatus? = nil,
          purpose: String = "ai_chats",
-         hasReceivedHello: Bool = false) {
+         hasReceivedHello: Bool = false,
+         hasHostConfirmed: Bool = false) {
         self.localClient = localClient
         self.peerChannelID = peerChannelID
         self.localChannelID = localChannelID
         self.peerStatus = peerStatus
         self.purpose = purpose
         self.hasReceivedHello = hasReceivedHello
+        self.hasHostConfirmed = hasHostConfirmed
     }
 
     func withPeerStatus(_ peerStatus: PairingV2PeerStatus) -> PairingV2Session {
@@ -92,7 +95,8 @@ struct PairingV2Session: Equatable {
                          localChannelID: localChannelID,
                          peerStatus: peerStatus,
                          purpose: purpose,
-                         hasReceivedHello: hasReceivedHello)
+                         hasReceivedHello: hasReceivedHello,
+                         hasHostConfirmed: hasHostConfirmed)
     }
 
     func withReceivedHello() -> PairingV2Session {
@@ -101,7 +105,18 @@ struct PairingV2Session: Equatable {
                          localChannelID: localChannelID,
                          peerStatus: peerStatus,
                          purpose: purpose,
-                         hasReceivedHello: true)
+                         hasReceivedHello: true,
+                         hasHostConfirmed: hasHostConfirmed)
+    }
+
+    func withHostConfirmation() -> PairingV2Session {
+        PairingV2Session(localClient: localClient,
+                         peerChannelID: peerChannelID,
+                         localChannelID: localChannelID,
+                         peerStatus: peerStatus,
+                         purpose: purpose,
+                         hasReceivedHello: hasReceivedHello,
+                         hasHostConfirmed: true)
     }
 }
 
@@ -549,9 +564,15 @@ struct PairingV2StateMachine {
     }
 
     private mutating func handleRecoveryCodeProgress(message: PairingV2RecoveryCodeMessage) -> [PairingV2Command] {
-        switch state {
-        case .joinerWaitingForConfirmation,
-             .joinerWaitingForRecoveryCode:
+        switch (state, message) {
+        case (.joinerWaitingForConfirmation(let session), .confirmed):
+            state = .joinerWaitingForConfirmation(session.withHostConfirmation())
+            return []
+        case (.joinerWaitingForRecoveryCode(let session), .confirmed):
+            state = .joinerWaitingForRecoveryCode(session.withHostConfirmation())
+            return []
+        case (.joinerWaitingForConfirmation, _),
+             (.joinerWaitingForRecoveryCode, _):
             return []
         default:
             return fail(with: .unexpectedEvent(.recoveryCodeMessageReceivedWhileNotJoining(message)))

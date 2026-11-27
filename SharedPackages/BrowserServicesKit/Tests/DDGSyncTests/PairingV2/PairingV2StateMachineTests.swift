@@ -571,7 +571,8 @@ final class PairingV2StateMachineTests: XCTestCase {
             localClient: localClient,
             peerChannelID: "channel-1",
             localChannelID: "local-channel",
-            peerStatus: .recoveryCodeAvailable(kind: .ddg)
+            peerStatus: .recoveryCodeAvailable(kind: .ddg),
+            hasHostConfirmed: true
         )
 
         _ = stateMachine.handle(.scannedCode(.v2Linking(peerChannelID: "channel-1", localChannelID: "local-channel"), localClient: localClient, flags: enabledFlags))
@@ -654,7 +655,11 @@ final class PairingV2StateMachineTests: XCTestCase {
         XCTAssertEqual(
             stateMachine.state,
             .joinerWaitingForRecoveryCode(
-                .init(localClient: localClient, peerChannelID: "channel-1", localChannelID: "local-channel", peerStatus: .recoveryCodeAvailable(kind: .thirdParty))
+                .init(localClient: localClient,
+                      peerChannelID: "channel-1",
+                      localChannelID: "local-channel",
+                      peerStatus: .recoveryCodeAvailable(kind: .thirdParty),
+                      hasHostConfirmed: true)
             )
         )
     }

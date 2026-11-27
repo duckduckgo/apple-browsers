@@ -68,6 +68,10 @@ final class AIChatHistoryCell: UITableViewCell {
         fatalError("init(coder:) is not supported.")
     }
 
+    /// The title ends at the Fire Button normally, and at the row's edge while multi-selecting (the button is hidden then).
+    private lazy var titleTrailingToFireButton = titleLabel.trailingAnchor.constraint(equalTo: fireButton.leadingAnchor, constant: -4)
+    private lazy var titleTrailingToEdge = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+
     /// Set only by the iPad sidebar, which draws rows on the column instead of grouped cards.
     private var sidebarRowIsCurrentChat: Bool?
 
@@ -89,6 +93,10 @@ final class AIChatHistoryCell: UITableViewCell {
         super.updateConfiguration(using: state)
         // Multi-select acts on the selection from the toolbar, so the per-row Fire Button steps aside.
         fireButton.isHidden = state.isEditing
+        // Deactivate before activating so the two trailing constraints never conflict.
+        let (off, on) = state.isEditing ? (titleTrailingToFireButton, titleTrailingToEdge) : (titleTrailingToEdge, titleTrailingToFireButton)
+        off.isActive = false
+        on.isActive = true
         guard let isCurrentChat = sidebarRowIsCurrentChat else { return }
         let isMarked = isCurrentChat && !state.isEditing
         var background = UIBackgroundConfiguration.clear()
@@ -136,7 +144,7 @@ final class AIChatHistoryCell: UITableViewCell {
             iconImageView.heightAnchor.constraint(equalToConstant: 24),
 
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: fireButton.leadingAnchor, constant: -4),
+            titleTrailingToFireButton,
             titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             titleLabel.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 11.5),
             titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -11.5),

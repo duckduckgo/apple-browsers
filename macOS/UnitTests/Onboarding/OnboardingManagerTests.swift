@@ -87,6 +87,7 @@ class OnboardingManagerTests: XCTestCase {
             aiChatURL: { URL(string: "https://duckduckgo.com/?ia=chat&duckai=5")! },
             featureFlagger: MockFeatureFlagger(),
             topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: MockFeatureFlagger(), bookmarkManager: MockBookmarkManager()),
+            topSitesPickerFaviconSeeder: MockTopSitesPickerFaviconSeeder(),
             regionCode: { "GB" },
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
@@ -186,6 +187,7 @@ class OnboardingManagerTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             featureFlagger: MockFeatureFlagger(),
             topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: MockFeatureFlagger(), bookmarkManager: MockBookmarkManager()),
+            topSitesPickerFaviconSeeder: MockTopSitesPickerFaviconSeeder(),
             regionCode: { "GB" },
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
@@ -746,6 +748,7 @@ class OnboardingManagerTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             featureFlagger: featureFlagger,
             topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: MockBookmarkManager()),
+            topSitesPickerFaviconSeeder: MockTopSitesPickerFaviconSeeder(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -819,6 +822,7 @@ class OnboardingManagerTests: XCTestCase {
             homepageSearchModeSeedPersistor: homepageSearchModeSeedPersistor,
             featureFlagger: featureFlagger,
             topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: MockBookmarkManager()),
+            topSitesPickerFaviconSeeder: MockTopSitesPickerFaviconSeeder(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -896,6 +900,19 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertIdentical(bookmarkManager.updateBookmarkCalled, bookmark)
         XCTAssertTrue(bookmark.isFavorite)
     }
+
+    @MainActor
+    func testAddFavorites_SeedsFaviconsForThePickedSites() {
+        let faviconSeeder = MockTopSitesPickerFaviconSeeder()
+        let seeded = expectSeededSites(by: faviconSeeder)
+        let manager = makeTopSitesPickerManager(bookmarkManager: MockBookmarkManager(), faviconSeeder: faviconSeeder)
+        let sites = [pickedSite("https://www.youtube.com"), pickedSite("https://www.reddit.com")]
+
+        manager.addFavorites(sites)
+
+        wait(for: [seeded.expectation], timeout: 1)
+        XCTAssertEqual(seeded.sites(), sites)
+    }
 }
 
 // MARK: - Chrome extension experiment test helpers
@@ -918,6 +935,7 @@ private extension OnboardingManagerTests {
             bookmarkManager: MockBookmarkManager(),
             featureFlagger: featureFlagger,
             topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: MockBookmarkManager()),
+            topSitesPickerFaviconSeeder: MockTopSitesPickerFaviconSeeder(),
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -939,7 +957,10 @@ private extension OnboardingManagerTests {
     }
 
     @MainActor
-    func makeTopSitesPickerManager(bookmarkManager: MockBookmarkManager) -> OnboardingActionsManager {
+    func makeTopSitesPickerManager(
+        bookmarkManager: MockBookmarkManager,
+        faviconSeeder: TopSitesPickerFaviconSeederProtocol = MockTopSitesPickerFaviconSeeder()
+    ) -> OnboardingActionsManager {
         let featureFlagger = MockFeatureFlagger(
             featuresStub: [FeatureFlag.onboardingFavoritesStepExperiment.rawValue: true],
             resolveCohortStub: FeatureFlag.OnboardingFavoritesStepCohort.treatment,
@@ -956,6 +977,7 @@ private extension OnboardingManagerTests {
             bookmarkManager: bookmarkManager,
             featureFlagger: featureFlagger,
             topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: bookmarkManager),
+            topSitesPickerFaviconSeeder: faviconSeeder,
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
@@ -963,5 +985,15 @@ private extension OnboardingManagerTests {
 
     func pickedSite(_ url: String) -> OnboardingUserScript.FavoriteSite {
         OnboardingUserScript.FavoriteSite(id: url, url: URL(string: url)!, title: url)
+    }
+
+    func expectSeededSites(by faviconSeeder: MockTopSitesPickerFaviconSeeder) -> (expectation: XCTestExpectation, sites: () -> [OnboardingUserScript.FavoriteSite]) {
+        let expectation = expectation(description: "Favicons seeded")
+        var seededSites: [OnboardingUserScript.FavoriteSite] = []
+        faviconSeeder.onSeedFavicons = { sites in
+            seededSites = sites
+            expectation.fulfill()
+        }
+        return (expectation, { seededSites })
     }
 }

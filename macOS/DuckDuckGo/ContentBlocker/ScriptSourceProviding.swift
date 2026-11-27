@@ -92,7 +92,8 @@ protocol ScriptSourceProviding {
         webExtensionAvailability: Application.appDelegate.webExtensionAvailability,
         dockCustomization: Application.appDelegate.dockCustomization,
         reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore),
-        installDateProvider: { AppDelegate.firstLaunchDate }
+        installDateProvider: { AppDelegate.firstLaunchDate },
+        topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeeder(faviconStore: Application.appDelegate.faviconManager)
     )
 }
 
@@ -155,7 +156,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          webExtensionAvailability: WebExtensionAvailabilityProviding?,
          dockCustomization: DockCustomization,
          reinstallUserDetection: ReinstallingUserDetecting,
-         installDateProvider: @escaping () -> Date
+         installDateProvider: @escaping () -> Date,
+         topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeederProtocol
     ) {
 
         self.configStorage = configStorage
@@ -193,7 +195,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             appearancePreferences,
             startupPreferences,
             reinstallUserDetection,
-            installDateProvider
+            installDateProvider,
+            topSitesPickerFaviconSeeder
         )
         self.historyViewActionsManager = HistoryViewActionsManager(
             historyCoordinator: historyCoordinator,
@@ -238,7 +241,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         _ appearancePreferences: AppearancePreferences,
         _ startupPreferences: StartupPreferences,
         _ reinstallUserDetection: ReinstallingUserDetecting,
-        _ installDateProvider: @escaping () -> Date
+        _ installDateProvider: @escaping () -> Date,
+        _ topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeederProtocol
     ) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
@@ -251,7 +255,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             pinningManager: pinningManager,
             featureFlagger: featureFlagger,
             reinstallUserDetection: reinstallUserDetection,
-            installDateProvider: installDateProvider
+            installDateProvider: installDateProvider,
+            topSitesPickerFaviconSeeder: topSitesPickerFaviconSeeder
         )
     }
 

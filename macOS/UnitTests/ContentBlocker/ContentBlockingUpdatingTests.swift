@@ -101,7 +101,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        webExtensionAvailability: nil,
                                        dockCustomization: DockCustomizerMock(),
                                        reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: MockKeyValueStore()),
-                                       installDateProvider: { Date() })
+                                       installDateProvider: { Date() },
+                                       topSitesPickerFaviconSeeder: MockTopSitesPickerFaviconSeeder())
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil
     }

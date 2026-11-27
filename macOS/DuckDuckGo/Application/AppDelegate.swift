@@ -1236,7 +1236,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 webExtensionAvailability: webExtensionAvailability,
                 dockCustomization: dockCustomization,
                 reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
-                installDateProvider: { AppDelegate.firstLaunchDate }
+                installDateProvider: { AppDelegate.firstLaunchDate },
+                topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeeder(faviconStore: faviconManager)
             )
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
@@ -1273,7 +1274,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             webExtensionAvailability: webExtensionAvailability,
             dockCustomization: dockCustomization,
             reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
-            installDateProvider: { AppDelegate.firstLaunchDate }
+            installDateProvider: { AppDelegate.firstLaunchDate },
+            topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeeder(faviconStore: faviconManager)
         )
         privacyFeatures = AppPrivacyFeatures(
             contentBlocking: contentBlocking,

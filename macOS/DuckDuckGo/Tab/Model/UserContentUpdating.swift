@@ -115,7 +115,8 @@ final class UserContentUpdating {
          webExtensionAvailability: WebExtensionAvailabilityProviding?,
          dockCustomization: DockCustomization,
          reinstallUserDetection: ReinstallingUserDetecting,
-         installDateProvider: @escaping () -> Date
+         installDateProvider: @escaping () -> Date,
+         topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeederProtocol
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
             return NotificationCenter.default.publisher(for: name)
@@ -165,7 +166,8 @@ final class UserContentUpdating {
                                                           webExtensionAvailability: webExtensionAvailability,
                                                           dockCustomization: dockCustomization,
                                                           reinstallUserDetection: reinstallUserDetection,
-                                                          installDateProvider: installDateProvider)
+                                                          installDateProvider: installDateProvider,
+                                                          topSitesPickerFaviconSeeder: topSitesPickerFaviconSeeder)
                 return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
             }
             return await newContentTask.value

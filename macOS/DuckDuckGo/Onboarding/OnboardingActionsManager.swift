@@ -434,7 +434,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             // No pixel for addressBarMode as it's the last step before final
             pixel = nil
         case .searchOrChat:
-            pixel = .searchChatToggle(.shown)
+            // Pixels added in https://app.asana.com/1/137249556945/task/1220344101103835
+            pixel = nil
         }
         if let pixel {
             PixelKit.fire(pixel, frequency: .dailyAndCount)

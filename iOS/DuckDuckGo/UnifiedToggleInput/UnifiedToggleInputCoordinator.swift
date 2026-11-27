@@ -1451,7 +1451,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             // The sheet goes up over the input as it is: expanding first would raise the keyboard under it. Closing
             // it, by a pick or a cancel, expands the input (`expandIfOnExpandedInputHost`).
             if hint == .documents {
-                attachmentController.presentFilePicker()
+                attachmentController.presentFilePicker(source: .newChatHint) { [weak self] in
+                    self?.newChatHintsUsage.filePickerCancelled()
+                }
             } else {
                 attachmentController.presentPhotoPicker()
             }

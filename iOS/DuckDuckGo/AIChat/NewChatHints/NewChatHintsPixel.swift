@@ -36,6 +36,8 @@ enum NewChatHintsPixel: PixelKit.Event {
     /// `position` is 1-based.
     case hintTapped(NewChatHint, position: Int)
     case capReached
+    /// The file picker opened by the documents hint closed without a file chosen.
+    case filePickerCancelled
 
     var name: String {
         switch self {
@@ -44,6 +46,7 @@ enum NewChatHintsPixel: PixelKit.Event {
         case .hintsShown: return "aichat_new_chat_hints_shown"
         case .hintTapped: return "aichat_new_chat_hint_tapped"
         case .capReached: return "aichat_new_chat_hints_cap_reached_u"
+        case .filePickerCancelled: return "aichat_new_chat_hint_file_picker_cancelled"
         }
     }
 
@@ -74,7 +77,7 @@ enum NewChatHintsPixel: PixelKit.Event {
             })
         case .hintTapped(let hint, let position):
             return [Parameter.hint: hint.pixelValue, Parameter.position: String(position)]
-        case .capReached:
+        case .capReached, .filePickerCancelled:
             return nil
         }
     }

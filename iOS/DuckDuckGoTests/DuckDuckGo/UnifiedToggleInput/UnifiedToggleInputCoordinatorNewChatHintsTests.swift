@@ -471,6 +471,22 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Cancelling the picker a hint opened reports the cancel for the documents hint only",
+          .timeLimit(.minutes(1)), arguments: [NewChatHint.photo, .documents])
+    func pickerHintCancelReportsForDocumentsOnly(hint: NewChatHint) async throws {
+        let sut = try makeSUT()
+        let presenter = RecordingPresenter {}
+        sut.attachmentPresentingViewController = presenter
+        try await openBlankChat(sut)
+
+        sut.performNewChatHint(hint)
+        try await Task.sleep(nanoseconds: 100_000_000)
+        try presenter.cancelPicker()
+
+        #expect(fired("aichat_new_chat_hint_file_picker_cancelled").count == (hint == .documents ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("From the collapsed bar, the page's file picker request still expands the input before its sheet goes up",
           .timeLimit(.minutes(1)))
     func pageFilePickerExpandsFirst() async throws {

@@ -139,22 +139,27 @@ final class UTIAttachmentController {
             self?.addFileAttachment(attachment, sourceURL: metadata.url)
         }
         presenter.onFileValidationFailed = { [weak self] message, metadata in
-            guard let self else { return }
-            let reason: UTIAttachmentPolicy.FileValidationFailureReason
-            if let metadataError = self.environment.policy()
-                .fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes) {
-                reason = metadataError.reason
-            } else if message == UserText.aiChatAttachmentFileUnreadable {
-                reason = .unreadable
-            } else {
-                reason = .other
-            }
-            self.pixelReporter.reportFileValidationFailed(reason: reason, source: "file_picker")
-            self.addInvalidFileAttachment(metadata: metadata, validationMessage: message)
+            self?.handleFileValidationFailed(message: message, metadata: metadata, source: .filePicker)
         }
         presenter.fileMetadataValidationMessage = { [weak self] metadata in
             self?.environment.policy().fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes)?.message
         }
+    }
+
+    private func handleFileValidationFailed(message: String,
+                                            metadata: UnifiedToggleInputAttachmentPresenter.FileMetadata,
+                                            source: FilePickerSource) {
+        let reason: UTIAttachmentPolicy.FileValidationFailureReason
+        if let metadataError = environment.policy()
+            .fileMetadataValidationError(mimeType: metadata.mimeType, fileSizeBytes: metadata.fileSizeBytes) {
+            reason = metadataError.reason
+        } else if message == UserText.aiChatAttachmentFileUnreadable {
+            reason = .unreadable
+        } else {
+            reason = .other
+        }
+        pixelReporter.reportFileValidationFailed(reason: reason, source: source.rawValue)
+        addInvalidFileAttachment(metadata: metadata, validationMessage: message)
     }
 
     // MARK: - Image / file limits
@@ -533,12 +538,33 @@ final class UTIAttachmentController {
         return .changed
     }
 
-    /// Opens the system file picker directly for the promo "add file" CTA. No-ops when files can't be
-    /// attached to the active chat.
-    func presentFilePicker() {
+    /// The `source` the file attachment pixels report for a file chosen in the system file picker.
+    enum FilePickerSource: String {
+        case filePicker = "file_picker"
+        case newChatHint = "new_chat_hint"
+    }
+
+    /// Opens the system file picker directly, for the promo "add file" CTA and the new chat hint. No-ops when files
+    /// can't be attached to the active chat. `source` and `onCancelled` apply to this picker only, so a later pick
+    /// from the attachment menu reports `file_picker` again.
+    func presentFilePicker(source: FilePickerSource = .filePicker, onCancelled: (() -> Void)? = nil) {
         guard canPresentFilePicker, !allowedFileUTTypes.isEmpty, !view.isGenerating(),
               let presenterVC = environment.presenterViewController() else { return }
-        presenter.presentFilePicker(from: presenterVC, allowedFileTypes: allowedFileUTTypes)
+        let pickerCallbacks = UnifiedToggleInputAttachmentPresenter.PickerCallbacks(
+            onExpandIfNeeded: { [weak self] in self?.callbacks.onExpandIfNeeded() },
+            onFilePicked: { [weak self] attachment, metadata in
+                self?.addFileAttachment(attachment, sourceURL: metadata.url, source: source.rawValue)
+            },
+            onFileValidationFailed: { [weak self] message, metadata in
+                self?.handleFileValidationFailed(message: message, metadata: metadata, source: source)
+            },
+            fileMetadataValidationMessage: { [weak self] metadata in
+                self?.environment.policy().fileMetadataValidationError(mimeType: metadata.mimeType,
+                                                                       fileSizeBytes: metadata.fileSizeBytes)?.message
+            },
+            onCancelled: onCancelled
+        )
+        presenter.presentFilePicker(from: presenterVC, allowedFileTypes: allowedFileUTTypes, callbacks: pickerCallbacks)
     }
 
     /// Opens the photo library directly, for the new chat hint. No-ops when the active chat can't take another image.

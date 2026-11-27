@@ -237,9 +237,9 @@
             "simplified_prompt_box",
             {
                 "key": "source",
-                "description": "Source of the attached file.",
+                "description": "Source of the attached file. new_chat_hint: the file picker opened by the documents new chat hint.",
                 "type": "string",
-                "enum": ["file_picker", "paste"]
+                "enum": ["file_picker", "paste", "new_chat_hint"]
             }
         ]
     },
@@ -266,9 +266,9 @@
             },
             {
                 "key": "source",
-                "description": "Source of the rejected file.",
+                "description": "Source of the rejected file. new_chat_hint: the file picker opened by the documents new chat hint.",
                 "type": "string",
-                "enum": ["file_picker", "paste"]
+                "enum": ["file_picker", "paste", "new_chat_hint"]
             }
         ]
     },

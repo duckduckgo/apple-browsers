@@ -108,5 +108,12 @@
         "triggers": ["user_interaction"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "aichat_new_chat_hint_file_picker_cancelled": {
+        "description": "The file picker opened by the documents new chat hint closed without a file chosen.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

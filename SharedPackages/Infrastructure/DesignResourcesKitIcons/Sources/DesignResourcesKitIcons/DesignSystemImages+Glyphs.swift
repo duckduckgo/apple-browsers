@@ -495,6 +495,7 @@ public extension DesignSystemImages {
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt24) }
             public static var attach: DesignSystemImage { .init(resource: .attach24) }
             public static var bell: DesignSystemImage { .init(resource: .bell24) }
+            public static var bellNotification: DesignSystemImage { .init(resource: .bellNotification24) }
             public static var bookmark: DesignSystemImage { .init(resource: .bookmark24) }
             public static var bookmarkSolid: DesignSystemImage { .init(resource: .bookmarkSolid24) }
             public static var bookmarkFavorite: DesignSystemImage { .init(resource: .bookmarkFavorite24) }

@@ -238,6 +238,7 @@ public class SyncSettingsViewModel: ObservableObject {
     @Published public var isAccountRecoveryAvailable: Bool = true
     @Published public var isAIChatSyncEnabled: Bool = false
     @Published public var isDeviceActivityAvailable: Bool = false
+    @Published public var areSyncNotificationsAvailable: Bool = false
     @Published public var isAppVersionNotSupported: Bool = false
     @Published public var isRecoverSyncedDataSheetVisible: Bool = false
 
@@ -275,6 +276,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @Published public var isDeviceActivityPresented = false
     public let deviceActivityViewModel: DeviceActivityViewModel?
+    public let notificationSettingsViewModel: SyncNotificationSettingsViewModel?
     @Published public var pendingLoginEvents: [LoginEvent] = []
 
     var isNewDevicesCardVisible: Bool {
@@ -345,12 +347,14 @@ public class SyncSettingsViewModel: ObservableObject {
         switchToProdEnvironment: @escaping () -> Void,
         autoRestoreProvider: SyncAutoRestoreProviding,
         isImprovedPairingFlowEnabled: Bool = false,
-        deviceActivityViewModel: DeviceActivityViewModel? = nil
+        deviceActivityViewModel: DeviceActivityViewModel? = nil,
+        notificationSettingsViewModel: SyncNotificationSettingsViewModel? = nil
     ) {
         self.isOnDevEnvironment = isOnDevEnvironment()
         self.autoRestoreProvider = autoRestoreProvider
         self.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
         self.deviceActivityViewModel = deviceActivityViewModel
+        self.notificationSettingsViewModel = notificationSettingsViewModel
         self.isAutoRestoreFeatureAvailable = autoRestoreProvider.isAutoRestoreFeatureEnabled
         if isAutoRestoreFeatureAvailable {
             self.isAutoRestoreEnabled = autoRestoreProvider.existingDecision() ?? false

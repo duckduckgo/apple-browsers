@@ -17,10 +17,12 @@
 //  limitations under the License.
 //
 
+import Core
 import DDGSync
 import FeatureFlags_iOS
 import Foundation
 import PrivacyConfig
+import Persistence
 import UserNotifications
 import os.log
 
@@ -36,13 +38,16 @@ final class SyncLoginNotificationService {
     private let syncService: DDGSyncing
     private let featureFlagger: FeatureFlagger
     private let notificationCenter: UNUserNotificationCenterRepresentable
+    private let settingsStorage: any KeyedStoring<SyncNotificationSettingsStorageKeys>
 
     init(syncService: DDGSyncing,
          featureFlagger: FeatureFlagger,
-         notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current()) {
+         notificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
+         settingsStorage: any KeyedStoring<SyncNotificationSettingsStorageKeys> = UserDefaults.app.keyedStoring()) {
         self.syncService = syncService
         self.featureFlagger = featureFlagger
         self.notificationCenter = notificationCenter
+        self.settingsStorage = settingsStorage
     }
 
     func deliver(_ notification: SyncLoginNotification) async {
@@ -54,6 +59,7 @@ final class SyncLoginNotificationService {
                 _ = try await notificationCenter.requestAuthorization(options: [.provisional, .alert])
                 status = await notificationCenter.authorizationStatus()
             }
+            // Quiet delivery remains enabled by default, while the settings toggle requires full permission.
             guard status == .authorized || status == .provisional,
                   try canDeliver(for: notification.accountID), !Task.isCancelled else { return }
             let reviewDate = try syncService.auditLogReviewState(for: notification.accountID)?.reviewedThrough
@@ -73,7 +79,8 @@ final class SyncLoginNotificationService {
 
     private func canDeliver(for accountID: String) throws -> Bool {
         guard featureFlagger.isFeatureOn(.syncLoginAuditLog),
-              featureFlagger.isFeatureOn(.syncLoginNotification) else { return false }
+              featureFlagger.isFeatureOn(.syncLoginNotification),
+              settingsStorage.isEnabled ?? true else { return false }
         return try syncService.isAuditLogPollingAvailable(forAccountID: accountID)
     }
 

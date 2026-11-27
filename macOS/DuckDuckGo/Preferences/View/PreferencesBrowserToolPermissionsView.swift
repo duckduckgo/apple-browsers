@@ -98,6 +98,15 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
         reload()
     }
 
+    func setTranslate(languageCode: String, excluded: Bool) {
+        if excluded {
+            translatePages.exclude(languageCode: languageCode)
+        } else {
+            translatePages.include(languageCode: languageCode)
+        }
+        reload()
+    }
+
     func resetTranslate() {
         translatePages.reset()
         reload()
@@ -330,16 +339,35 @@ struct TranslatePagesRow: View {
 
     @ObservedObject var model: BrowserToolPermissionsPreferences
 
-    private var detail: String {
-        let userLanguage = Locale.preferredLanguages.first.flatMap { Locale.current.localizedString(forLanguageCode: $0) } ?? ""
-        return UserText.translatePagesSettingsDetail(userLanguage: userLanguage)
+    private var systemCode: String? { TranslatePagesLanguages.systemCode() }
+
+    private var summary: String {
+        TranslatePagesLanguages.summary(excluded: model.translateExcludedLanguages, systemCode: systemCode)
     }
 
-    private var excludedDetail: String? {
-        let excluded = model.translateExcludedLanguages
-            .compactMap { Locale.current.localizedString(forLanguageCode: $0) }
-            .sorted()
-        return excluded.isEmpty ? nil : UserText.translatePagesSettingsExcluded(languages: excluded.joined(separator: ", "))
+    private var languageMenu: some View {
+        Menu {
+            if let systemCode, let name = TranslatePagesLanguages.name(of: systemCode) {
+                Toggle(isOn: .constant(true)) {
+                    Text("\(name)  \(UserText.translatePagesSettingsSystemLanguage)")
+                }
+                .disabled(true)
+                Divider()
+            }
+            ForEach(TranslatePagesLanguages.menuCodes(excluded: model.translateExcludedLanguages, systemCode: systemCode), id: \.self) { code in
+                Toggle(TranslatePagesLanguages.name(of: code) ?? code, isOn: Binding(
+                    get: { model.translateExcludedLanguages.contains(code) },
+                    set: { model.setTranslate(languageCode: code, excluded: $0) }))
+            }
+        } label: {
+            Text(summary)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .accentTextPrimary))
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.visible)
+        .fixedSize()
+        .accessibilityIdentifier("Preferences.AIChat.translatePages.languages")
     }
 
     var body: some View {
@@ -354,15 +382,11 @@ struct TranslatePagesRow: View {
                 Text(UserText.translatePagesSettingsTitle)
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(detail)
-                    .font(.system(size: 11))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .fixedSize(horizontal: false, vertical: true)
-                if let excludedDetail {
-                    Text(excludedDetail)
+                HStack(spacing: 3) {
+                    Text(UserText.translatePagesSettingsDetailPrefix)
                         .font(.system(size: 11))
                         .foregroundColor(Color(designSystemColor: .textSecondary))
-                        .fixedSize(horizontal: false, vertical: true)
+                    languageMenu
                 }
             }
 

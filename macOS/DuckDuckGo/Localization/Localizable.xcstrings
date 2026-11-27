@@ -123909,25 +123909,13 @@
       }
     },
     "translate-pages.settings.detail" : {
-      "comment" : "Detail of the Translate Pages setting. Parameter is the user's language, e.g. English",
+      "comment" : "Detail of the Translate Pages setting. Parameter is a menu link naming the user's language and the languages excluded from the offer, e.g. English, Spanish",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Offer to translate and summarize pages that aren't in %@."
-          }
-        }
-      }
-    },
-    "translate-pages.settings.excluded" : {
-      "comment" : "Added to the Translate Pages setting detail. Parameter is a comma-separated list of languages, e.g. French, German",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Not offered for %@."
+            "value" : "Summarize pages that aren't in %@"
           }
         }
       }
@@ -123940,6 +123928,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Never Ask"
+          }
+        }
+      }
+    },
+    "translate-pages.settings.system-language" : {
+      "comment" : "Label next to the user's language in the Translate Pages language menu; it is always checked",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System Language"
           }
         }
       }

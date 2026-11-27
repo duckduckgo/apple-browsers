@@ -236,6 +236,44 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         XCTAssertEqual(model.translateMode, .alwaysAsk)
     }
 
+    func testIncludingAnExcludedLanguageBringsItBack() {
+        translatePages.exclude(languageCode: "fr")
+        translatePages.exclude(languageCode: "de")
+
+        model.setTranslate(languageCode: "fr", excluded: false)
+
+        XCTAssertEqual(model.translateExcludedLanguages, ["de"])
+        model.setTranslate(languageCode: "de", excluded: false)
+        XCTAssertEqual(model.translateExcludedLanguages, [])
+        XCTAssertFalse(model.isTranslateCustomized)
+    }
+
+    func testTheLanguageMenuListsTheOfferedLanguagesByNameWithoutTheSystemLanguage() {
+        let locale = Locale(identifier: "en_US")
+
+        let codes = TranslatePagesLanguages.menuCodes(excluded: [], systemCode: "es", locale: locale)
+
+        XCTAssertEqual(codes.map { TranslatePagesLanguages.name(of: $0, locale: locale) },
+                       ["Chinese", "Dutch", "French", "German", "Italian", "Japanese", "Korean", "Polish", "Portuguese", "Turkish"])
+    }
+
+    func testTheLanguageMenuAddsExcludedLanguagesOutsideTheOfferedList() {
+        let locale = Locale(identifier: "en_US")
+
+        let codes = TranslatePagesLanguages.menuCodes(excluded: ["sv", "fr"], systemCode: "en", locale: locale)
+
+        XCTAssertEqual(codes.count, 12)
+        XCTAssertTrue(codes.contains("sv"))
+        XCTAssertEqual(codes.filter { $0 == "fr" }.count, 1)
+    }
+
+    func testTheSummaryNamesTheSystemLanguageThenTheExcludedOnes() {
+        let locale = Locale(identifier: "en_US")
+
+        XCTAssertEqual(TranslatePagesLanguages.summary(excluded: [], systemCode: "en", locale: locale), "English")
+        XCTAssertEqual(TranslatePagesLanguages.summary(excluded: ["fr", "es", "en"], systemCode: "en", locale: locale), "English, French, Spanish")
+    }
+
     // MARK: - Pixels
 
     func testWhenAChoiceChangesInSettingsThenThePermissionChangedPixelFires() {

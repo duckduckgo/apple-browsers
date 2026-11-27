@@ -81,6 +81,18 @@ final class TranslatePagesSetting {
         notificationCenter.post(name: Self.didChange, object: self)
     }
 
+    func include(languageCode: String) {
+        let code = Self.normalized(languageCode)
+        guard excludedLanguageCodes.contains(code) else { return }
+        let remaining = excludedLanguageCodes.filter { $0 != code }
+        if remaining.isEmpty {
+            store.removeObject(forKey: Key.excludedLanguages.rawValue)
+        } else {
+            store.set(remaining, forKey: Key.excludedLanguages.rawValue)
+        }
+        notificationCenter.post(name: Self.didChange, object: self)
+    }
+
     func reset() {
         store.removeObject(forKey: Key.mode.rawValue)
         store.removeObject(forKey: Key.excludedLanguages.rawValue)
@@ -90,5 +102,37 @@ final class TranslatePagesSetting {
     private static func normalized(_ languageCode: String) -> String {
         let primary = languageCode.split(whereSeparator: { $0 == "-" || $0 == "_" }).first.map(String.init) ?? ""
         return primary.lowercased()
+    }
+}
+
+/// The languages the Settings menu lists, and how it names them.
+enum TranslatePagesLanguages {
+
+    static let offered = ["zh", "nl", "fr", "de", "it", "ja", "ko", "pl", "pt", "es", "tr"]
+
+    /// The first preferred language's primary subtag, the one the offer never covers.
+    static func systemCode(preferredLanguages: [String] = Locale.preferredLanguages) -> String? {
+        preferredLanguages.first?.split(whereSeparator: { $0 == "-" || $0 == "_" }).first.map { String($0).lowercased() }
+    }
+
+    static func name(of code: String, locale: Locale = .current) -> String? {
+        locale.localizedString(forLanguageCode: code)
+    }
+
+    /// The listed languages plus any excluded outside them, without the system language, by name.
+    static func menuCodes(excluded: [String], systemCode: String?, locale: Locale = .current) -> [String] {
+        Set(offered + excluded).subtracting([systemCode].compactMap { $0 })
+            .compactMap { code in name(of: code, locale: locale).map { (code, $0) } }
+            .sorted { $0.1.localizedCaseInsensitiveCompare($1.1) == .orderedAscending }
+            .map(\.0)
+    }
+
+    /// The system language, then each excluded language by name.
+    static func summary(excluded: [String], systemCode: String?, locale: Locale = .current) -> String {
+        let system = systemCode.flatMap { name(of: $0, locale: locale) }
+        let names = Set(excluded).subtracting([systemCode].compactMap { $0 })
+            .compactMap { name(of: $0, locale: locale) }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+        return ([system].compactMap { $0 } + names).joined(separator: ", ")
     }
 }

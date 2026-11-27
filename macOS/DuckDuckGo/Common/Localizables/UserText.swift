@@ -1786,14 +1786,11 @@ struct UserText {
         return String(format: localized, toolName)
     }
     static let translatePagesSettingsTitle = NSLocalizedString("translate-pages.settings.title", value: "Translate Pages", comment: "Name of the Browser Access setting for offering to translate pages with Duck.ai")
-    static func translatePagesSettingsDetail(userLanguage: String) -> String {
-        let localized = NSLocalizedString("translate-pages.settings.detail", value: "Offer to translate and summarize pages that aren't in %@.", comment: "Detail of the Translate Pages setting. Parameter is the user's language, e.g. English")
-        return String(format: localized, userLanguage)
-    }
-    static func translatePagesSettingsExcluded(languages: String) -> String {
-        let localized = NSLocalizedString("translate-pages.settings.excluded", value: "Not offered for %@.", comment: "Added to the Translate Pages setting detail. Parameter is a comma-separated list of languages, e.g. French, German")
-        return String(format: localized, languages)
-    }
+    /// What precedes the language menu link in the Translate Pages detail.
+    static let translatePagesSettingsDetailPrefix = NSLocalizedString("translate-pages.settings.detail", value: "Summarize pages that aren't in %@", comment: "Detail of the Translate Pages setting. The parameter is replaced by a menu link naming the user's language and the languages excluded from the offer, e.g. English, Spanish")
+        .replacingOccurrences(of: "%@", with: "")
+        .trimmingCharacters(in: .whitespaces)
+    static let translatePagesSettingsSystemLanguage = NSLocalizedString("translate-pages.settings.system-language", value: "System Language", comment: "Label next to the user's language in the Translate Pages language menu; it is always checked")
     static let translatePagesSettingsAlwaysAsk = NSLocalizedString("translate-pages.settings.always-ask", value: "Always Ask", comment: "Translate Pages dropdown option to offer translation on pages in other languages")
     static let translatePagesSettingsNeverAsk = NSLocalizedString("translate-pages.settings.never-ask", value: "Never Ask", comment: "Translate Pages dropdown option to never offer translation")
     static let browserToolPanelScope = NSLocalizedString("browser-tool.panel.scope", value: "These apply to every site and chat.", comment: "Note at the bottom of the Browser Permissions panel opened from the Duck.ai button menu")

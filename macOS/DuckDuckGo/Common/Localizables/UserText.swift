@@ -1738,6 +1738,17 @@ struct UserText {
     static let websitePermissionsDefaultAccessibilityLabel = NSLocalizedString("preferences.website-permissions.default.accessibility", value: "Default behavior for %@", comment: "Accessibility label for the default behavior radio group, %@ is the permission name")
     // MARK: - Duck.ai browser tool permission prompt
 
+    static let translateOfferTitle = NSLocalizedString("translate-offer.title", value: "Translate this page with Duck.ai?", comment: "Title of the pop-up that offers to translate a page in another language with Duck.ai")
+    static func translateOfferDetail(userLanguage: String) -> String {
+        let localized = NSLocalizedString("translate-offer.detail", value: "Get a summary of this page in %@ and continue the conversation.", comment: "Body of the pop-up that offers to translate a page with Duck.ai. Parameter is the user's language name, e.g. English")
+        return String(format: localized, userLanguage)
+    }
+    static func translateOfferDontAskAgain(pageLanguage: String) -> String {
+        let localized = NSLocalizedString("translate-offer.dont-ask-again", value: "Don't ask again for %@", comment: "Checkbox in the pop-up that offers to translate a page with Duck.ai. Parameter is the page's language name, e.g. Spanish")
+        return String(format: localized, pageLanguage)
+    }
+    static let translateOfferNoThanks = NSLocalizedString("translate-offer.no-thanks", value: "No Thanks", comment: "Button in the pop-up that offers to translate a page with Duck.ai. It closes the pop-up without translating")
+    static let translateOfferTranslate = NSLocalizedString("translate-offer.translate", value: "Translate", comment: "Button in the pop-up that offers to translate a page with Duck.ai. It opens Duck.ai to translate and summarize the page")
     static let browserToolInUse = NSLocalizedString("browser-tool.in-use", value: "Duck.ai is using a browser tool", comment: "Tooltip on the tab bar icon shown while Duck.ai runs a browser tool")
     static let browserToolPermissionAllowOnce = NSLocalizedString("browser-tool.permission.allow-once", value: "Allow once", comment: "Duck.ai browser tool permission prompt button that lets one tool call run")
     static let browserToolPermissionTitleListOpenTabs = NSLocalizedString("browser-tool.permission.title.list-open-tabs", value: "Allow Duck.ai to see your open tabs?", comment: "Duck.ai browser tool permission prompt title")

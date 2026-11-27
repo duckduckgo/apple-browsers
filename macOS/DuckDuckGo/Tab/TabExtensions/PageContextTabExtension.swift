@@ -1141,6 +1141,24 @@ extension PageContextTabExtension: NavigationResponder {
         if ["http", "https"].contains(navigation.url.scheme?.lowercased()) {
             browserTools.notifyTabChanged(ownerTabID: tabID, url: navigation.url)
         }
+        offerTranslationIfForeign(navigation.url)
+    }
+
+    @MainActor
+    private func offerTranslationIfForeign(_ url: URL) {
+        guard featureFlagger.isFeatureOn(.aiChatOfferTranslationAndSummarize) else { return }
+        guard ["http", "https"].contains(url.scheme?.lowercased()), aiChatMenuConfiguration.shouldDisplayTranslationMenuItem,
+              let webView else {
+            browserTools.permissionPrompts.offerTranslation(languageCode: nil, tabID: tabID)
+            return
+        }
+        Task { @MainActor [weak self, weak webView] in
+            // An isolated world, so the page can't spoof the read.
+            let lang = try? await webView?.evaluateJavaScript("String(document.documentElement?.lang ?? '')", in: nil, contentWorld: .defaultClient) as? String
+            guard let self, webView?.url == url else { return }
+            let languageCode = TranslateOfferLanguage.foreignLanguageCode(pageLanguage: lang, preferredLanguage: Locale.preferredLanguages.first)
+            browserTools.permissionPrompts.offerTranslation(languageCode: languageCode, tabID: tabID)
+        }
     }
 
     /// Back/forward cache restores can end in `didFail` (NSURLError -999) after committing — the page

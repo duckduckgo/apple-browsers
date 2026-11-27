@@ -178,6 +178,19 @@ class MockDDGSyncing: DDGSyncing {
         return registeredDevices
     }
 
+    @MainActor
+    func makeAuditLogReader() throws -> any SyncAuditLogReading { MockAuditLogReader() }
+
+    private var auditLogReviewStates = [String: SyncAuditLogReviewState]()
+
+    func auditLogReviewState(for accountID: String) throws -> SyncAuditLogReviewState? {
+        auditLogReviewStates[accountID]
+    }
+
+    func setAuditLogReviewState(_ reviewState: SyncAuditLogReviewState, for accountID: String) throws {
+        auditLogReviewStates[accountID] = reviewState
+    }
+
     var updateDeviceNameCallback: ((String) -> Void)?
     var updateDeviceNameError: Error?
     func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
@@ -309,4 +322,9 @@ extension SyncAccount {
             state: .active
         )
     }
+}
+
+@MainActor
+private final class MockAuditLogReader: SyncAuditLogReading {
+    func nextPage() async throws -> SyncAuditLogPage { SyncAuditLogPage(events: [], hasMore: false) }
 }

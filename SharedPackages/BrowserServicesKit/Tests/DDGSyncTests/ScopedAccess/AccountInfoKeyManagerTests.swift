@@ -320,8 +320,8 @@ struct AccountInfoKeyManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A failed default wrapper falls back to the third-party wrapper", .timeLimit(.minutes(1)))
-    func testWhenDefaultWrapperCannotBeUnwrappedThenFallsBackToThirdPartyWrapper() async throws {
+    @Test("A failed default wrapper falls back to the third-party wrapper", .timeLimit(.minutes(1)), arguments: [false, true])
+    func testWhenDefaultWrapperCannotBeUnwrappedThenFallsBackToThirdPartyWrapper(useAuditLoader: Bool) async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
         let malformedDefaultWrapper = ProtectedKey(kid: protectedKeys.defaultCredential.kid,
@@ -340,7 +340,12 @@ struct AccountInfoKeyManagerTests {
                                             scopedAccess: scopedAccess,
                                             crypter: crypter)
 
-        let key = try await manager.loadKey(for: account)
+        let key: AccountInfoKey
+        if useAuditLoader {
+            key = try await manager.loadKeyForAuditLog(for: account).key
+        } else {
+            key = try await manager.loadKey(for: account)
+        }
 
         #expect(key.kid == protectedKeys.thirdParty.kid)
         #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
@@ -348,8 +353,8 @@ struct AccountInfoKeyManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The default wrapper is preferred without recovering a scoped password", .timeLimit(.minutes(1)))
-    func testWhenBothWrappersAreCachedThenPrefersDefaultWithoutRecoveringScopedPassword() async throws {
+    @Test("The default wrapper is preferred without recovering a scoped password", .timeLimit(.minutes(1)), arguments: [false, true])
+    func testWhenBothWrappersAreCachedThenPrefersDefaultWithoutRecoveringScopedPassword(useAuditLoader: Bool) async throws {
         let scopedPassword = Data(repeating: 0x03, count: 32)
         let protectedKeys = try makeDualWrappedProtectedKeys(scopedPassword: scopedPassword)
         let secureStore = SecureStorageStub()
@@ -362,7 +367,12 @@ struct AccountInfoKeyManagerTests {
                                             scopedAccess: scopedAccess,
                                             crypter: crypter)
 
-        let key = try await manager.loadKey(for: account)
+        let key: AccountInfoKey
+        if useAuditLoader {
+            key = try await manager.loadKeyForAuditLog(for: account).key
+        } else {
+            key = try await manager.loadKey(for: account)
+        }
 
         #expect(key.kid == protectedKeys.defaultCredential.kid)
         #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
@@ -463,15 +473,28 @@ struct AccountInfoKeyManagerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Unsupported wrappers are rejected", .timeLimit(.minutes(1)))
-    func testWhenAccountInfoKeyHasUnsupportedWrapperThenThrowsUnavailableWrappingKey() async {
+    @Test("Unsupported wrappers are rejected", .timeLimit(.minutes(1)), arguments: [false, true])
+    func testWhenAccountInfoKeyHasUnsupportedWrapperThenThrowsUnavailableWrappingKey(useAuditLoader: Bool) async {
         let protectedKey = ProtectedKey(kid: "account-info-key",
                                         encryptedPrivateKey: "unused",
                                         publicKey: .mock,
                                         encryptedWith: "unsupported",
                                         purpose: ProtectedKeyPurpose.accountInfo)
 
-        await assertRefreshing([protectedKey], expectedError: .unavailableWrappingKey)
+        if useAuditLoader {
+            let secureStore = SecureStorageStub()
+            let scopedAccess = ScopedAccessCredentialManagingMock()
+            scopedAccess.fetchProtectedKeysStub = [protectedKey]
+            let manager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: crypter)
+
+            await #expect(throws: AccountInfoKeyManagerError.unavailableWrappingKey) {
+                try await manager.loadKeyForAuditLog(for: account)
+            }
+            #expect(secureStore.theProtectedKeysData == nil)
+            #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+        } else {
+            await assertRefreshing([protectedKey], expectedError: .unavailableWrappingKey)
+        }
     }
 
     @available(iOS 16, macOS 13, *)
@@ -517,6 +540,116 @@ struct AccountInfoKeyManagerTests {
         } catch {
             #expect((error as? AccountInfoKeyManagerError) == .missingProtectedKey)
         }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Audit reads preserve corrupt cached bytes while using server keys", .timeLimit(.minutes(1)))
+    func testAuditReadDoesNotDeleteOrReplaceCorruptCache() async throws {
+        let secureStore = SecureStorageStub()
+        let corruptData = Data("invalid-json".utf8)
+        secureStore.theProtectedKeysData = corruptData
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        scopedAccess.fetchProtectedKeysStub = [protectedKey]
+        let manager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: crypter)
+
+        let key = try await manager.loadKeyForAuditLog(for: account).key
+
+        #expect(key.kid == protectedKey.kid)
+        #expect(secureStore.theProtectedKeysData == corruptData)
+        #expect(scopedAccess.fetchProtectedKeysCalls.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Audit reads use cached keys without a server request", .timeLimit(.minutes(1)))
+    func testAuditReadUsesCachedDefaultKey() async throws {
+        let secureStore = SecureStorageStub()
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let cachedData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        secureStore.theProtectedKeysData = cachedData
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let manager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: crypter)
+
+        let key = try await manager.loadKeyForAuditLog(for: account).key
+
+        #expect(key.kid == protectedKey.kid)
+        #expect(secureStore.theProtectedKeysData == cachedData)
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        #expect(scopedAccess.fetchAccessCredentialsCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Audit password recovery does not cache keys or the password", .timeLimit(.minutes(1)))
+    func testAuditRecoveryKeepsFetchedMaterialInMemoryOnly() async throws {
+        let password = Data(repeating: 3, count: 32)
+        let protectedKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: password)
+        let secureStore = SecureStorageStub()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysStub = [protectedKey]
+        scopedAccess.recoverScopedPasswordStub = password
+        let manager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: crypter)
+
+        let key = try await manager.loadKeyForAuditLog(for: account).key
+
+        #expect(key.kid == protectedKey.kid)
+        #expect(secureStore.theProtectedKeysData == nil)
+        #expect(secureStore.theScopedPassword == nil)
+        #expect(secureStore.persistScopedPasswordCalls.isEmpty)
+        #expect(scopedAccess.fetchAccessCredentialsCalls.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An audit key request 401 is propagated", .timeLimit(.minutes(1)))
+    func testAuditProtectedKeyRequestPropagatesUnauthorizedError() async throws {
+        let secureStore = SecureStorageStub()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysError = SyncError.unexpectedStatusCode(401)
+        let manager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: crypter)
+
+        await #expect(throws: SyncError.unexpectedStatusCode(401)) {
+            try await manager.loadKeyForAuditLog(for: account)
+        }
+        #expect(secureStore.theProtectedKeysData == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An audit password request 401 does not retry key loading", .timeLimit(.minutes(1)))
+    func testAuditPasswordRequestPropagatesUnauthorizedError() async throws {
+        let secureStore = SecureStorageStub()
+        let protectedKey = try makeThirdPartyCredentialProtectedKey(scopedPassword: Data(repeating: 3, count: 32))
+        let cachedData = try JSONEncoder.snakeCaseKeys.encode([protectedKey])
+        secureStore.theProtectedKeysData = cachedData
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchAccessCredentialsError = SyncError.unexpectedStatusCode(401)
+        let manager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: crypter)
+
+        await #expect(throws: SyncError.unexpectedStatusCode(401)) {
+            try await manager.loadKeyForAuditLog(for: account)
+        }
+        #expect(scopedAccess.fetchProtectedKeysCalls.isEmpty)
+        #expect(secureStore.theProtectedKeysData == cachedData)
+        #expect(secureStore.theScopedPassword == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A cancelled audit key response does not restore removed account data", .timeLimit(.minutes(1)))
+    func testCancelledAuditKeyRequestDoesNotRestoreCachesAfterLogout() async throws {
+        let secureStore = SecureStorageStub()
+        secureStore.theAccount = account
+        let protectedKey = try makeDefaultCredentialProtectedKey()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        scopedAccess.fetchProtectedKeysHandler = {
+            try secureStore.removeAccount()
+            withUnsafeCurrentTask { $0?.cancel() }
+            return [protectedKey]
+        }
+        let manager = AccountInfoKeyManager(secureStore: secureStore, scopedAccess: scopedAccess, crypter: crypter)
+        let request = Task { try await manager.loadKeyForAuditLog(for: account) }
+
+        await #expect(throws: CancellationError.self) { try await request.value }
+        #expect(secureStore.theAccount == nil)
+        #expect(secureStore.theProtectedKeysData == nil)
+        #expect(secureStore.theScopedPassword == nil)
     }
 
     private func assertRefreshing(_ protectedKeys: [ProtectedKey],

@@ -46,9 +46,9 @@ final class AIChatHistoryCell: UITableViewCell {
     /// Burns this row's chat. Shown on every row so single-chat Fire is one tap away, not only behind swipe or long-press.
     let fireButton: UIButton = {
         let button = UIButton(type: .system)
-        // 16pt like the Fire accessory on Duck.ai recent-chat suggestion rows; tinted like the row's leading chat icon.
+        // Same glyph and tint as the Fire accessory on Duck.ai recent-chat suggestion rows (SuggestionRowView).
         button.setImage(DesignSystemImages.Glyphs.Size16.fire, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .icons)
+        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
         button.accessibilityLabel = UserText.aiChatHistoryDeleteSwipeAccessibilityLabel
         button.accessibilityIdentifier = "aiChatHistoryRowFireButton"
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -111,7 +111,7 @@ final class AIChatHistoryCell: UITableViewCell {
         let foreground = UIColor(designSystemColor: isMarked ? .accentContentPrimary : .textPrimary)
         titleLabel.textColor = foreground
         iconImageView.tintColor = isMarked ? foreground : UIColor(designSystemColor: .icons)
-        fireButton.tintColor = iconImageView.tintColor
+        fireButton.tintColor = isMarked ? foreground : UIColor(designSystemColor: .iconsSecondary)
     }
 
     private func setupViews() {

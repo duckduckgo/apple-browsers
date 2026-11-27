@@ -149,17 +149,24 @@ final class FaviconRasterizer {
         try Task.checkCancellation()
 
         // One render at a time: a render that hangs or crashes the process then takes down only itself, and its
-        // `hardTimeout` doesn't run while it waits for its turn.
+        // `hardTimeout` doesn't run while it waits for its turn. The gate is released when the render ends, not when
+        // this call returns: a call that gives up on a render (it is cancelled, or times out) leaves it running in the
+        // web view, and the next render must not start behind it.
         try await renderGate.enter()
-        defer { renderGate.leave() }
+        guard !Task.isCancelled else {
+            renderGate.leave()
+            throw CancellationError()
+        }
 
         let webView = acquireWebView()
         defer { releaseWebViewWhenIdle() }
 
         do {
-            return try await withHardTimeout { [self] in
-                try await render(data, in: webView)
-            }
+            return try await withHardTimeout(
+                { [self] in try await render(data, in: webView) },
+                whenAbandoned: { [self] in handle(failure: RasterizationError.timedOut, of: webView) },
+                whenWorkEnds: { [renderGate] in renderGate.leave() }
+            )
         } catch {
             handle(failure: error, of: webView)
             throw error
@@ -359,7 +366,13 @@ final class FaviconRasterizer {
 
     /// `callAsyncJavaScript` can't be cancelled, so the caller is released by whichever of the work, the timer
     /// and the cancellation of the calling task comes first (a task group would wait for the work).
-    private func withHardTimeout(_ work: @escaping @MainActor () async throws -> Data) async throws -> Data {
+    ///
+    /// The timer stays on after the caller has walked away: if the render is still running when it fires,
+    /// `whenAbandoned` ends the web view, so that a render that hangs the process can't hold the next calls up
+    /// forever. `whenWorkEnds` runs when the render itself has ended, whatever became of the caller.
+    private func withHardTimeout(_ work: @escaping @MainActor () async throws -> Data,
+                                 whenAbandoned: @escaping @MainActor () -> Void,
+                                 whenWorkEnds: @escaping @MainActor () -> Void) async throws -> Data {
         let outcome = Outcome()
         let hardTimeout = self.hardTimeout
         let sleep = self.sleep
@@ -367,7 +380,11 @@ final class FaviconRasterizer {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
                 outcome.timer = Task {
                     try? await sleep(hardTimeout)
+                    guard !Task.isCancelled else { return }
                     outcome.finish(.failure(RasterizationError.timedOut))
+                    if !outcome.isWorkEnded {
+                        whenAbandoned()
+                    }
                 }
                 Task {
                     do {
@@ -375,6 +392,8 @@ final class FaviconRasterizer {
                     } catch {
                         outcome.finish(.failure(error))
                     }
+                    outcome.workEnded()
+                    whenWorkEnds()
                 }
                 outcome.attach(continuation)
             }
@@ -389,6 +408,7 @@ final class FaviconRasterizer {
         private var continuation: CheckedContinuation<Data, Error>?
         private var result: Result<Data, Error>?
         private var isDelivered = false
+        private(set) var isWorkEnded = false
         var timer: Task<Void, Never>?
 
         func attach(_ continuation: CheckedContinuation<Data, Error>) {
@@ -399,8 +419,13 @@ final class FaviconRasterizer {
         func finish(_ result: Result<Data, Error>) {
             guard self.result == nil else { return }
             self.result = result
-            timer?.cancel()
             deliverIfPossible()
+        }
+
+        /// The render is over: nothing is left for the timer to watch.
+        func workEnded() {
+            isWorkEnded = true
+            timer?.cancel()
         }
 
         private func deliverIfPossible() {

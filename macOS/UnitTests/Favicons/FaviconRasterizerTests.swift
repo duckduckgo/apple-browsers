@@ -424,6 +424,36 @@ final class FaviconRasterizerTests: XCTestCase {
         await hog.value
     }
 
+    /// A call that is cancelled while its render is still stuck in the web view doesn't free the way for the next
+    /// call: that one waits until the render is over. The watchdog of the abandoned render ends the process after
+    /// the hard timeout, and the next call then renders on a new web view without failing.
+    func testACancelledRenderThatIsStillRunningKeepsTheNextCallWaiting() async throws {
+        let clock = TestClock<Duration>()
+        let rasterizer = Fixtures.makeRasterizer(sleep: clock.sleeper, didCreateWebView: webViews.record)
+        _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
+        let hog = hogWebContentProcess(of: try XCTUnwrap(webViews.latest))
+        await Task.megaYield(count: 20)
+        let cancelled = Task { try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8)) }
+        await Task.megaYield(count: 20)
+        cancelled.cancel()
+        do {
+            _ = try await cancelled.value
+            XCTFail("Expected a cancellation")
+        } catch {
+            XCTAssertTrue(error is CancellationError)
+        }
+        let next = Task { try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8)) }
+        await Task.megaYield(count: 20)
+        XCTAssertEqual(webViews.webViews.count, 1, "The next call must not start rendering behind the abandoned render")
+
+        await clock.advance(by: .seconds(FaviconRasterizer.defaultHardTimeout))
+        let png = try await next.value
+        await hog.value
+
+        XCTAssertTrue(try decode(png).hasVisiblePixels())
+        XCTAssertEqual(webViews.webViews.count, 2, "The next call rendered on a new web view")
+    }
+
     // MARK: - Process termination
 
     /// The web content process is killed while a render is stuck in it and two more calls wait for their turn. Only

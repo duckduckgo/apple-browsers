@@ -599,7 +599,7 @@ final class FaviconManager: FaviconManagement {
 
         /// See `FaviconDecodingError.transparentSVG`.
         var isTransparentSVG: Bool {
-            (isSVG || data.isSVGImageData) && !image.hasVisiblePixels()
+            (isSVG || data.looksLikeSVG) && !image.hasVisiblePixels()
         }
     }
 
@@ -798,15 +798,6 @@ extension NSImage {
 
         // Every 4th byte, starting at index 3, is the alpha component.
         return stride(from: 3, to: pixels.count, by: 4).contains { pixels[$0] > 0 }
-    }
-}
-
-extension Data {
-
-    /// Returns whether the data looks like an SVG document, based on its first bytes.
-    var isSVGImageData: Bool {
-        // Latin-1 decodes any byte sequence, and `<svg` is plain ASCII.
-        String(bytes: prefix(1024), encoding: .isoLatin1)?.lowercased().contains("<svg") ?? false
     }
 }
 

@@ -71,8 +71,6 @@ public class AppUserDefaults: AppSettings {
         public static let appDataClearingUpdated = Notification.Name("com.duckduckgo.app.dataClearingUpdates")
     }
 
-    private let groupName: String
-
     struct Keys {
         static let autocompleteKey = "com.duckduckgo.app.autocompleteDisabledKey"
         static let recentlyVisitedSites = "com.duckduckgo.app.recentlyVisitedSitesKey"
@@ -140,9 +138,7 @@ public class AppUserDefaults: AppSettings {
         static let slowAnimationsEnabledKey = "com.duckduckgo.ios.debug.slowAnimationsEnabled"
     }
 
-    private var userDefaults: UserDefaults? {
-        return UserDefaults(suiteName: groupName)
-    }
+    private let userDefaults: UserDefaults?
 
     private var bookmarksUserDefaults: UserDefaults? {
         UserDefaults(suiteName: "group.com.duckduckgo.bookmarks")
@@ -151,7 +147,7 @@ public class AppUserDefaults: AppSettings {
     lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
 
     init(groupName: String = "group.com.duckduckgo.app") {
-        self.groupName = groupName
+        self.userDefaults = UserDefaults(suiteName: groupName)
     }
 
     var autocomplete: Bool {

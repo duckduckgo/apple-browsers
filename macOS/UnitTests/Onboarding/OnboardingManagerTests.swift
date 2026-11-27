@@ -752,9 +752,12 @@ class OnboardingManagerTests: XCTestCase {
         let manager = makeManager(enabledFlags: [.onboardingSearchOrChat], aiChatPreferencesStorage: MockAIChatPreferencesStorage(),
                                   homepageSearchModeSeedPersistor: HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
 
+        manager.stepCompleted(step: .addressBarMode)
         manager.goToAddressBar()
 
-        XCTAssertFalse(onboardingSharedPixelHandler.eventsReceived.contains { if case .searchExperience = $0 { true } else { false } })
+        let addressBarClicks = onboardingSharedPixelHandler.eventsReceived.filter { if case .searchExperience(.clicked) = $0 { true } else { false } }
+        XCTAssertEqual(addressBarClicks.count, 1)
+        XCTAssertTrue(OnboardingActionsManager.isOnboardingFinished)
     }
 
     @MainActor

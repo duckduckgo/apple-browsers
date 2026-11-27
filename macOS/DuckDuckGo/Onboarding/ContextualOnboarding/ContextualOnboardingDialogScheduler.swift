@@ -159,7 +159,9 @@ final class ContextualOnboardingDialogScheduler {
             onUpdate(.hide)
             return
         }
-        send(dialogProvider.dialogTypeForTab(tab), trigger: trigger)
+        let dialog = dialogProvider.dialogTypeForTab(tab)
+        // Onboarding can pick another dialog here, such as the upsell, which the trigger doesn't describe.
+        send(dialog, trigger: dialog == .thatsDuckAI ? trigger : nil)
     }
 
     private func stopWaitingForFirstDuckAIAnswer() {

@@ -113,6 +113,10 @@ class MainViewCoordinator {
     private var isFloatingUIEnabled = false
     private var isDuckAIAndInputLiquidGlassEnabled = false
     var isAITabCollapsedBarFloatingOffsetEnabled: () -> Bool = { false }
+    /// Views pinned to the input that must drop with the collapsed bar's floating offset, which moves the input by transform.
+    var viewsFollowingAITabCollapsedBar: [UIView] = [] {
+        didSet { applyAITabCollapsedBarFloatingOffset() }
+    }
     private(set) var isWebInputEditing = false
     private(set) var isInMinimalChromeLayout = false
 
@@ -670,6 +674,7 @@ class MainViewCoordinator {
         // Only the vertical part, so a swipe's horizontal shift of the same views survives.
         unifiedToggleInputContainer?.transform.ty = offset
         aiTabCollapsedTopSeparator?.transform.ty = offset
+        viewsFollowingAITabCollapsedBar.forEach { $0.transform.ty = offset }
     }
 
     /// Enforces the invariant: the separator can only be visible above a visible chrome. The

@@ -37,6 +37,7 @@ final class UTIFooterController {
     /// The disclaimer on screen means the next Ask tap accepts the terms.
     var onTermsOfServiceVisibilityChanged: ((Bool) -> Void)?
     var onAttachmentPrivacyEvent: ((AttachmentPrivacyPixel.Action, UTIAttachmentPrivacyKind) -> Void)?
+    var onMessagesChanged: (() -> Void)?
 
     private let termsOfServiceStore: DuckAiTermsOfServiceStore?
     private let viewModel: DuckAiUsageWarningViewModel?
@@ -324,6 +325,7 @@ final class UTIFooterController {
         guard messages != currentMessages else { return }
         currentMessages = messages
         visibleIDs.formIntersection(messages.map(\.id))
+        onMessagesChanged?()
         let isPrivacyHiddenByError = nextIDs.contains(.attachmentPrivacy)
             && messages.contains { $0.type == .error(.persistent) }
         if !messages.contains(where: { $0.id == .attachmentPrivacy }) && !isPrivacyHiddenByError {

@@ -28,11 +28,12 @@ extension MainViewController {
         viewCoordinator.unifiedToggleInputContainer.addGestureRecognizer(makeSwipeTabsPanGesture())
         viewCoordinator.aiChatTabChatHeaderContainer.addGestureRecognizer(makeSwipeTabsPanGesture())
         viewCoordinator.toolbar.addGestureRecognizer(makeSwipeTabsPanGesture())
+        let newChatHints = newChatHintsPresenter.map { [$0.row as UIView] } ?? []
         swipeTabsCoordinator?.auxiliarySwipeViews = [
             viewCoordinator.unifiedToggleInputContainer,
             viewCoordinator.aiChatTabChatHeaderContainer,
-        ]
-        swipeTabsCoordinator?.liveSwipeChromeViews = [
+        ] + newChatHints
+        swipeTabsCoordinator?.liveSwipeChromeViews = newChatHints + [
             viewCoordinator.unifiedToggleInputContainer,
             viewCoordinator.aiChatTabChatHeaderContainer,
             viewCoordinator.unifiedInputContentContainer,

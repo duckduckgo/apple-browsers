@@ -142,6 +142,10 @@ extension MainViewController {
         let mentions = BrowserTabMentionSuggestionsController(coordinator: coordinator, parentView: view)
         browserTabMentionSuggestionsController = mentions
         coordinator.onTabMentionSuggestionsChanged = { [weak mentions] in mentions?.show($0) }
+        newChatHintsPresenter = NewChatHintsPresenter(coordinator: coordinator,
+                                                      parentView: view,
+                                                      swipeOverlay: swipeTabsCoordinator?.swipeOverlayView)
+        viewCoordinator.viewsFollowingAITabCollapsedBar = newChatHintsPresenter.map { [$0.row] } ?? []
         installFloatingReturnKeyViewController()
         installDuckAIKeyboardEdgeSweep()
         installSwipeTabsGesturesForUnifiedInput()
@@ -284,6 +288,9 @@ extension MainViewController {
         activateUnifiedToggleInput(for: tab.tabModel)
 
         let action = refreshAction(for: tab, coordinator: coordinator, isRefreshingCurrentTab: isRefreshingCurrentTab)
+        if !action.isAITab {
+            coordinator.tabLeftDuckAI(tab.tabModel.uid)
+        }
 
         switch action {
         case .unbindInactiveNonAITab(let needsLayoutRefresh):
@@ -451,6 +458,11 @@ enum UnifiedToggleInputRefreshAction: Equatable {
     case refreshNonAITab
     /// The coordinator is mid-omnibar session on a non-AI tab — leave it alone.
     case preserveOmnibarSession
+
+    var isAITab: Bool {
+        if case .refreshAITab = self { return true }
+        return false
+    }
 }
 
 enum AITabRefreshBehavior: Equatable {

@@ -1,6 +1,5 @@
 //
 //  SwitchToTabBrowserTool.swift
-//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -17,17 +16,16 @@
 //  limitations under the License.
 //
 
-import AIChat
 import Foundation
 import PrivacyConfig
 
 @MainActor
-final class SwitchToTabBrowserTool: BrowserTool {
+public final class SwitchToTabBrowserTool: BrowserTool {
 
-    let name = AIChatBrowserToolsSubfeature.switchToTab.rawValue
-    let permissionMode = BrowserToolPermissionMode.auto
+    public let name = AIChatBrowserToolsSubfeature.switchToTab.rawValue
+    public let permissionMode = BrowserToolPermissionMode.auto
 
-    let inputSchema: JSONValue = [
+    public let inputSchema: JSONValue = [
         "type": "object",
         "properties": [
             "tabId": ["type": "string", "description": "Tab ID from listOpenTabs (GUID string)."]
@@ -35,34 +33,32 @@ final class SwitchToTabBrowserTool: BrowserTool {
         "required": ["tabId"]
     ]
 
-    private let scopeProvider: BrowserToolScopeProvider
+    private let selectTab: @MainActor (String, BrowserToolCallContext) -> Result<(title: String, url: String), BrowserToolFailure>
 
-    init(scopeProvider: @escaping BrowserToolScopeProvider) {
-        self.scopeProvider = scopeProvider
+    public init(selectTab: @escaping @MainActor (String, BrowserToolCallContext) -> Result<(title: String, url: String), BrowserToolFailure>) {
+        self.selectTab = selectTab
     }
 
-    func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
+    public func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         guard !context.isBurner else { return .failure(.unavailable) }
 
         guard let targetTabID = arguments?["tabId"]?.stringValue, !targetTabID.isEmpty else {
             return .failure(.invalidArguments)
         }
 
-        guard let scope = scopeProvider(context), scope.accepts(context) else { return .failure(.unavailable) }
-        guard let tab = scope.source.tabsProvider().first(where: { $0.mode == .normal && $0.uid == targetTabID }),
-              tab.link?.url.isDuckAIURL != true else {
-            return .failure(.notFound)
+        switch selectTab(targetTabID, context) {
+        case .failure(let failure):
+            return .failure(failure)
+        case .success(let tab):
+            return .success([
+                "tabId": .string(targetTabID),
+                "title": .string(tab.title),
+                "url": .string(tab.url)
+            ])
         }
-        guard scope.contains(tab), scope.selectTab(tab) else { return .failure(.unavailable) }
-
-        return .success([
-            "tabId": .string(targetTabID),
-            "title": .string(tab.link?.displayTitle ?? ""),
-            "url": .string(tab.link?.url.absoluteString ?? "")
-        ])
     }
 
-    func clientToolResult(from value: JSONValue) -> BrowserToolResult {
+    public func clientToolResult(from value: JSONValue) -> BrowserToolResult {
         guard let tabID = value["tabId"] else { return .failure(.unavailable) }
         return .success(["tabId": tabID])
     }

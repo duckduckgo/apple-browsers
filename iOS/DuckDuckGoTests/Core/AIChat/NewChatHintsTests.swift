@@ -145,6 +145,15 @@ struct NewChatHintsEligibilityTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Once the cap is reached nobody is eligible", .timeLimit(.minutes(1)))
+    func capReached() throws {
+        let eligibility = NewChatHintsEligibility(storage: try storage(#"["duckai_prompt"]"#), fireModeStorage: nil,
+                                                  termsOfServiceStore: termsStore(accepted: true),
+                                                  isCapReached: { true })
+        #expect(!eligibility.isEligibleUser(isFireTab: false))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A Fire tab reads the normal store too", .timeLimit(.minutes(1)))
     func fireTabReadsNormalStore() throws {
         let eligibility = NewChatHintsEligibility(storage: try storage(#"["duckai_prompt"]"#), fireModeStorage: try storage(nil),

@@ -37,6 +37,9 @@ def problems(text):
     ids = re.findall(r"^- `([a-z0-9-]+)`", sections["Sub-features"], re.M)
     if not ids:
         found.append("Sub-features lists no `id`")
+    for bullet in re.findall(r"^- .*$", sections["Sub-features"], re.M):
+        if not re.match(r"- `[a-z0-9-]+`", bullet):
+            found.append(f"sub-feature doesn't start with an `id` in lowercase and hyphens: {bullet}")
     if len(ids) != len(set(ids)):
         found.append(f"duplicate sub-feature ids: {ids}")
     # verify-macos-browser also requires each id in both How to get to it and Driving it; the iOS maps describe
@@ -68,6 +71,13 @@ class FeatureMap(unittest.TestCase):
 
     def test_a_heading_only_file_fails(self):
         self.assertTrue(problems("# Tabs\n\n" + "".join(f"## {h}\n\n" for h in CONTRACT)))
+
+    def test_a_sub_feature_without_a_valid_id_fails(self):
+        text = read(listed()[0])
+        for bad in ["- duckai history", "- `duckai_send` sends"]:
+            with self.subTest(bad):
+                broken = text.replace("## Sub-features\n\n", f"## Sub-features\n\n{bad}\n", 1)
+                self.assertIn(f"sub-feature doesn't start with an `id` in lowercase and hyphens: {bad}", problems(broken))
 
     def test_a_map_with_no_worked_proof_fails(self):
         text = read(listed()[0])

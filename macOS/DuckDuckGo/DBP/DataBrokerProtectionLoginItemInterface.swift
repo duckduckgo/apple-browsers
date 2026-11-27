@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DataBrokerProtectionCore
 import DataBrokerProtection_macOS
 import Common
 import FoundationExtensions
@@ -137,5 +138,17 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
 
     func stopDebugServer() {
         ipcClient.stopDebugServer()
+    }
+
+    func getAssistedOptOuts() async -> AssistedOptOutList? {
+        await ipcClient.getAssistedOptOuts()
+    }
+
+    func assistedOptOutDataDidChange() {
+        ipcClient.assistedOptOutDataDidChange()
+    }
+
+    func startAssistedOptOut(id: String) {
+        ipcClient.startAssistedOptOut(id: id)
     }
 }

@@ -42,6 +42,7 @@ public final class SyncSetupAttemptTracker {
     private let isEnabled: () -> Bool
     private let now: () -> Date
     private var attempt: SyncSetupWideEventData?
+    private var supportedFlowVersion: SyncSetupWideEventData.FlowVersion?
     private struct ErrorOnScreen {
         let error: SyncConnectionError
         let underlyingError: Error?
@@ -74,6 +75,7 @@ public final class SyncSetupAttemptTracker {
                                              startedAt: now(),
                                              contextData: WideEventContextData(name: entryPoint))
         self.attempt = attempt
+        supportedFlowVersion = flowVersion
         wideEvent.startFlow(attempt)
     }
 
@@ -101,6 +103,9 @@ public final class SyncSetupAttemptTracker {
             $0.connectMethod = connectMethod
             $0.role = nil
             $0.peerKind = nil
+            if let supportedFlowVersion {
+                $0.flowVersion = supportedFlowVersion
+            }
         }
     }
 

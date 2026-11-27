@@ -2422,6 +2422,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         startAttempt()
         dependencies.account = AccountManagingMock()
         attemptTracker.recordPeer(role: .host, kind: .ddg)
+        attemptTracker.recordFlowVersion(.v1)
 
         await controller.syncCodeEntered(code: Self.validRecoveryCode, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
 
@@ -2429,6 +2430,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(attempt.pixelParameters()["feature.data.ext.connect_method"], "scan_code")
         XCTAssertNil(attempt.pixelParameters()["feature.data.ext.role"])
         XCTAssertNil(attempt.pixelParameters()["feature.data.ext.peer_kind"])
+        XCTAssertEqual(attempt.pixelParameters()["feature.data.ext.flow_version"], "v2.1")
     }
 
     @MainActor

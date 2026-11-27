@@ -35,9 +35,9 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
     /// Whether the attempt's window is in front, meaning the user is looking at it.
     @Published public var isWindowKey = false
 
-    var onBeginRequested: ((AssistedOptOutSession) -> Void)?
-    var onUserTurnStarted: ((AssistedOptOutSession) -> Void)?
-    var onCancelRequested: ((AssistedOptOutSession) -> Void)?
+    public var onBeginRequested: ((AssistedOptOutSession) -> Void)?
+    public var onUserTurnStarted: ((AssistedOptOutSession) -> Void)?
+    public var onCancelRequested: ((AssistedOptOutSession) -> Void)?
 
     private let instrumentation: AssistedOptOutInstrumentation?
     private let now: () -> Date
@@ -47,7 +47,7 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
     private var userTurnDuration: TimeInterval = 0
     private var ended = false
     private var userTurnActionID: String?
-    private(set) var isCancelled = false
+    public private(set) var isCancelled = false
 
     public init(id: AssistedOptOutID, broker: AssistedOptOut.DataBroker, steps: AssistedOptOutSteps,
                 instrumentation: AssistedOptOutInstrumentation? = nil, now: @escaping () -> Date = Date.init) {
@@ -89,7 +89,8 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
         onCancelRequested?(self)
     }
 
-    func markCancelled() { isCancelled = true }
+    /// Called by the queue when it cancels the attempt, so late reports from the page are ignored.
+    public func markCancelled() { isCancelled = true }
 
     func finish(outcome: AssistedOptOutOutcome) {
         guard !ended else { return }
@@ -109,7 +110,7 @@ public final class AssistedOptOutSession: ObservableObject, OptOutAssistanceObse
         }
     }
 
-    func markSubmitted() {
+    public func markSubmitted() {
         endUserTurn()
         phase = .submitted
         userTurnActionID = nil

@@ -20,6 +20,7 @@ import DataBrokerProtectionCore
 import DataBrokerProtectionDebugServer
 import Foundation
 import os.log
+import WebKit
 
 public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @unchecked Sendable {
 
@@ -191,12 +192,25 @@ public final class DebugModeRunManager: DataBrokerProtectionDebugModeRunning, @u
             return
         }
         addHistoryEvent(.optOutStarted, runId: runId, profileQuery: label)
+        // Without an observer, a headless run of an assisted broker fails at once with userAssistanceRequired.
+        var assistanceObserver: DebugAssistanceObserver?
+        if showWebView, scanResult.dataBroker.requiresUserAssistance {
+            assistanceObserver = await MainActor.run {
+                DebugAssistanceObserver(onUserTurn: { [weak self] webView, step in
+                    self?.addEvent(runId, kind: .history, profileQuery: label, summary: "Waiting for the user", details: step ?? "")
+                    #if os(macOS)
+                    webView?.window?.orderFrontRegardless()
+                    #endif
+                })
+            }
+        }
         do {
             let requiresEmailConfirmation = try await runner.optOut(scanResult,
                                                                     dataBroker: scanResult.dataBroker,
                                                                     showWebView: showWebView,
                                                                     timeout: optOutTimeout,
-                                                                    stageCalculator: stageCalculator(runId: runId, stepType: .optOut, broker: scanResult.dataBroker, profileQuery: label))
+                                                                    stageCalculator: stageCalculator(runId: runId, stepType: .optOut, broker: scanResult.dataBroker, profileQuery: label),
+                                                                    assistanceObserver: assistanceObserver)
             if requiresEmailConfirmation {
                 setOptOutStatus(.awaitingEmailConfirmation, resultId: resultId, runId: runId)
                 addHistoryEvent(.optOutSubmittedAndAwaitingEmailConfirmation, runId: runId, profileQuery: label)

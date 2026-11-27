@@ -16,12 +16,16 @@
 //  limitations under the License.
 //
 
+#if os(macOS)
+import AppKit
+#endif
 import BrowserServicesKit
 import Common
 import ConcurrencyExtensions
 import Foundation
 import os.log
 import PrivacyConfig
+import WebKit
 
 /// Nothing it runs is saved to the PIR database.
 public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
@@ -202,6 +206,8 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
                        showWebView: Bool,
                        timeout: TimeInterval?,
                        stageCalculator: FakeStageDurationCalculator,
+                       assistanceObserver: OptOutAssistanceObserving? = nil,
+                       shouldRunNextStep: @escaping () -> Bool = { true },
                        onWebRunnerStarted: ((any SubJobWebRunning) -> Void)? = nil) async throws -> Bool {
         let runner = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: privacyConfigManager,
@@ -215,13 +221,15 @@ public final class DebugModeRunner: DebugModeEmailConfirmationLookup {
             executionConfig: brokerJobExecutionConfig,
             actionsHandlerMode: .optOut,
             contentBlocking: contentBlocking,
-            shouldRunNextStep: { true }
+            assistanceObserver: assistanceObserver,
+            shouldRunNextStep: shouldRunNextStep
         )
         onWebRunnerStarted?(runner)
 
         try await withOptionalTimeout(timeout) {
             try await runner.optOut(extractedProfile: scanResult.extractedProfile,
-                                    showWebView: showWebView) { true }
+                                    showWebView: showWebView,
+                                    shouldRunNextStep: shouldRunNextStep)
         }
 
         return scanResult.dataBroker.requiresEmailConfirmationDuringOptOut()
@@ -335,5 +343,60 @@ extension DebugModeRunner {
 
     public static func historyError(_ error: Error) -> HistoryEvent.EventType {
         .error(error: (error as? DataBrokerProtectionError) ?? .unknown(error.localizedDescription))
+    }
+}
+
+@MainActor
+/// Lets a debug opt-out pause for the user at a `userAssist` step, in a plain window instead of the assisted opt-out window.
+public final class DebugAssistanceObserver: OptOutAssistanceObserving {
+    private let onUserTurn: @MainActor (WKWebView?, String?) -> Void
+    private weak var webView: WKWebView?
+    private var step: String?
+#if os(macOS)
+    private var window: NSWindow?
+    private var windowCloseObservation: NSObjectProtocol?
+    /// Keeps the window open after the debug run lets go of this observer.
+    private var keepAliveUntilWindowCloses: DebugAssistanceObserver?
+#endif
+
+    public init(onUserTurn: @escaping @MainActor (WKWebView?, String?) -> Void) {
+        self.onUserTurn = onUserTurn
+    }
+
+    // Runners with an observer leave the web view without a window, so debug runs show it here.
+    public func attemptDidCreate(webView: WKWebView) {
+        self.webView = webView
+#if os(macOS)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024),
+                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                              backing: .buffered, defer: false)
+        window.title = "Data Broker Protection"
+        window.isReleasedWhenClosed = false
+        window.contentView = webView
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        windowCloseObservation = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification,
+                                                                        object: window, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.windowDidClose() }
+        }
+        self.window = window
+        keepAliveUntilWindowCloses = self
+#endif
+    }
+
+#if os(macOS)
+    private func windowDidClose() {
+        windowCloseObservation.map(NotificationCenter.default.removeObserver)
+        windowCloseObservation = nil
+        keepAliveUntilWindowCloses = nil
+    }
+#endif
+
+    public func attemptWillRun(_ action: Action) {
+        step = action.step
+    }
+
+    public func attemptNeedsUser(actionID: String) {
+        onUserTurn(webView, step)
     }
 }

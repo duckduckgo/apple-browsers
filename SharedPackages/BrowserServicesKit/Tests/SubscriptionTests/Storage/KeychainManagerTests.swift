@@ -413,7 +413,10 @@ final class KeychainManagerTests: XCTestCase {
         let drainResult = expectation(description: "No drain result while the keychain is unavailable")
         drainResult.isInverted = true
         recordingPixelHandler.onKeychainPixel = { pixel in
-            if pixel == .dataWroteFromBacklog || pixel == .failedToWriteDataFromBacklog { drainResult.fulfill() }
+            switch pixel {
+            case .dataWroteFromBacklog, .failedToWriteDataFromBacklog: drainResult.fulfill()
+            default: break
+            }
         }
         makeKeychainNotAvailable()
         try manager.store(data: testData, forKey: testKey)
@@ -422,14 +425,14 @@ final class KeychainManagerTests: XCTestCase {
         wait(for: [drainResult], timeout: 0.2)
 
         // Then: re-queuing is neither a success, a failure, nor a new addition, and the item is still in the backlog.
-        XCTAssertEqual(recordingPixelHandler.keychainPixels, [.dataAddedToTheBacklog])
+        XCTAssertEqual(recordingPixelHandler.keychainPixels, [.dataAddedToTheBacklog(key: testKey)])
         XCTAssertNil(mockKeychainOperations.getStoredData(for: testKey))
         XCTAssertEqual(try manager.retrieveData(forKey: testKey), testData)
 
         // When: the keychain becomes available.
         let wroteFromBacklog = expectation(description: "Backlog written")
         recordingPixelHandler.onKeychainPixel = { pixel in
-            if pixel == .dataWroteFromBacklog { wroteFromBacklog.fulfill() }
+            if pixel == .dataWroteFromBacklog(key: testKey) { wroteFromBacklog.fulfill() }
         }
         makeKeychainAvailable()
 
@@ -448,7 +451,7 @@ final class KeychainManagerTests: XCTestCase {
 
         let wroteFromBacklog = expectation(description: "Backlog written")
         recordingPixelHandler.onKeychainPixel = { pixel in
-            if pixel == .dataWroteFromBacklog { wroteFromBacklog.fulfill() }
+            if pixel == .dataWroteFromBacklog(key: testKey) { wroteFromBacklog.fulfill() }
         }
         makeKeychainNotAvailable()
         try manager.store(data: testData, forKey: testKey)
@@ -477,8 +480,95 @@ final class KeychainManagerTests: XCTestCase {
         try manager.store(data: "second".data(using: .utf8)!, forKey: testKey)
 
         // Then: both failed writes are counted, and the backlog holds the latest data.
-        XCTAssertEqual(recordingPixelHandler.keychainPixels.filter { $0 == .dataAddedToTheBacklog }.count, 2)
+        XCTAssertEqual(recordingPixelHandler.keychainPixels.filter { $0 == .dataAddedToTheBacklog(key: testKey) }.count, 2)
         XCTAssertEqual(try manager.retrieveData(forKey: testKey), "second".data(using: .utf8)!)
+    }
+
+    // MARK: - Backlog pixels per item
+
+    func testWhenTwoQueuedItemsAreWrittenFromTheBacklogThenEachIsReportedWithItsKey() throws {
+        // Given: two items are queued while the keychain is unavailable.
+        let recordingPixelHandler = RecordingPixelHandler()
+        let manager = makeManagerWithFastBacklogRetry(pixelHandler: recordingPixelHandler)
+        let wroteFromBacklog = expectation(description: "Both items written")
+        wroteFromBacklog.expectedFulfillmentCount = 2
+        recordingPixelHandler.onKeychainPixel = { pixel in
+            if case .dataWroteFromBacklog = pixel { wroteFromBacklog.fulfill() }
+        }
+        makeKeychainNotAvailable()
+        try manager.store(data: createTestData(), forKey: "key-a")
+        try manager.store(data: createTestData(), forKey: "key-b")
+
+        // When: the keychain becomes available and the scheduled retry drains the backlog.
+        makeKeychainAvailable()
+
+        // Then: each written item is reported once, with its own key.
+        wait(for: [wroteFromBacklog], timeout: 2.0)
+        let written = recordingPixelHandler.keychainPixels.filter {
+            if case .dataWroteFromBacklog = $0 { return true }
+            return false
+        }
+        XCTAssertEqual(written, [.dataWroteFromBacklog(key: "key-a"), .dataWroteFromBacklog(key: "key-b")])
+        withExtendedLifetime(manager) {}
+    }
+
+    func testWhenTwoQueuedItemsFailToBeWrittenFromTheBacklogThenEachIsReportedWithItsKey() throws {
+        // Given: two items are queued while the keychain is unavailable.
+        let recordingPixelHandler = RecordingPixelHandler()
+        let manager = makeManagerWithFastBacklogRetry(pixelHandler: recordingPixelHandler)
+        let failedFromBacklog = expectation(description: "Both items failed")
+        failedFromBacklog.expectedFulfillmentCount = 2
+        recordingPixelHandler.onKeychainPixel = { pixel in
+            if case .failedToWriteDataFromBacklog = pixel { failedFromBacklog.fulfill() }
+        }
+        makeKeychainNotAvailable()
+        try manager.store(data: createTestData(), forKey: "key-a")
+        try manager.store(data: createTestData(), forKey: "key-b")
+
+        // When: the keychain becomes available but rejects the writes with a permanent error.
+        makeKeychainAvailable()
+        mockKeychainOperations.shouldFailAdd = true
+        mockKeychainOperations.addFailureStatus = errSecParam
+
+        // Then: each failed item is reported once, with its own key.
+        wait(for: [failedFromBacklog], timeout: 2.0)
+        let failed = recordingPixelHandler.keychainPixels.filter {
+            if case .failedToWriteDataFromBacklog = $0 { return true }
+            return false
+        }
+        XCTAssertEqual(failed, [.failedToWriteDataFromBacklog(key: "key-a"), .failedToWriteDataFromBacklog(key: "key-b")])
+        withExtendedLifetime(manager) {}
+    }
+
+    func testWhenTheManagerIsDeallocatedWithTwoQueuedItemsThenEachIsReportedWithItsKey() throws {
+        // Given: two items are queued while the keychain is unavailable.
+        let recordingPixelHandler = RecordingPixelHandler()
+        makeKeychainNotAvailable()
+        var manager: KeychainManager? = KeychainManager(keychainOperations: mockKeychainOperations, attributes: [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrSynchronizable: false
+        ], pixelHandler: recordingPixelHandler)
+        try manager?.store(data: createTestData(), forKey: "key-b")
+        try manager?.store(data: createTestData(), forKey: "key-a")
+
+        // When: the manager is deallocated before the items are written.
+        manager = nil
+
+        // Then: each lost item is reported once, with its own key.
+        let deallocated = recordingPixelHandler.keychainPixels.filter {
+            if case .deallocatedWithBacklog = $0 { return true }
+            return false
+        }
+        XCTAssertEqual(deallocated, [.deallocatedWithBacklog(key: "key-a"), .deallocatedWithBacklog(key: "key-b")])
+    }
+
+    func testBacklogPixelsReportTheSubscriptionTokenOfTheirKey() {
+        let mainKey = SubscriptionTokenKeychainStorage.SubscriptionKeychainField.tokenContainer.keyValue
+        let backupKey = SubscriptionTokenKeychainStorage.SubscriptionKeychainField.backupTokenContainer.keyValue
+
+        XCTAssertEqual(KeychainManager.Pixel.dataAddedToTheBacklog(key: mainKey).tokenType, .main)
+        XCTAssertEqual(KeychainManager.Pixel.dataWroteFromBacklog(key: backupKey).tokenType, .backup)
+        XCTAssertNil(KeychainManager.Pixel.failedToWriteDataFromBacklog(key: "unrelated-key").tokenType)
     }
 
     // MARK: - Edge Cases Tests

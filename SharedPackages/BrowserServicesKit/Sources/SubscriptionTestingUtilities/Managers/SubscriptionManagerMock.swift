@@ -46,6 +46,11 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func loadInitialData() async {}
 
+    public private(set) var restoreMissingTokenIfPossibleCallCount = 0
+    public func restoreMissingTokenIfPossible() async {
+        restoreMissingTokenIfPossibleCallCount += 1
+    }
+
     public var resultSubscription: Result<DuckDuckGoSubscription, Error>?
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription? {
         switch resultSubscription {
@@ -140,8 +145,16 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     public var resultTokenContainer: Networking.TokenContainer?
     public var resultCreateAccountTokenContainer: Networking.TokenContainer?
     public private(set) var getTokenContainerCallCount = 0
+    /// The policies passed to `getTokenContainer(policy:)`, in call order.
+    public private(set) var getTokenContainerPolicies: [Networking.AuthTokensCachePolicy] = []
+    /// When set, `getTokenContainer(policy:)` returns or throws its result instead of using `resultTokenContainer`.
+    public var getTokenContainerHandler: ((Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer)?
     public func getTokenContainer(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
         getTokenContainerCallCount += 1
+        getTokenContainerPolicies.append(policy)
+        if let getTokenContainerHandler {
+            return try await getTokenContainerHandler(policy)
+        }
         switch policy {
         case .local, .localValid, .localForceRefresh:
             guard let resultTokenContainer else {

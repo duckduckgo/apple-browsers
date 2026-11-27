@@ -294,11 +294,9 @@ extension NetworkProtectionNavBarButtonModelTests {
                                                        defaultBrowserProvider: MockDefaultBrowserProvider(),
                                                        contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
                                                        notificationCenter: NotificationCenter())
-        buttonDelegate = VPNUpsellToolbarButtonPromoDelegate(featureFlagger: MockFeatureFlagger(),
-                                                             visibilityManager: upsellManager,
+        buttonDelegate = VPNUpsellToolbarButtonPromoDelegate(visibilityManager: upsellManager,
                                                              persistor: mockPersistor)
-        dotDelegate = VPNUpsellDotBadgePromoDelegate(featureFlagger: MockFeatureFlagger(),
-                                                     visibilityManager: upsellManager,
+        dotDelegate = VPNUpsellDotBadgePromoDelegate(visibilityManager: upsellManager,
                                                      persistor: mockPersistor)
 
         let popoverManager = NetPPopoverManagerMock()

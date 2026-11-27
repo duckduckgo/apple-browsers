@@ -121,9 +121,9 @@ struct SettingsDataClearingView: View {
     private var aiChatsToggleSection: some View {
         Section {
             SettingsCellView(label: viewModel.aiChatsToggleTitle,
-                             accessory: .toggle(isOn: settingsViewModel.autoClearAIChatHistoryBinding))
+                             accessory: .toggle(isOn: viewModel.aiChatsToggleBinding(settingsViewModel.autoClearAIChatHistoryBinding)))
         } footer: {
-            Text(UserText.settingsClearAIChatHistoryFooter)
+            Text(viewModel.aiChatsToggleFooter)
         }
     }
 }

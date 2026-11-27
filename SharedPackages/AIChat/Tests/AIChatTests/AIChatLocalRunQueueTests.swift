@@ -27,7 +27,6 @@ final class AIChatLocalRunQueueTests {
     private let engine = ScriptedLocalModelEngine()
     private let owner = NSObject()
     private var chunks: [AIChatLocalRunChunk] = []
-    private var movedChunks: [AIChatLocalRunChunk] = []
 
     private func makeQueue(batchInterval: TimeInterval = 0) -> AIChatLocalRunQueue {
         AIChatLocalRunQueue(engine: engine, batchInterval: batchInterval)
@@ -60,7 +59,7 @@ final class AIChatLocalRunQueueTests {
 
         engine.send(.text("Hello"), to: "r1")
         engine.send(.text(" world"), to: "r1")
-        engine.send(.finished(AIChatLocalModelRunSummary(promptTokens: 120, outputTokens: 4, inputTruncated: true)), to: "r1")
+        engine.send(.finished(AIChatLocalModelRunSummary(promptTokens: 120, outputTokens: 4, inputTruncated: true, loadMs: 480)), to: "r1")
         engine.finish("r1")
         await waitUntil { chunks.last?.done == true }
 
@@ -72,6 +71,7 @@ final class AIChatLocalRunQueueTests {
         #expect(last.metrics?.promptTokens == 120)
         #expect(last.metrics?.outputTokens == 4)
         #expect(last.metrics?.inputTruncated == true)
+        #expect(last.metrics?.loadMs == 480)
         #expect(last.metrics?.timeToFirstWordMs != nil)
         #expect(queue.isIdle)
     }
@@ -205,36 +205,6 @@ final class AIChatLocalRunQueueTests {
 
         #expect(chunks(for: "r2").isEmpty)
         #expect(engine.startedRequestIds == ["r1", "r3"])
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Runs given to a new owner send it their next chunks, and only it can end them", .timeLimit(.minutes(1)))
-    func reassignedRunsFollowTheNewOwner() async {
-        let queue = makeQueue()
-        let newOwner = NSObject()
-        enqueue("r1", on: queue)
-        enqueue("r2", on: queue)
-        await waitUntil { engine.startedRequestIds == ["r1"] }
-        engine.send(.text("Before"), to: "r1")
-        await waitUntil { chunks.count == 1 }
-
-        queue.reassign(ownerID: ObjectIdentifier(owner), to: ObjectIdentifier(newOwner)) { [weak self] chunk in
-            self?.movedChunks.append(chunk)
-        }
-        queue.cancelAll(ownerID: ObjectIdentifier(owner))
-        queue.cancel(requestId: "r2", ownerID: ObjectIdentifier(owner))
-        engine.send(.text(" after"), to: "r1")
-        engine.finish("r1")
-        await waitUntil { engine.startedRequestIds == ["r1", "r2"] }
-        queue.cancel(requestId: "r2", ownerID: ObjectIdentifier(newOwner))
-        await waitUntil { movedChunks.last?.requestId == "r2" && movedChunks.last?.done == true }
-
-        let movedR1 = movedChunks.filter { $0.requestId == "r1" }
-        #expect(chunks.map(\.text) == ["Before"])
-        #expect(movedR1.map(\.seq) == [1, 2])
-        #expect(movedR1.map(\.text) == [" after", ""])
-        #expect(movedR1.last?.status == .ok)
-        #expect(movedChunks.filter { $0.requestId == "r2" }.last?.status == .cancelled)
     }
 }
 

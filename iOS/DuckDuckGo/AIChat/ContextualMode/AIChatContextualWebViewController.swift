@@ -687,6 +687,8 @@ extension AIChatContextualWebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         guard webView === self.webView else { return }
         browserToolsScript?.browserToolsDocumentDidCommit()
+        aiChatUserScript?.isAIChatPromoVisible = nil
+        aiChatUserScript?.aiChatStatusOnPage = nil
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {

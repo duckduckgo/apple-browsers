@@ -396,6 +396,7 @@ final class AIChatOmnibarController {
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        userDefaultModelStorage: DuckAiNativeStorageHandling? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
         inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring? = nil
     ) {
@@ -428,7 +429,7 @@ final class AIChatOmnibarController {
         subscribeToTextChangesForSuggestions()
         subscribeToToolModeChangesForDraftStore()
         setUpUsageWarnings()
-        observeNewChatDefaults()
+        observeNewChatDefaults(userDefaultModelStorage: userDefaultModelStorage)
     }
 
     private func makeModelPickStore() -> DuckAIModelPickStoring {
@@ -468,14 +469,15 @@ final class AIChatOmnibarController {
             .store(in: &cancellables)
     }
 
-    private func observeNewChatDefaults() {
+    private func observeNewChatDefaults(userDefaultModelStorage: DuckAiNativeStorageHandling?) {
         guard let newChatDefaults else { return }
-        newChatDefaults.overLimitDefaultChanges
+        newChatDefaults.defaultChanges
             .sink { [weak self] in self?.onSelectedModelChanged?() }
             .store(in: &cancellables)
         if let usageLimitsStore {
             newChatDefaults.observeOverLimitDefaults(usageLimitsStore.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main))
         }
+        newChatDefaults.observeUserDefaultModel(in: userDefaultModelStorage, receivingUpdatesOn: DispatchQueue.main)
     }
 
     /// Opens a voice chat. Focuses an existing voice session in the origin window when there is one;

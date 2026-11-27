@@ -78,7 +78,6 @@ final class MockOnboardingStateUpdater: ContextualOnboardingStateUpdater {
 @MainActor
 final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
 
-    private var featureFlagger: MockFeatureFlagger!
     private var keyValueStore: InMemoryThrowingKeyValueStore!
     private var windowControllersManager: WindowControllersManagerMock!
     private var cookiePopupProtectionPreferences: CookiePopupProtectionPreferences!
@@ -91,8 +90,6 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.promoQueueCookiePopupsBlockedPromo]
         keyValueStore = InMemoryThrowingKeyValueStore()
         windowControllersManager = WindowControllersManagerMock()
         setSelectedTabContent(.url(URL.duckDuckGo, source: .ui))
@@ -131,13 +128,11 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
         cookiePopupProtectionPreferences = nil
         windowControllersManager = nil
         keyValueStore = nil
-        featureFlagger = nil
         super.tearDown()
     }
 
     private func makeSUT() -> CookiePopupsBlockedPromoDelegate {
         CookiePopupsBlockedPromoDelegate(
-            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             windowControllersManager: windowControllersManager,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
@@ -167,11 +162,6 @@ final class CookiePopupsBlockedPromoDelegateTests: XCTestCase {
 
     func testWhenAllGatesPassThenEligible() {
         XCTAssertTrue(sut.isEligible)
-    }
-
-    func testWhenFeatureFlagDisabledThenNotEligible() {
-        featureFlagger.enabledFeatureFlags = []
-        XCTAssertFalse(sut.isEligible)
     }
 
     func testWhenAutoconsentDisabledThenNotEligible() {

@@ -480,7 +480,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
     public func isUserEligibleForFreeTrial() -> Bool {
-        Logger.subscription.info("[StorePurchaseManager] isUserEligibleForFreeTrial")
+        Logger.subscriptionStorePurchaseManager.info("isUserEligibleForFreeTrial")
         return availableProducts.contains { $0.isEligibleForFreeTrial == true }
     }
 
@@ -489,7 +489,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
 
         guard let product = await getAvailableProducts().first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
 
-        Logger.subscriptionStorePurchaseManager.log("Purchasing Subscription: \(product.displayName, privacy: .public) (\(externalID, privacy: .public))")
+        Logger.subscriptionStorePurchaseManager.log("Purchasing Subscription: \(product.displayName, privacy: .public) (\(externalID))")
 
         purchaseQueue.append(product.id)
 
@@ -615,7 +615,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     /// Note: `Internal` for testing
     internal func updateAvailableProductsTrialEligibility() async {
         for index in self.availableProducts.indices {
-            Logger.subscription.info("[StorePurchaseManager] updateAvailableProductsTrialStatus subscription id: \(self.availableProducts[index].id)")
+            Logger.subscriptionStorePurchaseManager.info("updateAvailableProductsTrialStatus subscription id: \(self.availableProducts[index].id)")
             var mutableProduct = self.availableProducts[index]
             await mutableProduct.refreshFreeTrialEligibility()
             self.availableProducts[index] = mutableProduct

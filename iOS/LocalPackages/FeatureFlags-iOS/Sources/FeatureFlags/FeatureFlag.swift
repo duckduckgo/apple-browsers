@@ -603,6 +603,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
     case floatingUIiOS27
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220969131024441
+    case floatingUIWebViewportInset
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220300732211487
     case duckAIAndInputLiquidGlass
 
@@ -1166,6 +1169,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS26))
         case .floatingUIiOS27:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS27))
+        case .floatingUIWebViewportInset:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIWebViewportInset))
         case .duckAIAndInputLiquidGlass:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.duckAIAndInputLiquidGlass))
         case .legacyFindInPage:

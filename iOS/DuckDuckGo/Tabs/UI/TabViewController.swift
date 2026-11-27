@@ -1389,16 +1389,54 @@ class TabViewController: UIViewController {
     /// page-fixed content continuously while the obscured insets change mid-scroll.
     private func updateWebViewViewportInsetRange() {
         guard #available(iOS 15.5, *), let webView, let chromeDelegate else { return }
-        let hidden = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
-        let shown = chromeDelegate.floatingWebViewObscuredInsets(for: 1)
-        // WebKit rejects a range whose minimum exceeds its maximum on any edge.
-        let minimum = UIEdgeInsets(top: min(hidden.top, shown.top), left: min(hidden.left, shown.left),
-                                   bottom: min(hidden.bottom, shown.bottom), right: min(hidden.right, shown.right))
-        let maximum = UIEdgeInsets(top: max(hidden.top, shown.top), left: max(hidden.left, shown.left),
-                                   bottom: max(hidden.bottom, shown.bottom), right: max(hidden.right, shown.right))
+        let (minimum, maximum) = Self.edgewiseRange(chromeDelegate.floatingWebViewObscuredInsets(for: 0),
+                                                    chromeDelegate.floatingWebViewObscuredInsets(for: 1))
         if let applied = appliedViewportInsetRange, applied.minimum == minimum, applied.maximum == maximum { return }
         appliedViewportInsetRange = (minimum, maximum)
         webView.setMinimumViewportInset(minimum, maximumViewportInset: maximum)
+    }
+
+    /// WebKit rejects a range whose minimum exceeds its maximum on any edge.
+    private static func edgewiseRange(_ first: UIEdgeInsets, _ second: UIEdgeInsets) -> (minimum: UIEdgeInsets, maximum: UIEdgeInsets) {
+        (UIEdgeInsets(top: min(first.top, second.top), left: min(first.left, second.left),
+                      bottom: min(first.bottom, second.bottom), right: min(first.right, second.right)),
+         UIEdgeInsets(top: max(first.top, second.top), left: max(first.left, second.left),
+                      bottom: max(first.bottom, second.bottom), right: max(first.right, second.right)))
+    }
+
+    /// Sized from the bars alone, so the keyboard doesn't change `vh`, and only once the chrome settles, so the
+    /// page isn't relaid out on every frame of a collapse.
+    @available(iOS 26, *)
+    private func updateWebViewViewportSizesOverride(obscuredInsets: UIEdgeInsets,
+                                                    contextualOnboardingTopInset: CGFloat,
+                                                    barsVisibilityPercent: CGFloat,
+                                                    tracksChrome: Bool) {
+        guard let webView = webView as? WebView, barsVisibilityPercent == 0 || barsVisibilityPercent == 1 else { return }
+        guard tracksChrome, !shouldUseFloatingAIChrome, !isAITab,
+              webView.fullscreenState == .notInFullscreen,
+              UIDevice.current.userInterfaceIdiom == .phone,
+              featureFlagger.isFeatureOn(.floatingUIWebViewportInset),
+              let chromeDelegate else {
+            webView.floatingChromeInsets = nil
+            return
+        }
+        let range: (minimum: UIEdgeInsets, maximum: UIEdgeInsets)
+        if let hidden = chromeDelegate.floatingChromeObscuredInsets(for: 0),
+           let shown = chromeDelegate.floatingChromeObscuredInsets(for: 1) {
+            // The onboarding dialog moves the web view down, so the bars cover that much less of it.
+            let onboardingOffset = UIEdgeInsets(top: contextualOnboardingTopInset, left: 0, bottom: 0, right: 0)
+            range = Self.edgewiseRange(Self.inset(hidden, by: onboardingOffset), Self.inset(shown, by: onboardingOffset))
+        } else if let previous = webView.floatingChromeInsets {
+            range = (previous.minimum, previous.maximum)
+        } else {
+            return
+        }
+        webView.floatingChromeInsets = .init(minimum: range.minimum, maximum: range.maximum, current: obscuredInsets)
+    }
+
+    private static func inset(_ insets: UIEdgeInsets, by offset: UIEdgeInsets) -> UIEdgeInsets {
+        UIEdgeInsets(top: max(0, insets.top - offset.top), left: max(0, insets.left - offset.left),
+                     bottom: max(0, insets.bottom - offset.bottom), right: max(0, insets.right - offset.right))
     }
 
     private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat, forceInsets: Bool = false) {
@@ -1470,6 +1508,10 @@ class TabViewController: UIViewController {
         updateWebViewObscuredInsetsFollowingChrome(obscuredInsets,
                                                    barsVisibilityPercent: barsVisibilityPercent,
                                                    tracksChrome: !isUnifiedToggleInputAffectingLayout)
+        updateWebViewViewportSizesOverride(obscuredInsets: obscuredInsets,
+                                           contextualOnboardingTopInset: effectiveContextualOnboardingTopInset,
+                                           barsVisibilityPercent: barsVisibilityPercent,
+                                           tracksChrome: !isUnifiedToggleInputAffectingLayout)
         if shouldUpdateScrollInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets,
                                                isFloatingUIEnabled: true, animated: animateTopAlignment)
@@ -1584,6 +1626,7 @@ class TabViewController: UIViewController {
         WebViewScrollViewInsetUpdater.endManaging(webView.scrollView, restoring: behavior)
         scrollViewAdjustmentBehaviorBeforeFloatingUI = nil
         setInteractiveObscuredInsetsChange(active: false)
+        (webView as? WebView)?.floatingChromeInsets = nil
         if #available(iOS 15.5, *), appliedViewportInsetRange != nil {
             appliedViewportInsetRange = nil
             webView.setMinimumViewportInset(.zero, maximumViewportInset: .zero)
@@ -2736,6 +2779,7 @@ class TabViewController: UIViewController {
     /// WebKit sizes the web view by setting its frame while it owns it in the fullscreen window.
     /// Auto Layout would zero that frame back out, leaving the fullscreen surface blank.
     private func handOverWebViewLayoutToWebKit() {
+        (webView as? WebView)?.floatingChromeInsets = nil
         NSLayoutConstraint.deactivate(webViewLayoutConstraints)
         webView.translatesAutoresizingMaskIntoConstraints = true
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -2792,6 +2836,8 @@ class TabViewController: UIViewController {
         restoreWebViewBackgroundAfterFullscreen()
         updateBorderViewForFloatingUIIfNeeded()
         pullToRefreshViewAdapter?.setPullSuspended(false)
+        // Entering fullscreen cleared the viewport sizes override; restore it without waiting for the next scroll.
+        applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent, forceFloatingUIInsets: true)
     }
 
     private func removeObservers() {

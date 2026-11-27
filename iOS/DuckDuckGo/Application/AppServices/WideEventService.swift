@@ -19,6 +19,7 @@
 
 import Foundation
 import BrowserServicesKit
+import DDGSync
 import PrivacyConfig
 import WideEvent
 import Subscription
@@ -63,6 +64,7 @@ actor WideEventService {
         if includingLaunchOnlyEvents {
             // Launch-only: only a cold launch proves a still-pending refresh is genuinely stalled.
             await processCompletion(AuthV2TokenRefreshWideEventData.self, trigger: trigger)
+            await processCompletion(SyncSetupWideEventData.self, trigger: trigger)
         }
 
         isProcessing = false

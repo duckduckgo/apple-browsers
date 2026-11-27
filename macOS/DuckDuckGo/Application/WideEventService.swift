@@ -18,6 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
+import DDGSync
 import WideEvent
 import Subscription
 import VPN
@@ -46,6 +47,7 @@ actor WideEventService {
         await processSubscriptionPurchaseCompletion(trigger: trigger)
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
         await processCompletion(AuthV2TokenRefreshWideEventData.self, trigger: trigger)
+        await processCompletion(SyncSetupWideEventData.self, trigger: trigger)
 
         isProcessing = false
     }

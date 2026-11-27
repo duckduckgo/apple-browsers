@@ -17,6 +17,7 @@
 //
 
 import Common
+import DDGSync
 import FoundationExtensions
 import Foundation
 @_spi(Testing) import WideEvent
@@ -94,6 +95,22 @@ final class WideEventServiceTests: XCTestCase {
         guard case .unknown = completion?.1 else {
             return XCTFail("Expected the stale refresh to complete as UNKNOWN")
         }
+    }
+
+    func test_sendPendingEvents_openSyncSetupAttemptCompletesAsAppRestart() async {
+        mockWideEvent.started.append(SyncSetupWideEventData(existingAccount: false,
+                                                            flowVersion: .v21,
+                                                            uiVersion: .v1,
+                                                            launchID: "previous-launch",
+                                                            contextData: WideEventContextData()))
+
+        await sut.sendPendingEvents()
+
+        let completion = mockWideEvent.completions.first { $0.0 is SyncSetupWideEventData }
+        guard case .unknown(let reason) = completion?.1 else {
+            return XCTFail("Expected the open sync setup attempt to complete as UNKNOWN")
+        }
+        XCTAssertEqual(reason, "app_restart")
     }
 
     // MARK: - processSubscriptionPurchasePixels - Happy Path

@@ -89,7 +89,7 @@ public protocol WideEventData: Codable, WideEventParameterProviding {
     func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision
 }
 
-public enum WideEventStatus: Codable, Equatable, CustomStringConvertible {
+public enum WideEventStatus: Codable, Equatable, Sendable, CustomStringConvertible {
     case success(reason: String? = nil)
     case failure
     case cancelled

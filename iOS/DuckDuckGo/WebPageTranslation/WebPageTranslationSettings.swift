@@ -27,6 +27,8 @@ struct WebPageTranslationSettings {
     private enum Constants {
         static let sampleLengthKey = "sampleLength"
         static let defaultSampleLength = 4096
+        static let batchCharacterLimitKey = "batchCharacterLimit"
+        static let defaultBatchCharacterLimit = 2000
     }
 
     private let configManager: PrivacyConfigurationManaging
@@ -37,9 +39,19 @@ struct WebPageTranslationSettings {
 
     /// How many characters of the page's text language detection reads (default 4096).
     var sampleLength: Int {
-        guard let value = configManager.privacyConfig.settings(for: .pageTranslation)[Constants.sampleLengthKey] as? Int,
-              value > 0 else {
-            return Constants.defaultSampleLength
+        positiveInt(forKey: Constants.sampleLengthKey) ?? Constants.defaultSampleLength
+    }
+
+    /// How many characters of text a translation batch holds at most (default 2000).
+    var batchCharacterLimit: Int {
+        positiveInt(forKey: Constants.batchCharacterLimitKey) ?? Constants.defaultBatchCharacterLimit
+    }
+
+    /// Nil when the setting is absent, not an integer, or not positive.
+    private func positiveInt(forKey key: String) -> Int? {
+        guard let value = configManager.privacyConfig.settings(for: .pageTranslation)[key] as? Int,
+                value > 0 else {
+            return nil
         }
         return value
     }

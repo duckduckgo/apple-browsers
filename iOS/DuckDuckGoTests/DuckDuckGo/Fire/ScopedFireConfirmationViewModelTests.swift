@@ -22,6 +22,7 @@ import UIKit
 import Core
 import Persistence
 import FeatureFlags_iOS
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -33,10 +34,12 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     private var mockHistoryManager: MockHistoryManager!
     private var mockAppSettings: AppSettingsMock!
     private var mockDataClearingCapability: MockDataClearingCapability!
+    private var pixelFiring: PixelKitMock!
 
     override func setUp() {
         super.setUp()
         mockFeatureFlagger = MockFeatureFlagger()
+        pixelFiring = PixelKitMock()
         mockDownloadManager = SpyDownloadManager()
         mockKeyValueStore = MockKeyValueStore()
         mockHistoryManager = MockHistoryManager()
@@ -51,6 +54,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         mockHistoryManager = nil
         mockAppSettings = nil
         mockDataClearingCapability = nil
+        pixelFiring = nil
         super.tearDown()
     }
     
@@ -763,6 +767,66 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(SlideToDeleteStyle.glass.resolved(isGlassAvailable: false), .original)
     }
 
+    // MARK: - Settings Button
+
+    func testWhenSettingsButtonFlagOnThenFireButtonSheetOpensSettingsAndFiresPixel() throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.fireSheetSettingsButton]
+        var didOpenSettings = false
+
+        let sut = makeSUT(tabViewModel: createTabViewModel(), source: .tabSwitcher, onOpenSettings: { didOpenSettings = true })
+        sut.onOpenSettings?()
+
+        XCTAssertTrue(didOpenSettings)
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+        let fireCall = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(fireCall.pixel.name, "fire_confirmation-settings-tapped")
+        XCTAssertEqual(fireCall.pixel.parameters, ["source": "tabSwitcher"])
+        XCTAssertEqual(fireCall.frequency, .dailyAndCount)
+    }
+
+    func testWhenSettingsButtonFlagOffThenSheetHasNoSettingsButton() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        let sut = makeSUT(tabViewModel: createTabViewModel(), onOpenSettings: { })
+
+        XCTAssertNil(sut.onOpenSettings)
+    }
+
+    func testWhenSheetIsNotFromFireButtonThenItHasNoSettingsButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.fireSheetSettingsButton]
+
+        let sut = makeSUT(tabViewModel: createTabViewModel(), fireContext: .singleTab, onOpenSettings: { })
+
+        XCTAssertNil(sut.onOpenSettings)
+    }
+
+    func testWhenFireOnboardingDialogIsShowingThenSheetHasNoSettingsButton() {
+        mockFeatureFlagger.enabledFeatureFlags = [.fireSheetSettingsButton]
+        let daxDialogsManager = MockDaxDialogsManager()
+        daxDialogsManager.isShowingFireDialog = true
+
+        let sut = makeSUT(tabViewModel: createTabViewModel(),
+                          fireContext: .default(daxDialogsManager: daxDialogsManager),
+                          onOpenSettings: { })
+
+        XCTAssertNil(sut.onOpenSettings)
+    }
+
+    func testWhenChatsSheetsShowSettingsButtonThenPixelNamesTheirSource() throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.fireSheetSettingsButton]
+        let cases: [(ScopedFireConfirmationViewModel.FireContext, String)] = [
+            (.deleteChats(count: 2, onDelete: { }), "chatHistory"),
+            (.contextualChat(onDelete: { }), "contextualChat")
+        ]
+
+        for (fireContext, expectedSource) in cases {
+            let sut = makeSUT(tabViewModel: nil, fireContext: fireContext, onOpenSettings: { })
+            try XCTUnwrap(sut.onOpenSettings)()
+
+            XCTAssertEqual(pixelFiring.actualFireCalls.last?.pixel.parameters, ["source": expectedSource])
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(tabViewModel: TabViewModel?,
@@ -771,7 +835,8 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
                          isSingleTab: Bool = false,
                          browsingMode: BrowsingMode = .normal,
                          onConfirm: @escaping (FireRequest) -> Void = { _ in },
-                         onCancel: @escaping () -> Void = { }) -> ScopedFireConfirmationViewModel {
+                         onCancel: @escaping () -> Void = { },
+                         onOpenSettings: (() -> Void)? = nil) -> ScopedFireConfirmationViewModel {
         return ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                source: source,
                                                fireContext: fireContext,
@@ -781,9 +846,11 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
                                                appSettings: mockAppSettings,
                                                dataClearingCapability: mockDataClearingCapability,
                                                featureFlagger: mockFeatureFlagger,
+                                               pixelFiring: pixelFiring,
                                                browsingMode: browsingMode,
                                                onConfirm: onConfirm,
-                                               onCancel: onCancel)
+                                               onCancel: onCancel,
+                                               onOpenSettings: onOpenSettings)
     }
     
     private func createTabViewModel() -> TabViewModel {

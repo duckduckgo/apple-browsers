@@ -223,6 +223,15 @@ class LocatorTests(unittest.TestCase):
         self.assertEqual(parse_locator("name=x")["sel"], {"label": "x"})
         self.assertEqual(parse_locator("web:css=#token"), {"web": "css", "value": "#token"})
 
+    def test_system_app_scope(self):
+        from verify_ios.driver import scoped
+        sel = parse_locator('app=springboard id="Passcode field"')["sel"]
+        self.assertEqual(scoped({"op": "type", "sel": sel}),
+                         {"op": "type", "sel": {"id": "Passcode field"}, "app": "com.apple.springboard"})
+        self.assertEqual(scoped({"op": "tap", "sel": {"id": "x"}}), {"op": "tap", "sel": {"id": "x"}})
+        with self.assertRaises(env.Failed):
+            scoped({"op": "tap", "sel": {"app": "com.apple.Preferences", "id": "x"}})
+
 
 class LaunchProfileTests(unittest.TestCase):
     def test_profile_pins_the_flags_without_internal_user(self):
@@ -433,7 +442,8 @@ class FakeDevice:
         self.cleaned = 0
         self.language = None
 
-    def launch(self, flags=None, language=None):
+    def launch(self, flags=None, language=None, profile=None):
+        self.launch_profile = profile
         if self.fail_launch:
             raise env.Failed("running app is not this worktree's build")
         self.language = dict(language or env.LANGUAGE)
@@ -443,7 +453,7 @@ class FakeDevice:
         if getattr(self, "fail_reset", False):
             raise env.Failed("AutomationServer never reported /contentBlockerReady true")
         self.reset_profile = profile
-        return self.launch(flags, language)
+        return self.launch(flags, language, profile)
 
     def foreground(self):
         return self.fg
@@ -645,6 +655,14 @@ class HarnessTests(unittest.TestCase):
                                 profile=profile)
         self.assertEqual(r["status"], "pass", r)
         self.assertEqual(self.fake.reset_profile, profile)
+
+    def test_a_relaunch_reapplies_the_proof_profile(self):
+        profile = {"debug": {"daysSinceInstall": 8}}
+        mod = type("Proof", (), {"run": staticmethod(lambda ios: (ios.reset(), ios.launch(), ios.check("ok", True)))})
+        r = harness._run_device(mod, "iphone", tempfile.mkdtemp(dir=TMP), keep=False, flags={}, device_obj=self.fake,
+                                profile=profile)
+        self.assertEqual(r["status"], "pass", r)
+        self.assertEqual(self.fake.launch_profile, profile)
 
     def test_profile_never_applied_is_an_error_not_a_pass(self):
         mod = type("Proof", (), {"run": staticmethod(lambda ios: ios.check("ok", True))})   # no reset

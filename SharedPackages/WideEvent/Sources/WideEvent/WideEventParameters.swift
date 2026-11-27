@@ -25,7 +25,11 @@ public protocol WideEventParameterProviding {
 
 public extension WideEventParameterProviding {
     func pixelParameters() -> [String: String] {
-        jsonParameters().mapValues { value in
+        Self.pixelParameters(from: jsonParameters())
+    }
+
+    static func pixelParameters(from jsonParameters: [String: Encodable]) -> [String: String] {
+        jsonParameters.mapValues { value in
             if let string = value as? String {
                 return string
             }

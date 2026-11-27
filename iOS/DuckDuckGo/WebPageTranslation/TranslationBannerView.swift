@@ -93,8 +93,8 @@ struct TranslationBannerView: View {
 
 #Preview {
     VStack(spacing: 16) {
-        TranslationBannerView(offer: TranslationOffer(source: "es", target: "en"), onTranslate: {})
-        TranslationBannerView(offer: TranslationOffer(source: "pt", target: "en"), onTranslate: {})
+        TranslationBannerView(offer: TranslationOffer(source: "es", target: "en", pairID: "es-en", downloadBytes: 23_000_000), onTranslate: {})
+        TranslationBannerView(offer: TranslationOffer(source: "pt", target: "en", pairID: "pt-en", downloadBytes: 23_000_000), onTranslate: {})
             .dynamicTypeSize(.xxxLarge)
     }
     .padding(.horizontal, 24)

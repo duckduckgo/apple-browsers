@@ -22,6 +22,7 @@ import Core
 import Persistence
 import FeatureFlags_iOS
 import PrivacyConfig
+import PixelKit
 
 @MainActor
 final class ScopedFireConfirmationViewModel: ObservableObject {
@@ -74,6 +75,8 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     let headerTitle: String
     let showAnimation: Bool
     let buttons: [FireConfirmationButton]
+    /// Opens Data Clearing settings from a Fire button's sheet; `nil` hides the settings button.
+    let onOpenSettings: (() -> Void)?
 
     // MARK: - Private Variables
 
@@ -91,11 +94,22 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          dataClearingCapability: DataClearingCapable = DataClearingCapability.create(using: AppDependencyProvider.shared.featureFlagger),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         pixelFiring: PixelFiring? = PixelKit.shared,
          browsingMode: BrowsingMode,
          onConfirm: @escaping (FireRequest) -> Void,
-         onCancel: @escaping () -> Void) {
+         onCancel: @escaping () -> Void,
+         onOpenSettings: (() -> Void)? = nil) {
         self.fireContext = fireContext
         self.onCancel = onCancel
+        if let settingsPixelSource = Self.settingsPixelSource(fireContext: fireContext, source: source),
+           featureFlagger.isFeatureOn(.fireSheetSettingsButton), let onOpenSettings {
+            self.onOpenSettings = {
+                pixelFiring?.fire(DataClearingPixels.confirmationSettingsTapped(source: settingsPixelSource), frequency: .dailyAndCount)
+                onOpenSettings()
+            }
+        } else {
+            self.onOpenSettings = nil
+        }
 
         let isRefinementsEnabled = dataClearingCapability.isFireButtonRefinementsEnabled
         let isSingleChatConfirmation = Self.isSingleChatConfirmation(fireContext: fireContext,
@@ -148,6 +162,18 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
     }
 
     // MARK: - Button Building
+
+    /// The settings button's pixel `source`, or `nil` for sheets that never show it (onboarding, single-tab and per-item confirmations).
+    private static func settingsPixelSource(fireContext: FireContext, source: FireRequest.Source) -> String? {
+        switch fireContext {
+        // Leaving onboarding for Settings would skip both onboarding outcome pixels.
+        case .default(let daxDialogsManager) where daxDialogsManager.isShowingFireDialog: return nil
+        case .default: return source.rawValue
+        case .deleteChats: return "chatHistory"
+        case .contextualChat: return "contextualChat"
+        case .duckAIOnboarding, .singleTab, .custom: return nil
+        }
+    }
 
     /// Returns `true` when the dialog should show only a single chat-delete button
     /// (contextual chat deletion, or AI tab with refinements enabled).

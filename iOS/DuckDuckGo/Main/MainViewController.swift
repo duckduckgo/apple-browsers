@@ -664,6 +664,7 @@ class MainViewController: UIViewController {
         didSet { remoteMessageImpressionReporter.observeInputVisibility(unifiedToggleInputCoordinator) }
     }
     var browserTabMentionSuggestionsController: BrowserTabMentionSuggestionsController?
+    var newChatHintsPresenter: NewChatHintsPresenter?
     var unifiedInputStateStore: UnifiedInputStateStore?
     var isPaidAIChatEnabledForSwipe = false
     var unifiedToggleInputCancellables = Set<AnyCancellable>()
@@ -3020,6 +3021,9 @@ class MainViewController: UIViewController {
                     if wasContextualFireOnboardingDialogVisible {
                         contextualOnboardingPixelReporter.measureFireButtonOnboardingDismissButtonTapped()
                     }
+                },
+                onOpenSettings: { [weak self] in
+                    self?.segueToSettingsDataClearing()
                 }
             )
         }
@@ -8860,6 +8864,10 @@ extension MainViewController: TabDelegate {
         segueToSettingsSync()
     }
 
+    func tabDidRequestSettingsToDataClearing(_ tab: TabViewController) {
+        segueToSettingsDataClearing()
+    }
+
     func tabContentProcessDidTerminate(tab: TabViewController) {
         findInPageView?.done()
 
@@ -9315,6 +9323,12 @@ extension MainViewController: TabSwitcherDelegate {
         fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: true, hasPrompt: false)
         loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
             $0.duckAIEntrySource = .tabSwitcher
+        }
+    }
+
+    func tabSwitcherDidRequestDataClearingSettings(_ tabSwitcher: TabSwitcherViewController) {
+        tabSwitcher.dismissForDataClearingSettings {
+            self.segueToSettingsDataClearing()
         }
     }
 

@@ -175,6 +175,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             openSyncSettingsCallCount += 1
         }
 
+        func aiChatContextualSheetCoordinatorDidRequestOpenDataClearingSettings(_ coordinator: AIChatContextualSheetCoordinator) {}
+
         var contextualChatURLUpdates: [URL?] = []
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {

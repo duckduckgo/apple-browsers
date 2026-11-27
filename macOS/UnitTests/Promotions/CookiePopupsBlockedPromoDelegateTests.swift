@@ -69,6 +69,8 @@ final class MockOnboardingStateUpdater: ContextualOnboardingStateUpdater {
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { $isContextualOnboardingCompleted }
     func gotItPressed() {}
 
+    var isWaitingForDuckAIChatDeletion = false
+
     func fireButtonUsed() {}
     func turnOffFeature() {}
 }

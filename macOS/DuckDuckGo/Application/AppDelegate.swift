@@ -252,6 +252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
     private let fireWindowOpenPixelReporter: FireWindowOpenPixelReporter
+    private var onboardingDuckAIPathWindowRestorer: OnboardingDuckAIPathWindowRestorer?
     let tabSuspensionService: TabSuspensionService
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
@@ -599,7 +600,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var wideEventService: WideEventService = {
         return WideEventService(
             wideEvent: wideEvent,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            isSyncSetupWideEventEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sendSyncSetupWideEvent) }
         )
     }()
 
@@ -1303,13 +1305,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             httpsUpgrade: privacyFeatures.httpsUpgrade
         )
 
-        onboardingContextualDialogsManager = ContextualDialogsManager(
+        let contextualDialogsManager = ContextualDialogsManager(
             trackerMessageProvider: TrackerMessageProvider(
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
             ),
             subscriptionManager: subscriptionManager,
             settings: keyValueStore.throwingKeyedStoring(),
-            uiLocker: windowControllersManager
+            uiLocker: windowControllersManager,
+            aiChatMenuConfig: aiChatMenuConfiguration
+        )
+        onboardingContextualDialogsManager = contextualDialogsManager
+        onboardingDuckAIPathWindowRestorer = OnboardingDuckAIPathWindowRestorer(
+            windowDidOpen: windowControllersManager.didRegisterWindowController.map { $0 as DuckAIOnboardingWindow }.eraseToAnyPublisher(),
+            onboarding: contextualDialogsManager,
+            isDuckAIAvailable: { [aiChatMenuConfiguration] in aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature },
+            clearDuckAIChats: { [aiChatHistoryCleaner] in _ = await aiChatHistoryCleaner?.cleanAIChatHistory() },
+            aiChatURL: { AIChatRemoteSettings().aiChatURL }
         )
 
         let onboardingManager = onboardingContextualDialogsManager

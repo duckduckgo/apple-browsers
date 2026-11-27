@@ -401,6 +401,7 @@ private struct AIChatInputFooterDebugView: View {
         List {
             AIChatAttachmentPrivacySection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             AIChatMultiTabPromotionSection()
+            AIChatNewChatHintsSection()
             AIChatTermsOfServiceSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
         }
         .navigationTitle("Native Input Footer Messages")
@@ -729,6 +730,30 @@ private struct AIChatMultiTabPromotionSection: View {
             Text(verbatim: "Chat across multiple tabs")
         } footer: {
             Text(verbatim: "Clears the display count, dismissal, and feature usage. The feature flag and promotion dates still apply.")
+        }
+    }
+}
+
+private struct AIChatNewChatHintsSection: View {
+    @State private var ignoredChats = 0
+    private let capStore = NewChatHintsCapStore()
+
+    var body: some View {
+        Section {
+            Button {
+                capStore.reset()
+                ignoredChats = capStore.ignoredChats
+            } label: {
+                Text(verbatim: "Reset hints cap")
+            }
+            Text(verbatim: "Ignored new chats: \(ignoredChats) of \(NewChatHintsCapStore.hideAfterIgnoredChats)")
+                .onAppear {
+                    ignoredChats = capStore.ignoredChats
+                }
+        } header: {
+            Text(verbatim: "New chat hints")
+        } footer: {
+            Text(verbatim: "Hints stop after this many new chats where a prompt was sent without tapping one. Resetting brings them back.")
         }
     }
 }

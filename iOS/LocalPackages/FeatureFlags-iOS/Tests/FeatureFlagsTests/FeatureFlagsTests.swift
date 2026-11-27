@@ -41,6 +41,22 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertTrue(flag.supportsLocalOverriding)
     }
 
+    func testIdleReturnLaunchWaitProtectionIsARemoteKillSwitchEnabledByDefault() {
+        let flag = FeatureFlag.idleReturnLaunchWaitProtection
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .idleReturnLaunchWaitProtection)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "idleReturnLaunchWaitProtection")
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testContextualOnboardingTimeLimitUsesIOSBrowserConfigAndInternalOnlyDefault() {
         let flag = FeatureFlag.contextualOnboardingTimeLimit
         guard case let .remoteReleasable(subfeature) = flag.source else {

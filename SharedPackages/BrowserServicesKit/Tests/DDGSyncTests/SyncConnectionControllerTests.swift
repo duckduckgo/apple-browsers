@@ -1421,7 +1421,7 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         XCTAssertFalse(result)
         XCTAssertEqual(dependencies.createPairingV2MessageExchangerCallCount, 0)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .updateRequired)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .updateRequired(detectedDuring: .codeRead))
         XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? PairingV2Error, .unsupportedVersion("3.0"))
     }
 
@@ -1546,8 +1546,8 @@ final class SyncConnectionControllerTests: XCTestCase {
             (.nativeCredentialAlreadyPresent, .thirdPartyAccountAlreadyUpgraded, "native credential already present"),
             (.recoveryCodeDenied, .syncCancelledFromOtherDevice, "recovery code denied"),
             (.recoveryCodeUnavailable, .peerRecoveryCodeUnavailable, "peer recovery code unavailable"),
-            (.unsupportedVersion("3.0"), .updateRequired, "unsupported future version"),
-            (.unsupportedVersion("not-a-version"), .unableToRecognizeCode, "malformed version"),
+            (.unsupportedVersion("3.0"), .updateRequired(detectedDuring: .pairingSession), "unsupported future version"),
+            (.unsupportedVersion("not-a-version"), .unreadablePairingMessage, "malformed version"),
             (.v2ScanningDisabled, .unableToRecognizeCode, "V2 scanning disabled"),
             (.unknownCode, .unableToRecognizeCode, "unknown code"),
             (.unsupportedFlow("unsupported-flow"), .unableToRecognizeCode, "unsupported flow"),
@@ -1600,10 +1600,12 @@ final class SyncConnectionControllerTests: XCTestCase {
             (.failedToCreateAccount, SyncSetupFailureReason.v1Failure, "legacy account creation failure"),
             (.invalidCredentials, SyncSetupFailureReason.invalidCredentials, "invalid credentials"),
             (.pairingV2SessionTimedOut(timeoutStage: .loggingIn), SyncSetupFailureReason.sessionTimeout, "Pairing V2 session timeout"),
-            (.updateRequired, SyncSetupFailureReason.needsUpgrade, "update required"),
+            (.updateRequired(detectedDuring: .codeRead), SyncSetupFailureReason.needsUpgrade, "update required when reading the code"),
+            (.updateRequired(detectedDuring: .pairingSession), SyncSetupFailureReason.needsUpgrade, "update required during the pairing session"),
             (.unsupportedThirdPartyRecoveryCode, SyncSetupFailureReason.incompatibleCode, "unsupported 3party recovery code"),
             (.thirdPartyAccountAlreadyUpgraded, SyncSetupFailureReason.alreadyUpgraded, "3party account already upgraded"),
             (.unableToRecognizeCode, SyncSetupFailureReason.unrecognizedCode, "unable to recognize code"),
+            (.unreadablePairingMessage, SyncSetupFailureReason.unrecognizedCode, "unreadable pairing message"),
             (.accountCreationFailed, SyncSetupFailureReason.accountCreationFailed, "Pairing V2 account creation failure"),
             (.accountUpgradeFailed, SyncSetupFailureReason.accountUpgradeFailed, "Pairing V2 account upgrade failure"),
             (.transportFailure, SyncSetupFailureReason.transportFailure, "Pairing V2 transport failure"),
@@ -1734,7 +1736,22 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_syncCodeEntered_withV2MessageCryptoError_notifiesUnableToRecognizeCode() async throws {
+    func test_syncCodeEntered_withV2UrlWithInvalidPublicKey_notifiesUnableToRecognizeCode() async throws {
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        dependencies.createPairingV2MessageExchangerStub = PairingV2MessageExchangingMock()
+        let peerKeyPair = try makePeerKeyPair()
+        let payload = PairingV2QRCodePayload(channelId: peerKeyPair.channelID, publicKey: "not-a-public-key")
+        let url = try payload.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
+
+        let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .unableToRecognizeCode)
+        XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? PairingV2MessageCryptoError, .invalidPublicKey)
+    }
+
+    @MainActor
+    func test_syncCodeEntered_withV2MessageCryptoError_notifiesUnreadablePairingMessage() async throws {
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let messageExchanger = PairingV2MessageExchangingMock()
         messageExchanger.fetchMessagesError = PairingV2MessageCryptoError.unsupportedProtectedHeader
@@ -1746,7 +1763,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .unableToRecognizeCode)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .unreadablePairingMessage)
         XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? PairingV2MessageCryptoError, .unsupportedProtectedHeader)
     }
 
@@ -1763,12 +1780,12 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .updateRequired)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .updateRequired(detectedDuring: .pairingSession))
         XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? PairingV2MessageCryptoError, .unsupportedVersion("3.0"))
     }
 
     @MainActor
-    func test_syncCodeEntered_withMalformedVersionV2MessageCryptoError_notifiesUnableToRecognizeCode() async throws {
+    func test_syncCodeEntered_withMalformedVersionV2MessageCryptoError_notifiesUnreadablePairingMessage() async throws {
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
         let messageExchanger = PairingV2MessageExchangingMock()
         messageExchanger.fetchMessagesError = PairingV2MessageCryptoError.unsupportedVersion("not-a-version")
@@ -1780,7 +1797,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
 
         XCTAssertFalse(result)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .unableToRecognizeCode)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .unreadablePairingMessage)
         XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? PairingV2MessageCryptoError, .unsupportedVersion("not-a-version"))
     }
 
@@ -2208,7 +2225,7 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         XCTAssertFalse(result)
         XCTAssertFalse(mockAccountManager.loginCalled)
-        XCTAssertEqual(delegate.didErrorErrors?.error, .updateRequired)
+        XCTAssertEqual(delegate.didErrorErrors?.error, .updateRequired(detectedDuring: .codeRead))
         XCTAssertEqual(delegate.didErrorErrors?.underlyingError as? SyncCode.RecoveryCodeVersionError, .unsupported("3.0"))
     }
 

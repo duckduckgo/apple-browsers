@@ -1157,7 +1157,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .declaredAgeRangeSparkle:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.declaredAgeRangeSparkle))
         case .appStoreAddToDockOnlyCTA:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreAddToDockOnlyCTA))
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreAddToDockOnlyCTA))
         case .appStoreBothDefaultBrowserAndDockCTA:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appStoreBothDefaultBrowserAndDockCTA))
         case .aiChatLimitExtensionPromo:

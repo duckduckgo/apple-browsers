@@ -487,6 +487,15 @@
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "attachment";
 
+/* Suggestion chip above the Duck.ai input on a new chat. Tapping it opens the file picker so the user can attach a PDF or other document for Duck.ai to summarize. */
+"aichat.new-chat-hint.documents" = "Summarize a PDF";
+
+/* Suggestion chip above the Duck.ai input on a new chat. Tapping it selects the image generation tool. */
+"aichat.new-chat-hint.image-generation" = "Create an image";
+
+/* Suggestion chip above the Duck.ai input on a new chat. Tapping it opens the photo library so the user can ask about a photo. */
+"aichat.new-chat-hint.photo" = "Ask about photos";
+
 /* VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted */
 "aichat.pasted.text.accessibility.label" = "Pasted text";
 
@@ -4600,6 +4609,9 @@ https://duckduckgo.com/mac";
 /* Informational message explaining that new tabs can also be deleted individually */
 "scoped.fire.confirmation.new.tabs.info" = "New tabs you created can also be deleted individually.";
 
+/* Accessibility label for the button in the fire confirmation dialog that opens Data Clearing settings */
+"scoped.fire.confirmation.settings.button" = "Data Clearing Settings";
+
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";
 
@@ -4950,6 +4962,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Option to always default the omnibar toggle to Search */
 "settings.default.omnibar.mode.search" = "Search";
+
+/* Settings screen toggle text for the option that makes the Fire Button's Delete All also delete Duck.ai chats */
+"settings.delete.all.includes.duckai.chats" = "Delete All Includes Duck.ai Chats";
+
+/* Settings screen footer text explaining that the Fire Button's Delete All also deletes Duck.ai chats when the toggle is on */
+"settings.delete.all.includes.duckai.chats.footer" = "When on, choosing Delete All with the Fire Button also deletes your Duck.ai chats, including pinned chats.";
 
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Delete Duck.ai Chats";
@@ -5934,6 +5952,21 @@ Take back control of your personal information with the browser designed for dat
 
 /* Button in the translation banner that translates the current web page */
 "translation.banner.translate" = "Translate";
+
+/* Accessibility label of the button that closes the translation download sheet without downloading */
+"translation.download-sheet.close" = "Close";
+
+/* Button in the translation sheet that downloads the language pack and translates the current web page */
+"translation.download-sheet.download" = "Download and Translate";
+
+/* Explains the language pack download in the translation sheet. %@ is the page's language, e.g. Spanish */
+"translation.download-sheet.message" = "This one-time download lets you translate %@ pages privately on your device.";
+
+/* Size of the language pack download in the translation sheet. %@ is a formatted file size, e.g. 23 MB */
+"translation.download-sheet.size" = "Download size: %@";
+
+/* Title of the sheet asking to download what's needed to translate pages in a language on the device, e.g. Download Spanish language pack?. %@ is the page's language */
+"translation.download-sheet.title" = "Download %@ language pack?";
 
 /* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
 "vcard.add-contact.parse-failure" = "Unable to add contact. Try opening the contact file from Downloads instead.";

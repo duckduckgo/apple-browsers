@@ -1785,6 +1785,14 @@ struct UserText {
         let localized = NSLocalizedString("browser-tool.settings.reset-tool", value: "Reset %@ to default", comment: "Accessibility label of the button that resets one browser tool permission to its default. Parameter is the tool name, e.g. Search Downloads")
         return String(format: localized, toolName)
     }
+    static let translatePagesSettingsTitle = NSLocalizedString("translate-pages.settings.title", value: "Translate Pages", comment: "Name of the Browser Access setting for offering to translate pages with Duck.ai")
+    /// What precedes the language menu link in the Translate Pages detail.
+    static let translatePagesSettingsDetailPrefix = NSLocalizedString("translate-pages.settings.detail", value: "Summarize pages that aren't in %@", comment: "Detail of the Translate Pages setting. The parameter is replaced by a menu link naming the user's language and the languages excluded from the offer, e.g. English, Spanish")
+        .replacingOccurrences(of: "%@", with: "")
+        .trimmingCharacters(in: .whitespaces)
+    static let translatePagesSettingsSystemLanguage = NSLocalizedString("translate-pages.settings.system-language", value: "System Language", comment: "Label next to the user's language in the Translate Pages language menu; it is always checked")
+    static let translatePagesSettingsAlwaysAsk = NSLocalizedString("translate-pages.settings.always-ask", value: "Always Ask", comment: "Translate Pages dropdown option to offer translation on pages in other languages")
+    static let translatePagesSettingsNeverAsk = NSLocalizedString("translate-pages.settings.never-ask", value: "Never Ask", comment: "Translate Pages dropdown option to never offer translation")
     static let browserToolPanelScope = NSLocalizedString("browser-tool.panel.scope", value: "These apply to every site and chat.", comment: "Note at the bottom of the Browser Permissions panel opened from the Duck.ai button menu")
     static let browserToolPanelAllDefault = NSLocalizedString("browser-tool.panel.all-default", value: "All browser permissions are back to their defaults.", comment: "Note at the bottom of the Browser Permissions panel once every browser tool permission is back to its default")
     static let browserToolPanelManageInSettings = NSLocalizedString("browser-tool.panel.manage-in-settings", value: "Manage in Settings", comment: "Link in the Browser Permissions panel that opens the Browser Permissions section in Settings")

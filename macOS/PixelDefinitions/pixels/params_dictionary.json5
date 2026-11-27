@@ -335,6 +335,12 @@
         "type": "string",
         "description": "Identifier of the broker action executed during the broker flow"
     },
+    "dbpUserAssisted": {
+        "key": "user_assisted",
+        "type": "string",
+        "description": "Sent as true when the opt-out attempt ran with the user completing some steps. Absent for scheduled attempts.",
+        "enum": ["true"]
+    },
     "dbpActionType": {
         "key": "action_type",
         "type": "string",

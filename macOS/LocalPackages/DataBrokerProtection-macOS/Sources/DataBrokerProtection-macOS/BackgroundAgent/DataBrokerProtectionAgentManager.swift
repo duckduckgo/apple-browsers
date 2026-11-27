@@ -674,7 +674,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAssistedOpt
     @MainActor
     func setUpAssistedOptOuts() {
         guard assistedOptOutQueue == nil else { return }
-        let queue = AssistedOptOutQueue(dependencies: jobDependencies)
+        let queue = AssistedOptOutQueue(dependencies: jobDependencies, instrumentation: AssistedOptOutPixelInstrumentation())
         queue.presenter = assistedOptOutPresenter
         assistedOptOutQueue = queue
         // A config update can turn the feature on or off, so recheck the list.

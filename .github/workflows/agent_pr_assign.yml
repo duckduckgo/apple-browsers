@@ -1,6 +1,6 @@
 name: Agent PR Assign
 
-# Assigns pull requests opened by the agent worker (agent/worker-* branches)
+# Assigns pull requests opened by the agent worker (agent/* branches)
 # to the assignee of the Asana task linked in their "Task/Issue URL:" line,
 # mapped to a GitHub login through the GitHub → Asana user map. For feature
 # flag removals that's the flag's owner. Leaves the PR unassigned, with a
@@ -27,7 +27,7 @@ jobs:
       github.event.pull_request.user.type == 'Bot' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.base.ref == github.event.repository.default_branch &&
-      startsWith(github.event.pull_request.head.ref, 'agent/worker-')
+      startsWith(github.event.pull_request.head.ref, 'agent/')
     runs-on: ubuntu-latest
     timeout-minutes: 5
 

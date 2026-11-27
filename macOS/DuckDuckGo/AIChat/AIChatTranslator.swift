@@ -72,6 +72,9 @@ protocol AIChatTranslating {
 
     /// Handle text translation.
     func translate(_ request: AIChatTextTranslationRequest)
+
+    /// Translate and summarize the current page into the user's language.
+    func translateCurrentPage() async
 }
 
 final class AIChatTranslator: AIChatTranslating {
@@ -81,6 +84,7 @@ final class AIChatTranslator: AIChatTranslating {
     private let aiChatTabOpener: AIChatTabOpening
     private let pixelFiring: PixelFiring?
     private let currentPageContextProvider: () -> PageContextProtocol?
+    private let currentPageContentProvider: @MainActor () async -> AIChatPageContextData?
     private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
 
     init(
@@ -89,6 +93,7 @@ final class AIChatTranslator: AIChatTranslating {
         aiChatTabOpener: AIChatTabOpening,
         pixelFiring: PixelFiring?,
         currentPageContextProvider: @escaping () -> PageContextProtocol?,
+        currentPageContentProvider: @escaping @MainActor () async -> AIChatPageContextData? = { nil },
         aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -96,6 +101,7 @@ final class AIChatTranslator: AIChatTranslating {
         self.aiChatTabOpener = aiChatTabOpener
         self.pixelFiring = pixelFiring
         self.currentPageContextProvider = currentPageContextProvider
+        self.currentPageContentProvider = currentPageContentProvider
         self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
     }
 
@@ -115,8 +121,36 @@ final class AIChatTranslator: AIChatTranslating {
                                                           sourceTLD: request.websiteTLD,
                                                           sourceLanguage: request.sourceLanguage,
                                                           targetLanguage: targetTranslationLanguage())
-        pixelFiring?.fire(AIChatPixel.aiChatTranslateText(source: request.source), frequency: .dailyAndStandard)
+        pixelFiring?.fire(AIChatPixel.aiChatTranslateText(source: .init(request.source)), frequency: .dailyAndStandard)
+        revealTranslation(prompt)
+    }
 
+    /// Opens Duck.ai for the current tab with the page attached and auto-submits a request to
+    /// translate and summarize it into the user's language.
+    @MainActor
+    func translateCurrentPage() async {
+        guard aiChatMenuConfig.shouldDisplayTranslationMenuItem,
+              let page = await currentPageContentProvider(),
+              page.attachable != false else {
+            return
+        }
+
+        let prompt = AIChatNativePrompt.queryPrompt(Self.pageTranslationQuery(targetLanguage: targetTranslationLanguage()),
+                                                    autoSubmit: true,
+                                                    pageContext: .single(page))
+        pixelFiring?.fire(AIChatPixel.aiChatTranslateText(source: .translateOffer), frequency: .dailyAndStandard)
+        revealTranslation(prompt)
+    }
+
+    /// Sent to the model rather than shown in the UI, so it stays in English.
+    static func pageTranslationQuery(targetLanguage: String) -> String {
+        let languageCode = Locale.components(fromIdentifier: targetLanguage)[NSLocale.Key.languageCode.rawValue] ?? targetLanguage
+        let languageName = Locale(identifier: "en").localizedString(forLanguageCode: languageCode) ?? targetLanguage
+        return "Translate this page into \(languageName) and summarize it."
+    }
+
+    @MainActor
+    private func revealTranslation(_ prompt: AIChatNativePrompt) {
         if !aiChatCoordinator.isChatPresentedForCurrentTab() {
             pixelFiring?.fire(
                 AIChatPixel.aiChatSidebarOpened(
@@ -128,7 +162,7 @@ final class AIChatTranslator: AIChatTranslating {
             )
             aiChatConversationSourceHandler.setData(.contextualTranslate)
         }
-        // The selection is what the user asked about — don't also auto-attach the whole page.
+        // The prompt carries its own context (selection or page), so the input must not also auto-attach the page.
         currentPageContextProvider()?.suppressAutoPageContextForSelectionAction()
         aiChatCoordinator.revealChat(for: prompt)
     }

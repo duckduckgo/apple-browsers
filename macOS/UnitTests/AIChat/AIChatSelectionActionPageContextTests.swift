@@ -113,6 +113,55 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
         XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
     }
 
+    // MARK: - Page translation
+
+    func testTranslateCurrentPageRevealsAutoSubmittedQueryWithPage() async throws {
+        let page = AIChatPageContextData(title: "Página", favicon: [], url: "https://example.es/", content: "Hola", truncated: false, fullContentLength: 4)
+
+        await makeTranslator(pageContent: page).translateCurrentPage()
+
+        XCTAssertEqual(coordinator.revealedPrompts.count, 1)
+        let prompt = try XCTUnwrap(coordinator.revealedPrompts.first)
+        guard case .query(let query) = prompt.tool else { return XCTFail("Expected a query prompt, got \(String(describing: prompt.tool))") }
+        XCTAssertTrue(query.autoSubmit)
+        XCTAssertEqual(query.prompt, AIChatTranslator.pageTranslationQuery(targetLanguage: Locale.preferredLanguages.first ?? ""))
+        XCTAssertEqual(prompt.pageContext, .single(page))
+        XCTAssertEqual(firedParameters(named: "aichat_translate_text"), [["source": "translate-offer"]])
+        XCTAssertEqual(pageContext.suppressCallCount, 1)
+    }
+
+    func testTranslateCurrentPageDoesNothingWithoutPageContent() async {
+        await makeTranslator(pageContent: nil).translateCurrentPage()
+
+        XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
+        XCTAssertTrue(firedParameters(named: "aichat_translate_text").isEmpty)
+        XCTAssertEqual(pageContext.suppressCallCount, 0)
+    }
+
+    func testTranslateCurrentPageDoesNothingWhenPageIsNotAttachable() async {
+        let page = AIChatPageContextData(title: "Local", favicon: [], url: "file:///tmp/page.html", content: "", truncated: false, fullContentLength: 0, attachable: false)
+
+        await makeTranslator(pageContent: page).translateCurrentPage()
+
+        XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
+        XCTAssertTrue(firedParameters(named: "aichat_translate_text").isEmpty)
+    }
+
+    func testTranslateCurrentPageDoesNothingWhenMenuItemDisabled() async {
+        config.shouldDisplayTranslationMenuItem = false
+        let page = AIChatPageContextData(title: "T", favicon: [], url: "https://example.com/", content: "c", truncated: false, fullContentLength: 1)
+
+        await makeTranslator(pageContent: page).translateCurrentPage()
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+        XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
+    }
+
+    func testPageTranslationQueryNamesTargetLanguage() {
+        XCTAssertTrue(AIChatTranslator.pageTranslationQuery(targetLanguage: "es-ES").contains("Spanish"))
+        XCTAssertTrue(AIChatTranslator.pageTranslationQuery(targetLanguage: "zz-ZZ").contains("zz-ZZ"))
+    }
+
     func testAttachSelectionDoesNothingWhenMenuItemDisabled() {
         config.shouldDisplaySelectionContextMenuItem = false
         makeAttacher().attach(text: "selected", url: nil, source: .keyboardShortcut)
@@ -137,12 +186,13 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
                          aiChatConversationSourceHandler: AIChatConversationSourceHandler())
     }
 
-    private func makeTranslator() -> AIChatTranslator {
+    private func makeTranslator(pageContent: AIChatPageContextData? = nil) -> AIChatTranslator {
         AIChatTranslator(aiChatMenuConfig: config,
                          aiChatCoordinator: coordinator,
                          aiChatTabOpener: SelectionActionAIChatTabOpenerMock(),
                          pixelFiring: pixelFiring,
                          currentPageContextProvider: { [pageContext] in pageContext },
+                         currentPageContentProvider: { pageContent },
                          aiChatConversationSourceHandler: AIChatConversationSourceHandler())
     }
 
@@ -185,7 +235,8 @@ private final class PageContextMock: PageContextProtocol {
 
 private final class SelectionActionAIChatCoordinatorMock: AIChatCoordinating {
     var isChatPresented = false
-    var revealChatWithPromptCallCount = 0
+    var revealedPrompts: [AIChatNativePrompt] = []
+    var revealChatWithPromptCallCount: Int { revealedPrompts.count }
     var revealChatCallCount = 0
 
     func toggleSidebar() {}
@@ -202,7 +253,7 @@ private final class SelectionActionAIChatCoordinatorMock: AIChatCoordinating {
     func focusFloatingWindow(for tabID: TabIdentifier) {}
     func closeFloatingWindow(for tabID: TabIdentifier) {}
     func closeChat(for tabID: TabIdentifier, withAnimation: Bool) {}
-    func revealChat(for prompt: AIChatNativePrompt) { revealChatWithPromptCallCount += 1 }
+    func revealChat(for prompt: AIChatNativePrompt) { revealedPrompts.append(prompt) }
     func revealChat() { revealChatCallCount += 1 }
 }
 

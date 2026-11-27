@@ -324,7 +324,7 @@ final class SyncSetupAttemptTrackerTests {
     func hostEndsWithJoinerOutcome(peerOutcome: SyncSetupWideEventData.PeerOutcome) {
         startHostAwaitingJoiner()
 
-        tracker.endAsHost(peerOutcome: peerOutcome)
+        tracker.recordJoinerOutcome(peerOutcome)
 
         #expect(sent.count == 1)
         #expect(sent.first?.status == .success)
@@ -382,6 +382,20 @@ final class SyncSetupAttemptTrackerTests {
         #expect(sent.first?.status == .success)
         #expect(sent.first?.parameters["feature.data.ext.peer_outcome"] == "unknown")
         #expect(wideEvent.started.count == 2)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A late report or code send from a replaced host doesn't end the new attempt", .timeLimit(.minutes(1)))
+    func lateHostCallbacksLeaveReplacementOpen() {
+        startHostAwaitingJoiner()
+        start()
+
+        tracker.recordJoinerOutcome(.success)
+        tracker.endAsHost(peerOutcome: .unknown)
+
+        #expect(sent.count == 1)
+        #expect(sent.first?.status == .success)
+        #expect(sent.first?.parameters["feature.data.ext.peer_outcome"] == "unknown")
     }
 
     @available(iOS 16, macOS 13, *)

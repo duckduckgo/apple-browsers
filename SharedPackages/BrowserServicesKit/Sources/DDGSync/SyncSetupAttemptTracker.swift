@@ -124,7 +124,13 @@ public final class SyncSetupAttemptTracker {
         end(Outcome(status: .success))
     }
 
+    func recordJoinerOutcome(_ peerOutcome: SyncSetupWideEventData.PeerOutcome) {
+        guard attempt?.hasHostSentRecoveryCode == true else { return }
+        endAsHost(peerOutcome: peerOutcome)
+    }
+
     func endAsHost(peerOutcome: SyncSetupWideEventData.PeerOutcome) {
+        guard attempt?.role == .host else { return }
         update { $0.peerOutcome = peerOutcome }
         end(Outcome(status: .success))
     }

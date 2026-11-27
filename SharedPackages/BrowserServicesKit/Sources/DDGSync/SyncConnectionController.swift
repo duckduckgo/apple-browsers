@@ -1238,7 +1238,7 @@ extension SyncConnectionController: PairingV2ConfirmationDelegate {
         guard let peerOutcome = SyncSetupWideEventData.PeerOutcome(joinerMessage: message) else {
             return
         }
-        await attemptTracker?.endAsHost(peerOutcome: peerOutcome)
+        await attemptTracker?.recordJoinerOutcome(peerOutcome)
     }
 
     private func reportPeer(role: SyncSetupWideEventData.Role, session: PairingV2Session) async {

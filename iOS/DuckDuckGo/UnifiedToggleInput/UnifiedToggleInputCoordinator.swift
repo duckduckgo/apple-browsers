@@ -420,6 +420,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         modeChangeSubject.eraseToAnyPublisher()
     }
 
+    /// Mode changes the user made with the toggle or a swipe; excludes programmatic syncs such as per-tab state restore.
+    private let userModeChangeSubject = PassthroughSubject<TextEntryMode, Never>()
+    var userModeChangePublisher: AnyPublisher<TextEntryMode, Never> {
+        userModeChangeSubject.eraseToAnyPublisher()
+    }
+
     private let featureFlagger: FeatureFlagger
     private let simplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding
     private var openingChatModelId: String?
@@ -1910,6 +1916,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             }
             if didModeChange {
                 modeChangeSubject.send(effectiveMode)
+                userModeChangeSubject.send(effectiveMode)
             }
         }
 

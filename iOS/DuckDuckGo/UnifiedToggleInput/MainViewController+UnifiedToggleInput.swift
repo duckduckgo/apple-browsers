@@ -628,6 +628,11 @@ extension MainViewController {
             }
             .store(in: &unifiedToggleInputCancellables)
 
+        coordinator.userModeChangePublisher
+            .sink { [weak self] mode in
+                self?.recordToggleUsed(mode)
+            }
+            .store(in: &unifiedToggleInputCancellables)
 
         coordinator.attachmentsChangePublisher
             .sink { [weak self] in
@@ -683,12 +688,6 @@ extension MainViewController {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         updateDuckAIKeyboardEdgeSweep()
 
-        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
-            ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
-        }
-        postIdleSessionInstrumentation.toggleUsed()
-        recordNewTabPageSessionToggleSwitch(to: mode)
-
         if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
         } else if coordinator.isAITabExpanded {
@@ -697,6 +696,14 @@ extension MainViewController {
             coordinator.showExpanded(inputMode: .aiChat)
         }
         updateFloatingReturnKeyVisibility()
+    }
+
+    func recordToggleUsed(_ mode: TextEntryMode) {
+        if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
+            ntpAfterIdleInstrumentation.toggleUsedFromNTP(afterIdle: tab.openedAfterIdle)
+        }
+        postIdleSessionInstrumentation.toggleUsed()
+        recordNewTabPageSessionToggleSwitch(to: mode)
     }
 
     func handleOmnibarModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {

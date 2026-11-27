@@ -2348,6 +2348,34 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
+    func test_updateInputMode_emitsUserModeChange() {
+        var userModes: [TextEntryMode] = []
+        sut.userModeChangePublisher
+            .sink { userModes.append($0) }
+            .store(in: &cancellables)
+
+        sut.updateInputMode(.search, animated: false)
+
+        XCTAssertEqual(userModes, [.search])
+    }
+
+    func test_syncInputModeFromExternalSource_emitsModeChangeButNotUserModeChange() {
+        sut.syncInputModeFromExternalSource(.aiChat)
+        var modes: [TextEntryMode] = []
+        var userModes: [TextEntryMode] = []
+        sut.modeChangePublisher
+            .sink { modes.append($0) }
+            .store(in: &cancellables)
+        sut.userModeChangePublisher
+            .sink { userModes.append($0) }
+            .store(in: &cancellables)
+
+        sut.syncInputModeFromExternalSource(.search)
+
+        XCTAssertEqual(modes, [.search])
+        XCTAssertTrue(userModes.isEmpty)
+    }
+
     func test_updateInputMode_toggleDisabled_forcesSearchInOmnibarSession() {
         sut.activateFromOmnibar()
         sut.updateToggleEnabled(false)

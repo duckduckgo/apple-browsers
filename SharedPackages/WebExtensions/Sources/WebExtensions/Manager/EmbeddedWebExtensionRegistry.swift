@@ -51,6 +51,7 @@ public enum EmbeddedWebExtensionRegistry {
         EmbeddedWebExtensionDescriptor(type: .embedded, resourceFilename: "duckduckgo-embedded-web-extension.zip"),
         EmbeddedWebExtensionDescriptor(type: .darkReader, resourceFilename: "darkreader.zip"),
         EmbeddedWebExtensionDescriptor(type: .adBlockingExtension, resourceFilename: "content-blocker-extension-apple.zip"),
+        // Retired: never enabled, listed so sync uninstalls existing copies. The zip is no longer bundled.
         EmbeddedWebExtensionDescriptor(type: .searchToken, resourceFilename: "search-token-extension.zip"),
     ]
 

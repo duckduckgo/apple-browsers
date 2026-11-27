@@ -131,7 +131,11 @@ extension TabSwitcherViewController {
                 onConfirm: { [weak self] fireRequest in
                     self?.forgetAll(fireRequest)
                 },
-                onCancel: { }
+                onCancel: { },
+                onOpenSettings: { [weak self] in
+                    guard let self else { return }
+                    self.delegate?.tabSwitcherDidRequestDataClearingSettings(self)
+                }
             )
         }
 

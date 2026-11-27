@@ -492,13 +492,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         let loopDetector = ConnectionFailureLoopDetector(store: loopDetectorStore)
 
-        let wideEvent = WideEvent(useMockRequests: {
-#if DEBUG || REVIEW || ALPHA
-            true
-#else
-            false
-#endif
-        }(),
+        let wideEvent = WideEvent(isDevMode: !BuildFlags.isProductionBuild,
                                   featureFlagProvider: WideEventFeatureFlagProvider(featureFlagger: featureFlagger))
         self.wideEvent = wideEvent
 

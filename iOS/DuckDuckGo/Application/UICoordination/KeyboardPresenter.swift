@@ -98,8 +98,10 @@ final class KeyboardPresenter: KeyboardPresenting {
     private let scheduleAfterPrompt: (@escaping () -> Void) -> Void
     private let schedule: (@escaping () -> Void) -> Void
     private var hasForegroundEnded = false
+    private let foregroundScreen: IdleReturnForegroundScreen
 
     init(mainViewController: any AppOpenKeyboardHandling,
+         foregroundScreen: IdleReturnForegroundScreen,
          runOnceModalPromptCloses: @escaping (@escaping @MainActor () -> Bool, @escaping @MainActor () -> Void) -> Bool,
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          onAppLaunch: @escaping () -> Bool = { KeyboardSettings().onAppLaunch },
@@ -113,6 +115,7 @@ final class KeyboardPresenter: KeyboardPresenting {
         self.scheduleForInlinePage = scheduleForInlinePage
         self.scheduleAfterPrompt = scheduleAfterPrompt
         self.schedule = schedule
+        self.foregroundScreen = foregroundScreen
     }
 
     func showKeyboardOnLaunch(lastBackgroundDate: Date? = nil, hasCompletedAuthentication: Bool = true, isAfterIdleReturn: Bool = false) {
@@ -121,7 +124,7 @@ final class KeyboardPresenter: KeyboardPresenting {
                                                            hasCompletedAuthentication: hasCompletedAuthentication)
         let requestID = mainViewController.appOpenKeyboardRequestID
         // Captured before any App Lock wait, which a launch prompt can be presented during.
-        let screenLeftOpen = mainViewController.presentedViewController
+        let screenLeftOpen = foregroundScreen.screenLeftOpen(current: mainViewController.presentedViewController)
         scheduleKeyboardWhenWindowVisible(requestID: requestID,
                                           isAfterIdleReturn: isAfterIdleReturn,
                                           screenLeftOpen: screenLeftOpen) { [self] in

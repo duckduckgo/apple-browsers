@@ -5,11 +5,11 @@ usage: verify-ios [--device iphone|ipad] [--json] [--evidence DIR] <command> [ar
 exit:  0 ok · 1 a check failed or an element wasn't found · 2 error (setup, driver, a proof rejected by check,
        or a pass with cleanup/evidence problems) · 3 not supported · 75 device busy · 130 cancelled
 """
-import argparse, json, os, sys, time
+import argparse, json, os, shutil, sys, time
 
 sys.dont_write_bytecode = True   # keep __pycache__ out of the repo's skill directory
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "lib"))
-from verify_ios import env, harness  # noqa: E402
+from verify_ios import env, harness, reap  # noqa: E402
 from verify_ios.device import Device, fixture, info  # noqa: E402
 from verify_ios.env import Busy, Failed, Unsupported  # noqa: E402
 
@@ -49,7 +49,7 @@ def build_parser():
     add_evidence_options(a)
     a = sp.add_parser("check", help="compile and import proofs without touching a device")
     a.add_argument("proofs", nargs="+")
-    sp.add_parser("setup", help="create/adopt and boot this worktree's simulator for --device (each proof deletes it when it ends)")
+    sp.add_parser("setup", help="create/adopt and boot this worktree's simulator for --device (`cleanup --delete-sims` deletes it)")
     a = sp.add_parser("build", help="build the app and the runner")
     a.add_argument("--app-only", action="store_true")
     a.add_argument("--runner-only", action="store_true")
@@ -61,7 +61,8 @@ def build_parser():
     a.add_argument("--all", action="store_true", help="both devices and the fixture server")
     a.add_argument("--fixture", action="store_true", help="also stop the fixture server")
     a.add_argument("--shutdown", action="store_true", help="also shut the simulator down")
-    a.add_argument("--delete-sims", action="store_true", help="also delete this worktree's simulator(s)")
+    a.add_argument("--delete-sims", action="store_true", help="also delete this worktree's simulator(s): run it when you are done exploring")
+    a.add_argument("--builds", action="store_true", help="also delete this worktree's builds (DerivedData/verify-ios)")
     a = sp.add_parser("fixture", help="serve the skill's fixture page on this worktree's fixture port")
     a.add_argument("sub", nargs="?", default="start", choices=["start", "stop"])
     a = sp.add_parser("snapshot")
@@ -151,7 +152,7 @@ def dispatch(args):
     # proof. The fixture server, builds and cleanup --all touch both devices, so they hold both locks.
     both = list(env.PORT_OFFSET)
     if args.cmd in LOCK_BOTH or (args.cmd == "fixture" and args.sub == "stop") or \
-            (args.cmd == "cleanup" and (args.all or args.fixture)):
+            (args.cmd == "cleanup" and (args.all or args.fixture or args.builds)):
         held = both
     elif args.cmd in DRIVING:
         held = [args.device]
@@ -187,6 +188,10 @@ def run_command(args):
             out["removed"] += Device(dev).cleanup(shutdown=args.shutdown, delete_sim=args.delete_sims)["removed"]
         if args.all or args.fixture:
             out["fixture"] = fixture(stop=True)
+        if args.builds:
+            shutil.rmtree(env.BUILD, ignore_errors=True)
+            env.update_state(lambda st: [st.pop(k, None) for k in ("appBuild", "runnerBuild")])
+            out["buildsRemoved"] = env.BUILD
         return out
     if c == "snapshot":
         return d.snapshot(web=args.web)
@@ -237,10 +242,22 @@ class ProveExit(Exception):
         self.code, self.out = code, out
 
 
+def spared(args):
+    """This worktree's simulators the command is about to use, which the reaper leaves alone even when idle."""
+    devices = list(env.PORT_OFFSET) if args.cmd in ("prove", "selftest") or getattr(args, "all", False) else [args.device]
+    return {(env.KEY, d) for d in devices}
+
+
 def main():
     args = build_parser().parse_args()
     t0 = time.time()
     code, out = 0, {}
+    try:   # never let reaping other simulators fail this command
+        reaped = reap.reap(spared(args))
+    except Exception as e:
+        reaped = [dict(problems=[f"reaping failed: {type(e).__name__}: {e}"])]
+    if reaped:
+        print(f"verify-ios: reaped {json.dumps(reaped)}", file=sys.stderr)
     try:
         out = dispatch(args) or {}
         out["ok"] = True
@@ -254,6 +271,8 @@ def main():
         code, out = 1, {"ok": False, "code": "FAILED", "message": str(e), **e.extra}
     except Exception as e:
         code, out = 2, {"ok": False, "code": "DRIVER_ERROR", "message": f"{type(e).__name__}: {e}"}
+    if reaped:
+        out["reaped"] = reaped
     out["ms"] = int((time.time() - t0) * 1000)
     if args.evidence:
         os.makedirs(args.evidence, exist_ok=True)

@@ -31,16 +31,55 @@ final class DeclaredAgeRequesterTests: XCTestCase {
         storage = InMemoryKeyValueStore().throwingKeyedStoring()
     }
 
-    func testFirstLaunchIsRequestNeeded() async {
-        let isNeeded = await makeRequester().isRequestNeeded(isReinstall: false)
+    func testFirstLaunchIsRequestNeeded() async throws {
+        let isNeeded = try await makeRequester().isRequestNeeded(isReinstall: false)
 
         XCTAssertTrue(isNeeded)
     }
 
-    func testNotRequiredIsNotRequestNeeded() async {
-        let isNeeded = await makeRequester(service: ServiceMock(isRequired: false)).isRequestNeeded(isReinstall: false)
+    func testNotRequiredIsNotRequestNeeded() async throws {
+        let isNeeded = try await makeRequester(service: ServiceMock(isRequired: false)).isRequestNeeded(isReinstall: false)
 
         XCTAssertFalse(isNeeded)
+    }
+
+    func testNotRequiredIsNotCheckedAgainOnceMarked() async throws {
+        makeRequester().markNotRequired(isReinstall: false)
+
+        let service = ServiceMock(isRequired: true)
+        let isNeeded = try await makeRequester(service: service).isRequestNeeded(isReinstall: false)
+
+        XCTAssertFalse(isNeeded)
+        XCTAssertEqual(service.checkCount, 0)
+    }
+
+    func testAlreadyRequestedIsNotMarkedAsNotRequired() throws {
+        try storeMarker(at: start)
+
+        makeRequester().markNotRequired(isReinstall: false)
+
+        XCTAssertNil(try storage.requestWasNotRequired)
+    }
+
+    func testFailedCheckThrowsAndStoresNothing() async {
+        let requester = makeRequester(service: ServiceMock(isRequired: true, checkError: CancellationError()))
+
+        let isNeeded = try? await requester.isRequestNeeded(isReinstall: false)
+
+        XCTAssertNil(isNeeded)
+        XCTAssertTrue(requester.isRequestDue(isReinstall: false))
+    }
+
+    func testNotRequiredIsCheckedAgainOnceAfterReinstall() async throws {
+        makeRequester().markNotRequired(isReinstall: false)
+        let service = ServiceMock(isRequired: false)
+        let requester = makeRequester(service: service)
+
+        _ = try await requester.isRequestNeeded(isReinstall: true)
+        requester.markNotRequired(isReinstall: true)
+        _ = try await requester.isRequestNeeded(isReinstall: true)
+
+        XCTAssertEqual(service.checkCount, 1)
     }
 
     func testSuccessfulRequestStoresMarker() async throws {
@@ -85,7 +124,7 @@ final class DeclaredAgeRequesterTests: XCTestCase {
         let requester = makeRequester()
 
         _ = await requester.requestDeclaredAge(isReinstall: true, in: makeAnchor())
-        let isNeeded = await requester.isRequestNeeded(isReinstall: true)
+        let isNeeded = try await requester.isRequestNeeded(isReinstall: true)
 
         XCTAssertFalse(isNeeded)
     }
@@ -114,16 +153,23 @@ final class DeclaredAgeRequesterTests: XCTestCase {
 @MainActor
 private final class ServiceMock: DeclaredAgeServicing {
     let isRequired: Bool
+    let checkError: Error?
     let requestError: Error?
+    private(set) var checkCount = 0
     private(set) var requestCount = 0
 
-    init(isRequired: Bool, requestError: Error? = nil) {
+    init(isRequired: Bool, checkError: Error? = nil, requestError: Error? = nil) {
         self.isRequired = isRequired
+        self.checkError = checkError
         self.requestError = requestError
     }
 
     func isRequestRequired() async throws -> Bool {
-        isRequired
+        checkCount += 1
+        if let checkError {
+            throw checkError
+        }
+        return isRequired
     }
 
     func requestDeclaredAge(in anchor: DeclaredAgeAnchor) async throws -> Bool {

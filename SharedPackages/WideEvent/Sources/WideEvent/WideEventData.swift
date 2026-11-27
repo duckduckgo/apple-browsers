@@ -246,8 +246,14 @@ public struct WideEventAppData: Codable {
 extension WideEventAppData: WideEventParameterProviding {
 
     public func jsonParameters() -> [String: Encodable] {
-        Dictionary(compacting: [
-            (WideEventParameter.App.name, name),
+        #if os(macOS)
+        // Verification builds include the developer's topic in the bundle name, including in saved flows.
+        let appName = name.hasPrefix("DuckDuckGo - verify-") ? "DuckDuckGo" : name
+        #else
+        let appName = name
+        #endif
+        return Dictionary(compacting: [
+            (WideEventParameter.App.name, appName),
             (WideEventParameter.App.version, version),
             (WideEventParameter.App.formFactor, formFactor),
         ])

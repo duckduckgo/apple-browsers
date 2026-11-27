@@ -25,6 +25,8 @@
                         "DuckDuckGo Alpha",
                         "DuckDuckGo Review",
                         "DuckDuckGo App Store",
+                        "DuckDuckGo App Store Review",
+                        "DuckDuckGo App Store Alpha",
                         "DuckDuckGo VPN",
                         "DuckDuckGo VPN Alpha",
                         "DuckDuckGo VPN Review",
@@ -36,10 +38,17 @@
                         "com.duckduckgo.macos.vpn.network-extension.debug",
                         "com.duckduckgo.macos.vpn.network-extension.review",
                         "com.duckduckgo.macos.vpn.network-extension.alpha",
-                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension.debug",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension.review",
+                        "com.duckduckgo.mobile.ios.vpn.agent.network-extension.alpha"
                     ]
                 },
-                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" }
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "dev_mode": {
+                    "type": "boolean",
+                    "description": "Whether the event came from a non-production build (debug, alpha, review or experimental). Only included when true, and only in the POST payload."
+                }
             }
         },
         "global": {

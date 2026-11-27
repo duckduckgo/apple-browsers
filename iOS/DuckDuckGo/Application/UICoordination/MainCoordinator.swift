@@ -110,6 +110,7 @@ final class MainCoordinator {
     let isFloatingUIFeatureEnabledForCurrentLaunch: Bool
 
     private var hasPresentedOnboarding = false
+    private var idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: nil, wasOnNewTabPage: false, isProtectionEnabled: false)
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          syncService: SyncService,
@@ -220,6 +221,8 @@ final class MainCoordinator {
         let translationOfferProvider = Self.makeTranslationOfferProvider(translationModels: translationModels,
                                                                          featureFlagger: featureFlagger,
                                                                          privacyConfig: privacyConfigurationManager)
+        // One translator for every tab, so only one model is ever in memory.
+        let pageTranslator = translationModels.map { PageTranslator(modelsProvider: $0) }
 
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
@@ -262,6 +265,7 @@ final class MainCoordinator {
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
                                 eventHub: eventHub,
                                 pageTranslationOfferProvider: translationOfferProvider,
+                                pageTranslator: pageTranslator,
                                 clearAppSwitcherSnapshots: clearAppSwitcherSnapshots)
         // Start before any tab saves a decision, so each saved site keeps its favicon.
         _ = tabManager.sitePermissionsFavicons
@@ -475,7 +479,6 @@ final class MainCoordinator {
             privacyConfigurationManager: privacyConfigurationManager,
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
-            searchTokenProvider: controller,
             scriptletConfiguration: makeScriptletConfiguration(),
             eventHub: eventHub,
             isAppleSurrogateRedirectionEnabled: { [webExtensionAvailability] in
@@ -483,6 +486,7 @@ final class MainCoordinator {
             }
         )
         self.webExtensionManager = webExtensionManager
+        webExtensionManager.installUserAllowlistNotifier(privacyConfigurationManager: privacyConfigurationManager)
 
         let lifecycleCoordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -623,12 +627,6 @@ final class MainCoordinator {
         if controller.adBlockingAvailability.isEnabled {
             enabledTypes.insert(.adBlockingExtension)
         }
-        let searchTokenCohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort
-        // The search-token extension pulls its token over native messaging,
-        // so skipping this extension builds without that support (Alpha)
-        if searchTokenCohort == .treatment, nativeMessagingSupport.isSupported {
-            enabledTypes.insert(.searchToken)
-        }
         return enabledTypes
     }
 
@@ -737,6 +735,14 @@ final class MainCoordinator {
     }
 
     // MARK: App Lifecycle handling
+
+    /// Records what is on screen as the foreground begins, before the user can act during the launch wait.
+    func captureIdleReturnForegroundScreen() -> IdleReturnForegroundScreen {
+        idleReturnForegroundScreen = IdleReturnForegroundScreen(presented: controller.presentedViewController,
+                                                                wasOnNewTabPage: tabManager.currentTabsModel.currentTab?.link == nil,
+                                                                isProtectionEnabled: featureFlagger.isFeatureOn(.idleReturnLaunchWaitProtection))
+        return idleReturnForegroundScreen
+    }
 
     func onForeground(isFirstForeground: Bool) {
         daxGreetingActivity.recordForegroundOpen()
@@ -1000,12 +1006,26 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
             return
         }
 
+        // Leave alone a screen or page the user opened while launch waited for App Lock or Automatically Clear Data.
+        // Clearing every Fire tab presents the empty tab switcher itself, so that one isn't the user's.
+        let presented = controller.presentedViewController
+        let isEmptyTabSwitcher = presented != nil && presented === controller.tabSwitcherController
+            && controller.tabSwitcherController?.tabsModel.isEmpty == true
+        if idleReturnForegroundScreen.userActed(presented: isEmptyTabSwitcher ? nil : presented,
+                                                isOnNewTabPage: tabManager.currentTabsModel.currentTab?.link == nil) {
+            // A Duck.ai page the user opened already recorded its own entry.
+            startUntreatedReturnSession(timeAwayMs: timeAwayMs, reportsDuckAIEntry: false)
+            completion(.suppressed)
+            return
+        }
+
         // Restore a cold-start NTP's hatch; warm returns preserve its existing or consumed state and input focus.
         //
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: controller.presentedViewController) { [weak self] in
+            let screenLeftOpen = idleReturnForegroundScreen.screenLeftOpen(current: controller.presentedViewController)
+            controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: screenLeftOpen) { [weak self] in
                 guard let self else { return }
                 if !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
                     startUntreatedReturnSession(timeAwayMs: timeAwayMs)
@@ -1048,13 +1068,13 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
     /// A return where no after-idle treatment was applied, so `after_idle` stays false and
     /// the post-idle event — which only reports on treated returns — is not started.
     /// `focused` starts from the input focus a short return keeps; an app-open keyboard raises it later.
-    private func startUntreatedReturnSession(timeAwayMs: Int?) {
+    private func startUntreatedReturnSession(timeAwayMs: Int?, reportsDuckAIEntry: Bool = true) {
         guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        startReturnSession(afterIdleSurface: nil)
+        startReturnSession(afterIdleSurface: nil, reportsDuckAIEntry: reportsDuckAIEntry)
     }
 
-    private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?) {
+    private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?, reportsDuckAIEntry: Bool = true) {
         let focused = controller.isInputFocused
         let landedOn = landedOnForCurrentTab()
         controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOn, afterIdleSurface: afterIdleSurface,
@@ -1062,7 +1082,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
                                                                  toggleEnabled: controller.isReturnSessionToggleEnabled,
                                                                  togglePosition: controller.returnSessionTogglePosition(focused: focused))
         // A live voice chat carries on from its own entry.
-        if landedOn == .duckAI, !voiceSessionStateManager.isVoiceSessionActive {
+        if landedOn == .duckAI, reportsDuckAIEntry, !voiceSessionStateManager.isVoiceSessionActive {
             controller.fireAIChatEntryPointPixel(source: .appOpen, opensNewTab: false, hasPrompt: false)
             // The Duck.ai tab is already on screen, so show it to the entry that just started.
             controller.reportDuckAISessionCurrentTab()

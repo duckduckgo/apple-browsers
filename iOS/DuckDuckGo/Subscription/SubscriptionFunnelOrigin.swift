@@ -122,6 +122,15 @@ enum SubscriptionFunnelOrigin: String {
     /// https://app.asana.com/1/137249556945/task/1216395339071576
     case duckAIVoiceChatDurationLimit = "funnel_duckai_ios__voicechatdurationlimit"
 
+    /// Frontend-reported: the upgrade prompt shown when switching to a gated model mid-chat. Only reaches
+    /// pixels as the source of a subscribe / upgrade-to-Pro modal click.
+    /// https://app.asana.com/1/137249556945/task/1217475599862970
+    case duckAISwitchModel = "funnel_duckai_ios__switchmodel"
+
+    /// Frontend-reported: a subscribe / upgrade-to-Pro modal the frontend could not attribute to an entry point.
+    /// https://app.asana.com/1/137249556945/task/1217475599862970
+    case duckAIUnknown = "funnel_duckai_ios__unknown"
+
     // MARK: - Win-Back Offer Origins
     
     /// User entered via win-back offer launch prompt
@@ -188,7 +197,9 @@ extension SubscriptionFunnelOrigin {
                 .duckAISettings,
                 .duckAIDisclaimerBanner,
                 .duckAIVoiceChatLimit,
-                .duckAIVoiceChatDurationLimit:
+                .duckAIVoiceChatDurationLimit,
+                .duckAISwitchModel,
+                .duckAIUnknown:
             return .duckAI
         case .onboarding,
                 .skippedOnboarding:

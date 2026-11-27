@@ -240,6 +240,12 @@
                 "description": "Source of the attached file.",
                 "type": "string",
                 "enum": ["file_picker", "paste"]
+            },
+            {
+                "key": "entry_point",
+                "description": "For files from the file picker, the route that opened it: the attach menu (or the page's file picker request), or the documents new chat hint. Not sent for pasted files. Same values as Android.",
+                "type": "string",
+                "enum": ["attachment_menu", "new_chat_hint"]
             }
         ]
     },
@@ -269,6 +275,12 @@
                 "description": "Source of the rejected file.",
                 "type": "string",
                 "enum": ["file_picker", "paste"]
+            },
+            {
+                "key": "entry_point",
+                "description": "For files from the file picker, the route that opened it: the attach menu (or the page's file picker request), or the documents new chat hint. Not sent for pasted files. Same values as Android.",
+                "type": "string",
+                "enum": ["attachment_menu", "new_chat_hint"]
             }
         ]
     },

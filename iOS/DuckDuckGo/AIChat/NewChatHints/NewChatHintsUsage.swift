@@ -117,6 +117,11 @@ final class NewChatHintsUsage {
         newChats[tab]?.tappedHint = hint
     }
 
+    /// The file picker the documents hint opened closed without a file chosen.
+    func filePickerCancelled() {
+        fire(.filePickerCancelled)
+    }
+
     /// The tab moved to a chat that isn't new, or off Duck.ai, without sending from this one.
     func leftNewChat(tab: TabUID) {
         newChats[tab] = nil

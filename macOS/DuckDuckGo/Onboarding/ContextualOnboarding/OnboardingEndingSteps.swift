@@ -26,7 +26,8 @@ enum OnboardingEndingDecision: Equatable {
     case decided(ContextualOnboardingDecision)
 }
 
-/// The end of contextual onboarding, shared by every path: High Five, then the subscription upsell for eligible users.
+/// The end of contextual onboarding, shared by every path: High Five, or Try Duck.ai when offered,
+/// then the subscription upsell for eligible users.
 final class OnboardingEndingSteps {
 
     private let progress: ContextualOnboardingProgressReading
@@ -39,22 +40,22 @@ final class OnboardingEndingSteps {
     }
 
     /// Called when a path reaches the end.
-    func start() -> ContextualOnboardingDecision {
-        .next(.highFive)
+    func start(offeringDuckAI: Bool = false) -> ContextualOnboardingDecision {
+        .next(offeringDuckAI ? .tryDuckAI : .highFive)
     }
 
     /// Asked before a path's own rules on every dialog request. Browsing on is the third way out of High Five.
     func decisionForNextDialog() -> OnboardingEndingDecision {
         // The upsell shows once; the saved marker also keeps it from returning after a relaunch.
         if progress.hasSeen(.subscriptionUpsell) { return .decided(.completed) }
-        if progress.hasSeen(.highFive) { return .decided(afterHighFive()) }
+        if progress.hasSeen(.highFive) || progress.hasSeen(.tryDuckAI) { return .decided(afterHighFive()) }
         return .notStarted
     }
 
     /// `.none` when `dialog` isn't part of the ending.
     func gotItPressed(after dialog: ContextualDialogType) -> ContextualOnboardingDecision {
         switch dialog {
-        case .highFive: return afterHighFive()
+        case .highFive, .tryDuckAI: return afterHighFive()
         case .subscriptionUpsell: return .completed
         default: return .none
         }

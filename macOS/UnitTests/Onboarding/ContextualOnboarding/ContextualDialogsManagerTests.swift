@@ -523,13 +523,15 @@ extension ContextualDialogsManager {
                                  stateStorage: stateStorage,
                                  settings: settings,
                                  uiLocker: uiLocker,
+                                 aiChatMenuConfig: MockAIChatConfig(),
                                  makePath: { kind, progress in
                                      switch kind {
                                      case .search:
                                          SearchOnboardingPath(progress: progress,
                                                               storage: searchPathStorage,
                                                               subscriptionManager: subscriptionManager,
-                                                              trackerMessageProvider: trackerMessageProvider)
+                                                              trackerMessageProvider: trackerMessageProvider,
+                                                              aiChatMenuConfig: MockAIChatConfig())
                                      case .duckAI:
                                          DuckAIOnboardingPath(progress: progress, subscriptionManager: subscriptionManager)
                                      }

@@ -1310,7 +1310,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ),
             subscriptionManager: subscriptionManager,
             settings: keyValueStore.throwingKeyedStoring(),
-            uiLocker: windowControllersManager
+            uiLocker: windowControllersManager,
+            aiChatMenuConfig: aiChatMenuConfiguration
+        )
+        onboardingContextualDialogsManager = contextualDialogsManager
+        onboardingDuckAIPathWindowRestorer = OnboardingDuckAIPathWindowRestorer(
+            windowDidOpen: windowControllersManager.didRegisterWindowController.map { $0 as DuckAIOnboardingWindow }.eraseToAnyPublisher(),
+            onboarding: contextualDialogsManager,
+            isDuckAIAvailable: { [aiChatMenuConfiguration] in aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature },
+            clearDuckAIChats: { [aiChatHistoryCleaner] in _ = await aiChatHistoryCleaner?.cleanAIChatHistory() },
+            aiChatURL: { AIChatRemoteSettings().aiChatURL }
         )
         onboardingContextualDialogsManager = contextualDialogsManager
         onboardingDuckAIPathWindowRestorer = OnboardingDuckAIPathWindowRestorer(

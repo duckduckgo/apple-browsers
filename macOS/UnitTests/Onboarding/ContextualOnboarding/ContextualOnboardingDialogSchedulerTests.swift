@@ -126,12 +126,13 @@ struct ContextualOnboardingDialogSchedulerTests {
     // MARK: - High Five hands over to the upsell
 
     @available(iOS 16, macOS 13, *)
-    @Test("Dismissing High Five shows the upsell next, without moving onboarding forward", .timeLimit(.minutes(1)))
-    func dismissingHighFiveShowsUpsell() async {
+    @Test("Dismissing the ending shows the upsell next, without moving onboarding forward", .timeLimit(.minutes(1)),
+          arguments: [ContextualDialogType.highFive, .tryDuckAI])
+    func dismissingEndingShowsUpsell(ending: ContextualDialogType) async {
         provider.lastDialog = .subscriptionUpsell
         let tab = await Tab(content: .newtab)
 
-        makeScheduler().dialogDismissed(.highFive, in: tab)
+        makeScheduler().dialogDismissed(ending, in: tab)
 
         #expect(sent.updates == [.show(.subscriptionUpsell)])
         #expect(provider.dialogTypeForTabCallCount == 0)

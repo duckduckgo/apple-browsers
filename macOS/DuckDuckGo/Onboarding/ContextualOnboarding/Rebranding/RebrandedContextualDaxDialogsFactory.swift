@@ -83,11 +83,15 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let fireCoordinator: FireCoordinator
+    /// The dialog onboarding is on, read when the Fire dialog moves to the ending in place.
+    private let lastDialog: () -> ContextualDialogType?
 
     init(onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
-         fireCoordinator: FireCoordinator) {
+         fireCoordinator: FireCoordinator,
+         lastDialog: @escaping () -> ContextualDialogType? = { Application.appDelegate.onboardingContextualDialogsManager.lastDialog }) {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.fireCoordinator = fireCoordinator
+        self.lastDialog = lastDialog
     }
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
@@ -115,12 +119,14 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .tryASite:
             return AnyView(tryASiteDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onSuggestionPressed: onSuggestionPressed))
         case .trackers(message: let message, shouldFollowUp: let shouldFollowUp):
-            return AnyView(trackersDialog(message: message, shouldFollowUp: shouldFollowUp, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
+            return AnyView(trackersDialog(message: message, shouldFollowUp: shouldFollowUp, delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         case .tryFireButton:
-            return AnyView(tryFireButtonDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
+            return AnyView(tryFireButtonDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         case .highFive:
             onboardingPixelReporter.measureLastDialogShown()
             return AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+        case .tryDuckAI:
+            return AnyView(tryDuckAIDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .subscriptionUpsell:
             return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .thatsDuckAI:
@@ -183,7 +189,7 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             return Image(.contextualBgTrackers)
         case .tryFireButton, .thatsDuckAI:
             return Image(.contextualBgFire)
-        case .highFive:
+        case .highFive, .tryDuckAI:
             return Image(.contextualBgEndOfJourney)
         case .subscriptionUpsell:
             return Image(.contextualBgSubscriptionUpsell)
@@ -221,13 +227,13 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         return OnboardingRebranding.OnboardingTrySiteDialog(viewModel: viewModel, onManualDismiss: onManualDismiss)
     }
 
-    private func trackersDialog(message: NSAttributedString, shouldFollowUp: Bool, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
+    private func trackersDialog(message: NSAttributedString, shouldFollowUp: Bool, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
         let onDismissGotIt = {
             onboardingPixelReporter.measureGotItPressed(dialogType: .trackers(message: message, shouldFollowUp: shouldFollowUp))
             onDismiss()
         }
         let gotIt = shouldFollowUp ? onGotItPressed : onDismissGotIt
-        let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
+        let viewModel = fireButtonDialogViewModel(delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
         return OnboardingRebranding.OnboardingTrackersBlockedDialog(
             shouldFollowUp: true,
             message: message,
@@ -238,8 +244,8 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         )
     }
 
-    private func tryFireButtonDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
-        let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
+    private func tryFireButtonDialog(delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
+        let viewModel = fireButtonDialogViewModel(delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
         return OnboardingRebranding.OnboardingFireDialog(viewModel: viewModel, onManualDismiss: onManualDismiss, onContentTransition: nil)
     }
 
@@ -265,6 +271,36 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                 onManualDismiss()
             }
         )
+    }
+
+    private func fireButtonDialogViewModel(delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> OnboardingFireButtonDialogViewModel {
+        OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter,
+                                            fireCoordinator: fireCoordinator,
+                                            lastDialog: lastDialog,
+                                            onDismiss: onDismiss,
+                                            onGotItPressed: onGotItPressed,
+                                            onFireButtonPressed: onFireButtonPressed,
+                                            onTryDuckAI: Self.tryDuckAIAction(delegate: delegate, onDismiss: onDismiss))
+    }
+
+    private func tryDuckAIDialog(delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {
+        OnboardingRebranding.OnboardingEndOfJourneyDialog(onManualDismiss: onManualDismiss) {
+            OnboardingRebranding.OnboardingTryDuckAIDialogContent(
+                tryDuckAIAction: Self.tryDuckAIAction(delegate: delegate, onDismiss: onDismiss),
+                skipAction: {
+                    onDismiss()
+                    onGotItPressed()
+                }
+            )
+        }
+    }
+
+    /// Opens Duck.ai without moving onboarding on, so the upsell waits for a page that isn't Duck.ai.
+    static func tryDuckAIAction(delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void) -> () -> Void {
+        {
+            onDismiss()
+            delegate.navigateFromOnboarding(to: AIChatRemoteSettings().aiChatURL)
+        }
     }
 
     private func highFiveDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {

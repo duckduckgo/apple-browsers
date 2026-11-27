@@ -96,6 +96,10 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
     func makeView(for type: ContextualDialogType, delegate: any OnboardingNavigationDelegate, onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void, onSuggestionPressed: @escaping () -> Void) -> AnyView {
         onboardingPixelReporter.measureDialogShown(dialogType: type)
+        // Here rather than in the bubble view, which SwiftUI may build more than once.
+        if type == .highFive || type == .tryDuckAI {
+            onboardingPixelReporter.measureLastDialogShown()
+        }
         return AnyView(
             ContextualDialogView(
                 type: type,
@@ -123,10 +127,8 @@ struct RebrandedContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .tryFireButton:
             return AnyView(tryFireButtonDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         case .highFive:
-            onboardingPixelReporter.measureLastDialogShown()
             return AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .tryDuckAI:
-            onboardingPixelReporter.measureLastDialogShown()
             return AnyView(tryDuckAIDialog(delegate: delegate, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
         case .subscriptionUpsell:
             return AnyView(Self.subscriptionUpsellDialog(delegate: delegate, pixelReporter: onboardingPixelReporter, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))

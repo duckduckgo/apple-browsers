@@ -124,12 +124,25 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertNil(find(OnboardingRebranding.OnboardingEndOfJourneyDialogContent.self, in: result))
     }
 
-    func testWhenTryDuckAIShownThenOnboardingFinishedIsMeasured() {
-        // WHEN
-        _ = factory.makeBubbleView(for: .tryDuckAI, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+    func testWhenRebrandedEndingIsShownThenOnboardingFinishedIsMeasuredWithShown() {
+        for ending in [ContextualDialogType.highFive, .tryDuckAI] {
+            // GIVEN
+            reporter = CapturingOnboardingPixelReporter()
+            let factory = RebrandedContextualDaxDialogsFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
 
-        // THEN
-        XCTAssertTrue(reporter.measureLastDialogShownCalled)
+            // WHEN building only the content, as SwiftUI may do again
+            _ = factory.makeBubbleView(for: ending, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+            // THEN
+            XCTAssertFalse(reporter.measureLastDialogShownCalled, "\(ending)")
+
+            // WHEN
+            _ = factory.makeView(for: ending, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+            // THEN
+            XCTAssertTrue(reporter.measureLastDialogShownCalled, "\(ending)")
+            XCTAssertEqual(reporter.shownDialog, ending)
+        }
     }
 
     func testWhenTryDuckAIThenTheDialogClosesAndDuckAIOpens() {

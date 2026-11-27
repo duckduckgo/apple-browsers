@@ -864,7 +864,6 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertEqual(navigationDelegate.preventUserInteraction, false)
     }
 
-
     // MARK: - Top sites picker
 
     @MainActor

@@ -243,7 +243,7 @@ The cut-off is the newest issue date among the current token's and the stored ba
 - a stored backup is still deleted in the cases above, so turning the flag back on never brings back a backup that should have been deleted;
 - a renewal or restore that was running stores no new backup.
 
-The apps wire it to the `authBackupToken` feature flag. On macOS the flag is turned off for now, so the macOS app keeps no backup.
+The iOS app passes `{ true }`, so its backup is always enabled. The macOS app wires it to its `authBackupToken` feature flag, which is turned off for now, so the macOS app keeps no backup.
 
 ## Sessions and concurrency
 

@@ -277,7 +277,7 @@ final class AppDependencyProvider: DependencyProvider {
                                             authService: authService,
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
                                             backupStorage: backupTokenStorage,
-                                            isBackupEnabled: { featureFlagger.isFeatureOn(.authBackupToken) },
+                                            isBackupEnabled: { true },
                                             backupUserDefaults: subscriptionUserDefaults,
                                             backupEventMapping: pixelHandler.backupEventMapping())
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)

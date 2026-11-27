@@ -724,6 +724,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220871979531854
     case aiChatNewChatDefaultModel
 
+    /// Offers to translate and summarize pages in another language from the Duck.ai tab-bar button.
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220953171633449
+    case aiChatOfferTranslationAndSummarize
+
     /// Removes tracking parameters without `URLComponents`, which is slow and memory-hungry on very large URLs.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220580902953934
     case fastTrackingParameterFilter
@@ -1164,6 +1168,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), category: .duckAI)
         case .aiChatNewChatDefaultModel:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.newChatDefaultModel), category: .duckAI)
+        case .aiChatOfferTranslationAndSummarize:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.offerTranslationAndSummarize), category: .duckAI)
         case .fastTrackingParameterFilter:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fastTrackingParameterFilter))
         }

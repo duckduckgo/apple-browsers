@@ -660,6 +660,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// New Duck.ai chats start on the default model and effort instead of the last one picked.
     /// https://app.asana.com/1/137249556945/task/1220520342210072
     case newChatDefaultModel
+
+    /// Offers to translate and summarize pages in another language from the Duck.ai tab-bar button (macOS).
+    /// https://app.asana.com/1/137249556945/project/1203972458584429/task/1220953171633449
+    case offerTranslationAndSummarize
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool

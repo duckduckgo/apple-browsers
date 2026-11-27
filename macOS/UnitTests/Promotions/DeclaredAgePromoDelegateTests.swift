@@ -31,7 +31,6 @@ final class DeclaredAgePromoDelegateTests: XCTestCase {
     private var featureFlagger: MockFeatureFlagger!
     private var service: DeclaredAgeServiceMock!
     private var storage: (any ThrowingKeyedStoring<DeclaredAgeSettings>)!
-    private var reinstallUserDetection: MockReinstallingUserDetecting!
     private var window: NSWindow?
 
     override func setUp() {
@@ -40,13 +39,11 @@ final class DeclaredAgePromoDelegateTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = [.declaredAgeRange]
         service = DeclaredAgeServiceMock()
         storage = InMemoryKeyValueStore().throwingKeyedStoring()
-        reinstallUserDetection = MockReinstallingUserDetecting()
         window = NSWindow()
     }
 
     override func tearDown() {
         window = nil
-        reinstallUserDetection = nil
         storage = nil
         service = nil
         featureFlagger = nil
@@ -58,7 +55,6 @@ final class DeclaredAgePromoDelegateTests: XCTestCase {
         let buildType = ApplicationBuildTypeMock()
         buildType.isSparkleBuild = isSparkleBuild
         return DeclaredAgePromoDelegate(requester: requester,
-                                        reinstallUserDetection: reinstallUserDetection,
                                         featureFlagger: featureFlagger,
                                         buildType: buildType,
                                         windowProvider: { self.window })
@@ -153,14 +149,6 @@ final class DeclaredAgePromoDelegateTests: XCTestCase {
         featureFlagger.triggerUpdate()
 
         await eligibility(of: sut, becomes: true)
-    }
-
-    func testWhenAlreadyAskedAndUserReinstalledThenItBecomesEligibleAgain() async {
-        _ = await show(await makeEligibleSUT())
-
-        reinstallUserDetection.isReinstallingUser = true
-
-        await eligibility(of: makeSUT(), becomes: true)
     }
 
     func testWhenFlagTurnsOffThenEligibilityBecomesFalse() async {

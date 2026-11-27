@@ -28,12 +28,9 @@ extension PromoServiceFactory {
         let requester = DeclaredAgeRequester(service: DefaultDeclaredAgeService(),
                                              storage: dependencies.keyValueStore.throwingKeyedStoring())
 
-        let reinstallUserDetection = DefaultReinstallUserDetection(keyValueStore: dependencies.keyValueStore)
-
         let windowControllersManager = dependencies.windowControllersManager
 
         let delegate = DeclaredAgePromoDelegate(requester: requester,
-                                                reinstallUserDetection: reinstallUserDetection,
                                                 featureFlagger: dependencies.featureFlagger,
                                                 buildType: StandardApplicationBuildType(),
                                                 windowProvider: { windowControllersManager.lastKeyMainWindowController?.window })

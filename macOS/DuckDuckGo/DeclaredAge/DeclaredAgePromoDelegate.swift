@@ -28,7 +28,6 @@ import PrivacyConfig
 final class DeclaredAgePromoDelegate: InternalPromoDelegate {
 
     private let requester: DeclaredAgeRequester
-    private let isReinstall: Bool
     private let featureFlagger: FeatureFlagger
     private let featureFlag: FeatureFlag
     private let notificationCenter: NotificationCenter
@@ -37,13 +36,11 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
     private var cancellables = Set<AnyCancellable>()
 
     init(requester: DeclaredAgeRequester,
-         reinstallUserDetection: ReinstallingUserDetecting,
          featureFlagger: FeatureFlagger,
          buildType: ApplicationBuildType,
          notificationCenter: NotificationCenter = .default,
          windowProvider: @escaping @MainActor () -> NSWindow?) {
         self.requester = requester
-        self.isReinstall = reinstallUserDetection.isReinstallingUser
         self.featureFlagger = featureFlagger
         self.featureFlag = buildType.isSparkleBuild ? .declaredAgeRangeSparkle : .declaredAgeRange
         self.notificationCenter = notificationCenter
@@ -76,7 +73,7 @@ final class DeclaredAgePromoDelegate: InternalPromoDelegate {
         }
 
         // Success or failure, the next attempt waits for the next launch.
-        _ = await requester.requestDeclaredAge(isReinstall: isReinstall, in: window)
+        _ = await requester.requestDeclaredAge(in: window)
         isRequestNeededSubject.send(false)
 
         return .noChange
@@ -110,14 +107,14 @@ private extension DeclaredAgePromoDelegate {
     @MainActor
     func refreshIsRequestNeeded() async {
         // A failed check stores nothing, so the next launch retries.
-        guard let isNeeded = try? await requester.isRequestNeeded(isReinstall: isReinstall) else {
+        guard let isNeeded = try? await requester.isRequestNeeded() else {
             return
         }
 
         isRequestNeededSubject.send(isNeeded)
 
         guard isNeeded else {
-            requester.markNotRequired(isReinstall: isReinstall)
+            requester.markNotRequired()
             return
         }
 

@@ -2,9 +2,9 @@ name: Feature Flag Cleanup
 
 # Queues feature flag removals for the Apple agent worker. For each open
 # Apple Feature Flags Registry task with "Auto Removal" set, creates a
-# subtask whose description is the removal prompt, in a project the agent
-# watches, with "Apple Agent Status" set to Ready. The worker then removes
-# the flag and opens the PR.
+# subtask whose description is the removal prompt, in iOS or macOS App
+# Development (by the task's Platform), with "Apple Agent Status" set to
+# Ready. The worker then removes the flag and opens the PR.
 #
 # Manual dispatches default to dry-run (no Asana writes): uncheck dry_run to
 # write for real. Scheduled runs are real (dry_run is unset → falsy), and only

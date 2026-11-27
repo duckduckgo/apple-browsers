@@ -4,8 +4,8 @@
 Finds open tasks in the Apple Feature Flags Registry whose "Auto Removal"
 field is set, and gives each one a subtask that the agent worker picks up:
 the subtask's description is the prompt (``prompt.md`` filled in for the
-flag), it lives in a project the agent watches, and its "Apple Agent Status"
-is Ready. The worker then removes the flag and opens the PR.
+flag), it lives in the agent's project for the flag's platform (iOS or macOS
+App Development), and its "Apple Agent Status" is Ready. The worker then removes the flag and opens the PR.
 
 A Registry task that already has an agent subtask (one with "Apple Agent
 Status" set, or the expected name) is skipped, so the script is safe to run
@@ -45,12 +45,11 @@ REMOVE_FEATURE_OPTION_GID = "1220399141879089"
 AGENT_STATUS_FIELD_GID = "1220497931497848"
 AGENT_STATUS_READY_OPTION_GID = "1220497931497849"
 
-# Projects the agent bot watches, per platform. iOS has none yet.
+# Projects the agent bot watches, per Registry "Platform" option.
 AGENT_PROJECT_GIDS = {
+    "iOS": "414709148257752",  # iOS App Development
     "macOS": "1201037661562251",  # macOS App Development
 }
-
-PLATFORMS = {"iOS", "macOS"}
 
 FLAG_NAME_PATTERN = re.compile(r"Flag name:\s*`?([A-Za-z_][A-Za-z0-9_]*)")
 BOLD_PATTERN = re.compile(r"\*\*(.+?)\*\*")
@@ -173,10 +172,8 @@ def plan_removal(task: dict) -> tuple[Optional[FlagRemoval], str]:
     platform = (enum_value(task, PLATFORM_FIELD_GID) or {}).get("name")
     if not platform:
         return None, "Platform not set"
-    if platform not in PLATFORMS:
-        return None, f"unsupported Platform '{platform}'"
     if platform not in AGENT_PROJECT_GIDS:
-        return None, f"no agent project for {platform} yet"
+        return None, f"unsupported Platform '{platform}'"
 
     match = FLAG_NAME_PATTERN.search(task.get("notes", ""))
     if not match:

@@ -46,28 +46,28 @@ def agent_subtask(name):
 class PlanRemovalTests(unittest.TestCase):
     def test_reads_flag_platform_owner_and_kept_path(self):
         keep = registry_task("1", flag="dataImportHistory")
-        remove = registry_task("2", auto_removal=ffc.REMOVE_FEATURE_OPTION_GID)
+        remove = registry_task("2", platform="iOS", auto_removal=ffc.REMOVE_FEATURE_OPTION_GID)
 
         kept, _ = ffc.plan_removal(keep)
         removed, _ = ffc.plan_removal(remove)
 
         self.assertEqual(kept, ffc.FlagRemoval("1", "dataImportHistory", "macOS", True, "owner"))
+        self.assertEqual(kept.agent_project_gid, "1201037661562251")
         self.assertFalse(removed.keep_enabled_path)
+        self.assertEqual(removed.agent_project_gid, "414709148257752")
 
     def test_skips_tasks_the_agent_cannot_take(self):
         tasks = [
             registry_task("1", auto_removal=None),
-            registry_task("2", platform="iOS"),
-            registry_task("3", platform=None),
-            {**registry_task("4"), "notes": "No flag line"},
-            registry_task("5", platform="Windows"),
+            registry_task("2", platform=None),
+            {**registry_task("3"), "notes": "No flag line"},
+            registry_task("4", platform="Windows"),
         ]
 
         plans = [ffc.plan_removal(task) for task in tasks]
 
-        self.assertEqual([removal for removal, _ in plans], [None] * 5)
-        self.assertEqual(plans[1][1], "no agent project for iOS yet")
-        self.assertEqual(plans[4][1], "unsupported Platform 'Windows'")
+        self.assertEqual([removal for removal, _ in plans], [None] * 4)
+        self.assertEqual(plans[3][1], "unsupported Platform 'Windows'")
 
 
 class RenderPromptTests(unittest.TestCase):

@@ -85,6 +85,37 @@ struct ContextualDialogsManagerPathTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("The Duck.ai path waits for its chat to be deleted until Fire is used", .timeLimit(.minutes(1)))
+    func duckAIPathWaitsForChatDeletionUntilFire() {
+        manager.startPath(.duckAI)
+        manager.state = .ongoing
+
+        #expect(manager.isWaitingForDuckAIChatDeletion)
+
+        manager.fireButtonUsed()
+
+        #expect(!manager.isWaitingForDuckAIChatDeletion)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The search path doesn't wait for a chat to be deleted", .timeLimit(.minutes(1)))
+    func searchPathDoesNotWaitForChatDeletion() {
+        manager.startPath(.search)
+        manager.state = .ongoing
+
+        #expect(!manager.isWaitingForDuckAIChatDeletion)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Completing onboarding stops waiting for the chat to be deleted", .timeLimit(.minutes(1)))
+    func completingOnboardingStopsWaitingForChatDeletion() {
+        manager.startPath(.duckAI)
+        manager.state = .onboardingCompleted
+
+        #expect(!manager.isWaitingForDuckAIChatDeletion)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Ending or restarting onboarding unlocks the UI", .timeLimit(.minutes(1)),
           arguments: [ContextualOnboardingState.onboardingCompleted, .notStarted])
     func endingOnboardingUnlocks(newState: ContextualOnboardingState) async {

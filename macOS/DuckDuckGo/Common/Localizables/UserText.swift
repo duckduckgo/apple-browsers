@@ -637,6 +637,7 @@ struct UserText {
 
     // Fire Dialog – new concise segment labels and link row
     static let fireDialogTitle = NSLocalizedString("fire.dialog.title", value: "Delete Browsing Data", comment: "Title of the Fire dialog")
+    static let fireDialogDuckAIOnboardingTitle = NSLocalizedString("fire.dialog.duck-ai-onboarding.title", value: "Delete Chat Data", comment: "Title of the dialog that deletes browsing data, opened from the browser's Fire Button. New users see this version after their first chat in Duck.ai, DuckDuckGo's private AI chat, and it offers to delete only their Duck.ai chats. \"Duck.ai\" is not part of this text.")
     static let fireDialogSegmentTab = NSLocalizedString("fire.dialog.segment.tab", value: "Tab", comment: "Segment label for Tab scope")
     static let fireDialogSegmentWindow = NSLocalizedString("fire.dialog.segment.window", value: "Window", comment: "Segment label for Window scope")
     static let fireDialogSegmentEverything = NSLocalizedString("fire.dialog.segment.everything", value: "Everything", comment: "Segment label for Everything scope")

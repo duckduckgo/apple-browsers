@@ -52606,6 +52606,18 @@
         }
       }
     },
+    "fire.dialog.duck-ai-onboarding.title" : {
+      "comment" : "Title of the dialog that deletes browsing data, opened from the browser's Fire Button. New users see this version after their first chat in Duck.ai, DuckDuckGo's private AI chat, and it offers to delete only their Duck.ai chats. \"Duck.ai\" is not part of this text.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Chat Data"
+          }
+        }
+      }
+    },
     "fire.dialog.fire-window.close-tabs" : {
       "comment" : "Title of the dialog where the user can close browser tabs and clear data.",
       "extractionState" : "extracted_with_value",

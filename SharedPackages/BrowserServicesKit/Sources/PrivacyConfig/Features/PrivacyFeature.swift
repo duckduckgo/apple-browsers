@@ -1008,7 +1008,6 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newDataImportExperience
     case dataImportSummarySyncPromotion
     case historyImport
-    case sourceFilter
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

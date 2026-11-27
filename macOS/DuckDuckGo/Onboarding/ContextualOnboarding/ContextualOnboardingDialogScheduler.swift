@@ -20,6 +20,7 @@ import AIChat
 import Combine
 import FeatureFlags_macOS
 import Foundation
+import PixelKit
 import PrivacyConfig
 
 /// What a tab view should do with the contextual onboarding dialog it shows.
@@ -53,17 +54,20 @@ final class ContextualOnboardingDialogScheduler {
     static let firstDuckAIAnswerFailsafeDelay: TimeInterval = 2
     /// Runs an action after a delay; cancelling the result skips it. Injected so tests control time.
     private let runAfter: (TimeInterval, @escaping @MainActor () -> Void) -> AnyCancellable
+    private let pixelFiring: PixelFiring?
     private weak var tabWaitingForFirstDuckAIAnswer: Tab?
     private var firstDuckAIAnswerFailsafe: AnyCancellable?
 
     init(dialogProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater,
          featureFlagger: FeatureFlagger,
          isInPopUpWindow: @escaping () -> Bool,
-         runAfter: @escaping (TimeInterval, @escaping @MainActor () -> Void) -> AnyCancellable = ContextualOnboardingDialogScheduler.runAfterDelay) {
+         runAfter: @escaping (TimeInterval, @escaping @MainActor () -> Void) -> AnyCancellable = ContextualOnboardingDialogScheduler.runAfterDelay,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.dialogProvider = dialogProvider
         self.featureFlagger = featureFlagger
         self.isInPopUpWindow = isInPopUpWindow
         self.runAfter = runAfter
+        self.pixelFiring = pixelFiring
     }
 
     /// A navigation finished in the tab on screen: moves onboarding forward, unless it's a reload.
@@ -90,8 +94,7 @@ final class ContextualOnboardingDialogScheduler {
 
     /// Duck.ai's first answer arrived in the tab on screen.
     func firstDuckAIAnswerReceived() {
-        // To do: pixel (dialog triggered by the first answer)
-        askAfterFirstDuckAIAnswer()
+        askAfterFirstDuckAIAnswer(trigger: .answer)
     }
 
     /// The window became key; `displayed` is the dialog on screen, if any.
@@ -141,14 +144,14 @@ final class ContextualOnboardingDialogScheduler {
     private func waitForFirstDuckAIAnswer(in tab: Tab) {
         tabWaitingForFirstDuckAIAnswer = tab
         firstDuckAIAnswerFailsafe = runAfter(Self.firstDuckAIAnswerFailsafeDelay) { [weak self] in
-            // To do: pixel (dialog triggered by the failsafe)
-            self?.askAfterFirstDuckAIAnswer()
+            self?.askAfterFirstDuckAIAnswer(trigger: .timeout)
         }
     }
 
-    private func askAfterFirstDuckAIAnswer() {
+    private func askAfterFirstDuckAIAnswer(trigger: DuckAIOnboardingPathPixel.Trigger) {
         guard let tab = tabWaitingForFirstDuckAIAnswer else { return }
         stopWaitingForFirstDuckAIAnswer()
+        pixelFiring?.fire(DuckAIOnboardingPathPixel.thatsDuckAITriggered(trigger), frequency: .standard)
         guard canShowDialog() else {
             onUpdate(.hide)
             return

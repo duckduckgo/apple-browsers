@@ -19,6 +19,7 @@
 import Combine
 import FeatureFlags_macOS
 import Foundation
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
@@ -29,17 +30,26 @@ struct ContextualOnboardingDialogSchedulerTests {
     private let provider = MockContextualOnboardingState()
     private let sent = SentUpdates()
     private let timer = FakeTimer()
+    private let pixelFiring = PixelKitMock()
     let featureFlagger = MockFeatureFlagger(featuresStub: [FeatureFlag.contextualOnboarding.rawValue: true])
 
     init() {
         provider.state = .ongoing
     }
 
+    /// The `trigger` of each "That's Duck.ai!" trigger pixel sent.
+    private var triggerParameters: [String?] {
+        pixelFiring.actualFireCalls
+            .filter { $0.pixel.name == "onboarding_thats-duckai_trigger_macos" }
+            .map { $0.pixel.parameters?["trigger"] }
+    }
+
     func makeScheduler(isInPopUpWindow: Bool = false) -> ContextualOnboardingDialogScheduler {
         let scheduler = ContextualOnboardingDialogScheduler(dialogProvider: provider,
                                                             featureFlagger: featureFlagger,
                                                             isInPopUpWindow: { isInPopUpWindow },
-                                                            runAfter: { [timer] in timer.runAfter($0, $1) })
+                                                            runAfter: { [timer] in timer.runAfter($0, $1) },
+                                                            pixelFiring: pixelFiring)
         scheduler.onUpdate = { [sent] in sent.updates.append($0) }
         return scheduler
     }
@@ -290,6 +300,7 @@ extension ContextualOnboardingDialogSchedulerTests {
 
         #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
         #expect(provider.dialogTypeForTabCallCount == 1)
+        #expect(triggerParameters == ["answer"])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -304,6 +315,7 @@ extension ContextualOnboardingDialogSchedulerTests {
 
         #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
         #expect(provider.dialogTypeForTabCallCount == 1)
+        #expect(triggerParameters == ["timeout"])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -319,6 +331,7 @@ extension ContextualOnboardingDialogSchedulerTests {
 
         #expect(sent.updates == [.hide, .show(.thatsDuckAI)])
         #expect(provider.dialogTypeForTabCallCount == 1)
+        #expect(triggerParameters == ["timeout"])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -340,6 +353,7 @@ extension ContextualOnboardingDialogSchedulerTests {
 
         #expect(provider.dialogTypeForTabCallCount == (bySwitchingTabs ? 0 : 1))
         #expect(timer.pendingDelays.isEmpty)
+        #expect(triggerParameters.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -152,6 +152,18 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
         XCTAssertTrue(firedParameters(named: "aichat_translate_text").isEmpty)
     }
 
+    func testTranslateCurrentPageDoesNothingWhenPageIsNotAttachable() async {
+        pageContext.isCurrentPageAttachable = false
+        var didExtract = false
+        onExtract = { didExtract = true }
+
+        await makeTranslator(pageContent: .translatablePage).translateCurrentPage()
+
+        XCTAssertFalse(didExtract)
+        XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
+        XCTAssertTrue(firedParameters(named: "aichat_translate_text").isEmpty)
+    }
+
     func testTranslateCurrentPageDoesNothingWithoutCurrentTab() async {
         currentTab = nil
 
@@ -261,6 +273,7 @@ private final class PageContextMock: PageContextProtocol {
     var appendSelectionContextCallCount = 0
     var suppressCallCount = 0
     var requestPageContextAttachmentCallCount = 0
+    var isCurrentPageAttachable = true
 
     func appendSelectionContext(_ selection: AIChatSelectionContextData) {
         appendSelectionContextCallCount += 1

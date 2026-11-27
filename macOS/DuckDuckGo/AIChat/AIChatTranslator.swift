@@ -132,7 +132,9 @@ final class AIChatTranslator: AIChatTranslating {
     /// translate and summarize it into the user's language.
     @MainActor
     func translateCurrentPage() async {
-        guard aiChatMenuConfig.shouldDisplayTranslationMenuItem, let tab = currentTabProvider() else {
+        guard aiChatMenuConfig.shouldDisplayTranslationMenuItem,
+              let tab = currentTabProvider(),
+              currentPageContextProvider()?.isCurrentPageAttachable == true else {
             return
         }
         let url = tab.url

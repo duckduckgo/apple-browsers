@@ -31040,58 +31040,10 @@
       "comment" : "Message of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. It invites them to delete that chat with the browser's Fire Button, which clears browsing data. Keep \"Fire Button\" as the app's name for it, and keep the * around it: they make it bold.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Private KI-Chats, die du jederzeit mit dem *Fire Button* löschen kannst. Probier’s doch mal aus! 🔥"
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Private AI chats you can delete anytime with the *Fire Button*. Give it a try! 🔥"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chats privados de IA que puedes eliminar en cualquier momento con el *Fire Button*. ¡Pruébalo! 🔥"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les chats IA privés que vous pouvez supprimer à tout moment avec le *Fire Button*. Essayez par vous-même ! 🔥"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat AI private che puoi eliminare in qualsiasi momento con il *Fire Button*. Prova! 🔥"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privé AI-chats kun je op elk moment verwijderen met de *Fire Button*. Probeer het maar! 🔥"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prywatne czaty AI, które możesz usunąć w dowolnym momencie za pomocą *Fire Button*. Spróbuj! 🔥"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conversas privadas de IA que podes eliminar a qualquer momento com o *Fire Button*. Experimenta! 🔥"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Приватные чаты с ИИ всегда можно стереть с помощью кнопки *Fire Button*. Убедитесь сами! 🔥"
           }
         }
       }
@@ -31100,58 +31052,10 @@
       "comment" : "Title of a short tip shown to new users of the browser, right after they get their first answer in Duck.ai, DuckDuckGo's private AI chat. \"Duck.ai\" is a product name: keep it as is.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Das ist Duck.ai!"
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "That’s Duck.ai!"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¡Eso es Duck.ai!"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "C'est Duck.ai !"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Questo è Duck.ai!"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dat is Duck.ai!"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "To jest Duck.ai!"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "É o Duck.ai!"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Это Duck.ai!"
           }
         }
       }

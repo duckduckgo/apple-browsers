@@ -32,6 +32,7 @@ final class DeclaredAgePrompt {
     private var isRequestNeeded = false
     private var isPresenting = false
     private var pendingActions: [() -> Void] = []
+    private weak var requestAnchor: UIViewController?
     private var cancellables = Set<AnyCancellable>()
 
     /// Returns nil while the request has to wait.
@@ -58,6 +59,7 @@ final class DeclaredAgePrompt {
         // Success or failure, the next attempt waits for the next launch.
         isRequestNeeded = false
         isPresenting = true
+        requestAnchor = anchor
 
         Task {
             _ = await requester.requestDeclaredAge(in: anchor)
@@ -76,6 +78,16 @@ final class DeclaredAgePrompt {
 
         pendingActions.append(action)
         return true
+    }
+
+    /// Apple can drop its sheet in the background without finishing the request, so it's given up once the sheet is gone.
+    func handleAppForegrounded() {
+        guard isPresenting, requestAnchor?.presentedViewController == nil else {
+            return
+        }
+
+        isPresenting = false
+        pendingActions = []
     }
 }
 

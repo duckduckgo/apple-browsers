@@ -794,6 +794,7 @@ final class MainCoordinator {
         daxGreetingActivity.recordForegroundOpen()
         daxDialogs.recordForegroundOpen()
         homePageConfiguration.handleAppForegrounded()
+        declaredAgePrompt.handleAppForegrounded()
 
         // Apply tracker animation suppression based on launch source
         // Must be called after launchSourceManager.handleAppAction sets the source

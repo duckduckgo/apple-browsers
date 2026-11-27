@@ -34,6 +34,8 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
     private var coordinator: SelectionActionAIChatCoordinatorMock!
     private var pageContext: PageContextMock!
     private var pixelFiring: PixelKitMock!
+    private var currentTab: Tab?
+    private var onExtract: (() -> Void)?
 
     override func setUp() {
         super.setUp()
@@ -44,6 +46,7 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
         coordinator = SelectionActionAIChatCoordinatorMock()
         pageContext = PageContextMock()
         pixelFiring = PixelKitMock()
+        currentTab = Tab(content: .url(URL(string: "https://example.es/")!, credential: nil, source: .ui))
     }
 
     override func tearDown() {
@@ -51,6 +54,8 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
         coordinator = nil
         pageContext = nil
         pixelFiring = nil
+        currentTab = nil
+        onExtract = nil
         super.tearDown()
     }
 
@@ -138,10 +143,41 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
         XCTAssertEqual(pageContext.suppressCallCount, 0)
     }
 
-    func testTranslateCurrentPageDoesNothingWhenPageIsNotAttachable() async {
-        let page = AIChatPageContextData(title: "Local", favicon: [], url: "file:///tmp/page.html", content: "", truncated: false, fullContentLength: 0, attachable: false)
+    func testTranslateCurrentPageDoesNothingWhenPageHasNoContent() async {
+        let page = AIChatPageContextData(title: "Empty", favicon: [], url: "https://example.es/", content: "", truncated: false, fullContentLength: 0)
 
         await makeTranslator(pageContent: page).translateCurrentPage()
+
+        XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
+        XCTAssertTrue(firedParameters(named: "aichat_translate_text").isEmpty)
+    }
+
+    func testTranslateCurrentPageDoesNothingWithoutCurrentTab() async {
+        currentTab = nil
+
+        await makeTranslator(pageContent: .translatablePage).translateCurrentPage()
+
+        XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
+    }
+
+    func testTranslateCurrentPageDropsPageWhenTabChangesDuringExtraction() async {
+        onExtract = { [unowned self] in
+            currentTab = Tab(content: .url(URL(string: "https://other.example/")!, credential: nil, source: .ui))
+        }
+
+        await makeTranslator(pageContent: .translatablePage).translateCurrentPage()
+
+        XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
+        XCTAssertTrue(firedParameters(named: "aichat_translate_text").isEmpty)
+    }
+
+    func testTranslateCurrentPageDropsPageWhenTabNavigatesDuringExtraction() async {
+        let tab = currentTab
+        onExtract = {
+            _ = tab?.setContent(.url(URL(string: "https://example.es/otra")!, credential: nil, source: .ui))
+        }
+
+        await makeTranslator(pageContent: .translatablePage).translateCurrentPage()
 
         XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
         XCTAssertTrue(firedParameters(named: "aichat_translate_text").isEmpty)
@@ -159,7 +195,15 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
 
     func testPageTranslationQueryNamesTargetLanguage() {
         XCTAssertTrue(AIChatTranslator.pageTranslationQuery(targetLanguage: "es-ES").contains("Spanish"))
-        XCTAssertTrue(AIChatTranslator.pageTranslationQuery(targetLanguage: "zz-ZZ").contains("zz-ZZ"))
+        XCTAssertTrue(AIChatTranslator.pageTranslationQuery(targetLanguage: "zz-ZZ").contains("zz"))
+    }
+
+    func testPageTranslationQueryKeepsScript() {
+        let traditional = AIChatTranslator.pageTranslationQuery(targetLanguage: "zh-Hant-TW")
+        let simplified = AIChatTranslator.pageTranslationQuery(targetLanguage: "zh-Hans-CN")
+
+        XCTAssertTrue(traditional.contains("Traditional"), traditional)
+        XCTAssertTrue(simplified.contains("Simplified"), simplified)
     }
 
     func testAttachSelectionDoesNothingWhenMenuItemDisabled() {
@@ -192,7 +236,11 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
                          aiChatTabOpener: SelectionActionAIChatTabOpenerMock(),
                          pixelFiring: pixelFiring,
                          currentPageContextProvider: { [pageContext] in pageContext },
-                         currentPageContentProvider: { pageContent },
+                         currentTabProvider: { [unowned self] in currentTab },
+                         pageContentExtractor: { [unowned self] _ in
+                             onExtract?()
+                             return pageContent
+                         },
                          aiChatConversationSourceHandler: AIChatConversationSourceHandler())
     }
 
@@ -263,4 +311,8 @@ private struct SelectionActionAIChatTabOpenerMock: AIChatTabOpening {
     func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior) {}
     func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {}
     func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {}
+}
+
+private extension AIChatPageContextData {
+    static let translatablePage = AIChatPageContextData(title: "Página", favicon: [], url: "https://example.es/", content: "Hola", truncated: false, fullContentLength: 4)
 }

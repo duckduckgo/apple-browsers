@@ -84,7 +84,8 @@ final class AIChatTranslator: AIChatTranslating {
     private let aiChatTabOpener: AIChatTabOpening
     private let pixelFiring: PixelFiring?
     private let currentPageContextProvider: () -> PageContextProtocol?
-    private let currentPageContentProvider: @MainActor () async -> AIChatPageContextData?
+    private let currentTabProvider: @MainActor () -> Tab?
+    private let pageContentExtractor: @MainActor (Tab) async -> AIChatPageContextData?
     private let aiChatConversationSourceHandler: AIChatConversationSourceHandler
 
     init(
@@ -93,7 +94,8 @@ final class AIChatTranslator: AIChatTranslating {
         aiChatTabOpener: AIChatTabOpening,
         pixelFiring: PixelFiring?,
         currentPageContextProvider: @escaping () -> PageContextProtocol?,
-        currentPageContentProvider: @escaping @MainActor () async -> AIChatPageContextData? = { nil },
+        currentTabProvider: @escaping @MainActor () -> Tab?,
+        pageContentExtractor: @escaping @MainActor (Tab) async -> AIChatPageContextData?,
         aiChatConversationSourceHandler: AIChatConversationSourceHandler = Application.appDelegate.aiChatConversationSourceHandler
     ) {
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -101,7 +103,8 @@ final class AIChatTranslator: AIChatTranslating {
         self.aiChatTabOpener = aiChatTabOpener
         self.pixelFiring = pixelFiring
         self.currentPageContextProvider = currentPageContextProvider
-        self.currentPageContentProvider = currentPageContentProvider
+        self.currentTabProvider = currentTabProvider
+        self.pageContentExtractor = pageContentExtractor
         self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
     }
 
@@ -129,9 +132,14 @@ final class AIChatTranslator: AIChatTranslating {
     /// translate and summarize it into the user's language.
     @MainActor
     func translateCurrentPage() async {
-        guard aiChatMenuConfig.shouldDisplayTranslationMenuItem,
-              let page = await currentPageContentProvider(),
-              page.attachable != false else {
+        guard aiChatMenuConfig.shouldDisplayTranslationMenuItem, let tab = currentTabProvider() else {
+            return
+        }
+        let url = tab.url
+        // Reading the page is async: drop it if the user moved to another tab or page meanwhile,
+        // since the prompt goes to whichever tab is current.
+        guard let page = await pageContentExtractor(tab), page.hasAttachedPage,
+              currentTabProvider() === tab, tab.url == url else {
             return
         }
 
@@ -144,8 +152,7 @@ final class AIChatTranslator: AIChatTranslating {
 
     /// Sent to the model rather than shown in the UI, so it stays in English.
     static func pageTranslationQuery(targetLanguage: String) -> String {
-        let languageCode = Locale.components(fromIdentifier: targetLanguage)[NSLocale.Key.languageCode.rawValue] ?? targetLanguage
-        let languageName = Locale(identifier: "en").localizedString(forLanguageCode: languageCode) ?? targetLanguage
+        let languageName = Locale(identifier: "en").localizedString(forIdentifier: targetLanguage) ?? targetLanguage
         return "Translate this page into \(languageName) and summarize it."
     }
 

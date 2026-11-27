@@ -599,7 +599,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
             wideEvent.startFlow(data)
             
             do {
-                try await subFeature.restoreAccountFromAppStorePurchase()
+                try await subFeature.restoreAccountFromAppStorePurchase(wideEventData: data)
                 
                 data.appleAccountRestoreDuration?.complete()
                 wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })

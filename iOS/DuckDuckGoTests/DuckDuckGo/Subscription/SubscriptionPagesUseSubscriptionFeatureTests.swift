@@ -55,6 +55,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var mockSubscriptionManager: SubscriptionManagerMock!
     var mockStripePurchaseFlow: StripePurchaseFlowMock!
     var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
+    var mockAppStoreRestoreFlow: AppStoreRestoreFlowMock!
     var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     var mockNotificationCenter: NotificationCenter!
     var mockWideEvent: WideEventMock!
@@ -69,6 +70,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager = SubscriptionManagerMock()
         mockStripePurchaseFlow = StripePurchaseFlowMock(prepareSubscriptionPurchaseResult: .success((purchaseUpdate: .completed, accountCreationDuration: nil)))
         mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
+        mockAppStoreRestoreFlow = AppStoreRestoreFlowMock()
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
         mockNotificationCenter = NotificationCenter()
         mockWideEvent = WideEventMock()
@@ -88,7 +90,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: "",
             appStorePurchaseFlow: mockAppStorePurchaseFlow,
-            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            appStoreRestoreFlow: mockAppStoreRestoreFlow,
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent,
@@ -104,6 +106,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockSubscriptionManager = nil
         mockStripePurchaseFlow = nil
         mockAppStorePurchaseFlow = nil
+        mockAppStoreRestoreFlow = nil
         mockSubscriptionFeatureAvailability = nil
         mockNotificationCenter = nil
         mockWideEvent = nil
@@ -112,6 +115,37 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         super.tearDown()
     }
     
+    // MARK: - Restore from App Store purchase
+
+    func testRestoreAccountFromAppStorePurchase_SyncsWithAppStoreBeforeRestoring() async throws {
+        // Given
+        mockAppStoreRestoreFlow.restoreAccountFromPastPurchaseResult = .success("transactionJWS")
+        let wideEventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+
+        // When
+        try await sut.restoreAccountFromAppStorePurchase(wideEventData: wideEventData)
+
+        // Then
+        XCTAssertTrue(mockAppStoreRestoreFlow.syncAndRestoreAccountFromPastPurchaseCalled)
+        XCTAssertFalse(mockAppStoreRestoreFlow.restoreAccountFromPastPurchaseCalled)
+        XCTAssertTrue(mockAppStoreRestoreFlow.syncAndRestoreAccountFromPastPurchaseWideEventData === wideEventData)
+    }
+
+    func testRestoreAccountFromAppStorePurchase_WhenNoTransactionAfterSync_ThrowsRestoreFailedDueToNoSubscription() async {
+        // Given
+        mockAppStoreRestoreFlow.restoreAccountFromPastPurchaseResult = .failure(.missingAccountOrTransactions)
+
+        // When
+        do {
+            try await sut.restoreAccountFromAppStorePurchase(wideEventData: nil)
+            XCTFail("Expected restore to fail")
+        } catch {
+            // Then
+            XCTAssertEqual(error as? UseSubscriptionError, .restoreFailedDueToNoSubscription)
+            XCTAssertTrue(mockAppStoreRestoreFlow.syncAndRestoreAccountFromPastPurchaseCalled)
+        }
+    }
+
     func testGetFeatureConfig_WhenStripeSupported_ReturnsCorrectConfig() async throws {
         // Given
         mockSubscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled = true

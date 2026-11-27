@@ -688,6 +688,22 @@
                 "enum": [-1, 10000, 30000, 60000, 300000, 600000, 900000]
             },
             {
+                "key": "feature.data.ext.app_store_sync_result",
+                "type": "string",
+                "description": "Outcome of syncing transactions with the App Store before an Apple Account restore",
+                "enum": ["success", "user_cancelled", "failure"]
+            },
+            {
+                "key": "feature.data.ext.app_store_sync_error_domain",
+                "type": "string",
+                "description": "Domain of the error the App Store sync threw"
+            },
+            {
+                "key": "feature.data.ext.app_store_sync_error_code",
+                "type": "integer",
+                "description": "Code of the error the App Store sync threw"
+            },
+            {
                 "key": "feature.data.ext.funnel_name",
                 "type": "string",
                 "description": "The funnel that led to the restore flow",

@@ -838,3 +838,51 @@ private struct MockMonthlyFreeTrialDecider: MonthlyFreeTrialDeciding {
         shouldOffer
     }
 }
+
+// MARK: - Most recent transaction selection
+
+extension StorePurchaseManagerTests {
+
+    private struct PurchaseRecord: Equatable {
+        let id: String
+        let purchaseDate: Date
+        var isVerified = true
+    }
+
+    private func mostRecentVerified(in records: [PurchaseRecord]) -> PurchaseRecord? {
+        DefaultStorePurchaseManager.mostRecentVerified(in: records, isVerified: \.isVerified, purchaseDate: \.purchaseDate)
+    }
+
+    func testMostRecentVerifiedReturnsNilWhenThereAreNoTransactions() {
+        XCTAssertNil(mostRecentVerified(in: []))
+    }
+
+    func testMostRecentVerifiedReturnsLatestPurchaseWhenOlderTransactionComesFirst() {
+        let expiredMonthly = PurchaseRecord(id: "expired", purchaseDate: Date(timeIntervalSince1970: 1_000))
+        let renewal = PurchaseRecord(id: "renewal", purchaseDate: Date(timeIntervalSince1970: 3_000))
+        let previousRenewal = PurchaseRecord(id: "previous", purchaseDate: Date(timeIntervalSince1970: 2_000))
+
+        XCTAssertEqual(mostRecentVerified(in: [expiredMonthly, renewal, previousRenewal]), renewal)
+    }
+
+    func testMostRecentVerifiedReturnsFirstItemWhenPurchaseDatesAreEqual() {
+        let date = Date(timeIntervalSince1970: 1_000)
+        let first = PurchaseRecord(id: "first", purchaseDate: date)
+        let second = PurchaseRecord(id: "second", purchaseDate: date)
+
+        XCTAssertEqual(mostRecentVerified(in: [first, second]), first)
+    }
+
+    func testMostRecentVerifiedSkipsNewerUnverifiedTransaction() {
+        let verified = PurchaseRecord(id: "verified", purchaseDate: Date(timeIntervalSince1970: 1_000))
+        let unverified = PurchaseRecord(id: "unverified", purchaseDate: Date(timeIntervalSince1970: 2_000), isVerified: false)
+
+        XCTAssertEqual(mostRecentVerified(in: [verified, unverified]), verified)
+    }
+
+    func testMostRecentVerifiedReturnsNilWhenNoTransactionIsVerified() {
+        let unverified = PurchaseRecord(id: "unverified", purchaseDate: Date(timeIntervalSince1970: 1_000), isVerified: false)
+
+        XCTAssertNil(mostRecentVerified(in: [unverified]))
+    }
+}

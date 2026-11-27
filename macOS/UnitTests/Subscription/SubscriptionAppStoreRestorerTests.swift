@@ -167,6 +167,51 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         XCTAssertTrue(assertNoOtherSubscriptionPixelsExcept(expectedPixels), "Unexpected Subscription pixels fired")
     }
 
+    // MARK: - App Store sync outcome on the restore wide event
+
+    func testRestoreAppStoreSubscriptionWhenSyncSucceedsRecordsSyncSuccessOnWideEvent() async throws {
+        // Given
+        let wideEventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+        let restorer = makeRestorer(wideEventData: wideEventData)
+        appStoreRestoreFlow.restoreAccountFromPastPurchaseResult = .success("")
+
+        // When
+        await restorer.restoreAppStoreSubscription()
+
+        // Then
+        XCTAssertEqual(wideEventData.appStoreSyncResult, .success)
+        XCTAssertNil(wideEventData.appStoreSyncErrorDomain)
+    }
+
+    func testRestoreAppStoreSubscriptionWhenSyncFailsAndUserProceedsRecordsSyncFailureOnWideEvent() async throws {
+        // Given
+        let wideEventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+        let restorer = makeRestorer(wideEventData: wideEventData)
+        storePurchaseManager.syncAppleIDAccountResultError = StoreKitError.unknown
+        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        appStoreRestoreFlow.restoreAccountFromPastPurchaseResult = .success("")
+
+        // When
+        await restorer.restoreAppStoreSubscription()
+
+        // Then
+        XCTAssertEqual(wideEventData.appStoreSyncResult, .failure)
+        XCTAssertEqual(wideEventData.appStoreSyncErrorDomain, (StoreKitError.unknown as NSError).domain)
+        XCTAssertEqual(wideEventData.appStoreSyncErrorCode, (StoreKitError.unknown as NSError).code)
+    }
+
+    private func makeRestorer(wideEventData: SubscriptionRestoreWideEventData) -> DefaultSubscriptionAppStoreRestorerV2 {
+        DefaultSubscriptionAppStoreRestorerV2(
+            subscriptionManager: subscriptionManager,
+            subscriptionErrorReporter: subscriptionEventReporter,
+            appStoreRestoreFlow: appStoreRestoreFlow,
+            uiHandler: uiHandler,
+            subscriptionRestoreWideEventData: wideEventData,
+            featureFlagger: featureFlagger,
+            wideEvent: wideEvent
+        )
+    }
+
     // MARK: - Tests for different restore failures
 
     func testRestoreAppStoreSubscriptionWhenRestoreFailsDueToMissingAccountOrTransactions() async throws {

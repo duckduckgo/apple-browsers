@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import StoreKit
 @testable import Subscription
 import SubscriptionTestingUtilities
 @_spi(Testing) @testable import Networking
@@ -162,6 +163,133 @@ final class AppStoreRestoreFlowTests: XCTestCase {
         case .success:
             XCTFail("Unexpected success")
         }
+    }
+
+    // MARK: - syncAndRestoreAccountFromPastPurchase Tests
+
+    func test_syncAndRestoreAccountFromPastPurchase_whenTransactionOnlyAppearsAfterSync_returnsSuccess() async {
+        // Given the device has no local transaction until the App Store sync delivers it
+        storePurchaseManagerMock.mostRecentTransactionResult = nil
+        storePurchaseManagerMock.onSyncAppleIDAccount = { [storePurchaseManagerMock] in
+            storePurchaseManagerMock?.mostRecentTransactionResult = "syncedTransactionJWS"
+        }
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+
+        // When
+        let result = await sut.syncAndRestoreAccountFromPastPurchase(wideEventData: nil)
+
+        // Then
+        XCTAssertTrue(storePurchaseManagerMock.syncAppleIDAccountCalled)
+        XCTAssertEqual(try? result.get(), "syncedTransactionJWS")
+    }
+
+    func test_syncAndRestoreAccountFromPastPurchase_syncsBeforeReadingTransactions() async {
+        // Given
+        var mostRecentTransactionReadBeforeSync: Bool?
+        storePurchaseManagerMock.onSyncAppleIDAccount = { [storePurchaseManagerMock] in
+            mostRecentTransactionReadBeforeSync = storePurchaseManagerMock?.mostRecentTransactionCalled
+        }
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+
+        // When
+        await sut.syncAndRestoreAccountFromPastPurchase(wideEventData: nil)
+
+        // Then
+        XCTAssertEqual(mostRecentTransactionReadBeforeSync, false)
+        XCTAssertTrue(storePurchaseManagerMock.mostRecentTransactionCalled)
+    }
+
+    func test_syncAndRestoreAccountFromPastPurchase_whenSyncFails_restoresFromLocalTransaction() async {
+        // Given
+        storePurchaseManagerMock.syncAppleIDAccountResultError = StoreKitError.networkError(URLError(.notConnectedToInternet))
+        storePurchaseManagerMock.mostRecentTransactionResult = "localTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+
+        // When
+        let result = await sut.syncAndRestoreAccountFromPastPurchase(wideEventData: nil)
+
+        // Then
+        XCTAssertTrue(storePurchaseManagerMock.syncAppleIDAccountCalled)
+        XCTAssertEqual(try? result.get(), "localTransactionJWS")
+        XCTAssertTrue(pendingTransactionHandlerMock.handleSubscriptionActivatedCalled)
+    }
+
+    func test_syncAndRestoreAccountFromPastPurchase_whenUserCancelsSyncAndNoLocalTransaction_returnsMissingAccountOrTransactionsError() async {
+        // Given
+        storePurchaseManagerMock.syncAppleIDAccountResultError = StoreKitError.userCancelled
+        storePurchaseManagerMock.mostRecentTransactionResult = nil
+
+        // When
+        let result = await sut.syncAndRestoreAccountFromPastPurchase(wideEventData: nil)
+
+        // Then
+        XCTAssertTrue(storePurchaseManagerMock.mostRecentTransactionCalled)
+        switch result {
+        case .failure(let error):
+            XCTAssertEqual(error, .missingAccountOrTransactions)
+        case .success:
+            XCTFail("Unexpected success")
+        }
+    }
+
+    func test_syncAndRestoreAccountFromPastPurchase_whenSyncSucceeds_recordsSuccessOnWideEvent() async {
+        // Given
+        let wideEventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+
+        // When
+        await sut.syncAndRestoreAccountFromPastPurchase(wideEventData: wideEventData)
+
+        // Then
+        XCTAssertEqual(wideEventData.appStoreSyncResult, .success)
+        XCTAssertNil(wideEventData.appStoreSyncErrorDomain)
+        XCTAssertNil(wideEventData.appStoreSyncErrorCode)
+    }
+
+    func test_syncAndRestoreAccountFromPastPurchase_whenSyncFails_recordsFailureWithErrorOnWideEvent() async {
+        // Given
+        let wideEventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+        let syncError = NSError(domain: "TestSyncDomain", code: 42)
+        storePurchaseManagerMock.syncAppleIDAccountResultError = syncError
+        storePurchaseManagerMock.mostRecentTransactionResult = "localTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+
+        // When
+        let result = await sut.syncAndRestoreAccountFromPastPurchase(wideEventData: wideEventData)
+
+        // Then
+        XCTAssertEqual(try? result.get(), "localTransactionJWS")
+        XCTAssertEqual(wideEventData.appStoreSyncResult, .failure)
+        XCTAssertEqual(wideEventData.appStoreSyncErrorDomain, "TestSyncDomain")
+        XCTAssertEqual(wideEventData.appStoreSyncErrorCode, 42)
+    }
+
+    func test_syncAndRestoreAccountFromPastPurchase_whenUserCancelsSync_recordsUserCancelledOnWideEvent() async {
+        // Given
+        let wideEventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+        storePurchaseManagerMock.syncAppleIDAccountResultError = StoreKitError.userCancelled
+        storePurchaseManagerMock.mostRecentTransactionResult = nil
+
+        // When
+        await sut.syncAndRestoreAccountFromPastPurchase(wideEventData: wideEventData)
+
+        // Then
+        XCTAssertEqual(wideEventData.appStoreSyncResult, .userCancelled)
+        XCTAssertEqual(wideEventData.appStoreSyncErrorDomain, (StoreKitError.userCancelled as NSError).domain)
+    }
+
+    func test_restoreAccountFromPastPurchase_doesNotSyncWithAppStore() async {
+        // Given
+        storePurchaseManagerMock.mostRecentTransactionResult = "lastTransactionJWS"
+        subscriptionManagerMock.resultSubscription = .success(SubscriptionMockFactory.appleSubscription)
+
+        // When
+        await sut.restoreAccountFromPastPurchase()
+
+        // Then
+        XCTAssertFalse(storePurchaseManagerMock.syncAppleIDAccountCalled)
     }
 }
 

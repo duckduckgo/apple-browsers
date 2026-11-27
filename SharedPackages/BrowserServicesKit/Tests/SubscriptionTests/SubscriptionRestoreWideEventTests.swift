@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import StoreKit
 import WideEvent
 @testable import Subscription
 
@@ -42,6 +43,47 @@ final class SubscriptionRestoreWideEventTests: XCTestCase {
 
         XCTAssertNil(parameters["feature.data.ext.email_address_restore_latency_ms_bucketed"])
         XCTAssertNil(parameters["feature.data.ext.email_address_restore_last_url"])
+    }
+
+    func testPixelParameters_withoutAppStoreSync_omitsSyncParameters() {
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+
+        let parameters = eventData.pixelParameters()
+
+        XCTAssertNil(parameters["feature.data.ext.app_store_sync_result"])
+        XCTAssertNil(parameters["feature.data.ext.app_store_sync_error_domain"])
+        XCTAssertNil(parameters["feature.data.ext.app_store_sync_error_code"])
+    }
+
+    func testPixelParameters_withSuccessfulAppStoreSync() {
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+
+        eventData.recordAppStoreSync(error: nil)
+
+        let parameters = eventData.pixelParameters()
+        XCTAssertEqual(parameters["feature.data.ext.app_store_sync_result"], "success")
+        XCTAssertNil(parameters["feature.data.ext.app_store_sync_error_domain"])
+        XCTAssertNil(parameters["feature.data.ext.app_store_sync_error_code"])
+    }
+
+    func testPixelParameters_withFailedAppStoreSync() {
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+
+        eventData.recordAppStoreSync(error: NSError(domain: "TestSyncDomain", code: 42))
+
+        let parameters = eventData.pixelParameters()
+        XCTAssertEqual(parameters["feature.data.ext.app_store_sync_result"], "failure")
+        XCTAssertEqual(parameters["feature.data.ext.app_store_sync_error_domain"], "TestSyncDomain")
+        XCTAssertEqual(parameters["feature.data.ext.app_store_sync_error_code"], "42")
+    }
+
+    func testPixelParameters_withCancelledAppStoreSync() {
+        let eventData = SubscriptionRestoreWideEventData(restorePlatform: .appleAccount)
+
+        eventData.recordAppStoreSync(error: StoreKitError.userCancelled)
+
+        let parameters = eventData.pixelParameters()
+        XCTAssertEqual(parameters["feature.data.ext.app_store_sync_result"], "user_cancelled")
     }
 
     func testPixelParameters_withEmailAddressFlows() {

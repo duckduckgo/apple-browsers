@@ -2083,7 +2083,7 @@ extension SettingsViewModel {
 
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager())
-        let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
+        let result = await appStoreRestoreFlow.syncAndRestoreAccountFromPastPurchase(wideEventData: nil)
         switch result {
         case .success:
             DispatchQueue.main.async {

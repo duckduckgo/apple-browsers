@@ -150,7 +150,7 @@ final class SubscriptionRestoreViewModel: ObservableObject {
             state.transactionStatus = .restoring
             state.activationResult = .unknown
             do {
-                try await subFeature.restoreAccountFromAppStorePurchase()
+                try await subFeature.restoreAccountFromAppStorePurchase(wideEventData: data)
                 
                 PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseStoreSuccess,
                               frequency: .legacyDailyAndCount)

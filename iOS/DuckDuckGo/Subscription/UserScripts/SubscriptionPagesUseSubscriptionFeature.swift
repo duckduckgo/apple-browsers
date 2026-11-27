@@ -158,7 +158,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
 
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async
     func pushNotificationsPermissionChanged(into webView: WKWebView?) async -> DefaultSubscriptionPagesUseSubscriptionFeature.NotificationsPermissionStatus?
-    func restoreAccountFromAppStorePurchase() async throws
+    func restoreAccountFromAppStorePurchase(wideEventData: SubscriptionRestoreWideEventData?) async throws
     func cleanup()
 }
 
@@ -901,9 +901,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     // MARK: Native methods - Called from ViewModels
 
-    func restoreAccountFromAppStorePurchase() async throws {
+    func restoreAccountFromAppStorePurchase(wideEventData: SubscriptionRestoreWideEventData?) async throws {
         setTransactionStatus(.restoring)
-        let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
+        let result = await appStoreRestoreFlow.syncAndRestoreAccountFromPastPurchase(wideEventData: wideEventData)
 
         switch result {
         case .success:

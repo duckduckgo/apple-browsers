@@ -74,7 +74,7 @@ final class TopSitesPickerFaviconSeederTests: XCTestCase {
         XCTAssertEqual(faviconStore.stored, [
             StoredFavicon(imageData: youtubeIcon,
                           faviconURL: URL(string: "duck://onboarding/assets/img/v4/top-sites/youtube.png"),
-                          documentURL: URL(string: "https://www.youtube.com")!)
+                          documentURL: URL(string: "https://www.youtube.com/")!)
         ])
     }
 }

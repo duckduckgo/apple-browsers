@@ -49,8 +49,15 @@ final class TopSitesPickerFaviconSeeder: TopSitesPickerFaviconSeederProtocol {
                   let iconData = try? Data(contentsOf: iconFileURL) else {
                 continue
             }
-            try? await faviconStore.storeFavicon(iconData, with: pageIconURL(for: site.id), for: site.url)
+            try? await faviconStore.storeFavicon(iconData, with: pageIconURL(for: site.id), for: homePageURL(for: site.url))
         }
+    }
+
+    /// A visit loads the home page as `https://host/`, so storing the icon for that URL lets the fetched favicon replace it.
+    private func homePageURL(for url: URL) -> URL {
+        guard url.path.isEmpty, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
+        components.path = "/"
+        return components.url ?? url
     }
 
     /// The page can send any id, so only a plain name maps to a file in the icons folder.

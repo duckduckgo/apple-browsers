@@ -6272,16 +6272,24 @@ extension MainViewController: BrowserChromeDelegate {
 
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
         if let insets = delegateFindObscuredInsets { return insets }
-        let chromeInsets = UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
-                                       left: 0,
-                                       bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
-                                       right: 0)
+        let chromeInsets = floatingBarsObscuredInsets(for: barsVisibilityPercent)
         guard isFloatingUIEnabled, !isKeyboardOwnedByOmnibar else { return chromeInsets }
         return BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
                                                     keyboardFrame: viewCoordinator.isWebInputEditing
                                                         ? floatingWebInputKeyboardFrame
                                                         : view.convert(latestKeyboardFrame, from: nil),
                                                     viewBounds: view.bounds)
+    }
+
+    func floatingChromeObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets? {
+        viewCoordinator.isWebInputEditing ? nil : floatingBarsObscuredInsets(for: barsVisibilityPercent)
+    }
+
+    private func floatingBarsObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
+        UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
+                     left: 0,
+                     bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
+                     right: 0)
     }
 
     private var delegateFindObscuredInsets: UIEdgeInsets? {

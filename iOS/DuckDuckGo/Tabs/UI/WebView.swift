@@ -66,6 +66,7 @@ final class WebView: WKWebView {
     private enum LayoutParametersSelector {
         static let override = NSSelectorFromString("_overrideLayoutParametersWithMinimumLayoutSize:minimumUnobscuredSizeOverride:maximumUnobscuredSizeOverride:")
         static let clear = NSSelectorFromString("_clearOverrideLayoutParameters")
+        static let overrideTypeEncoding = "v@:{CGSize=dd}{CGSize=dd}{CGSize=dd}"
     }
 
     var floatingChromeInsets: FloatingChromeInsets? {
@@ -91,7 +92,9 @@ final class WebView: WKWebView {
                                           minimumUnobscuredSize: bounds.inset(by: floatingChromeInsets.maximum).size,
                                           maximumUnobscuredSize: bounds.inset(by: floatingChromeInsets.minimum).size)
         guard parameters != appliedLayoutParameters,
-              let method = class_getInstanceMethod(object_getClass(self), LayoutParametersSelector.override) else { return }
+              let method = class_getInstanceMethod(object_getClass(self), LayoutParametersSelector.override),
+              let typeEncoding = method_getTypeEncoding(method),
+              String(cString: typeEncoding).filter({ !$0.isNumber }) == LayoutParametersSelector.overrideTypeEncoding else { return }
         typealias Override = @convention(c) (WKWebView, Selector, CGSize, CGSize, CGSize) -> Void
         unsafeBitCast(method_getImplementation(method), to: Override.self)(self, LayoutParametersSelector.override,
                                                                            parameters.layoutSize,

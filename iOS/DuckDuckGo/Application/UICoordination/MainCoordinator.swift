@@ -743,7 +743,13 @@ final class MainCoordinator {
               launchSourceManager.source == .standard,
               !promoCoordinationService.isModalPromptPending else { return nil }
 
-        return controller.topPresentedViewController
+        // Apple never shows its sheet, nor returns, when asked from the background or from a view controller being dismissed.
+        let anchor = controller.topPresentedViewController
+        let isInBackground = controller.view.window?.windowScene?.activationState == .background
+
+        guard !isInBackground, !anchor.isBeingDismissed else { return nil }
+
+        return anchor
     }
 
     private func presentModalPromptIfNeeded() {

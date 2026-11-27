@@ -40,6 +40,8 @@ public final class ContentBlocking {
     private let contentBlockerRulesSource: DefaultContentBlockerRulesListsSource
     private let exceptionsSource: DefaultContentBlockerRulesExceptionsSource
     private let lastCompiledRulesStore: AppLastCompiledRulesStore
+    private let surrogateRulesUnblocking = UnblockSurrogateRulesProvider()
+    private var surrogateRulesRecompilation: AnyCancellable?
 
     enum PixelParameterName {
         static let experimentName = "experimentName"
@@ -67,7 +69,8 @@ public final class ContentBlocking {
 
         adClickAttribution = AdClickAttributionFeature(with: privacyConfigurationManager)
         contentBlockerRulesSource = ContentBlockerRulesLists(trackerDataManager: trackerDataManager,
-                                                             adClickAttribution: adClickAttribution)
+                                                             adClickAttribution: adClickAttribution,
+                                                             unblockSurrogateRules: { [surrogateRulesUnblocking] in surrogateRulesUnblocking.value })
 
         exceptionsSource = DefaultContentBlockerRulesExceptionsSource(privacyConfigManager: privacyConfigurationManager)
         lastCompiledRulesStore = AppLastCompiledRulesStore()
@@ -82,6 +85,17 @@ public final class ContentBlocking {
                                                                           exceptionsSource: exceptionsSource,
                                                                           errorReporting: attributionDebugEvents,
                                                                           compilationErrorReporting: Self.debugEvents)
+    }
+
+    /// Leaves requests that have a surrogate unblocked in the tracker data set rules whenever `isEnabled` returns
+    /// `true`, and recompiles the rules when its answer changes on an `updates` event. Called once at launch, as the
+    /// answer depends on app-level state that doesn't exist yet when `shared` is created; until then it is `false`.
+    public func unblockSurrogateRules(when isEnabled: @escaping () -> Bool, updates: AnyPublisher<Void, Never>) {
+        surrogateRulesUnblocking.set(isEnabled)
+        // Rules built so far used `false`, so check once straight away too.
+        surrogateRulesRecompilation = contentBlockingManager.scheduleCompilation(whenChanged: isEnabled,
+                                                                                 from: false,
+                                                                                 on: updates.prepend(()).eraseToAnyPublisher())
     }
 
     /// Clear stale config before the manager reads it, then allow an immediate fetch.
@@ -296,4 +310,23 @@ public class DomainsProtectionUserDefaultsStore: DomainsProtectionStore {
         unprotectedDomains = domains
     }
 
+}
+
+/// Rules lists are built on the content blocking work queue, while the answer is set from the main thread at launch.
+private final class UnblockSurrogateRulesProvider {
+    private let lock = NSLock()
+    private var isEnabled: () -> Bool = { false }
+
+    var value: Bool {
+        lock.lock()
+        let isEnabled = self.isEnabled
+        lock.unlock()
+        return isEnabled()
+    }
+
+    func set(_ isEnabled: @escaping () -> Bool) {
+        lock.lock()
+        self.isEnabled = isEnabled
+        lock.unlock()
+    }
 }

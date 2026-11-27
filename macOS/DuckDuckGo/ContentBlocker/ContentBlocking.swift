@@ -61,6 +61,7 @@ final class AppContentBlocking {
 
     private let contentBlockerRulesSource: ContentBlockerRulesLists
     private let exceptionsSource: DefaultContentBlockerRulesExceptionsSource
+    private var surrogateRulesRecompilation: AnyCancellable?
 
     enum Constants {
         enum ParameterName {
@@ -196,13 +197,17 @@ final class AppContentBlocking {
 
         adClickAttribution = AdClickAttributionFeature(with: privacyConfigurationManager)
 
-        contentBlockerRulesSource = ContentBlockerRulesLists(trackerDataManager: trackerDataManager, adClickAttribution: adClickAttribution)
+        let unblockSurrogateRules = { webExtensionAvailability?.isAppleSurrogateRedirectionConfigured == true }
+        contentBlockerRulesSource = ContentBlockerRulesLists(trackerDataManager: trackerDataManager,
+                                                             adClickAttribution: adClickAttribution,
+                                                             unblockSurrogateRules: unblockSurrogateRules)
         exceptionsSource = DefaultContentBlockerRulesExceptionsSource(privacyConfigManager: privacyConfigurationManager)
 
-        contentBlockingManager = ContentBlockerRulesManager(rulesSource: contentBlockerRulesSource,
-                                                            exceptionsSource: exceptionsSource,
-                                                            cache: ContentBlockingRulesCache(),
-                                                            errorReporting: Self.debugEvents)
+        let rulesManager = ContentBlockerRulesManager(rulesSource: contentBlockerRulesSource,
+                                                      exceptionsSource: exceptionsSource,
+                                                      cache: ContentBlockingRulesCache(),
+                                                      errorReporting: Self.debugEvents)
+        contentBlockingManager = rulesManager
         userContentUpdating = UserContentUpdating(contentBlockerRulesManager: contentBlockingManager,
                                                   privacyConfigurationManager: privacyConfigurationManager,
                                                   trackerDataManager: trackerDataManager,
@@ -238,6 +243,11 @@ final class AppContentBlocking {
                                                                           exceptionsSource: exceptionsSource,
                                                                           errorReporting: attributionDebugEvents,
                                                                           compilationErrorReporting: Self.debugEvents)
+
+        // Config updates already recompile; this also covers local flag overrides.
+        surrogateRulesRecompilation = rulesManager.scheduleCompilation(whenChanged: unblockSurrogateRules,
+                                                                       from: unblockSurrogateRules(),
+                                                                       on: featureFlagger.updatesPublisher)
     }
 
     static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in

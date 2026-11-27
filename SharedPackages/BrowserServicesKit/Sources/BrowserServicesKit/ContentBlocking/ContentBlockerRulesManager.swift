@@ -450,3 +450,34 @@ public class ContentBlockerRulesManager: CompiledRuleListsSource {
     }
 
 }
+
+extension ContentBlockerRulesManager {
+
+    /// Schedules a compilation each time `value` changes after an `updates` event, so that a value read while building
+    /// the rules lists (such as `unblockSurrogateRules`) takes effect without waiting for the next config or TDS update.
+    ///
+    /// - Parameters:
+    ///   - value: Read on each update.
+    ///   - initialValue: The value the current rules were built with.
+    ///   - updates: Emits whenever `value` may have changed.
+    public func scheduleCompilation(whenChanged value: @escaping () -> Bool,
+                                    from initialValue: Bool,
+                                    on updates: AnyPublisher<Void, Never>) -> AnyCancellable {
+        Self.changes(of: value, from: initialValue, on: updates)
+            .sink { [weak self] _ in
+                self?.scheduleCompilation()
+            }
+    }
+
+    /// Emits the new value each time `value` differs from the last one seen, starting from `initialValue`.
+    static func changes(of value: @escaping () -> Bool,
+                        from initialValue: Bool,
+                        on updates: AnyPublisher<Void, Never>) -> AnyPublisher<Bool, Never> {
+        updates
+            .map { value() }
+            .prepend(initialValue)
+            .removeDuplicates()
+            .dropFirst()
+            .eraseToAnyPublisher()
+    }
+}

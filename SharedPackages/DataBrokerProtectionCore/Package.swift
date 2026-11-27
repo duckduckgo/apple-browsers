@@ -46,7 +46,7 @@ let package = Package(
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
         .package(url: "https://github.com/apple/swift-algorithms", exact: "1.2.1"),
-        .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
+        .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.1.0"),
     ],
     targets: [
         .target(

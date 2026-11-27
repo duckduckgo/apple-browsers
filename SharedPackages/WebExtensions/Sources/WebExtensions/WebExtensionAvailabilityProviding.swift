@@ -33,4 +33,8 @@ public protocol WebExtensionAvailabilityProviding {
 
     /// Whether the embedded web extension serves surrogates instead of content-scope-scripts.
     var isAppleSurrogateRedirectionEnabled: Bool { get }
+
+    /// Whether the OS and flags allow surrogate redirection, without requiring the extension to be loaded. Content
+    /// blocking rules use this, as they are compiled at launch before the extension loads.
+    var isAppleSurrogateRedirectionConfigured: Bool { get }
 }

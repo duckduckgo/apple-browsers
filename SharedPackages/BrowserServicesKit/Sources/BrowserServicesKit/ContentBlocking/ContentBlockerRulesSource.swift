@@ -57,12 +57,18 @@ public class ContentBlockerRulesList {
 
     public let name: String
 
+    /// When `true`, requests matching a tracker rule that has a surrogate are not blocked, so the surrogate can be
+    /// served outside content blocking (by the embedded web extension's redirect rules).
+    public let unblockSurrogateRules: Bool
+
     public init(name: String,
                 trackerData: @escaping @autoclosure () -> TrackerDataManager.DataSet?,
-                fallbackTrackerData: @escaping @autoclosure () -> TrackerDataManager.DataSet) {
+                fallbackTrackerData: @escaping @autoclosure () -> TrackerDataManager.DataSet,
+                unblockSurrogateRules: Bool = false) {
         self.name = name
         self.getTrackerData = trackerData
         self.getFallbackTrackerData = fallbackTrackerData
+        self.unblockSurrogateRules = unblockSurrogateRules
     }
 }
 
@@ -73,15 +79,20 @@ open class DefaultContentBlockerRulesListsSource: ContentBlockerRulesListsSource
     }
 
     private let trackerDataManager: TrackerDataManager
+    private let unblockSurrogateRules: () -> Bool
 
-    public init(trackerDataManager: TrackerDataManager) {
+    /// - Parameter unblockSurrogateRules: Read each time the lists are built. When it returns `true`, the tracker data
+    ///   set list leaves requests that have a surrogate unblocked.
+    public init(trackerDataManager: TrackerDataManager, unblockSurrogateRules: @escaping () -> Bool = { false }) {
         self.trackerDataManager = trackerDataManager
+        self.unblockSurrogateRules = unblockSurrogateRules
     }
 
     open var contentBlockerRulesLists: [ContentBlockerRulesList] {
         return [ContentBlockerRulesList(name: Constants.trackerDataSetRulesListName,
                                         trackerData: self.trackerDataManager.fetchedData,
-                                        fallbackTrackerData: self.trackerDataManager.embeddedData)]
+                                        fallbackTrackerData: self.trackerDataManager.embeddedData,
+                                        unblockSurrogateRules: unblockSurrogateRules())]
     }
 }
 

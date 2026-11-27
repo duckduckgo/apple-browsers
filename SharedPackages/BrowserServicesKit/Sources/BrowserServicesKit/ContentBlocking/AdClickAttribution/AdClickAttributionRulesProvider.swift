@@ -132,7 +132,8 @@ public class AdClickAttributionRulesProvider: AdClickAttributionRulesProviding {
                                                            etag: sourceRules.etag)
         let attributedRulesList = ContentBlockerRulesList(name: Constants.attributedTempRuleListName,
                                                           trackerData: nil,
-                                                          fallbackTrackerData: attributedDataSet)
+                                                          fallbackTrackerData: attributedDataSet,
+                                                          unblockSurrogateRules: sourceRules.identifier.unblockSurrogateRules)
 
         let sourceManager = ContentBlockerRulesSourceManager(rulesList: attributedRulesList,
                                                              exceptionsSource: exceptionsSource,

@@ -127,6 +127,27 @@ final class WebExtensionAvailabilityTests: XCTestCase {
         XCTAssertFalse(sut.isAppleSurrogateRedirectionEnabled)
     }
 
+    // MARK: - isAppleSurrogateRedirectionConfigured
+
+    // Content blocking rules are compiled before the extension loads, so this must not wait for it.
+    func testWhenFlagsAreOnButExtensionIsNotLoadedThenRedirectionIsConfigured() {
+        setFlags([.embeddedExtension, .appleSurrogateRedirection])
+
+        XCTAssertTrue(makeSUT().isAppleSurrogateRedirectionConfigured)
+        XCTAssertFalse(makeSUT().isAppleSurrogateRedirectionEnabled)
+    }
+
+    func testWhenAnyConfiguredConditionIsMissingThenRedirectionIsNotConfigured() {
+        setFlags([.appleSurrogateRedirection])
+        XCTAssertFalse(makeSUT().isAppleSurrogateRedirectionConfigured)
+
+        setFlags([.embeddedExtension])
+        XCTAssertFalse(makeSUT().isAppleSurrogateRedirectionConfigured)
+
+        setFlags([.embeddedExtension, .appleSurrogateRedirection])
+        XCTAssertFalse(makeSUT(isOSSupported: false).isAppleSurrogateRedirectionConfigured)
+    }
+
     // MARK: - Helpers
 
     // The type is read from the manifest, so the fixture only needs an id.

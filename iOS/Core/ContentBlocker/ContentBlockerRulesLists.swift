@@ -24,9 +24,11 @@ public final class ContentBlockerRulesLists: DefaultContentBlockerRulesListsSour
 
     private let adClickAttribution: AdClickAttributionFeature
 
-    init(trackerDataManager: TrackerDataManager, adClickAttribution: AdClickAttributionFeature) {
+    init(trackerDataManager: TrackerDataManager,
+         adClickAttribution: AdClickAttributionFeature,
+         unblockSurrogateRules: @escaping () -> Bool = { false }) {
         self.adClickAttribution = adClickAttribution
-        super.init(trackerDataManager: trackerDataManager)
+        super.init(trackerDataManager: trackerDataManager, unblockSurrogateRules: unblockSurrogateRules)
     }
 
     public override var contentBlockerRulesLists: [ContentBlockerRulesList] {

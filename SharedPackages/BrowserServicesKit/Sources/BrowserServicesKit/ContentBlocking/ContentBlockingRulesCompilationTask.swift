@@ -145,7 +145,7 @@ extension ContentBlockerRulesManager {
                              completionHandler: @escaping Completion) {
             Logger.contentBlocking.log("Starting CBR compilation for \(self.rulesList.name, privacy: .public)")
 
-            let builder = ContentBlockerRulesBuilder(trackerData: model.tds)
+            let builder = ContentBlockerRulesBuilder(trackerData: model.tds, unblockSurrogateRules: model.unblockSurrogateRules)
             let rules = builder.buildRules(withExceptions: model.unprotectedSites,
                                            andTemporaryUnprotectedDomains: model.tempList,
                                            andTrackerAllowlist: model.allowList)

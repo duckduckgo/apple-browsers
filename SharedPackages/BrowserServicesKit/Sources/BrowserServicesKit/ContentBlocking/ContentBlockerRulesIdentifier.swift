@@ -25,10 +25,17 @@ public class ContentBlockerRulesIdentifier: Equatable, Codable {
     let tempListId: String
     let allowListId: String
     let unprotectedSitesHash: String
+    /// Whether the rules leave requests that have a surrogate unblocked. Saved identifiers from before this existed
+    /// decode as `false`.
+    public let unblockSurrogateRules: Bool
 
+    /// Only changes when `unblockSurrogateRules` is on, so rules compiled before it existed still match.
     public var stringValue: String {
-        return name + tdsEtag + tempListId + allowListId + unprotectedSitesHash
+        let base = name + tdsEtag + tempListId + allowListId + unprotectedSitesHash
+        return unblockSurrogateRules ? base + Self.unblockSurrogateRulesSuffix : base
     }
+
+    private static let unblockSurrogateRulesSuffix = "\"unblockSurrogateRules\""
 
     public struct Difference: OptionSet, CustomDebugStringConvertible, Sendable {
         public let rawValue: Int
@@ -41,8 +48,9 @@ public class ContentBlockerRulesIdentifier: Equatable, Codable {
         public static let tempListId = Difference(rawValue: 1 << 1)
         public static let allowListId = Difference(rawValue: 1 << 2)
         public static let unprotectedSites = Difference(rawValue: 1 << 3)
+        public static let unblockSurrogateRules = Difference(rawValue: 1 << 4)
 
-        public static let all: Difference = [.tdsEtag, .tempListId, .allowListId, .unprotectedSites]
+        public static let all: Difference = [.tdsEtag, .tempListId, .allowListId, .unprotectedSites, .unblockSurrogateRules]
 
         public var debugDescription: String {
             if self == .all {
@@ -59,6 +67,7 @@ public class ContentBlockerRulesIdentifier: Equatable, Codable {
                     case .tempListId: ".tempListId"
                     case .allowListId: ".allowListId"
                     case .unprotectedSites: ".unprotectedSites"
+                    case .unblockSurrogateRules: ".unblockSurrogateRules"
                     default: "1<<\(i)"
                     }
                 }()
@@ -93,13 +102,33 @@ public class ContentBlockerRulesIdentifier: Equatable, Codable {
         return domains.joined().sha1
     }
 
-    public init(name: String, tdsEtag: String, tempListId: String?, allowListId: String?, unprotectedSitesHash: String?) {
+    public init(name: String,
+                tdsEtag: String,
+                tempListId: String?,
+                allowListId: String?,
+                unprotectedSitesHash: String?,
+                unblockSurrogateRules: Bool = false) {
 
         self.name = Self.normalize(identifier: name)
         self.tdsEtag = Self.normalize(identifier: tdsEtag)
         self.tempListId = Self.normalize(identifier: tempListId)
         self.allowListId = Self.normalize(identifier: allowListId)
         self.unprotectedSitesHash = Self.normalize(identifier: unprotectedSitesHash)
+        self.unblockSurrogateRules = unblockSurrogateRules
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name, tdsEtag, tempListId, allowListId, unprotectedSitesHash, unblockSurrogateRules
+    }
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        tdsEtag = try container.decode(String.self, forKey: .tdsEtag)
+        tempListId = try container.decode(String.self, forKey: .tempListId)
+        allowListId = try container.decode(String.self, forKey: .allowListId)
+        unprotectedSitesHash = try container.decode(String.self, forKey: .unprotectedSitesHash)
+        unblockSurrogateRules = try container.decodeIfPresent(Bool.self, forKey: .unblockSurrogateRules) ?? false
     }
 
     public func compare(with id: ContentBlockerRulesIdentifier) -> Difference {
@@ -116,6 +145,9 @@ public class ContentBlockerRulesIdentifier: Equatable, Codable {
         }
         if unprotectedSitesHash != id.unprotectedSitesHash {
             result.insert(.unprotectedSites)
+        }
+        if unblockSurrogateRules != id.unblockSurrogateRules {
+            result.insert(.unblockSurrogateRules)
         }
 
         return result

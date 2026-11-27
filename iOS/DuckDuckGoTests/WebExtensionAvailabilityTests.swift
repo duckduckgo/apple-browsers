@@ -154,6 +154,28 @@ final class WebExtensionAvailabilityTests: XCTestCase {
         XCTAssertFalse(sut.isAppleSurrogateRedirectionEnabled)
     }
 
+    // MARK: - isAppleSurrogateRedirectionConfigured
+
+    // Content blocking rules are compiled before the extension loads, so this must not wait for it.
+    func testWhenFlagsAreOnButExtensionIsNotLoadedThenAppleSurrogateRedirectionIsConfigured() {
+        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension, .appleSurrogateRedirection]
+
+        XCTAssertTrue(makeSurrogateRedirectionSUT().isAppleSurrogateRedirectionConfigured)
+        XCTAssertFalse(makeSurrogateRedirectionSUT().isAppleSurrogateRedirectionEnabled)
+    }
+
+    func testWhenAnyConfiguredConditionIsMissingThenAppleSurrogateRedirectionIsNotConfigured() {
+        mockFeatureFlagger.enabledFeatureFlags = [.appleSurrogateRedirection]
+        XCTAssertFalse(makeSurrogateRedirectionSUT().isAppleSurrogateRedirectionConfigured)
+
+        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension]
+        XCTAssertFalse(makeSurrogateRedirectionSUT().isAppleSurrogateRedirectionConfigured)
+
+        mockFeatureFlagger.enabledFeatureFlags = [.embeddedExtension, .appleSurrogateRedirection]
+        XCTAssertFalse(makeSurrogateRedirectionSUT(isOSSupported: false).isAppleSurrogateRedirectionConfigured)
+        XCTAssertFalse(makeSurrogateRedirectionSUT(isNativeMessagingSupported: false).isAppleSurrogateRedirectionConfigured)
+    }
+
     // MARK: - isAutoconsentExtensionAvailable
 
     @MainActor

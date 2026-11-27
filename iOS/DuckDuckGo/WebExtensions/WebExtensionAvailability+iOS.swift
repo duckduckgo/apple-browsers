@@ -98,12 +98,17 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
         false
     }
 
-    /// The only place that combines the conditions: iOS 26+, `trackerProtection.appleSurrogateRedirection`, and the
-    /// embedded extension being loaded and able to reach the app over native messaging. Requiring it loaded (not just
+    /// iOS 26+, native messaging, `webExtensions.embeddedExtension` and `trackerProtection.appleSurrogateRedirection`.
+    var isAppleSurrogateRedirectionConfigured: Bool {
+        isSurrogateRedirectionOSSupported
+            && nativeMessagingSupport.isSupported
+            && featureFlagger.isFeatureOn(.embeddedExtension)
+            && featureFlagger.isFeatureOn(.appleSurrogateRedirection)
+    }
+
+    /// `isAppleSurrogateRedirectionConfigured`, and the embedded extension being loaded. Requiring it loaded (not just
     /// flagged on) means C-S-S keeps injecting surrogates if the extension fails to load or is removed.
     var isAppleSurrogateRedirectionEnabled: Bool {
-        isSurrogateRedirectionOSSupported
-            && featureFlagger.isFeatureOn(.appleSurrogateRedirection)
-            && isAutoconsentExtensionAvailable
+        isAppleSurrogateRedirectionConfigured && isAutoconsentExtensionAvailable
     }
 }

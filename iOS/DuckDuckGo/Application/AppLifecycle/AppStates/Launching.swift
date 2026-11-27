@@ -158,6 +158,8 @@ struct Launching: LaunchingHandling {
                 webExtensionManagerHolder.manager
             }
         )
+        contentBlocking.unblockSurrogateRules(when: { webExtensionAvailability.isAppleSurrogateRedirectionConfigured },
+                                              updates: featureFlagger.updatesPublisher)
         let fireModeStorageController = FireModeNativeStorageController(
             featureFlagger: featureFlagger,
             consentSeedSource: duckAiNativeStorageHandler,

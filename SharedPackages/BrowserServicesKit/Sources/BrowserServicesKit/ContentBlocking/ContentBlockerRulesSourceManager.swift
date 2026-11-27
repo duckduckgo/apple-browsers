@@ -38,9 +38,12 @@ public class ContentBlockerRulesSourceIdentifiers {
 
     public internal(set) var unprotectedSitesIdentifier: String?
 
-    init(name: String, tdsIdentfier: String) {
+    public let unblockSurrogateRules: Bool
+
+    init(name: String, tdsIdentfier: String, unblockSurrogateRules: Bool = false) {
         self.name = name
         self.tdsIdentifier = tdsIdentfier
+        self.unblockSurrogateRules = unblockSurrogateRules
     }
 
     public var rulesIdentifier: ContentBlockerRulesIdentifier {
@@ -48,7 +51,8 @@ public class ContentBlockerRulesSourceIdentifiers {
                                       tdsEtag: tdsIdentifier,
                                       tempListId: tempListIdentifier,
                                       allowListId: allowListIdentifier,
-                                      unprotectedSitesHash: unprotectedSitesIdentifier)
+                                      unprotectedSitesHash: unprotectedSitesIdentifier,
+                                      unblockSurrogateRules: unblockSurrogateRules)
     }
 }
 
@@ -65,9 +69,9 @@ public class ContentBlockerRulesSourceModel: ContentBlockerRulesSourceIdentifier
 
     var unprotectedSites = [String]()
 
-    init(name: String, tdsIdentfier: String, tds: TrackerData) {
+    init(name: String, tdsIdentfier: String, tds: TrackerData, unblockSurrogateRules: Bool = false) {
         self.tds = tds
-        super.init(name: name, tdsIdentfier: tdsIdentfier)
+        super.init(name: name, tdsIdentfier: tdsIdentfier, unblockSurrogateRules: unblockSurrogateRules)
     }
 }
 
@@ -138,11 +142,13 @@ public class ContentBlockerRulesSourceManager {
            trackerData.etag != brokenSources?.tdsIdentifier {
             result = ContentBlockerRulesSourceModel(name: rulesList.name,
                                                     tdsIdentfier: trackerData.etag,
-                                                    tds: trackerData.tds)
+                                                    tds: trackerData.tds,
+                                                    unblockSurrogateRules: rulesList.unblockSurrogateRules)
         } else {
             result = ContentBlockerRulesSourceModel(name: rulesList.name,
                                                     tdsIdentfier: rulesList.fallbackTrackerData.etag,
-                                                    tds: rulesList.fallbackTrackerData.tds)
+                                                    tds: rulesList.fallbackTrackerData.tds,
+                                                    unblockSurrogateRules: rulesList.unblockSurrogateRules)
         }
 
         if tempListIdentifier != brokenSources?.tempListIdentifier {

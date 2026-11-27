@@ -60,12 +60,16 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
         isAvailable && (featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal))
     }
 
-    /// The only place that combines the conditions: macOS 26+, `trackerProtection.appleSurrogateRedirection`, and the
-    /// embedded extension being loaded. Requiring it loaded (not just flagged on) means C-S-S keeps injecting surrogates
-    /// if the extension fails to load or is removed.
-    var isAppleSurrogateRedirectionEnabled: Bool {
+    /// macOS 26+, `webExtensions.embeddedExtension` and `trackerProtection.appleSurrogateRedirection`.
+    var isAppleSurrogateRedirectionConfigured: Bool {
         isSurrogateRedirectionOSSupported
+            && featureFlagger.isFeatureOn(.embeddedExtension)
             && featureFlagger.isFeatureOn(.appleSurrogateRedirection)
-            && isAutoconsentExtensionAvailable
+    }
+
+    /// `isAppleSurrogateRedirectionConfigured`, and the embedded extension being loaded. Requiring it loaded (not just
+    /// flagged on) means C-S-S keeps injecting surrogates if the extension fails to load or is removed.
+    var isAppleSurrogateRedirectionEnabled: Bool {
+        isAppleSurrogateRedirectionConfigured && isAutoconsentExtensionAvailable
     }
 }

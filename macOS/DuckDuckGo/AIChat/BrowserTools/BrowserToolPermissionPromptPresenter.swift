@@ -280,18 +280,20 @@ final class BrowserToolPermissionPromptPresenter {
         }
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: requestID, popover: popover, tabBar: tabBar,
-                           keyMonitor: keyMonitor(dismiss: dismiss, primary: primary, popover: popover, ownerWindow: tabBar.view.window))
+                           keyMonitor: keyMonitor(dismiss: dismiss, primary: primary, popover: popover, ownerWindow: tabBar.view.window,
+                                                   answersPageKeys: request.translateOfferLanguageCode == nil))
         tabBar.showBrowserToolPermissionButton(icon: icon, title: title, action: { _ in dismiss() }, shown: open)
     }
 
     // The browser window takes focus back from the popover, so its key presses answer too,
-    // unless a text field such as the address bar has focus.
+    // unless a text field such as the address bar has focus. An unrequested offer also leaves keys typed in the page to it.
     private func keyMonitor(dismiss: @escaping () -> Void, primary: @escaping () -> Void, popover: NSPopover,
-                            ownerWindow: NSWindow?) -> Any? {
+                            ownerWindow: NSWindow?, answersPageKeys: Bool) -> Any? {
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak popover, weak ownerWindow] event in
-            guard let popover, popover.isShown, let window = event.window,
-                  window === popover.contentViewController?.view.window || (window === ownerWindow && !(window.firstResponder is NSText))
-            else { return event }
+            guard let popover, popover.isShown, let window = event.window else { return event }
+            let inOwnerWindow = window === ownerWindow && !(window.firstResponder is NSText)
+                && (answersPageKeys || !(window.firstResponder is WKWebView))
+            guard window === popover.contentViewController?.view.window || inOwnerWindow else { return event }
             let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
             switch (event.keyCode, modifiers) {
             case (53, []): // Esc

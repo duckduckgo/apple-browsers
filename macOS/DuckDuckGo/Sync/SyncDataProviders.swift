@@ -40,7 +40,6 @@ final class SyncDataProvidersSource: DataProvidersSource {
     func makeDataProviders() -> [DataProviding] {
         initializeMetadataDatabaseIfNeeded()
         guard let syncMetadata else {
-            assertionFailure("Sync Metadata not initialized")
             return []
         }
 
@@ -163,9 +162,11 @@ final class SyncDataProvidersSource: DataProvidersSource {
         appearancePreferences: AppearancePreferences,
         keyValueStore: ThrowingKeyValueStoring,
         syncErrorHandler: SyncErrorHandler,
-        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+        syncMetadataDatabase: SyncMetadataDatabase = SyncMetadataDatabase()
     ) {
         self.bookmarksDatabase = bookmarksDatabase
+        self.syncMetadataDatabase = syncMetadataDatabase
         self.secureVaultFactory = secureVaultFactory
         self.appearancePreferences = appearancePreferences
         self.keyValueStore = keyValueStore
@@ -194,6 +195,7 @@ final class SyncDataProvidersSource: DataProvidersSource {
             return
         }
 
+        var didLoadStore = false
         syncMetadataDatabase.db.loadStore { context, error in
             guard context != nil else {
                 if let error = error {
@@ -203,8 +205,14 @@ final class SyncDataProvidersSource: DataProvidersSource {
                 }
 
                 Thread.sleep(forTimeInterval: 1)
-                fatalError("Could not create Sync Metadata database stack: \(error?.localizedDescription ?? "err")")
+                return
             }
+            didLoadStore = true
+        }
+
+        // Leave Sync without data providers rather than crashing; loading is retried on the next call.
+        guard didLoadStore else {
+            return
         }
         syncMetadata = LocalSyncMetadataStore(database: syncMetadataDatabase.db)
         isSyncMetadaDatabaseLoaded = true
@@ -215,7 +223,7 @@ final class SyncDataProvidersSource: DataProvidersSource {
     private var syncAuthStateDidChangeCancellable: AnyCancellable?
     private let metricsEventsHandler = SyncMetricsEventsHandler()
 
-    private let syncMetadataDatabase: SyncMetadataDatabase = SyncMetadataDatabase()
+    private let syncMetadataDatabase: SyncMetadataDatabase
     private let bookmarksDatabase: CoreDataDatabase
     private let secureVaultFactory: AutofillVaultFactory
     private let appearancePreferences: AppearancePreferences

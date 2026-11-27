@@ -664,6 +664,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Optional `var` because its `syncServiceProvider` closure captures `self`,
     /// which is unavailable before `super.init()`. Initialized immediately after `super.init()`.
     var memoryUsageIntervalReporter: MemoryUsageIntervalReporter?
+    private(set) var usageTimeMonitor: UsageTimeMonitor?
 
     let startupProfiler: StartupProfiler
     private var startupMetricsReporter: PerformanceMetricsReporter?
@@ -1672,8 +1673,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
+    @MainActor private func startUsageTimeMonitor() {
+        guard AppVersion.runType == .normal else { return }
+        usageTimeMonitor = UsageTimeMonitor(directory: Self.keyValueStoresLocation)
+        usageTimeMonitor?.start()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard AppVersion.runType.requiresEnvironment else { return }
+        startUsageTimeMonitor()
         defer {
             didFinishLaunching = true
         }
@@ -1880,6 +1888,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidResignActive(_ notification: Notification) {
+        usageTimeMonitor?.handle(.resignActive)
         cleanScreenTimeDataOnMacOS26()
         eventHubIntegration.applicationDidResignActive()
     }
@@ -2248,6 +2257,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             // 7. Auto-clear (burn on quit)
             autoClearHandler,
+
+            .perform { [weak self] in
+                self?.usageTimeMonitor?.stopForQuit()
+            },
 
             // 8. Privacy stats cleanup
             .terminationDecider { [privacyStats] _ in

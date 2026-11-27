@@ -149,10 +149,8 @@ final class BrowserToolPermissionPromptPresenter {
     func offerTranslation(languageCode: String?, tabID: TabIdentifier, window: NSWindow? = nil) {
         guard translateOfferLanguageCode(for: tabID) != languageCode else { return }
         requests.removeAll { $0.ownerTabID == tabID && $0.translateOfferLanguageCode != nil }
-        // A pinned tab is in every window's collection, so only its web view's window tells them apart.
         if let languageCode, !translateOfferDismissedTabIDs.contains(tabID),
-           let collection = (window?.windowController as? MainWindowController)?.mainViewController.tabCollectionViewModel
-            ?? AIChatTabPickerSource.collection(containingTabID: tabID, in: windowControllersManager),
+           let collection = ownerCollection(ofTabID: tabID, shownIn: window),
            !collection.isBurner,
            windowController(for: collection)?.mainViewController.aiChatCoordinator.isSidebarOpen(for: tabID) != true {
             requests.append(Request(id: UUID().uuidString, ownerTabID: tabID, collection: collection,
@@ -160,6 +158,18 @@ final class BrowserToolPermissionPromptPresenter {
             observeSelection(of: collection)
         }
         refresh()
+    }
+
+    // A pinned tab is in every window's collection: its web view's window picks one, or, when it shows in none, the main window.
+    private func ownerCollection(ofTabID tabID: TabIdentifier, shownIn window: NSWindow?) -> TabCollectionViewModel? {
+        if let collection = (window?.windowController as? MainWindowController)?.mainViewController.tabCollectionViewModel
+            ?? AIChatTabPickerSource.collection(containingTabID: tabID, in: windowControllersManager) {
+            return collection
+        }
+        let owners = windowControllersManager.mainWindowControllers.filter {
+            $0.mainViewController.tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == tabID }) != nil
+        }
+        return (owners.first { $0.window?.isMainWindow == true } ?? owners.first)?.mainViewController.tabCollectionViewModel
     }
 
     func translateOfferLanguageCode(for tabID: TabIdentifier) -> String? {

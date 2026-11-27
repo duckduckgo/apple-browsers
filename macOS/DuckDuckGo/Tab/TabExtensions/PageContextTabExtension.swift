@@ -43,6 +43,8 @@ final class PageContextTabExtension {
     private var sidebarCancellables = Set<AnyCancellable>()
     private let tabID: TabIdentifier
     private let browserTools: AIChatBrowserToolsService
+    /// Bumped on each main-frame commit, so a language read from an earlier document can't offer.
+    private var translateOfferDocument = 0
     private var content: Tab.TabContent = .none
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -1131,6 +1133,7 @@ extension PageContextTabExtension: PageContextProtocol, TabExtension {
 extension PageContextTabExtension: NavigationResponder {
     func didCommit(_ navigation: Navigation) {
         if !isLoadedInSidebar {
+            translateOfferDocument += 1
             browserTools.permissionPrompts.offerTranslation(languageCode: nil, tabID: tabID)
         }
         guard isLinkedPageInSlot else { return }
@@ -1165,7 +1168,8 @@ extension PageContextTabExtension: NavigationResponder {
         Self.canOfferTranslation(isFeatureOn: featureFlagger.isFeatureOn(.aiChatOfferTranslationAndSummarize),
                                  isWebPage: isWebPage,
                                  showsTranslationMenuItem: aiChatMenuConfiguration.shouldDisplayTranslationMenuItem,
-                                 isPageAttachable: isWebPage && isPageAttachable(at: url),
+                                 // Without the page-context script, Translate has no page to send.
+                                 isPageAttachable: isWebPage && featureFlagger.isFeatureOn(.aiChatPageContext) && isPageAttachable(at: url),
                                  isSidebarOpen: aiChatSessionStore.sessions[tabID]?.state.presentationMode == .sidebar)
     }
 
@@ -1175,11 +1179,13 @@ extension PageContextTabExtension: NavigationResponder {
             browserTools.permissionPrompts.offerTranslation(languageCode: nil, tabID: tabID)
             return
         }
+        let document = translateOfferDocument
         Task { @MainActor [weak self, weak webView] in
             // An isolated world, so the page can't spoof the read.
             let lang = try? await webView?.evaluateJavaScript("String(document.documentElement?.lang ?? '')", in: nil, contentWorld: .defaultClient) as? String
-            guard let self, let webView, webView.url == url else { return }
-            let languageCode = canOfferTranslation(at: url, isWebPage: isWebPage)
+            // The URL can change in the same document (replaceState); a commit means another document.
+            guard let self, let webView, document == translateOfferDocument, let url = webView.url else { return }
+            let languageCode = canOfferTranslation(at: url, isWebPage: url.isHttpOrHttps)
                 ? TranslateOfferLanguage.foreignLanguageCode(pageLanguage: lang, preferredLanguage: Locale.preferredLanguages.first)
                 : nil
             browserTools.permissionPrompts.offerTranslation(languageCode: languageCode, tabID: tabID, window: webView.window)

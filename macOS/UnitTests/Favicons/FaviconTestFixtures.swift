@@ -60,6 +60,7 @@ enum FaviconTestFixtures {
                                hardTimeout: TimeInterval = FaviconRasterizer.defaultHardTimeout,
                                idleLifetime: TimeInterval = FaviconRasterizer.defaultIdleLifetime,
                                scriptTimeout: TimeInterval = FaviconRasterizer.timeout,
+                               sleep: @escaping (TimeInterval) async throws -> Void = { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) },
                                makeConfiguration: @escaping () -> WKWebViewConfiguration = { WKWebViewConfiguration() },
                                didCreateWebView: ((WKWebView) -> Void)? = nil) -> FaviconRasterizer {
         let flagger = featureFlagger ?? MockFeatureFlagger()
@@ -71,6 +72,7 @@ enum FaviconTestFixtures {
                                  hardTimeout: hardTimeout,
                                  idleLifetime: idleLifetime,
                                  scriptTimeout: scriptTimeout,
+                                 sleep: sleep,
                                  makeConfiguration: makeConfiguration,
                                  didCreateWebView: didCreateWebView)
     }

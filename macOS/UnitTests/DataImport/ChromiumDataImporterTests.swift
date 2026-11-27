@@ -163,6 +163,24 @@ class ChromiumDataImporterTests {
         #expect(handled.count == 6, "The four icons of the fixture are imported along with the two added ones")
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if favicons keep the legacy decoding while the WebKit rendering is off", .timeLimit(.minutes(1)))
+    @MainActor
+    func whenImportingBookmarks_AndWebKitRenderingIsOff_FaviconsAreNotRendered() async throws {
+        let profileURL = try makeProfileWithFavicons(["https://svg.example": Data(FaviconTestFixtures.svg(width: 16, height: 16).utf8)])
+        let faviconManager = FaviconManagerMock()
+        let rasterizer = FaviconTestFixtures.makeRasterizer(enabled: false)
+        let importer = makeImporter(profileURL: profileURL, faviconManager: faviconManager, faviconRasterizer: rasterizer)
+
+        _ = await importer.importData(types: [.bookmarks])
+
+        let handled = try #require(faviconManager.handledFaviconsByDocumentUrl.first)
+        let svgURL = try #require(URL(string: "https://svg.example"))
+        let svgImage = try #require(handled[svgURL]?.first?.image)
+        #expect(!svgImage.representations.contains { $0 is NSBitmapImageRep })
+        #expect(!rasterizer.hasWebView)
+    }
+
     /// A copy of the test profile whose favicons database has the given icons (page URL to image data) added.
     private func makeProfileWithFavicons(_ dataByPageURL: [String: Data]) throws -> URL {
         let profileURL = missingProfileURL

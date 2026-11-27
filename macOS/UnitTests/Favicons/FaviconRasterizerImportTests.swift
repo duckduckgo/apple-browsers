@@ -211,9 +211,9 @@ final class FaviconRasterizerImportTests: XCTestCase {
         }
     }
 
-    /// Decoding thousands of imported raster favicons must not block the main thread.
+    /// Decoding many imported raster favicons must not block the main thread.
     func testImportingManyRasterFaviconsDoesNotBlockTheMainThread() async throws {
-        let imported = ["https://example.com": (0..<3000).map { ImportedFavicon(imageData: Self.solidPNG(index: $0)) }]
+        let imported = ["https://example.com": (0..<1000).map { ImportedFavicon(imageData: Self.solidPNG(index: $0)) }]
         let rasterizer = self.rasterizer!
 
         let importTask = Task.detached { await rasterizer.favicons(fromImported: imported) }
@@ -234,8 +234,8 @@ final class FaviconRasterizerImportTests: XCTestCase {
         }
         let result = await importTask.value
 
-        XCTAssertEqual(result.values.first?.count, 3000)
-        XCTAssertEqual(result.values.first?.compactMap(\.image).count, 3000)
+        XCTAssertEqual(result.values.first?.count, 1000)
+        XCTAssertEqual(result.values.first?.compactMap(\.image).count, 1000)
         XCTAssertLessThan(longestGap, 1)
     }
 

@@ -95,6 +95,9 @@ final class FaviconRasterizer {
 
     /// Create the configuration the web view starts from, and report each web view created. Tests use them to
     /// observe the web view's requests and to reach the web views.
+    /// Waits for the given number of seconds. The hard timeout and the idle lifetime of the web view run on it; tests
+    /// drive it with a test clock.
+    nonisolated(unsafe) private let sleep: (TimeInterval) async throws -> Void
     nonisolated(unsafe) private let makeConfiguration: () -> WKWebViewConfiguration
     nonisolated(unsafe) private let didCreateWebView: ((WKWebView) -> Void)?
 
@@ -111,6 +114,7 @@ final class FaviconRasterizer {
                      hardTimeout: TimeInterval = FaviconRasterizer.defaultHardTimeout,
                      idleLifetime: TimeInterval = FaviconRasterizer.defaultIdleLifetime,
                      scriptTimeout: TimeInterval = FaviconRasterizer.timeout,
+                     sleep: @escaping (TimeInterval) async throws -> Void = { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) },
                      makeConfiguration: @escaping () -> WKWebViewConfiguration = { WKWebViewConfiguration() },
                      didCreateWebView: ((WKWebView) -> Void)? = nil) {
         self.featureFlagger = featureFlagger
@@ -118,6 +122,7 @@ final class FaviconRasterizer {
         self.hardTimeout = hardTimeout
         self.idleLifetime = idleLifetime
         self.scriptTimeout = scriptTimeout
+        self.sleep = sleep
         self.makeConfiguration = makeConfiguration
         self.didCreateWebView = didCreateWebView
     }
@@ -321,8 +326,9 @@ final class FaviconRasterizer {
         activeCalls -= 1
         guard activeCalls == 0 else { return }
         let idleLifetime = self.idleLifetime
+        let sleep = self.sleep
         releaseTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(idleLifetime * 1_000_000_000))
+            try? await sleep(idleLifetime)
             guard !Task.isCancelled, let self else { return }
             Logger.favicons.debug("FaviconRasterizer: releasing the idle web view")
             webView = nil
@@ -356,10 +362,11 @@ final class FaviconRasterizer {
     private func withHardTimeout(_ work: @escaping @MainActor () async throws -> Data) async throws -> Data {
         let outcome = Outcome()
         let hardTimeout = self.hardTimeout
+        let sleep = self.sleep
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
                 outcome.timer = Task {
-                    try? await Task.sleep(nanoseconds: UInt64(hardTimeout * 1_000_000_000))
+                    try? await sleep(hardTimeout)
                     outcome.finish(.failure(RasterizationError.timedOut))
                 }
                 Task {

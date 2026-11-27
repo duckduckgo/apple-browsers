@@ -2606,6 +2606,18 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
+    func test_attempt_v21PresenterHost_whenSessionTimesOutWithoutReport_endsWithPeerOutcomeUnknown() async throws {
+        startAttempt(pairingV2PollingTimeout: 1)
+        let didEnd = expectationForAttemptEnd()
+
+        try await startPresenterHost(peerVersion: PairingV2ProtocolVersion.v2Point1.rawValue, canUseExchangeV2Point1: true, joinerMessages: [])
+        await fulfillment(of: [didEnd], timeout: 5)
+
+        try assertEndedHostAttempt(peerKind: "ddg", connectMethod: "show_code", flowVersion: "v2.1", peerOutcome: "unknown",
+                                   steps: "started,preparing_code,code_accepted_by_other_device,confirmation_screen,sync_confirmation,preparing_sync,host_awaiting_joiner")
+    }
+
+    @MainActor
     func test_attempt_v21PresenterHost_whileJoinerNeverReports_awaitsJoinerUntilUserCloses() async throws {
         startAttempt()
         let isAwaitingJoiner = expectation(description: "host awaiting joiner")

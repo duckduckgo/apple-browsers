@@ -681,6 +681,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         guard await state.isActivePairingV2Coordinator(coordinator) else {
             return
         }
+        await attemptTracker?.stopAwaitingJoiner()
 
         let timeoutStage: SyncSetupTimeoutStage?
         if let syncError = error as? SyncError, syncError == .pollingDidTimeOut {

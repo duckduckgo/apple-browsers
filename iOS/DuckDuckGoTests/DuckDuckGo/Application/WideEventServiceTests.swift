@@ -24,6 +24,7 @@ import FoundationExtensions
 import Subscription
 import SubscriptionTestingUtilities
 import BrowserServicesKit
+import DDGSync
 @testable import DuckDuckGo
 
 final class WideEventServiceTests: XCTestCase {
@@ -31,12 +32,16 @@ final class WideEventServiceTests: XCTestCase {
     private var wideEventMock: WideEventMock!
     private var subscriptionManager: SubscriptionManagerMock!
     private var service: WideEventService!
+    private var isSyncSetupWideEventEnabled = true
 
     override func setUp() {
         super.setUp()
         wideEventMock = WideEventMock()
         subscriptionManager = SubscriptionManagerMock()
-        service = WideEventService(wideEvent: wideEventMock, subscriptionManager: subscriptionManager)
+        isSyncSetupWideEventEnabled = true
+        service = WideEventService(wideEvent: wideEventMock,
+                                   subscriptionManager: subscriptionManager,
+                                   isSyncSetupWideEventEnabled: { [unowned self] in isSyncSetupWideEventEnabled })
     }
 
     override func tearDown() {
@@ -218,6 +223,44 @@ final class WideEventServiceTests: XCTestCase {
         guard case .unknown = completion?.1 else {
             return XCTFail("Expected the stalled refresh to complete as UNKNOWN")
         }
+    }
+
+    // MARK: - Sync setup
+
+    func testForegroundResume_leavesSyncSetupAttemptOpen() async {
+        wideEventMock.started = [makeSyncSetupData()]
+
+        await service.sendPendingEvents(trigger: .appLaunch, includingLaunchOnlyEvents: false)
+
+        XCTAssertFalse(wideEventMock.completions.contains { $0.0 is SyncSetupWideEventData })
+    }
+
+    func testColdLaunch_completesSyncSetupAttemptAsAppRestart() async {
+        wideEventMock.started = [makeSyncSetupData()]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        let completion = wideEventMock.completions.first { $0.0 is SyncSetupWideEventData }
+        guard case .unknown(let reason) = completion?.1 else {
+            return XCTFail("Expected the open sync setup attempt to complete as UNKNOWN")
+        }
+        XCTAssertEqual(reason, "app_restart")
+    }
+
+    func testColdLaunch_withSyncSetupFlagOff_discardsSyncSetupAttemptWithoutSending() async {
+        isSyncSetupWideEventEnabled = false
+        let data = makeSyncSetupData()
+        wideEventMock.started = [data]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertFalse(wideEventMock.completions.contains { $0.0 is SyncSetupWideEventData })
+        XCTAssertTrue(wideEventMock.discarded.contains { $0.globalData.id == data.globalData.id })
+    }
+
+    private func makeSyncSetupData() -> SyncSetupWideEventData {
+        SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,
+                               launchID: "previous-launch", contextData: WideEventContextData())
     }
 
     private func createMockWideEventData(activateAccountDuration: WideEvent.MeasuredInterval? = nil) -> SubscriptionPurchaseWideEventData {

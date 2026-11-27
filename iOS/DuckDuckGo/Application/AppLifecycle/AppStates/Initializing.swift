@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Core
 import UIKit
 import BrowserServicesKit
 
@@ -37,7 +38,16 @@ struct Initializing: InitializingHandling {
 extension Initializing {
 
     func makeLaunchingState(startupFailureInstrumentation: any StartupFailureInstrumentation) throws -> any LaunchingHandling {
-        try Launching(startupFailureInstrumentation: startupFailureInstrumentation)
+        applyLaunchArguments()
+        return try Launching(startupFailureInstrumentation: startupFailureInstrumentation)
+    }
+
+    /// Runs before `Launching` builds any dependency, so every service starts from the state these arguments set.
+    private func applyLaunchArguments() {
+        LaunchOptionsHandler().resetAppStateIfNeeded()
+#if DEBUG || ALPHA
+        LaunchProfileStartup.applyIfNeeded()
+#endif
     }
 
 }

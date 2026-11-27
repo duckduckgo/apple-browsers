@@ -177,10 +177,18 @@ struct Launching: LaunchingHandling {
             }
         )
 
+        // The flag also gates Apple Intelligence, so remote config could turn it on for everyone. The
+        // downloadable model stays internal either way. Decided at launch: a change in internal status
+        // applies after a relaunch.
+        let downloadableModel = featureFlagger.internalUserDecider.isInternalUser
+            ? DownloadableLlamaModel(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
+            : nil
         let localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
-                                                        storage: AIChatSettings(featureFlagger: featureFlagger))
+                                                        storage: AIChatSettings(featureFlagger: featureFlagger),
+                                                        downloadableModel: downloadableModel?.model)
         let aiChatLocalModel = AIChatLocalModelDependencies(service: localModelService,
-                                                            accessPrompt: LocalModelAccessPrompt())
+                                                            accessPrompt: LocalModelAccessPrompt(),
+                                                            downloadableModelLifecycle: downloadableModel?.lifecycle)
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
                                                             contentBlocking: contentBlocking,
@@ -286,13 +294,17 @@ struct Launching: LaunchingHandling {
                                                             idleReturnEligibilityManager: idleReturnEligibilityManager,
                                                             aiChatBonusStateProvider: aiChatBonusService,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
-        let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
+        let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+                                                      featureFlagger: featureFlagger,
+                                                      onboardingVPNExperimentMetrics: .live,
+                                                      notificationCenter: .default)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            isSyncSetupWideEventEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sendSyncSetupWideEvent) }
         )
 
         // Service to display the Default Browser prompt.
@@ -375,7 +387,7 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
-        let usageContextProvider = UsageContextProvider()
+        let usageContextProvider = UsageContextProvider(featureFlagger: featureFlagger)
         mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                               syncService: syncService,
                                               contentBlockingService: contentBlockingService,
@@ -440,7 +452,8 @@ struct Launching: LaunchingHandling {
         let vpnService = VPNService(mainCoordinator: mainCoordinator,
                                     notificationServiceManager: notificationServiceManager,
                                     onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(
-                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
+                                        keyValueStore: appKeyValueFileStoreService.keyValueFilesStore),
+                                    onboardingVPNExperimentMetrics: .live)
         let aiChatService = AIChatService(
             aiChatSettings: aiChatSettings,
             aiChatBonusService: aiChatBonusService,
@@ -620,7 +633,7 @@ struct Launching: LaunchingHandling {
     /// Nil when web page translation is off, or when its store or models folder can't be opened:
     /// translation is then unavailable rather than failing launch.
     private static func makeTranslationModels(featureFlagger: FeatureFlagger) -> TranslationModels? {
-        guard featureFlagger.isFeatureOn(.webPageTranslation) else {
+        guard featureFlagger.isFeatureOn(.pageTranslation) else {
             return nil
         }
 

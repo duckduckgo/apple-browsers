@@ -28,33 +28,50 @@ import UIKit
 @MainActor
 final class LocalModelAccessPrompt: LocalModelAccessAsking {
 
+    private let instrumentation: AIChatLocalModelInstrumentation
     private weak var controller: UIViewController?
     private var answer: AIChatLocalModelAccessReply.Result?
+    private var isInstallPrompt = false
     private var waiting: [CheckedContinuation<AIChatLocalModelAccessReply.Result, Never>] = []
 
-    func ask(in window: UIWindow?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
+    init(instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
+        self.instrumentation = instrumentation
+    }
+
+    func ask(in window: UIWindow?, request: AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result {
         await withCheckedContinuation { continuation in
             waiting.append(continuation)
             // A second request while the card is up, from a double tap or another tab, gets the same answer.
             guard waiting.count == 1 else { return }
-            if !show(in: window, modelName: modelName) {
+            if show(in: window, request: request) {
+                // The pixels only know Apple Intelligence so far, so an Install card would count as its offer.
+                if case .install = request {
+                    isInstallPrompt = true
+                } else {
+                    instrumentation.fire(.promoShown)
+                }
+            } else {
                 finish(.declined)
             }
         }
     }
 
-    private func show(in window: UIWindow?, modelName: String) -> Bool {
+    private func show(in window: UIWindow?, request: AIChatLocalModelAccessRequest) -> Bool {
         guard let root = window?.rootViewController else { return false }
         var presenter = root
         while let presented = presenter.presentedViewController, !presented.isBeingDismissed {
             presenter = presented
         }
 
-        let card = LocalModelAccessPromptView(modelName: modelName,
+        let card = LocalModelAccessPromptView(request: request,
                                               onAnswer: { [weak self] answer in self?.close(with: answer) })
         let controller = LocalModelAccessPromptHostingController(rootView: card) { [weak self] in
             guard let self else { return }
-            self.finish(self.answer ?? .declined)
+            let result = self.answer ?? .declined
+            if result == .declined, !self.isInstallPrompt {
+                self.instrumentation.fire(.promoClosed)
+            }
+            self.finish(result)
         }
         self.controller = controller
         presenter.present(controller, animated: true)
@@ -72,6 +89,7 @@ final class LocalModelAccessPrompt: LocalModelAccessAsking {
         let waiting = self.waiting
         self.waiting = []
         answer = nil
+        isInstallPrompt = false
         for continuation in waiting {
             continuation.resume(returning: result)
         }
@@ -110,8 +128,33 @@ final class LocalModelAccessPromptHostingController: UIHostingController<LocalMo
 
 struct LocalModelAccessPromptView: View {
 
-    let modelName: String
+    let request: AIChatLocalModelAccessRequest
     let onAnswer: (AIChatLocalModelAccessReply.Result) -> Void
+
+    private var message: String {
+        switch request {
+        case .connect(let model):
+            return String(format: UserText.localModelAccessPromptMessage, model.name)
+        case .install(let model, _):
+            return String(format: UserText.localModelAccessPromptMessage, model.name) + "\n\n" + UserText.localModelInstallPromptFutureUse
+        }
+    }
+
+    private var acceptTitle: String {
+        switch request {
+        case .connect:
+            return UserText.localModelAccessTurnOn
+        case .install(_, let bytes):
+            return String(format: UserText.localModelInstallButton, ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
+        }
+    }
+
+    private var acceptIdentifier: String {
+        switch request {
+        case .connect: return "LocalModelAccessPrompt.turnOn"
+        case .install: return "LocalModelAccessPrompt.install"
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -151,16 +194,16 @@ struct LocalModelAccessPromptView: View {
                     .daxHeadline()
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
-                Text(String(format: UserText.localModelAccessPromptMessage, modelName))
+                Text(message)
                     .daxBodyRegular()
                     .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundColor(Color(designSystemColor: .textPrimary))
 
             VStack(spacing: 12) {
-                Button(UserText.localModelAccessTurnOn) { onAnswer(.allowed) }
+                Button(acceptTitle) { onAnswer(.allowed) }
                     .buttonStyle(PrimaryButtonStyle())
-                    .accessibilityIdentifier("LocalModelAccessPrompt.turnOn")
+                    .accessibilityIdentifier(acceptIdentifier)
                 Button(UserText.localModelAccessNoThanks) { onAnswer(.declined) }
                     .buttonStyle(SecondaryFillButtonStyle())
                     .accessibilityIdentifier("LocalModelAccessPrompt.noThanks")

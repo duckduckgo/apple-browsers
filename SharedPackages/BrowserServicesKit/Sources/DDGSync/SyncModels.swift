@@ -162,7 +162,7 @@ public struct ExchangeMessage: Codable, Sendable {
     public let deviceName: String
 }
 
-public struct PairingInfo {
+public struct PairingInfo: Sendable {
     enum Kind {
         case legacy
         case pairingV2(URL)

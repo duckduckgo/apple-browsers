@@ -241,6 +241,66 @@ final class NativeMessagingHostManifestTests: XCTestCase {
         XCTAssertTrue(paths[firstSystemIndex...].allSatisfy { $0.hasPrefix("/Library/") })
     }
 
+    // MARK: - Hosts directory
+
+    func testWhenUserHostsDirectoryIsReadThenItIsOurOwnUserLevelDirectory() throws {
+        let userLibrary = try XCTUnwrap(FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first)
+        let expected = userLibrary.appendingPathComponent("Application Support/DuckDuckGo/NativeMessagingHosts")
+
+        XCTAssertEqual(NativeMessagingHostManifestLocator.userHostsDirectory, expected)
+        XCTAssertEqual(NativeMessagingHostManifestLocator.searchDirectories.first, expected)
+    }
+
+    func testWhenSearchDirectoriesAreOmittedThenTheContainerDirectoryIsSearchedSecond() throws {
+        // The real `~/Library`, also when the test host is sandboxed.
+        let bundleID = try XCTUnwrap(Bundle.main.bundleIdentifier)
+        let expected = URL.nonSandboxLibraryDirectoryURL
+            .appendingPathComponent("Containers/\(bundleID)/Data/Library/Application Support/NativeMessagingHosts")
+
+        XCTAssertEqual(NativeMessagingHostManifestLocator.containerHostsDirectory.standardizedFileURL, expected.standardizedFileURL)
+        let directories = NativeMessagingHostManifestLocator.searchDirectories
+        XCTAssertEqual(directories.count, 13)
+        XCTAssertEqual(directories[1].standardizedFileURL, expected.standardizedFileURL)
+    }
+
+    func testWhenHostsDirectoryIsMissingThenItIsCreatedWithItsParents() {
+        let hostsDirectory = directories[0].appendingPathComponent("Application Support/DuckDuckGo/NativeMessagingHosts")
+
+        NativeMessagingHostManifestLocator.createHostsDirectoryIfNeeded(at: hostsDirectory)
+
+        var isDirectory: ObjCBool = false
+        XCTAssertTrue(FileManager.default.fileExists(atPath: hostsDirectory.path, isDirectory: &isDirectory))
+        XCTAssertTrue(isDirectory.boolValue)
+    }
+
+    func testWhenHostsDirectoryExistsThenItsContentsAreKept() throws {
+        let manifestURL = directories[0].appendingPathComponent("com.example.host.json")
+        try Data("{}".utf8).write(to: manifestURL)
+
+        NativeMessagingHostManifestLocator.createHostsDirectoryIfNeeded(at: directories[0])
+
+        XCTAssertEqual(try Data(contentsOf: manifestURL), Data("{}".utf8))
+    }
+
+    @available(macOS 15.4, *)
+    @MainActor
+    func testWhenHandlerIsCreatedThenItCreatesEveryHostsDirectory() {
+        let userHostsDirectory = directories[0].appendingPathComponent("DuckDuckGo/NativeMessagingHosts")
+        let containerHostsDirectory = directories[1].appendingPathComponent("Data/Library/Application Support/NativeMessagingHosts")
+
+        _ = NativeMessagingHandler(hostsDirectories: [userHostsDirectory, containerHostsDirectory])
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: userHostsDirectory.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: containerHostsDirectory.path))
+    }
+
+    func testWhenOwnHostsDirectoriesAreReadThenTheyAreTheFirstTwoSearchDirectories() {
+        let ownDirectories = NativeMessagingHostManifestLocator.ownHostsDirectories
+
+        XCTAssertEqual(ownDirectories.count, 2)
+        XCTAssertEqual(Array(NativeMessagingHostManifestLocator.searchDirectories.prefix(2)), ownDirectories)
+    }
+
     // MARK: - Helpers
 
     private func assertInvalidName(_ name: String, searchDirectories: [URL], file: StaticString = #filePath, line: UInt = #line) {

@@ -67,6 +67,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to open sync settings.
     func aiChatContextualSheetCoordinatorDidRequestOpenSyncSettings(_ coordinator: AIChatContextualSheetCoordinator)
 
+    /// Called when the user requests to open Data Clearing settings.
+    func aiChatContextualSheetCoordinatorDidRequestOpenDataClearingSettings(_ coordinator: AIChatContextualSheetCoordinator)
+
     /// Called when the contextual chat URL changes, used to persist for cold restore.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?)
 
@@ -201,6 +204,10 @@ final class AIChatContextualSheetCoordinator {
     }
 
     private var chatStorage: DuckAiNativeStorageHandling? {
+        chatStorage(isFireTab: isFireTab)
+    }
+
+    private func chatStorage(isFireTab: Bool) -> DuckAiNativeStorageHandling? {
         isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
     }
 
@@ -809,7 +816,9 @@ final class AIChatContextualSheetCoordinator {
     private func park(_ sheetViewController: AIChatContextualSheetViewController,
                       leavingSidebarOf sidebarHost: AIChatContextualSidebarHosting,
                       animated: Bool) {
-        cancelBrowserToolsPermission()
+        if browserToolsPermissionPresenter?.preservesPermissionOnSurfaceChange != true {
+            cancelBrowserToolsPermission()
+        }
         // Something the chat presented, like the Fire confirmation, would be left behind by the move.
         if let presented = sheetViewController.presentedViewController,
            browserToolsPermissionPresenter?.owns(presented) != true {
@@ -1164,6 +1173,7 @@ private extension AIChatContextualSheetCoordinator {
             attachMoreTabsFeature: attachMoreTabsFeature,
             start: start,
             usageLimitsStore: duckAiUsageLimitsStore,
+            userDefaultModelStorage: { [weak self] in self?.chatStorage(isFireTab: $0) },
             floatingUIManager: floatingUIManager,
             tabAttachmentSource: tabAttachmentSource,
             duckAIWideEventInstrumentation: DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
@@ -1427,8 +1437,8 @@ private extension AIChatContextualSheetCoordinator {
         return webVC
     }
 
-    private func makeBrowserToolsPermissionPresenter(for webVC: AIChatContextualWebViewController) -> AIChatNativePermissionPresenter {
-        AIChatNativePermissionPresenter { [weak self, weak webVC] in
+    private func makeBrowserToolsPermissionPresenter(for webVC: AIChatContextualWebViewController) -> AIChatToolPermissionPresenter {
+        AIChatToolPermissionPresenter { [weak self, weak webVC] in
             guard let self, let webVC, self.browserToolsWebViewController === webVC,
                   self.isSheetPresented, !self.hasParkedSurface, !self.isAwayWithTab,
                   let sheet = self.sheetViewController else { return nil }
@@ -1438,7 +1448,7 @@ private extension AIChatContextualSheetCoordinator {
             } else if sheet.presentingViewController == nil {
                 return nil
             }
-            return sheet
+            return .init(sheet, isChanging: sheet.$isChangingSurface.eraseToAnyPublisher())
         }
     }
 
@@ -1614,6 +1624,13 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
         dismissSurface(of: viewController) { [weak self] in
             guard let self else { return }
             self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenSyncSettings(self)
+        }
+    }
+
+    func aiChatContextualSheetViewControllerDidRequestOpenDataClearingSettings(_ viewController: AIChatContextualSheetViewController) {
+        dismissSurface(of: viewController) { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinatorDidRequestOpenDataClearingSettings(self)
         }
     }
 

@@ -31,6 +31,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
     private let churnState: UserChurnStateProviding
     private let promptStore: DefaultBrowserAndDockPromptStorage
     private let confirmationMonitor: DefaultBrowserConfirmationMonitoring
+    private let rolloutMonitor: AppStoreDockRolloutMonitoring?
     private let pixelFiring: PixelFiring?
     private let isFeatureEnabled: () -> Bool
     private let uiHosting: () -> DefaultBrowserAndDockPromptUIHosting?
@@ -53,6 +54,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
          churnState: UserChurnStateProviding,
          promptStore: DefaultBrowserAndDockPromptStorage,
          confirmationMonitor: DefaultBrowserConfirmationMonitoring,
+         rolloutMonitor: AppStoreDockRolloutMonitoring? = nil,
          pixelFiring: PixelFiring? = PixelKit.shared,
          isFeatureEnabled: @escaping () -> Bool,
          uiHosting: @escaping () -> DefaultBrowserAndDockPromptUIHosting?,
@@ -62,6 +64,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         self.churnState = churnState
         self.promptStore = promptStore
         self.confirmationMonitor = confirmationMonitor
+        self.rolloutMonitor = rolloutMonitor
         self.pixelFiring = pixelFiring
         self.isFeatureEnabled = isFeatureEnabled
         self.uiHosting = uiHosting
@@ -111,6 +114,7 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
             self.modal = modal
             modal.present(over: anchor)
             pixelFiring?.fire(DefaultBrowserWinBackPixel.shown(type: type))
+            rolloutMonitor?.promptShown(type, promptID: "win-back-modal")
         }
     }
 
@@ -131,9 +135,10 @@ final class DefaultBrowserWinBackPromoDelegate: InternalPromoDelegate {
         guard showContinuation != nil else { return }
         pixelFiring?.fire(DefaultBrowserWinBackPixel.confirmButtonClicked(type: type))
         markInactiveUserModalSeen(isForceShow: isForceShow)
-        actionPerformer.performPendingActions { [weak self] in
+        actionPerformer.performPendingActions(from: .winBackModal) { [weak self] in
             guard let self else { return }
             confirmationMonitor.start(clickDate: dateProvider())
+            rolloutMonitor?.setAsDefaultRequested()
         }
         resume(with: .actioned())
     }

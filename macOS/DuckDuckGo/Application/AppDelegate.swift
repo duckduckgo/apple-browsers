@@ -181,7 +181,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private(set) lazy var cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate = { // swiftlint:disable:this weak_delegate
         CookiePopupsBlockedPromoDelegate(
-            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             windowControllersManager: windowControllersManager,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
@@ -254,6 +253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
     private let fireWindowOpenPixelReporter: FireWindowOpenPixelReporter
+    private var onboardingDuckAIPathWindowRestorer: OnboardingDuckAIPathWindowRestorer?
     let tabSuspensionService: TabSuspensionService
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
@@ -419,7 +419,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserWinBackConfirmationMonitor: DefaultBrowserConfirmationMonitor
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionManager,
-        featureFlagger: featureFlagger,
         buttonDelegate: vpnUpsellToolbarButtonPromoDelegate
     )
     let themeManager: ThemeManager
@@ -427,7 +426,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let subscriptionManager: any SubscriptionManager
-    static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
 
@@ -475,13 +473,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     lazy var vpnUpsellToolbarButtonPromoDelegate = VPNUpsellToolbarButtonPromoDelegate( // swiftlint:disable:this weak_delegate
-        featureFlagger: featureFlagger,
         visibilityManager: vpnUpsellVisibilityManager,
         persistor: vpnUpsellUserDefaultsPersistor
     )
 
     lazy var vpnUpsellDotBadgePromoDelegate = VPNUpsellDotBadgePromoDelegate( // swiftlint:disable:this weak_delegate
-        featureFlagger: featureFlagger,
         visibilityManager: vpnUpsellVisibilityManager,
         persistor: vpnUpsellUserDefaultsPersistor
     )
@@ -605,7 +601,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var wideEventService: WideEventService = {
         return WideEventService(
             wideEvent: wideEvent,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            isSyncSetupWideEventEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sendSyncSetupWideEvent) }
         )
     }()
 
@@ -884,7 +881,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         wideEvent = WideEvent(
-            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            isDevMode: !BuildFlags.isProductionBuild,
             featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
         )
 
@@ -962,6 +959,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                  authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
+        let backupTokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                                                  userDefaults: .subs,
+                                                                  field: .backupTokenContainer,
+                                                                  errorEventsHandler: pixelHandler.backupKeychainErrorHandler())
 
         let isAuthV2WideEventEnabled = {
 #if DEBUG
@@ -974,7 +975,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                     isFeatureEnabled: isAuthV2WideEventEnabled)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
-                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
+                                            backupStorage: backupTokenStorage,
+                                            isBackupEnabled: { featureFlagger.isFeatureOn(.authBackupToken) },
+                                            backupUserDefaults: subscriptionUserDefaults,
+                                            backupEventMapping: pixelHandler.backupEventMapping())
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
@@ -982,15 +987,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
             guard let tokenContainer = try? tokenStorage.getTokenContainer() else {
+                Logger.subscriptionTokensManagement.error("Unauthorized response, but no current token can be read to refresh")
                 throw OAuthClientError.internalError("Missing refresh token")
             }
 
             if tokenContainer.decodedAccessToken.isExpired() {
-                Logger.OAuth.debug("Refreshing tokens")
+                Logger.subscriptionTokensManagement.log("Unauthorized response with an expired access token, refreshing it")
                 let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
                 return tokens.accessToken
             } else {
-                Logger.general.debug("Trying to refresh valid token, using the old one")
+                Logger.subscriptionTokensManagement.log("Unauthorized response with an unexpired access token, retrying with it")
                 return tokenContainer.accessToken
             }
         }
@@ -1034,9 +1040,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
                                                      storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
                                                      pendingTransactionHandler: pendingTransactionHandler)
-        defaultSubscriptionManager.tokenRecoveryHandler = {
-            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
-        }
+        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient, pixelHandler: pixelHandler)
+        let appStoreRecovery = AppStoreTokenRecovery(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
+                                                     restoreFlow: restoreFlow)
+        defaultSubscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],
+                                                                                       missingTokenStrategies: [backupRecovery])
 
         subscriptionManager = defaultSubscriptionManager
         freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
@@ -1057,7 +1065,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
             ),
             internalUserDecider: internalUserDecider,
-            featureFlagger: featureFlagger,
             pinningManager: pinningManager
         )
         tabsPreferences = TabsPreferences(
@@ -1074,7 +1081,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider.tabsPreferences = tabsPreferences
         pinnedTabsManagerProvider.windowControllersManager = windowControllersManager
 
-        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger)
+        // The flag also gates Apple Intelligence, so remote config could turn it on for everyone. The
+        // downloadable model stays internal either way. Decided at launch: a change in internal status
+        // applies after a relaunch.
+        let downloadableModel: AIChatDownloadableLocalModel? = internalUserDecider.isInternalUser
+            ? .llamaCpp(privacyConfigurationManager: privacyConfigurationManager)
+            : nil
+        localModelService = AIChatLocalModelService(featureFlagger: featureFlagger,
+                                                     downloadableModel: downloadableModel)
 
         contentScopePreferences = ContentScopePreferences(windowControllersManager: windowControllersManager)
         webTrackingProtectionPreferences = WebTrackingProtectionPreferences(persistor: WebTrackingProtectionPreferencesUserDefaultsPersistor(), windowControllersManager: windowControllersManager)
@@ -1306,13 +1320,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             httpsUpgrade: privacyFeatures.httpsUpgrade
         )
 
-        onboardingContextualDialogsManager = ContextualDialogsManager(
+        let contextualDialogsManager = ContextualDialogsManager(
             trackerMessageProvider: TrackerMessageProvider(
                 entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
             ),
             subscriptionManager: subscriptionManager,
             settings: keyValueStore.throwingKeyedStoring(),
-            uiLocker: windowControllersManager
+            uiLocker: windowControllersManager,
+            aiChatMenuConfig: aiChatMenuConfiguration
+        )
+        onboardingContextualDialogsManager = contextualDialogsManager
+        onboardingDuckAIPathWindowRestorer = OnboardingDuckAIPathWindowRestorer(
+            windowDidOpen: windowControllersManager.didRegisterWindowController.map { $0 as DuckAIOnboardingWindow }.eraseToAnyPublisher(),
+            onboarding: contextualDialogsManager,
+            isDuckAIAvailable: { [aiChatMenuConfiguration] in aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature },
+            clearDuckAIChats: { [aiChatHistoryCleaner] in _ = await aiChatHistoryCleaner?.cleanAIChatHistory() },
+            aiChatURL: { AIChatRemoteSettings().aiChatURL }
         )
 
         let onboardingManager = onboardingContextualDialogsManager
@@ -1928,6 +1951,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Reads and writes end an expired boost too, but neither may happen soon after the app becomes active.
         try? aiChatBonusService.endBoostIfExpired()
 
+        Task { [subscriptionManager] in
+            await subscriptionManager.restoreMissingTokenIfPossible()
+        }
+
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
         QuitSurveyReturnUserHandler(
@@ -2419,6 +2446,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         webExtensionManager.installRemoteDisableEnforcer(
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             featureFlagger: featureFlagger
+        )
+        webExtensionManager.installUserAllowlistNotifier(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager
         )
         let nativeBitwardenRetirement = NativeBitwardenRetirement(
             isBitwardenExtensionInstalled: { [weak webExtensionManager] in

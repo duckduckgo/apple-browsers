@@ -25,23 +25,28 @@ import SwiftUI
 @MainActor
 final class LocalModelAccessSettingsViewModel: ObservableObject {
 
-    /// The flag is on and Apple Intelligence is ready on this device.
+    /// The flag is on, and Apple Intelligence is ready or the downloadable model can run instead.
     @Published private(set) var isAvailable = false
     @Published private(set) var isOn = false
     @Published var isConfirmingTurnOn = false
-
-    let modelName: String
+    @Published private(set) var modelName = ""
+    /// The downloadable model's install state, or nil when the section shows Apple Intelligence.
+    @Published private(set) var downloadableModelState: AIChatLocalModelInstallState?
 
     private let service: AIChatLocalModelService
     private var cancellable: AnyCancellable?
 
     init(service: AIChatLocalModelService) {
         self.service = service
-        self.modelName = service.model.name
         update()
         cancellable = service.changesPublisher
-            .receive(on: DispatchQueue.main)
+            // A download reports progress for every megabyte; the row doesn't need more than a few updates a second.
+            .throttle(for: .milliseconds(250), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] in self?.update() }
+    }
+
+    var downloadableModelBytes: Int64 {
+        service.installer?.spec.bytes ?? 0
     }
 
     /// Stays on while the confirmation is up, so Cancel visibly flips it back.
@@ -56,7 +61,7 @@ final class LocalModelAccessSettingsViewModel: ObservableObject {
                 if isOn {
                     self.isConfirmingTurnOn = true
                 } else {
-                    self.service.optOut()
+                    self.service.select(.duckAI, source: .settings)
                 }
             }
         )
@@ -70,15 +75,31 @@ final class LocalModelAccessSettingsViewModel: ObservableObject {
 
     func confirmTurnOn() {
         isConfirmingTurnOn = false
-        service.optIn()
+        service.select(.appleIntelligence, source: .settings)
     }
 
     func cancelTurnOn() {
         isConfirmingTurnOn = false
     }
 
+    /// Also Try Again after a failed download.
+    func installDownloadableModel() {
+        service.installDownloadableModel()
+    }
+
+    func cancelDownloadableModelInstall() {
+        service.cancelDownloadableModelInstall()
+    }
+
+    func uninstallDownloadableModel() {
+        service.uninstallDownloadableModel()
+    }
+
     private func update() {
-        isAvailable = service.isFeatureEnabled && service.availability.isAvailable
+        let state = service.currentState
+        isAvailable = state != nil && state != .unsupported
         isOn = service.isOptedIn
+        modelName = service.model.name
+        downloadableModelState = service.activeEngineKind == .llama ? service.installer?.state : nil
     }
 }

@@ -39,13 +39,15 @@ let package = Package(
                 .product(name: "Common", package: "Common"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PixelKit", package: "PixelKit")
-            ]),
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]),
         .testTarget(
             name: "HangMetricsTests",
             dependencies: [
                 "HangMetrics",
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PixelKit", package: "PixelKit")
-            ])
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")])
     ]
 )

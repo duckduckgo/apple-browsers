@@ -64,6 +64,18 @@ public final class DataBrokerProtectionSettings {
         self.defaults = defaults
     }
 
+#if DEBUG
+    /// Allowlist that narrows scheduled scans, opt-outs and email confirmations to these broker URLs.
+    public var debugTestBrokerURLs: [String]? {
+        get { defaults.stringArray(forKey: "dbp.debug.testBrokerURLs") }
+        set { defaults.set(newValue, forKey: "dbp.debug.testBrokerURLs") }
+    }
+
+    func allowsBrokerForDebugTesting(_ brokerURL: String) -> Bool {
+        debugTestBrokerURLs?.contains(brokerURL) ?? true
+    }
+#endif
+
     // MARK: - Environment
 
     public var selectedEnvironment: SelectedEnvironment {

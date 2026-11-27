@@ -35,6 +35,7 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
     var daxEasterEggPresenter: DaxEasterEggPresenting
     var mobileCustomization: DuckDuckGo.MobileCustomization
     var duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    var duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),

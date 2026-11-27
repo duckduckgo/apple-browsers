@@ -318,6 +318,14 @@ final class MainWindowController: NSWindowController {
         NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !lock.isLocked }
     }
 
+    /// Replaces the window's tabs even while it's locked, then locks the new tab too.
+    func replaceTabs(with tab: Tab) {
+        mainViewController.tabCollectionViewModel.removeAllTabs(andAppend: tab, forceChange: true)
+        if let lock = windowControllersManager?.userInteractionLock {
+            userInteraction(lock: lock)
+        }
+    }
+
     private func moveTabBarView(toTitlebarView: Bool) {
         guard let newParentView = toTitlebarView ? window?.titlebarView : mainViewController.view else {
             assertionFailure("Failed to move tab bar view")

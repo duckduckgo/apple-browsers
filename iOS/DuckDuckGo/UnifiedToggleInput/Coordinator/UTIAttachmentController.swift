@@ -541,6 +541,14 @@ final class UTIAttachmentController {
         presenter.presentFilePicker(from: presenterVC, allowedFileTypes: allowedFileUTTypes)
     }
 
+    /// Opens the photo library directly, for the new chat hint. No-ops when the active chat can't take another image.
+    func presentPhotoPicker() {
+        let policy = environment.policy()
+        guard policy.canAttachImages, policy.remainingImagesForPicker > 0, !view.isGenerating(),
+              let presenterVC = environment.presenterViewController() else { return }
+        presenter.presentPhotoLibrary(from: presenterVC, selectionLimit: policy.remainingImagesForPicker)
+    }
+
     func updateAttachButtonPresentation() {
         let policy = environment.policy()
         let supportsPageContextAttachment = environment.isContextualChatState() && environment.pageContextAttachHandler() != nil && (environment.isPageContextAttachable() ?? true)

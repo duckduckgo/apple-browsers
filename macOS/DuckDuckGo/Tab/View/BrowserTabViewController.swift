@@ -887,20 +887,20 @@ final class BrowserTabViewController: NSViewController {
         if case .tryFireButton = currentState {
             delegate?.highlightFireButton()
         }
-        // The rebranded Fire dialog transitions to High Five in place. Remember the visible content
-        // so its later callbacks remain High Five even after the manager advances to the upsell.
-        if case .highFive = currentState {
-            presentedContextualOnboardingDialogType = .highFive
+        // The rebranded Fire dialog transitions to its ending (High Five or Try Duck.ai) in place. Remember the
+        // visible content so its later callbacks remain the ending even after the manager advances to the upsell.
+        if currentState == .highFive || currentState == .tryDuckAI {
+            presentedContextualOnboardingDialogType = currentState
         }
     }
 
     private func displayedDialogType(forRoot rootDialogType: ContextualDialogType) -> ContextualDialogType {
         if let presentedContextualOnboardingDialogType,
-           presentedContextualOnboardingDialogType == .highFive || presentedContextualOnboardingDialogType == .subscriptionUpsell {
+           [.highFive, .tryDuckAI, .subscriptionUpsell].contains(presentedContextualOnboardingDialogType) {
             return presentedContextualOnboardingDialogType
         }
         switch rootDialogType {
-        case .highFive, .subscriptionUpsell:
+        case .highFive, .tryDuckAI, .subscriptionUpsell:
             return rootDialogType
         default:
             return onboardingDialogTypeProvider.lastDialog ?? rootDialogType

@@ -168,15 +168,11 @@ private class MockFeatureAvailability: SubscriptionFeatureAvailability {
     var mockSubscriptionPurchaseAllowed: Bool = false
 
     var isSubscriptionPurchaseAllowed: Bool { mockSubscriptionPurchaseAllowed }
-    var isPaidAIChatEnabled = false
-    var isProTierPurchaseEnabled = false
     var isSupportsAlternateStripePaymentFlowEnabled = false
 
     func reset() {
         mockFeatureAvailable = false
         mockSubscriptionPurchaseAllowed = false
-        isPaidAIChatEnabled = false
-        isProTierPurchaseEnabled = false
         isSupportsAlternateStripePaymentFlowEnabled = false
     }
 }

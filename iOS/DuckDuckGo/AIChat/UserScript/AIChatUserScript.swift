@@ -239,7 +239,13 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     weak var delegate: AIChatUserScriptDelegate?
     weak var broker: UserScriptMessageBroker?
-    weak var webView: WKWebView?
+    weak var webView: WKWebView? {
+        didSet {
+            if let webView {
+                localModelRunPageID = ObjectIdentifier(webView)
+            }
+        }
+    }
 
     @MainActor weak var browserToolsService: AIChatBrowserToolsService?
     private let debugSettings: AIChatDebugSettingsHandling
@@ -247,6 +253,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     private let handler: AIChatUserScriptHandling
     private let bonusMessageLog: AIChatBonusMessageLogging?
     private let localModelService: AIChatLocalModelServing?
+    /// The page whose local runs this script ends when it goes. `deinit` can't ask a web view
+    /// that's already gone for its identity.
+    private var localModelRunPageID: ObjectIdentifier?
+    /// A replaced script leaves the page's runs to the script that replaced it.
+    private var isReplacedOnItsPage = false
     private let localModelAccessPrompt: LocalModelAccessAsking?
     private var localTaskForSubmission: AIChatLocalModelTask?
     private(set) var messageOriginPolicy: MessageOriginPolicy
@@ -320,10 +331,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     deinit {
         pendingTabContextSubmission?.cancel()
         pendingOpenChat?.continuation.resume(returning: nil)
-        guard let localModelService else { return }
-        let ownerID = ObjectIdentifier(self)
+        // Content-blocking updates replace the script while its page stays open. The page's runs
+        // carry on and reach it through the new script, so only a page that's gone ends them.
+        guard let localModelService, !isReplacedOnItsPage, let pageID = localModelRunPageID else { return }
         Task { @MainActor in
-            localModelService.cancelRuns(ownerID: ownerID)
+            localModelService.cancelRuns(ownerID: pageID)
         }
     }
 
@@ -473,6 +485,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.disableChatInput
         case .enableChatInput:
             return handler.enableChatInput
+        case .aiChatPromoVisibility:
+            return handler.aiChatPromoVisibility
         case .focusChatInput:
             return handler.focusChatInput
         case .editPrompt:
@@ -561,6 +575,18 @@ final class AIChatUserScript: NSObject, Subfeature {
         set { handler.isTermsOfServiceShownOnPage = newValue }
     }
 
+    @MainActor
+    var isAIChatPromoVisible: Bool? {
+        get { handler.isAIChatPromoVisible }
+        set { handler.isAIChatPromoVisible = newValue }
+    }
+
+    @MainActor
+    var aiChatStatusOnPage: AIChatStatusValue? {
+        get { handler.aiChatStatusOnPage }
+        set { handler.aiChatStatusOnPage = newValue }
+    }
+
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
         handler.setOpenLinkHandler(openLinkHandler)
     }
@@ -645,6 +671,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         cancelQueuedTabContextSubmissions()
         inputBoxHandler = nil
         delegate = nil
+        isReplacedOnItsPage = true
         webView = nil
     }
 
@@ -1021,19 +1048,14 @@ extension AIChatUserScript: AIChatLocalModelPushing {
             throw AIChatLocalModelRequestError.unavailable
         }
         let window = message.messageWebView?.window
-        let modelName = localModelService.model.name
-        let result = try await localModelService.requestAccess {
-            await localModelAccessPrompt.ask(in: window, modelName: modelName)
+        let result = try await localModelService.requestAccess { request in
+            await localModelAccessPrompt.ask(in: window, request: request)
         }
         return AIChatLocalModelAccessReply(result: result)
     }
 
-    /// Runs belong to the script that started them. One replaced under a page that stays open hands them on,
-    /// or the page would wait for chunks that never come.
-    @MainActor
-    func handOverLocalRuns(to replacement: AIChatUserScriptProviding) {
-        guard let replacement = replacement as? AIChatLocalModelPushing else { return }
-        localModelService?.moveRuns(from: self, to: replacement)
+    var localModelPage: AnyObject? {
+        webView
     }
 
     @MainActor

@@ -175,7 +175,6 @@ private struct Copyable: ViewModifier {
 }
 
 private struct ListRowSelectableBackground: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
     var isSelected: Bool
     
     public func body(content: Content) -> some View {
@@ -186,7 +185,7 @@ private struct ListRowSelectableBackground: ViewModifier {
     
     private var backgroundColor: Color {
         if isSelected {
-            return colorScheme == .light ? Color(baseColor: .gray40) : Color(baseColor: .gray80)
+            return Color(singleUseColor: .autofillSelectedRowBackground)
         } else {
             return Color(designSystemColor: .surface)
         }

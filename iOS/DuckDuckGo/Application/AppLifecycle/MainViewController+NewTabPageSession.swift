@@ -259,15 +259,18 @@ final class NewTabPagePresentationCoordinator {
     init(notificationCenter: NotificationCenter = .default, isVisible: @escaping () -> Bool) {
         self.notificationCenter = notificationCenter
         self.isVisible = isVisible
-        for notification in [UIWindow.didBecomeKeyNotification, UIWindow.didBecomeHiddenNotification, UIApplication.didBecomeActiveNotification] {
+        // Settings can clear data and attach a page behind itself, so its dismissal must start that page's visit.
+        for notification in [UIWindow.didBecomeKeyNotification, UIWindow.didBecomeHiddenNotification, UIApplication.didBecomeActiveNotification,
+                             .settingsDidDisappear] {
             observers.append(notificationCenter.addObserver(forName: notification, object: nil, queue: .main) { [weak self] _ in
-                // Authentication replaces its blank snapshot within the same main-loop turn.
+                // Authentication replaces its blank snapshot within the same main-loop turn, and a dismissed sheet
+                // is still the presented view controller while it reports disappearing.
                 DispatchQueue.main.async {
                     self?.recordIfVisible()
                 }
             })
         }
-        // Dismissing a sheet over the page, such as Settings, posts none of the above. Until the app resigns,
+        // Dismissing any other sheet over the page, such as Bookmarks, posts none of the above. Until the app resigns,
         // its window is still active and uncovered, so this is the last reliable check that the page was seen.
         observers.append(notificationCenter.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: nil) { [weak self] _ in
             // Delivered synchronously so the check runs while the app is still active; skip rather than trap off-main.

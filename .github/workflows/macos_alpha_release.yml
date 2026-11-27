@@ -134,6 +134,12 @@ jobs:
       - name: Print macOS version
         run: sw_vers
 
+      - name: Check out the Sparkle key selection script
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: macOS/scripts/select_sparkle_private_key.swift
+          sparse-checkout-cone-mode: false
+
       - name: Download DMG URL artifact
         uses: actions/download-artifact@v7
         with:
@@ -174,9 +180,14 @@ jobs:
         id: appcast
         working-directory: sparkle
         env:
+          DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SPARKLE_PRIVATE_KEY_V2: ${{ secrets.SPARKLE_PRIVATE_KEY_V2 }}
         run: |
-          echo "$SPARKLE_PRIVATE_KEY" | generate_appcast --ed-key-file - \
+          # Keep the key out of this directory, which generate_appcast scans for updates
+          key_file="${RUNNER_TEMP}/sparkle_private_key"
+          "${GITHUB_WORKSPACE}/macOS/scripts/select_sparkle_private_key.swift" "${DMG_NAME}" "${key_file}"
+          generate_appcast --ed-key-file "${key_file}" \
             -o appcast-alpha.xml \
             --embed-release-notes \
             .

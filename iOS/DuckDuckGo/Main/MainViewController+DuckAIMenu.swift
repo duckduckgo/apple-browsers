@@ -174,7 +174,10 @@ extension MainViewController {
             }),
             browsingMode: isFireMode ? .fire : .normal,
             onConfirm: { _ in },
-            onCancel: {}
+            onCancel: {},
+            onOpenSettings: { [weak self] in
+                self?.segueToSettingsDataClearing()
+            }
         )
     }
 

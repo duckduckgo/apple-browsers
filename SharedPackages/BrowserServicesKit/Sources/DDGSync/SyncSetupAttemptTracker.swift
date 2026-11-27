@@ -101,6 +101,7 @@ public final class SyncSetupAttemptTracker {
             $0.connectMethod = connectMethod
             $0.role = nil
             $0.peerKind = nil
+            $0.peerOutcome = nil
             if let supportedFlowVersion {
                 $0.flowVersion = supportedFlowVersion
             }

@@ -2423,6 +2423,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.account = AccountManagingMock()
         attemptTracker.recordPeer(role: .host, kind: .ddg)
         attemptTracker.recordFlowVersion(.v1)
+        attemptTracker.recordHostAwaitingJoiner()
 
         await controller.syncCodeEntered(code: Self.validRecoveryCode, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
 
@@ -2430,6 +2431,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(attempt.pixelParameters()["feature.data.ext.connect_method"], "scan_code")
         XCTAssertNil(attempt.pixelParameters()["feature.data.ext.role"])
         XCTAssertNil(attempt.pixelParameters()["feature.data.ext.peer_kind"])
+        XCTAssertNil(attempt.pixelParameters()["feature.data.ext.peer_outcome"])
         XCTAssertEqual(attempt.pixelParameters()["feature.data.ext.flow_version"], "v2.1")
     }
 
@@ -2593,8 +2595,14 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_attempt_v21PresenterHost_whenJoinerLeavesWithoutReport_endsWithPeerOutcomeUnknown() async throws {
-        try await assertV21PresenterHostEnds(afterJoinerSends: [.bye(.init(reason: .done))], peerOutcome: "unknown")
+    func test_attempt_v21PresenterHost_whenJoinerSaysDoneBeforeReporting_waitsForTheReport() async throws {
+        try await assertV21PresenterHostEnds(afterJoinerSends: [.bye(.init(reason: .done)), .recoveryCodeDone(.init(reason: .success))],
+                                             peerOutcome: "success")
+    }
+
+    @MainActor
+    func test_attempt_v21PresenterHost_whenJoinerLeavesWithAnUnknownReason_endsWithPeerOutcomeUnknown() async throws {
+        try await assertV21PresenterHostEnds(afterJoinerSends: [.bye(.init(reason: .unknown("gone")))], peerOutcome: "unknown")
     }
 
     @MainActor

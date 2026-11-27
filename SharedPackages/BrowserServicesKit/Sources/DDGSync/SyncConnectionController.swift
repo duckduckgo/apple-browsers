@@ -1305,8 +1305,10 @@ private extension SyncSetupWideEventData.PeerOutcome {
                 self = .cancelled
             case .error:
                 self = .failure
-            case .done, .unknown:
+            case .unknown:
                 self = .unknown
+            case .done:
+                return nil
             }
         default:
             return nil

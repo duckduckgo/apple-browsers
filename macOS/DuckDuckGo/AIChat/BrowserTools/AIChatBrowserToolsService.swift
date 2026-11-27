@@ -51,6 +51,7 @@ final class AIChatBrowserToolsService {
          historyCoordinator: HistoryCoordinating,
          bookmarkManager: BookmarkManager,
          permissionManager: PermissionManagerProtocol,
+         translatePages: TranslatePagesSetting = TranslatePagesSetting(),
          tools: [any BrowserTool]? = nil) {
         let tools = tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
                                                historyCoordinator: historyCoordinator,
@@ -67,7 +68,7 @@ final class AIChatBrowserToolsService {
         self.catalog = catalog
         self.permissions = permissions
         self.clientToolPermissions = clientToolPermissions
-        self.permissionPrompts = BrowserToolPermissionPromptPresenter(windowControllersManager: windowControllersManager) { prompt, decision, prompter in
+        self.permissionPrompts = BrowserToolPermissionPromptPresenter(windowControllersManager: windowControllersManager, translatePages: translatePages) { prompt, decision, prompter in
             clientToolPermissions.respond(to: prompt, decision: decision, from: prompter)
         }
         let invoker = BrowserToolInvoker(catalog: catalog, clientToolPermissions: clientToolPermissions)

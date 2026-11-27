@@ -168,27 +168,29 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
     // MARK: - File picker source
 
-    func testFilePickerFromNewChatHint_validPick_reportsNewChatHintSource() async throws {
-        let picker = try presentFilePicker(source: .newChatHint)
+    func testFilePickerFromNewChatHint_validPick_reportsNewChatHintEntryPoint() async throws {
+        let picker = try presentFilePicker(entryPoint: .newChatHint)
 
         picker.delegate?.documentPicker?(picker, didPickDocumentsAt: [try makePDFFile()])
 
         let call = try await firstFireCall(named: Pixel.Event.unifiedToggleInputFileAttached.name)
-        XCTAssertEqual(call.additionalParameters?["source"], "new_chat_hint")
+        XCTAssertEqual(call.additionalParameters?["source"], "file_picker")
+        XCTAssertEqual(call.additionalParameters?["entry_point"], "new_chat_hint")
     }
 
-    func testFilePickerFromNewChatHint_tooLargePick_reportsNewChatHintSource() async throws {
-        let picker = try presentFilePicker(source: .newChatHint)
+    func testFilePickerFromNewChatHint_tooLargePick_reportsNewChatHintEntryPoint() async throws {
+        let picker = try presentFilePicker(entryPoint: .newChatHint)
 
         picker.delegate?.documentPicker?(picker, didPickDocumentsAt: [try makeOversizedFile()])
 
         let call = try await firstFireCall(named: Pixel.Event.unifiedToggleInputFileValidationFailed.name)
-        XCTAssertEqual(call.additionalParameters?["source"], "new_chat_hint")
+        XCTAssertEqual(call.additionalParameters?["source"], "file_picker")
+        XCTAssertEqual(call.additionalParameters?["entry_point"], "new_chat_hint")
         XCTAssertEqual(call.additionalParameters?["reason"], "size_exceeded")
     }
 
-    func testFilePickerAfterNewChatHintPickerCloses_reportsFilePickerSource() async throws {
-        let hintPicker = try presentFilePicker(source: .newChatHint)
+    func testFilePickerAfterNewChatHintPickerCloses_reportsAttachmentMenuEntryPoint() async throws {
+        let hintPicker = try presentFilePicker(entryPoint: .newChatHint)
         hintPicker.delegate?.documentPickerWasCancelled?(hintPicker)
 
         let picker = try presentFilePicker()
@@ -196,11 +198,12 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
         let call = try await firstFireCall(named: Pixel.Event.unifiedToggleInputFileValidationFailed.name)
         XCTAssertEqual(call.additionalParameters?["source"], "file_picker")
+        XCTAssertEqual(call.additionalParameters?["entry_point"], "attachment_menu")
     }
 
     func testFilePickerCancel_callsOnCancelledOnlyForThatPicker() throws {
         var cancelCount = 0
-        let hintPicker = try presentFilePicker(source: .newChatHint, onCancelled: { cancelCount += 1 })
+        let hintPicker = try presentFilePicker(entryPoint: .newChatHint, onCancelled: { cancelCount += 1 })
         hintPicker.delegate?.documentPickerWasCancelled?(hintPicker)
         XCTAssertEqual(cancelCount, 1)
         XCTAssertEqual(callbackSpy.onExpandIfNeededCount, 1)
@@ -210,7 +213,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertEqual(cancelCount, 1)
     }
 
-    private func presentFilePicker(source: UTIAttachmentController.FilePickerSource = .filePicker,
+    private func presentFilePicker(entryPoint: UTIAttachmentController.FilePickerEntryPoint = .attachmentMenu,
                                    onCancelled: (() -> Void)? = nil) throws -> UIDocumentPickerViewController {
         config.model = makeModel(supportsImageUpload: false, supportedFileTypes: ["application/pdf"])
         config.limits = makeLimits()
@@ -218,7 +221,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         recordingHost = host
         config.presenter = host
         if filePickerSUT == nil { filePickerSUT = makeController() }
-        filePickerSUT?.presentFilePicker(source: source, onCancelled: onCancelled)
+        filePickerSUT?.presentFilePicker(entryPoint: entryPoint, onCancelled: onCancelled)
         return try XCTUnwrap(host.presented as? UIDocumentPickerViewController)
     }
 
@@ -306,6 +309,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["reason"], "size_exceeded")
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["source"], "paste")
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["entry_point"])
     }
 
     func testTransientBanner_survivesValidationResyncWithNoInvalidAttachments() {

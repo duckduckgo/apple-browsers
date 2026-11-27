@@ -16,40 +16,26 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
-import PrivacyConfig
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
 final class HistoryMenuTests: XCTestCase {
 
-    var featureFlagger: MockFeatureFlagger!
     var sut: HistoryMenu!
 
     @MainActor
     override func setUp() {
-        featureFlagger = MockFeatureFlagger()
         sut = makeHistoryMenu(location: .mainMenu)
     }
 
     @MainActor
     override func tearDown() {
         sut = nil
-        featureFlagger = nil
     }
 
     @MainActor
-    func testWhenDataImportHistoryIsOff_ThenImportHistoryMenuItemIsHidden() {
-        sut.update()
-
-        XCTAssertEqual(importHistoryMenuItem(in: sut)?.isHidden, true)
-    }
-
-    @MainActor
-    func testWhenDataImportHistoryIsOn_ThenImportHistoryMenuItemOpensDataImport() throws {
-        featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
-
+    func testImportHistoryMenuItemOpensDataImport() throws {
         sut.update()
 
         let item = try XCTUnwrap(importHistoryMenuItem(in: sut))
@@ -59,18 +45,7 @@ final class HistoryMenuTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenDataImportHistoryChangesWhileRunning_ThenImportHistoryMenuItemFollowsOnNextUpdate() {
-        sut.update()
-        featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
-
-        sut.update()
-
-        XCTAssertEqual(importHistoryMenuItem(in: sut)?.isHidden, false)
-    }
-
-    @MainActor
-    func testWhenDataImportHistoryIsOn_ThenMoreOptionsHistoryMenuShowsImportHistoryBelowShowAllHistory() throws {
-        featureFlagger.featuresStub = [FeatureFlag.dataImportHistory.rawValue: true]
+    func testMoreOptionsHistoryMenuShowsImportHistoryBelowShowAllHistory() throws {
         let moreOptionsHistoryMenu = makeHistoryMenu(location: .moreOptionsMenu)
 
         moreOptionsHistoryMenu.update()
@@ -85,8 +60,7 @@ final class HistoryMenuTests: XCTestCase {
         HistoryMenu(
             location: location,
             historyGroupingDataSource: HistoryCoordinatingMock(),
-            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
-            featureFlagger: featureFlagger
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock()
         )
     }
 

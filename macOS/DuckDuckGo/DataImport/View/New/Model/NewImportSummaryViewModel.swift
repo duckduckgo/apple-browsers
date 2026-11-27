@@ -90,7 +90,7 @@ final class NewImportSummaryViewModel: ObservableObject {
         }
     }
 
-    init(summary: DataImportSummary, isHistoryImportEnabled: Bool, prefs: AppearancePreferences? = nil, pinningManager: PinningManager) {
+    init(summary: DataImportSummary, prefs: AppearancePreferences? = nil, pinningManager: PinningManager) {
         self.prefs = prefs ?? NSApp.delegateTyped.appearancePreferences
         self.pinningManager = pinningManager
 
@@ -100,7 +100,7 @@ final class NewImportSummaryViewModel: ObservableObject {
         self.items = summary.sorted {
             $0.key < $1.key
         }.compactMap { dataType, result in
-            Self.createSummaryItem(for: dataType, result: result, isHistoryImportEnabled: isHistoryImportEnabled)
+            Self.createSummaryItem(for: dataType, result: result)
         }
 
         shouldShowFeedbackView = summary.contains { element in
@@ -148,8 +148,7 @@ final class NewImportSummaryViewModel: ObservableObject {
 
     private static func createSummaryItem(
         for dataType: DataImport.DataType,
-        result: DataImportResult<DataImport.DataTypeSummary>,
-        isHistoryImportEnabled: Bool
+        result: DataImportResult<DataImport.DataTypeSummary>
     ) -> SummaryItem {
         guard case .success(let typeSummary) = result else {
             switch dataType {
@@ -165,7 +164,7 @@ final class NewImportSummaryViewModel: ObservableObject {
         }
 
         let image = image(for: dataType)
-        let primaryText = primaryText(for: dataType, summary: typeSummary, isHistoryImportEnabled: isHistoryImportEnabled)
+        let primaryText = primaryText(for: dataType, summary: typeSummary)
         let secondaryText: String? = dataType == .history ? UserText.importSummaryHistoryTimeRange : nil
         let duplicateText = duplicateText(from: typeSummary)
         let failureText = failureText(from: typeSummary)
@@ -197,38 +196,26 @@ final class NewImportSummaryViewModel: ObservableObject {
         }
     }
 
-    private static func primaryText(for dataType: DataImport.DataType, summary: DataImport.DataTypeSummary, isHistoryImportEnabled: Bool) -> String {
+    private static func primaryText(for dataType: DataImport.DataType, summary: DataImport.DataTypeSummary) -> String {
         let total = summary.successful + summary.duplicateItems.count + summary.failedItems.count
         let allImported = summary.duplicateItems.isEmpty && summary.failedItems.isEmpty
 
-        switch (dataType, allImported, isHistoryImportEnabled) {
-        case (.history, _, _):
+        switch (dataType, allImported) {
+        case (.history, _):
             // History reports only the visits it added: the ones already in history aren't counted.
             return UserText.importSummaryHistoryImported(summary.successful)
-        case (.bookmarks, true, true):
+        case (.bookmarks, true):
             return UserText.importSummaryBookmarks(summary.successful)
-        case (.bookmarks, false, true):
+        case (.bookmarks, false):
             return UserText.importSummaryBookmarksPartial(summary.successful, total)
-        case (.bookmarks, true, false):
-            return UserText.importSummaryBookmarksImported(summary.successful)
-        case (.bookmarks, false, false):
-            return UserText.importSummaryBookmarksImportedPartial(summary.successful, total)
-        case (.passwords, true, true):
+        case (.passwords, true):
             return UserText.importSummaryPasswords(summary.successful)
-        case (.passwords, false, true):
+        case (.passwords, false):
             return UserText.importSummaryPasswordsPartial(summary.successful, total)
-        case (.passwords, true, false):
-            return UserText.importSummaryPasswordsImported(summary.successful)
-        case (.passwords, false, false):
-            return UserText.importSummaryPasswordsImportedPartial(summary.successful, total)
-        case (.creditCards, true, true):
+        case (.creditCards, true):
             return UserText.importSummaryCreditCards(summary.successful)
-        case (.creditCards, false, true):
+        case (.creditCards, false):
             return UserText.importSummaryCreditCardsPartial(summary.successful, total)
-        case (.creditCards, true, false):
-            return UserText.importSummaryCreditCardsImported(summary.successful)
-        case (.creditCards, false, false):
-            return UserText.importSummaryCreditCardsImportedPartial(summary.successful, total)
         }
     }
 

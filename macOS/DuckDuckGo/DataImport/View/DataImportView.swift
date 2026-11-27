@@ -148,7 +148,6 @@ struct DataImportView: ModalView {
             case .summary(let summary):
                 NewImportSummaryView(
                     summary: summary,
-                    isHistoryImportEnabled: model.isHistoryImportEnabled,
                     sourceImage: model.importSource.importSourceImage ?? DesignSystemImages.Color.Size24.document,
                     reportModel: $model.reportModel,
                     pinningManager: pinningManager

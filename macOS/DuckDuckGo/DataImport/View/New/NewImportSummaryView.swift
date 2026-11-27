@@ -30,13 +30,12 @@ struct NewImportSummaryView: View {
 
     init(
         summary: DataImportSummary,
-        isHistoryImportEnabled: Bool,
         sourceImage: NSImage,
         reportModel: Binding<DataImportReportModel>,
         pinningManager: PinningManager,
         onShowDetail: ((DataImport.DataType) -> Void)? = nil
     ) {
-        _viewModel = .init(wrappedValue: .init(summary: summary, isHistoryImportEnabled: isHistoryImportEnabled, pinningManager: pinningManager))
+        _viewModel = .init(wrappedValue: .init(summary: summary, pinningManager: pinningManager))
         _reportModel = reportModel
         self.sourceImage = sourceImage
         self.onShowDetail = onShowDetail
@@ -46,7 +45,7 @@ struct NewImportSummaryView: View {
         VStack(spacing: 20) {
             Image(nsImage: viewModel.shouldShowSuccessImage ? DesignSystemImages.Color.Size128.bringStuff : sourceImage)
                 .resizable()
-                .aspectRatio(contentMode: .fit)
+                .scaledToFit()
                 .frame(width: viewModel.shouldShowSuccessImage ? 96 : 72)
             Text(UserText.importDataSummaryTitle)
                 .font(.title2)

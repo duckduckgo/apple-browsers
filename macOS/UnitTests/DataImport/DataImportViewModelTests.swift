@@ -262,7 +262,7 @@ final class DataImportViewModelTests: XCTestCase {
     func testDataTypesSelection_returnsAllWhenAllSelectableTypesSelected() {
         // GIVEN
         model = DataImportViewModel(importSource: .safari, syncFeatureVisibility: .hide)
-        model.selectedDataTypes = [.bookmarks, .passwords]
+        model.selectedDataTypes = [.bookmarks, .passwords, .history]
 
         // WHEN
         let result = model.dataTypesSelection
@@ -426,11 +426,11 @@ final class DataImportViewModelTests: XCTestCase {
         model.setDataType(.bookmarks, selected: false)
         XCTAssertEqual(model.selectedDataTypes, [.passwords])
 
-        // WHEN: switch to another browser that also supports both types
+        // WHEN: switch to another browser that supports the same types
         model.update(with: .firefox)
 
         // THEN: the explicit narrowing is preserved
-        XCTAssertEqual(model.selectableImportTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.selectableImportTypes, [.bookmarks, .passwords, .history])
         XCTAssertEqual(model.selectedDataTypes, [.passwords])
     }
 
@@ -613,21 +613,13 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(Set(kind.supportedFileTypes(for: .safari)), Source.safari.archiveImportSupportedFiles)
     }
 
-    func testSupportedDataTypes_historyFlagTurnedOn_addsHistoryForBrowsersThatImportIt() throws {
-        try setHistoryImportFlag(false)
-        let typesWithFlagOff = [Source.chrome, .firefox, .safari].map(\.supportedDataTypes)
-
-        try setHistoryImportFlag(true)
-
-        XCTAssertTrue(typesWithFlagOff.allSatisfy { !$0.contains(.history) })
+    func testSupportedDataTypes_includesHistoryForBrowsersThatImportIt() {
         XCTAssertTrue([Source.chrome, .yandex, .firefox, .safari].allSatisfy { $0.supportedDataTypes.contains(.history) })
         XCTAssertFalse(Source.tor.supportedDataTypes.contains(.history))
     }
 
     @MainActor
-    func testInit_historyFlagOn_selectsHistoryByDefaultForFirefoxAndSafari() throws {
-        try setHistoryImportFlag(true)
-
+    func testInit_selectsHistoryByDefaultForFirefoxAndSafari() {
         let models = [Source.firefox, .safari].map(defaultProfileModel(importSource:))
 
         XCTAssertEqual(models.map { $0.selectedDataTypes.contains(.history) }, [true, true])
@@ -635,7 +627,6 @@ final class DataImportViewModelTests: XCTestCase {
 
     @MainActor
     func testImportButtonPressed_safariTechnologyPreviewWithHistoryOnly_asksForArchive() throws {
-        try setHistoryImportFlag(true)
         model = sourceFilterModel(
             importSource: .safariTechnologyPreview,
             isFilterOn: true,
@@ -657,8 +648,8 @@ final class DataImportViewModelTests: XCTestCase {
 
         model.update(with: .bitwarden)
 
-        XCTAssertEqual(model.dataTypeFilter?.enabledTypes, [.bookmarks, .passwords])
-        XCTAssertEqual(model.pickerSelectableDataTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.dataTypeFilter?.enabledTypes, [.bookmarks, .passwords, .history])
+        XCTAssertEqual(model.pickerSelectableDataTypes, [.bookmarks, .passwords, .history])
         XCTAssertEqual(model.selectedDataTypes, [.passwords])
     }
 
@@ -3068,20 +3059,11 @@ final class DataImportViewModelTests: XCTestCase {
         addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
     }
 
-    private func setHistoryImportFlag(_ isOn: Bool) throws {
-        let featureFlagger = try XCTUnwrap(Application.appDelegate.featureFlagger as? MockFeatureFlagger)
-        let key = FeatureFlag.dataImportHistory.rawValue
-        let originalValue = featureFlagger.featuresStub[key]
-        featureFlagger.featuresStub[key] = isOn
-        addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
-    }
-
     @MainActor
     private func startSafariImport(
         selecting dataTypes: Set<DataType> = [.bookmarks, .passwords, .history],
         returning summary: DataImportSummary
     ) throws {
-        try setHistoryImportFlag(true)
         setupModel(with: .safari, dataImporterFactory: { _, _, _, _ in
             ImporterMock(importTask: { _, _ in summary })
         })

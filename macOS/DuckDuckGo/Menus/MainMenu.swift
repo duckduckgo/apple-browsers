@@ -290,7 +290,7 @@ final class MainMenu: NSMenu {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSuggestionsReader = aiChatSuggestionsReader
         self.aiChatHistoryCleaner = aiChatHistoryCleaner
-        self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, recentlyClosedCoordinator: recentlyClosedCoordinator, featureFlagger: featureFlagger)
+        self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, recentlyClosedCoordinator: recentlyClosedCoordinator)
         self.configurationURLProvider = configurationURLProvider
         self.contentScopePreferences = contentScopePreferences
         self.quitSurveyPersistor = quitSurveyPersistor

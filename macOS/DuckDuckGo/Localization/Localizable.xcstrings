@@ -123896,6 +123896,66 @@
         }
       }
     },
+    "translate-pages.settings.always-ask" : {
+      "comment" : "Translate Pages dropdown option to offer translation on pages in other languages",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Ask"
+          }
+        }
+      }
+    },
+    "translate-pages.settings.detail" : {
+      "comment" : "Detail of the Translate Pages setting. Parameter is the user's language, e.g. English",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Offer to translate and summarize pages that aren't in %@."
+          }
+        }
+      }
+    },
+    "translate-pages.settings.excluded" : {
+      "comment" : "Added to the Translate Pages setting detail. Parameter is a comma-separated list of languages, e.g. French, German",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not offered for %@."
+          }
+        }
+      }
+    },
+    "translate-pages.settings.never-ask" : {
+      "comment" : "Translate Pages dropdown option to never offer translation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never Ask"
+          }
+        }
+      }
+    },
+    "translate-pages.settings.title" : {
+      "comment" : "Name of the Browser Access setting for offering to translate pages with Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Translate Pages"
+          }
+        }
+      }
+    },
     "uninstall" : {
       "comment" : "Uninstall button",
       "extractionState" : "extracted_with_value",

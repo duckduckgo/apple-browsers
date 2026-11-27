@@ -194,6 +194,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220874250279358
     case hardwareKeyboardMonitoring
 
-    /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1220371333669061
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220953480589673
     case blankFrameOptimizations
 }

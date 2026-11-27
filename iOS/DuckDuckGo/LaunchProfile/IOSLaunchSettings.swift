@@ -26,6 +26,7 @@ import Core
 import FeatureFlags_iOS
 import Foundation
 import LaunchProfile
+import Persistence
 import PrivacyConfig
 
 /// Every key a `-launchProfile` can set on iOS. Settings apply in the order listed in `make`.
@@ -49,6 +50,8 @@ enum IOSLaunchSettings {
         /// The app-configuration group: Duck.ai settings and custom configuration URLs.
         var appConfigurationDefaults: UserDefaults
         var aiChatDebugSettings: AIChatDebugSettingsHandling
+        /// The app's key-value file store, opened only when a key writes to it.
+        var appKeyValueStore: () throws -> ThrowingKeyValueStoring
     }
 
     static func make(_ dependencies: Dependencies) -> LaunchSettings {
@@ -64,7 +67,8 @@ enum IOSLaunchSettings {
             + debugMenu(appSettings: dependencies.appSettings,
                         appDefaults: dependencies.appDefaults,
                         aiChatDebugSettings: dependencies.aiChatDebugSettings,
-                        customConfigurationURLs: CustomConfigurationURLStorage(defaults: dependencies.appConfigurationDefaults))
+                        customConfigurationURLs: CustomConfigurationURLStorage(defaults: dependencies.appConfigurationDefaults),
+                        appKeyValueStore: dependencies.appKeyValueStore)
             + [tabs(persistence: dependencies.tabsPersistence, isPad: dependencies.isPad)]
         )
     }

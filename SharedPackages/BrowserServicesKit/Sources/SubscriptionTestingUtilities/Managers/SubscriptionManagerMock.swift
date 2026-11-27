@@ -46,6 +46,8 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func loadInitialData() async {}
 
+    public func waitForBackupRenewal() async {}
+
     public private(set) var restoreMissingTokenIfPossibleCallCount = 0
     public func restoreMissingTokenIfPossible() async {
         restoreMissingTokenIfPossibleCallCount += 1

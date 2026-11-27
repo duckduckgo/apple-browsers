@@ -187,5 +187,28 @@
             "underlyingErrorDomain",
             "underlyingErrorCode"
         ]
+    },
+    // Background token refresh
+    "subscription_auth-background-refresh_run": {
+        "description": "Fired when a run of the background token refresh finishes, which refreshes the token once its refresh token is 15 days old so an unused app keeps its session. Sent for every background task run, for every run that tried to refresh, whatever started it, and when iOS expires the background task first. Not sent while the authBackgroundTokenRefresh flag is off, or for foreground and sign-in runs that found nothing to refresh",
+        "owners": ["federicocappelli"],
+        "triggers": ["scheduled", "feature_lifecycle", "user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "trigger",
+                "type": "string",
+                "description": "What started the run: the app coming to the foreground, a sign-in, the background task iOS launched, or the internal debug menu",
+                "enum": ["foreground", "sign_in", "background_task", "debug_menu"]
+            },
+            {
+                "key": "result",
+                "type": "string",
+                "description": "How the run ended: refreshed the token, not_due because the refresh token is younger than 15 days, no_token stored, failed to read or refresh the token (retried 6 hours later), or expired when iOS ended the background task before the run finished",
+                "enum": ["refreshed", "not_due", "no_token", "failed", "expired"]
+            }
+        ]
     }
 }

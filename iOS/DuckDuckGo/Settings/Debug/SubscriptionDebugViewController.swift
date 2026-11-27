@@ -91,6 +91,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private let titles = [
         Sections.authorization: "Authentication",
+        Sections.backgroundTokenRefresh: "Background Token Refresh",
         Sections.api: "Make API Call",
         Sections.appstore: "App Store",
         Sections.environment: "Environment",
@@ -108,6 +109,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     enum Sections: Int, CaseIterable {
         case authorization
+        case backgroundTokenRefresh
         case api
         case appstore
         case environment
@@ -127,6 +129,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         case restoreSubscription
         case clearAuthData
         case showAccountDetails
+    }
+
+    enum BackgroundTokenRefreshRows: Int, CaseIterable {
+        case configure
     }
 
     enum SubscriptionRows: Int, CaseIterable {
@@ -241,6 +247,15 @@ final class SubscriptionDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Remove Subscription From This Device"
             case .showAccountDetails:
                 cell.textLabel?.text = "Show Account Details"
+            case .none:
+                break
+            }
+
+        case .backgroundTokenRefresh:
+            switch BackgroundTokenRefreshRows(rawValue: indexPath.row) {
+            case .configure:
+                cell.textLabel?.text = "Intervals and Status"
+                cell.accessoryType = .disclosureIndicator
             case .none:
                 break
             }
@@ -424,6 +439,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch Sections(rawValue: section) {
         case .authorization: return AuthorizationRows.allCases.count
+        case .backgroundTokenRefresh: return BackgroundTokenRefreshRows.allCases.count
         case .api: return SubscriptionRows.allCases.count
         case .appstore: return AppStoreRows.allCases.count
         case .environment: return EnvironmentRows.allCases.count
@@ -448,6 +464,11 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .restoreSubscription: openSubscriptionRestoreFlow()
             case .clearAuthData: clearAuthData()
             case .showAccountDetails: showAccountDetails()
+            default: break
+            }
+        case .backgroundTokenRefresh:
+            switch BackgroundTokenRefreshRows(rawValue: indexPath.row) {
+            case .configure: showBackgroundTokenRefreshDebug()
             default: break
             }
         case .appstore:
@@ -500,6 +521,21 @@ final class SubscriptionDebugViewController: UITableViewController {
             break
         }
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+
+    private func showBackgroundTokenRefreshDebug() {
+        guard let keyValueStore else {
+            showAlert(title: "Unavailable", message: "No key-value store was provided to this screen.")
+            return
+        }
+        let featureFlagger = featureFlagger
+        let viewModel = SubscriptionTokenRefreshDebugViewModel(
+            settings: SubscriptionTokenRefreshDebugSettings(keyValueStore: keyValueStore),
+            isFeatureEnabled: { featureFlagger.isFeatureOn(.authBackgroundTokenRefresh) },
+            isInternalUser: { featureFlagger.internalUserDecider.isInternalUser }
+        )
+        let controller = UIHostingController(rootView: SubscriptionTokenRefreshDebugView(viewModel: viewModel))
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     @objc private func debugOverlayToggled(_ sender: UISwitch) {

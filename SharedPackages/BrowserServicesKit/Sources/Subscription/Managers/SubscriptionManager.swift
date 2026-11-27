@@ -31,7 +31,7 @@ public enum AuthVersion: String {
     public static let key = "auth_version"
 }
 
-public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
+public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionTokenRefreshing {
 
     // MARK: - Environment and App Store
 
@@ -917,6 +917,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         guard let result = report?.result(of: .appStore) else { return false }
         if case .notApplicable = result { return false }
         return true
+    }
+
+    public func waitForBackupRenewal() async {
+        await oAuthClient.waitForBackupRenewal()
     }
 
     public func restoreMissingTokenIfPossible() async {

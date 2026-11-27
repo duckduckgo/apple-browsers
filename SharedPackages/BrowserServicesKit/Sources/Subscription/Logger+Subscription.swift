@@ -30,4 +30,5 @@ public extension Logger {
     static let subscriptionKeychain = Logger(subsystem: Self.subscriptionSubsystem, category: "KeyChain")
     static let subscriptionCachingService = Logger(subsystem: Self.subscriptionSubsystem, category: "CachingService")
     static let subscriptionTokensManagement = Logger(subsystem: Self.subscriptionSubsystem, category: "TokensManagement")
+    static let subscriptionTokenKeepAlive = Logger(subsystem: Self.subscriptionSubsystem, category: "TokenKeepAlive")
 }

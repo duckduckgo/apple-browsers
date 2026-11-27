@@ -292,6 +292,7 @@ struct Launching: LaunchingHandling {
                                                             aiChatBonusStateProvider: aiChatBonusService,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+                                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
                                                       featureFlagger: featureFlagger,
                                                       onboardingVPNExperimentMetrics: .live,
                                                       notificationCenter: .default)

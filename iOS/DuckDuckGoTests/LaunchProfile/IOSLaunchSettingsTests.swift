@@ -59,7 +59,8 @@ final class IOSLaunchSettingsTests {
             appSettings: appSettings,
             appDefaults: defaults,
             appConfigurationDefaults: appConfigurationDefaults,
-            aiChatDebugSettings: AIChatDebugSettings(userDefault: defaults)
+            aiChatDebugSettings: AIChatDebugSettings(userDefault: defaults),
+            appKeyValueStore: { InMemoryThrowingKeyValueStore() }
         ))
         return settings.apply(try LaunchProfile(json: Data(json.utf8)))
     }

@@ -96,6 +96,14 @@ class SubscriptionManagerTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Backup renewal
+
+    func testWaitForBackupRenewal_waitsOnTheClient() async {
+        await subscriptionManager.waitForBackupRenewal()
+
+        XCTAssertEqual(mockOAuthClient.waitForBackupRenewalCallCount, 1)
+    }
+
     // MARK: - Token Retrieval Tests
 
     func testWhenLocalTokenStateHasTokenThenReturnsPresentWithoutRefreshing() {

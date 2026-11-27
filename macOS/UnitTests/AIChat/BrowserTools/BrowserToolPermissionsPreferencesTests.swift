@@ -17,7 +17,9 @@
 //
 
 import AIChat
+import FeatureFlags_macOS
 import Persistence
+import PrivacyConfig
 @_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -32,7 +34,8 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
     private var model: BrowserToolPermissionsPreferences!
     private var translateStore: InMemoryKeyValueStore!
     private var translatePages: TranslatePagesSetting!
-    private var isTranslateFlagOn = true
+    private var featureFlagger: MockFeatureFlagger!
+    private var translateCenter: NotificationCenter!
 
     override func setUp() {
         super.setUp()
@@ -42,15 +45,17 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         catalog = BrowserToolCatalog(tools: tools, configuration: FakeConfiguration())
         pixels = PixelKitMock()
         translateStore = InMemoryKeyValueStore()
-        translatePages = TranslatePagesSetting(store: translateStore, notificationCenter: NotificationCenter())
-        isTranslateFlagOn = true
+        translateCenter = NotificationCenter()
+        translatePages = TranslatePagesSetting(store: translateStore, notificationCenter: translateCenter)
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = true
         model = makeModel()
     }
 
     private func makeModel(source: BrowserToolsPixel.PermissionSource = .settings) -> BrowserToolPermissionsPreferences {
         BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager,
                                           source: source, pixelFiring: pixels, translatePages: translatePages,
-                                          isTranslateFlagOn: { [unowned self] in isTranslateFlagOn })
+                                          featureFlagger: featureFlagger)
     }
 
     override func tearDown() {
@@ -112,10 +117,48 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
     // MARK: - Translate Pages
 
     func testWhenTheFlagIsOffThenTheTranslateRowIsHidden() {
-        isTranslateFlagOn = false
-        model.reload()
+        featureFlagger.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = false
+        model = makeModel()
 
         XCTAssertFalse(model.showsTranslateRow)
+    }
+
+    func testWhenTheFlagChangesWhileOpenThenTheRowFollows() {
+        let key = FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue
+        let hidden = expectation(description: "hidden")
+        let shown = expectation(description: "shown")
+        let cancellable = model.$showsTranslateRow.dropFirst().sink { $0 ? shown.fulfill() : hidden.fulfill() }
+
+        featureFlagger.featuresStub[key] = false
+        featureFlagger.triggerUpdate()
+        wait(for: [hidden], timeout: 1)
+        featureFlagger.featuresStub[key] = true
+        featureFlagger.triggerUpdate()
+        wait(for: [shown], timeout: 1)
+
+        cancellable.cancel()
+    }
+
+    func testWhenTheFlagIsOffThenResetAllKeepsTranslatePreferences() {
+        model.setTranslateMode(.neverAsk)
+        translatePages.exclude(languageCode: "de")
+        featureFlagger.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = false
+        model.reload()
+
+        model.resetAll()
+
+        XCTAssertEqual(translatePages.mode, .neverAsk)
+        XCTAssertEqual(translatePages.excludedLanguageCodes, ["de"])
+    }
+
+    func testWhenALanguageIsExcludedOutsideTheModelThenItIsPickedUp() {
+        let expectation = expectation(description: "reloaded")
+        let cancellable = model.$translateExcludedLanguages.first { $0 == ["de"] }.sink { _ in expectation.fulfill() }
+
+        translatePages.exclude(languageCode: "de")
+
+        wait(for: [expectation], timeout: 1)
+        cancellable.cancel()
     }
 
     func testTranslatePagesDefaultsToAlwaysAskWithNothingToReset() {

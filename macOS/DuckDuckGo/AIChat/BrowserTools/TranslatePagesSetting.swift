@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import Persistence
 
@@ -41,6 +42,11 @@ final class TranslatePagesSetting {
     init(store: KeyValueStoring = UserDefaults.standard, notificationCenter: NotificationCenter = .default) {
         self.store = store
         self.notificationCenter = notificationCenter
+    }
+
+    /// Fires after every write, on the center the setting was given.
+    var changes: AnyPublisher<Void, Never> {
+        notificationCenter.publisher(for: Self.didChange, object: self).map { _ in }.eraseToAnyPublisher()
     }
 
     var mode: TranslatePagesMode {

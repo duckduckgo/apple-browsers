@@ -136,6 +136,7 @@ final class DBPService: NSObject {
                 profileStateManager: profileStateManager,
                 isWebViewInspectable: isWebViewInspectable,
                 freeTrialConversionService: appDependencies.freeTrialConversionService,
+                vpnBypassService: DBPVPNConnectionStatusProvider(connectionObserver: appDependencies.connectionObserver),
                 contentBlocking: dbpContentBlocking)
         } else {
             assertionFailure("PixelKit not set up")

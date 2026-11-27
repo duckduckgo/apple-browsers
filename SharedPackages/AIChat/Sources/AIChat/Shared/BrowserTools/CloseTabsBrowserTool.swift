@@ -73,6 +73,7 @@ public final class CloseTabsBrowserTool: BrowserTool {
         case .failure(let failure):
             return .failure(failure)
         case .success(let batch):
+            // Closing the chat's own tab would close the chat, so a call that names it closes nothing.
             guard !batch.ids.contains(context.ownerTabID) else { return .failure(.unavailable) }
             guard !Task.isCancelled else { return .failure(.cancelled) }
 

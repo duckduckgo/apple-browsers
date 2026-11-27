@@ -93,6 +93,7 @@ extension CloseTabsBrowserTool {
             return .success(PreparedBatch(ids: tabs.map(\.uuid)) {
                 Set(tabs.compactMap { tab in
                     let id = tab.uuid
+                    // Pinned tabs stay open.
                     guard let index = collection.indexInAllTabs(where: { $0.uuid == id }), index.isUnpinnedTab else { return nil }
                     collection.close(at: index)
                     return collection.indexInAllTabs(where: { $0.uuid == id }) == nil ? id : nil

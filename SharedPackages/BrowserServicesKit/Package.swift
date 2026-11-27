@@ -57,9 +57,9 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        // POC ONLY (top sites picker): build of content-scope-scripts PR #3241 (spapaseit/onboarding-picker-poc @ 9fe4e2834). Revert to:
+        // POC ONLY (top sites picker): build of content-scope-scripts PR #3255 (spapaseit/onboarding-picker-icons @ e5db592fe). Revert to:
         // .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "21.4.0"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", revision: "fade465d98ec6d1208c6a5c16f22b8379bf3555c"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", revision: "6f7798d784e2f31449bf9000727780b7aea1a287"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),

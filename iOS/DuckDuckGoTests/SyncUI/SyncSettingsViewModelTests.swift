@@ -354,6 +354,59 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.authenticateUserCallCount, 0)
     }
 
+    func testWhenBeginPairingFlowThenSyncSetupAttemptStartsBeforeDeviceAuth() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        let pairingShown = expectation(description: "Pairing shown")
+        delegate.onShowSyncWithAnotherDevice = { pairingShown.fulfill() }
+
+        sut.beginPairingFlow()
+
+        await fulfillment(of: [pairingShown], timeout: 1.0)
+        XCTAssertEqual(delegate.startedSyncSetupAttempts, [.setup(.pairing)])
+        XCTAssertEqual(delegate.authenticateUserCallCountAtLastAttemptStart, 0)
+        XCTAssertEqual(delegate.authenticateUserCallCount, 1)
+    }
+
+    func testWhenBeginRecoverFlowThenRecoverySyncSetupAttemptStarts() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        let sheetShown = expectation(description: "Recover sheet shown")
+        let cancellable = sut.$isRecoverSyncedDataSheetVisible
+            .dropFirst()
+            .sink { if $0 { sheetShown.fulfill() } }
+
+        sut.beginRecoverFlow()
+
+        await fulfillment(of: [sheetShown], timeout: 1.0)
+        _ = cancellable
+        XCTAssertEqual(delegate.startedSyncSetupAttempts, [.recover])
+        XCTAssertEqual(delegate.authenticateUserCallCountAtLastAttemptStart, 0)
+    }
+
+    func testWhenEnableSyncToggleTappedThenBackUpSyncSetupAttemptStarts() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate, isImprovedPairingFlowEnabled: true)
+
+        await enableSyncAndWaitForAnotherDevicePrompt(sut)
+
+        XCTAssertEqual(delegate.startedSyncSetupAttempts, [.setup(.simplifiedToggle)])
+    }
+
+    func testWhenDeviceAuthFailsThenSyncSetupAttemptHasAlreadyStarted() async {
+        let delegate = MockSyncSettingsViewModelDelegate()
+        delegate.authenticationError = SyncSettingsViewModel.UserAuthenticationError.authFailed
+        let sut = makeSut(autoRestoreProvider: MockSyncAutoRestoreHandler(), delegate: delegate)
+        let authFinished = expectation(description: "Device auth finished")
+        delegate.onAuthenticateUserFinished = { authFinished.fulfill() }
+
+        sut.beginPairingFlow()
+
+        await fulfillment(of: [authFinished], timeout: 1.0)
+        XCTAssertEqual(delegate.startedSyncSetupAttempts, [.setup(.pairing)])
+        XCTAssertEqual(delegate.showSyncWithAnotherDeviceCallCount, 0)
+    }
+
     func testWhenBeginPairingFlowAndConnectingDevicesUnavailableThenNoAuthenticationOrRoutingOccurs() async {
         let autoRestoreProvider = MockSyncAutoRestoreHandler()
         let delegate = MockSyncSettingsViewModelDelegate()
@@ -366,6 +419,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.authenticateUserCallCount, 0)
         XCTAssertEqual(delegate.showSyncWithAnotherDeviceCallCount, 0)
         XCTAssertEqual(delegate.showAutoRestoreReadyCallCount, 0)
+        XCTAssertTrue(delegate.startedSyncSetupAttempts.isEmpty)
     }
 
     func testWhenBeginPairingFlowAndLoggedOutAccountCreationUnavailableThenNoAuthenticationOrRoutingOccurs() async {
@@ -381,6 +435,7 @@ final class SyncSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(delegate.authenticateUserCallCount, 0)
         XCTAssertEqual(delegate.showSyncWithAnotherDeviceCallCount, 0)
         XCTAssertEqual(delegate.showAutoRestoreReadyCallCount, 0)
+        XCTAssertTrue(delegate.startedSyncSetupAttempts.isEmpty)
     }
 
     func testWhenEnablingSyncWithNoPreservedAccountThenPromptIsShownWithoutCreatingAccount() async {
@@ -1414,6 +1469,8 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     var authenticationError: Error?
     var isUserAuthenticationPromptNeeded = false
     var isPreservedAccountPromptNeededValue = false
+    var startedSyncSetupAttempts: [SyncSettingsViewModel.PreservedAccountContinuation] = []
+    var authenticateUserCallCountAtLastAttemptStart: Int?
     var continueAfterPreservedAccountRemovalContinuations: [SyncSettingsViewModel.PreservedAccountContinuation] = []
     var showAutoRestoreReadyContinuations: [SyncSettingsViewModel.PreservedAccountContinuation] = []
     var showAutoRestoreReadyCallCount = 0
@@ -1451,6 +1508,11 @@ private final class MockSyncSettingsViewModelDelegate: SyncManagementViewModelDe
     var syncBookmarksPausedButtonTitle: String?
     var syncCredentialsPausedButtonTitle: String?
     var syncCreditCardsPausedButtonTitle: String?
+
+    func startSyncSetupAttempt(for continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        startedSyncSetupAttempts.append(continuation)
+        authenticateUserCallCountAtLastAttemptStart = authenticateUserCallCount
+    }
 
     func authenticateUser() async throws {
         authenticateUserCallCount += 1

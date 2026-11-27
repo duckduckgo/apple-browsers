@@ -25,6 +25,7 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
 
     func authenticateUser() async throws
     var isUserAuthenticationPromptNeeded: Bool { get }
+    func startSyncSetupAttempt(for continuation: SyncSettingsViewModel.PreservedAccountContinuation)
     func showAutoRestoreReady(for continuation: SyncSettingsViewModel.PreservedAccountContinuation)
     func isPreservedAccountPromptNeeded() -> Bool
     func continueAfterPreservedAccountRemoval(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation)
@@ -470,6 +471,7 @@ public class SyncSettingsViewModel: ObservableObject {
 
     @MainActor
     private func beginFlow(for continuation: PreservedAccountContinuation) async {
+        delegate?.startSyncSetupAttempt(for: continuation)
         isFlowAuthenticationDeferred = shouldDeferAuthentication(for: continuation)
         if !isFlowAuthenticationDeferred {
             guard await commonAuthenticate(setupSource: setupAuthenticationSource(for: continuation)) else {

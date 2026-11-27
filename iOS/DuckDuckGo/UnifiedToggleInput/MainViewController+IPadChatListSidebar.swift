@@ -337,7 +337,7 @@ extension IPadChatListSidebar: AIChatHistorySidebarDelegate {
 
     func chatHistorySidebarDidRequestSyncSettings() {
         host?.iPadChatListSidebarState.instrumentation.menuActionSelected(.syncSettings)
-        host?.segueToSettingsSync()
+        host?.segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.aiChatHistory)
     }
 
     func chatHistorySidebarDidRequestDuckAISettings() {

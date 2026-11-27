@@ -60,7 +60,9 @@ class DefaultMessageNavigator: MessageNavigator {
         case .feedback:
             delegate?.segueToFeedback(presentationStyle: presentationStyle)
         case .sync:
-            delegate?.segueToSettingsSync(with: nil, pairingInfo: nil, presentationStyle: presentationStyle)
+            delegate?.segueToSettingsSync(with: SyncSettingsViewController.SourceConstants.remoteMessage,
+                                          pairingInfo: nil,
+                                          presentationStyle: presentationStyle)
         case .importPasswords:
             delegate?.segueToImportPasswords(presentationStyle: presentationStyle)
         case .appearance:

@@ -127,7 +127,7 @@ struct SettingsMainSettingsView: View {
             let label = viewModel.state.sync.title
             AnyView(SettingsCellView(label: label,
                              image: Image(uiImage: DesignSystemImages.Color.Size24.sync),
-                             action: { viewModel.presentLegacyView(.sync(nil)) },
+                             action: { viewModel.shouldPresentSyncViewWithSource(SyncSettingsViewController.SourceConstants.settingsPage) },
                              statusIndicator: statusIndicator,
                              disclosureIndicator: true,
                              isButton: true))

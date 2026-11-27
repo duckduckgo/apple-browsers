@@ -21,6 +21,7 @@ import XCTest
 @_spi(Testing) import Persistence
 import Bookmarks
 import DDGSync
+@_spi(Testing) import WideEvent
 import History
 import BrowserServicesKit
 import RemoteMessaging
@@ -189,6 +190,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .lastUsedTab, keyValueStore: self.keyValueStore),
                 lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: self.keyValueStore),
                 syncAutoRestoreHandler: syncAutoRestoreHandler,
+                syncSetupAttemptTracker: SyncSetupAttemptTracker(wideEvent: WideEventMock(), isEnabled: { false }),
                 contentScopeExperimentsManager: MockContentScopeExperimentManager(),
                 fireproofing: fireproofing,
                 favicons: Favicons(),

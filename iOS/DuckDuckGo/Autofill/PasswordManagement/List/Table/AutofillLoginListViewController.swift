@@ -1133,7 +1133,7 @@ extension AutofillLoginListViewController: AutofillLoginDetailsViewControllerDel
 extension AutofillLoginListViewController: ImportPasswordsViaSyncViewControllerDelegate {
 
     func importPasswordsViaSyncViewControllerDidRequestOpenSync(_ viewController: ImportPasswordsViaSyncViewController) {
-        segueToSync()
+        segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsImportPromotion)
     }
 
 }

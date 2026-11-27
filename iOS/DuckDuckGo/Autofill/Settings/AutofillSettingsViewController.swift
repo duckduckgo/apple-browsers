@@ -282,7 +282,7 @@ extension AutofillSettingsViewController: DataImportViewControllerDelegate {
 extension AutofillSettingsViewController: ImportPasswordsViaSyncViewControllerDelegate {
     
     func importPasswordsViaSyncViewControllerDidRequestOpenSync(_ viewController: ImportPasswordsViaSyncViewController) {
-        segueToSync()
+        segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsImportPromotion)
     }
     
 }

@@ -448,7 +448,8 @@ extension MainViewController {
                                    appSettings: appSettings,
                                    syncPausedStateManager: syncPausedStateManager,
                                    source: source,
-                                   syncAutoRestoreHandler: syncAutoRestoreHandler)
+                                   syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                   syncSetupAttemptTracker: syncSetupAttemptTracker)
     }
 
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
@@ -533,6 +534,7 @@ extension MainViewController {
                                                             productSurfaceTelemetry: productSurfaceTelemetry,
                                                             webExtensionManager: webExtensionManager,
                                                             syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                                            syncSetupAttemptTracker: syncSetupAttemptTracker,
                                                             freemiumPIRDebugSettings: freemiumPIRDebugSettings,
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             daxGreetingDebugging: daxGreetingService,

@@ -94,7 +94,7 @@ final class SyncDialogController {
 
     private static let defaultConnectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = { syncService, delegate in
         let device = deviceInfo()
-        return syncService.createConnectionController(deviceName: device.name, deviceType: device.type, delegate: delegate)
+        return syncService.createConnectionController(deviceName: device.name, deviceType: device.type, delegate: delegate, attemptTracker: nil)
     }
     private static let defaultCloseSetupConfirmation: @MainActor (Bool) async -> Bool = { isImprovedPairingFlowEnabled in
         NSAlert.syncCloseSetupConfirmation(isImprovedPairingFlowEnabled: isImprovedPairingFlowEnabled).runModal() == .alertFirstButtonReturn

@@ -61,6 +61,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
     let webExtensionManager: WebExtensionManaging?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
+    let syncSetupAttemptTracker: SyncSetupAttemptTracker
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     let aiChatBonusMessageLog: AIChatBonusMessageLog?
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
@@ -90,6 +91,7 @@ class SettingsLegacyViewProvider: ObservableObject {
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          webExtensionManager: WebExtensionManaging?,
          syncAutoRestoreHandler: SyncAutoRestoreHandling,
+         syncSetupAttemptTracker: SyncSetupAttemptTracker,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          daxGreetingDebugging: DaxGreetingDebugging,
@@ -118,6 +120,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.webExtensionManager = webExtensionManager
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
+        self.syncSetupAttemptTracker = syncSetupAttemptTracker
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.aiChatBonusMessageLog = aiChatBonusMessageLog
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
@@ -213,7 +216,8 @@ class SettingsLegacyViewProvider: ObservableObject {
                                           syncPausedStateManager: self.syncPausedStateManager,
                                           source: source,
                                           pairingInfo: pairingInfo,
-                                          syncAutoRestoreHandler: syncAutoRestoreHandler)
+                                          syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                          syncSetupAttemptTracker: syncSetupAttemptTracker)
     }
 
     func loginSettings(delegate: AutofillSettingsViewControllerDelegate,

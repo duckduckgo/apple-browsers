@@ -293,6 +293,10 @@ final class MainCoordinator {
             decisionManager: syncAutoRestoreDecisionManager,
             syncService: syncService.sync
         )
+        let syncSetupAttemptTracker = SyncSetupAttemptTracker(
+            wideEvent: wideEvent,
+            isEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.sendSyncSetupWideEvent) }
+        )
         let aiChatAddressBarExperience = AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
         let afterInactivityOptionAdapter = AfterInactivityOptionAdapter(
             keyValueStore: keyValueStore,
@@ -324,6 +328,7 @@ final class MainCoordinator {
                                         afterInactivityOptionAdapter: afterInactivityOptionAdapter,
                                         lastTabShortcutAdapter: lastTabShortcutAdapter,
                                         syncAutoRestoreHandler: syncAutoRestoreHandler,
+                                        syncSetupAttemptTracker: syncSetupAttemptTracker,
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
                                         favicons: favicons,

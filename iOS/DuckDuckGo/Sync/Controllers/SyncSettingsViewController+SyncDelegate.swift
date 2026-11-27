@@ -183,7 +183,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 }
                 try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                 var additionalParameters = self.uiVersionParameters
-                additionalParameters[PixelParameters.source] = self.source
+                additionalParameters[PixelParameters.source] = self.classicPixelSource
                 pixelFiring?.fire(Pixel.Event.syncSignupDirect, options: .parameters(additionalParameters))
                 optionsViewModel.syncEnabled(recoveryCode: self.recoveryCode)
                 self.enableAutoRestoreByDefaultIfNeeded()
@@ -915,7 +915,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             SyncSetupPixelInfo.Parameter.flowVersion: syncSetupPixelFlowVersion,
             PixelParameters.uiVersion: syncUIVersion
         ]
-        parameters[PixelParameters.source] = source ?? scanSetupSource?.rawValue
+        parameters[PixelParameters.source] = classicPixelSource ?? scanSetupSource?.rawValue
         parameters.merge(additionalParameters) { _, new in new }
         pixelFiring?.fire(pixel, options: .parameters(parameters))
     }
@@ -1030,16 +1030,35 @@ private enum SyncSetupPixelInfo {
 
     enum Value {
         static let ddg = "ddg"
-        static let v1 = "v1"
-        static let v2 = "v2"
-        static let v2Point1 = "v2.1"
     }
 }
 
 extension SyncSettingsViewController {
 
+    var syncSetupFlowVersion: SyncSetupWideEventData.FlowVersion {
+        guard featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) else { return .v1 }
+        return featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1) ? .v21 : .v2
+    }
+
     var syncSetupPixelFlowVersion: String {
-        guard featureFlagger.isFeatureOn(.syncCanUseV2ConnectFlow) else { return SyncSetupPixelInfo.Value.v1 }
-        return featureFlagger.isFeatureOn(.syncCanUseExchangeV2Point1) ? SyncSetupPixelInfo.Value.v2Point1 : SyncSetupPixelInfo.Value.v2
+        syncSetupFlowVersion.rawValue
+    }
+
+    func startSyncSetupAttempt(for continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        syncSetupAttemptTracker.start(entryPoint: syncSetupContextName,
+                                      setupMode: SyncSetupWideEventData.SetupMode(continuation),
+                                      existingAccount: isSyncEnabled,
+                                      flowVersion: syncSetupFlowVersion,
+                                      uiVersion: syncSetupUIVersion)
+    }
+}
+
+private extension SyncSetupWideEventData.SetupMode {
+    init(_ continuation: SyncSettingsViewModel.PreservedAccountContinuation) {
+        switch continuation {
+        case .setup(.pairing): self = .multiDevice
+        case .setup(.simplifiedToggle): self = .singleDevice
+        case .recover: self = .recovery
+        }
     }
 }

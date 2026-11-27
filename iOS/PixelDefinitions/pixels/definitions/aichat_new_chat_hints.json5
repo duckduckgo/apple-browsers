@@ -1,0 +1,112 @@
+{
+    "aichat_new_chat_shown": {
+        "description": "A blank full-tab Duck.ai new chat is on screen on iPhone and ready for a prompt. Once per new chat per tab, until the tab leaves it, whether or not the new chat hints flag is on, as the denominator for how many new chats reach a first prompt.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["impression"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "newchathints_enabled",
+                "description": "Whether the new chat hints feature flag is on.",
+                "type": "boolean"
+            }
+        ]
+    },
+    "aichat_new_chat_first_prompt_sent": {
+        "description": "The first prompt is sent from a new chat counted by aichat_new_chat_shown.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "newchathints_enabled",
+                "description": "Whether the new chat hints feature flag is on.",
+                "type": "boolean"
+            },
+            {
+                "key": "hints_shown",
+                "description": "Whether hints showed at any point in this new chat before the prompt. Stays true if a promo hid them afterwards; false when they never showed (not eligible, capped, or behind a promo the whole time).",
+                "type": "boolean"
+            },
+            {
+                "key": "hint_tapped",
+                "description": "The last hint tapped in this new chat before the prompt was sent.",
+                "type": "string",
+                "enum": ["documents", "photo", "image_generation", "none"]
+            },
+            {
+                "key": "has_image_attachment",
+                "description": "Whether the prompt included an image attachment.",
+                "type": "boolean"
+            },
+            {
+                "key": "has_file_attachment",
+                "description": "Whether the prompt included a file attachment.",
+                "type": "boolean"
+            },
+            {
+                "key": "selected_tool",
+                "description": "Which tool was selected when the prompt was sent.",
+                "type": "string",
+                "enum": ["none", "image_generation", "web_search"]
+            }
+        ]
+    },
+    "aichat_new_chat_hints_shown": {
+        "description": "New chat hints show above the Duck.ai input. Once per new chat, with the slot of each hint.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["impression"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "documents_position",
+                "description": "The documents hint's 1-based slot in the row, which is shuffled per tab; 0 when it isn't shown.",
+                "type": "integer",
+                "enum": [0, 1, 2, 3]
+            },
+            {
+                "key": "photo_position",
+                "description": "The photo hint's 1-based slot in the row, which is shuffled per tab; 0 when it isn't shown.",
+                "type": "integer",
+                "enum": [0, 1, 2, 3]
+            },
+            {
+                "key": "image_generation_position",
+                "description": "The image generation hint's 1-based slot in the row, which is shuffled per tab; 0 when it isn't shown.",
+                "type": "integer",
+                "enum": [0, 1, 2, 3]
+            }
+        ]
+    },
+    "aichat_new_chat_hint_tapped": {
+        "description": "The user tapped a new chat hint above the Duck.ai input.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "hint",
+                "description": "Which hint.",
+                "type": "string",
+                "enum": ["documents", "photo", "image_generation"]
+            },
+            {
+                "key": "position",
+                "description": "The hint's 1-based slot in the row; the order is shuffled per tab.",
+                "type": "integer",
+                "enum": [1, 2, 3]
+            }
+        ]
+    },
+    "aichat_new_chat_hints_cap_reached_u": {
+        "description": "The user has sent the first prompt of 5 new chats in a row without tapping a hint, so hints stop showing. Once per install, when the count first reaches 5. Fire tabs don't count.",
+        "owners": ["aataraxiaa"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

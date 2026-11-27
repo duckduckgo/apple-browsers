@@ -379,6 +379,11 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
     func presentFilePicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
         presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
     }
+
+    /// Opens the photo library directly (bypassing the attachment menu) for the new chat hint.
+    func presentPhotoLibrary(from presenter: UIViewController, selectionLimit: Int) {
+        presentPhotoPicker(from: presenter, selectionLimit: selectionLimit)
+    }
 }
 
 /// Keeps picker navigation actions visible while SwiftUI search is active.

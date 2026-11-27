@@ -33,9 +33,8 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
 
     private func makeSUT(host: UnifiedToggleInputHost = .omnibar,
                          devicePlatform: DevicePlatformProviding.Type = IPhone.self,
-                         isFlagOn: Bool = true,
-                         featureFlagger: MockFeatureFlagger? = nil) -> UnifiedToggleInputCoordinator {
-        let featureFlagger = featureFlagger ?? MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : [])
+                         isFlagOn: Bool = true) -> UnifiedToggleInputCoordinator {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: isFlagOn ? [.newChatHints] : [])
         return UnifiedToggleInputCoordinator(
             host: host,
             isToggleEnabled: true,
@@ -108,11 +107,11 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Never with the flag off", .timeLimit(.minutes(1)))
+    @Test("Detected with the flag off too, so new chats are counted either way", .timeLimit(.minutes(1)))
     func flagOff() {
         let sut = makeSUT(isFlagOn: false)
         openBlankChat(sut)
-        #expect(!sut.isGuaranteedNewChat)
+        #expect(sut.isGuaranteedNewChat)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -264,41 +263,6 @@ final class UnifiedToggleInputCoordinatorNewChatTests {
         #expect(!published.contains { $0.isTabSelected && $0.hasChat })
         #expect(sut.isGuaranteedNewChat)
         publishing.cancel()
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Turning the flag off while a blank chat is open ends it", .timeLimit(.minutes(1)))
-    func flagTurnsOff() async throws {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.newChatHints])
-        let sut = makeSUT(featureFlagger: flagger)
-        openBlankChat(sut)
-        #expect(sut.isGuaranteedNewChat)
-
-        flagger.enabledFeatureFlags = []
-        flagger.triggerUpdate()
-        try await waitUntil { !sut.isGuaranteedNewChat }
-        #expect(!sut.isGuaranteedNewChat)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Turning the flag on while a blank chat is open starts it", .timeLimit(.minutes(1)))
-    func flagTurnsOn() async throws {
-        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let sut = makeSUT(featureFlagger: flagger)
-        openBlankChat(sut)
-        #expect(!sut.isGuaranteedNewChat)
-
-        flagger.enabledFeatureFlags = [.newChatHints]
-        flagger.triggerUpdate()
-        try await waitUntil { sut.isGuaranteedNewChat }
-        #expect(sut.isGuaranteedNewChat)
-    }
-
-    /// Flag updates arrive on the main queue, after the call that sends them.
-    private func waitUntil(_ condition: () -> Bool) async throws {
-        for _ in 0..<50 where !condition() {
-            try await Task.sleep(nanoseconds: 10_000_000)
-        }
     }
 
     @available(iOS 16, macOS 13, *)

@@ -22,6 +22,7 @@ import PixelKit
 enum CreateImageEntryPoint: String {
     case toolsMenu = "tools_menu"
     case chatHeaderNewImage = "chat_header_new_image"
+    case newChatHint = "new_chat_hint"
 }
 
 struct CreateImageModelSwitch: Equatable {

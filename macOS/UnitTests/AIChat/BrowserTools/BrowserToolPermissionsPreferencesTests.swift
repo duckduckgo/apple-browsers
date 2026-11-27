@@ -215,6 +215,15 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         XCTAssertFalse(reloaded.isExcluded(languageCode: "de"))
     }
 
+    func testWhenOnlyTranslatePagesIsCustomizedThenResetAllFiresNoToolResetPixel() {
+        model.setTranslateMode(.neverAsk)
+
+        model.resetAll()
+
+        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
+        XCTAssertEqual(model.translateMode, .alwaysAsk)
+    }
+
     // MARK: - Pixels
 
     func testWhenAChoiceChangesInSettingsThenThePermissionChangedPixelFires() {

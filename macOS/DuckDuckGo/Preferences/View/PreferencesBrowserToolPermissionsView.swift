@@ -123,13 +123,16 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     }
 
     func resetAll() {
+        let hadStoredPermissions = rows.contains { storedStates[$0.name] != nil }
         permissions.clearAll()
         // A hidden row keeps its opt-outs, so a flag rollback and re-enable does not lose them.
         if showsTranslateRow {
             translatePages.reset()
         }
         reload()
-        pixelFiring?.fire(BrowserToolsPixel.permissionsReset)
+        if hadStoredPermissions {
+            pixelFiring?.fire(BrowserToolsPixel.permissionsReset)
+        }
     }
 
     private func firePermissionChanged(_ row: Row, from previous: BrowserToolPermissionState) {

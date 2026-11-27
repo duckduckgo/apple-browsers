@@ -24,9 +24,10 @@ import PrivacyConfig
 
 extension SyncPairingURL {
 
-    init?(addressBarQuery: String, isSuggestionSelected: Bool, featureFlagger: FeatureFlagger) {
+    init?(addressBarQuery: String, isSuggestionSelected: Bool, syncService: DDGSyncing, featureFlagger: FeatureFlagger) {
         guard !isSuggestionSelected,
               featureFlagger.isFeatureOn(.syncPairingUrl),
+              syncService.featureFlags.contains(.connectFlows),
               let url = URL(trimmedAddressBarString: addressBarQuery.trimmingCharacters(in: .whitespacesAndNewlines),
                             useUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else {
             return nil

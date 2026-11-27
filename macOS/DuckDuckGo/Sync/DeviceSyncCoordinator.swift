@@ -180,8 +180,10 @@ extension DeviceSyncCoordinator {
 
     @MainActor
     static func openPairingFromAddressBarIfNeeded(for query: String, isSuggestionSelected: Bool) -> Bool {
-        guard SyncPairingURL(addressBarQuery: query,
+        guard let syncService = NSApp.delegateTyped.syncService,
+              SyncPairingURL(addressBarQuery: query,
                              isSuggestionSelected: isSuggestionSelected,
+                             syncService: syncService,
                              featureFlagger: Application.appDelegate.featureFlagger) != nil,
               let coordinator = DeviceSyncCoordinator() else { return false }
 

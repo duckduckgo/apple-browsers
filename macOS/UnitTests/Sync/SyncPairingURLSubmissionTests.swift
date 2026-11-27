@@ -32,7 +32,7 @@ final class SyncPairingURLSubmissionTests: XCTestCase {
                 for input in [host + "/pair", " " + host + "/PAIR/ ", "http://www." + host + "/pair",
                               "https://" + host + "/pair?", host + "/pair?ref=test", host + "/pair#code2=untrusted",
                               host + "/pair?code2=untrusted"] {
-                    XCTAssertEqual(SyncPairingURL(addressBarQuery: input, isSuggestionSelected: false, featureFlagger: flagger), destination, input)
+                    XCTAssertEqual(SyncPairingURL(addressBarQuery: input, isSuggestionSelected: false, syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false), featureFlagger: flagger), destination, input)
                 }
             }
         }
@@ -42,8 +42,8 @@ final class SyncPairingURLSubmissionTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         flagger.enabledFeatureFlags = [.syncPairingUrl]
         for input in ["duck.com/pair", "https://duck.ai/pair#code2=untrusted"] {
-            XCTAssertNil(SyncPairingURL(addressBarQuery: input, isSuggestionSelected: true, featureFlagger: flagger))
-            XCTAssertNotNil(SyncPairingURL(addressBarQuery: input, isSuggestionSelected: false, featureFlagger: flagger))
+            XCTAssertNil(SyncPairingURL(addressBarQuery: input, isSuggestionSelected: true, syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false), featureFlagger: flagger))
+            XCTAssertNotNil(SyncPairingURL(addressBarQuery: input, isSuggestionSelected: false, syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false), featureFlagger: flagger))
         }
     }
 
@@ -51,8 +51,26 @@ final class SyncPairingURLSubmissionTests: XCTestCase {
         let flagger = MockFeatureFlagger()
         for enabled in [false, true, false, true] {
             flagger.enabledFeatureFlags = enabled ? [.syncPairingUrl] : []
-            XCTAssertEqual(SyncPairingURL(addressBarQuery: "duck.ai/pair", isSuggestionSelected: false, featureFlagger: flagger),
+            XCTAssertEqual(SyncPairingURL(addressBarQuery: "duck.ai/pair", isSuggestionSelected: false, syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false), featureFlagger: flagger),
                            enabled ? .duckAI : nil)
+        }
+    }
+
+    func testUnavailableConnectFlowsLeaveURLsForNormalNavigation() {
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.syncPairingUrl]
+        let syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+        for flags in [SyncFeatureFlags.unavailable, .level0ShowSync, .level1AllowDataSyncing,
+                      .level2AllowSetupFlows, .all, .unavailable] {
+            syncService.featureFlags = flags
+            for state in [SyncAuthState.active, .inactive] {
+                syncService.authState = state
+                for (host, destination) in [("duck.com", SyncPairingURL.duckCom), ("duck.ai", .duckAI)] {
+                    XCTAssertEqual(SyncPairingURL(addressBarQuery: host + "/pair", isSuggestionSelected: false,
+                                                 syncService: syncService, featureFlagger: flagger),
+                                   flags.contains(.connectFlows) ? destination : nil)
+                }
+            }
         }
     }
 
@@ -61,7 +79,7 @@ final class SyncPairingURLSubmissionTests: XCTestCase {
         flagger.enabledFeatureFlags = [.syncPairingUrl]
         for input in ["sync my bookmarks", "duck.com/pair/extra", "https://duck.ai/pair//", "https://sub.duck.com/pair",
                       "https://duck.com.evil.com/pair", "https://duckduckgo.com/sync/pairing/#&code2=legacy"] {
-            XCTAssertNil(SyncPairingURL(addressBarQuery: input, isSuggestionSelected: false, featureFlagger: flagger), input)
+            XCTAssertNil(SyncPairingURL(addressBarQuery: input, isSuggestionSelected: false, syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false), featureFlagger: flagger), input)
         }
     }
 }

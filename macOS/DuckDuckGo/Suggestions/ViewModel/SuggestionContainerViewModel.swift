@@ -306,7 +306,7 @@ final class SuggestionContainerViewModel {
 
     /// Selects a suggestion by its index (for backward compatibility)
     func select(at index: Int) {
-         isSelectionAutocompleted = false
+        isSelectionAutocompleted = false
         guard index >= 0, index < numberOfSuggestions else {
             Logger.general.error("SuggestionContainerViewModel: Index out of bounds")
             selectionIndex = nil

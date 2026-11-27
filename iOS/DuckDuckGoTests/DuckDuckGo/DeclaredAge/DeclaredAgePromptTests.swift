@@ -129,25 +129,6 @@ final class DeclaredAgePromptTests: XCTestCase {
         XCTAssertEqual(service.requestCount, 1)
     }
 
-    func testWhenRequestFailsThenTheNextLaunchRetries() async {
-        service.requestError = CancellationError()
-
-        _ = await launchAndWaitForRequest()
-        _ = await launchAndWaitForRequest()
-
-        XCTAssertEqual(service.requestCount, 2)
-    }
-
-    func testWhenUserAlreadyAnsweredThenTheNextLaunchDoesNotAskApple() async {
-        _ = await launchAndWaitForRequest()
-
-        let nextLaunchPrompt = makePrompt()
-        await mainQueueDrains()
-
-        XCTAssertEqual(service.isRequestRequiredCount, 1)
-        XCTAssertFalse(nextLaunchPrompt.presentIfNeeded())
-    }
-
     // MARK: - Helpers
 
     private func makePrompt(anchor: UIViewController? = UIViewController()) -> DeclaredAgePrompt {

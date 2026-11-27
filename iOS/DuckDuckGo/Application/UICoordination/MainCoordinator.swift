@@ -746,7 +746,7 @@ final class MainCoordinator {
         return controller.topPresentedViewController
     }
 
-    func presentModalPromptIfNeeded() {
+    private func presentModalPromptIfNeeded() {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
         _ = runOnceModalPromptCloses {}
     }

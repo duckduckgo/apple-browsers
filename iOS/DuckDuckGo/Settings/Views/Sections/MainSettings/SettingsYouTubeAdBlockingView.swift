@@ -79,15 +79,15 @@ struct SettingsYouTubeAdBlockingView: View {
                 }
             }
 
-            if viewModel.isSponsorBlockAvailable {
-                Section(header: Text(verbatim: SponsorBlockCopy.sectionHeader),
-                        footer: Text(verbatim: SponsorBlockCopy.footer)) {
-                    SettingsCellView(label: SponsorBlockCopy.toggle,
-                                     accessory: .toggle(isOn: viewModel.sponsorBlockEnabled))
-                    if viewModel.sponsorBlockEnabled.wrappedValue {
-                        SettingsPickerCellView(label: SponsorBlockCopy.skipModeLabel,
-                                               options: SponsorBlockSkipMode.allCases,
-                                               selectedOption: viewModel.sponsorBlockSkipMode)
+            if viewModel.isSegmentSkipAvailable {
+                Section(header: Text(verbatim: SegmentSkipCopy.sectionHeader),
+                        footer: Text(verbatim: SegmentSkipCopy.footer)) {
+                    SettingsCellView(label: SegmentSkipCopy.toggle,
+                                     accessory: .toggle(isOn: viewModel.segmentSkipEnabled))
+                    if viewModel.segmentSkipEnabled.wrappedValue {
+                        SettingsPickerCellView(label: SegmentSkipCopy.skipModeLabel,
+                                               options: SegmentSkipMode.allCases,
+                                               selectedOption: viewModel.segmentSkipMode)
                     }
                 }
             }
@@ -159,7 +159,7 @@ struct SettingsYouTubeAdBlockingView: View {
     }
 }
 
-private enum SponsorBlockCopy {
+private enum SegmentSkipCopy {
     static let sectionHeader = "Sponsor Segments"
     static let toggle = "Skip Sponsor Segments"
     static let footer = "Marks sponsored segments on the video progress bar. Manual mode shows a Skip button, Automatic mode skips them for you."
@@ -168,11 +168,11 @@ private enum SponsorBlockCopy {
     static let auto = "Automatic"
 }
 
-extension SponsorBlockSkipMode: @retroactive CustomStringConvertible {
+extension SegmentSkipMode: @retroactive CustomStringConvertible {
     public var description: String {
         switch self {
-        case .manual: SponsorBlockCopy.manual
-        case .auto: SponsorBlockCopy.auto
+        case .manual: SegmentSkipCopy.manual
+        case .auto: SegmentSkipCopy.auto
         }
     }
 }

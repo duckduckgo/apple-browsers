@@ -33,7 +33,9 @@ final class SubscriptionService {
 
     init(application: UIApplication = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         onboardingVPNExperimentMetrics: OnboardingVPNDownloadReasonExperimentMetrics,
+         notificationCenter: NotificationCenter) {
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(
                     privacyConfigurationManager: privacyConfigurationManager,
                     purchasePlatform: .appStore,
@@ -42,9 +44,29 @@ final class SubscriptionService {
         Task {
             await subscriptionManager.loadInitialData()
         }
+        recordPurchasesForOnboardingVPNExperiment(metrics: onboardingVPNExperimentMetrics,
+                                                  featureFlagger: featureFlagger,
+                                                  notificationCenter: notificationCenter)
+    }
+
+    /// New subscriptions from any entry point count. Restores and plan changes of an existing subscription don't.
+    private func recordPurchasesForOnboardingVPNExperiment(metrics: OnboardingVPNDownloadReasonExperimentMetrics,
+                                                           featureFlagger: FeatureFlagger,
+                                                           notificationCenter: NotificationCenter) {
+        let subfeatureID = PrivacyProSubfeature.onboardingVPNDownloadReasonExperiment.rawValue
+        notificationCenter.publisher(for: .userDidStartNewSubscription)
+            .sink { _ in
+                metrics.recordSubscriptionPurchase(enrollmentDate: featureFlagger.allActiveExperiments[subfeatureID]?.enrollmentDate,
+                                                   now: Date())
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Resume
 
-    func resume() {}
+    func resume() {
+        Task { [subscriptionManager] in
+            await subscriptionManager.restoreMissingTokenIfPossible()
+        }
+    }
 }

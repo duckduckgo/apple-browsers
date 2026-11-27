@@ -91,7 +91,8 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
 
     func testUpdateDiscoveryFlagChangesApplyWithoutRecreatingManager() async throws {
         for enabled in [false, true] {
-            let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensionUpdateDiscovery.rawValue: enabled])
+            let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensions.rawValue: true,
+                                                          FeatureFlag.webExtensionUpdateDiscovery.rawValue: enabled])
             let storage = try DiscoveryStateStorage()
             let manager = makeManager(storage: storage, flags: flags)
             let store = try XCTUnwrap(manager.chromeWebStore)
@@ -120,6 +121,42 @@ final class WebExtensionManagerFactoryTests: XCTestCase {
             XCTAssertEqual(storage.discoveryReads, 1)
             withExtendedLifetime(manager) {}
         }
+    }
+
+    func testUpdateDiscoveryFollowsWebExtensionsFlagWithoutRecreatingManager() async throws {
+        let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensions.rawValue: false,
+                                                      FeatureFlag.webExtensionUpdateDiscovery.rawValue: true])
+        let storage = try DiscoveryStateStorage()
+        let manager = makeManager(storage: storage, flags: flags)
+        let store = try XCTUnwrap(manager.chromeWebStore)
+        XCTAssertFalse(store.canCheckForUpdates, "Update discovery needs the web extensions flag")
+
+        flags.featuresStub[FeatureFlag.webExtensions.rawValue] = true
+        flags.triggerUpdate()
+        try await waitForCondition { store.canCheckForUpdates }
+
+        flags.featuresStub[FeatureFlag.webExtensions.rawValue] = false
+        flags.triggerUpdate()
+        await store.checkForUpdatesNow()
+        XCTAssertFalse(store.canCheckForUpdates)
+        XCTAssertEqual(storage.discoveryReads, 1, "Toggling the flag must retain the coordinator and its timing state")
+        withExtendedLifetime(manager) {}
+    }
+
+    func testUpdateDiscoveryIsEnabledByWebExtensionsInternalFlag() async throws {
+        let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.webExtensions.rawValue: false,
+                                                      FeatureFlag.webExtensionsInternal.rawValue: true,
+                                                      FeatureFlag.webExtensionUpdateDiscovery.rawValue: true])
+        let manager = makeManager(storage: try DiscoveryStateStorage(), flags: flags)
+        let store = try XCTUnwrap(manager.chromeWebStore)
+
+        try await waitForCondition { store.canCheckForUpdates }
+
+        flags.featuresStub[FeatureFlag.webExtensionsInternal.rawValue] = false
+        flags.triggerUpdate()
+        await store.checkForUpdatesNow()
+        XCTAssertFalse(store.canCheckForUpdates)
+        withExtendedLifetime(manager) {}
     }
 
     func testManagerEnforcesExtensionPermissions() throws {

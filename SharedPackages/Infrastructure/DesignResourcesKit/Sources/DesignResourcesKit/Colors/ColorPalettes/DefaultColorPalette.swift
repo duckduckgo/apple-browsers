@@ -114,6 +114,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Text
     private static let accentTextPrimary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60, darkColor: RebrandingColor.Pondwater.pondwater40)
+    private static let accentTextTertiary = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater80, darkColor: RebrandingColor.Pondwater.pondwater60)
     private static let textSelectionFill = DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater60.opacity(0.2), darkColor: RebrandingColor.Pondwater.pondwater40.opacity(0.2))
 
     // Brand
@@ -133,6 +134,11 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Alert
     private static let alertGreen = DynamicColor(staticColor: RebrandingColor.Green.green40)
     private static let alertYellow = DynamicColor(staticColor: RebrandingColor.Pollen.pollen50)
+
+    // Status
+    private static let statusGreen = DynamicColor(staticColor: RebrandingColor.Green.green40)
+    private static let statusRed = DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: Color(0xFF5359))
+    private static let statusYellowPrimary = DynamicColor(staticColor: RebrandingColor.Pollen.pollen50)
     private static let shieldPrivacy = DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad70, darkColor: RebrandingColor.Lilypad.lilypad50)
 
     // Destructive
@@ -228,6 +234,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .accentBrandContentPrimary: return accentBrandContentPrimary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
+        case .statusGreen: return statusGreen
+        case .statusRed: return statusRed
+        case .statusYellowPrimary: return statusYellowPrimary
         case .shieldPrivacy: return shieldPrivacy
         // VPN pill + header animation, per the Figma spec. Backgrounds and foregrounds (text/icon)
         // vary by light/dark mode, with a darker interaction (hover/press) variant of each.
@@ -249,6 +258,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
         case .border: return border
         case .accentTextPrimary: return accentTextPrimary
+        case .accentTextTertiary: return accentTextTertiary
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
         case .textTertiary: return textTertiary
@@ -304,6 +314,14 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
         switch singleUseColor {
+        case .autofillSelectedRowBackground:
+            return DynamicColor(lightColor: .gray40, darkColor: .gray80)
+        case .syncScreenBackground:
+            return DynamicColor(staticColor: .gray90)
+        case .purchaseProgressShadow:
+            return DynamicColor(lightColor: .gray50, darkColor: .gray100)
+        case .fallbackFaviconBackground:
+            return DynamicColor(staticColor: .gray70)
         case .controlWidgetBackground:
             return DynamicColor(staticColor: .x818387)
         case .unifiedFeedbackFieldBackground:

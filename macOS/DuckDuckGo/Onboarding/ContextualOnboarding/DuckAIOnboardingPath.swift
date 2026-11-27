@@ -18,6 +18,7 @@
 
 import AIChat
 import Foundation
+import Subscription
 
 /// The path for users who send a Duck.ai prompt from the junction:
 /// "That's Duck.ai!" on the Duck.ai tab, then the shared ending on the next new tab.
@@ -27,12 +28,15 @@ final class DuckAIOnboardingPath: ContextualOnboardingPath {
     private let ending: OnboardingEndingSteps
 
     init(progress: ContextualOnboardingProgressReading,
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling) {
+         subscriptionManager: any SubscriptionManager) {
         self.progress = progress
-        self.ending = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: subscriptionUpsellExperiment)
+        self.ending = OnboardingEndingSteps(progress: progress, subscriptionManager: subscriptionManager)
     }
 
-    let isUILocked = false
+    /// Only Fire is allowed until the chat is deleted.
+    var uiLock: UserInteractionLock {
+        progress.fireButtonUsedOnce ? .unlocked : .locked(except: [.fire])
+    }
 
     func dialog(for tab: Tab) -> ContextualOnboardingDecision {
         if case .decided(let decision) = ending.decisionForNextDialog() { return decision }

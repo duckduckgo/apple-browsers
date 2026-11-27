@@ -32,6 +32,7 @@ final class DefaultBrowserAndDockPromptService {
     let uiHosting: () -> DefaultBrowserAndDockPromptUIHosting?
     let uiProvider: DefaultBrowserAndDockPromptUIProviding
     let actionPerformer: DefaultBrowserAndDockActionPerforming
+    let rolloutMonitor: AppStoreDockRolloutMonitor
     let dateProvider: () -> Date
 
     init(
@@ -40,7 +41,9 @@ final class DefaultBrowserAndDockPromptService {
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting,
         uiHosting: @escaping () -> DefaultBrowserAndDockPromptUIHosting?,
         isOnboardingCompletedProvider: @escaping () -> Bool,
-        dockCustomization: DockCustomization
+        dockCustomization: DockCustomization,
+        addToDockVideoFeatureFlagger: FeatureFlagger,
+        addToDockVideoPresenter: AddToDockVideoPresenting
     ) {
 
         var defaultBrowserAndDockPromptDebugStore: DefaultBrowserAndDockPromptDebugStore?
@@ -71,20 +74,30 @@ final class DefaultBrowserAndDockPromptService {
             installDateProvider: defaultBrowserAndDockInstallDateProvider,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
+        let actionPerformer = DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomization,
+                                                                   defaultBrowserProvider: SystemDefaultBrowserProvider(),
+                                                                   featureFlagger: addToDockVideoFeatureFlagger,
+                                                                   videoPresenter: addToDockVideoPresenter)
+        self.actionPerformer = actionPerformer
+        let rolloutMonitor = AppStoreDockRolloutMonitor(store: AppStoreDockRolloutStore(keyValueStore: keyValueStore),
+                                                        dockCustomization: dockCustomization,
+                                                        dateProvider: defaultBrowserAndDockPromptDateProvider)
+        rolloutMonitor.resume()
+        self.rolloutMonitor = rolloutMonitor
         coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,
             store: store,
             notificationPresenter: notificationPresenter,
             featureFlagger: featureFlagger,
             isOnboardingCompleted: isOnboardingCompletedProvider,
-            dockCustomization: dockCustomization,
+            actionPerformer: actionPerformer,
+            rolloutMonitor: rolloutMonitor,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier(dockCustomizer: dockCustomization)
         let uiProvider = DefaultBrowserAndDockPromptUIProvider()
         self.uiHosting = uiHosting
         self.uiProvider = uiProvider
-        actionPerformer = DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomization, defaultBrowserProvider: SystemDefaultBrowserProvider())
         dateProvider = defaultBrowserAndDockPromptDateProvider
 
         presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier, uiProvider: uiProvider)

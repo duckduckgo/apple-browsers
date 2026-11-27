@@ -20,7 +20,9 @@ import AppKitExtensions
 
 import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
+import PrivacyConfig
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -31,17 +33,20 @@ final class DockCustomizerTests: XCTestCase {
 
     private var keyValueStore: UserDefaults!
     private var dockMembershipProvider: MockDockMembershipProvider!
+    private var featureFlagger: MockFeatureFlagger!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         keyValueStore = UserDefaults(suiteName: Self.keyValueStoreSuiteName)
         dockMembershipProvider = MockDockMembershipProvider()
+        featureFlagger = MockFeatureFlagger()
     }
 
     override func tearDownWithError() throws {
         keyValueStore.removePersistentDomain(forName: Self.keyValueStoreSuiteName)
         keyValueStore = nil
         dockMembershipProvider = nil
+        featureFlagger = nil
         try super.tearDownWithError()
     }
 
@@ -51,6 +56,7 @@ final class DockCustomizerTests: XCTestCase {
 
         let sut = DockCustomizer(
             applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             dockMembershipProvider: dockMembershipProvider
         )
@@ -66,6 +72,7 @@ final class DockCustomizerTests: XCTestCase {
 
         let sut = DockCustomizer(
             applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore
         )
 
@@ -78,35 +85,146 @@ final class DockCustomizerTests: XCTestCase {
 
         let sut = DockCustomizer(
             applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore
         )
 
         XCTAssertTrue(sut.supportsAddingToDock)
     }
 
-    func testWhenAppStoreBuildThenNotificationTimerIsNotStarted() {
+    func testWhenAppStoreBuildWithFlagOnIsSynchronizedThenNotificationPublisherIsTrue() {
+        UserDefaultsWrapper<Any>.clearAll()
+        addTeardownBlock {
+            UserDefaultsWrapper<Any>.sharedDefaults
+                .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        }
+        UserDefaultsWrapper<Any>.sharedDefaults
+            .set(Date().addingTimeInterval(.days(-3)), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+
         let buildType = ApplicationBuildTypeMock()
         buildType.isAppStoreBuild = true
-
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
         let sut = DockCustomizer(
             applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             dockMembershipProvider: dockMembershipProvider
         )
+        var receivedValues: [Bool] = []
+        let cancellable = sut.shouldShowNotificationPublisher.sink { receivedValues.append($0) }
 
-        let expectation = expectation(description: "Publisher emits")
-        var receivedValue: Bool?
-        let cancellable = sut.shouldShowNotificationPublisher
-            .first()
-            .sink { value in
-                receivedValue = value
-                expectation.fulfill()
-            }
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
 
-        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedValues.last, true)
         cancellable.cancel()
+    }
 
-        XCTAssertEqual(receivedValue, false)
+    func testWhenAppStoreBuildWithFlagOffIsSynchronizedThenNotificationPublisherStaysFalse() {
+        UserDefaultsWrapper<Any>.clearAll()
+        addTeardownBlock {
+            UserDefaultsWrapper<Any>.sharedDefaults
+                .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        }
+        UserDefaultsWrapper<Any>.sharedDefaults
+            .set(Date().addingTimeInterval(.days(-3)), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isAppStoreBuild = true
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+        let sut = DockCustomizer(
+            applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            dockMembershipProvider: dockMembershipProvider
+        )
+        var receivedValues: [Bool] = []
+        let cancellable = sut.shouldShowNotificationPublisher.sink { receivedValues.append($0) }
+
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
+
+        XCTAssertEqual(receivedValues.last, false)
+        cancellable.cancel()
+    }
+
+    func testWhenAppStoreFlagTurnsOffWhileRunningThenShouldShowNotificationIsFalse() {
+        UserDefaultsWrapper<Any>.clearAll()
+        addTeardownBlock {
+            UserDefaultsWrapper<Any>.sharedDefaults
+                .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        }
+        UserDefaultsWrapper<Any>.sharedDefaults
+            .set(Date().addingTimeInterval(.days(-3)), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isAppStoreBuild = true
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        let sut = DockCustomizer(
+            applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            dockMembershipProvider: dockMembershipProvider
+        )
+        XCTAssertTrue(sut.shouldShowNotification)
+
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+
+        XCTAssertFalse(sut.shouldShowNotification)
+    }
+
+    func testWhenAppStoreBuildHasDirectDownloadDotKeySavedThenNotificationIsStillShown() {
+        setFirstLaunchDateThreeDaysAgo()
+        keyValueStore.set(true, forKey: DockCustomizer.Keys.wasNotificationShownToUser)
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        let sut = makeSUT(isAppStoreBuild: true)
+
+        XCTAssertTrue(sut.shouldShowNotification)
+    }
+
+    func testWhenNotAppStoreBuildHasDotKeySavedThenNotificationIsNotShown() {
+        setFirstLaunchDateThreeDaysAgo()
+        keyValueStore.set(true, forKey: DockCustomizer.Keys.wasNotificationShownToUser)
+        let sut = makeSUT(isAppStoreBuild: false)
+
+        XCTAssertFalse(sut.shouldShowNotification)
+    }
+
+    func testWhenMoreOptionsMenuClosesWithoutDotThenDotIsShownWhenFlagTurnsOn() {
+        setFirstLaunchDateThreeDaysAgo()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+        let sut = makeSUT(isAppStoreBuild: true)
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
+
+        sut.didCloseMoreOptionsMenu()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+
+        XCTAssertTrue(sut.shouldShowNotification)
+    }
+
+    func testWhenItemDotShowsBeforeButtonDotRefreshesThenClosingMenuHidesDot() {
+        setFirstLaunchDateThreeDaysAgo()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+        let sut = makeSUT(isAppStoreBuild: true)
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+
+        sut.didCloseMoreOptionsMenu()
+
+        XCTAssertFalse(sut.shouldShowNotification)
+    }
+
+    func testWhenMoreOptionsMenuClosesWithDotThenDotIsHidden() {
+        setFirstLaunchDateThreeDaysAgo()
+        featureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        let sut = makeSUT(isAppStoreBuild: true)
+        var receivedValues: [Bool] = []
+        let cancellable = sut.shouldShowNotificationPublisher.sink { receivedValues.append($0) }
+        sut.synchronizeNotificationVisibilityWithFirstLaunchDate()
+
+        sut.didCloseMoreOptionsMenu()
+
+        XCTAssertEqual(receivedValues.last, false)
+        XCTAssertFalse(sut.shouldShowNotification)
+        cancellable.cancel()
     }
 
     /// Without a stored `firstLaunchDate`, `AppDelegate` falls back to a default “old” date so computed dock notification eligibility is `true`,
@@ -123,6 +241,7 @@ final class DockCustomizerTests: XCTestCase {
 
         let sut = DockCustomizer(
             applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             dockMembershipProvider: dockMembershipProvider
         )
@@ -156,6 +275,7 @@ final class DockCustomizerTests: XCTestCase {
 
         let sut = DockCustomizer(
             applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             dockMembershipProvider: dockMembershipProvider
         )
@@ -195,6 +315,7 @@ final class DockCustomizerTests: XCTestCase {
 
         let sut = DockCustomizer(
             applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             dockMembershipProvider: dockMembershipProvider
         )
@@ -226,6 +347,7 @@ final class DockCustomizerTests: XCTestCase {
 
         let sut = DockCustomizer(
             applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
             keyValueStore: keyValueStore,
             dockMembershipProvider: MockDockMembershipProvider(isInDock: true)
         )
@@ -239,6 +361,27 @@ final class DockCustomizerTests: XCTestCase {
 
         XCTAssertEqual(receivedValues.last, false)
         cancellable.cancel()
+    }
+
+    private func setFirstLaunchDateThreeDaysAgo() {
+        UserDefaultsWrapper<Any>.clearAll()
+        addTeardownBlock {
+            UserDefaultsWrapper<Any>.sharedDefaults
+                .set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        }
+        UserDefaultsWrapper<Any>.sharedDefaults
+            .set(Date().addingTimeInterval(.days(-3)), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+    }
+
+    private func makeSUT(isAppStoreBuild: Bool) -> DockCustomizer {
+        let buildType = ApplicationBuildTypeMock()
+        buildType.isAppStoreBuild = isAppStoreBuild
+        return DockCustomizer(
+            applicationBuildType: buildType,
+            featureFlagger: featureFlagger,
+            keyValueStore: keyValueStore,
+            dockMembershipProvider: dockMembershipProvider
+        )
     }
 
 }

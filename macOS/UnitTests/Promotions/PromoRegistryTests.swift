@@ -43,7 +43,9 @@ final class PromoRegistryTests: XCTestCase {
             notificationPresenter: MockDefaultBrowserAndDockPromptNotificationPresenter(),
             uiHosting: { nil },
             isOnboardingCompletedProvider: { true },
-            dockCustomization: DockCustomizerMock()
+            dockCustomization: DockCustomizerMock(),
+            addToDockVideoFeatureFlagger: MockFeatureFlagger(),
+            addToDockVideoPresenter: CapturingAddToDockVideoPresenter()
         )
         let windowControllersManager = WindowControllersManagerMock()
         let dependencies = PromoDependencies(
@@ -64,7 +66,6 @@ final class PromoRegistryTests: XCTestCase {
             syncBookmarksAdapter: nil,
             pinningManager: MockPinningManager(),
             cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 keyValueStore: InMemoryThrowingKeyValueStore(),
                 windowControllersManager: windowControllersManager,
                 cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
@@ -93,12 +94,10 @@ final class PromoRegistryTests: XCTestCase {
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
             quitSurveyPromoObserver: QuitSurveyPromoObserver(),
             vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
             ),
             vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
             ),

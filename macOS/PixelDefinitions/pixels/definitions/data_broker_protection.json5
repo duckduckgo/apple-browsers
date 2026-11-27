@@ -1090,14 +1090,6 @@
         "triggers": ["other"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
-    "m_mac_dbp_freemium_pir_maintenance_scan_skipped": {
-        "description": "Temporary telemetry fired when PIR skips at least one maintenance scan job for an unauthenticated freemium user.",
-        "owners": ["jozsef-vesza"],
-        "triggers": ["other"],
-        "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel"],
-        "expires": "2026-08-31"
-    },
     "dbp_challenge_main-frame_detected_macos": {
         "description": "Fires when PIR detects a challenge response for a main-frame navigation.",
         "owners": ["quanganhdo"],

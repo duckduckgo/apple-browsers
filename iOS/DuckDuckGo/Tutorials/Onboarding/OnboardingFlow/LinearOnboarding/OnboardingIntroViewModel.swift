@@ -95,7 +95,8 @@ final class OnboardingIntroViewModel: ObservableObject {
     @Published var isSkipped = false
 
     var onCompletingOnboardingIntro: (() -> Void)?
-    var onOpenAIChatFromOnboarding: ((String?, Bool) -> Void)?
+    /// Opens the onboarding Duck.ai chat with the prompt, the auto-send flag and the model picked on the AI model step (if any).
+    var onOpenAIChatFromOnboarding: ((String?, Bool, String?) -> Void)?
     var onSearchFromOnboarding: ((String) -> Void)?
     /// Invoked when the flow reaches an `OnboardingIntroStep.interlude(_)` step. The host is expected to dismiss the onboarding UI, run its own experience, and call `resumeOnboardingFromInterlude()` once finished.
     var onOnboardingInterlude: ((OnboardingIntroStep.Interlude) -> Void)?
@@ -345,6 +346,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     /// - Parameter transition: Runs the step change, e.g. inside the view's content transition.
     func tryVPNAction(transition: @escaping (_ advance: @escaping () -> Void) -> Void = { $0() }) {
         guard currentIntroStep == .tryVPN else { return }
+        pixelReporter.measureTryVPNAction()
         guard let onTryVPNFromOnboarding else {
             makeNextViewState()
             return
@@ -363,14 +365,29 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     func skipTryVPNAction() {
         guard currentIntroStep == .tryVPN else { return }
+        pixelReporter.measureSkipTryVPNAction()
         // They declined the offer, so don't wait on a pending subscription check.
         tryVPNFollowUpProvider.cancelVPNAccessCheck()
         makeNextViewState()
     }
 
-    /// "Next" or "Skip" on the step after Try VPN.
-    func tryVPNFollowUpContinueAction() {
+    /// "Next" (the VPN is on) or "Skip" (it's off) on the Turn on VPN step after Try VPN.
+    func vpnActivationContinueAction(isVPNOn: Bool) {
         guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureVPNActivationContinue(isVPNOn: isVPNOn)
+        makeNextViewState()
+    }
+
+    /// Turning on the VPN failed on the Turn on VPN step after Try VPN.
+    func vpnActivationFailedAction(reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) {
+        guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureVPNActivationFailed(reason)
+    }
+
+    /// The button on the "If you change your mind" step after Try VPN.
+    func subscriptionReminderContinueAction() {
+        guard currentIntroStep == .tryVPNFollowUp else { return }
+        pixelReporter.measureSubscriptionReminderContinue()
         makeNextViewState()
     }
 
@@ -401,7 +418,8 @@ final class OnboardingIntroViewModel: ObservableObject {
         // Record that the user took the AI route at the Search/Duck.ai junction, so the end-of-journey step
         // shows the standard completion instead of the "Try Duck.ai" nudge (they already tried AI).
         onboardingSearchExperienceProvider.storeDidStartAIChatDuringOnboarding(true)
-        onOpenAIChatFromOnboarding?(prompt, autoSend)
+        // The model picked on the AI model step applies to this onboarding chat only.
+        onOpenAIChatFromOnboarding?(prompt, autoSend, personalizationManager.selectedAIChatModelID)
     }
 
     func searchFromOnboarding(query: String) {
@@ -721,6 +739,7 @@ private extension OnboardingIntroViewModel {
     func persistPendingOnboardingStep(for step: OnboardingIntroStep) {
         if step == .duckAIQuerySelection {
             onboardingResumeStepStore.resumeDuckAIQueryPrompt = nil
+            onboardingResumeStepStore.resumeDuckAIQueryModelID = nil
         }
         onboardingResumeStepStore.resumeStep = step.resumeStep
     }
@@ -757,8 +776,12 @@ private extension OnboardingIntroViewModel {
             pixelReporter.measureKeepDuckAIImpression()
         case .adBlockingDialog:
             pixelReporter.measureAdBlockingImpression()
-        case .tryVPNDialog, .vpnActivationDialog, .subscriptionReminderDialog:
-            break
+        case .tryVPNDialog:
+            pixelReporter.measureTryVPNImpression()
+        case .vpnActivationDialog:
+            pixelReporter.measureVPNActivationImpression()
+        case .subscriptionReminderDialog:
+            pixelReporter.measureSubscriptionReminderImpression()
         }
     }
 

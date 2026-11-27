@@ -35,6 +35,7 @@ extension DebugScreensViewModel {
 
     /// Just add your view or debug building logic to this array. In the UI this will be ordered by the title.
     /// Note that the storyboard is not passed to the controller builder - ideally we'll mirgate away from that to SwiftUI entirely
+    /// A screen option that stores a value also needs a launch profile key (see .claude/skills/ddg-ios-launch-profile).
     var screens: [DebugScreen] {
         return [
             // MARK: Actions
@@ -112,9 +113,6 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Duck.ai Toggle Prompt", { _ in
                 DuckAIToggleDebugView()
-            }),
-            .view(title: "Search Token", { _ in
-                SearchTokenDebugView()
             }),
             .view(title: "Data Audit", { _ in
                 DataAuditDebugScreen()
@@ -308,7 +306,7 @@ extension DebugScreensViewModel {
                         controller.presentingViewController?.dismiss(animated: true)
                     }
 
-                    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType) {}
+                    func openAIChatFromOnboarding(_ query: String?, autoSend: Bool, modelId: String?, flowType: AIChatOnboardingFlowType) {}
 
                     func searchFromOnboarding(for query: String) {}
 

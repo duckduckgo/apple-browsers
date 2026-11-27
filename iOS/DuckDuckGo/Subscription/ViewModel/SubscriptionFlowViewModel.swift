@@ -58,6 +58,20 @@ enum SubscriptionFlowType {
     }
 }
 
+/// What happened in a subscription flow, for the code that opened it to report.
+enum SubscriptionFlowEvent: Equatable {
+    /// The purchase failed, for reasons other than the user cancelling it.
+    case purchaseFailed
+    /// The App Store found a subscription the user already has, so the flow shows "Subscription Found".
+    case subscriptionFound
+    /// The user tapped Restore on "Subscription Found".
+    case subscriptionFoundRestoreTapped
+    /// The user tapped Cancel on "Subscription Found".
+    case subscriptionFoundCancelled
+    /// "Subscription Found" → Restore succeeded.
+    case subscriptionRestored
+}
+
 final class SubscriptionFlowViewModel: ObservableObject {
     
     let userScript: SubscriptionPagesUserScript
@@ -98,6 +112,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         var viewTitle: String = UserText.subscriptionTitle
         var shouldGoBackToSettings: Bool = false
         var shouldPresentOnboarding: Bool = false
+        var notificationsDeniedDialogDays: Int?
     }
     
     // Read only View State - Should only be modified from the VM
@@ -106,6 +121,11 @@ final class SubscriptionFlowViewModel: ObservableObject {
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
     }
+
+    // MARK: - Notifications Denied Dialog
+
+    private var notificationsDeniedDialogContinuation: CheckedContinuation<NotificationsDeniedDialogAction, Never>?
+    private var didBecomeActiveCancellable: AnyCancellable?
 
     // MARK: - Post-checkout onboarding
 
@@ -116,6 +136,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     /// `nil` unless this flow came from `makePurchaseFlowV2`; falls back to `SubscriptionOnboardingDuckAIChatLauncher`.
     private let onRequestDuckAIChatHandler: ((String?) -> Bool)?
+    /// Called with what happens in this flow. The restore keeps running, and still reports, if the flow is closed meanwhile.
+    private let onFlowEvent: ((SubscriptionFlowEvent) -> Void)?
 
     private var didHandOffToDuckAI = false
 
@@ -228,6 +250,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
 
     private let webViewSettings: AsyncHeadlessWebViewSettings
+    private let pixelFiring: PixelFiring?
 
     init(initialURL: URL,
          flowType: SubscriptionFlowType,
@@ -243,7 +266,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          onboardingKeyValueStore: ThrowingKeyValueStoring?,
          meetsPIRLocaleRequirement: @escaping () -> Bool,
-         onRequestDuckAIChat: ((String?) -> Bool)? = nil) {
+         onFlowEvent: ((SubscriptionFlowEvent) -> Void)?,
+         onRequestDuckAIChat: ((String?) -> Bool)? = nil,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.initialURL = initialURL
         self.flowType = flowType
         self.userScript = userScript
@@ -257,6 +282,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.meetsPIRLocaleRequirement = meetsPIRLocaleRequirement
         self.onRequestDuckAIChatHandler = onRequestDuckAIChat
+        self.onFlowEvent = onFlowEvent
+        self.pixelFiring = pixelFiring
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -349,6 +376,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
        
     }
 
+    /// Reports `.purchaseFailed` for the same errors as the purchase failure pixels.
     @MainActor
     private func handleTransactionError(error: UseSubscriptionError) {
         // Reset the transaction Status
@@ -359,14 +387,17 @@ final class SubscriptionFlowViewModel: ObservableObject {
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureStoreError,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .purchaseFailed
+            onFlowEvent?(.purchaseFailed)
         case .purchasePendingTransaction:
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureStoreError,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .purchasePendingTransaction
+            onFlowEvent?(.purchaseFailed)
         case .missingEntitlements:
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureBackendError,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .missingEntitlements
+            onFlowEvent?(.purchaseFailed)
         case .failedToGetSubscriptionOptions:
             state.transactionError = .failedToGetSubscriptionOptions
         case .failedToSetSubscription:
@@ -377,8 +408,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureAccountNotCreated,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .generalError
+            onFlowEvent?(.purchaseFailed)
         case .activeSubscriptionAlreadyPresent:
             state.transactionError = .hasActiveSubscription
+            onFlowEvent?(.subscriptionFound)
         case .restoreFailedDueToNoSubscription:
             // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .generalError
@@ -392,6 +425,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
             PixelKit.fire(Pixel.Event.subscriptionPurchaseFailureOther,
                           frequency: .legacyDailyAndCount)
             state.transactionError = .generalError
+            onFlowEvent?(.purchaseFailed)
         }
     }
     
@@ -469,6 +503,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
         canGoBackCancellable?.cancel()
         urlCancellable?.cancel()
         cancellables.removeAll()
+        notificationsDeniedDialogContinuation?.resume(returning: .notNow)
+        notificationsDeniedDialogContinuation = nil
     }
 
     @MainActor
@@ -511,6 +547,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
     func onAppear() {
         self.state.selectedFeature = .none
         self.state.shouldGoBackToSettings = false
+        subFeature.onShowNotificationsDeniedDialog = { [weak self] daysBeforeTrialCancel in
+            await self?.showNotificationsDeniedDialog(daysBeforeTrialCancel: daysBeforeTrialCancel) ?? .notNow
+        }
     }
     
     func onFirstAppear() async {
@@ -544,8 +583,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
         }
     }
 
+    /// Restore on "Subscription Found".
     @MainActor
     func restoreAppstoreTransaction() {
+        onFlowEvent?(.subscriptionFoundRestoreTapped)
         let data = SubscriptionRestoreWideEventData(
             restorePlatform: .purchaseBackgroundTask,
             funnelName: SubscriptionRestoreFunnelOrigin.prePurchaseCheck.rawValue
@@ -562,6 +603,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 
                 data.appleAccountRestoreDuration?.complete()
                 wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+                onFlowEvent?(.subscriptionRestored)
                 
                 backButtonEnabled(false)
                 await webViewModel.navigationCoordinator.reload()
@@ -589,5 +631,72 @@ final class SubscriptionFlowViewModel: ObservableObject {
     func clearTransactionError() {
         state.transactionError = nil
     }
+
+    /// Cancel on "Subscription Found".
+    @MainActor
+    func subscriptionFoundCancelled() {
+        onFlowEvent?(.subscriptionFoundCancelled)
+    }
     
+}
+
+// MARK: - Notifications Denied Dialog
+
+@MainActor
+extension SubscriptionFlowViewModel {
+
+    func notificationsDeniedDialogDidSelect(_ action: NotificationsDeniedDialogAction) {
+        switch action {
+        case .notNow: pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogNotNowClick)
+        case .openSettings: pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogOpenSettingsClick)
+        }
+        resolveNotificationsDeniedDialog(with: action)
+
+        if action == .openSettings {
+            openNotificationSettings()
+        }
+    }
+
+    func notificationsDeniedDialogFailedToPresent() {
+        pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogPresentationFailure, frequency: .dailyAndCount)
+        resolveNotificationsDeniedDialog(with: .notNow)
+    }
+
+    func onDisappear() {
+        subFeature.onShowNotificationsDeniedDialog = nil
+        resolveNotificationsDeniedDialog(with: .notNow)
+    }
+
+    private func resolveNotificationsDeniedDialog(with action: NotificationsDeniedDialogAction) {
+        state.notificationsDeniedDialogDays = nil
+        notificationsDeniedDialogContinuation?.resume(returning: action)
+        notificationsDeniedDialogContinuation = nil
+    }
+
+    private func showNotificationsDeniedDialog(daysBeforeTrialCancel: Int) async -> NotificationsDeniedDialogAction {
+        notificationsDeniedDialogContinuation?.resume(returning: .notNow)
+        return await withCheckedContinuation { continuation in
+            notificationsDeniedDialogContinuation = continuation
+            state.notificationsDeniedDialogDays = daysBeforeTrialCancel
+        }
+    }
+
+    private func openNotificationSettings() {
+        didBecomeActiveCancellable = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                Task { await self?.handleReturnFromNotificationSettings() }
+            }
+        Task { [weak self] in
+            if !(await UIApplication.shared.openAppNotificationSettings()) {
+                self?.didBecomeActiveCancellable = nil
+            }
+        }
+    }
+
+    private func handleReturnFromNotificationSettings() async {
+        guard didBecomeActiveCancellable != nil else { return }
+        didBecomeActiveCancellable = nil
+        guard let permission = await subFeature.pushNotificationsPermissionChanged(into: webViewModel.navigationCoordinator.webView) else { return }
+        pixelFiring?.fire(SubscriptionPixel.subscriptionNotificationsDeniedDialogSettingsReturn(notificationsPermission: permission.rawValue))
+    }
 }

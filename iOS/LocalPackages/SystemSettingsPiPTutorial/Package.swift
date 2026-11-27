@@ -23,21 +23,24 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "SystemSettingsPiPTutorial"
+            name: "SystemSettingsPiPTutorial",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SystemSettingsPiPTutorialTests",
             dependencies: [
                 "SystemSettingsPiPTutorial",
                 "SystemSettingsPiPTutorialTestSupport"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "SystemSettingsPiPTutorialTestSupport",
             dependencies: [
                 "SystemSettingsPiPTutorial"
             ],
-            path: "Sources/SystemSettingsPiPTutorialTestSupport"
+            path: "Sources/SystemSettingsPiPTutorialTestSupport",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

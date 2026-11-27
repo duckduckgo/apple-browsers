@@ -35,8 +35,8 @@ final class WebExtensionScriptletCoordinatorTests: XCTestCase {
     let testType: DuckDuckGoWebExtensionType = .adBlockingExtension
     let testScriptlets = [Scriptlet(path: "script.js", relativeCachedPath: "ext/1.0/script.js")]
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         mockProvider = MockScriptletProvider()
         mockStore = MockScriptletStore()
         mockInstaller = MockScriptletInstaller()
@@ -56,6 +56,8 @@ final class WebExtensionScriptletCoordinatorTests: XCTestCase {
             cacheRootDirectory: cacheRootDirectory,
             installationPathResolver: mockPathResolver
         )
+        // Most tests cover installation after launch; the held-install tests below use `makeCoordinatorBeforeInitialLoad()`.
+        await coordinator.initialLoadDidFinish()
     }
 
     override func tearDown() {
@@ -194,5 +196,83 @@ final class WebExtensionScriptletCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockInstaller.allInstalledScriptlets[1], v1Scriptlets)
         XCTAssertEqual(mockStore.installedVersion(for: testType), "1.0",
                        "V1 should record version 1.0 (captured at publish time), not 999.0 (current provider version)")
+    }
+
+    // MARK: - Held until the initial load
+
+    func testWhenExtensionEnabledBeforeInitialLoadThenInstallAndReloadAreHeldUntilItFinishes() async {
+        let sut = makeCoordinatorBeforeInitialLoad()
+        mockProvider.scriptletsMap[testType] = testScriptlets
+        mockProvider.versionMap[testType] = "1.0"
+
+        await sut.onExtensionEnabled(for: testType)
+
+        XCTAssertEqual(mockProvider.startCallCount, 1, "fetching may start before the load")
+        XCTAssertEqual(mockInstaller.installCallCount, 0)
+        XCTAssertEqual(mockPathResolver.reloadCallCount, 0, "reloading would load the extension ahead of the initial load")
+        XCTAssertNil(mockStore.installedVersion(for: testType))
+
+        await sut.initialLoadDidFinish()
+
+        XCTAssertEqual(mockInstaller.installCallCount, 1)
+        XCTAssertEqual(mockInstaller.lastInstalledScriptlets, testScriptlets)
+        XCTAssertEqual(mockPathResolver.reloadCallCount, 1)
+        XCTAssertEqual(mockStore.installedVersion(for: testType), "1.0")
+    }
+
+    func testWhenUpdatesArriveBeforeInitialLoadThenTheLatestIsInstalledOnceAfterIt() async throws {
+        let sut = makeCoordinatorBeforeInitialLoad()
+        await sut.onExtensionEnabled(for: testType)
+
+        let v2Scriptlets = [Scriptlet(path: "v2.js", relativeCachedPath: "ext/2.0/v2.js")]
+        let v3Scriptlets = [Scriptlet(path: "v3.js", relativeCachedPath: "ext/3.0/v3.js")]
+        mockProvider.versionMap[testType] = "2.0"
+        mockProvider.availabilitySubjects[testType]?.send(.available(v2Scriptlets))
+        try await Task.sleep(nanoseconds: 50_000_000)
+        mockProvider.versionMap[testType] = "3.0"
+        mockProvider.availabilitySubjects[testType]?.send(.available(v3Scriptlets))
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(mockInstaller.installCallCount, 0)
+
+        await sut.initialLoadDidFinish()
+
+        XCTAssertEqual(mockInstaller.allInstalledScriptlets, [v3Scriptlets])
+        XCTAssertEqual(mockStore.installedVersion(for: testType), "3.0")
+    }
+
+    func testWhenExtensionDisabledBeforeInitialLoadThenHeldInstallIsDiscarded() async {
+        let sut = makeCoordinatorBeforeInitialLoad()
+        mockProvider.scriptletsMap[testType] = testScriptlets
+        mockProvider.versionMap[testType] = "1.0"
+        await sut.onExtensionEnabled(for: testType)
+
+        sut.onExtensionDisabled(for: testType)
+        await sut.initialLoadDidFinish()
+
+        XCTAssertEqual(mockInstaller.installCallCount, 0)
+        XCTAssertEqual(mockPathResolver.reloadCallCount, 0)
+    }
+
+    func testWhenInitialLoadFinishesAgainThenNothingIsReinstalled() async {
+        let sut = makeCoordinatorBeforeInitialLoad()
+        mockProvider.scriptletsMap[testType] = testScriptlets
+        mockProvider.versionMap[testType] = "1.0"
+        await sut.onExtensionEnabled(for: testType)
+
+        await sut.initialLoadDidFinish()
+        await sut.initialLoadDidFinish()
+
+        XCTAssertEqual(mockInstaller.installCallCount, 1)
+    }
+
+    private func makeCoordinatorBeforeInitialLoad() -> WebExtensionScriptletCoordinator {
+        WebExtensionScriptletCoordinator(
+            scriptletProvider: mockProvider,
+            installationTracker: mockStore,
+            installer: mockInstaller,
+            cacheRootDirectory: cacheRootDirectory,
+            installationPathResolver: mockPathResolver
+        )
     }
 }

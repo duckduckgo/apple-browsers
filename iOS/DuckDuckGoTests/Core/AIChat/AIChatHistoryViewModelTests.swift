@@ -20,6 +20,7 @@
 import Combine
 import XCTest
 import AIChat
+import PrivacyConfig
 @testable import DuckDuckGo
 @testable import Core
 
@@ -733,10 +734,12 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         source: AIChatHistorySource = .browserMenu,
         isFireMode: Bool = false,
         mutationQueue: DispatchQueue = .main,
-        instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation()
+        instrumentation: AIChatHistoryInstrumentation = MockAIChatHistoryInstrumentation(),
+        featureFlagger: FeatureFlagger? = nil
     ) -> AIChatHistoryViewModel {
         let sut = AIChatHistoryViewModel(
             reader: MockChatHistoryReader(chats: chats),
+            featureFlagger: featureFlagger ?? AppDependencyProvider.shared.featureFlagger,
             fireExecutor: fireExecutor,
             downloader: downloader,
             modelDisplays: modelDisplays,
@@ -787,6 +790,7 @@ final class AIChatHistoryViewModelTests: XCTestCase {
         func viewModelDidExportChats(count: Int) { exportedChatCounts.append(count) }
         func viewModelDidFailExport() { didFailExport = true }
         func viewModelDidRequestChatProtection() { didRequestChatProtection = true }
+        func viewModelDidRequestDataClearingSettings() {}
         func viewModelWillClose() {}
     }
 

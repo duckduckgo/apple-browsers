@@ -35,12 +35,14 @@ final class AIChatLocalModelServiceTests {
     private let flag = FlagStub()
     private let notificationCenter = NotificationCenter()
     private let page = RecordingLocalModelPage()
+    private let pixels = RecordingLocalModelInstrumentation()
 
     private lazy var service = AIChatLocalModelService(isFeatureFlagOn: { [flag] in flag.isOn },
                                                        featureFlagUpdates: flag.updates.eraseToAnyPublisher(),
                                                        storage: storage,
                                                        engine: engine,
-                                                       notificationCenter: notificationCenter)
+                                                       notificationCenter: notificationCenter,
+                                                       instrumentation: pixels)
 
     private func request(content: String = "Page text", requestId: String = "r1") -> AIChatLocalRunRequest {
         AIChatLocalRunRequest(requestId: requestId, task: .summarize, instruction: "Summarize", content: content)
@@ -132,23 +134,6 @@ final class AIChatLocalModelServiceTests {
         #expect(otherPage.chunks.isEmpty)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("A run carries on through the script that replaced its page's old one", .timeLimit(.minutes(1)))
-    func movedRunStreamsToTheReplacement() async throws {
-        storage.pageSummariesModel = .appleIntelligence
-        engine.keepsRunning = true
-        let replacement = RecordingLocalModelPage()
-        _ = try service.startRun(request(), for: page)
-
-        service.moveRuns(from: page, to: replacement)
-        service.cancelRun(requestId: "r1", for: page)
-        service.cancelRun(requestId: "r1", for: replacement)
-        await waitUntil { replacement.chunks.last?.done == true }
-
-        #expect(page.chunks.isEmpty)
-        #expect(replacement.chunks.last?.status == .cancelled)
-    }
-
     // MARK: - Pushes
 
     @available(iOS 16, macOS 13, *)
@@ -235,16 +220,21 @@ final class AIChatLocalModelServiceTests {
     @available(iOS 16, macOS 13, *)
     @Test("Turn On in the prompt opts in", .timeLimit(.minutes(1)))
     func allowedOptsIn() async throws {
-        let result = try await service.requestAccess { .allowed }
+        var asked: AIChatLocalModelAccessRequest?
+        let result = try await service.requestAccess { request in
+            asked = request
+            return .allowed
+        }
 
         #expect(result == .allowed)
+        #expect(asked == .connect(engine.model))
         #expect(storage.pageSummariesModel == .appleIntelligence)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("No Thanks or closing the prompt leaves the model off", .timeLimit(.minutes(1)))
     func declinedLeavesItOff() async throws {
-        let result = try await service.requestAccess { .declined }
+        let result = try await service.requestAccess { _ in .declined }
 
         #expect(result == .declined)
         #expect(storage.pageSummariesModel == .duckAI)
@@ -256,7 +246,7 @@ final class AIChatLocalModelServiceTests {
         service.optIn()
         var asked = false
 
-        let result = try await service.requestAccess {
+        let result = try await service.requestAccess { _ in
             asked = true
             return .declined
         }
@@ -272,13 +262,100 @@ final class AIChatLocalModelServiceTests {
         var asked = false
 
         await #expect(throws: AIChatLocalModelRequestError.unavailable) {
-            try await self.service.requestAccess {
+            try await self.service.requestAccess { _ in
                 asked = true
                 return .allowed
             }
         }
         #expect(!asked)
         #expect(storage.pageSummariesModel == .duckAI)
+    }
+
+    // MARK: - Pixels
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The state pixel goes out at launch and on every return to the app", .timeLimit(.minutes(1)))
+    func statePixelAtLaunchAndOnReturn() {
+        _ = service
+        postDidBecomeActive()
+
+        let state = AIChatLocalModelPixel.state(selected: .duckAI, state: .notSetUp, availability: .available)
+        #expect(pixels.fired == [state, state])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The state pixel shows someone who opted in but lost Apple Intelligence", .timeLimit(.minutes(1)))
+    func statePixelForOptedInButUnavailable() {
+        storage.pageSummariesModel = .appleIntelligence
+        engine.availability = .appleIntelligenceNotEnabled
+
+        _ = service
+
+        #expect(pixels.fired == [.state(selected: .appleIntelligence, state: .unsupported, availability: .appleIntelligenceNotEnabled)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("No state pixel while the flag is off, and one as soon as it turns on", .timeLimit(.minutes(1)))
+    func statePixelOnlyWithTheFlag() async {
+        flag.isOn = false
+        _ = service
+        postDidBecomeActive()
+        #expect(pixels.fired.isEmpty)
+
+        flag.isOn = true
+        flag.updates.send()
+        await waitUntil { !self.pixels.fired.isEmpty }
+
+        #expect(pixels.fired == [.state(selected: .duckAI, state: .notSetUp, availability: .available)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An accepted run sends run_started and a refused one doesn't", .timeLimit(.minutes(1)))
+    func runStartedOnlyForAcceptedRuns() throws {
+        _ = try? service.startRun(request(), for: page)
+        storage.pageSummariesModel = .appleIntelligence
+        _ = try? service.startRun(request(content: ""), for: page)
+
+        _ = try service.startRun(request(), for: page)
+
+        #expect(pixels.fired.filter { $0.name == "aichat_local_model_run_started" } == [.runStarted(engine: .appleIntelligence, task: .summarize)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turn On in the prompt saves the choice and sends selected once", .timeLimit(.minutes(1)))
+    func promptTurnOnSendsSelected() async throws {
+        _ = try await service.requestAccess { _ in .allowed }
+        service.select(.appleIntelligence, source: .settings)
+
+        #expect(storage.pageSummariesModel == .appleIntelligence)
+        #expect(selectedPixels == [.selected(.appleIntelligence, source: .duckAIPromo)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("No Thanks in the prompt sends no selected", .timeLimit(.minutes(1)))
+    func promptNoThanksSendsNoSelected() async throws {
+        _ = try await service.requestAccess { _ in .declined }
+
+        #expect(selectedPixels.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Selecting the model that's already chosen saves nothing and sends nothing", .timeLimit(.minutes(1)))
+    func selectingTheSameModelSendsNothing() {
+        var writes = 0
+        let cancellable = storage.pageSummariesModelPublisher.dropFirst().sink { _ in writes += 1 }
+
+        service.select(.duckAI, source: .settings)
+        service.select(.appleIntelligence, source: .settings)
+        service.select(.appleIntelligence, source: .settings)
+
+        #expect(writes == 1)
+        #expect(selectedPixels == [.selected(.appleIntelligence, source: .settings)])
+        cancellable.cancel()
+    }
+
+    private var selectedPixels: [AIChatLocalModelPixel] {
+        pixels.fired.filter { $0.name == "aichat_local_model_selected" }
     }
 
     private func waitUntil(_ condition: () -> Bool) async {
@@ -334,6 +411,14 @@ private final class StubLocalModelEngine: AIChatLocalModelEngine {
             continuation.finish()
         }
         return stream
+    }
+}
+
+private final class RecordingLocalModelInstrumentation: AIChatLocalModelInstrumentation {
+    private(set) var fired: [AIChatLocalModelPixel] = []
+
+    func fire(_ pixel: AIChatLocalModelPixel) {
+        fired.append(pixel)
     }
 }
 

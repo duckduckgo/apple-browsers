@@ -803,6 +803,34 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertTrue(mockSearchExperienceProvider.didStartAIChatDuringOnboarding)
     }
 
+    func testWhenOpenAIChatFromOnboardingIsCalledThenItPassesTheModelPickedInOnboarding() {
+        // GIVEN
+        let personalizationManager = MockOnboardingPersonalizationManager()
+        personalizationManager.setAIChatModel(OnboardingAIModel(id: "claude-x", name: "Claude"))
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true), personalizationManager: personalizationManager)
+        var receivedModelId: String?
+        sut.onOpenAIChatFromOnboarding = { _, _, modelId in receivedModelId = modelId }
+
+        // WHEN
+        sut.openAIChatFromOnboarding(prompt: "test", autoSend: true)
+
+        // THEN
+        XCTAssertEqual(receivedModelId, "claude-x")
+    }
+
+    func testWhenOpenAIChatFromOnboardingIsCalledWithoutAPickedModelThenItPassesNoModel() {
+        // GIVEN
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
+        var receivedModelId: String? = "unexpected"
+        sut.onOpenAIChatFromOnboarding = { _, _, modelId in receivedModelId = modelId }
+
+        // WHEN
+        sut.openAIChatFromOnboarding(prompt: "test", autoSend: true)
+
+        // THEN
+        XCTAssertNil(receivedModelId)
+    }
+
     func testWhenSearchFromOnboardingIsCalledThenDidStartAIChatDuringOnboardingRemainsFalse() {
         // GIVEN
         let mockSearchExperienceProvider = MockOnboardingSearchExperienceProvider()
@@ -1892,7 +1920,7 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(sut.state.intro?.type, .subscriptionReminderDialog(content: .mock))
         XCTAssertEqual(sut.state.intro?.step, .init(currentStep: 3, totalSteps: 7))
 
-        sut.tryVPNFollowUpContinueAction()
+        sut.subscriptionReminderContinueAction()
         XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
         XCTAssertEqual(sut.state.intro?.step, .init(currentStep: 4, totalSteps: 7))
     }
@@ -2193,6 +2221,7 @@ struct OnboardingTryVPNFollowUpTests {
 
     private let followUpProvider = MockOnboardingTryVPNFollowUpProvider()
     private let onboardingManager = OnboardingManagerMock()
+    private let pixelReporter = OnboardingPixelReporterMock()
 
     @available(iOS 16, macOS 13, *)
     @Test("Subscribing from the paywall continues to VPN activation", .timeLimit(.minutes(1)))
@@ -2272,7 +2301,7 @@ struct OnboardingTryVPNFollowUpTests {
         sut.skipTryVPNAction()
 
         // WHEN
-        sut.tryVPNFollowUpContinueAction()
+        sut.subscriptionReminderContinueAction()
 
         // THEN
         #expect(sut.state.intro?.type == .chooseSearchExperienceDialog(content: .mock))
@@ -2286,10 +2315,93 @@ struct OnboardingTryVPNFollowUpTests {
         let sut = makeSUTOnTryVPN()
 
         // WHEN
-        sut.tryVPNFollowUpContinueAction()
+        sut.vpnActivationContinueAction(isVPNOn: true)
+        sut.vpnActivationFailedAction(reason: .permissionDenied)
+        sut.subscriptionReminderContinueAction()
 
         // THEN
         #expect(sut.state.intro?.type == .tryVPNDialog(content: .mock))
+        #expect(pixelReporter.capturedVPNActivationContinueIsVPNOn == nil)
+        #expect(pixelReporter.capturedVPNActivationFailureReasons.isEmpty)
+        #expect(!pixelReporter.didCallMeasureSubscriptionReminderContinue)
+    }
+
+    // MARK: - Pixels
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The Try VPN screen measures its impression, Try for Free and Skip", .timeLimit(.minutes(1)))
+    func tryVPNPixels() {
+        // GIVEN
+        let sut = makeSUTOnTryVPN()
+        sut.onTryVPNFromOnboarding = { _ in }
+
+        // WHEN
+        sut.tryVPNAction()
+        sut.skipTryVPNAction()
+
+        // THEN
+        #expect(pixelReporter.didCallMeasureTryVPNImpression)
+        #expect(pixelReporter.didCallMeasureTryVPNAction)
+        #expect(pixelReporter.didCallMeasureSkipTryVPNAction)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The Turn on VPN screen measures its impression and whether the VPN was on when continuing",
+          .timeLimit(.minutes(1)),
+          arguments: [true, false])
+    func vpnActivationPixels(isVPNOn: Bool) async {
+        // GIVEN
+        let sut = makeSUTOnTryVPN()
+        var dismissPaywall: (() -> Void)?
+        sut.onTryVPNFromOnboarding = { dismissPaywall = $0 }
+        sut.tryVPNAction()
+        followUpProvider.hasVPNAccessValue = true
+        dismissPaywall?()
+        await waitForIntroType(.vpnActivationDialog(content: .mock), in: sut)
+
+        // WHEN
+        sut.vpnActivationContinueAction(isVPNOn: isVPNOn)
+
+        // THEN
+        #expect(pixelReporter.didCallMeasureVPNActivationImpression)
+        #expect(pixelReporter.capturedVPNActivationContinueIsVPNOn == isVPNOn)
+        #expect(sut.state.intro?.type == .chooseSearchExperienceDialog(content: .mock))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The Turn on VPN screen measures failures to turn on the VPN and stays on the step", .timeLimit(.minutes(1)))
+    func vpnActivationFailurePixels() async {
+        // GIVEN
+        let sut = makeSUTOnTryVPN()
+        var dismissPaywall: (() -> Void)?
+        sut.onTryVPNFromOnboarding = { dismissPaywall = $0 }
+        sut.tryVPNAction()
+        followUpProvider.hasVPNAccessValue = true
+        dismissPaywall?()
+        await waitForIntroType(.vpnActivationDialog(content: .mock), in: sut)
+
+        // WHEN
+        sut.vpnActivationFailedAction(reason: .permissionDenied)
+        sut.vpnActivationFailedAction(reason: .connectionFailed)
+
+        // THEN
+        #expect(pixelReporter.capturedVPNActivationFailureReasons == [.permissionDenied, .connectionFailed])
+        #expect(sut.state.intro?.type == .vpnActivationDialog(content: .mock))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The If you change your mind screen measures its impression and continue", .timeLimit(.minutes(1)))
+    func subscriptionReminderPixels() {
+        // GIVEN
+        let sut = makeSUTOnTryVPN()
+        sut.skipTryVPNAction()
+
+        // WHEN
+        sut.subscriptionReminderContinueAction()
+
+        // THEN
+        #expect(pixelReporter.didCallMeasureSubscriptionReminderImpression)
+        #expect(pixelReporter.didCallMeasureSubscriptionReminderContinue)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -2334,7 +2446,7 @@ struct OnboardingTryVPNFollowUpTests {
         OnboardingIntroViewModel(
             defaultBrowserManager: MockDefaultBrowserManager(),
             contextualDaxDialogs: ContextualOnboardingLogicMock(),
-            pixelReporter: OnboardingPixelReporterMock(),
+            pixelReporter: pixelReporter,
             onboardingManager: onboardingManager,
             systemSettingsPiPTutorialManager: MockSystemSettingsPiPTutorialManager(),
             currentOnboardingStep: currentOnboardingStep,

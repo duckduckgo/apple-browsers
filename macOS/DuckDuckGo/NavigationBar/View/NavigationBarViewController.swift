@@ -161,7 +161,7 @@ final class NavigationBarViewController: NSViewController {
         popovers.isDownloadsPopoverShown
     }
 
-    private var allowsUserInteraction: Bool = true
+    @Published private var allowsUserInteraction: Bool = true
     private var isAutoFillAutosaveMessageVisible: Bool = false
     private var autofillPinningPromoCompletion: ((PromoResult) -> Void)?
 
@@ -1163,6 +1163,8 @@ final class NavigationBarViewController: NSViewController {
         controlsForUserPrevention.forEach { control in
             control?.isEnabled = !prevented
         }
+        // A locked address bar shows only its text, like the welcome page.
+        addressBarViewController?.buttonsContainerView.isHidden = prevented
     }
 
     // MARK: - Setup
@@ -1571,20 +1573,23 @@ final class NavigationBarViewController: NSViewController {
         navigationButtonsCancellables.removeAll()
         guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel else { return }
 
-        selectedTabViewModel.$canGoBack
+        // The navigation buttons stay disabled while the UI is locked, whatever the tab allows.
+        Publishers.CombineLatest(selectedTabViewModel.$canGoBack, $allowsUserInteraction)
+            .map { $0 && $1 }
             .removeDuplicates()
             .assign(to: \.isEnabled, onWeaklyHeld: goBackButton)
             .store(in: &navigationButtonsCancellables)
 
-        selectedTabViewModel.$canGoForward
+        Publishers.CombineLatest(selectedTabViewModel.$canGoForward, $allowsUserInteraction)
+            .map { $0 && $1 }
             .removeDuplicates()
             .assign(to: \.isEnabled, onWeaklyHeld: goForwardButton)
             .store(in: &navigationButtonsCancellables)
 
-        Publishers.CombineLatest(selectedTabViewModel.$canReload, selectedTabViewModel.$isLoading)
-            .map({
-                $0.canReload || $0.isLoading
-            } as ((canReload: Bool, isLoading: Bool)) -> Bool)
+        Publishers.CombineLatest3(selectedTabViewModel.$canReload, selectedTabViewModel.$isLoading, $allowsUserInteraction)
+            .map { canReload, isLoading, allowsUserInteraction in
+                (canReload || isLoading) && allowsUserInteraction
+            }
             .removeDuplicates()
             .assign(to: \.isEnabled, onWeaklyHeld: refreshOrStopButton)
             .store(in: &navigationButtonsCancellables)
@@ -1739,7 +1744,10 @@ final class NavigationBarViewController: NSViewController {
                                    subscriptionManager: subscriptionManager,
                                    freemiumDBPFeature: freemiumDBPFeature,
                                    dockCustomizer: dockCustomization,
-                                   defaultBrowserPreferences: defaultBrowserPreferences)
+                                   defaultBrowserPreferences: defaultBrowserPreferences,
+                                   addToDockMenuAction: AddToDockMenuAction(dockCustomization: dockCustomization,
+                                                                            featureFlagger: featureFlagger,
+                                                                            videoPresenter: Application.appDelegate.addToDockVideoPresenter))
 
         menu.actionDelegate = self
         let location = NSPoint(x: -menu.size.width + sender.bounds.width, y: sender.bounds.height + 4)

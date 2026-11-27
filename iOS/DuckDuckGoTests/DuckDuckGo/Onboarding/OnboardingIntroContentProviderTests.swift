@@ -424,8 +424,10 @@ struct OnboardingIntroContentProviderTests {
 
             // THEN
             let expectedTitle: String = switch reason {
-            case .browserPrivately, .privateAIChat, .vpn:
+            case .browserPrivately, .privateAIChat:
                 UserText.Onboarding.BrowsersComparison.titleGenericDownloadReasonExperiment
+            case .vpn:
+                UserText.Onboarding.BrowsersComparison.titleVPNDownloadReasonExperiment
             case .noAI:
                 UserText.Onboarding.BrowsersComparison.titleNoAIDownloadReasonExperiment
             case .blockAds:
@@ -596,11 +598,11 @@ struct OnboardingIntroContentProviderTests {
 
             // THEN
             #expect(result.title == UserText.Onboarding.SubscriptionReminder.title)
-            #expect(String(result.message.characters) == "Add the subscription anytime in Settings > Subscription")
+            #expect(String(result.message.characters) == "Add the subscription anytime in Settings > DuckDuckGo Subscription.")
             let boldText = result.message.runs
                 .filter { $0.inlinePresentationIntent?.contains(.stronglyEmphasized) == true }
                 .map { String(result.message[$0.range].characters) }
-            #expect(boldText == ["Settings > Subscription"])
+            #expect(boldText == ["Settings > DuckDuckGo Subscription"])
             #expect(result.cta == UserText.Onboarding.SubscriptionReminder.cta)
         }
 
@@ -1336,8 +1338,8 @@ struct OnboardingIntroContentProviderTests {
         func aiModelPersonalizationContent() {
             // GIVEN
             let expected = OnboardingAIModelContent(
-                title: "Your chats, your way.",
-                message: "Change your default AI now, or anytime during chat.",
+                title: "Pick an AI to try first",
+                message: "With Duck.ai, you can swap anytime.",
                 primaryCTA: "Next",
                 daxAnimation: .wingLeft
             )

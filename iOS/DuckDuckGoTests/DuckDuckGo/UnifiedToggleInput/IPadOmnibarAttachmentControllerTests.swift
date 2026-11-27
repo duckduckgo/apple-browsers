@@ -88,8 +88,11 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
 
         XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.name), ["m_aichat_unified_input_attach_menu_shown",
                                                                    "m_aichat_unified_input_attach_menu_item_selected"])
-        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.parameters), [["surface": "address_bar"],
-                                                                         ["surface": "address_bar", "item": "photo_library"]])
+        // iPad keeps today's prompt box, so the simplified prompt box is always off here.
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.parameters), [
+            ["surface": "address_bar", "simplified_prompt_box": "off"],
+            ["surface": "address_bar", "item": "photo_library", "simplified_prompt_box": "off"]
+        ])
         XCTAssertEqual(pixels.actualFireCalls.map(\.frequency), [.dailyAndCount, .dailyAndCount])
     }
 

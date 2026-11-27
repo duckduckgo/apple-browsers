@@ -73,6 +73,27 @@ protocol IdleReturnLaunchDelegate: AnyObject {
     func releaseHeldNewTabPage()
 }
 
+/// What was on screen when the app came to the foreground. The after-idle treatment waits for App Lock and
+/// Automatically Clear Data, and the user can already open a screen or a page during that wait.
+struct IdleReturnForegroundScreen {
+    weak var presented: UIViewController?
+    let wasOnNewTabPage: Bool
+    /// The `idleReturnLaunchWaitProtection` kill switch. Off, nothing counts as the user acting and the screen
+    /// open when launch handling runs is the one closed, as before.
+    let isProtectionEnabled: Bool
+
+    func userActed(presented current: UIViewController?, isOnNewTabPage: Bool) -> Bool {
+        guard isProtectionEnabled else { return false }
+        if let current, current !== presented { return true }
+        return wasOnNewTabPage && !isOnNewTabPage
+    }
+
+    /// The screen an idle return may close.
+    func screenLeftOpen(current: UIViewController?) -> UIViewController? {
+        isProtectionEnabled ? presented : current
+    }
+}
+
 enum IdleReturnNewTabPageResult {
     case keptCurrent
     case openedNewTab

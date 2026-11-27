@@ -70,7 +70,7 @@
 // - Only one prompt per day (any type)
 // - Onboarding must be completed
 // - Feature flags must be enabled
-// - If already default browser (+ in dock for Sparkle) → no prompts
+// - If nothing is left to offer → no prompts
 // - If only one action remains (default browser OR dock), only that action is promoted
 //
 // **KEY CLASSES:**
@@ -110,18 +110,7 @@ enum DefaultBrowserAndDockPromptDismissAction: Equatable {
 }
 
 protocol DefaultBrowserAndDockPrompt {
-    /// Evaluates the user's eligibility for the default browser and dock prompt, and returns the appropriate
-    /// `DefaultBrowserAndDockPromptType` value based on the user's current state (default browser status, dock status, and whether it's a Sparkle build).
-    ///
-    /// The implementation checks the following conditions:
-    /// - If this is a Sparkle build:
-    ///   - If the user has both set DuckDuckGo as the default browser and added it to the dock, they are not eligible for any prompt (returns `nil`).
-    ///   - If the user has set DuckDuckGo as the default browser but hasn't added it to the dock, it returns `.addToDockPrompt`.
-    ///   - If the user hasn't set DuckDuckGo as the default browser but has added it to the dock, it returns `.setAsDefaultPrompt`.
-    ///   - If the user hasn't set DuckDuckGo as the default browser and hasn't added it to the dock, it returns `.bothDefaultBrowserAndDockPrompt`.
-    /// - If this is not a Sparkle build, it only returns `.setAsDefaultPrompt` if the user hasn't already set DuckDuckGo as the default browser (otherwise, it returns `nil`).
-    ///
-    /// - Returns: The appropriate `DefaultBrowserAndDockPromptType` value, or `nil` if the user is not eligible for any prompt.
+    /// The prompt type the user is eligible for, or `nil` if there's nothing left to offer.
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? { get }
 
     /// Currently eligible prompt type, or nil if none. Updated by `evaluateEligibility()`.
@@ -142,6 +131,8 @@ protocol DefaultBrowserAndDockPrompt {
     /// 2. The `evaluatePromptEligibility` is not `nil`, indicating that the user has not set the user as default or did not add the browser to the dock.
     ///
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType?
+
+    func promptDisplayed(_ prompt: DefaultBrowserAndDockPromptPresentationType)
 
     /// Called when the prompt CTA is clicked.
     /// - Parameter prompt: The type of prompt the user interacted with.
@@ -164,6 +155,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let dateProvider: () -> Date
     private let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?
     private let featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
+    private let rolloutMonitor: AppStoreDockRolloutMonitoring?
 
     init(
         promptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding,
@@ -171,15 +163,16 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?,
         featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger,
         isOnboardingCompleted: @escaping () -> Bool,
-        dockCustomization: DockCustomization,
-        defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
+        actionPerformer: DefaultBrowserAndDockActionPerforming,
+        rolloutMonitor: AppStoreDockRolloutMonitoring? = nil,
         pixelFiring: PixelFiring? = PixelKit.shared,
         dateProvider: @escaping () -> Date = Date.init
     ) {
         self.promptTypeDecider = promptTypeDecider
         self.store = store
         self.isOnboardingCompleted = isOnboardingCompleted
-        self.actionPerformer = DefaultBrowserAndDockActionPerformer(dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider)
+        self.actionPerformer = actionPerformer
+        self.rolloutMonitor = rolloutMonitor
         self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
         self.notificationPresenter = notificationPresenter
@@ -191,16 +184,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     /// Determines WHAT to prompt the user about (default browser, dock, or both).
     /// This does NOT check timing - only checks current system state.
     ///
-    /// **Logic:**
-    /// - **Sparkle builds** (direct download): Can prompt for both default browser AND dock
-    ///   - Both done → nil (no prompt)
-    ///   - Default set, not in dock → `.addToDockPrompt`
-    ///   - Not default, in dock → `.setAsDefaultPrompt`
-    ///   - Neither done → `.bothDefaultBrowserAndDockPrompt`
-    ///
-    /// - **App Store builds**: Can only prompt for default browser (dock is user-managed)
-    ///   - Default set → nil (no prompt)
-    ///   - Not default → `.setAsDefaultPrompt`
+    /// **Logic:** see `DefaultBrowserAndDockActionPerformer.pendingPromptType`.
     ///
     /// **Called by:**
     /// - `getPromptType()` - to determine if any prompt should show
@@ -254,7 +238,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     /// **Evaluation Order:**
     /// 1. **Onboarding check**: Must be completed, otherwise returns nil
     /// 2. **Eligibility check**: Calls `evaluatePromptEligibility` to check if user needs to set default/dock
-    ///    - If already set as default (and in dock for Sparkle builds) → returns nil
+    ///    - If nothing is left to offer → returns nil
     /// 3. **Timing check**: Delegates to `promptTypeDecider.promptType()` which checks:
     ///    - Feature flags enabled
     ///    - Not permanently dismissed
@@ -302,6 +286,21 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         return prompt
     }
 
+    func promptDisplayed(_ prompt: DefaultBrowserAndDockPromptPresentationType) {
+        guard let promptType = evaluatePromptEligibility else { return }
+
+        let promptID: String
+        switch prompt {
+        case .active(.popover):
+            promptID = "popover"
+        case .active(.banner):
+            promptID = "banner-\(store.bannerShownOccurrences + 1)"
+        case .inactive:
+            promptID = "inactive-modal"
+        }
+        rolloutMonitor?.promptShown(promptType, promptID: promptID)
+    }
+
     /// **USER CLICKED PRIMARY BUTTON** (e.g., "Make Default Browser", "Add to Dock")
     ///
     /// Called when user confirms the prompt. This triggers the actual system actions.
@@ -340,7 +339,11 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         // Set Prompt seen and then fire pixel first to get the content of the prompt before mutating it.
         setPromptSeen()
         fireConfirmActionPixel()
-        actionPerformer.performPendingActions()
+        MainActor.assumeMainThread {
+            actionPerformer.performPendingActions(from: prompt.addToDockVideoEntryPoint) { [rolloutMonitor] in
+                rolloutMonitor?.setAsDefaultRequested()
+            }
+        }
         promptDismissedSubject.send((prompt, .actioned()))
         activePrompt = nil
     }
@@ -454,4 +457,14 @@ private extension DefaultBrowserAndDockPromptCoordinator {
         return value > 10 ? "10+" : String(value)
     }
 
+}
+
+private extension DefaultBrowserAndDockPromptPresentationType {
+    var addToDockVideoEntryPoint: AddToDockVideoEntryPoint {
+        switch self {
+        case .active(.popover): return .popover
+        case .active(.banner): return .banner
+        case .inactive: return .inactiveModal
+        }
+    }
 }

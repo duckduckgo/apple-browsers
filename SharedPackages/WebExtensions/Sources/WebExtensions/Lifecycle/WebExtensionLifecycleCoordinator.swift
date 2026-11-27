@@ -75,6 +75,9 @@ public final class WebExtensionLifecycleCoordinator {
     /// document-start scripts to inject.
     private var initialLoadAndSync: Task<Void, Never>?
     private var didEnqueueInitialLoadAndSync = false
+    /// Until a full load has run, nothing is loaded by design, so a consistency check would report every
+    /// expected type as missing. A sync that runs first (e.g. from a config update) must not report.
+    private var hasLoadedInstalledExtensions = false
     // Pending from construction, including iOS's deferred load before protected data is available.
     private var isInitialLoadGateOpen = false
     private let initialLoadTimeout: TimeInterval
@@ -166,6 +169,7 @@ public final class WebExtensionLifecycleCoordinator {
                            }) { [weak self] in
             guard let self else { return }
             await self.loadAndSyncInstalledExtensions()
+            self.hasLoadedInstalledExtensions = true
             guard !Task.isCancelled else { return }
             if isInitialLoadAndSync, self.initialLoadGateEnabledProvider(), !self.isInitialLoadGateOpen {
                 // WebKit's callback may never arrive. Only the bounded gate wait belongs on the
@@ -199,9 +203,16 @@ public final class WebExtensionLifecycleCoordinator {
         await manager.syncEmbeddedExtensions(enabledTypes: enabledTypesProvider())
     }
 
-    /// Embedded sync only. Appearance / YouTube / feature-flag triggers.
+    /// Embedded sync only. Appearance / YouTube / feature-flag triggers. No-op until `loadAndSync()` is requested.
     @discardableResult
     public func sync() -> Task<Void, Never> {
+        guard didEnqueueInitialLoadAndSync else {
+            // A config update or settings change can arrive before the host app's deferred launch load, e.g.
+            // in the background. Syncing then installs without loading; the launch `loadAndSync()` syncs
+            // with the state current at that point instead.
+            Logger.webExtensions.debug("⏭️ Skipping embedded sync — the initial load has not been requested yet")
+            return Task {}
+        }
         if let pendingSync { return pendingSync }
         let task = enqueue(clearPendingOnStart: { [weak self] in self?.pendingSync = nil }) { [weak self] in
             guard let self else { return }
@@ -219,6 +230,7 @@ public final class WebExtensionLifecycleCoordinator {
         enqueue { [weak self] in
             guard let self else { return }
             await self.manager.loadInstalledExtensions()
+            self.hasLoadedInstalledExtensions = true
             guard !Task.isCancelled else { return }
             self.reportConsistency()
         }
@@ -252,6 +264,10 @@ public final class WebExtensionLifecycleCoordinator {
 
     /// Compares enabled embedded types against loaded ones and fires pixels. Runs on the chain.
     private func reportConsistency() {
+        guard hasLoadedInstalledExtensions else {
+            Logger.webExtensions.debug("🩺 Skipping web extension state check — installed extensions have not been loaded yet")
+            return
+        }
         let expected = enabledTypesProvider()
         let loaded = manager.loadedEmbeddedExtensionTypes
 

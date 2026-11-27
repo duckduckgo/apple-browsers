@@ -22,6 +22,7 @@ import SnapshotTesting
 import SwiftUI
 import XCTest
 
+@MainActor
 public func assertImageSnapshot(
     matching view: NSView,
     strategy: SnapshotImageStrategy = .allAppearances,
@@ -66,6 +67,7 @@ public func assertImageSnapshot(
     }
 }
 
+@MainActor
 public func assertImageSnapshot(
     matching viewController: NSViewController,
     strategy: SnapshotImageStrategy = .allAppearances,
@@ -94,6 +96,7 @@ public func assertImageSnapshot(
     )
 }
 
+@MainActor
 public func assertImageSnapshot<Value: SwiftUI.View>(
     matching view: Value,
     strategy: SnapshotImageStrategy = .allAppearances,
@@ -140,6 +143,7 @@ private final class FixedBackingScaleWindow: NSWindow {
     override var backingScaleFactor: CGFloat { macOSSnapshotBackingScaleFactor }
 }
 
+@MainActor
 private func withFixedBackingScale(_ view: NSView, size: CGSize, perform body: () -> Void) {
     let window = FixedBackingScaleWindow(
         contentRect: CGRect(origin: .zero, size: size),
@@ -153,6 +157,7 @@ private func withFixedBackingScale(_ view: NSView, size: CGSize, perform body: (
     body()
 }
 
+@MainActor
 private func resolvedSize(
     for view: NSView,
     configuration: SnapshotImageConfiguration,
@@ -168,6 +173,7 @@ private func resolvedSize(
     ) ?? resolvedSize(for: view)
 }
 
+@MainActor
 private func resolvedSize(for view: NSView) -> CGSize {
     if view.frame.width > 0, view.frame.height > 0 {
         return wholePointSize(view.frame.size)
@@ -181,6 +187,7 @@ private func resolvedSize(for view: NSView) -> CGSize {
     return SnapshotDevice.macOSDefaultSize
 }
 
+@MainActor
 private func constrainedSize(for view: NSView, width: CGFloat) -> CGSize {
     let originalSize = view.frame.size
     view.setFrameSize(CGSize(width: width, height: 0))
@@ -194,6 +201,7 @@ private func constrainedSize(for view: NSView, width: CGFloat) -> CGSize {
     return CGSize(width: width, height: SnapshotDevice.macOSDefaultSize.height)
 }
 
+@MainActor
 private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     of viewController: NSHostingController<Value>,
     configuration: SnapshotImageConfiguration,
@@ -234,6 +242,7 @@ private func assertSwiftUIImageSnapshot<Value: SwiftUI.View>(
     }
 }
 
+@MainActor
 private func swiftUISnapshotSize<Value: SwiftUI.View>(
     for viewController: NSHostingController<Value>,
     configuration: SnapshotImageConfiguration,

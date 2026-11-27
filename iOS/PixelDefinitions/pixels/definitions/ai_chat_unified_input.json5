@@ -5,11 +5,11 @@
 // contextual sheet into the Duck.ai bucket (keeps the funnel origin / subscription redirect URL stable).
 {
     "m_aichat_unified_input_image_generation_selected": {
-        "description": "Fires when the user activates Create Image from the tools menu in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",
+        "description": "Fires when the user activates Create Image from the tools menu, or from the attach menu in the simplified prompt box, in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface"]
+        "parameters": ["appVersion", "unified_input_surface", "simplified_prompt_box"]
     },
     "m_aichat_unified_input_image_generation_deselected": {
         "description": "Fires when the user toggles the image generation tool off, either via menu re-tap or the chip's close button. Does not fire on auto-clear from a model switch.",
@@ -34,11 +34,11 @@
         ]
     },
     "m_aichat_unified_input_web_search_selected": {
-        "description": "Fires when the user activates Web Search from the tools menu in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",
+        "description": "Fires when the user activates Web Search from the tools menu, or from the attach menu in the simplified prompt box, in the Unified Toggle Input. Does not fire when the toggle is rejected by an unsupporting model.",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface"]
+        "parameters": ["appVersion", "unified_input_surface", "simplified_prompt_box"]
     },
     "m_aichat_unified_input_web_search_deselected": {
         "description": "Fires when the user toggles the web search tool off, either via menu re-tap or the chip's close button. Does not fire on auto-clear from a model switch.",
@@ -57,9 +57,9 @@
     "m_aichat_unified_input_customize_responses_selected": {
         "description": "Fires when the user selects Customize Responses from the tools menu in the Unified Toggle Input. Unlike the other tools menu items, this is a one-shot action forwarded to the front-end rather than a toggleable model tool.",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface"]
+        "parameters": ["appVersion", "unified_input_surface", "simplified_prompt_box"]
     },
     "m_aichat_unified_input_model_selected": {
         "description": "Fires when the user selects a different model in the Unified Toggle Input model picker (new model id differs from previous). Does not fire for gated/rejected models.",
@@ -133,7 +133,7 @@
         "owners": ["aataraxiaa"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "unified_input_surface"]
+        "parameters": ["appVersion", "unified_input_surface", "simplified_prompt_box"]
     },
     "m_aichat_unified_input_attach_menu_item_selected": {
         "description": "Fires when the user picks an enabled item from the attach (+) menu in the Unified Toggle Input or the iPad address bar. Fires on the pick, before any picker or sheet opens, so it counts picks that are later cancelled.",
@@ -143,22 +143,24 @@
         "parameters": [
             "appVersion",
             "unified_input_surface",
+            "simplified_prompt_box",
             {
                 "key": "item",
-                "description": "The menu item picked: camera (Take Photo), photo_library (Add Image), file_picker (Add File), page (Ask About Page), recent_tab (a tab in the recent tabs section, attaching or detaching it), tab_picker (Add Tabs).",
+                "description": "The menu item picked: camera (Take Photo), photo_library (Add Image), file_picker (Add File), page (Ask About Page), recent_tab (a tab in the recent tabs section, attaching or detaching it; not in the simplified prompt box), tab_picker (Add Tabs), web_search and create_image (the tool rows the simplified prompt box folds into the menu).",
                 "type": "string",
-                "enum": ["camera", "photo_library", "file_picker", "page", "recent_tab", "tab_picker"]
+                "enum": ["camera", "photo_library", "file_picker", "page", "recent_tab", "tab_picker", "web_search", "create_image"]
             }
         ]
     },
     "m_aichat_unified_input_image_attached": {
         "description": "Fires when the user attaches an image (camera, photo library, or paste) in the Unified Toggle Input.",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             "unified_input_surface",
+            "simplified_prompt_box",
             {
                 "key": "source",
                 "description": "Source of the attached image.",
@@ -227,11 +229,12 @@
     "m_aichat_unified_input_file_attached": {
         "description": "Fires when the user attaches a file (file picker or paste) in the Unified Toggle Input (post-validation).",
         "owners": ["pikorddg", "aataraxiaa"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             "unified_input_surface",
+            "simplified_prompt_box",
             {
                 "key": "source",
                 "description": "Source of the attached file.",
@@ -474,7 +477,7 @@
     "m_aichat_unified_input_prompt_submitted": {
         "description": "Fires on every Duck.ai submission in the unified toggle input, with the submit-time state of the composer. Divide against m_aichat_unified_input_query_submitted for the Search vs Duck.ai mix.",
         "owners": ["pikorddg", "aataraxiaa", "Bunn"],
-        "triggers": ["other"],
+        "triggers": ["user_interaction"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
@@ -539,6 +542,7 @@
                 ]
             },
             "unified_input_surface",
+            "simplified_prompt_box",
             {
                 "key": "selected_tool",
                 "description": "Selected tool at submission time.",
@@ -549,6 +553,12 @@
                 "key": "model_id",
                 "description": "Identifier of the selected model at submission time.",
                 "type": "string"
+            },
+            {
+                "key": "model_source",
+                "description": "Where the model of a new chat's first prompt came from: the server default, a pick before sending, a model the chat was opened with (onboarding), the user's default model from Duck.ai settings (user_default), the default the chat fell back to because the user's default model can't be used, e.g. unknown, not on their plan, or over the usage limit (user_default_unavailable), or a fallback when the server sent no usable default. Sent only on a new chat's first prompt, with new chats starting on the default.",
+                "type": "string",
+                "enum": ["default", "picked", "onboarding", "fallback", "user_default", "user_default_unavailable"]
             },
             {
                 "key": "reasoning_effort",

@@ -41,12 +41,14 @@ let package = Package(
                 .product(name: "UserScript", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .testTarget(
             name: "UserScriptActionsManagerTests",
-            dependencies: ["UserScriptActionsManager"]
+            dependencies: ["UserScriptActionsManager"],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

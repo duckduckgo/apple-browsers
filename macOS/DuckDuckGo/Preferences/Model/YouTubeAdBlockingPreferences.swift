@@ -104,25 +104,25 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
     // MARK: - YouTube Sponsor Skipping (internal MVP)
 
-    private let sponsorBlockPreferences: SponsorBlockPreferences
+    private let segmentSkipPreferences: SegmentSkipPreferences
 
-    var isSponsorBlockAvailable: Bool {
-        featureFlagger?.isFeatureOn(.sponsorBlock) ?? false
+    var isSegmentSkipAvailable: Bool {
+        featureFlagger?.isFeatureOn(.segmentSkip) ?? false
     }
 
-    var sponsorBlockEnabled: Bool {
-        get { sponsorBlockPreferences.isEnabled }
+    var segmentSkipEnabled: Bool {
+        get { segmentSkipPreferences.isEnabled }
         set {
             objectWillChange.send()
-            sponsorBlockPreferences.isEnabled = newValue
+            segmentSkipPreferences.isEnabled = newValue
         }
     }
 
-    var sponsorBlockSkipMode: SponsorBlockSkipMode {
-        get { sponsorBlockPreferences.skipMode }
+    var segmentSkipMode: SegmentSkipMode {
+        get { segmentSkipPreferences.skipMode }
         set {
             objectWillChange.send()
-            sponsorBlockPreferences.skipMode = newValue
+            segmentSkipPreferences.skipMode = newValue
         }
     }
 
@@ -187,14 +187,14 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
          pixelFiring: PixelFiring? = nil,
          adBlockingAvailability: AdBlockingAvailabilityProviding? = nil,
          featureFlagger: FeatureFlagger? = Application.appDelegate.featureFlagger,
-         sponsorBlockPreferences: SponsorBlockPreferences = Application.appDelegate.sponsorBlockPreferences) {
+         segmentSkipPreferences: SegmentSkipPreferences = Application.appDelegate.segmentSkipPreferences) {
         let resolvedSettings: any KeyedStoring<YouTubeAdBlockingSettings> = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
         self.settings = resolvedSettings
         self.duckPlayerPreferences = duckPlayerPreferences ?? DuckPlayerPreferences()
         self.pixelFiring = pixelFiring
         self.adBlockingAvailability = adBlockingAvailability
         self.featureFlagger = featureFlagger
-        self.sponsorBlockPreferences = sponsorBlockPreferences
+        self.segmentSkipPreferences = segmentSkipPreferences
         youTubeAdBlockingEnabled = resolvedSettings.youTubeAdBlockingEnabled
             ?? adBlockingAvailability?.defaultYouTubeAdBlockingEnabled
             ?? false

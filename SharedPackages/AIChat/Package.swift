@@ -51,6 +51,7 @@ let package = Package(
         .package(path: "../Networking"),
         .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../DebugServer"),
+        .package(path: "../LlamaRuntime"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0")
     ],
     targets: [
@@ -73,7 +74,8 @@ let package = Package(
                 .product(name: "DuckAiDataStore", package: "BrowserServicesKit"),
                 .product(name: "WKAbstractions", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
-                .product(name: "DDGSyncCrypto", package: "sync_crypto")
+                .product(name: "DDGSyncCrypto", package: "sync_crypto"),
+                .product(name: "LlamaRuntime", package: "LlamaRuntime")
             ],
             resources: [
                 .process("Resources")
@@ -83,7 +85,8 @@ let package = Package(
             name: "AIChatTestingUtilities",
             dependencies: [
                 "AIChat"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "AIChatDebugServer",
@@ -104,7 +107,8 @@ let package = Package(
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "SecureStorage", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
-                .product(name: "WKAbstractions", package: "BrowserServicesKit")
+                .product(name: "WKAbstractions", package: "BrowserServicesKit"),
+                .product(name: "LlamaRuntime", package: "LlamaRuntime")
             ]
         )
     ]

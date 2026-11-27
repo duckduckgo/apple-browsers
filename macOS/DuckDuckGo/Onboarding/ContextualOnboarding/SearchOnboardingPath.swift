@@ -19,6 +19,7 @@
 import Foundation
 import Persistence
 import PrivacyDashboard
+import Subscription
 
 /// The one value only the search path reads and writes.
 protocol BlockedTrackerStoring: AnyObject {
@@ -53,15 +54,15 @@ final class SearchOnboardingPath: ContextualOnboardingPath {
 
     init(progress: ContextualOnboardingProgressReading,
          storage: BlockedTrackerStoring = SearchOnboardingPathStorage(),
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling,
+         subscriptionManager: any SubscriptionManager,
          trackerMessageProvider: TrackerMessageProviding) {
         self.progress = progress
         self.storage = storage
-        self.ending = OnboardingEndingSteps(progress: progress, subscriptionUpsellExperiment: subscriptionUpsellExperiment)
+        self.ending = OnboardingEndingSteps(progress: progress, subscriptionManager: subscriptionManager)
         self.trackerMessageProvider = trackerMessageProvider
     }
 
-    let isUILocked = false
+    let uiLock = UserInteractionLock.unlocked
 
     func reset() {
         storage.blockedTrackerSeen = false

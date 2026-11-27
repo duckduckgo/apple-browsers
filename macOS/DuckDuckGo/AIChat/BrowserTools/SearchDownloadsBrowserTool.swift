@@ -82,4 +82,6 @@ final class SearchDownloadsBrowserTool: BrowserTool {
             }
         return .success(["results": .array(Array(results))])
     }
+
+    func resultCount(of value: JSONValue) -> Int? { value["results"]?.arrayValue?.count }
 }

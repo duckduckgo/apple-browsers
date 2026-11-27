@@ -72,6 +72,29 @@ final class TrackerDataURLOverriderTests: XCTestCase {
         XCTAssertEqual(url.absoluteString, TrackerDataURLOverrider.Constants.baseTDSURLString + treatmentURL)
     }
 
+    func testTrackerDataURL_whenSettingsAlsoContainMetrics_returnsCohortUrl() throws {
+        // GIVEN
+        mockFeatureFlagger.mockCohorts = [
+            TDSExperimentType.value(at: 0)!.rawValue: TDSExperimentType.Cohort.treatment]
+        let privacyConfig = MockPrivacyConfiguration()
+        privacyConfig.subfeatureSettings = """
+        {
+            "controlUrl": "\(controlURL)",
+            "treatmentUrl": "\(treatmentURL)",
+            "metrics": {
+                "adwall": { "event": "adwall", "conversions": [{ "windows": [[0, 0], [1, 1]], "thresholds": [1, 2] }] }
+            }
+        }
+        """
+        mockPrivacyConfigurationManager.privacyConfig = privacyConfig
+
+        // WHEN
+        let url = try XCTUnwrap(urlProvider.trackerDataURL)
+
+        // THEN
+        XCTAssertEqual(url.absoluteString, TrackerDataURLOverrider.Constants.baseTDSURLString + treatmentURL)
+    }
+
     func testTrackerDataURL_ifNoSettings_returnsDefaultURL() throws {
         // GIVEN
         mockFeatureFlagger.mockCohorts = [
@@ -171,6 +194,9 @@ private class MockFeatureFlaggerMockSettings: FeatureFlagger {
 }
 
 class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
+    var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
 
     var embeddedConfigData: PrivacyConfigurationManager.ConfigurationData {
         fatalError("not implemented")

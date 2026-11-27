@@ -158,7 +158,7 @@ public struct JWTRefreshToken: JWTPayload, Equatable {
     }
 }
 
-public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStringConvertible, Hashable, CaseIterable {
+public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStringConvertible, Hashable, CaseIterable, Sendable {
     case networkProtection = "Network Protection"
     case dataBrokerProtection = "Data Broker Protection"
     case identityTheftRestoration = "Identity Theft Restoration"

@@ -29,41 +29,42 @@ final class WebExtensionHandlerProvider: WebExtensionHandlerProviding {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let autoconsentPreferences: AutoconsentPreferencesProviding
     private let darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding?
-    private let searchTokenProvider: SearchTokenProviding?
     private let autoconsentDelegate: IOSAutoconsentMessageHandlerDelegate
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring
+    private let isAppleSurrogateRedirectionEnabled: @MainActor () -> Bool
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
         cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
-        searchTokenProvider: SearchTokenProviding? = nil,
-        eventHub: EventHubManaging
+        eventHub: EventHubManaging,
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.autoconsentPreferences = autoconsentPreferences
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
         self.darkReaderExcludedDomainsProvider = darkReaderExcludedDomainsProvider
-        self.searchTokenProvider = searchTokenProvider
         self.autoconsentDelegate = IOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
+        self.isAppleSurrogateRedirectionEnabled = isAppleSurrogateRedirectionEnabled
     }
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
         switch context.duckDuckGoWebExtensionType {
         case .embedded:
-            return [AutoconsentWebExtensionMessageHandler(
-                privacyConfigurationManager: privacyConfigurationManager,
-                autoconsentPreferences: autoconsentPreferences,
-                cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                delegate: autoconsentDelegate
-            )]
+            return [
+                AutoconsentWebExtensionMessageHandler(
+                    privacyConfigurationManager: privacyConfigurationManager,
+                    autoconsentPreferences: autoconsentPreferences,
+                    cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                    delegate: autoconsentDelegate,
+                    isAppleSurrogateRedirectionEnabled: isAppleSurrogateRedirectionEnabled
+                ),
+                UserAllowlistWebExtensionMessageHandler(privacyConfigurationManager: privacyConfigurationManager),
+            ]
         case .darkReader:
             guard let provider = darkReaderExcludedDomainsProvider else { return [] }
             return [DarkReaderWebExtensionMessageHandler(excludedDomainsProvider: provider)]
-        case .searchToken:
-            guard let searchTokenProvider else { return [] }
-            return [SearchTokenWebExtensionMessageHandler(tokenProvider: searchTokenProvider)]
         default:
             return []
         }

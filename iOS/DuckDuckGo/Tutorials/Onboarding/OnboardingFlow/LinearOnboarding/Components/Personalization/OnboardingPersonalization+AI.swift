@@ -60,29 +60,12 @@ extension AIChatSettings: OnboardingAIChatPersonalizationStore {
 
 /// Store adapter backing the **AI Chat model** picker on the first AI Chat onboarding step.
 ///
-/// Persists the chosen model onto `AIChatPreferencesPersisting`:
-/// - get: reads `selectedModelId`; the name comes from `selectedModelShortName` (best-effort — the
-///   manager resolves the canonical name by matching the id against the offered catalog).
-/// - set: writes both `selectedModelId` and `selectedModelShortName`; `nil` clears them.
+/// Keeps the chosen model in memory for the onboarding session only. The onboarding Duck.ai chat
+/// opens with this model, but the choice is not saved as the Duck.ai model, so later chats start
+/// on the usual model.
 ///
 /// - See: [AI Chat: Setup step 1](https://app.asana.com/1/137249556945/task/1216445221863466?focus=true)
+/// - See: [Onboarding - model selection step updates](https://app.asana.com/1/137249556945/task/1220656527376098?focus=true)
 final class OnboardingAIModelAdapter: OnboardingAIModelPersonalizationStore {
-    private var persistor: AIChatPreferencesPersisting
-
-    init(persistor: AIChatPreferencesPersisting) {
-        self.persistor = persistor
-    }
-
-    var selectedAIModel: OnboardingAIModel? {
-        get {
-            guard let id = persistor.selectedModelId else { return nil }
-            // Best-effort name; the manager resolves the canonical name by matching `id`
-            // against the fetched catalog, so only `id` needs to be correct here.
-            return OnboardingAIModel(id: id, name: persistor.selectedModelShortName ?? "")
-        }
-        set {
-            persistor.selectedModelId = newValue?.id
-            persistor.selectedModelShortName = newValue?.name
-        }
-    }
+    var selectedAIModel: OnboardingAIModel?
 }

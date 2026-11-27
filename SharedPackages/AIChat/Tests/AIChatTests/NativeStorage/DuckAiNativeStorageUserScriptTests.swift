@@ -362,10 +362,16 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
 
 // MARK: - Test helpers
 
-final class MockDuckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring {
-    var firedEvents: [DuckAiNativeStorageEvent] = []
+// Setup can fire an event on the database queue while the test reads the recorded events.
+final class MockDuckAiNativeStoragePixelFiring: DuckAiNativeStoragePixelFiring, @unchecked Sendable {
+    private let lock = NSLock()
+    private var events: [DuckAiNativeStorageEvent] = []
 
-    func fire(_ event: DuckAiNativeStorageEvent) { firedEvents.append(event) }
+    var firedEvents: [DuckAiNativeStorageEvent] { lock.withLock { events } }
+
+    func fire(_ event: DuckAiNativeStorageEvent) {
+        lock.withLock { events.append(event) }
+    }
 }
 
 // MARK: - Mock

@@ -44,6 +44,10 @@ final class DuckAISuggestionsSource: SuggestionsSource {
     private let searchSuggestionsEnabled: () -> Bool
     /// Gates the chat-history sub-source only (the "Chat Suggestions" setting); URL hits are unaffected.
     private let chatSuggestionsEnabled: () -> Bool
+    /// The typed text, so sections recompute on every keystroke. The fetchers stay silent when nothing
+    /// matches (or their settings are off), and the "Search DuckDuckGo" row still has to follow the text.
+    private let typedQuery: CurrentValueSubject<String, Never>
+    private var textCancellable: AnyCancellable?
 
     init(chatViewModel: AIChatSuggestionsViewModel,
          urlLoader: DuckAIURLSuggestionsLoader,
@@ -58,6 +62,8 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         self.query = query
         self.searchSuggestionsEnabled = searchSuggestionsEnabled
         self.chatSuggestionsEnabled = chatSuggestionsEnabled
+        let typedQuery = CurrentValueSubject<String, Never>(query())
+        self.typedQuery = typedQuery
 
         let pipeline = DuckAISuggestionsPipeline(
             chatsPublisher: chatViewModel.$filteredSuggestions.eraseToAnyPublisher(),
@@ -66,13 +72,14 @@ final class DuckAISuggestionsSource: SuggestionsSource {
             lastCompletedURLQuery: { [weak urlLoader] in urlLoader?.lastCompletedFetchQuery ?? "" }
         )
 
-        sectionsPublisher = pipeline.snapshotPublisher
-            .map { snapshot in Self.sections(from: snapshot, query: query(), viewAllChatsEnabled: viewAllChatsEnabled()) }
+        sectionsPublisher = Publishers.CombineLatest(pipeline.snapshotPublisher, typedQuery.removeDuplicates())
+            .map { snapshot, text in Self.sections(from: snapshot, query: text, viewAllChatsEnabled: viewAllChatsEnabled()) }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
 
     func start(textPublisher: AnyPublisher<String, Never>) {
+        textCancellable = textPublisher.sink { [typedQuery] in typedQuery.send($0) }
         // Skipped entirely when "Chat Suggestions" is off, so chat history (incl. recents) is
         // suppressed without touching URL hits.
         if chatSuggestionsEnabled() {
@@ -88,6 +95,7 @@ final class DuckAISuggestionsSource: SuggestionsSource {
     }
 
     func tearDown() {
+        textCancellable = nil
         chatManager.tearDown()
         urlLoader.tearDown()
     }
@@ -108,6 +116,15 @@ final class DuckAISuggestionsSource: SuggestionsSource {
         static let viewAllChats = "view-all-chats"
     }
 
+    /// Past this many words the text reads as a chat prompt, not a search, so the
+    /// "Search DuckDuckGo" row is hidden.
+    static let searchRowMaxWords = 15
+
+    /// A word is a run of non-whitespace characters, so spaces, tabs and newlines all separate words.
+    static func showsSearchRow(for query: String) -> Bool {
+        !query.isEmpty && query.split(whereSeparator: \.isWhitespace).count <= searchRowMaxWords
+    }
+
     static func sections(from snapshot: DuckAISuggestionsPipeline.Snapshot, query: String, viewAllChatsEnabled: Bool = false) -> [SuggestionSection] {
         var sections: [SuggestionSection] = []
         if !snapshot.chats.isEmpty {
@@ -123,7 +140,7 @@ final class DuckAISuggestionsSource: SuggestionsSource {
                 id: SectionID.urls,
                 rows: snapshot.urls.map { SuggestionRowMapper.row(for: $0, query: query, idPrefix: SectionID.urls) }))
         }
-        if !query.isEmpty {
+        if Self.showsSearchRow(for: query) {
             sections.append(SuggestionSection(
                 id: SectionID.search,
                 rows: [SuggestionRowMapper.searchRow(query: query, idPrefix: SectionID.search)]))

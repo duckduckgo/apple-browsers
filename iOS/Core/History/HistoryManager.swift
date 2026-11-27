@@ -331,12 +331,12 @@ extension HistoryManager {
                             tld: TLD) -> Result<HistoryManager, Error> {
 
         let database = HistoryDatabase.make()
-        var loadError: Error?
+        let loadError = Locked<Error?>(wrappedValue: nil)
         database.loadStore { _, error in
-            loadError = error
+            loadError.wrappedValue = error
         }
 
-        if let loadError {
+        if let loadError = loadError.wrappedValue {
             return .failure(loadError)
         }
 

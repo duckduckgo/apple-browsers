@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import Common
+import FeatureFlags_macOS
 import FoundationExtensions
 import MaliciousSiteProtection
 import NewTabPage
@@ -196,6 +197,51 @@ final class DuckSchemeHandlerTests: XCTestCase {
         let html = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
         XCTAssertTrue(html.contains("Favicons"))
         XCTAssertTrue(html.contains("/app.js"))
+    }
+
+    // MARK: - Web extensions inspector (duck://extensions)
+
+    @MainActor
+    func testWebExtensionsInspectorIsNotServedWhenWebExtensionsFlagIsOff() throws {
+        guard #available(macOS 15.4, *) else { throw XCTSkip("Web extensions require macOS 15.4") }
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                                featuresStub: [FeatureFlag.webExtensions.rawValue: false])
+        let handler = DuckURLSchemeHandler(featureFlagger: featureFlagger)
+        let task = MockSchemeTask(request: URLRequest(url: URL.webExtensions))
+
+        handler.webView(WKWebView(), start: task)
+
+        let html = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertFalse(html.contains("<title>Extensions</title>"))
+    }
+
+    @MainActor
+    func testWebExtensionsInspectorIsServedToInternalUsersWhenWebExtensionsFlagIsOn() throws {
+        guard #available(macOS 15.4, *) else { throw XCTSkip("Web extensions require macOS 15.4") }
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                                featuresStub: [FeatureFlag.webExtensions.rawValue: true])
+        let handler = DuckURLSchemeHandler(featureFlagger: featureFlagger)
+        let task = MockSchemeTask(request: URLRequest(url: URL.webExtensions))
+
+        handler.webView(WKWebView(), start: task)
+
+        let html = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertTrue(html.contains("<title>Extensions</title>"))
+    }
+
+    @MainActor
+    func testWebExtensionsInspectorIsServedToInternalUsersWhenOnlyWebExtensionsInternalFlagIsOn() throws {
+        guard #available(macOS 15.4, *) else { throw XCTSkip("Web extensions require macOS 15.4") }
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                                featuresStub: [FeatureFlag.webExtensions.rawValue: false,
+                                                               FeatureFlag.webExtensionsInternal.rawValue: true])
+        let handler = DuckURLSchemeHandler(featureFlagger: featureFlagger)
+        let task = MockSchemeTask(request: URLRequest(url: URL.webExtensions))
+
+        handler.webView(WKWebView(), start: task)
+
+        let html = String(data: try XCTUnwrap(task.data), encoding: .utf8) ?? ""
+        XCTAssertTrue(html.contains("<title>Extensions</title>"))
     }
 
     // MARK: - Permissions inspector (duck://permissions)

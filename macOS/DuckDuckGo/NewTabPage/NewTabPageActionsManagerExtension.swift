@@ -67,7 +67,8 @@ extension NewTabPageActionsManager {
         syncService: DDGSyncing?,
         pinningManager: PinningManager,
         promoService: PromoService?,
-        dockCustomization: DockCustomization
+        dockCustomization: DockCustomization,
+        addToDockVideoPresenter: AddToDockVideoPresenting
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -149,11 +150,15 @@ extension NewTabPageActionsManager {
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },
             availableModelsProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastFetchedModels ?? [] },
+            newChatDefaults: omnibarModelsProvider.newChatDefaults,
             isTrialEligibleProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.isEligibleForFreeTrial ?? false },
             allowsSubscriptionUpsellProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.allowsSubscriptionUpsell ?? false }
         )
         omnibarActionHandler.onCustomizeResponsesChanged = { [weak omnibarConfigProvider] in
             omnibarConfigProvider?.notifyCustomizeResponsesChanged()
+        }
+        omnibarActionHandler.newChatModelPixelParameters = { [weak omnibarConfigProvider] modelId, reasoningEffort, isImageGeneration in
+            omnibarConfigProvider?.newChatModelPixelParameters(sentModelId: modelId, sentReasoningEffort: reasoningEffort, isImageGeneration: isImageGeneration)
         }
         let aiChatsProvider = NewTabPageOmnibarAiChatsProvider(
             featureFlagger: featureFlagger,
@@ -189,7 +194,8 @@ extension NewTabPageActionsManager {
                 privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 pixelHandler: nextStepsPixelHandler,
                 newTabPageNavigator: DefaultNewTabPageNavigator(),
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                videoPresenter: addToDockVideoPresenter
             ),
             pixelHandler: nextStepsPixelHandler,
             persistor: nextStepsCardsPersistor,

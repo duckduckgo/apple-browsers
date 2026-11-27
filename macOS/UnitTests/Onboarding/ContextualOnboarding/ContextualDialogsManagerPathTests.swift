@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import Foundation
 @_spi(Testing) import Persistence
+import SubscriptionTestingUtilities
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -27,14 +29,16 @@ struct ContextualDialogsManagerPathTests {
     let stateStorage = MockContextualDialogStateStoring()
     let searchPathStorage = MockBlockedTrackerStoring()
     let store = InMemoryThrowingKeyValueStore()
+    let uiLocker = CapturingUILocker()
     let manager: ContextualDialogsManager
 
     init() {
         manager = .withSearchPath(trackerMessageProvider: MockTrackerMessageProvider(),
-                                  subscriptionUpsellExperiment: SpyOnboardingSubscriptionUpsellEnrolling(),
+                                  subscriptionManager: SubscriptionManagerMock.notUpsellEligible(),
                                   stateStorage: stateStorage,
                                   searchPathStorage: searchPathStorage,
-                                  settings: store.throwingKeyedStoring())
+                                  settings: store.throwingKeyedStoring(),
+                                  uiLocker: uiLocker)
         manager.state = .notStarted
     }
 
@@ -50,12 +54,108 @@ struct ContextualDialogsManagerPathTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("The search path never locks the UI", .timeLimit(.minutes(1)))
-    func searchPathDoesNotLock() {
-        #expect(!manager.isUILocked)
+    func searchPathDoesNotLock() async {
+        #expect(manager.uiLock == .unlocked)
 
         manager.startPath(.search)
+        manager.state = .ongoing
+        manager.fireButtonUsed()
+        manager.state = .onboardingCompleted
 
-        #expect(!manager.isUILocked)
+        #expect(manager.uiLock == .unlocked)
+        await lockUpdatesDelivered()
+        #expect(uiLocker.calls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The Duck.ai path locks all but Fire once, until Fire is used", .timeLimit(.minutes(1)))
+    func duckAIPathLocksUntilFire() async {
+        manager.startPath(.duckAI)
+        manager.state = .ongoing
+
+        #expect(manager.uiLock == .locked(except: [.fire]))
+        await lockUpdatesDelivered()
+        #expect(uiLocker.calls == [.locked(except: [.fire])])
+
+        manager.fireButtonUsed()
+
+        #expect(manager.uiLock == .unlocked)
+        await lockUpdatesDelivered()
+        #expect(uiLocker.calls == [.locked(except: [.fire]), .unlocked])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Ending or restarting onboarding unlocks the UI", .timeLimit(.minutes(1)),
+          arguments: [ContextualOnboardingState.onboardingCompleted, .notStarted])
+    func endingOnboardingUnlocks(newState: ContextualOnboardingState) async {
+        manager.startPath(.duckAI)
+
+        manager.state = newState
+
+        #expect(manager.uiLock == .unlocked)
+        await lockUpdatesDelivered()
+        #expect(uiLocker.calls == [.locked(except: [.fire]), .unlocked])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Fire used before the Duck.ai path starts doesn't unlock it", .timeLimit(.minutes(1)))
+    func fireBeforeDuckAIPathStillLocks() async {
+        manager.fireButtonUsed()
+
+        manager.startPath(.duckAI)
+
+        #expect(manager.uiLock == .locked(except: [.fire]))
+        await lockUpdatesDelivered()
+        #expect(uiLocker.calls == [.locked(except: [.fire])])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A relaunch during the Duck.ai path locks the UI again", .timeLimit(.minutes(1)))
+    func relaunchRelocks() async {
+        manager.startPath(.duckAI)
+        manager.state = .ongoing
+
+        let relaunchLocker = CapturingUILocker()
+        _ = relaunchedManager(uiLocker: relaunchLocker)
+        await lockUpdatesDelivered()
+
+        #expect(relaunchLocker.calls == [.locked(except: [.fire])])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A relaunch after Fire, or on the search path, sends no lock", .timeLimit(.minutes(1)),
+          arguments: [true, false])
+    func relaunchWithoutLock(duckAIPathAfterFire: Bool) async {
+        if duckAIPathAfterFire {
+            manager.startPath(.duckAI)
+            manager.state = .ongoing
+            manager.fireButtonUsed()
+        } else {
+            manager.startPath(.search)
+            manager.state = .ongoing
+        }
+
+        let relaunchLocker = CapturingUILocker()
+        _ = relaunchedManager(uiLocker: relaunchLocker)
+        await lockUpdatesDelivered()
+
+        #expect(relaunchLocker.calls.isEmpty)
+    }
+
+    /// The manager sends locks on the main queue; this waits until the ones already sent arrive.
+    private func lockUpdatesDelivered() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
+
+    private func relaunchedManager(uiLocker: CapturingUILocker) -> ContextualDialogsManager {
+        .withSearchPath(trackerMessageProvider: MockTrackerMessageProvider(),
+                        subscriptionManager: SubscriptionManagerMock.notUpsellEligible(),
+                        stateStorage: stateStorage,
+                        searchPathStorage: searchPathStorage,
+                        settings: store.throwingKeyedStoring(),
+                        uiLocker: uiLocker)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -89,5 +189,13 @@ struct ContextualDialogsManagerPathTests {
         manager.state = .notStarted
 
         #expect(!searchPathStorage.blockedTrackerSeen)
+    }
+}
+
+final class CapturingUILocker: ContextualOnboardingUILocking {
+    private(set) var calls: [UserInteractionLock] = []
+
+    func setUILock(_ lock: UserInteractionLock) {
+        calls.append(lock)
     }
 }

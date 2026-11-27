@@ -173,6 +173,8 @@ struct SettingsRootView: View {
                                                              performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
                                                              onboardingKeyValueStore: viewModel.keyValueStore,
                                                              meetsPIRLocaleRequirement: { viewModel.meetsLocaleRequirement },
+                                                             subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(featureFlagger: featureFlagger),
+                                                             onFlowEvent: nil,
                                                              onRequestDuckAIChat: viewModel.onRequestOnboardingDuckAIChat)
     }
 
@@ -282,6 +284,8 @@ struct SettingsRootView: View {
             SettingsGeneralView().environmentObject(viewModel)
         case .cookiePopupProtection:
             CookiePopUpProtectionView().environmentObject(viewModel)
+        case .dataClearing:
+            SettingsDataClearingView(viewModel: viewModel.dataClearingViewModel).environmentObject(viewModel)
         case .about:
             AboutView().environmentObject(viewModel)
         case .subscriptionSettings:

@@ -60,7 +60,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     @Published private(set) var logoModeChange: LogoModeChange?
     @Published private(set) var isPreparingLogoModeChange = false
     var onLogoFadeOutCompleted: (() -> Void)?
-    var usesRedesignedNewTabPageLayout = false
+    /// Whether the focused state sits over the redesigned New Tab Page, which swaps the logo with its own content at once.
+    var isOverRedesignedNewTabPage = false
     /// How the content collapses back to the omnibar. Cleared on the next focus.
     @Published private(set) var dismissBehavior: DismissBehavior = .none
     /// On a fire tab the empty state is the fire screen, not the Dax logo. Set by the container via
@@ -168,7 +169,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
     private func apply(_ newContent: UnifiedSuggestionsContentKind, modeChanged: Bool, wasLogoVisible: Bool = false) {
         guard newContent != content else { return }
         let crossfades = modeChanged && !Self.sameCategory(content, newContent)
-        waitsForLogoFadeOut = crossfades && wasLogoVisible && !usesRedesignedNewTabPageLayout
+        waitsForLogoFadeOut = crossfades && wasLogoVisible && !isOverRedesignedNewTabPage
         if crossfades {
             withAnimation(FocusedContentFade.fadeIn) { content = newContent }
         } else {
@@ -219,7 +220,7 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         defer {
             if finishingPreparation && isPreparingLogoModeChange { isPreparingLogoModeChange = false }
         }
-        guard !usesRedesignedNewTabPageLayout,
+        guard !isOverRedesignedNewTabPage,
               let change = logoModeChange, change.source != nil, !change.isFadingOut else { return }
         let fits = (logoViewportFrame ?? logoHostFrame).map { viewport in
             let layout = logoLayout(in: viewport)

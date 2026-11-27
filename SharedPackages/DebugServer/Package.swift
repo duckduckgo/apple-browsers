@@ -27,17 +27,35 @@ let package = Package(
     ],
     products: [
         .library(name: "DebugServer", targets: ["DebugServer"]),
+        .library(name: "LaunchProfile", targets: ["LaunchProfile"]),
+    ],
+    dependencies: [
+        .package(path: "../DDGError"),
     ],
     targets: [
         .target(
             name: "DebugServer",
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .testTarget(
             name: "DebugServerTests",
-            dependencies: ["DebugServer"]
+            dependencies: ["DebugServer"],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
+        .target(
+            name: "LaunchProfile",
+            dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
+        .testTarget(
+            name: "LaunchProfileTests",
+            dependencies: ["LaunchProfile"],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ]
 )

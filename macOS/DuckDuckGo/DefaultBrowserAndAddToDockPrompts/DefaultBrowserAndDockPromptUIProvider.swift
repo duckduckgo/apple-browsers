@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import DesignResourcesKit
 import Onboarding
+import SwiftUI
 
 protocol DefaultBrowserAndDockPromptUIProviding {
 
@@ -35,13 +36,24 @@ struct DefaultBrowserAndDockPromptUIProvider: DefaultBrowserAndDockPromptUIProvi
 }
 
 private extension BrowsersComparisonChart.Configuration {
-    static let defaultBrowserAndDockPromptConfiguration = BrowsersComparisonChart.Configuration(fontSize: Metrics.fontSize,
-                                                                                                fontWeight: Metrics.fontWeight,
-                                                                                                showFeatureIcons: true,
-                                                                                                showBottomDivider: false)
+    static var defaultBrowserAndDockPromptConfiguration: BrowsersComparisonChart.Configuration {
+        BrowsersComparisonChart.Configuration(fontSize: Metrics.fontSize,
+                                              fontWeight: Metrics.fontWeight,
+                                              showFeatureIcons: true,
+                                              showBottomDivider: false,
+                                              showHeaderDivider: false,
+                                              rowStyle: .alternatingBackground(Color(singleUseColor: .defaultBrowserAndDockPromptChartRowBackground),
+                                                                               cornerRadius: Metrics.rowCornerRadius),
+                                              rowHeight: Metrics.rowHeight,
+                                              availabilityIconStyle: .solid(available: Color(singleUseColor: .defaultBrowserAndDockPromptStatusAvailable),
+                                                                            partiallyAvailable: Color(singleUseColor: .defaultBrowserAndDockPromptStatusPartiallyAvailable),
+                                                                            unavailable: Color(singleUseColor: .defaultBrowserAndDockPromptStatusUnavailable)))
+    }
 
     enum Metrics {
         static let fontSize: CGFloat = 13
-        static let fontWeight: Font.Weight = .medium
+        static let fontWeight: Font.Weight = .regular
+        static let rowHeight: CGFloat = 48
+        static let rowCornerRadius: CGFloat = 8
     }
 }

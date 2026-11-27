@@ -180,7 +180,8 @@ final class ExtensionsManagementPreferencesTests: XCTestCase {
         settings["publisherUri"] = publisherURL
         let configuration = MockPrivacyConfiguration()
         configuration.subfeatureSettings = String(data: try JSONEncoder().encode(settings), encoding: .utf8)
-        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: configuration))
+        let catalog = ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManager(privacyConfig: configuration),
+                                            isExtensionsEnabled: { true })
         return try XCTUnwrap(catalog.listing(of: .bitwarden))
     }
 
@@ -257,6 +258,7 @@ private final class StubWebExtensionManager: WebExtensionManaging {
     @MainActor func hasHitNativeMessagingLimitation(identifier: String) -> Bool { limitedIdentifiers.contains(identifier) }
     @MainActor func isNativeMessagingAlertSuppressed(identifier: String) -> Bool { false }
     @MainActor func suppressNativeMessagingAlert(identifier: String) {}
+    @MainActor func pixelExtension(identifier: String) -> WebExtensionPixelExtension { .other }
     func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }

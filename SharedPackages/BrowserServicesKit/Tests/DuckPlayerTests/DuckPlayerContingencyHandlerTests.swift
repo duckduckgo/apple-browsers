@@ -231,6 +231,10 @@ private struct MockConfig {
 import Combine
 
 class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
+    var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
+
     var currentConfig: Data = .init()
     var updatesSubject = PassthroughSubject<Void, Never>()
     let updatesPublisher: AnyPublisher<Void, Never>

@@ -1701,6 +1701,7 @@
 				3706FA7A293F65D500E42796 /* Sources */,
 				3706FCA6293F65D500E42796 /* Frameworks */,
 				3706FCB1293F65D500E42796 /* Resources */,
+				7E0AAAEEF41C0645F3FC4C39 /* Embed llama.cpp */,
 				7BC3E4672D6E03BA009787CD /* Make /Applications symlink, remove app on Clean build */,
 				4BBA2D272B6AC09D00F6A470 /* Embed Login Items */,
 			);
@@ -1994,6 +1995,7 @@
 				4B2537572A11BE7300610219 /* Frameworks */,
 				B6BD8F0A2A260E5900B6A41F /* embed libswift_Concurrency.dylib */,
 				56F5C54E2B8F5FDB00E012C7 /* Resources */,
+				4A0A6182E9C227CDD795E808 /* Set system extension bundle version */,
 			);
 			buildRules = (
 			);
@@ -2166,6 +2168,7 @@
 				7B2E365B2D6DEFBB00A08CB7 /* Sources */,
 				7B2E365C2D6DEFBB00A08CB7 /* Frameworks */,
 				7B2E365D2D6DEFBB00A08CB7 /* Resources */,
+				9936E0FDA887B234AAC2C2F5 /* Set system extension bundle version */,
 			);
 			buildRules = (
 			);
@@ -2355,6 +2358,7 @@
 				AA585D7A248FD31100E9A3E2 /* Sources */,
 				AA585D7B248FD31100E9A3E2 /* Frameworks */,
 				AA585D7C248FD31100E9A3E2 /* Resources */,
+				614CBCD846D239004675247E /* Embed llama.cpp */,
 				B6F2C8722A7A4C7D000498CF /* Make /Applications symlink, remove app on Clean build */,
 				4B2D065D2A11D2AE00DE1F49 /* Embed Login Items */,
 			);
@@ -2906,6 +2910,26 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ \"${CONFIGURATION}\" == \"Release\" && \"${PRODUCT_NAME}\" != \"DuckDuckGo\" ]]; then\n    echo \"PRODUCT_NAME must be equal to \\\"DuckDuckGo\\\" (is \\\"${PRODUCT_NAME}\\\")\"\n    echo \"See ManualAppStoreRelease.xcconfig for instructions.\"\n    exit 1\nfi\n";
 		};
+		4A0A6182E9C227CDD795E808 /* Set system extension bundle version */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Set system extension bundle version";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/set_system_extension_bundle_version.sh\"\n";
+		};
 		4B2D065C2A11D23600DE1F49 /* Copy Assets */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -2962,6 +2986,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Embeds login items for the App Store build.\n\n# Skip login item embedding for release builds until they're ready to go live.\nif [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Alpha\" ]; then\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_RELEASE_PRODUCT_NAME}\"\nelse\n    PIR_AGENT_NAME=\"${DBP_BACKGROUND_AGENT_PRODUCT_NAME}\"\nfi\n\nVPN_AGENT_NAME=\"${AGENT_PRODUCT_NAME}\"\n\nif [ -z \"$VPN_AGENT_NAME\" ]; then\n    echo \"VPN_AGENT_NAME is empty.\"\n    exit 1\nelif [ -z \"$PIR_AGENT_NAME\" ]; then\n    echo \"PIR_AGENT_NAME is empty.\"\n    exit 1\nelse\n    echo \"Both VPN_AGENT_NAME and PIR_AGENT_NAME are set.\"\n    echo \"VPN_AGENT_NAME is set to '$VPN_AGENT_NAME'.\"\n    echo \"PIR_AGENT_NAME is set to '$PIR_AGENT_NAME'.\"\nfi\n\nVPN_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${VPN_AGENT_NAME}.app\")\nPIR_AGENT_ORIGIN=$(readlink -f \"${CONFIGURATION_BUILD_DIR}/${PIR_AGENT_NAME}.app\")\nAGENT_DESTINATION=\"${CONFIGURATION_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Library/LoginItems\"\n    \n# Make sure that Library/LoginItems exists before copying\nmkdir -p \"$AGENT_DESTINATION\"\n    \necho \"Copying VPN agent from $VPN_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$VPN_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n    \necho \"Copying Personal Information Removal agent from $PIR_AGENT_ORIGIN to $AGENT_DESTINATION\"\nrsync -r --links \"$PIR_AGENT_ORIGIN\" \"$AGENT_DESTINATION\"\n";
+		};
+		614CBCD846D239004675247E /* Embed llama.cpp */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed llama.cpp";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/embed_llama_framework.sh\"\n";
 		};
 		6A8856B31B2BC5078B61ED81 /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -3055,6 +3098,45 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [[ \"${CONFIGURATION}\" != \"Debug\" ]] || [ \"$ENABLE_PREVIEWS\" = \"YES\" ] || [[ \"${DEPLOYMENT_LOCATION}\" != \"YES\" ]]; then\n    # run only for Debug builds with DEPLOYMENT_LOCATION=YES\n    exit 0\nfi\n\n# if Xcode created real Applications directory inside BUILT_PRODUCTS_DIR \nif [[ ! -L ${BUILT_PRODUCTS_DIR}/Applications ]]; then\n    # we only get here on clean build, remove an existing app in /Applications/DEBUG on clean build\n    echo \"rm -rf /${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n    rm -rf \"/${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n\n    # create /Applications/DEBUG dir\n    echo \"mkdir -p /${INSTALL_PATH}\"\n    mkdir -p \"/${INSTALL_PATH}\"\n\n    # move the app bundle to /Applications/DEBUG\n    echo \"mv ${DSTROOT}/${INSTALL_PATH}/${PRODUCT_NAME}.app /${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n    mv \"${DSTROOT}/${INSTALL_PATH}/${PRODUCT_NAME}.app\" \"/${INSTALL_PATH}/${PRODUCT_NAME}.app\"\n\n    # rm ${BUILT_PRODUCTS_DIR}/Applications directory created by Xcode\n    echo \"rm -rf ${BUILT_PRODUCTS_DIR}/Applications\" \n    rm -rf \"${BUILT_PRODUCTS_DIR}/Applications\"\n    # create ${BUILT_PRODUCTS_DIR}/Applications symlink to /Applications\n    echo \"ln -s /Applications ${BUILT_PRODUCTS_DIR}/Applications\"\n    ln -s /Applications \"${BUILT_PRODUCTS_DIR}/Applications\"\nelse\n    echo \"/Applications symlink 👌\"\nfi\n";
+		};
+		7E0AAAEEF41C0645F3FC4C39 /* Embed llama.cpp */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed llama.cpp";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/embed_llama_framework.sh\"\n";
+		};
+		9936E0FDA887B234AAC2C2F5 /* Set system extension bundle version */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Set system extension bundle version";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/scripts/set_system_extension_bundle_version.sh\"\n";
 		};
 		B6BD8F0A2A260E5900B6A41F /* embed libswift_Concurrency.dylib */ = {
 			isa = PBXShellScriptBuildPhase;

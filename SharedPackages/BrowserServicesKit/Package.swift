@@ -52,12 +52,12 @@ let package = Package(
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.1"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.11.0"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.12.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "21.4.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "23.4.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -114,6 +114,7 @@ let package = Package(
                 "WKAbstractions",
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug)),
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
             ]
@@ -130,6 +131,7 @@ let package = Package(
                 "GRDB",
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -144,6 +146,7 @@ let package = Package(
                 .product(name: "Persistence", package: "Persistence"),
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -153,6 +156,7 @@ let package = Package(
                 "PrivacyConfig",
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -198,6 +202,7 @@ let package = Package(
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -207,7 +212,8 @@ let package = Package(
                 "Bookmarks",
                 .product(name: "Persistence", package: "Persistence"),
             ],
-            path: "Sources/BookmarksTestDBBuilder"
+            path: "Sources/BookmarksTestDBBuilder",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .executableTarget(
             name: "HistoryTestDBBuilder",
@@ -215,13 +221,15 @@ let package = Package(
                 "History",
                 .product(name: "Persistence", package: "Persistence"),
             ],
-            path: "Sources/HistoryTestDBBuilder"
+            path: "Sources/HistoryTestDBBuilder",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "BookmarksTestsUtils",
             dependencies: [
                 "Bookmarks",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "BloomFilterObjC",
@@ -232,7 +240,9 @@ let package = Package(
             name: "BloomFilterWrapper",
             dependencies: [
                 "BloomFilterObjC",
-            ]),
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
+        ),
         .target(
             name: "Crashes",
             dependencies: [
@@ -273,7 +283,8 @@ let package = Package(
                 "DDGSync",
                 .product(name: "Persistence", package: "Persistence"),
             ],
-            path: "Sources/SyncMetadataTestDBBuilder"
+            path: "Sources/SyncMetadataTestDBBuilder",
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "ContentBlocking",
@@ -281,6 +292,7 @@ let package = Package(
                 "TrackerRadarKit",
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -379,7 +391,8 @@ let package = Package(
             name: "RemoteMessagingTestsUtils",
             dependencies: [
                 "RemoteMessaging",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "SyncDataProviders",
@@ -411,6 +424,7 @@ let package = Package(
             ],
             exclude: ["README.md"],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -419,7 +433,8 @@ let package = Package(
             dependencies: [
                 "SecureStorage",
                 .product(name: "PixelKit", package: "PixelKit")
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "Subscription",
@@ -451,7 +466,8 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Networking", package: "Networking"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .target(
             name: "SpecialErrorPages",
@@ -480,6 +496,7 @@ let package = Package(
                 "PrivacyConfig",
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -501,11 +518,13 @@ let package = Package(
         .target(
             name: "PixelExperimentKit",
             dependencies: [
+                .product(name: "Common", package: "Common"),
                 .product(name: "PixelKit", package: "PixelKit"),
                 "PrivacyConfig",
                 "Configuration"
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -515,6 +534,7 @@ let package = Package(
                 "PrivacyConfig"
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -524,6 +544,7 @@ let package = Package(
                 "BrowserServicesKit"
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -554,6 +575,7 @@ let package = Package(
                 .product(name: "Persistence", package: "Persistence"),
             ],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -561,6 +583,7 @@ let package = Package(
             name: "WKAbstractions",
             dependencies: [],
             swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency"),
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
@@ -594,7 +617,8 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "Suggestions",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "BookmarksTests",
@@ -671,7 +695,8 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "NavigationTests",
@@ -714,7 +739,8 @@ let package = Package(
             resources: [
                 .process("testUserScript.js"),
                 .process("testLoadJSReplacements.js")
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "DuckAiDataStoreTests",
@@ -722,7 +748,8 @@ let package = Package(
                 "DuckAiDataStore",
                 .product(name: "Persistence", package: "Persistence"),
                 "SecureStorage",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "PrivacyConfigTests",
@@ -733,7 +760,8 @@ let package = Package(
             ],
             resources: [
                 .copy("Resources")
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "RemoteMessagingTests",
@@ -762,16 +790,19 @@ let package = Package(
                 .copy("Resources/Database_V1.sqlite"),
                 .copy("Resources/Database_V1.sqlite-shm"),
                 .copy("Resources/Database_V1.sqlite-wal"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "ConfigurationTests",
             dependencies: [
+                .product(name: "Common", package: "Common"),
                 "SharedObjCTestsUtils",
                 "Configuration",
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SyncDataProvidersTests",
@@ -790,7 +821,8 @@ let package = Package(
                 "SecureStorage",
                 "SecureStorageTestsUtils",
                 .product(name: "PixelKit", package: "PixelKit")
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "PrivacyDashboardTests",
@@ -800,7 +832,8 @@ let package = Package(
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
                 "BrowserServicesKitTestsUtils",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SubscriptionTests",
@@ -822,7 +855,8 @@ let package = Package(
                 "DuckPlayer",
                 "PrivacyConfigTestsUtils",
                 "SharedObjCTestsUtils",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
 
         .testTarget(
@@ -836,7 +870,8 @@ let package = Package(
             resources: [
                 .copy("Resources/phishingHashPrefixes.json"),
                 .copy("Resources/phishingFilterSet.json"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "PixelExperimentKitTests",
@@ -851,7 +886,8 @@ let package = Package(
                 "SecureStorage",
                 "Subscription",
                 "UserScript",
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "SpecialErrorPagesTests",
@@ -859,21 +895,24 @@ let package = Package(
                 "BrowserServicesKitTestsUtils",
                 "SharedObjCTestsUtils",
                 "SpecialErrorPages"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "BrokenSitePromptTests",
             dependencies: [
                 "SharedObjCTestsUtils",
                 "BrokenSitePrompt"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "PageRefreshMonitorTests",
             dependencies: [
                 "SharedObjCTestsUtils",
                 "PageRefreshMonitor"
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
         .testTarget(
             name: "PrivacyStatsTests",
@@ -888,7 +927,8 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "AutoconsentStats",
                 .product(name: "Persistence", package: "Persistence"),
-            ]
+            ],
+            swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]
         ),
     ],
     cxxLanguageStandard: .cxx11

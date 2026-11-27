@@ -1482,7 +1482,6 @@ extension Pixel {
         case subscriptionTierOptionsRequested
         case subscriptionTierOptionsSuccess
         case subscriptionTierOptionsFailure
-        case subscriptionTierOptionsUnexpectedProTier
 
         // Plan Change
         case subscriptionViewAllPlansClick
@@ -2043,10 +2042,6 @@ extension Pixel {
         case webExtensionAdBlockingUpgraded
         case webExtensionAdBlockingInstallError
 
-        case webExtensionSearchTokenInstalled
-        case webExtensionSearchTokenUpgraded
-        case webExtensionSearchTokenInstallError
-        case webExtensionSearchTokenNotLoaded
 
         case webExtensionAdBlockingSettingsOpen
         case webExtensionAdBlockingEnabled
@@ -3351,7 +3346,6 @@ extension Pixel.Event {
         case .subscriptionTierOptionsRequested: return "m_subscription_tier-options_requested"
         case .subscriptionTierOptionsSuccess: return "m_subscription_tier-options_success"
         case .subscriptionTierOptionsFailure: return "m_subscription_tier-options_failure"
-        case .subscriptionTierOptionsUnexpectedProTier: return "m_subscription_tier-options_unexpected-pro-tier"
 
         // Plan Change
         case .subscriptionViewAllPlansClick: return "m_subscription_settings_view-all-plans_click"
@@ -3992,10 +3986,6 @@ extension Pixel.Event {
         case .webExtensionAdBlockingUpgraded: return "m_web_extension_ad_blocking_upgraded"
         case .webExtensionAdBlockingInstallError: return "m_web_extension_ad_blocking_install_error"
 
-        case .webExtensionSearchTokenInstalled: return "search-token_web_extension_installed"
-        case .webExtensionSearchTokenUpgraded: return "search-token_web_extension_upgraded"
-        case .webExtensionSearchTokenInstallError: return "search-token_web_extension_install_error"
-        case .webExtensionSearchTokenNotLoaded: return "search-token_web_extension_not_loaded"
 
         case .webExtensionScriptletFetchSuccess: return "m_web_extension_scriptlet_fetch_success"
         case .webExtensionScriptletFetchError: return "m_web_extension_scriptlet_fetch_error"

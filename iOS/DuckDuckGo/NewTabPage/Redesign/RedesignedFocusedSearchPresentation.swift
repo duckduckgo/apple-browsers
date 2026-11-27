@@ -28,12 +28,18 @@ final class RedesignedFocusedSearchPresentation: ObservableObject {
 
     init(inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>,
          dismissPublisher: AnyPublisher<UnifiedSuggestionsViewModel.DismissBehavior, Never>,
-         fireTabPublisher: AnyPublisher<Bool, Never>) {
-        cancellable = Publishers.CombineLatest3(inputsPublisher, dismissPublisher, fireTabPublisher)
-            .sink { [weak self] inputs, dismissBehavior, isFireTab in
+         fireTabPublisher: AnyPublisher<Bool, Never>,
+         favoritesSectionVisibilityPublisher: AnyPublisher<Bool, Never>,
+         escapeHatchVisibilityPublisher: AnyPublisher<Bool, Never>) {
+        let pageModulesPublisher = Publishers.CombineLatest(favoritesSectionVisibilityPublisher, escapeHatchVisibilityPublisher)
+        cancellable = Publishers.CombineLatest4(inputsPublisher, dismissPublisher, fireTabPublisher, pageModulesPublisher)
+            .sink { [weak self] inputs, dismissBehavior, isFireTab, pageModules in
                 guard let self, dismissBehavior == .none else { return }
+                let (showsFavoritesSection, showsEscapeHatch) = pageModules
+                // The favorites section shows Add Favorite and placeholders when empty, and the page's
+                // escape hatch travels with the input, so either keeps the modules without saved favorites.
                 let showsSearchModules = inputs.mode == .search && !inputs.isTyping && !isFireTab
-                    && (inputs.hasFavorites || inputs.hasMessages)
+                    && (inputs.hasFavorites || showsFavoritesSection || inputs.hasMessages || showsEscapeHatch)
                 guard self.showsSearchModules != showsSearchModules else { return }
                 self.showsSearchModules = showsSearchModules
             }

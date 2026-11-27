@@ -159,6 +159,24 @@ final class PacketTunnelProviderTests: XCTestCase {
         XCTAssertTrue(recorder.retryOnFailure)
     }
 
+    // MARK: - Auth notifications
+
+    func testWhenTheTunnelStartsWithoutATokenThenTheSignedOutNotificationIsShown() {
+        let presenter = RecordingNotificationsPresenter()
+
+        PacketTunnelProvider.AuthNotification.signedOut.present(with: presenter)
+
+        XCTAssertEqual(presenter.shown, [.signedOut])
+    }
+
+    func testWhenTheSubscriptionExpiredThenTheEntitlementNotificationIsShown() {
+        let presenter = RecordingNotificationsPresenter()
+
+        PacketTunnelProvider.AuthNotification.subscriptionExpired.present(with: presenter)
+
+        XCTAssertEqual(presenter.shown, [.entitlement])
+    }
+
     /// Tests that `TunnelError` has the expected underlying error information.
     ///
     func testThatTunnelErrorHasTheExpectedUnderlyingErrorInformation() {
@@ -195,6 +213,61 @@ final class PacketTunnelProviderTests: XCTestCase {
         ]
         XCTAssertTrue(supersedingSources.allSatisfy { !$0.preservesFailureRecoveryDuringReassertUpdate })
     }
+
+    // MARK: - Subscription environment before the token
+
+    private func makeStartupOptions(environment: VPNSettings.SelectedEnvironment) throws -> StartupOptions {
+        let snapshot = VPNSettingsSnapshot(registrationKeyValidity: .automatic,
+                                           selectedEnvironment: environment,
+                                           selectedServer: .automatic,
+                                           selectedLocation: .nearest,
+                                           dnsSettings: .ddg(blockRiskyDomains: true),
+                                           excludeLocalNetworks: false)
+        return StartupOptions(options: [NetworkProtectionOptionKey.settings: try JSONEncoder().encode(snapshot)])
+    }
+
+    private func makeSettings(environment: VPNSettings.SelectedEnvironment) -> VPNSettings {
+        let settings = VPNSettings(defaults: startupDefaults)
+        settings.selectedEnvironment = environment
+        return settings
+    }
+
+    func testWhenTheAppSendsAnotherEnvironmentThenItIsLoaded() throws {
+        let settings = makeSettings(environment: .staging)
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: try makeStartupOptions(environment: .production), into: settings)
+
+        XCTAssertTrue(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .production)
+    }
+
+    func testWhenTheAppSendsTheSameEnvironmentThenNothingChanges() throws {
+        let settings = makeSettings(environment: .production)
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: try makeStartupOptions(environment: .production), into: settings)
+
+        XCTAssertFalse(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .production)
+    }
+
+    func testWhenTheTunnelStartsWithoutSettingsThenTheStoredEnvironmentIsKept() {
+        let settings = makeSettings(environment: .staging)
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: StartupOptions(options: [:]), into: settings)
+
+        XCTAssertFalse(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .staging)
+    }
+
+    func testWhenTheSentSettingsCannotBeDecodedThenTheStoredEnvironmentIsKept() {
+        let settings = makeSettings(environment: .staging)
+        let options = StartupOptions(options: [NetworkProtectionOptionKey.settings: Data("not json".utf8)])
+
+        let changed = PacketTunnelProvider.loadSubscriptionEnvironment(from: options, into: settings)
+
+        XCTAssertFalse(changed)
+        XCTAssertEqual(settings.selectedEnvironment, .staging)
+    }
 }
 
 private final class RetryRecordingPixelFiring: PixelKitFiring {
@@ -205,4 +278,24 @@ private final class RetryRecordingPixelFiring: PixelKitFiring {
         retryOnFailure = options.retryOnFailure
         mock.fire(event: event, frequency: frequency, options: options, onComplete: onComplete)
     }
+}
+
+private final class RecordingNotificationsPresenter: VPNNotificationsPresenting {
+    enum Notification: Equatable {
+        case entitlement
+        case signedOut
+    }
+
+    private(set) var shown: [Notification] = []
+
+    func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool) {}
+    func showStrictRoutingReminderNotification() {}
+    func showReconnectingNotification() {}
+    func showConnectionFailureNotification() {}
+    func showSnoozingNotification(duration: TimeInterval) {}
+    func showSupersededNotification() {}
+    func showTestNotification() {}
+    func showEntitlementNotification() { shown.append(.entitlement) }
+    func showDebugEventNotification(message: String) {}
+    func showSignedOutNotification() { shown.append(.signedOut) }
 }

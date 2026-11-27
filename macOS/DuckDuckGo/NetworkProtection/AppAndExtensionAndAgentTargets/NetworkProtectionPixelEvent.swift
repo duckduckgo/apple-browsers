@@ -109,7 +109,7 @@ enum NetworkProtectionPixelEvent: PixelKit.Event {
     case networkProtectionDNSUpdateDefault
 
     case networkProtectionSystemExtensionActivationAttempt
-    case networkProtectionSystemExtensionActivationSuccess
+    case networkProtectionSystemExtensionActivationSuccess(alreadyActive: Bool)
     case networkProtectionSystemExtensionActivationFailure(_ error: Error)
 
     case networkProtectionConfigurationInvalidPayload(configuration: Configuration)
@@ -414,6 +414,8 @@ enum NetworkProtectionPixelEvent: PixelKit.Event {
             return error?.pixelParameters
         case .networkProtectionWireguardErrorInvalidState(reason: let reason):
             return [PixelKit.Parameters.reason: reason]
+        case .networkProtectionSystemExtensionActivationSuccess(let alreadyActive):
+            return ["alreadyActive": String(alreadyActive)]
         case .networkProtectionControllerStartCancelled(let step):
             return [PixelKit.Parameters.vpnStartCancellationStep: step.rawValue]
         case .networkProtectionServerMigrationFailure:
@@ -472,7 +474,6 @@ enum NetworkProtectionPixelEvent: PixelKit.Event {
                 .networkProtectionRekeyCompleted,
                 .networkProtectionRekeyFailure,
                 .networkProtectionSystemExtensionActivationAttempt,
-                .networkProtectionSystemExtensionActivationSuccess,
                 .networkProtectionSystemExtensionActivationFailure,
                 .networkProtectionServerMigrationAttempt,
                 .networkProtectionServerMigrationSuccess,

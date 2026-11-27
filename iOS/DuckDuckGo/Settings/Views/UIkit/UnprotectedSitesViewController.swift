@@ -59,11 +59,15 @@ final class UnprotectedSitesViewController: UITableViewController {
     private let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
     private lazy var doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(endEditing))
     private lazy var editButton = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(startEditing))
-    private lazy var addButton = UIBarButtonItem(
-        image: DesignSystemImages.Glyphs.Size24.add,
-        style: .plain,
-        target: self,
-        action: #selector(onAddPressed))
+    private lazy var addButton: UIBarButtonItem = {
+        let button = UIBarButtonItem(
+            image: DesignSystemImages.Glyphs.Size24.add,
+            style: .plain,
+            target: self,
+            action: #selector(onAddPressed))
+        button.accessibilityLabel = UserText.actionAdd
+        return button
+    }()
 
     private var hiddenNavBarItems: [UIBarButtonItem]?
 

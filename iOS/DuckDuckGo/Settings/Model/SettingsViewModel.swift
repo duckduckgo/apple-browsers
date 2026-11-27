@@ -188,6 +188,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestOnboardingDuckAIChat: ((String?) -> Bool)?
     var onRequestPresentFireConfirmation: ((_ sourceRect: CGRect, _ onConfirm: @escaping (FireRequest) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
     let isSitePermissionsEnabled: Bool
+    @MainActor var browserToolsService: AIChatBrowserToolsService?
     @MainActor private var sitePermissionsStore: SitePermissionsStore?
     @MainActor private var sitePermissionsFavicons: SitePermissionsFaviconStore?
     @MainActor private var sitePermissionsEventHandler: (SitePermissionsEvent) -> Void = { _ in }
@@ -225,11 +226,6 @@ final class SettingsViewModel: ObservableObject {
     // When true, indicates the AI Features settings was opened from the SERP settings button
     // This affects UI: shows Done button and hides Search Assist link
     var openedFromSERPSettingsButton: Bool = false
-
-    // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
-    var isPaidAIChatEnabled: Bool {
-        featureFlagger.isFeatureOn(.paidAIChat)
-    }
 
     var isPIREnabled: Bool {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
@@ -332,6 +328,8 @@ final class SettingsViewModel: ObservableObject {
     // Used to automatically navigate to a specific section
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
+    /// `deepLinkTarget` is cleared after navigating, so keep whether Settings opened straight to Data Clearing.
+    private let opensAtDataClearing: Bool
 
     var afterInactivityOption: AfterInactivityOption {
         afterInactivityOptionAdapter.afterInactivityOption
@@ -391,6 +389,8 @@ final class SettingsViewModel: ObservableObject {
             appSettings: appSettings,
             aiChatSettings: aiChatSettings,
             fireproofing: legacyViewProvider.fireproofing,
+            featureFlagger: featureFlagger,
+            source: opensAtDataClearing ? .deepLink : .settings,
             delegate: self
         )
     }()
@@ -841,28 +841,28 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - YouTube Sponsor Skipping (internal MVP)
 
     /// Same file-backed store as the tabs' instance, so writes here reach open YouTube tabs through its change notification.
-    lazy var sponsorBlockPreferences = SponsorBlockPreferences(store: keyValueStore)
+    lazy var segmentSkipPreferences = SegmentSkipPreferences(store: keyValueStore)
 
-    var isSponsorBlockAvailable: Bool {
-        featureFlagger.isFeatureOn(.sponsorBlock)
+    var isSegmentSkipAvailable: Bool {
+        featureFlagger.isFeatureOn(.segmentSkip)
     }
 
-    var sponsorBlockEnabled: Binding<Bool> {
+    var segmentSkipEnabled: Binding<Bool> {
         Binding<Bool>(
-            get: { self.sponsorBlockPreferences.isEnabled },
+            get: { self.segmentSkipPreferences.isEnabled },
             set: {
                 self.objectWillChange.send()
-                self.sponsorBlockPreferences.isEnabled = $0
+                self.segmentSkipPreferences.isEnabled = $0
             }
         )
     }
 
-    var sponsorBlockSkipMode: Binding<SponsorBlockSkipMode> {
-        Binding<SponsorBlockSkipMode>(
-            get: { self.sponsorBlockPreferences.skipMode },
+    var segmentSkipMode: Binding<SegmentSkipMode> {
+        Binding<SegmentSkipMode>(
+            get: { self.segmentSkipPreferences.skipMode },
             set: {
                 self.objectWillChange.send()
-                self.sponsorBlockPreferences.skipMode = $0
+                self.segmentSkipPreferences.skipMode = $0
             }
         )
     }
@@ -1150,6 +1150,7 @@ final class SettingsViewModel: ObservableObject {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.deepLinkTarget = deepLink
+        self.opensAtDataClearing = deepLink == .dataClearing
         self.historyManager = historyManager
         self.syncPausedStateManager = syncPausedStateManager
         self.subscriptionDataReporter = subscriptionDataReporter
@@ -1894,6 +1895,7 @@ extension SettingsViewModel {
         case appearance
         case general
         case cookiePopupProtection
+        case dataClearing
         case about
         // Add other cases as needed
 
@@ -1915,6 +1917,7 @@ extension SettingsViewModel {
             case .appearance: return "appearance"
             case .general: return "general"
             case .cookiePopupProtection: return "cookiePopupProtection"
+            case .dataClearing: return "dataClearing"
             case .about: return "about"
             // Ensure all cases are covered
             }
@@ -1924,7 +1927,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection, .about:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection, .dataClearing, .about:
                 return .navigationLink
             }
         }

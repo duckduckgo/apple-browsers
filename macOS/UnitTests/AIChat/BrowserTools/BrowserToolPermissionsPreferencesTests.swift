@@ -17,6 +17,7 @@
 //
 
 import AIChat
+@_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -25,6 +26,8 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
 
     private var manager: PermissionManagerMock!
     private var permissions: BrowserToolSitePermissions!
+    private var catalog: BrowserToolCatalog!
+    private var pixels: PixelKitMock!
     private var model: BrowserToolPermissionsPreferences!
 
     override func setUp() {
@@ -32,12 +35,16 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         manager = PermissionManagerMock()
         permissions = BrowserToolSitePermissions(permissionManager: manager)
         let tools = [FakeTool(name: "pinTab", permissionMode: .auto), FakeTool(name: "listOpenTabs", permissionMode: .ask)]
-        let catalog = BrowserToolCatalog(tools: tools, configuration: FakeConfiguration())
-        model = BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager)
+        catalog = BrowserToolCatalog(tools: tools, configuration: FakeConfiguration())
+        pixels = PixelKitMock()
+        model = BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager,
+                                                  pixelFiring: pixels)
     }
 
     override func tearDown() {
         model = nil
+        pixels = nil
+        catalog = nil
         permissions = nil
         manager = nil
         super.tearDown()
@@ -88,6 +95,50 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
 
         XCTAssertEqual(model.state(of: model.rows[0]), .allow)
         cancellable.cancel()
+    }
+
+    // MARK: - Pixels
+
+    func testWhenAChoiceChangesInSettingsThenThePermissionChangedPixelFires() {
+        model.setState(.allow, of: model.rows[0])
+
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.name), ["aichat_tools_permission_changed_macos"])
+        XCTAssertEqual(pixels.actualFireCalls[0].pixel.parameters,
+                       ["tool": "list_open_tabs", "from": "ask", "to": "allow", "source": "settings"])
+    }
+
+    func testWhenAChoiceChangesInThePanelThenThePixelNamesThePanel() {
+        model = BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager,
+                                                  source: .panel, pixelFiring: pixels)
+
+        model.setState(.deny, of: model.rows[1])
+
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.parameters), [["tool": "pin_tab", "from": "allow", "to": "deny", "source": "panel"]])
+    }
+
+    func testWhenTheSameChoiceIsPickedAgainThenNoPixelFires() {
+        model.setState(.ask, of: model.rows[0])
+
+        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
+    }
+
+    func testWhenOneToolIsResetThenThePixelReportsTheChangeToItsDefault() {
+        permissions.setState(.deny, forToolNamed: "pinTab")
+        model.reload()
+
+        model.reset(model.rows[1])
+
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.parameters), [["tool": "pin_tab", "from": "deny", "to": "allow", "source": "settings"]])
+    }
+
+    func testWhenEveryToolIsResetThenTheResetPixelFires() {
+        permissions.setState(.deny, forToolNamed: "listOpenTabs")
+        model.reload()
+
+        model.resetAll()
+
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.name), ["aichat_tools_permissions_reset_macos"])
+        XCTAssertNil(pixels.actualFireCalls[0].pixel.parameters)
     }
 
 }

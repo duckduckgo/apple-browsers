@@ -224,6 +224,35 @@ struct NewTabPageFavoritesExpansionPixelTests {
         #expect(pixelKitMock.actualFireCalls.isEmpty)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @MainActor
+    @Test("Redesigned page favorites report autocomplete only while the input is focused", .timeLimit(.minutes(1)))
+    func redesignedPageFavoritesReportFocusedState() {
+        let sut = makeSUT(isFocussedState: false)
+        let page = RedesignedNewTabPageViewController(blocks: [], favoritesModel: sut, returnSettings: .makeForTests())
+
+        page.setFocusedPose(NewTabPageFocusedPose(inputOffset: -300, modulesOffset: -280, showsModules: true))
+        sut.changeExpansion(to: true)
+        page.setFocusedPose(nil)
+        sut.changeExpansion(to: false)
+
+        #expect(pixelKitMock.actualFireCalls.map(\.pixel.parameters) == [["expanded": "true", "is_autocomplete": "true"],
+                                                                          ["expanded": "false", "is_autocomplete": "false"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @MainActor
+    @Test("A favorite opened from the focused redesigned page fires the website launch pixel", .timeLimit(.minutes(1)))
+    func redesignedPageFocusedFavoriteFiresWebsiteLaunch() {
+        let sut = makeSUT(isFocussedState: false)
+        let page = RedesignedNewTabPageViewController(blocks: [], favoritesModel: sut, returnSettings: .makeForTests())
+
+        page.setFocusedPose(NewTabPageFocusedPose(inputOffset: -300, modulesOffset: -280, showsModules: true))
+        sut.favoriteSelected(Favorite(id: "", title: "", domain: "", urlObject: URL(string: "https://foo.bar")))
+
+        #expect(pixelKitMock.actualFireCalls.map(\.pixel.name) == [Pixel.Event.favoriteLaunchedWebsite.name])
+    }
+
     private func makeSUT(isFocussedState: Bool) -> FavoritesViewModel {
         FavoritesViewModel(isFocussedState: isFocussedState,
                            favoriteDataSource: MockNewTabPageFavoriteDataSource(),

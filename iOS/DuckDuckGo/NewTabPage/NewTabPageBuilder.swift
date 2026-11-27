@@ -52,6 +52,7 @@ struct NewTabPageBuilder {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let daxGreetingProvider: DaxGreetingProviding
     let daxGreetingChanges: AnyPublisher<Void, Never>
+    let returnSettings: NewTabPageReturnSettings
 
     /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
@@ -84,6 +85,7 @@ struct NewTabPageBuilder {
                 // Must match the address bar's home-tab mode resolution.
                 defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
         })
+        let usesLiquidGlass = floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
         let searchInputView = NewTabPageSearchInputView(
             model: searchInputModel,
             onActivate: { textEntryMode in
@@ -92,7 +94,7 @@ struct NewTabPageBuilder {
             onVoiceSearch: { textEntryMode in
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
             },
-            usesLiquidGlass: floatingUIManager.isDuckAIAndInputLiquidGlassEnabled,
+            usesLiquidGlass: usesLiquidGlass,
             aiChatMenu: {
                 newTabPage?.duckAIMenu()
             })
@@ -149,6 +151,7 @@ struct NewTabPageBuilder {
             NewTabPageSwiftUIBlock(id: .messages,
                                   rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel))
         ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel,
+           returnSettings: returnSettings,
            onboardingCoordinator: NewTabPageOnboardingCoordinator(newTabDialogFactory: daxDialogFactory,
                                                                   daxDialogsManager: daxDialogsManager,
                                                                   onboardingFlowProvider: onboardingFlowProvider,

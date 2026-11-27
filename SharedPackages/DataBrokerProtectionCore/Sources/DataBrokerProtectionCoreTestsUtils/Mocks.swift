@@ -194,6 +194,10 @@ public extension PrivacyConfigurationManagingMock {
 }
 
 public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
+    public var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
+
     public var currentConfig: Data = Data()
 
     public var updatesPublisher: AnyPublisher<Void, Never> = .init(Just(()))

@@ -17,20 +17,46 @@
 //
 
 import AIChat
+import AppKitExtensions
 import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 
 extension AIChatLocalModelService {
 
+    /// - Parameter downloadableModel: Nil offers only Apple Intelligence.
     convenience init(featureFlagger: FeatureFlagger,
                      storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
                      engine: AIChatLocalModelEngine = AppleFoundationModelEngine(),
-                     notificationCenter: NotificationCenter = .default) {
+                     downloadableModel: AIChatDownloadableLocalModel? = nil,
+                     engineOverride: LocalModelEngineOverridePersistor = LocalModelEngineOverridePersistor(),
+                     notificationCenter: NotificationCenter = .default,
+                     instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
         self.init(isFeatureFlagOn: { featureFlagger.isFeatureOn(.aiChatLocalModels) },
                   featureFlagUpdates: featureFlagger.updatesPublisher,
                   storage: storage,
                   engine: engine,
-                  notificationCenter: notificationCenter)
+                  downloadableModel: downloadableModel,
+                  engineOverride: { engineOverride.current.engineKind },
+                  engineOverrideUpdates: engineOverride.updates,
+                  notificationCenter: notificationCenter,
+                  instrumentation: instrumentation)
+    }
+}
+
+extension AIChatDownloadableLocalModel {
+
+    /// The model for Macs without Apple Intelligence: the one remote config names, or Gemma 4 E2B,
+    /// on the llama.cpp framework the app bundles.
+    @MainActor
+    static func llamaCpp(privacyConfigurationManager: PrivacyConfigurationManaging) -> AIChatDownloadableLocalModel {
+        let settings = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.localModels)
+        let spec = AIChatLocalModelSpec.fromRemoteSettings(settings) ?? .gemma4E2B
+        let directory = URL.sandboxApplicationSupportURL.appendingPathComponent("LocalModels/LlamaCpp", isDirectory: true)
+        let engine = AIChatLlamaEngine(model: spec.info, runtime: BundledLlamaRuntime()) {
+            AIChatLocalModelDownloader.installedFileURL(in: directory, spec: spec)
+        }
+        return AIChatDownloadableLocalModel(engine: engine,
+                                            installer: AIChatLocalModelDownloader(spec: spec, directory: directory))
     }
 }

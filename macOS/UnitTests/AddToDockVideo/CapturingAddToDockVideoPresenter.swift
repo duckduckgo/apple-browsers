@@ -21,12 +21,21 @@
 @MainActor
 final class CapturingAddToDockVideoPresenter: AddToDockVideoPresenting {
 
-    private(set) var presentations: [AddToDockVideoAction.Primary] = []
+    struct Presentation: Equatable {
+        let entryPoint: AddToDockVideoEntryPoint
+        let primaryAction: AddToDockVideoAction.Primary
+    }
+
+    private(set) var presentations: [Presentation] = []
+    var presentResult = true
     private var completion: ((AddToDockVideoAction) -> Void)?
 
-    func present(primaryAction: AddToDockVideoAction.Primary, completion: @escaping (AddToDockVideoAction) -> Void) {
-        presentations.append(primaryAction)
+    func present(from entryPoint: AddToDockVideoEntryPoint,
+                 primaryAction: AddToDockVideoAction.Primary,
+                 completion: @escaping (AddToDockVideoAction) -> Void) -> Bool {
+        presentations.append(Presentation(entryPoint: entryPoint, primaryAction: primaryAction))
         self.completion = completion
+        return presentResult
     }
 
     func complete(with action: AddToDockVideoAction) {

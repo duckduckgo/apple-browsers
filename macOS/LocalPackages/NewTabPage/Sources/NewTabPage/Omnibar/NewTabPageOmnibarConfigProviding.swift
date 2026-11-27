@@ -153,6 +153,10 @@ public protocol NewTabPageOmnibarConfigProviding: AnyObject {
     var selectedReasoningEffort: String? { get set }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { get }
 
+    /// Called after a chat is submitted, so the next chat can start on the default model and effort.
+    @MainActor
+    func chatSubmitted()
+
     /// Whether recent-chat suggestions can be deleted. Published so the client can push `omnibar_onConfigUpdate`.
     var isAIChatDeletionEnabled: Bool { get }
     var isAIChatDeletionEnabledPublisher: AnyPublisher<Bool, Never> { get }

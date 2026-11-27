@@ -19,6 +19,7 @@
 
 import UIKit
 import BrowserServicesKit
+import Combine
 import PrivacyDashboard
 import AIChat
 import Core
@@ -59,6 +60,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     private let modeToggleTextModel: IPadModeToggleTextModeling = IPadModeToggleTextModel()
     private let featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     private var modelPickerController: IPadOmnibarModelPickerController?
+    private var isFireMode = false
     private var reasoningPickerController: IPadOmnibarReasoningPickerController?
     private var toolPickerController: IPadOmnibarToolPickerController?
     private var attachmentController: IPadOmnibarAttachmentController?
@@ -161,6 +163,12 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     }
 
     // MARK: - Initialization
+
+    override func refreshFireMode(fireMode: Bool) {
+        super.refreshFireMode(fireMode: fireMode)
+        isFireMode = fireMode
+        modelPickerController?.refreshFireMode(fireMode)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -400,6 +408,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         modeToggleTextModel.endTransition()
         omniBarView.aiChatTextView.resignFirstResponder()
         endEditing()
+        moveModelSelection(from: iPadDraft, to: draft)
         iPadDraft = draft
         omniBarView.aiChatTextView.text = ""
         modeToggleTextModel.updateText("")
@@ -428,6 +437,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         modeToggleTextModel.updateText("")
         attachmentController?.bindDraft(iPadDraft)
         toolPickerController?.resetSelection()
+        resetModelPickerToNewChatDefaultIfNeeded()
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
         omniBarView.updateAIChatSendButton(hasText: false)
         return values
@@ -725,7 +735,13 @@ extension DefaultOmniBarViewController {
     private func setUpModelPickerIfNeeded() {
         guard dependencies.aiChatAddressBarExperience.isIPadAIToggleExperienceEnabled else { return }
 
-        let controller = IPadOmnibarModelPickerController()
+        let controller = IPadOmnibarModelPickerController(
+            startsNewChatsOnDefault: dependencies.featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel),
+            duckAiNativeStorageHandler: dependencies.duckAiNativeStorageHandler,
+            duckAiFireModeStorageHandler: dependencies.duckAiFireModeStorageHandler,
+            featureFlagger: dependencies.featureFlagger
+        )
+        controller.refreshFireMode(isFireMode)
         modelPickerController = controller
 
         // The reasoning and tool pickers share the model picker's store so all chips reflect the
@@ -1014,6 +1030,24 @@ extension DefaultOmniBarViewController {
         omniBarView.isAIChatAttachmentButtonVisible = attachmentController?.isAttachButtonVisible ?? false
     }
 
+    /// Each tab keeps its own unsent model pick; a tab without one starts on the default.
+    private func moveModelSelection(from oldDraft: IPadOmnibarDraft, to newDraft: IPadOmnibarDraft) {
+        guard let modelPickerController, modelPickerController.startsNewChatsOnDefault else { return }
+        oldDraft.modelSelection = modelPickerController.liveSelection
+        applyModelSelection(newDraft.modelSelection, to: modelPickerController)
+    }
+
+    private func resetModelPickerToNewChatDefaultIfNeeded() {
+        guard let modelPickerController, modelPickerController.startsNewChatsOnDefault else { return }
+        applyModelSelection(UTIModelSelection(), to: modelPickerController)
+    }
+
+    private func applyModelSelection(_ selection: UTIModelSelection, to modelPickerController: IPadOmnibarModelPickerController) {
+        modelPickerController.apply(selection)
+        refreshModelPicker()
+        refreshReasoningPicker()
+    }
+
     private func fireIPadUnifiedPromptSubmittedPixels(hasText: Bool, isFirstPromptNewInstall: Bool) {
         guard modelPickerController != nil else { return }
         let attachments = attachmentController?.pendingAttachments ?? []
@@ -1029,13 +1063,21 @@ extension DefaultOmniBarViewController {
             origin: .ipadTogglePrompt,
             defaultMode: dependencies.aiChatSettings.defaultOmnibarMode,
             isFirstPromptNewInstall: isFirstPromptNewInstall,
-            usageContext: omniDelegate?.currentUsageContext()
+            usageContext: omniDelegate?.currentUsageContext(),
+            simplifiedPromptBox: false,   // iPad keeps today's prompt box.
+            modelSource: iPadNewChatModelSourceForSubmitPixel
         )
         UnifiedToggleInputCoordinatorPixelHelper.fireToolSubmittedPixelIfNeeded(
             selectedTool: selectedTool,
             attachments: attachments,
             surface: .addressBar
         )
+    }
+
+    /// An address-bar prompt always starts a new chat. Image generation picks its own model, so it reports no source.
+    private var iPadNewChatModelSourceForSubmitPixel: DuckAINewChatModelSource? {
+        guard toolPickerController?.selectedTool != .imageGeneration else { return nil }
+        return modelPickerController?.modelStore.newChatModelSource(onboardingModelId: nil)
     }
 
     private var iPadReasoningModeForSubmitPixel: AIChatReasoningMode? {

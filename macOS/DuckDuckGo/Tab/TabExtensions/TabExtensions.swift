@@ -340,7 +340,15 @@ extension TabExtensionsBuilder {
                                     aiChatSessionStore: dependencies.aiChatSessionStore,
                                     aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
                                     isLoadedInSidebar: args.isTabLoadedInSidebar,
-                                    faviconManagement: dependencies.faviconManagement)
+                                    faviconManagement: dependencies.faviconManagement,
+                                    linkedPageLoader: LinkedPageContextLoader(burnerMode: args.burnerMode,
+                                                                              contentBlocking: dependencies.privacyFeatures.contentBlocking,
+                                                                              httpsUpgrade: dependencies.privacyFeatures.httpsUpgrade,
+                                                                              maliciousSiteDetector: dependencies.maliciousSiteDetector,
+                                                                              isGPCEnabled: { [webTrackingProtectionPreferences = dependencies.webTrackingProtectionPreferences] in
+                                                                                  webTrackingProtectionPreferences.isGPCEnabled
+                                                                              },
+                                                                              featureFlagger: dependencies.featureFlagger))
         }
 
         add {
@@ -368,7 +376,7 @@ extension TabExtensionsBuilder {
         if #available(macOS 15.4, *) {
             add {
                 ChromeWebStoreTabExtension(
-                    isFeatureEnabled: { [featureFlagger = dependencies.featureFlagger] in featureFlagger.isFeatureOn(.webExtensions) },
+                    isFeatureEnabled: { [featureFlagger = dependencies.featureFlagger] in featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal) },
                     scriptsPublisher: userScripts.compactMap { $0 },
                     webViewPublisher: args.webViewFuture
                 )

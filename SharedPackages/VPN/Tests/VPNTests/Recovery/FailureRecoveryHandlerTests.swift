@@ -27,7 +27,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
 
     private static let testConfig = FailureRecoveryHandler.RetryConfig(
         times: 0, // Means failure will bubble up after the first try
-        initialDelay: .seconds(1),
+        initialDelay: .milliseconds(1),
         maxDelay: .seconds(30),
         factor: 2.0
     )

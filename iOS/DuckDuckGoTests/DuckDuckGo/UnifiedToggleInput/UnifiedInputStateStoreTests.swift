@@ -155,6 +155,52 @@ final class UnifiedInputStateStoreTests: XCTestCase {
                        "an ongoing-chat pick must not retarget the new-tab seed")
     }
 
+    // MARK: - New chats start on the default (flag on)
+
+    func test_newChatDefault_whenFlagOn_newTabIsNotSeededFromSavedPick() {
+        preferences.selectedModelId = "gpt-5"
+        preferences.selectedReasoningMode = .reasoning
+        let store = makeStoreStartingNewChatsOnDefault()
+
+        let state = store.state(for: "tab-1")
+
+        XCTAssertNil(state.selectedModelID)
+        XCTAssertNil(state.selectedReasoningMode)
+    }
+
+    func test_newChatDefault_whenFlagOn_pickStaysOnItsTabOnly() {
+        let store = makeStoreStartingNewChatsOnDefault()
+
+        store.recordUserChoice(TabInputState(toggleMode: .aiChat, selectedModelID: "claude-opus", selectedReasoningMode: .reasoning),
+                               for: "tab-A", isNewChatContext: true)
+
+        XCTAssertEqual(store.state(for: "tab-A").selectedModelID, "claude-opus")
+        XCTAssertNil(store.state(for: "tab-B").selectedModelID)
+        XCTAssertNil(store.lastUsed.selectedModelID)
+        XCTAssertNil(preferences.selectedReasoningMode)
+    }
+
+    func test_newChatDefault_whenFlagOn_pickIsNotSavedOnTheTabForRestart() {
+        let store = makeStoreStartingNewChatsOnDefault()
+        let tabsModel = TabsModel(desktop: false)
+        let tab = Tab(uid: "restart", fireTab: false,
+                      unifiedInputState: UnifiedInputTabState(selectedModelID: "old-model", selectedReasoningMode: .extendedReasoning))
+        store.observeTabsModel(tabsModel)
+        tabsModel.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+
+        XCTAssertNil(store.state(for: "restart").selectedModelID)
+
+        store.recordUserChoice(TabInputState(toggleMode: .aiChat, selectedModelID: "claude-opus", selectedReasoningMode: .reasoning),
+                               for: "restart", isNewChatContext: true)
+
+        XCTAssertNil(tab.unifiedInputState.selectedModelID)
+        XCTAssertNil(tab.unifiedInputState.selectedReasoningMode)
+    }
+
+    private func makeStoreStartingNewChatsOnDefault() -> UnifiedInputStateStore {
+        UnifiedInputStateStore(preferences: preferences, toggleModeStorage: toggleStorage, startsNewChatsOnDefault: true)
+    }
+
     // MARK: - commitToggleMode
 
     func test_commitToggleMode_writesThroughToStorage() {

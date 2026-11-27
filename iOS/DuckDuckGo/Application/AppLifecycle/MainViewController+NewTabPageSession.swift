@@ -251,18 +251,26 @@ final class NewTabPagePresentationCoordinator {
     private var pendingFocus: (() -> Void)?
     private(set) var hasPresentedPage = false
 
+    /// Overlays drawn over the whole window, such as the burn animation, that hide the page.
+    /// The window stays visible and key underneath, so `isVisible` alone cannot tell.
+    private var covers: Set<UUID> = []
+    private var isCovered: Bool { !covers.isEmpty }
+
     init(notificationCenter: NotificationCenter = .default, isVisible: @escaping () -> Bool) {
         self.notificationCenter = notificationCenter
         self.isVisible = isVisible
-        for notification in [UIWindow.didBecomeKeyNotification, UIWindow.didBecomeHiddenNotification, UIApplication.didBecomeActiveNotification] {
+        // Settings can clear data and attach a page behind itself, so its dismissal must start that page's visit.
+        for notification in [UIWindow.didBecomeKeyNotification, UIWindow.didBecomeHiddenNotification, UIApplication.didBecomeActiveNotification,
+                             .settingsDidDisappear] {
             observers.append(notificationCenter.addObserver(forName: notification, object: nil, queue: .main) { [weak self] _ in
-                // Authentication replaces its blank snapshot within the same main-loop turn.
+                // Authentication replaces its blank snapshot within the same main-loop turn, and a dismissed sheet
+                // is still the presented view controller while it reports disappearing.
                 DispatchQueue.main.async {
                     self?.recordIfVisible()
                 }
             })
         }
-        // Dismissing a sheet over the page, such as Settings, posts none of the above. Until the app resigns,
+        // Dismissing any other sheet over the page, such as Bookmarks, posts none of the above. Until the app resigns,
         // its window is still active and uncovered, so this is the last reliable check that the page was seen.
         observers.append(notificationCenter.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: nil) { [weak self] _ in
             // Delivered synchronously so the check runs while the app is still active; skip rather than trap off-main.
@@ -291,12 +299,27 @@ final class NewTabPagePresentationCoordinator {
         recordIfVisible()
     }
 
+    /// Holds the visit, the shown report and the keyboard request until `endCovering(_:)`, so that a
+    /// visit starts when the user can see the page rather than while an overlay still hides it.
+    /// Pass the returned cover to `endCovering(_:)` once the overlay is gone; backgrounding releases every cover.
+    func beginCovering() -> UUID {
+        let cover = UUID()
+        covers.insert(cover)
+        return cover
+    }
+
+    /// Runs whatever was held while the page was covered, once the last overlay is gone and the page is visible.
+    func endCovering(_ cover: UUID) {
+        guard covers.remove(cover) != nil else { return }
+        recordIfVisible()
+    }
+
     func recordIfVisible() {
         guard page != nil else {
             cancel()
             return
         }
-        guard isVisible() else { return }
+        guard !isCovered, isVisible() else { return }
         let visit = pendingVisit
         let shown = pendingShown
         let focus = pendingFocus
@@ -312,7 +335,7 @@ final class NewTabPagePresentationCoordinator {
     /// Marks the page as seen without running pending callbacks: a visit or keyboard request must not start as the app leaves.
     /// A pending `shown` stays queued, as it does across `backgrounded()`, and reports on the next visible presentation.
     func notePresentedIfVisible() {
-        guard page != nil, isVisible() else { return }
+        guard page != nil, !isCovered, isVisible() else { return }
         hasPresentedPage = true
     }
 
@@ -320,6 +343,9 @@ final class NewTabPagePresentationCoordinator {
         pendingVisit = nil
         pendingFocus = nil
         hasPresentedPage = false
+        // An overlay that never reports its end must not hide every later page, so leaving the app releases it.
+        // A late `endCovering(_:)` for it is then ignored and cannot release a newer overlay.
+        covers.removeAll()
         // An unseen card remains installed across a cancelled unlock; report it when it is finally shown.
     }
 

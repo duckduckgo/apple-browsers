@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Subscription
 
 /// What the ending answers when a path asks for the next dialog.
 enum OnboardingEndingDecision: Equatable {
@@ -29,19 +30,17 @@ enum OnboardingEndingDecision: Equatable {
 final class OnboardingEndingSteps {
 
     private let progress: ContextualOnboardingProgressReading
-    private let subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling
+    private let subscriptionManager: any SubscriptionManager
 
     init(progress: ContextualOnboardingProgressReading,
-         subscriptionUpsellExperiment: OnboardingSubscriptionUpsellEnrolling) {
+         subscriptionManager: any SubscriptionManager) {
         self.progress = progress
-        self.subscriptionUpsellExperiment = subscriptionUpsellExperiment
+        self.subscriptionManager = subscriptionManager
     }
 
-    /// Called when a path reaches the end. Enrolls on entering High Five, not on leaving it,
-    /// so every exit resolves against the same cohort.
+    /// Called when a path reaches the end.
     func start() -> ContextualOnboardingDecision {
-        subscriptionUpsellExperiment.enroll()
-        return .next(.highFive)
+        .next(.highFive)
     }
 
     /// Asked before a path's own rules on every dialog request. Browsing on is the third way out of High Five.
@@ -62,6 +61,7 @@ final class OnboardingEndingSteps {
     }
 
     private func afterHighFive() -> ContextualOnboardingDecision {
-        subscriptionUpsellExperiment.cohort == .treatment ? .next(.subscriptionUpsell) : .completed
+        subscriptionManager.isSubscriptionPurchaseEligible && !subscriptionManager.isUserAuthenticated
+            ? .next(.subscriptionUpsell) : .completed
     }
 }

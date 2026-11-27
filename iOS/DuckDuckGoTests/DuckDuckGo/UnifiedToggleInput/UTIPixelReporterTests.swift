@@ -52,14 +52,16 @@ final class UTIPixelReporterTests: XCTestCase {
                          isToggleVisible: Bool = false,
                          pageType: UnifiedToggleInputPromptPageType = .unknown,
                          duckAIEntrySource: AIChatEntryPointSource? = nil,
-                         addressBarPosition: AddressBarPosition? = nil) -> UTIPixelContext {
+                         addressBarPosition: AddressBarPosition? = nil,
+                         usesSimplifiedPromptBox: Bool = false) -> UTIPixelContext {
         UTIPixelContext(surface: surface,
                         isDuckAISurfaceForAttribution: isDuckAISurfaceForAttribution,
                         inputMode: inputMode,
                         isToggleVisible: isToggleVisible,
                         pageType: pageType,
                         duckAIEntrySource: duckAIEntrySource,
-                        addressBarPosition: addressBarPosition)
+                        addressBarPosition: addressBarPosition,
+                        usesSimplifiedPromptBox: usesSimplifiedPromptBox)
     }
 
     func testAttachmentPrivacyPixelsReportNamesKindsSurfacesAndFrequency() {
@@ -325,7 +327,9 @@ final class UTIPixelReporterTests: XCTestCase {
     // MARK: - Prompt submission (daily, non-trivial params)
 
     func testReportPromptSubmittedFiresDailyWithResolvedSurface() {
-        let reporter = makeReporter { self.context(surface: .duckAI, pageType: .duckAI, duckAIEntrySource: .addressBarIcon) }
+        let reporter = makeReporter {
+            self.context(surface: .duckAI, pageType: .duckAI, duckAIEntrySource: .addressBarIcon, usesSimplifiedPromptBox: true)
+        }
 
         reporter.reportPromptSubmitted(hasText: true,
                                        selectedTool: nil,
@@ -348,7 +352,8 @@ final class UTIPixelReporterTests: XCTestCase {
             "surface": "duck_ai",
             "page_type": "duck_ai",
             "origin": "address_bar_icon",
-            "default_mode": "search"
+            "default_mode": "search",
+            "simplified_prompt_box": "on"
         ])
     }
 
@@ -530,7 +535,8 @@ final class UTIPixelReporterTests: XCTestCase {
         reporter.reportFileAttached(source: "file_picker")
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileAttached.name)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "address_bar", "source": "file_picker"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "address_bar", "source": "file_picker",
+                                                                                   "simplified_prompt_box": "off"])
     }
 
     func testPastedTextPixelsReportNamesSurfacesAndFrequency() {
@@ -583,7 +589,8 @@ final class UTIPixelReporterTests: XCTestCase {
         reporter.reportImageAttached(source: "paste")
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputImageAttached.name)
-        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "address_bar", "source": "paste"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "address_bar", "source": "paste",
+                                                                                   "simplified_prompt_box": "off"])
     }
 
     func testReportFileValidationFailedWithRawReasonFiresDaily() {

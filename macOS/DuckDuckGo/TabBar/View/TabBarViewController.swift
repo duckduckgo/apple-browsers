@@ -127,6 +127,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     var isInteractionPrevented: Bool = false {
         didSet {
             addNewTabButtonFooter?.isEnabled = !isInteractionPrevented
+            updateDuckAIChromeSegmentedControlState()
         }
     }
 
@@ -175,6 +176,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private var selectionIndexCancellable: AnyCancellable?
     private var mouseDownCancellable: AnyCancellable?
+    private var touchDragHandlers = [TabBarTouchDragHandler]()
     private var cancellables = Set<AnyCancellable>()
     private var previousScrollViewWidth: CGFloat = .zero
     var aiChatCoordinator: AIChatCoordinating? {
@@ -666,6 +668,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         setupScrollInsets()
         setupTabsContainersHeight()
         subscribeToThemeChanges()
+        setupTouchDragHandlers()
 
         applyThemeStyle()
     }
@@ -1497,7 +1500,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private var isDuckAIChromeButtonsEnabled: Bool {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return false }
-        return tab.content != .onboarding
+        return tab.content != .onboarding && !isInteractionPrevented
     }
 
     private func updateDuckAIChromeSegmentedControlState() {
@@ -2131,6 +2134,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             WindowsManager.openNewWindow(with: tab, droppingPoint: droppingPoint)
         }
         tabCollectionViewModel.notifyWebExtensionTabMoved(tab, from: oldWebExtensionIndex)
+    }
+
+    // MARK: - Touch Drag
+
+    private func setupTouchDragHandlers() {
+        touchDragHandlers = [collectionView, pinnedTabsCollectionView]
+            .compactMap { $0 }
+            .map { TabBarTouchDragHandler(collectionView: $0) }
     }
 
     // MARK: - Mouse Monitor

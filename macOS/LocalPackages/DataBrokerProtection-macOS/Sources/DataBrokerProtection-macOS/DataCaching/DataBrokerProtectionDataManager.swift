@@ -216,6 +216,12 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
         communicator.invalidateCache()
     }
 
+#if DEBUG
+    public func scanJobsForDebugLaunch(_ managedSeed: PIRDebugLaunchOptions.ManagedSeed) throws -> [PIRDebugLaunchOptions.DebugScanJob] {
+        try managedSeed.scanJobs(database: database)
+    }
+#endif
+
     public func removeAllData() throws {
         try database.deleteProfileData()
         communicator.invalidateCache()

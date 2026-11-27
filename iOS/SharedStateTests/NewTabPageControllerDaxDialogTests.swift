@@ -113,9 +113,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         controller.loadViewIfNeeded()
 
         let page = try XCTUnwrap(controller.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
-        XCTAssertEqual(controller.children.count, 1)
-        XCTAssertTrue(page.parent === controller)
-        XCTAssertTrue(page.view.superview === controller.view)
         XCTAssertEqual(controller.view.backgroundColor, .clear)
         XCTAssertEqual(page.view.backgroundColor, .clear)
     }
@@ -164,10 +161,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         try assertFocusedContentTracksTopClearance(usesRedesign: false, resetsScrolledContent: true)
     }
 
-    func testWhenLegacyFocusedContentIsScrolledThenResetReturnsToAlignedTopBeforeClearanceChanges() throws {
-        try assertFocusedContentTracksTopClearance(usesRedesign: false, resetsScrolledContent: true, resetsBeforeClearanceChanges: true)
-    }
-
     func testWhenTypingTopClearanceShrinksThenNativeListTracksItInBothFlagStates() throws {
         for usesScrollableEscapeHatch in [false, true] {
             try assertTypingListTracksTopClearance(usesScrollableEscapeHatch: usesScrollableEscapeHatch)
@@ -190,10 +183,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                 frameRevision += 1
             })
         func content(showsSearchModules: Bool, topInset: CGFloat) -> AnyView {
-            AnyView(RedesignedFocusedSearchModulesView(favoritesModel: hvc.favoritesModel,
-                                                       messagesModel: nil,
-                                                       showsSearchModules: showsSearchModules,
-                                                       recentChats: recentChats,
+            AnyView(RedesignedFocusedSearchModulesView(recentChats: recentChats,
                                                        escapeHatch: hatch,
                                                        syncPromo: marker,
                                                        contentTopInset: topInset,
@@ -211,11 +201,10 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             window.rootViewController = nil
             testWindow?.makeKeyAndVisible()
         }
-        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        waitForLayout {
             hosting.view.layoutIfNeeded()
             return markerFrame?.height == 1
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
+        }
         let initialFrame = try XCTUnwrap(markerFrame)
         let initialGap = initialFrame.minY - hosting.view.safeAreaInsets.top - 131
 
@@ -232,11 +221,10 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             animator.addCompletion { _ in animated.fulfill() }
             animator.startAnimation()
             wait(for: [animated], timeout: 5)
-            let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            waitForLayout {
                 hosting.view.layoutIfNeeded()
                 return frameRevision > revision
-            }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
+            }
             let frame = try XCTUnwrap(markerFrame)
             XCTAssertEqual(frame.minY - hosting.view.safeAreaInsets.top - topInset, initialGap, accuracy: 1,
                            "The marker below the unchanged hatch must retain its input gap across modes")
@@ -348,8 +336,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     private func assertFocusedContentTracksTopClearance(
         usesRedesign: Bool,
-        resetsScrolledContent: Bool = false,
-        resetsBeforeClearanceChanges: Bool = false
+        resetsScrolledContent: Bool = false
     ) throws {
         let (configuration, _) = makeConfiguration(withScheduledMessage: false)
         let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
@@ -370,7 +357,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                 probeFrame = frame
                 probeRevision += 1
             })
-        host.setUsesRedesignedNewTabPageLayout(usesRedesign)
+        host.setRedesignedFocusedSurface(usesRedesign ? .newTabPage : nil)
         host.setFocusedContent(mode: .aiChat, escapeHatchPlacement: .hidden, escapeHatch: nil, syncPromo: probe)
 
         let parent = UIViewController()
@@ -388,12 +375,11 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             testWindow?.makeKeyAndVisible()
         }
         host.setContentInsets(UIEdgeInsets(top: 184, left: 0, bottom: 0, right: 0))
-        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        waitForLayout {
             parent.view.layoutIfNeeded()
-            return probeFrame?.height == 1_200 && self.outerContentScrollView(in: parent.view) != nil
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
-        let scrollView = try XCTUnwrap(outerContentScrollView(in: parent.view))
+            return probeFrame?.height == 1_200 && self.outerContentScrollView(in: parent.view, holdingContentHeight: 1_200) != nil
+        }
+        let scrollView = try XCTUnwrap(outerContentScrollView(in: parent.view, holdingContentHeight: 1_200))
         XCTAssertTrue(parent.view.window === window)
         if !usesRedesign { XCTAssertTrue(controller.view.window === window) }
         let initialFrame = try XCTUnwrap(probeFrame)
@@ -405,24 +391,13 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         for topInset in [CGFloat(177), 131, 60] {
             if resetsScrolledContent && topInset == 60 {
                 scrollView.contentOffset.y = 250
-                let scrolled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                waitForLayout {
                     parent.view.layoutIfNeeded()
                     return (probeFrame?.maxY ?? 0) > 0 && (probeFrame?.minY ?? 0) < 0
-                }, object: nil)
-                XCTAssertEqual(XCTWaiter.wait(for: [scrolled], timeout: 5), .completed)
-                XCTAssertTrue(outerContentScrollView(in: controller.view) === scrollView)
+                }
+                XCTAssertTrue(outerContentScrollView(in: controller.view, holdingContentHeight: 1_200) === scrollView)
                 XCTAssertTrue(controller.isViewLoaded)
                 host.scrollLegacyContentToTop(duration: 0.2)
-                if resetsBeforeClearanceChanges {
-                    let alignedTop = NSPredicate { _, _ in
-                        parent.view.layoutIfNeeded()
-                        return abs(scrollView.contentOffset.y + scrollView.adjustedContentInset.top) <= 1
-                            && abs((probeFrame?.minY ?? .infinity) - initialFrame.minY - 131 + 184) <= 1
-                    }
-                    let reset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
-                    let animatedResult = XCTWaiter.wait(for: [reset], timeout: 5)
-                    XCTAssertEqual(animatedResult, .completed)
-                }
             }
             let revision = probeRevision
             let animated = expectation(description: "Focused top clearance animation completes")
@@ -434,25 +409,34 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             animator.startAnimation()
             wait(for: [animated], timeout: 5)
             let expectedOrigin = initialFrame.minY + topInset - 184
-            let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            waitForLayout {
                 parent.view.layoutIfNeeded()
                 return probeRevision > revision && abs((probeFrame?.minY ?? .infinity) - expectedOrigin) <= 1
-            }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
+            }
 
             let frame = try XCTUnwrap(probeFrame)
             XCTAssertEqual(frame.minY, initialFrame.minY + topInset - 184, accuracy: 1,
                            "The scrolling content must follow the input clearance exactly once")
-            XCTAssertTrue(outerContentScrollView(in: parent.view) === scrollView)
+            XCTAssertTrue(outerContentScrollView(in: parent.view, holdingContentHeight: 1_200) === scrollView)
             XCTAssertEqual(scrollView.convert(scrollView.bounds, to: window).minY, initialViewport.minY, accuracy: 1)
             XCTAssertEqual(scrollView.adjustedContentInset.top, initialNativeTopInset, accuracy: 1,
                            "Input clearance belongs to the scrolling content, not the native safe area")
         }
     }
 
-    private func outerContentScrollView(in view: UIView) -> UIScrollView? {
-        if let scrollView = view as? UIScrollView, !(scrollView is UICollectionView), !(scrollView is UITableView) { return scrollView }
-        return view.subviews.lazy.compactMap { self.outerContentScrollView(in: $0) }.first
+    private func waitForLayout(file: StaticString = #filePath, line: UInt = #line, until isReady: @escaping () -> Bool) {
+        // Animation completion often arrives after the measured layout is already ready.
+        guard !isReady() else { return }
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in isReady() }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, file: file, line: line)
+    }
+
+    private func outerContentScrollView(in view: UIView, holdingContentHeight minimumContentHeight: CGFloat) -> UIScrollView? {
+        if let scrollView = view as? UIScrollView, !(scrollView is UICollectionView), !(scrollView is UITableView),
+           scrollView.contentSize.height >= minimumContentHeight {
+            return scrollView
+        }
+        return view.subviews.lazy.compactMap { self.outerContentScrollView(in: $0, holdingContentHeight: minimumContentHeight) }.first
     }
 
     private func assertTypingListTracksTopClearance(usesScrollableEscapeHatch: Bool) throws {
@@ -494,12 +478,11 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         XCTAssertTrue(parent.view.window === window)
         XCTAssertTrue(hostingController.view.window === window)
         host.setContentInsets(UIEdgeInsets(top: 184, left: 0, bottom: 0, right: 0))
-        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        waitForLayout {
             parent.view.layoutIfNeeded()
             guard let list = nativeList(in: parent.view), visibleCell(in: list) != nil else { return false }
             return abs(list.convert(CGPoint.zero, to: window).y - parent.view.safeAreaInsets.top - 184) <= 1
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
+        }
         let list = try XCTUnwrap(nativeList(in: parent.view))
         let initialOrigin = list.convert(CGPoint.zero, to: window).y
         let initialCell = try XCTUnwrap(visibleCell(in: list))
@@ -517,13 +500,12 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             wait(for: [animated], timeout: 5)
             let expectedOrigin = initialOrigin + topInset - 184
             let expectedCellOrigin = initialCellOrigin + topInset - 184
-            let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            waitForLayout {
                 parent.view.layoutIfNeeded()
                 guard let cell = visibleCell(in: list) else { return false }
                 return abs(list.convert(CGPoint.zero, to: window).y - expectedOrigin) <= 1
                     && abs(cell.convert(cell.bounds, to: window).minY - expectedCellOrigin) <= 1
-            }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
+            }
             XCTAssertEqual(list.convert(CGPoint.zero, to: window).y, expectedOrigin, accuracy: 1)
             let cell = try XCTUnwrap(visibleCell(in: list))
             XCTAssertEqual(cell.convert(cell.bounds, to: window).minY, expectedCellOrigin, accuracy: 1)

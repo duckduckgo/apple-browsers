@@ -109,6 +109,14 @@ public struct AIChatNativeConfigValues: Codable {
     public var supportsResponseStateReporting = false
     /// `true` when iPad shows its own native chat list beside the full-tab chat, so Duck.ai can leave its list out.
     public var supportsiPadNativeChatList = false
+    /// `true` when native has taken Customize Responses out of its input, so Duck.ai shows it as a row in
+    /// Duck.ai Settings. `nil` omits the key, which keeps today's behaviour.
+    public var supportsCustomizeResponsesInSettings: Bool?
+    /// `true` when native accepts the `browserToolsAnswerCompleted` and `browserToolsAnswerRated` metrics.
+    /// Older apps don't decode them and log an error, so Duck.ai sends them only when this is set.
+    public var supportsBrowserToolsAnswerMetrics = false
+    /// `true` when native applies the user's "Default AI Model" setting to new chats, so Duck.ai shows that setting.
+    public var supportsDefaultModelSetting = false
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool

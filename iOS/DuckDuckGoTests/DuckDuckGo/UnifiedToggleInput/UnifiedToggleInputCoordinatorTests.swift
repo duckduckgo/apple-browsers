@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
@@ -1581,6 +1582,260 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.viewController.isInputFirstResponder)
     }
 
+    // MARK: - New chats start on the default (flag on)
+
+    func test_newChatDefault_whenChatChanges_userPickResetsToDefault() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.modelStore.updateSelectedModel("gpt-5.6-terra", isNewChatContext: true)
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
+    func test_newChatDefault_whenOpenedWithExplicitModel_thatChatStartsOnIt() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.updateSelectedModel("gpt-5.6-terra")
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+        XCTAssertNil(mockPreferences.selectedModelId)
+    }
+
+    func test_newChatDefault_explicitModelAppliesToTheOpenedChatOnly() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.updateSelectedModel("gpt-5.6-terra")
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
+    func test_newChatModelSource_whenAnEntryPointOpenedTheChatOnTheSentModel_isNotOnboarding() {
+        let pixelKit = PixelKitMock()
+        let coordinator = makeNewChatDefaultCoordinator(pixelKit: pixelKit)
+        coordinator.updateSelectedModel("gpt-5.6-terra")
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(promptSubmittedModelSource(in: pixelKit), "picked")
+    }
+
+    func test_newChatModelSource_whenOnboardingOpenedTheChatOnTheSentModel_isOnboarding() {
+        let pixelKit = PixelKitMock()
+        let coordinator = makeNewChatDefaultCoordinator(pixelKit: pixelKit)
+        coordinator.updateSelectedModel("gpt-5.6-terra", origin: .onboarding)
+        coordinator.handleNavigationCommit(tabUID: "tab-A", didChangeChat: true)
+
+        coordinator.unifiedToggleInputVC(coordinator.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(promptSubmittedModelSource(in: pixelKit), "onboarding")
+    }
+
+    func test_newChatDefault_whenOnlyAStorageHandlerIsPassed_overLimitDefaultStillApplies() {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try? storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: """
+        {"notice": {"id": "weeklyReachedDegraded", "window": "weekly", "resetsAt": "2030-01-01T00:00:00Z"}, \
+        "newChatDefault": {"modelId": "gpt-5.6-terra"}}
+        """)
+
+        let coordinator = makeNewChatDefaultCoordinator(duckAiNativeStorageHandler: storage)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+    }
+
+    func test_newChatDefault_whenBuiltLikeTheAddressBar_tierAppliesBeforeModelsLoadAndServerDefaultAfter() async {
+        subscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .failure(URLError(.notConnectedToInternet))
+        let coordinator = makeLoadingNewChatDefaultCoordinator(host: .omnibar,
+                                                               duckAiNativeStorageHandler: DuckAiNativeMemoryStorageHandler(),
+                                                               modelsService: modelsService)
+
+        await fetchModelsAndWait(coordinator)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        await fetchModelsAndWait(coordinator)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
+    func test_newChatDefault_whenBuiltLikeTheContextualSheet_overLimitDefaultApplies() async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue, value: """
+        {"notice": {"id": "weeklyReachedDegraded", "window": "weekly", "resetsAt": "2030-01-01T00:00:00Z"}, \
+        "newChatDefault": {"modelId": "gpt-5.6-terra"}}
+        """)
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let coordinator = makeLoadingNewChatDefaultCoordinator(host: .contextualChat,
+                                                               usageLimitsStore: DuckAiUsageLimitsStore(storageHandler: storage),
+                                                               modelsService: modelsService)
+
+        await fetchModelsAndWait(coordinator)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+    }
+
+    func test_newChatDefault_whenBuiltLikeTheAddressBar_userDefaultModelApplies() async throws {
+        try await assertUserDefaultModelApplies { storage, modelsService in
+            self.makeLoadingNewChatDefaultCoordinator(host: .omnibar, userDefaultModelStorage: { _ in storage }, modelsService: modelsService)
+        }
+    }
+
+    func test_newChatDefault_whenBuiltLikeTheContextualSheet_userDefaultModelApplies() async throws {
+        try await assertUserDefaultModelApplies { storage, modelsService in
+            self.makeLoadingNewChatDefaultCoordinator(host: .contextualChat, userDefaultModelStorage: { _ in storage }, modelsService: modelsService)
+        }
+    }
+
+    func test_newChatDefault_userDefaultComesFromTheStorageOfTheTabsFireState() async throws {
+        let normalStorage = DuckAiNativeMemoryStorageHandler()
+        try normalStorage.putUserDefaultModel("gpt-5.6-terra")
+        let fireStorage = DuckAiNativeMemoryStorageHandler()
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let coordinator = makeLoadingNewChatDefaultCoordinator(host: .omnibar,
+                                                               isFireTab: true,
+                                                               userDefaultModelStorage: { $0 ? fireStorage : normalStorage },
+                                                               modelsService: modelsService)
+        await fetchModelsAndWait(coordinator)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+
+        coordinator.updateIsFireTab(false)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+
+        coordinator.updateIsFireTab(true)
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+    }
+
+    func test_newChatDefault_whenTabHasNoPick_itFollowsADefaultChangeAfterATabSwitch() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.activateForTab("tab-B")
+
+        coordinator.modelStore.newChatDefaults?.overLimitDefault = AIChatOverLimitNewChatDefault(.model(id: "gpt-5.6-terra", reasoningEffort: nil),
+                                                                                                  resetsAt: .distantFuture)
+        coordinator.activateForTab("tab-A")
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+        XCTAssertNil(coordinator.modelStore.currentModelId)
+    }
+
+    func test_newChatDefault_whenTabHasAPick_itSurvivesATabSwitch() {
+        let coordinator = makeNewChatDefaultCoordinator()
+        coordinator.modelStore.updateSelectedModel("gpt-5.6-terra", isNewChatContext: true)
+        coordinator.activateForTab("tab-B")
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-6-luna")
+
+        coordinator.activateForTab("tab-A")
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra")
+    }
+
+    func test_newChatDefault_voicePromptInExistingChat_sendsNeitherModelNorEffort() {
+        let coordinator = makeNewChatDefaultCoordinator(supportedReasoningEffort: [.none, .low, .high])
+        XCTAssertNotNil(coordinator.voicePromptSubmissionConfiguration.reasoningEffort)
+
+        coordinator.bindToTab(makeTestUserScript(), hasExistingChat: true)
+
+        XCTAssertNil(coordinator.voicePromptSubmissionConfiguration.modelId)
+        XCTAssertNil(coordinator.voicePromptSubmissionConfiguration.reasoningEffort)
+    }
+
+    private func promptSubmittedModelSource(in pixelKit: PixelKitMock) -> String? {
+        pixelKit.actualFireCalls.last { $0.pixel.name == "m_aichat_unified_input_prompt_submitted" }?.additionalParameters?["model_source"]
+    }
+
+    private func makeNewChatDefaultCoordinator(supportedReasoningEffort: [AIChatReasoningEffort] = [],
+                                               pixelKit: PixelKitMock? = nil,
+                                               duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil) -> UnifiedToggleInputCoordinator {
+        let models = ["gpt-6-luna", "gpt-5.6-terra"].map {
+            AIChatModel(id: $0, name: $0, provider: .openAI, supportsImageUpload: false, entityHasAccess: true,
+                        supportedReasoningEffort: supportedReasoningEffort)
+        }
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            modelsService: AppOpenModelsService(models: []),
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            pixelFiring: UTIPixelFiring(pixelKit: { pixelKit }),
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewChatDefaultModel]),
+            scheduleInputFocus: { _ in })
+        coordinator.modelStore.subscriptionState = .free
+        coordinator.modelStore.models = models
+        coordinator.activateForTab("tab-A")
+        return coordinator
+    }
+
+    private var newChatDefaultRemoteModels: [AIChatRemoteModel] {
+        ["gpt-6-luna", "gpt-5.6-terra"].map {
+            AIChatRemoteModel(id: $0, name: $0, provider: "openai", entityHasAccess: true, supportsImageUpload: false,
+                              supportedTools: [], accessTier: [])
+        }
+    }
+
+    /// Leaves tier and models to the coordinator's own `/models` fetch, as production does.
+    private func assertUserDefaultModelApplies(
+        whenBuilt makeCoordinator: (DuckAiNativeStorageHandling, AIChatModelsProviding) -> UnifiedToggleInputCoordinator,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async throws {
+        let storage = DuckAiNativeMemoryStorageHandler()
+        try storage.putUserDefaultModel("gpt-5.6-terra")
+        let modelsService = NewChatDefaultModelsService()
+        modelsService.result = .success(AIChatModelsResponse(models: newChatDefaultRemoteModels,
+                                                             newChatDefault: .model(id: "gpt-6-luna", reasoningEffort: nil)))
+        let coordinator = makeCoordinator(storage, modelsService)
+
+        await fetchModelsAndWait(coordinator)
+
+        XCTAssertEqual(coordinator.persistedModelId, "gpt-5.6-terra", file: file, line: line)
+    }
+
+    private func makeLoadingNewChatDefaultCoordinator(host: UnifiedToggleInputHost,
+                                                      isFireTab: Bool = false,
+                                                      duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+                                                      usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+                                                      userDefaultModelStorage: @escaping (Bool) -> DuckAiNativeStorageHandling? = { _ in nil },
+                                                      modelsService: AIChatModelsProviding) -> UnifiedToggleInputCoordinator {
+        UnifiedToggleInputCoordinator(
+            host: host,
+            isToggleEnabled: host == .omnibar,
+            isFireTab: isFireTab,
+            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+            modelsService: modelsService,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            usageLimitsStore: usageLimitsStore,
+            userDefaultModelStorage: userDefaultModelStorage,
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewChatDefaultModel]),
+            scheduleInputFocus: { _ in })
+    }
+
+    private func fetchModelsAndWait(_ coordinator: UnifiedToggleInputCoordinator) async {
+        let updated = expectation(description: "models updated")
+        let forward = coordinator.modelStore.onModelsUpdated
+        coordinator.modelStore.onModelsUpdated = {
+            forward?()
+            updated.fulfill()
+        }
+        coordinator.fetchModels()
+        await fulfillment(of: [updated], timeout: 1)
+        coordinator.modelStore.onModelsUpdated = forward
+    }
+
     private func makeAppOpenCoordinator(isFloatingUIEnabled: Bool = false,
                                         schedule: @escaping (@escaping () -> Void) -> Void) -> UnifiedToggleInputCoordinator {
         let remoteModel = AIChatRemoteModel(id: "app-open-model", name: "App Open Model", provider: "openai",
@@ -2436,6 +2691,186 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertTrue(inlineTitles.contains(UserText.aiChatToolbarImageGenerationToolTitle))
     }
 
+    // MARK: - Simplified prompt box
+
+    func test_simplifiedPromptBox_movesToolsIntoTheAttachMenuAndHidesTheToolsButton() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertTrue(sut.viewController.isToolsButtonHidden)
+        XCTAssertNil(sut.viewController.toolsMenu)
+        let children = sut.viewController.attachmentMenu?.children ?? []
+        let toolsSection = children.last as? UIMenu
+        XCTAssertEqual(toolsSection?.options.contains(.displayInline), true, "The tools sit in their own section below a divider")
+        XCTAssertEqual(toolsSection?.children.compactMap { ($0 as? UIAction)?.title },
+                       [UserText.aiChatToolbarImageGenerationToolTitle, UserText.aiChatToolbarWebSearchToolTitle])
+    }
+
+    func test_simplifiedPromptBox_attachMenuToolRowsNeverShowACheckmark() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.handleAttachMenuToolSelection(.webSearch)
+
+        let toolActions = (sut.viewController.attachmentMenu?.children.last as? UIMenu)?.children.compactMap { $0 as? UIAction } ?? []
+        XCTAssertFalse(toolActions.isEmpty)
+        XCTAssertTrue(toolActions.allSatisfy { $0.state == .off })
+        XCTAssertEqual(sut.viewController.selectedTool, .webSearch, "The chip carries the selection")
+    }
+
+    func test_simplifiedPromptBox_pickingTheActiveToolAgainKeepsItOn() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel()
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        sut.handleAttachMenuToolSelection(.webSearch)
+        sut.handleAttachMenuToolSelection(.webSearch)
+
+        XCTAssertEqual(sut.selectedTool, .webSearch)
+        XCTAssertEqual(sut.viewController.selectedTool, .webSearch)
+    }
+
+    func test_simplifiedPromptBox_pickingTheOtherToolSwapsTheChip() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel()
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleAttachMenuToolSelection(.webSearch)
+
+        sut.handleAttachMenuToolSelection(.imageGeneration)
+
+        XCTAssertEqual(sut.selectedTool, .imageGeneration)
+        XCTAssertEqual(sut.viewController.selectedTool, .imageGeneration)
+    }
+
+    func test_simplifiedPromptBox_chipClearTurnsTheToolOff() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel()
+        sut.activateFromOmnibar(inputMode: .aiChat)
+        sut.handleAttachMenuToolSelection(.webSearch)
+
+        sut.clearSelectedTool()
+
+        XCTAssertNil(sut.selectedTool)
+        XCTAssertNil(sut.viewController.selectedTool)
+    }
+
+    func test_simplifiedPromptBox_keepsTheAttachButtonForAModelThatOnlySupportsATool() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel(supportsImageUpload: false, supportedTools: [.webSearch])
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertFalse(sut.viewController.isImageButtonHidden)
+        XCTAssertTrue(sut.viewController.isImageButtonEnabled)
+        XCTAssertNotNil(sut.viewController.attachmentMenu)
+    }
+
+    func test_simplifiedPromptBox_dropsCustomizeResponsesFromTheInput_onAITab() {
+        sut = makeSimplifiedPromptBoxSUT()
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.showExpanded()
+
+        let titles = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+            + toolsMenuActions().map(\.title)
+
+        XCTAssertFalse(titles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+    }
+
+    func test_simplifiedPromptBoxOff_keepsTheToolsButtonAndTheAttachMenuWithoutTools() {
+        sut = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [])
+        )
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.activateFromOmnibar(inputMode: .aiChat)
+
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden)
+        XCTAssertNotNil(sut.viewController.toolsMenu)
+        let attachTitles = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+        XCTAssertFalse(attachTitles.contains(UserText.aiChatToolbarWebSearchToolTitle))
+    }
+
+    func test_simplifiedPromptBox_followsTheFlagWhenItChangesWhileTheAppRuns() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        sut = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: featureFlagger
+        )
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden, "Flag off: today's tools button")
+        XCTAssertTrue(toolsMenuActions().map(\.title).contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+
+        featureFlagger.enabledFeatureFlags = [.unifiedToggleInputSimplifiedPromptBox]
+        sut.showExpanded()
+        XCTAssertTrue(sut.viewController.isToolsButtonHidden, "Flag turned on: the tools move into the attach menu")
+        let attachTitles = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+        XCTAssertTrue(attachTitles.contains(UserText.aiChatToolbarWebSearchToolTitle))
+        XCTAssertFalse(attachTitles.contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+
+        featureFlagger.enabledFeatureFlags = []
+        sut.showExpanded()
+        XCTAssertFalse(sut.viewController.isToolsButtonHidden, "Flag turned off again: the tools button is back")
+        XCTAssertTrue(toolsMenuActions().map(\.title).contains(UserText.aiChatToolbarCustomizeResponsesMenuTitle))
+        let attachTitlesAfter = flattenedActions(sut.viewController.attachmentMenu?.children ?? []).map(\.title)
+        XCTAssertFalse(attachTitlesAfter.contains(UserText.aiChatToolbarWebSearchToolTitle))
+    }
+
+    func test_simplifiedPromptBoxPixels_reportTheToolRowsAndFollowTheFlagWhileTheAppRuns() throws {
+        guard #available(iOS 16.0, *) else {
+            throw XCTSkip("UIAction.performWithSender requires iOS 16")
+        }
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let pixelKitMock = PixelKitMock()
+        sut = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            pixelFiring: UTIPixelFiring(pixelKit: { pixelKitMock }),
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: featureFlagger
+        )
+        configureSimplifiedPromptBoxModel(supportsImageUpload: true)
+        sut.showExpanded()
+
+        sut.handleToolsMenuSelection(.webSearch)
+        XCTAssertEqual(firedParameters(pixelKitMock, "m_aichat_unified_input_web_search_selected").last?["simplified_prompt_box"], "off")
+
+        featureFlagger.enabledFeatureFlags = [.unifiedToggleInputSimplifiedPromptBox]
+        sut.clearSelectedTool()
+        sut.showExpanded()
+        let toolRows = (sut.viewController.attachmentMenu?.children.last as? UIMenu)?.children.compactMap { $0 as? UIAction } ?? []
+        try XCTUnwrap(toolRows.first { $0.title == UserText.aiChatToolbarWebSearchToolTitle }).performWithSender(nil, target: nil)
+        try XCTUnwrap(toolRows.first { $0.title == UserText.aiChatToolbarImageGenerationToolTitle }).performWithSender(nil, target: nil)
+
+        let picks = firedParameters(pixelKitMock, "m_aichat_unified_input_attach_menu_item_selected")
+        XCTAssertEqual(picks.map { $0["item"] }, ["web_search", "create_image"],
+                       "Each tool pick counts as a pick, so the open-without-pick guardrail doesn't trip")
+        XCTAssertEqual(picks.map { $0["simplified_prompt_box"] }, ["on", "on"])
+        XCTAssertEqual(firedParameters(pixelKitMock, "m_aichat_unified_input_web_search_selected").last?["simplified_prompt_box"], "on")
+        XCTAssertEqual(firedParameters(pixelKitMock, "m_aichat_unified_input_image_generation_selected").last?["simplified_prompt_box"], "on")
+    }
+
+    /// Parameters of each fire of `name`, whether the event carries them or the call passes them.
+    private func firedParameters(_ pixelKitMock: PixelKitMock, _ name: String) -> [[String: String]] {
+        pixelKitMock.actualFireCalls
+            .filter { $0.pixel.name == name }
+            .map { ($0.pixel.parameters ?? [:]).merging($0.additionalParameters ?? [:]) { $1 } }
+    }
+
     func test_handleToolsMenuSelection_customizeResponses_forwardsToHandler() {
         let exp = expectation(description: "didPressCustomizeResponsesButton fires")
         sut.didPressCustomizeResponsesButton
@@ -2935,6 +3370,22 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.updateSelectedModel("mistral")
 
         XCTAssertEqual(mockPreferences.selectedModelId, "haiku")
+    }
+
+    func test_updateSelectedModel_fromOnboarding_onNewChat_doesNotChangePreferredModel() {
+        sut.modelStore.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("haiku")
+        XCTAssertFalse(sut.hasSubmittedPrompt)
+
+        sut.updateSelectedModel("mistral", origin: .onboarding)
+
+        XCTAssertEqual(mockPreferences.selectedModelId, "haiku",
+                       "a chat-only pick must not retarget the new-chat default")
+        XCTAssertEqual(sut.modelStore.currentModelId, "mistral",
+                       "a chat-only pick still updates the live current-tab model")
     }
 
     func test_persistedModelId_fallsBackToPreferredModel_onFreshTabActivation() {
@@ -4092,6 +4543,36 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         )
     }
 
+    private func makeSimplifiedPromptBoxSUT() -> UnifiedToggleInputCoordinator {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputSimplifiedPromptBox])
+        )
+        coordinator.delegate = mockDelegate
+        return coordinator
+    }
+
+    private func configureSimplifiedPromptBoxModel(supportsImageUpload: Bool = false,
+                                                   supportedTools: [AIChatRAGTool] = [.webSearch, .imageGeneration]) {
+        mockPreferences.selectedModelId = "tools-model"
+        sut.modelStore.models = [makeModel(id: "tools-model", access: true,
+                                           supportsImageUpload: supportsImageUpload, supportedTools: supportedTools)]
+        sut.modelStore.attachmentLimits = makeLimits()
+    }
+
+    private func flattenedActions(_ elements: [UIMenuElement]) -> [UIAction] {
+        elements.flatMap { element -> [UIAction] in
+            if let action = element as? UIAction { return [action] }
+            if let submenu = element as? UIMenu { return flattenedActions(submenu.children) }
+            return []
+        }
+    }
+
     private func toolsMenuActions() -> [UIAction] {
         // Tools are grouped into an inline submenu (for the divider), so flatten recursively.
         func flatten(_ elements: [UIMenuElement]) -> [UIAction] {
@@ -4331,6 +4812,13 @@ private final class AppOpenModelsService: AIChatModelsProviding {
     func fetchModels() async throws -> AIChatModelsResponse {
         AIChatModelsResponse(models: models)
     }
+}
+
+@MainActor
+private final class NewChatDefaultModelsService: AIChatModelsProviding {
+    var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
+
+    func fetchModels() async throws -> AIChatModelsResponse { try result.get() }
 }
 
 // MARK: - Mock Delegate

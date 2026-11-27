@@ -181,7 +181,7 @@ final class UTIStateMachineTests: XCTestCase {
     }
 
     func test_cardLayout_isFlankedByFireAndMenuForTheCollapsedAITab() {
-        XCTAssertEqual(renderState(for: .aiTab(.collapsed), host: .omnibar).cardLayout, .flanked(.all))
+        XCTAssertEqual(renderState(for: .aiTab(.collapsed), host: .omnibar).cardLayout, .flanked(.aiTab))
     }
 
     func test_cardLayout_contextualCollapsedPillIsBareWithoutAccessories() {

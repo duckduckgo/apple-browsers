@@ -414,6 +414,34 @@ final class PermissionManagerTests: XCTestCase {
                      .ask)
     }
 
+    func testWhenPermissionsBurnedThenBrowserToolDecisionsSurvive() {
+        let allow = PermissionEntity(permission: .init(id: .init(), decision: .allow), domain: "duck.ai", type: .browserTool(name: "read_tab"))
+        let deny = PermissionEntity(permission: .init(id: .init(), decision: .deny), domain: "duck.ai", type: .browserTool(name: "close_tabs"))
+        let ask = PermissionEntity(permission: .init(id: .init(), decision: .ask), domain: "duck.ai", type: .browserTool(name: "open_tab"))
+        let camera = PermissionEntity(permission: .init(id: .init(), decision: .allow), domain: "duck.ai", type: .camera)
+        store.permissions = [allow, deny, ask, camera]
+        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
+
+        manager.burnPermissions(except: fireproofDomains) { _ in }
+
+        XCTAssertEqual(manager.permission(forDomain: "duck.ai", permissionType: allow.type), .allow)
+        XCTAssertEqual(manager.permission(forDomain: "duck.ai", permissionType: deny.type), .deny)
+        XCTAssertTrue(manager.hasPermissionPersisted(forDomain: "duck.ai", permissionType: ask.type))
+        XCTAssertFalse(manager.hasPermissionPersisted(forDomain: "duck.ai", permissionType: .camera))
+        guard case .clear(let exceptions) = store.history.last else { return XCTFail("Expected store clear") }
+        XCTAssertEqual(Set(exceptions.map(\.id)), Set([allow, deny, ask].map(\.permission.id)))
+    }
+
+    func testWhenDuckAiPermissionsBurnedThenBrowserToolDecisionsSurvive() {
+        let allow = PermissionEntity(permission: .init(id: .init(), decision: .allow), domain: "duck.ai", type: .browserTool(name: "read_tab"))
+        store.permissions = [allow]
+
+        manager.burnPermissions(of: ["duck.ai"], tld: Application.appDelegate.tld) { _ in }
+
+        XCTAssertEqual(manager.permission(forDomain: "duck.ai", permissionType: allow.type), .allow)
+        XCTAssertEqual(store.history.last, .clear(exceptions: [allow.permission]))
+    }
+
     func testDebugEntriesPreserveStoredDomain() throws {
         let objectID = NSManagedObjectID()
         store.permissions = [

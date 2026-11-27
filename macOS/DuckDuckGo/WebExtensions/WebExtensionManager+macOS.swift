@@ -36,6 +36,11 @@ extension WebExtensionManager {
         NSApp.delegateTyped.webExtensionManager != nil
     }
 
+    /// Whether extension management is on for this user: launched for everyone, or for internal users only.
+    static func isExtensionsEnabled(featureFlagger: FeatureFlagger) -> Bool {
+        featureFlagger.isFeatureOn(.webExtensions) || featureFlagger.isFeatureOn(.webExtensionsInternal)
+    }
+
     /// Installed with the manager, so `isRemotelyDisabled` is correct before the initial load finishes.
     @MainActor
     func installRemoteDisableEnforcer(configurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
@@ -47,6 +52,9 @@ extension WebExtensionManager {
                 Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
             },
             disabledExtensionIDsDidChange: featureFlagger.updatesPublisher,
+            isExtensionsEnabled: { [featureFlagger] in
+                Self.isExtensionsEnabled(featureFlagger: featureFlagger)
+            },
             pixelFiring: MacOSWebExtensionPixelFiring()
         )
     }
@@ -96,7 +104,8 @@ enum WebExtensionManagerFactory {
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil,
-        eventHub: EventHubManaging
+        eventHub: EventHubManaging,
+        isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool = { false }
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
         let windowTabProvider = WebExtensionWindowTabProvider()
@@ -168,22 +177,23 @@ enum WebExtensionManagerFactory {
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             isCPMNetworkProcessRecoveryEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+                featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
             },
-            cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             isCPMBackgroundLoadRestartEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRestart)
             },
             isCPMStableBaseURLEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
+                featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },
-            isCPMUpgradeBeforeLoadEnabled: Application.appDelegate.featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
+            isCPMUpgradeBeforeLoadEnabled: featureFlagger.isFeatureOn(.cpmUpgradeBeforeLoad),
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
-                eventHub: eventHub
+                eventHub: eventHub,
+                isAppleSurrogateRedirectionEnabled: isAppleSurrogateRedirectionEnabled
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             unavailablePermissions: buildType.isAppStoreBuild ? [.nativeMessaging] : [],
@@ -197,10 +207,16 @@ enum WebExtensionManagerFactory {
         manager.chromeWebStore = ChromeWebStoreService(
             manager: manager,
             catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager,
+                                           isExtensionsEnabled: {
+                                               WebExtensionManager.isExtensionsEnabled(featureFlagger: featureFlagger)
+                                           },
                                            isAppStoreBuild: buildType.isAppStoreBuild,
                                            unsupportedExtensionIDs: unsupportedExtensionIDs),
             presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow }, themeManager: themeManager),
-            isUpdateDiscoveryEnabled: { featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery) },
+            isUpdateDiscoveryEnabled: {
+                WebExtensionManager.isExtensionsEnabled(featureFlagger: featureFlagger)
+                    && featureFlagger.isFeatureOn(.webExtensionUpdateDiscovery)
+            },
             updateDiscoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
             canApplyUpdatesWhileInactive: updateApplicationPolicy(for: manager),
             updateApplicationActivityUpdates: updateActivity,

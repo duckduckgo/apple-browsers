@@ -54,6 +54,7 @@ import SitePermissions
 import WebExtensions
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
+import WebPageTranslation
 
 enum WebViewPreviewSnapshotGeometry {
 
@@ -162,8 +163,6 @@ class TabViewController: UIViewController {
     var containerStackView: UIStackView!
     /// Driven by `applyContextualOnboardingTopInset(_:)` to clear the floating chrome.
     var containerStackViewTopConstraint: NSLayoutConstraint?
-    /// Released while the iPad Duck.ai chats sidebar sits beside the chat.
-    var containerStackViewLeadingConstraint: NSLayoutConstraint?
     var outerContainer: UIView!
     var webViewContainer: UIView!
     var webViewContainerBottomConstraint: NSLayoutConstraint?
@@ -173,6 +172,8 @@ class TabViewController: UIViewController {
     var chatListSidebarContainer: IPadChatListSidebarContainerView?
     /// Set once this tab's `sidebar=open` load has opened the chats sidebar, so later page URL changes don't reopen it.
     var hasOpenedChatListSidebarFromURL = false
+    /// Opened for the iPad chats list, so its empty chat keeps the input down on every visit, as `sidebar=open` does.
+    var isOpenedForChatList = false
     private lazy var firstPaintCover = FirstPaintCover()
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
@@ -183,6 +184,7 @@ class TabViewController: UIViewController {
         didSet {
             // Floating UI reserves the obscured top region while a dialog is up, so relayout on both.
             updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+            updateOuterContainerClippingForFloatingUI()
         }
     }
     var lastPresentedContextualOnboardingSpec: DaxDialogs.BrowsingSpec?
@@ -795,7 +797,7 @@ class TabViewController: UIViewController {
                                     featureFlagger: featureFlagger,
                                     userScriptsDependencies: userScriptsDependencies,
                                     // Same app store as ContentBlockingService's instance; instances sync through the store notification.
-                                    sponsorBlockPreferences: SponsorBlockPreferences(store: keyValueStore),
+                                    segmentSkipPreferences: SegmentSkipPreferences(store: keyValueStore),
                                     floatingUIManager: floatingUIManager)
 
         if duckPlayer.settings.nativeUI {
@@ -856,7 +858,7 @@ class TabViewController: UIViewController {
 
     var browserToolsService: AIChatBrowserToolsService?
     private var browserToolsSurfaceVisible = false
-    private var browserToolsPermissionPresenter: AIChatNativePermissionPresenter?
+    private var browserToolsPermissionPresenter: AIChatToolPermissionPresenter?
 
     func browserToolsDidBecomeActive() {
         browserToolsSurfaceVisible = true
@@ -871,6 +873,14 @@ class TabViewController: UIViewController {
         if let script = userScripts?.aiChatUserScript { browserToolsService?.sourceWillDisappear(script) }
     }
 
+    var pageTranslationOfferProvider: PageTranslationOfferProvider?
+    private lazy var translationBannerPresenter = TranslationBannerPresenter(appSettings: appSettings)
+    var pageTranslator: PageTranslating?
+    private var pageTranslationBridge: PageTranslationBridge?
+    /// Made on the first Translate, for the current bridge.
+    private var pageTranslationSession: PageTranslationSession?
+    /// Counts main-frame loads, so work started on a page can tell the tab has left it; pushState and replaceState don't count.
+    private var pageLoads = 0
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -1186,6 +1196,7 @@ class TabViewController: UIViewController {
         duckAISwipeNewChat?.cancel()
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
+        translationBannerPresenter.dismiss(animated: false)
 
         unregisterFromResignActive()
         unregisterFromKeyboardNotifications()
@@ -1300,15 +1311,20 @@ class TabViewController: UIViewController {
     private func applyWebViewLayout(for barsVisibilityPercent: CGFloat, forceFloatingUIInsets: Bool = false) {
         if floatingUIManager.isFloatingUIEnabled {
             updateWebViewLayoutForFloatingUI(for: barsVisibilityPercent, forceInsets: forceFloatingUIInsets)
+            if translationBannerPresenter.isPresented {
+                translationBannerPresenter.chromeInsets = chromeDelegate?.floatingWebViewObscuredInsets(for: 0) ?? .zero
+            }
         } else {
             updateWebViewBottomConstraint(for: barsVisibilityPercent)
             updateWebViewLayoutForClassicUI(for: barsVisibilityPercent)
         }
+        if translationBannerPresenter.isPresented {
+            translationBannerPresenter.followAddressBar()
+        }
     }
 
     private func updateWebViewBottomConstraint(for barsVisibilityPercent: CGFloat) {
-        let isUnifiedToggleInputAffectingBottomLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingBottomLayout {
+        if appSettings.currentAddressBarPosition == .bottom && !isUnifiedToggleInputAffectingLayout {
             if chromeDelegate?.isInMinimalChromeLayout == true {
                 // Minimal chrome: inset follows the bars so the slot is reclaimed when hidden. The
                 // iOS 26 fixed inset is skipped; in landscape it leaves a visible gap once the bar
@@ -1412,14 +1428,8 @@ class TabViewController: UIViewController {
         borderView.isTopVisible = false
         borderView.isBottomVisible = false
 
-        // AI tabs keep the web view full-bleed while native controls float above it.
-        let isUnifiedToggleInputAffectingLayout = isAITab && unifiedToggleInputFeature.isAvailable
-        let usesFloatingAIChrome = if #available(iOS 26, *) {
-            isUnifiedToggleInputAffectingLayout
-                && floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
-        } else {
-            false
-        }
+        let isUnifiedToggleInputAffectingLayout = self.isUnifiedToggleInputAffectingLayout
+        let usesFloatingAIChrome = self.shouldUseFloatingAIChrome
         var obscuredInsets: UIEdgeInsets = isUnifiedToggleInputAffectingLayout
             ? .zero
             : (chromeDelegate?.floatingWebViewObscuredInsets(for: barsVisibilityPercent) ?? .zero)
@@ -1431,7 +1441,10 @@ class TabViewController: UIViewController {
         // While a dialog is up the obscured top region offsets the stack instead of the web view, or
         // the page gets pushed down twice. Measured at full chrome visibility so the dialog (and the
         // web view frame) holds still through a bars hide/show instead of resizing every frame.
-        let effectiveContextualOnboardingTopInset = isUnifiedToggleInputAffectingLayout ? 0 : contextualOnboardingTopInset
+        // Floating Duck.ai chrome: the dialog clears the floating chat header, which stays in place on scroll.
+        let effectiveContextualOnboardingTopInset = (isUnifiedToggleInputAffectingLayout && !usesFloatingAIChrome)
+            ? 0
+            : contextualOnboardingTopInset
         applyContextualOnboardingTopInset(effectiveContextualOnboardingTopInset)
         obscuredInsets.top = max(0, obscuredInsets.top - effectiveContextualOnboardingTopInset)
 
@@ -1544,12 +1557,36 @@ class TabViewController: UIViewController {
     private func updateContextualOnboardingLayoutForFloatingUIIfNeeded() {
         // A non-current tab has no chrome to measure; it gets laid out again on re-selection.
         guard floatingUIManager.isFloatingUIEnabled, webView != nil, let chromeDelegate else { return }
-        let inset = daxContextualOnboardingController == nil
-            ? 0
-            : max(0, chromeDelegate.floatingWebViewObscuredInsets(for: 1.0).top)
+        let chromeTopInset = shouldUseFloatingAIChrome
+            ? chromeDelegate.floatingAIChatHeaderObscuredHeight
+            : chromeDelegate.floatingWebViewObscuredInsets(for: 1.0).top
+        let inset = daxContextualOnboardingController == nil ? 0 : max(0, chromeTopInset)
         guard contextualOnboardingTopInset != inset else { return }
         contextualOnboardingTopInset = inset
         applyWebViewLayout(for: lastAppliedBarsVisibilityPercent)
+        if shouldUseFloatingAIChrome, daxContextualOnboardingController != nil {
+            // Settle the header offset now, so the presenter's animation only grows the dialog
+            // from under the floating chat header instead of sliding it in from the top of the screen.
+            view.layoutIfNeeded()
+        }
+    }
+
+    /// AI tab with the unified toggle input: the web view stays full-bleed while native controls float above it.
+    private var isUnifiedToggleInputAffectingLayout: Bool {
+        isAITab && unifiedToggleInputFeature.isAvailable
+    }
+
+    /// AI tab on iOS 26+ with the Liquid Glass Duck.ai chrome: the chat header and input float over a full-bleed web view.
+    private var shouldUseFloatingAIChrome: Bool {
+        guard #available(iOS 26, *) else { return false }
+        return isUnifiedToggleInputAffectingLayout && floatingUIManager.isDuckAIAndInputLiquidGlassEnabled
+    }
+
+    /// Floating UI lets the page draw outside its container so it shows behind the glass chrome.
+    /// While a contextual onboarding dialog sits above the page clip it.
+    private func updateOuterContainerClippingForFloatingUI() {
+        guard floatingUIManager.isFloatingUIEnabled, outerContainer != nil else { return }
+        outerContainer.clipsToBounds = daxContextualOnboardingController != nil
     }
 
     /// Offsets the content stack so the dialog — its first arranged subview — clears the floating
@@ -1739,8 +1776,8 @@ class TabViewController: UIViewController {
         if floatingUIManager.isFloatingUIEnabled {
             webView.scrollView.clipsToBounds = false
             webView.clipsToBounds = false
-            outerContainer.clipsToBounds = false
             webViewContainer.clipsToBounds = false
+            updateOuterContainerClippingForFloatingUI()
         }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
@@ -2883,6 +2920,7 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        Task { @MainActor [pageTranslationSession] in pageTranslationSession?.cancel() }
         let browserToolsScript = userScripts?.aiChatUserScript
         Task { @MainActor in browserToolsScript?.detachBrowserTools() }
         delegateSessionFindInPage?.done()
@@ -2937,6 +2975,22 @@ extension TabViewController: LoginFormDetectionDelegate {
         detectedLoginURL = webView.url
     }
     
+}
+
+// The page's translation shows on the same bar as page loads.
+extension TabViewController: PageTranslationProgress {
+
+    func translationDidStart() {
+        progressWorker.didStartLoading(.translation)
+    }
+
+    func translationDidProgress(_ fraction: Double) {
+        progressWorker.progressDidChange(fraction, for: .translation)
+    }
+
+    func translationDidFinish() {
+        progressWorker.didFinishLoading(.translation)
+    }
 }
 
 // MARK: - WKNavigationDelegate
@@ -2997,6 +3051,9 @@ extension TabViewController: WKNavigationDelegate {
             browserToolsService?.ownerDidNavigate(tabID: tabModel.uid, url: webView.url)
             firstPaintCover.didCommit(navigation)
             signpostSearchCommit(url: webView.url)
+            pageTranslationBridge?.documentDidChange()
+            // The old page's translation may still be running; the new page gets its own session.
+            cancelPageTranslation()
         }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
@@ -3031,6 +3088,10 @@ extension TabViewController: WKNavigationDelegate {
         lastCommittedDuckAIChatID = committedChatID
 
         url = webView.url
+
+        // Before any of the new page's scripts run: its load messages can arrive after its first promo report.
+        userScripts?.aiChatUserScript.isAIChatPromoVisible = nil
+        userScripts?.aiChatUserScript.aiChatStatusOnPage = nil
 
         if isAITab {
             delegate?.tab(self, didCommitDuckAINavigationChangingChat: didChangeDuckAIChat)
@@ -3105,6 +3166,89 @@ extension TabViewController: WKNavigationDelegate {
             return nil
         }
         return PageContextAttachabilityPolicy(settings: blocklist)
+    }
+
+    /// Detects the page's language once per page load and shows the translation banner when it applies.
+    private func offerTranslationIfNeeded(in webView: WKWebView) {
+        guard let provider = pageTranslationOfferProvider, provider.isEnabled,
+              webView === self.webView, !isError,
+              let url = webView.url,
+              PageTranslationOfferProvider.isEligible(url),
+              lastMainFramePageContextMIMEType(for: url) != "application/pdf" else {
+            return
+        }
+
+        let pageLoad = pageLoads
+        Task { [weak self, weak webView] in
+            // Dropped if another page started loading while detecting; a URL change within the page, such as replaceState, keeps it.
+            guard let webView, case .banner(let offer) = await provider.decision(in: webView),
+                  let self, pageLoads == pageLoad else { return }
+            showTranslationBanner(offer)
+        }
+    }
+
+    /// One prompt at a time, and only on the tab the user is looking at.
+    private func showTranslationBanner(_ offer: TranslationOffer) {
+        guard view.window != nil,
+              delegate?.tabIsShowingOtherPrompt(self) != true,
+              let addressBar = chromeDelegate?.addressBarChromeView,
+              addressBar.window === view.window else {
+            return
+        }
+        if floatingUIManager.isFloatingUIEnabled, let chromeDelegate {
+            translationBannerPresenter.chromeInsets = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
+        }
+        translationBannerPresenter.present(offer, in: self, nextTo: addressBar) { [weak self] in
+            self?.translatePage(offer)
+        }
+    }
+
+    /// One bridge per tab: rebuilt scripts (a config refresh, protections toggled) keep the page and its bundle, whose
+    /// replies now reach the new scripts' broker, so the same bridge re-registers there and a request in flight carries on.
+    private func installPageTranslationBridge(in userScripts: UserScripts) {
+        let bridge = pageTranslationBridge ?? PageTranslationBridge(inject: { [weak self] in
+            guard let self, let webView, let userScripts = self.userScripts else { return }
+            _ = try await webView.evaluateJavaScript(try userScripts.pageTranslationSource(), in: nil, contentWorld: .defaultClient)
+        })
+        bridge.webView = webView
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: bridge)
+        pageTranslationBridge = bridge
+    }
+
+    /// Translates at once when the pair is installed or already downloading; otherwise asks first, since the user decides on the download.
+    private func translatePage(_ offer: TranslationOffer) {
+        guard let pageTranslator else { return }
+        let pageLoad = pageLoads
+        Task { [weak self] in
+            guard await pageTranslator.needsDownload(offer.pairID) else {
+                self?.startTranslation(offer)
+                return
+            }
+            let sheet = TranslationDownloadSheet.makeController(for: offer) { [weak self] in
+                // The page can navigate on its own while the sheet is up; the offer was for the page that showed it.
+                guard let self, pageLoads == pageLoad else { return }
+                self.startTranslation(offer)
+            }
+            self?.present(sheet, animated: true)
+        }
+    }
+
+    private func startTranslation(_ offer: TranslationOffer) {
+        guard let bridge = pageTranslationBridge, let pageTranslator else { return }
+        let settings = WebPageTranslationSettings(privacyConfigurationManager: privacyConfigurationManager)
+        let session = pageTranslationSession ?? PageTranslationSession(bridge: bridge,
+                                                                       translator: pageTranslator,
+                                                                       batchCharacterLimit: { settings.batchCharacterLimit },
+                                                                       progress: self)
+        pageTranslationSession = session
+        session.start(offer)
+    }
+
+    /// Stops the page's translation, if any, and clears its bar; a bar that a page load has taken over stays.
+    private func cancelPageTranslation() {
+        pageTranslationSession?.cancel()
+        pageTranslationSession = nil
+        progressWorker.didCancelLoading(.translation)
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.
@@ -3220,6 +3364,9 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         if webView === self.webView {
             firstPaintCover.didStartNavigation(navigation)
+            pageLoads += 1
+            translationBannerPresenter.dismiss(animated: false)
+            cancelPageTranslation()
         }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
@@ -3302,6 +3449,7 @@ extension TabViewController: WKNavigationDelegate {
                                               to: webView)
         }
         updateFloatingPageBackgroundColor(in: webView)
+        offerTranslationIfNeeded(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
@@ -4175,8 +4323,8 @@ extension TabViewController: WKNavigationDelegate {
             }
         }
 
-        // Compose the synchronous main-frame request mutations (referrer trimming -> GPC -> search-token
-        // signals) in one pass and reload at most once.
+        // Compose the synchronous main-frame request mutations (referrer trimming -> GPC) in one pass
+        // and reload at most once.
         var modifiedRequest = navigationAction.request
         var didModifyRequest = false
 
@@ -4197,30 +4345,6 @@ extension TabViewController: WKNavigationDelegate {
            let gpcRequest = requestForDoNotSell(basedOn: modifiedRequest) {
             modifiedRequest = gpcRequest
             didModifyRequest = true
-        }
-
-        // Attach Search Token experiment signals (dindexexp param + X-DDG-Search-Token header) to SERP navigations.
-        // Enrolled devices only, skipping back/forward so we don't wipe forward history.
-        if navigationAction.isTargetingMainFrame,
-           navigationAction.navigationType != .backForward,
-           let url = navigationAction.request.url,
-           SerpSearchTokenInterceptor.isSerpURL(url),
-           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort {
-            // Pin the UA this SERP navigation will send so it can't inherit a stale `customUserAgent`
-            // from a prior (non-DDG) navigation. Matches the UA the token was warmed against.
-            webView.customUserAgent = userAgentManager.userAgent(isDesktop: tabModel.isDesktop, url: url)
-            let token = cohort == .treatment ? delegate?.searchToken(for: self) : nil
-            if let signalled = SerpSearchTokenInterceptor.signalledRequest(for: modifiedRequest,
-                                                                           cohort: cohort,
-                                                                           token: token) {
-                modifiedRequest = signalled
-                didModifyRequest = true
-                // Fires only when we mutate the request, i.e. the first pass — the cancel+reload re-enters
-                // with signals already present so `signalledRequest` returns nil, avoiding a double count.
-                if cohort == .treatment {
-                    fireSearchTokenAttachPixel(token: token)
-                }
-            }
         }
 
         if didModifyRequest {
@@ -5428,9 +5552,9 @@ extension TabViewController: UserContentControllerDelegate {
         if let browserToolsService, let browserToolScopeFactory,
            let webView, webView.configuration.userContentController === userContentController {
             if browserToolsPermissionPresenter == nil {
-                browserToolsPermissionPresenter = AIChatNativePermissionPresenter { [weak self] in
+                browserToolsPermissionPresenter = AIChatToolPermissionPresenter { [weak self] in
                     guard let self, self.browserToolsSurfaceVisible, self.isTabCurrentlyPresented() else { return nil }
-                    return self
+                    return .init(self)
                 }
             }
             userScripts.aiChatUserScript.bindBrowserTools(to: browserToolsService, owner: tabModel,
@@ -5462,6 +5586,8 @@ extension TabViewController: UserContentControllerDelegate {
 
         siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: siteLoadingPerformanceSubfeature!)
+
+        installPageTranslationBridge(in: userScripts)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         
@@ -6588,6 +6714,12 @@ extension TabViewController: DuckPlayerHosting {
     var contentBottomConstraint: NSLayoutConstraint? {
         return webViewBottomAnchorConstraint
     }
+
+    /// Read from the pill itself: its visibility notification also fires when no pill exists.
+    var isDuckPlayerPillVisible: Bool {
+        let duckPlayer = duckPlayerNavigationHandler.duckPlayer as? DuckPlayer
+        return (duckPlayer?.nativeUIPresenter as? DuckPlayerNativeUIPresenter)?.containerViewModel?.sheetVisible == true
+    }
     
     var floatingBottomChromeObscuredHeight: CGFloat {
         guard let chromeDelegate else { return 0 }
@@ -6677,30 +6809,6 @@ private extension WKProcessTerminationReason {
         case .requestedByClient: return "requested_by_client"
         case .crash: return "crash"
         case .exceededSharedProcessCrashLimit: return "exceeded_shared_process_crash_limit"
-        }
-    }
-}
-
-// MARK: - Search Token (Dindex) experiment diagnostics
-
-private extension TabViewController {
-
-    /// Fires the treatment-only `search-token_serp-attach` diagnostic for a SERP navigation the interceptor
-    /// just decorated: whether a token was attached and its length bucket. Daily+count, low-cardinality, no PII.
-    func fireSearchTokenAttachPixel(token: String?) {
-        PixelKit.fire(SearchTokenPixel.serpAttach(outcome: token != nil ? "attached" : "no_token",
-                                                  tokenLength: Self.tokenLengthBucket(token?.count ?? 0)),
-                      frequency: .dailyAndCount)
-    }
-
-    // A normal token is ~347 chars; buckets bracket that so truncation (1_256) and oversize (513_plus)
-    // stand out from the normal range (257_512).
-    static func tokenLengthBucket(_ length: Int) -> String {
-        switch length {
-        case 0: return "0"
-        case 1...256: return "1_256"
-        case 257...512: return "257_512"
-        default: return "513_plus"
         }
     }
 }

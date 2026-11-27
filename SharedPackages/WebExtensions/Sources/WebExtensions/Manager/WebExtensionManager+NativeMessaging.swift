@@ -31,6 +31,14 @@ extension WebExtensionManager {
     }
 
     func registerHandlersForExtension(identifier: String, context: WKWebExtensionContext) {
+        // A manifest's DDG identifier does not authorize access to the browser's internal handlers.
+        guard installingEmbeddedIdentifiers.contains(identifier)
+            || installationStore.installedExtension(withUniqueIdentifier: identifier)?.isEmbedded == true else {
+            return
+        }
+
+        registerSubscriptionEventsHandler(identifier: identifier, context: context)
+
         guard let handlerProvider = handlerProvider else {
             Logger.webExtensions.debug("⚠️ No handler provider configured")
             return

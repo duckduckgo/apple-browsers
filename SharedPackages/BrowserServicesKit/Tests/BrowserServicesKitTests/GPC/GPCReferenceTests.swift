@@ -27,6 +27,7 @@ import WebKit
 import XCTest
 @testable import TrackerRadarKit
 
+@MainActor
 final class GPCReferenceTests: XCTestCase {
     private let navigationDelegateMock = MockNavigationDelegate()
     private let schemeHandler = TestSchemeHandler()

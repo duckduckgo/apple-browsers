@@ -17,6 +17,7 @@
 //
 
 import AppKit
+@_spi(Testing) import PixelKit
 import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -25,22 +26,36 @@ import Testing
 @Suite("Add to Dock Video Presenter Tests")
 final class AddToDockVideoPresenterTests {
 
+    private let pixelFiring = PixelKitMock()
     private let window = SheetRecordingWindow()
 
-    private func makeSUT(window: NSWindow?) -> AddToDockVideoPresenter {
-        AddToDockVideoPresenter(windowProvider: { window })
+    private func makeSUT(window: NSWindow?, newWindow: NSWindow? = nil) -> AddToDockVideoPresenter {
+        AddToDockVideoPresenter(windowProvider: { window }, newWindowProvider: { newWindow }, pixelFiring: pixelFiring)
     }
 
     @available(macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func presentingWithNoWindowDoesNothing() {
+    func presentingWithNoWindowShowsSheetInNewWindow() {
+        let sut = makeSUT(window: nil, newWindow: window)
+
+        let didPresent = sut.present(from: .mainMenu, primaryAction: .done) { _ in }
+
+        #expect(didPresent)
+        #expect(window.presentedSheets.count == 1)
+    }
+
+    @available(macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func presentingWhenNoWindowCanBeOpenedDoesNothing() {
         let sut = makeSUT(window: nil)
         var receivedActions: [AddToDockVideoAction] = []
 
-        sut.present(primaryAction: .done) { receivedActions.append($0) }
+        let didPresent = sut.present(from: .mainMenu, primaryAction: .done) { receivedActions.append($0) }
         sut.handle(.done)
 
+        #expect(!didPresent)
         #expect(receivedActions.isEmpty)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
     }
 
     @available(macOS 13, *)
@@ -49,12 +64,16 @@ final class AddToDockVideoPresenterTests {
         let sut = makeSUT(window: window)
         var receivedActions: [AddToDockVideoAction] = []
 
-        sut.present(primaryAction: action == .done ? .done : .next) { receivedActions.append($0) }
+        let entryPoint: AddToDockVideoEntryPoint = action == .done ? .mainMenu : .popover
+        sut.present(from: entryPoint, primaryAction: action == .done ? .done : .next) { receivedActions.append($0) }
         sut.handle(action)
 
         #expect(receivedActions == [action])
         #expect(window.presentedSheets.count == 1)
         #expect(window.endedSheets == window.presentedSheets)
+        #expect(pixelFiring.actualFireCalls == [
+            ExpectedFireCall(pixel: AddToDockVideoPixel.buttonClicked(action: action, entryPoint: entryPoint), frequency: .standard)
+        ])
     }
 
     @available(macOS 13, *)
@@ -64,15 +83,20 @@ final class AddToDockVideoPresenterTests {
         var firstActions: [AddToDockVideoAction] = []
         var secondActions: [AddToDockVideoAction] = []
 
-        sut.present(primaryAction: .done) { firstActions.append($0) }
-        sut.present(primaryAction: .next) { secondActions.append($0) }
+        let firstDidPresent = sut.present(from: .mainMenu, primaryAction: .done) { firstActions.append($0) }
+        let secondDidPresent = sut.present(from: .popover, primaryAction: .next) { secondActions.append($0) }
 
+        #expect(firstDidPresent)
+        #expect(!secondDidPresent)
         #expect(window.presentedSheets.count == 1)
 
         sut.handle(.done)
 
         #expect(firstActions == [.done])
         #expect(secondActions.isEmpty)
+        #expect(pixelFiring.actualFireCalls == [
+            ExpectedFireCall(pixel: AddToDockVideoPixel.buttonClicked(action: .done, entryPoint: .mainMenu), frequency: .standard)
+        ])
     }
 }
 

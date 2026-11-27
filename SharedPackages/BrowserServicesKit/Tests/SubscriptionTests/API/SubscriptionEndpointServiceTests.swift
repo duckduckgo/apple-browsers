@@ -95,6 +95,24 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         XCTAssertEqual(subscription.status, .autoRenewable)
     }
 
+    func testWhenTheBaseURLChangesThenRequestsGoToTheNewBaseURL() async {
+        struct RequestFailed: Error {}
+        var requestedHosts: [String] = []
+        let apiService = MockAPIService { request in
+            requestedHosts.append(request.host)
+            return .failure(RequestFailed())
+        }
+        var serviceEnvironment = SubscriptionEnvironment.ServiceEnvironment.production
+        let endpointService = DefaultSubscriptionEndpointService(apiService: apiService) { serviceEnvironment.url }
+
+        _ = try? await endpointService.getSubscription(accessToken: "token")
+        serviceEnvironment = .staging
+        _ = try? await endpointService.getSubscription(accessToken: "token")
+
+        XCTAssertEqual(requestedHosts, [SubscriptionEnvironment.ServiceEnvironment.production.url.host,
+                                        SubscriptionEnvironment.ServiceEnvironment.staging.url.host])
+    }
+
     // MARK: - Withdrawal Tests
 
     func testGetWithdrawalEligibilityDecodesResponse() async throws {

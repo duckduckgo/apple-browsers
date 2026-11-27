@@ -51,6 +51,16 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
         XCTAssertEqual(call.pixel.parameters, ["last_stage": "none", "tabs": "one"])
     }
 
+    func testNativeMessagingBlockedFiresEveryTimeTheManagerReportsIt() {
+        let pixels = PixelKitMock()
+
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.nativeMessagingBlocked(extension: .catalog(.onePassword)))
+
+        XCTAssertEqual(pixels.actualFireCalls, [
+            ExpectedFireCall(pixel: WebExtensionPixel.nativeMessagingBlocked(extension: .catalog(.onePassword)), frequency: .standard)
+        ])
+    }
+
     func testUpdatePixelsUseOnlyAllowedParameters() throws {
         for pixelExtension in WebExtensionPixelExtension.allCases {
             var cases: [(WebExtensionPixelEvent, String, [String: String])] = [
@@ -239,6 +249,16 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(event)
             XCTAssertEqual(try XCTUnwrap(pixels.actualFireCalls.first).frequency, .standard, "\(event)")
         }
+    }
+
+    func testKillSwitchDisabledIsDailyAndCountWithBucketedCount() throws {
+        let pixels = PixelKitMock()
+        MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.killSwitchDisabled(count: 3))
+
+        let call = try XCTUnwrap(pixels.actualFireCalls.first)
+        XCTAssertEqual(call.pixel.name, "web_extension_kill_switch_disabled_macos")
+        XCTAssertEqual(call.frequency, .dailyAndCount)
+        XCTAssertEqual(call.pixel.parameters, ["count": "2"])
     }
 
     func testInstalledCountIsDaily() throws {

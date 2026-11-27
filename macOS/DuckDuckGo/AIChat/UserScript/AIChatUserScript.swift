@@ -23,6 +23,7 @@ import ConcurrencyExtensions
 import FoundationExtensions
 import Foundation
 import Persistence
+import PixelKit
 import UserScript
 import WebKit
 
@@ -30,7 +31,13 @@ final class AIChatUserScript: NSObject, Subfeature {
     public let handler: AIChatUserScriptHandling
     public let featureName: String = "aiChat"
     weak var broker: UserScriptMessageBroker?
-    weak var webView: WKWebView?
+    weak var webView: WKWebView? {
+        didSet {
+            if let webView {
+                localModelRunPageID = ObjectIdentifier(webView)
+            }
+        }
+    }
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     let messageFramePolicy: MessageFramePolicy
@@ -65,17 +72,23 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     private let browserTools: AIChatBrowserToolsService?
     private let localModelService: AIChatLocalModelServing?
+    /// The page whose local runs this script ends when it goes, including runs a script it
+    /// replaced started. `deinit` can't ask a web view that's already gone for its identity.
+    private var localModelRunPageID: ObjectIdentifier?
     /// Nil uses the app's, which lives on the main actor and so can't be a default argument here.
     private let localModelAccessPrompt: LocalModelAccessAsking?
     private let bonusMessageLog: AIChatBonusMessageLogging?
+    private let pixelFiring: PixelFiring?
 
     init(handler: AIChatUserScriptHandling,
          urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
          browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService,
          localModelService: AIChatLocalModelServing? = Application.appDelegate.localModelService,
          localModelAccessPrompt: LocalModelAccessAsking? = nil,
-         bonusMessageLog: AIChatBonusMessageLogging? = nil) {
+         bonusMessageLog: AIChatBonusMessageLogging? = nil,
+         pixelFiring: PixelFiring? = PixelKit.shared) {
         self.handler = handler
+        self.pixelFiring = pixelFiring
         self.browserTools = browserTools
         self.localModelService = localModelService
         self.localModelAccessPrompt = localModelAccessPrompt
@@ -153,11 +166,10 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker?.push(method: AIChatUserScriptMessages.submitAIChatNativePrompt.rawValue, params: prompt, for: self, into: webView)
     }
 
-    private func submitAIChatPageContext(_ pageContextData: AIChatPageContextData?) {
+    private func submitAIChatPageContext(_ response: PageContextResponse) {
         guard let webView else {
             return
         }
-        let response = PageContextResponse(pageContext: pageContextData)
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
     }
 
@@ -336,10 +348,11 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     deinit {
-        guard let localModelService else { return }
-        let ownerID = ObjectIdentifier(self)
+        // Content-blocking updates replace every script while its page stays open. The page's runs
+        // carry on and reach it through the new script, so only a page that's gone ends them.
+        guard let localModelService, webView == nil, let pageID = localModelRunPageID else { return }
         Task { @MainActor in
-            localModelService.cancelRuns(ownerID: ownerID)
+            localModelService.cancelRuns(ownerID: pageID)
         }
     }
 }
@@ -356,7 +369,13 @@ extension AIChatUserScript: AIChatLocalModelPushing {
         guard let request: AIChatLocalRunRequest = DecodableHelper.decode(from: params) else {
             throw AIChatLocalModelRequestError.invalidArguments
         }
-        return try localModelService.startRun(request, for: self)
+        let reply = try localModelService.startRun(request, for: self)
+        localModelRunPageID = localModelPageID
+        return reply
+    }
+
+    var localModelPage: AnyObject? {
+        webView
     }
 
     /// A notification, but it also answers with `{}` in case the page sends it as a request.
@@ -376,9 +395,8 @@ extension AIChatUserScript: AIChatLocalModelPushing {
         }
         let localModelAccessPrompt = localModelAccessPrompt ?? Application.appDelegate.localModelAccessPrompt
         let webView = message.messageWebView
-        let modelName = localModelService.model.name
-        let result = try await localModelService.requestAccess {
-            await localModelAccessPrompt.ask(from: webView, modelName: modelName)
+        let result = try await localModelService.requestAccess { request in
+            await localModelAccessPrompt.ask(from: webView, request: request)
         }
         return AIChatLocalModelAccessReply(result: result)
     }
@@ -440,6 +458,8 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
         let response = await handler.getAIChatNativeConfigValues(params: params, message: message)
         guard var configValues = response as? AIChatNativeConfigValues else { return response }
         configValues.clientTools = clientToolsConfiguration(for: message)
+        // Only where tools are offered, so Fire windows never send the answer metrics.
+        configValues.supportsBrowserToolsAnswerMetrics = configValues.clientTools != nil
         // The model's state and text reach the page only through `pushToDuckAI`. A page it skips,
         // such as Duck.ai on duckduckgo.com, would wait for a summary that never arrives.
         if !isDuckAIPushDestination(message.messageWebView?.url) {
@@ -457,8 +477,10 @@ extension AIChatUserScript: ClientToolPermissionPrompting {
     @MainActor
     fileprivate func clientToolsConfiguration(for message: UserScriptMessage) -> ClientToolsConfiguration? {
         guard isClientToolsPage(message.messageWebView?.url),
-              handler.isFireWindowProvider?() != true else { return nil }
-        return browserTools?.clientToolsConfiguration
+              handler.isFireWindowProvider?() != true,
+              let configuration = browserTools?.clientToolsConfiguration else { return nil }
+        pixelFiring?.fire(BrowserToolsPixel.enabled, frequency: .daily)
+        return configuration
     }
 
     @MainActor
@@ -479,6 +501,9 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
         guard handler.isFireWindowProvider?() != true,
               let webView, let broker,
               isClientToolsPage(webView.url) else { return }
+        if data.clientTools != nil {
+            pixelFiring?.fire(BrowserToolsPixel.enabled, frequency: .daily)
+        }
         broker.push(method: AIChatUserScriptMessages.clientToolsChanged.rawValue, params: data, for: self, into: webView)
     }
 

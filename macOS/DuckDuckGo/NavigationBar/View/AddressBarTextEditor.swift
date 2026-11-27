@@ -164,12 +164,34 @@ final class AddressBarTextEditor: NSTextView {
     }
 
     override func paste(_ sender: Any?) {
-        // Fixes an issue when url-name instead of url is pasted
-        if let url = NSPasteboard.general.url {
+        let pasteboard = NSPasteboard.general
+        if pasteboard.availableType(from: [.URL, .fileURL]) == nil,
+           let string = pasteboard.string(forType: .string),
+           let singleLine = Self.singleLineTextForPaste(string) {
+            guard !singleLine.isEmpty else { return }
+            // `super` skips the typing path, which would autocomplete the pasted text
+            breakUndoCoalescing()
+            super.insertText(singleLine, replacementRange: selectedRange())
+            breakUndoCoalescing()
+            lastInputType = nil
+        } else if let url = NSPasteboard.general.url {
+            // Fixes an issue when url-name instead of url is pasted
             super.pasteAsPlainText(url.absoluteString)
         } else {
             super.paste(sender)
         }
+    }
+
+    /// Joins multi-line text for the single-line address bar; `nil` if `string` has no line breaks.
+    /// Lines are joined with a space if the text contains other whitespace, otherwise with nothing,
+    /// so a URL wrapped across lines (e.g. copied from a terminal) stays one URL.
+    static func singleLineTextForPaste(_ string: String) -> String? {
+        guard string.rangeOfCharacter(from: .newlines) != nil else { return nil }
+        let lines = string.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        let hasOtherWhitespace = lines.contains { $0.rangeOfCharacter(from: .whitespaces) != nil }
+        return lines.joined(separator: hasOtherWhitespace ? " " : "")
     }
 
     // MARK: - Exclude “ – Search with DuckDuckGo” suffix from selection range

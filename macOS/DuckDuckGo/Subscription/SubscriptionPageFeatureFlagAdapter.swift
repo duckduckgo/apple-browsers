@@ -31,10 +31,6 @@ struct SubscriptionPageFeatureFlagAdapter: SubscriptionPageFeatureFlagProviding 
 
     func isEnabled(_ flag: SubscriptionPageFeatureFlag) -> Bool {
         switch flag {
-        case .paidAIChat:
-            return featureFlagger.isFeatureOn(.paidAIChat)
-        case .proTierPurchase:
-            return featureFlagger.isFeatureOn(.allowProTierPurchase)
         case .supportsAlternateStripePaymentFlow:
             return featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow)
         }

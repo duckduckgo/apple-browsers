@@ -1,10 +1,10 @@
 // Privacy Pro subscription-related pixel definitions
 {
     "m_privacy-pro_keychain_manager_data_added_to_backlog": {
-        "description": "Fired when Privacy Pro keychain manager adds data to the backlog because keychain is unavailable",
+        "description": "Fired once per keychain item when Privacy Pro keychain manager can't write it because the keychain is unavailable, and queues it in the backlog",
         "owners": ["federicocappelli"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -12,14 +12,20 @@
                 "key": "source",
                 "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
                 "type": "string"
+            },
+            {
+                "key": "token_type",
+                "description": "Which subscription token the keychain item holds: main, the token used by the app and its extensions, or backup, the backup token kept by the main app",
+                "type": "string",
+                "enum": ["main", "backup"]
             }
         ]
     },
     "m_privacy-pro_keychain_manager_deallocated_with_backlog": {
-        "description": "Fired when Privacy Pro keychain manager is deallocated while still having pending data in the backlog",
+        "description": "Fired once per keychain item still queued in the backlog when Privacy Pro keychain manager is deallocated, so the item was never written",
         "owners": ["federicocappelli"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
@@ -27,51 +33,54 @@
                 "key": "source",
                 "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
                 "type": "string"
+            },
+            {
+                "key": "token_type",
+                "description": "Which subscription token the keychain item holds: main, the token used by the app and its extensions, or backup, the backup token kept by the main app",
+                "type": "string",
+                "enum": ["main", "backup"]
             }
         ]
     },
     "m_privacy-pro_keychain_manager_data_wrote_from_backlog": {
-        "description": "Fired when Privacy Pro keychain manager successfully writes data from the backlog to keychain",
+        "description": "Fired once per keychain item that a backlog retry of Privacy Pro keychain manager writes to the keychain",
         "owners": ["federicocappelli"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
             {
-                "key": "itemsWritten",
-                "description": "The number of items successfully written from the backlog",
-                "type": "integer"
-            },
-            {
                 "key": "source",
                 "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
                 "type": "string"
+            },
+            {
+                "key": "token_type",
+                "description": "Which subscription token the keychain item holds: main, the token used by the app and its extensions, or backup, the backup token kept by the main app",
+                "type": "string",
+                "enum": ["main", "backup"]
             }
         ]
     },
     "m_privacy-pro_keychain_manager_failed_to_write_data_from_backlog": {
-        "description": "Fired when Privacy Pro keychain manager fails to write data from the backlog to keychain",
+        "description": "Fired once per keychain item that a backlog retry of Privacy Pro keychain manager fails to write with a permanent error",
         "owners": ["federicocappelli"],
-        "triggers": ["other"],
-        "suffixes": ["first_daily_count"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",
             {
-                "key": "error",
-                "description": "The error code or description for the failed write operation",
-                "type": "string"
-            },
-            {
-                "key": "attemptCount",
-                "description": "The number of attempts made before failing",
-                "type": "integer"
-            },
-            {
                 "key": "source",
                 "description": "The app component that generated the pixel, like MainApp, SysExt, VPNApp or DBP",
                 "type": "string"
+            },
+            {
+                "key": "token_type",
+                "description": "Which subscription token the keychain item holds: main, the token used by the app and its extensions, or backup, the backup token kept by the main app",
+                "type": "string",
+                "enum": ["main", "backup"]
             }
         ]
     },
@@ -202,13 +211,6 @@
                 "description": "Underlying error code at any depth"
             }
         ]
-    },
-    "m_subscription_tier-options_unexpected-pro-tier": {
-        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out",
-        "owners": ["SabrinaTardio"],
-        "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion"]
     },
 
     // Plan Change Click Pixels
@@ -958,8 +960,20 @@
             {
                 "key": "feature.data.ext.recovery_outcome",
                 "type": "string",
-                "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed",
+                "description": "Outcome of invalid-token recovery for this refresh, with its meaning from before the backup token: succeeded when any recovery yielded a valid token (see recovery_method), failed when the App Store restore ran and didn't, not_attempted when it didn't run and nothing recovered the token. The backup restore is reported in backup_outcome",
                 "enum": ["not_attempted", "succeeded", "failed"]
+            },
+            {
+                "key": "feature.data.ext.recovery_method",
+                "type": "string",
+                "description": "How the token was recovered when recovery_outcome is succeeded: from the backup token or by the App Store restore. Absent when another process had already stored a new token or the user changed the session",
+                "enum": ["backup", "app_store"]
+            },
+            {
+                "key": "feature.data.ext.backup_outcome",
+                "type": "string",
+                "description": "Outcome of the backup token restore when the recovery path was reached: succeeded, not_attempted when no backup restore ran, rejected when the backup can never restore the session, failed for a temporary or unknown failure, or session_changed when the user signed out, signed in or switched account during the restore",
+                "enum": ["succeeded", "not_attempted", "rejected", "failed", "session_changed"]
             },
             {
                 "key": "feature.data.ext.signed_out",
@@ -1270,6 +1284,43 @@
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_notifications-denied-dialog_not-now_click": {
+        "description": "Fired when the user taps 'Not Now' in the native dialog asking them to turn on notifications in Settings for the free-trial reminder. The subscription page shows the dialog when notifications are off and the user picks a reminder.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_notifications-denied-dialog_open-settings_click": {
+        "description": "Fired when the user taps 'Open Settings' in the native dialog asking them to turn on notifications for the free-trial reminder, which opens the app's notification settings.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_notifications-denied-dialog_settings_return": {
+        "description": "Fired the first time the app becomes active again after the user tapped 'Open Settings' in the notifications dialog, with the notification permission at that moment. Comparing it with open-settings_click shows how many users never came back.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "notifications_permission",
+                "type": "string",
+                "description": "Notification permission when the user comes back from Settings, as reported to the subscription page by getUserSettings",
+                "enum": ["granted", "denied", "notDetermined"]
+            }
+        ]
+    },
+    "subscription_notifications-denied-dialog_presentation_failure": {
+        "description": "Fired when the subscription page asks for the native dialog to turn on notifications in Settings, but the app cannot present it because no screen is available, the screen is not in a window, or a transition is in progress. The subscription page receives 'notNow' instead.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
     },
     "m_privacy-pro_app-settings_partner-benefits_click": {
         "description": "Fires when the user taps 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared verbatim with Android and Windows, and predates the label being renamed to 'Subscriber Offers'.",

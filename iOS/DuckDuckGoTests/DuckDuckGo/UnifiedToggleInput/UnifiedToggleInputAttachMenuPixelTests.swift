@@ -43,7 +43,7 @@ struct UnifiedToggleInputAttachMenuPixelTests {
         let call = pixelKit.actualFireCalls.last
         #expect(pixelKit.actualFireCalls.count == 1)
         #expect(call?.pixel.name == "m_aichat_unified_input_attach_menu_shown")
-        #expect(call?.pixel.parameters == ["surface": surface.rawValue])
+        #expect(call?.pixel.parameters == ["surface": surface.rawValue, "simplified_prompt_box": "off"])
         #expect(call?.frequency == .dailyAndCount)
         #expect(call?.includeAppVersionParameter == true)
     }
@@ -59,7 +59,7 @@ struct UnifiedToggleInputAttachMenuPixelTests {
         let call = pixelKit.actualFireCalls.last
         #expect(pixelKit.actualFireCalls.count == 1)
         #expect(call?.pixel.name == "m_aichat_unified_input_attach_menu_item_selected")
-        #expect(call?.pixel.parameters == ["surface": surface.rawValue, "item": item.rawValue])
+        #expect(call?.pixel.parameters == ["surface": surface.rawValue, "item": item.rawValue, "simplified_prompt_box": "off"])
         #expect(call?.frequency == .dailyAndCount)
         #expect(call?.includeAppVersionParameter == true)
     }
@@ -68,7 +68,7 @@ struct UnifiedToggleInputAttachMenuPixelTests {
     @Test(.timeLimit(.minutes(1)))
     func itemParamValuesMatchTheDefinition() {
         #expect(UnifiedToggleInputAttachMenuItem.allCases.map(\.rawValue)
-                == ["camera", "photo_library", "file_picker", "page", "recent_tab", "tab_picker"])
+                == ["camera", "photo_library", "file_picker", "page", "recent_tab", "tab_picker", "web_search", "create_image"])
     }
 
     // MARK: - Presenter: each enabled item reports itself

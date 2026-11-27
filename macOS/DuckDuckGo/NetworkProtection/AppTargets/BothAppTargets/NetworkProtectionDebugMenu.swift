@@ -36,7 +36,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     // MARK: - Menus
 
-    private let environmentMenu = NSMenu()
+    private let environmentItem = NSMenuItem(title: "", action: nil, target: nil)
     private let upsellMenu = NSMenu()
 
     private let preferredServerMenu: NSMenu
@@ -178,8 +178,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
             NSMenuItem(title: "Onboarding")
                 .submenu(NetworkProtectionOnboardingMenu())
 
-            NSMenuItem(title: "Environment")
-                .submenu(environmentMenu)
+            environmentItem
 
             NSMenuItem(title: "Excluded Apps") {
                 excludeDDGBrowserTrafficFromVPN.targetting(self)
@@ -216,7 +215,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
         }
 
         preferredServerMenu.autoenablesItems = false
-        populateNetworkProtectionEnvironmentListMenuItems()
         populateNetworkProtectionUpsellMenuItems()
         Task {
             try? await populateNetworkProtectionServerListMenuItems()
@@ -510,16 +508,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     // MARK: Populating Menu Items
 
-    private func populateNetworkProtectionEnvironmentListMenuItems() {
-        environmentMenu.items = [
-            NSMenuItem(title: "⚠️ A staging subscription can be used for the staging VPN environment, a production subscription can be used for both", action: nil, target: nil),
-            NSMenuItem(title: "⚠️ Please restart the browser after changing environment", action: nil, target: nil),
-            NSMenuItem.separator(),
-            NSMenuItem(title: "Production", action: #selector(setSelectedEnvironment(_:)), target: self, keyEquivalent: ""),
-            NSMenuItem(title: "Staging", action: #selector(setSelectedEnvironment(_:)), target: self, keyEquivalent: ""),
-        ]
-    }
-
     private func populateNetworkProtectionUpsellMenuItems() {
         upsellMenu.items = [
             NSMenuItem(title: "⚠️ Please restart the browser after resetting upsell state", action: nil, target: nil),
@@ -598,19 +586,16 @@ final class NetworkProtectionDebugMenu: NSMenu {
     // MARK: - Menu State Update
 
     override func update() {
-        updateEnvironmentMenu()
+        updateEnvironmentItem()
         updateExclusionsMenu()
         updatePreferredServerMenu()
         updateRekeyValidityMenu()
         updateNetworkProtectionMenuItemsState()
     }
 
-    private func updateEnvironmentMenu() {
-        let selectedEnvironment = settings.selectedEnvironment
-        guard environmentMenu.items.count == 5 else { return }
-
-        environmentMenu.items[3].state = selectedEnvironment == .production ? .on : .off
-        environmentMenu.items[4].state = selectedEnvironment == .staging ? .on : .off
+    private func updateEnvironmentItem() {
+        let environment = settings.selectedEnvironment == .production ? "Production" : "Staging"
+        environmentItem.title = "Environment: \(environment), set in Debug > Subscription > Environment"
     }
 
     private func updatePreferredServerMenu() {
@@ -723,27 +708,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
         transparentProxySettings.toggleExclusion(for: ddgBrowserAppIdentifier)
     }
 
-    // MARK: Environment
-
-    @objc func setSelectedEnvironment(_ menuItem: NSMenuItem) {
-        let title = menuItem.title
-        let selectedEnvironment: VPNSettings.SelectedEnvironment
-
-        if title == "Staging" {
-            selectedEnvironment = .staging
-        } else {
-            selectedEnvironment = .production
-        }
-
-        settings.selectedEnvironment = selectedEnvironment
-
-        Task {
-            _ = try await networkProtectionDeviceManager.refreshServerList()
-            try? await populateNetworkProtectionServerListMenuItems()
-
-            settings.selectedServer = .automatic
-        }
-    }
 }
 
 #if DEBUG

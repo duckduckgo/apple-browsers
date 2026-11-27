@@ -24,6 +24,7 @@ import WebKit
 private final class SpyWebExtensionPixelFiring: WebExtensionPixelFiring {
     private(set) var firedEvents: [WebExtensionPixelEvent] = []
     func fire(_ event: WebExtensionPixelEvent) { firedEvents.append(event) }
+    func reset() { firedEvents.removeAll() }
 
     var stateCheckedCount: Int {
         firedEvents.filter { if case .stateChecked = $0 { return true }; return false }.count
@@ -486,6 +487,8 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
     func testRapidSyncsCoalesceToSingleRun() async {
         let manager = RecordingWebExtensionManager()
         let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [] })
+        await sut.loadAndSync().value
+        let launchOperations = manager.finished.count
 
         sut.sync()
         sut.sync()
@@ -493,18 +496,85 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         let last = sut.sync()
         await last.value
 
-        XCTAssertEqual(manager.finished, [.sync([])], "synchronous bursts of sync() must collapse to one run")
+        XCTAssertEqual(Array(manager.finished.dropFirst(launchOperations)), [.sync([])],
+                       "synchronous bursts of sync() must collapse to one run")
     }
 
     @MainActor
     func testSyncAfterPreviousCompletesRunsAgain() async {
         let manager = RecordingWebExtensionManager()
         let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [] })
+        await sut.loadAndSync().value
+        let launchOperations = manager.finished.count
 
         await sut.sync().value
         await sut.sync().value
 
-        XCTAssertEqual(manager.finished, [.sync([]), .sync([])], "a sync requested after the prior one started must run")
+        XCTAssertEqual(Array(manager.finished.dropFirst(launchOperations)), [.sync([]), .sync([])],
+                       "a sync requested after the prior one started must run")
+    }
+
+    @MainActor
+    func testSyncBeforeInitialLoadAndSyncIsRequestedIsSkipped() async {
+        let manager = RecordingWebExtensionManager()
+        let spy = SpyWebExtensionPixelFiring()
+        var enabledTypes: Set<DuckDuckGoWebExtensionType> = [.embedded]
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { enabledTypes }, pixelFiring: spy)
+
+        await sut.sync().value
+
+        XCTAssertTrue(manager.started.isEmpty, "a sync before the launch load must not install extensions it can't load")
+        XCTAssertTrue(spy.firedEvents.isEmpty)
+
+        // The launch load syncs with the state current when it runs, so the skipped change is not lost.
+        enabledTypes = [.embedded, .adBlockingExtension]
+        await sut.loadAndSync().value
+        XCTAssertEqual(manager.finished, [.syncCPM(true), .load, .sync([.embedded, .adBlockingExtension])])
+    }
+
+    @MainActor
+    func testSyncAfterInitialLoadAndSyncIsRequestedRunsAfterIt() async {
+        let manager = RecordingWebExtensionManager()
+        manager.suspendLoad = true
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { [.embedded] })
+
+        let loadAndSync = sut.loadAndSync()
+        let sync = sut.sync()
+        while !manager.isLoadSuspended { await Task.yield() }
+        manager.resumeLoad()
+        await loadAndSync.value
+        await sync.value
+
+        XCTAssertEqual(manager.finished, [.syncCPM(true), .load, .sync([.embedded]), .sync([.embedded])])
+    }
+
+    @MainActor
+    func testConsistencyIsNotReportedBeforeInstalledExtensionsAreLoaded() async {
+        let manager = RecordingWebExtensionManager()
+        manager.stubbedLoadedTypes = []
+        let spy = SpyWebExtensionPixelFiring()
+        let sut = WebExtensionLifecycleCoordinator(
+            manager: manager, enabledTypesProvider: { [.embedded, .adBlockingExtension] }, pixelFiring: spy
+        )
+
+        await sut.verify().value
+        await sut.reload().value
+
+        XCTAssertTrue(spy.firedEvents.isEmpty, "nothing is loaded yet by design, so no state check or not-loaded pixel")
+
+        await sut.loadAndSync().value
+        XCTAssertEqual(spy.stateCheckedCount, 1)
+        XCTAssertEqual(spy.notLoadedTypes, [.embedded, .adBlockingExtension])
+    }
+
+    @MainActor
+    private func makeLoadedSUT(manager: RecordingWebExtensionManager,
+                               enabledTypes: Set<DuckDuckGoWebExtensionType>,
+                               pixelFiring spy: SpyWebExtensionPixelFiring) async -> WebExtensionLifecycleCoordinator {
+        let sut = WebExtensionLifecycleCoordinator(manager: manager, enabledTypesProvider: { enabledTypes }, pixelFiring: spy)
+        await sut.loadAndSync().value
+        spy.reset()
+        return sut
     }
 
     @MainActor
@@ -525,9 +595,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         let manager = RecordingWebExtensionManager()
         manager.stubbedLoadedTypes = [.embedded]
         let spy = SpyWebExtensionPixelFiring()
-        let sut = WebExtensionLifecycleCoordinator(
-            manager: manager, enabledTypesProvider: { [.embedded] }, pixelFiring: spy
-        )
+        let sut = await makeLoadedSUT(manager: manager, enabledTypes: [.embedded], pixelFiring: spy)
         await sut.sync().value
         XCTAssertEqual(spy.stateCheckedCount, 1)
         XCTAssertTrue(spy.notLoadedTypes.isEmpty)
@@ -562,9 +630,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         let manager = RecordingWebExtensionManager()
         manager.stubbedLoadedTypes = []
         let spy = SpyWebExtensionPixelFiring()
-        let sut = WebExtensionLifecycleCoordinator(
-            manager: manager, enabledTypesProvider: { [.adBlockingExtension] }, pixelFiring: spy
-        )
+        let sut = await makeLoadedSUT(manager: manager, enabledTypes: [.adBlockingExtension], pixelFiring: spy)
         await sut.verify().value
         XCTAssertEqual(spy.stateCheckedCount, 1)
         XCTAssertEqual(spy.notLoadedTypes, [.adBlockingExtension])
@@ -576,9 +642,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         manager.stubbedLoadedTypes = [.adBlockingExtension]
         manager.stubbedAdBlockingScriptletsFetched = true
         let spy = SpyWebExtensionPixelFiring()
-        let sut = WebExtensionLifecycleCoordinator(
-            manager: manager, enabledTypesProvider: { [.adBlockingExtension] }, pixelFiring: spy
-        )
+        let sut = await makeLoadedSUT(manager: manager, enabledTypes: [.adBlockingExtension], pixelFiring: spy)
         await sut.sync().value
         XCTAssertTrue(spy.scriptletNotFetchedFlags.isEmpty)
     }
@@ -589,9 +653,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         manager.stubbedLoadedTypes = [.adBlockingExtension]
         manager.stubbedAdBlockingScriptletsFetched = false
         let spy = SpyWebExtensionPixelFiring()
-        let sut = WebExtensionLifecycleCoordinator(
-            manager: manager, enabledTypesProvider: { [.adBlockingExtension] }, pixelFiring: spy
-        )
+        let sut = await makeLoadedSUT(manager: manager, enabledTypes: [.adBlockingExtension], pixelFiring: spy)
         await sut.sync().value
         XCTAssertEqual(spy.scriptletNotFetchedFlags, [true])
     }
@@ -602,9 +664,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         manager.stubbedLoadedTypes = []
         manager.stubbedAdBlockingScriptletsFetched = false
         let spy = SpyWebExtensionPixelFiring()
-        let sut = WebExtensionLifecycleCoordinator(
-            manager: manager, enabledTypesProvider: { [.adBlockingExtension] }, pixelFiring: spy
-        )
+        let sut = await makeLoadedSUT(manager: manager, enabledTypes: [.adBlockingExtension], pixelFiring: spy)
         await sut.sync().value
         XCTAssertEqual(spy.scriptletNotFetchedFlags, [false])
     }
@@ -614,9 +674,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         let manager = RecordingWebExtensionManager()
         manager.stubbedAdBlockingScriptletsFetched = false
         let spy = SpyWebExtensionPixelFiring()
-        let sut = WebExtensionLifecycleCoordinator(
-            manager: manager, enabledTypesProvider: { [.embedded] }, pixelFiring: spy
-        )
+        let sut = await makeLoadedSUT(manager: manager, enabledTypes: [.embedded], pixelFiring: spy)
         await sut.sync().value
         XCTAssertTrue(spy.scriptletNotFetchedFlags.isEmpty)
     }
@@ -626,9 +684,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         let manager = RecordingWebExtensionManager()
         manager.stubbedLoadedTypes = []
         let spy = SpyWebExtensionPixelFiring()
-        let sut = WebExtensionLifecycleCoordinator(
-            manager: manager, enabledTypesProvider: { [.embedded, .darkReader] }, pixelFiring: spy
-        )
+        let sut = await makeLoadedSUT(manager: manager, enabledTypes: [.embedded, .darkReader], pixelFiring: spy)
         await sut.sync().value
         XCTAssertEqual(spy.stateCheckedCount, 1)
         XCTAssertEqual(spy.notLoadedTypes, [.embedded, .darkReader])
@@ -764,6 +820,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
     @MainActor func hasHitNativeMessagingLimitation(identifier: String) -> Bool { false }
     @MainActor func isNativeMessagingAlertSuppressed(identifier: String) -> Bool { false }
     @MainActor func suppressNativeMessagingAlert(identifier: String) {}
+    @MainActor func pixelExtension(identifier: String) -> WebExtensionPixelExtension { .other }
     @MainActor func setHasAccessToPrivateData(_ allowed: Bool, for identifier: String) throws {}
     func extensionContext(for url: URL) -> WKWebExtensionContext? { nil }
     func context(for identifier: String) -> WKWebExtensionContext? { nil }

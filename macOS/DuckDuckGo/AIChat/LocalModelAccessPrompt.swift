@@ -19,13 +19,15 @@
 import AIChat
 import AppKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 import SwiftUIExtensions
 import WebKit
 
 @MainActor
 protocol LocalModelAccessAsking: AnyObject {
-    func ask(from webView: WKWebView?, modelName: String) async -> AIChatLocalModelAccessReply.Result
+    /// `.allowed` means Turn On for a model on the device, or Install for one that needs a download.
+    func ask(from webView: WKWebView?, request: AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result
 }
 
 /// Asks whether Duck.ai may use the local model, in a pop-up at the window's Duck.ai button.
@@ -33,32 +35,42 @@ protocol LocalModelAccessAsking: AnyObject {
 final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
 
     private let themeManager: ThemeManager
+    private let instrumentation: AIChatLocalModelInstrumentation
     private var popover: NSPopover?
     private var answer: AIChatLocalModelAccessReply.Result?
+    private var isInstallPrompt = false
     private var waiting: [CheckedContinuation<AIChatLocalModelAccessReply.Result, Never>] = []
 
-    init(themeManager: ThemeManager) {
+    init(themeManager: ThemeManager, instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
         self.themeManager = themeManager
+        self.instrumentation = instrumentation
     }
 
-    func ask(from webView: WKWebView?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
+    func ask(from webView: WKWebView?, request: AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result {
         await withCheckedContinuation { continuation in
             waiting.append(continuation)
             // A second request while the pop-up is up, from a double click or another window, gets the same answer.
             guard popover == nil else { return }
-            if !show(from: webView, modelName: modelName) {
+            if show(from: webView, request: request) {
+                // The pixels only know Apple Intelligence so far, so an Install pop-up would count as its offer.
+                if case .install = request {
+                    isInstallPrompt = true
+                } else {
+                    instrumentation.fire(.promoShown)
+                }
+            } else {
                 finish(.declined)
             }
         }
     }
 
-    private func show(from webView: WKWebView?, modelName: String) -> Bool {
+    private func show(from webView: WKWebView?, request: AIChatLocalModelAccessRequest) -> Bool {
         guard let webView, webView.window != nil else { return false }
 
         let content = LocalModelAccessPromptView(themeManager: themeManager,
-                                                 modelName: modelName,
+                                                 request: request,
                                                  onNoThanks: { [weak self] in self?.close(with: .declined) },
-                                                 onTurnOn: { [weak self] in self?.close(with: .allowed) })
+                                                 onAccept: { [weak self] in self?.close(with: .allowed) })
         let controller = NSHostingController(rootView: content)
         let popover = NSPopover()
         popover.behavior = .transient
@@ -75,7 +87,8 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
             let top = webView.isFlipped ? webView.bounds.minY : webView.bounds.maxY - 1
             popover.show(positionedBelow: NSRect(x: webView.bounds.midX, y: top, width: 1, height: 1), in: webView)
         }
-        return true
+        // AppKit skips the pop-up for a hidden window, and a pop-up that never shows never closes to answer the page.
+        return popover.isShown
     }
 
     private func duckAIButton(in window: NSWindow?) -> NSView? {
@@ -96,6 +109,7 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
         self.waiting = []
         popover = nil
         answer = nil
+        isInstallPrompt = false
         for continuation in waiting {
             continuation.resume(returning: result)
         }
@@ -106,22 +120,53 @@ extension LocalModelAccessPrompt: NSPopoverDelegate {
 
     /// Every way the pop-up closes ends here, so Escape or a click outside answers `declined`.
     func popoverDidClose(_ notification: Notification) {
-        finish(answer ?? .declined)
+        let result = answer ?? .declined
+        if result == .declined, !isInstallPrompt {
+            instrumentation.fire(.promoClosed)
+        }
+        finish(result)
     }
 }
 
 struct LocalModelAccessPromptView: View {
 
     @ObservedObject var themeManager: ThemeManager
-    let modelName: String
+    let request: AIChatLocalModelAccessRequest
     let onNoThanks: () -> Void
-    let onTurnOn: () -> Void
+    let onAccept: () -> Void
+
+    private var isInstall: Bool {
+        if case .install = request { return true }
+        return false
+    }
+
+    private var titleFormat: String {
+        UserText.localModelPromptTitle
+    }
+
+    private var message: String {
+        switch request {
+        case .connect(let model):
+            return String(format: UserText.localModelPromptMessage, model.name)
+        case .install(let model, _):
+            return String(format: UserText.localModelPromptMessage, model.name) + "\n\n" + UserText.localModelInstallPromptFutureUse
+        }
+    }
+
+    private var acceptTitle: String {
+        switch request {
+        case .connect:
+            return UserText.localModelConnect
+        case .install(_, let bytes):
+            return String(format: UserText.localModelInstallButton, ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             title
 
-            Text(UserText.localModelAccessPromptMessage)
+            Text(message)
                 .font(.system(size: 13))
                 .foregroundColor(color(.textPrimary))
                 .fixedSize(horizontal: false, vertical: true)
@@ -137,11 +182,11 @@ struct LocalModelAccessPromptView: View {
                 .buttonStyle(DismissActionButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true, stateColors: .themedDismissButton))
                 .accessibilityIdentifier("LocalModelAccessPrompt.noThanks")
 
-                Button(action: onTurnOn) {
-                    buttonLabel(UserText.localModelAccessTurnOn)
+                Button(action: onAccept) {
+                    buttonLabel(acceptTitle)
                 }
                 .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, stateColors: .themedActionButton, pillShape: true))
-                .accessibilityIdentifier("LocalModelAccessPrompt.turnOn")
+                .accessibilityIdentifier(isInstall ? "LocalModelAccessPrompt.install" : "LocalModelAccessPrompt.turnOn")
             }
         }
         .padding(16)
@@ -150,7 +195,7 @@ struct LocalModelAccessPromptView: View {
 
     /// One sentence for translators, laid out as in the design: the model's chip ends the first line.
     private var title: some View {
-        let parts = UserText.localModelAccessPromptTitle.components(separatedBy: "%@")
+        let parts = titleFormat.components(separatedBy: "%@")
         let beforeModel = parts.first?.trimmingCharacters(in: .whitespaces) ?? ""
         let afterModel = parts.dropFirst().joined().trimmingCharacters(in: .whitespaces)
         return VStack(alignment: .leading, spacing: 4) {
@@ -159,8 +204,15 @@ struct LocalModelAccessPromptView: View {
                     Text(beforeModel)
                 }
                 HStack(spacing: 6) {
-                    AppleIntelligenceGlyph(size: 16)
-                    Text(modelName)
+                    switch request {
+                    case .connect:
+                        AppleIntelligenceGlyph(size: 16)
+                    case .install:
+                        Image(nsImage: DesignSystemImages.Glyphs.Size12.chip)
+                            .foregroundColor(color(.iconsPrimary))
+                            .accessibilityHidden(true)
+                    }
+                    Text(UserText.localModelPromptChip)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)

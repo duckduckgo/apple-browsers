@@ -88,7 +88,7 @@ final class UTIToolsController {
     }
 
     private func hasActionableMenuItem(toolsMenu: UTIToolsMenu) -> Bool {
-        toolsMenu.items.contains { $0.isEnabled }
+        toolsMenu.hasEnabledItem
     }
 }
 
@@ -207,6 +207,15 @@ struct UTIToolsMenu {
     }
 
     let items: [Item]
+
+    var hasEnabledItem: Bool {
+        items.contains { $0.isEnabled }
+    }
+}
+
+struct UTIAttachMenuTools {
+    let menu: UTIToolsMenu
+    let onSelect: (UTIToolsMenu.Item.Identifier) -> Void
 }
 
 struct UTIToolsMenuFactory {
@@ -226,21 +235,31 @@ struct UTIToolsMenuFactory {
         return UIMenu(children: children)
     }
 
-    private func makeAction(_ item: UTIToolsMenu.Item, onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void) -> UIAction {
+    func makeAttachMenuSection(_ menu: UTIToolsMenu, onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void) -> UIMenu {
+        let toolActions = menu.items
+            .filter { $0.identifier != .customizeResponses }
+            .map { makeAction($0, isAttachMenuRow: true, onSelect: onSelect) }
+        return UIMenu(options: .displayInline, children: toolActions)
+    }
+
+    private func makeAction(_ item: UTIToolsMenu.Item,
+                            isAttachMenuRow: Bool = false,
+                            onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void) -> UIAction {
         switch item {
         case .customizeResponses:
             return makeCustomizeResponsesAction(onSelect: onSelect)
         case let .webSearch(isSelected, isEnabled):
             return makeWebSearchAction(
-                isSelected: isSelected,
+                isSelected: !isAttachMenuRow && isSelected,
                 isEnabled: isEnabled,
+                showsSubtitle: !isAttachMenuRow,
                 onSelect: onSelect
             )
         case let .imageGeneration(isSelected, isEnabled, subtitle):
             return makeImageGenerationAction(
-                isSelected: isSelected,
+                isSelected: !isAttachMenuRow && isSelected,
                 isEnabled: isEnabled,
-                subtitle: subtitle,
+                subtitle: isAttachMenuRow ? nil : subtitle,
                 onSelect: onSelect
             )
         }
@@ -260,6 +279,7 @@ struct UTIToolsMenuFactory {
     private func makeWebSearchAction(
         isSelected: Bool,
         isEnabled: Bool,
+        showsSubtitle: Bool,
         onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void
     ) -> UIAction {
         let state: UIMenuElement.State = isSelected ? .on : .off
@@ -267,8 +287,8 @@ struct UTIToolsMenuFactory {
 
         return UIAction(
             title: UserText.aiChatToolbarWebSearchToolTitle,
-            subtitle: UserText.aiChatToolbarWebSearchToolSubtitle,
-            image: DesignSystemImages.Glyphs.Size24.globe,
+            subtitle: showsSubtitle ? UserText.aiChatToolbarWebSearchToolSubtitle : nil,
+            image: showsSubtitle ? DesignSystemImages.Glyphs.Size24.globe : DesignSystemImages.Glyphs.Size16.globe,
             attributes: attributes,
             state: state
         ) { _ in
@@ -279,7 +299,7 @@ struct UTIToolsMenuFactory {
     private func makeImageGenerationAction(
         isSelected: Bool,
         isEnabled: Bool,
-        subtitle: String,
+        subtitle: String?,
         onSelect: @escaping (UTIToolsMenu.Item.Identifier) -> Void
     ) -> UIAction {
         let state: UIMenuElement.State = isSelected ? .on : .off
@@ -288,7 +308,7 @@ struct UTIToolsMenuFactory {
         return UIAction(
             title: UserText.aiChatToolbarImageGenerationToolTitle,
             subtitle: subtitle,
-            image: DesignSystemImages.Glyphs.Size24.images,
+            image: subtitle == nil ? DesignSystemImages.Glyphs.Size16.images : DesignSystemImages.Glyphs.Size24.images,
             attributes: attributes,
             state: state
         ) { _ in

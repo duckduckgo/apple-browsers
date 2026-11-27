@@ -19,6 +19,7 @@
 import Combine
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
+import FeatureFlags_macOS
 import NetworkProtectionUI
 import Persistence
 import PrivacyConfig
@@ -28,6 +29,7 @@ import SubscriptionTestingUtilities
 import VPN
 import XCTest
 @_spi(Testing) import Networking
+@_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -41,6 +43,8 @@ final class MoreOptionsMenuTests: XCTestCase {
     var internalUserDecider: MockInternalUserDecider!
     var defaultBrowserProvider: DefaultBrowserProviderMock!
     var dockCustomizer: DockCustomizerMock!
+    var videoPresenter: CapturingAddToDockVideoPresenter!
+    var addToDockPixelFiring: PixelKitMock!
     var mockSubscriptionManager: SubscriptionManagerMock!
 
     private var mockFreemiumDBPPresenter: MockFreemiumDBPPresenter! = .init()
@@ -65,6 +69,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         defaultBrowserProvider = DefaultBrowserProviderMock()
         dockCustomizer = DockCustomizerMock()
         dockCustomizer.addToDock()
+        videoPresenter = CapturingAddToDockVideoPresenter()
+        addToDockPixelFiring = PixelKitMock()
         defaultBrowserProvider.isDefault = true
         mockFeatureFlagger = MockFeatureFlagger()
         mockSubscriptionManager = SubscriptionManagerMock()
@@ -85,6 +91,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         moreOptionsMenu = nil
         defaultBrowserProvider = nil
         dockCustomizer = nil
+        videoPresenter = nil
+        addToDockPixelFiring = nil
         fireproofDomains = nil
         internalUserDecider = nil
         mockFeatureFlagger = nil
@@ -135,7 +143,11 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           ),
                                           isFireWindowDefault: isFireWindowDefault,
                                           freeTrialBadgePersistor: freeTrialBadgePersistor,
-                                          winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager)
+                                          winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+                                          addToDockMenuAction: AddToDockMenuAction(dockCustomization: dockCustomizer,
+                                                                                   featureFlagger: mockFeatureFlagger,
+                                                                                   videoPresenter: videoPresenter,
+                                                                                   pixelFiring: addToDockPixelFiring))
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
@@ -389,27 +401,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     // MARK: - Paid AI Chat
 
     @MainActor
-    func testWhenUserIsAuthenticatedWithPaidAIChatFeatureAndFeatureFlagEnabledThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
-        // Given
-        mockAuthentication()
-        mockSubscriptionManager.resultFeatures = [.paidAIChat]
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
-        setupMoreOptionsMenu()
-
-        // When
-        let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
-        XCTAssertTrue(subscriptionItem.hasSubmenu, "Subscription item should have submenu when user is authenticated")
-
-        await waitForSubscriptionSubmenuBuilding()
-        let subscriptionSubmenu = try XCTUnwrap(subscriptionItem.submenu)
-
-        // Then
-        let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
-        XCTAssertNotNil(paidAIChatItem, "Paid AI Chat item should appear in subscription submenu when user has entitlement and feature flag is enabled")
-    }
-
-    @MainActor
-    func testWhenUserIsAuthenticatedWithPaidAIChatFeatureButFeatureFlagDisabledThenPaidAIChatItemDoesNotAppear() async throws {
+    func testWhenUserIsAuthenticatedWithPaidAIChatFeatureThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
         // Given
         mockAuthentication()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
@@ -424,7 +416,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         // Then
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
-        XCTAssertNil(paidAIChatItem, "Paid AI Chat item should not appear when feature flag is disabled")
+        XCTAssertNotNil(paidAIChatItem, "Paid AI Chat item should appear in subscription submenu when user has entitlement")
     }
 
     @MainActor
@@ -432,7 +424,6 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         mockSubscriptionManager.resultFeatures = []
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
@@ -452,7 +443,6 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         mockSubscriptionManager.resultFeatures = [.paidAIChat]
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate
         let subscriptionItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
@@ -550,6 +540,84 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         XCTAssertNotEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
         XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.setAsDefaultBrowser)
+    }
+
+    @MainActor
+    func testWhenAppStoreBuildCanShowVideoAndNotInDockThenMenuItemIsVisible() {
+        dockCustomizer.supportsAddingToDock = false
+        mockFeatureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        dockCustomizer.dockStatus = false
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
+    }
+
+    @MainActor
+    func testWhenAppStoreBuildCanShowVideoAndNotificationIsShownThenMenuItemWithIndicatorIsVisible() {
+        dockCustomizer.supportsAddingToDock = false
+        mockFeatureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        dockCustomizer.dockStatus = false
+        dockCustomizer.shouldShowNotification = true
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        XCTAssertEqual(moreOptionsMenu.items[1].action, #selector(MoreOptionsMenu.addToDock(_:)))
+        XCTAssertNotNil(moreOptionsMenu.items[1].view)
+    }
+
+    @MainActor
+    func testWhenAppStoreBuildCannotShowVideoThenMenuItemIsNotVisible() {
+        defaultBrowserProvider.isDefault = false
+        dockCustomizer.supportsAddingToDock = false
+        mockFeatureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = false
+        dockCustomizer.dockStatus = false
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.setAsDefaultBrowser)
+    }
+
+    @MainActor
+    func testWhenAppStoreBuildCanShowVideoAndInDockThenMenuItemIsNotVisible() {
+        dockCustomizer.supportsAddingToDock = false
+        mockFeatureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        dockCustomizer.dockStatus = true
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        XCTAssertNotEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
+    }
+
+    @MainActor
+    func testWhenAppStoreAddToDockItemIsClickedThenVideoIsPresented() {
+        dockCustomizer.supportsAddingToDock = false
+        mockFeatureFlagger.featuresStub[FeatureFlag.appStoreAddToDockOnlyCTA.rawValue] = true
+        dockCustomizer.dockStatus = false
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+        moreOptionsMenu.addToDock(moreOptionsMenu.items[1])
+
+        XCTAssertEqual(videoPresenter.presentations, [.init(entryPoint: .moreOptionsMenu, primaryAction: .done)])
+        XCTAssertEqual(addToDockPixelFiring.actualFireCalls,
+                       [ExpectedFireCall(pixel: GeneralPixel.userAddedToDockFromMoreOptionsMenu, frequency: .dailyAndStandard)])
+    }
+
+    @MainActor
+    func testWhenDMGAddToDockItemIsClickedThenAppIsAddedToDock() {
+        dockCustomizer.dockStatus = false
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+        moreOptionsMenu.addToDock(moreOptionsMenu.items[1])
+
+        XCTAssertTrue(dockCustomizer.isAddedToDock)
+        XCTAssertTrue(videoPresenter.presentations.isEmpty)
     }
 
     @MainActor

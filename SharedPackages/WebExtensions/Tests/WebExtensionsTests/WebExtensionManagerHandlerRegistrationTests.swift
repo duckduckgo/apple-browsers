@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+@_spi(Testing) import Persistence
 import XCTest
 import WebKit
 @testable import WebExtensions
@@ -60,15 +61,22 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
     // MARK: - Helper
 
     @MainActor
-    private func makeManager() -> WebExtensionManager {
+    private func makeManager(useRealLoader: Bool = false,
+                             bundledURL: URL? = nil,
+                             permissionController: WebExtensionPermissionController? = nil,
+                             isPermissionEnforcementEnabled: Bool = true) -> WebExtensionManager {
         WebExtensionManager(
             configuration: configurationMock,
+            controllerConfiguration: .nonPersistent(),
             windowTabProvider: windowTabProviderMock,
             storageProvider: storageProvidingMock,
             installationStore: installedExtensionStoringMock,
-            loader: webExtensionLoadingMock,
+            permissionController: permissionController,
+            isPermissionEnforcementEnabled: { isPermissionEnforcementEnabled },
+            loader: useRealLoader ? nil : webExtensionLoadingMock,
             messageRouter: messageRouter,
-            handlerProvider: handlerProvider
+            handlerProvider: handlerProvider,
+            bundledExtensionURL: { $0.type == .embedded ? bundledURL : nil }
         )
     }
 
@@ -83,52 +91,196 @@ final class WebExtensionManagerHandlerRegistrationTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenExtensionIsInstalled_ThenHandlersAreRegistered() async throws {
-        let manager = makeManager()
-        let sourceURL = try createTestWebExtension()
+    func testWhenBundledExtensionIsInstalledAndReloaded_ThenHandlersAreRegistered() async throws {
+        let sourceURL = try createTestWebExtension(claimsDDGIdentity: true)
+        storageProvidingMock.resolvedExtensionURL = sourceURL
+        let manager = makeManager(useRealLoader: true, bundledURL: sourceURL)
+        defer { manager.unloadAllExtensions() }
 
         try await manager.installExtension(from: sourceURL)
 
-        XCTAssertTrue(handlerProvider.makeHandlersCalled)
-        XCTAssertTrue(messageRouter.registerHandlerCalled)
-        XCTAssertEqual(messageRouter.registeredHandlers.count, 1)
+        let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
+        XCTAssertEqual(installed.embeddedType, .embedded)
+        XCTAssertEqual(messageRouter.providedHandlerCount, 1)
+        XCTAssertTrue(manager.installingEmbeddedIdentifiers.isEmpty)
+
+        try await manager.reloadExtension(identifier: installed.uniqueIdentifier)
+
+        XCTAssertEqual(messageRouter.providedHandlerCount, 2)
+        XCTAssertEqual(handlerProvider.lastIdentifier, installed.uniqueIdentifier)
     }
 
     @MainActor
-    func testWhenExtensionIsLoaded_ThenHandlersAreRegisteredBeforeLoad() async throws {
-        let manager = makeManager()
-        let sourceURL = try createTestWebExtension()
+    func testWhenBundledExtensionIsInstalled_ThenHandlersAreRegisteredBeforeLoad() async throws {
+        let sourceURL = try createTestWebExtension(claimsDDGIdentity: true)
+        storageProvidingMock.resolvedExtensionURL = sourceURL
+        let manager = makeManager(useRealLoader: true, bundledURL: sourceURL)
+        defer { manager.unloadAllExtensions() }
+        let installationStore = try XCTUnwrap(installedExtensionStoringMock)
+        handlerProvider.onMakeHandlers = { context in
+            XCTAssertTrue(installationStore.installedExtensions.isEmpty)
+            XCTAssertFalse(context.isLoaded)
+        }
 
         try await manager.installExtension(from: sourceURL)
 
         XCTAssertTrue(handlerProvider.makeHandlersCalled)
-        XCTAssertTrue(messageRouter.registerHandlerCalled)
-        XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionCalled)
+        XCTAssertEqual(messageRouter.providedHandlerCount, 1)
+        XCTAssertEqual(messageRouter.subscriptionEventsHandlerCount, 1)
     }
+
+    @MainActor
+    func testWhenStoreExtensionClaimsDDGIdentity_ThenInternalHandlersAreUnavailableOnInstallAndReload() async throws {
+        let sourceURL = try createTestWebExtension(claimsDDGIdentity: true)
+        storageProvidingMock.resolvedExtensionURL = sourceURL
+        let manager = makeManager(useRealLoader: true)
+        defer { manager.unloadAllExtensions() }
+
+        try await manager.installExtension(from: sourceURL,
+                                           storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: "catalog-extension"))
+        let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
+        let context = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        XCTAssertEqual(context.duckDuckGoWebExtensionType, .embedded)
+        XCTAssertNil(installed.embeddedType)
+        XCTAssertFalse(handlerProvider.makeHandlersCalled)
+        XCTAssertFalse(messageRouter.registerHandlerCalled)
+
+        try await manager.reloadExtension(identifier: installed.uniqueIdentifier)
+
+        XCTAssertNotNil(manager.context(for: installed.uniqueIdentifier))
+        XCTAssertFalse(handlerProvider.makeHandlersCalled)
+        XCTAssertFalse(messageRouter.registerHandlerCalled)
+    }
+
+    @MainActor
+    func testWhenStoreUpdateAddsDDGIdentity_ThenInternalHandlersRemainUnavailable() async throws {
+        let sourceURL = try createTestWebExtension()
+        storageProvidingMock.resolvedExtensionURL = sourceURL
+        let manager = makeManager(useRealLoader: true)
+        defer { manager.unloadAllExtensions() }
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: "catalog-extension")
+        try await manager.installExtension(from: sourceURL, storeIdentity: identity)
+        let original = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
+
+        let replacementURL = try createTestWebExtension(claimsDDGIdentity: true)
+        storageProvidingMock.resolvedExtensionURL = replacementURL
+        try await manager.installExtension(from: replacementURL, storeIdentity: identity, replacing: original.uniqueIdentifier)
+
+        let replacement = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first {
+            $0.uniqueIdentifier != original.uniqueIdentifier
+        })
+        let context = try XCTUnwrap(manager.context(for: replacement.uniqueIdentifier))
+        XCTAssertEqual(context.duckDuckGoWebExtensionType, .embedded)
+        XCTAssertNil(replacement.embeddedType)
+        XCTAssertFalse(handlerProvider.makeHandlersCalled)
+        XCTAssertFalse(messageRouter.registerHandlerCalled)
+    }
+
+    @MainActor
+    func testWhenUnbundledExtensionClaimsDDGIdentity_ThenHandlersAreUnavailableRegardlessOfPermissionEnforcement() async throws {
+        let modes = [(hasController: false, enforcesPermissions: false),
+                     (hasController: true, enforcesPermissions: false),
+                     (hasController: true, enforcesPermissions: true)]
+        for mode in modes {
+            let sourceURL = try createTestWebExtension(claimsDDGIdentity: true)
+            storageProvidingMock.resolvedExtensionURL = sourceURL
+            let permissionController = mode.hasController ? WebExtensionPermissionController(
+                store: WebExtensionPermissionStore(keyValueStore: InMemoryThrowingKeyValueStore()),
+                installationStore: installedExtensionStoringMock,
+                prompter: HandlerRegistrationPermissionPrompter()) : nil
+            let manager = makeManager(useRealLoader: true,
+                                      permissionController: permissionController,
+                                      isPermissionEnforcementEnabled: mode.enforcesPermissions)
+            defer { manager.unloadAllExtensions() }
+
+            try await manager.installExtension(from: sourceURL)
+
+            let context = try XCTUnwrap(manager.loadedExtensions.first)
+            let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: context.uniqueIdentifier))
+            XCTAssertEqual(context.duckDuckGoWebExtensionType, .embedded)
+            XCTAssertNil(installed.embeddedType)
+            XCTAssertFalse(handlerProvider.makeHandlersCalled)
+            XCTAssertFalse(messageRouter.registerHandlerCalled)
+
+            try await manager.reloadExtension(identifier: installed.uniqueIdentifier)
+
+            XCTAssertNotNil(manager.context(for: installed.uniqueIdentifier))
+            XCTAssertFalse(handlerProvider.makeHandlersCalled)
+            XCTAssertFalse(messageRouter.registerHandlerCalled)
+        }
+    }
+
+#if os(macOS)
+    @MainActor
+    func testWhenEmbeddedExtensionsAreSynced_ThenHandlersAreRegisteredOnFirstLoadAndReload() async throws {
+        let bundledURL = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?.bundledURL)
+        storageProvidingMock.resolvedExtensionURL = bundledURL
+        let manager = makeManager(useRealLoader: true, bundledURL: bundledURL)
+        defer { manager.unloadAllExtensions() }
+
+        await manager.syncEmbeddedExtensions(enabledTypes: [.embedded])
+
+        let installed = try XCTUnwrap(manager.installedEmbeddedExtension(for: .embedded))
+        XCTAssertNotNil(manager.context(for: installed.uniqueIdentifier))
+        XCTAssertEqual(messageRouter.providedHandlerCount, 1)
+        XCTAssertTrue(manager.installingEmbeddedIdentifiers.isEmpty)
+
+        try await manager.reloadExtension(identifier: installed.uniqueIdentifier)
+
+        XCTAssertEqual(messageRouter.providedHandlerCount, 2)
+    }
+#endif
+
+    @MainActor
+    func testWhenBundledExtensionInstallFails_ThenPendingTrustIsRemoved() async throws {
+        let sourceURL = try createTestWebExtension(claimsDDGIdentity: true)
+        let manager = makeManager(bundledURL: sourceURL)
+        webExtensionLoadingMock.mockError = NSError(domain: "test", code: 1)
+
+        do {
+            try await manager.installExtension(from: sourceURL)
+            XCTFail("Expected installation to fail")
+        } catch {
+            XCTAssertTrue(manager.installingEmbeddedIdentifiers.isEmpty)
+            XCTAssertTrue(installedExtensionStoringMock.installedExtensions.isEmpty)
+        }
+    }
+
+#if os(macOS)
+    @MainActor
+    func testWhenEmbeddedSyncFails_ThenPendingTrustIsRemoved() async throws {
+        let bundledURL = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?.bundledURL)
+        let manager = makeManager(bundledURL: bundledURL)
+        webExtensionLoadingMock.mockError = NSError(domain: "test", code: 1)
+
+        await manager.syncEmbeddedExtensions(enabledTypes: [.embedded])
+
+        XCTAssertTrue(manager.installingEmbeddedIdentifiers.isEmpty)
+        XCTAssertTrue(installedExtensionStoringMock.installedExtensions.isEmpty)
+    }
+#endif
 
     // MARK: - Test Helpers
 
-    private func createTestWebExtension() throws -> URL {
-        let tempDir = FileManager.default.temporaryDirectory
-        let extensionDir = tempDir.appendingPathComponent("TestExtension-\(UUID().uuidString)")
-
-        let manifest = """
-        {
+    private func createTestWebExtension(claimsDDGIdentity: Bool = false) throws -> URL {
+        let extensionDir = FileManager.default.temporaryDirectory.appendingPathComponent("TestExtension-\(UUID().uuidString)")
+        var manifest: [String: Any] = [
             "manifest_version": 3,
             "name": "Test Extension",
             "version": "1.0.0",
             "description": "Minimal test extension for unit tests"
+        ]
+        if claimsDDGIdentity {
+            manifest["browser_specific_settings"] = [
+                "duckduckgo": ["id": DuckDuckGoWebExtensionType.embedded.rawValue]
+            ]
         }
-        """
 
         try FileManager.default.createDirectory(at: extensionDir, withIntermediateDirectories: true)
-        try manifest.write(to: extensionDir.appendingPathComponent("manifest.json"),
-                          atomically: true, encoding: .utf8)
-
+        try JSONSerialization.data(withJSONObject: manifest).write(to: extensionDir.appendingPathComponent("manifest.json"))
         addTeardownBlock {
             try? FileManager.default.removeItem(at: extensionDir)
         }
-
         return extensionDir
     }
 
@@ -190,6 +342,15 @@ final class TestMessageRouter: WebExtensionMessageRouting {
         registeredHandlers.append((handler, extensionIdentifier))
     }
 
+    /// Handlers made by `TestHandlerProvider`, leaving out the ones the manager registers itself.
+    var providedHandlerCount: Int {
+        registeredHandlers.filter { $0.handler is TestMessageHandler }.count
+    }
+
+    var subscriptionEventsHandlerCount: Int {
+        registeredHandlers.filter { $0.handler is SubscriptionEventsWebExtensionMessageHandler }.count
+    }
+
     func unregisterHandlers(for extensionIdentifier: String) {
         unregisterHandlersCalled = true
         unregisteredIdentifier = extensionIdentifier
@@ -206,8 +367,10 @@ final class TestHandlerProvider: WebExtensionHandlerProviding {
     var makeHandlersCalled = false
     var lastIdentifier: String?
     var lastContext: WKWebExtensionContext?
+    var onMakeHandlers: ((WKWebExtensionContext) -> Void)?
 
     func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
+        onMakeHandlers?(context)
         makeHandlersCalled = true
         lastIdentifier = context.uniqueIdentifier
         lastContext = context
@@ -224,5 +387,19 @@ final class TestMessageHandler: WebExtensionMessageHandler {
 
     func handleMessage(_ message: WebExtensionMessage) async -> WebExtensionMessageResult {
         .success(nil)
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class HandlerRegistrationPermissionPrompter: WebExtensionPermissionPrompting {
+    func confirmInstallation(of webExtension: WKWebExtension,
+                             permissions: WebExtensionPermissionRequest) async -> WebExtensionPermissionInstallationPromptResult {
+        .granted(privateDataAccess: false)
+    }
+
+    func confirmPermissions(_ permissions: WebExtensionPermissionRequest,
+                            for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
+        .granted
     }
 }

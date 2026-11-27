@@ -141,20 +141,5 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
-    },
-    "aichat_history_duckai_settings_tapped": {
-        "description": "User opened Duck.ai Settings from the chat history screen, through the settings button next to the (…) menu or the Duck.ai Settings row in that menu. Both show only with the simplified prompt box on iPhone",
-        "owners": ["aataraxiaa"],
-        "triggers": ["user_interaction"],
-        "suffixes": ["daily_count", "platform", "form_factor"],
-        "parameters": [
-            "appVersion",
-            {
-                "key": "source",
-                "description": "Where the user opened Duck.ai Settings: the header button, or the row in the (…) menu",
-                "type": "string",
-                "enum": ["header_button", "overflow_menu"]
-            }
-        ]
     }
 }

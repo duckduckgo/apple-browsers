@@ -158,24 +158,31 @@ final class UTIPixelReporter {
         }
     }
 
-    func reportFileValidationFailed(reason: UTIAttachmentPolicy.FileValidationFailureReason, source: String) {
-        reportFileValidationFailed(reason: reason.rawValue, source: source)
+    /// `entryPoint` names the route that opened the file picker, as Android's `entry_point`; nil for pasted files.
+    func reportFileValidationFailed(reason: UTIAttachmentPolicy.FileValidationFailureReason, source: String, entryPoint: String? = nil) {
+        reportFileValidationFailed(reason: reason.rawValue, source: source, entryPoint: entryPoint)
     }
 
     /// Raw-reason variant for the paste-rejection path, which derives its reason outside the policy's `FileValidationFailureReason`.
-    func reportFileValidationFailed(reason: String, source: String) {
+    func reportFileValidationFailed(reason: String, source: String, entryPoint: String? = nil) {
         withContext {
-            firing.fireDailyAndCount(.unifiedToggleInputFileValidationFailed, [
+            var parameters = [
                 "reason": reason,
                 "surface": $0.surface.rawValue,
                 "source": source
-            ])
+            ]
+            parameters[Self.entryPointKey] = entryPoint
+            firing.fireDailyAndCount(.unifiedToggleInputFileValidationFailed, parameters)
         }
     }
 
-    func reportFileAttached(source: String) {
-        withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, Self.parameters($0, ["source": source])) }
+    func reportFileAttached(source: String, entryPoint: String? = nil) {
+        var extra = ["source": source]
+        extra[Self.entryPointKey] = entryPoint
+        withContext { firing.fireDailyAndCount(.unifiedToggleInputFileAttached, Self.parameters($0, extra)) }
     }
+
+    private static let entryPointKey = "entry_point"
 
     func reportImageValidationFailed(reason: String, source: String) {
         withContext {
@@ -295,7 +302,8 @@ final class UTIPixelReporter {
                                modelId: String?,
                                defaultOmnibarMode: DefaultOmnibarMode,
                                isFirstPromptNewInstall: Bool,
-                               resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil) {
+                               resubmitDelay: CrossModeResubmitDetector.DelayBucket? = nil,
+                               modelSource: DuckAINewChatModelSource? = nil) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedPromptSubmittedPixel(
                 hasText: hasText,
@@ -311,6 +319,7 @@ final class UTIPixelReporter {
                 addressBarPosition: $0.addressBarPosition,
                 resubmitOfSearch: resubmitDelay,
                 simplifiedPromptBox: $0.usesSimplifiedPromptBox,
+                modelSource: modelSource,
                 firing: firing
             )
         }

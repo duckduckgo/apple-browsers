@@ -1152,7 +1152,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
         switch error {
-        case .unableToRecognizeCode:
+        case .unableToRecognizeCode, .unreadablePairingMessage:
             managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToRecognizeCode)
             sendCodeParsingFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
         case .updateRequired:

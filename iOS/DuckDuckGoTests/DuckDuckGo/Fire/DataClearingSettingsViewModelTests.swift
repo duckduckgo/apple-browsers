@@ -20,7 +20,10 @@
 import XCTest
 @testable import DuckDuckGo
 @testable import Core
+@_spi(Testing) import PixelKit
+import SwiftUI
 import AIChat
+import FeatureFlags_iOS
 
 final class MockDataClearingCapability: DataClearingCapable {
     var isFireButtonRefinementsEnabled: Bool = false
@@ -55,6 +58,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
     private var mockAIChatSettings: MockAIChatSettingsProvider!
     private var mockFireproofing: GranularFireConfirmationViewModelTests.TestFireproofing!
     private var mockDelegate: MockDelegate!
+    private var pixelFiring: PixelKitMock!
 
     // MARK: - Setup / Teardown
 
@@ -64,6 +68,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         mockAIChatSettings = MockAIChatSettingsProvider()
         mockFireproofing = GranularFireConfirmationViewModelTests.TestFireproofing()
         mockDelegate = MockDelegate()
+        pixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
@@ -71,18 +76,87 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
         mockAIChatSettings = nil
         mockFireproofing = nil
         mockDelegate = nil
+        pixelFiring = nil
         super.tearDown()
     }
 
     // MARK: - Factory
 
-    private func makeViewModel() -> DataClearingSettingsViewModel {
+    private func makeViewModel(featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
+                               source: DataClearingPixels.SettingsSource = .settings) -> DataClearingSettingsViewModel {
         DataClearingSettingsViewModel(
             appSettings: mockAppSettings,
             aiChatSettings: mockAIChatSettings,
             fireproofing: mockFireproofing,
+            featureFlagger: featureFlagger,
+            pixelFiring: pixelFiring,
+            source: source,
             delegate: mockDelegate
         )
+    }
+
+    // MARK: - Pixel Tests
+
+    func testWhenOpenFireproofSitesCalledThenPixelFires() throws {
+        let viewModel = makeViewModel()
+
+        viewModel.openFireproofSites()
+
+        let fireCall = try XCTUnwrap(pixelFiring.actualFireCalls.first)
+        XCTAssertEqual(pixelFiring.actualFireCalls.count, 1)
+        XCTAssertEqual(fireCall.pixel.name, "data_clearing_settings-fireproof_sites_opened")
+        XCTAssertEqual(fireCall.pixel.parameters, ["source": "settings"])
+        XCTAssertEqual(fireCall.frequency, .dailyAndCount)
+    }
+
+    func testWhenOpenedByDeepLinkThenPixelsReportDeepLinkSource() {
+        let viewModel = makeViewModel(source: .deepLink)
+        var storedValue = false
+        let binding = viewModel.aiChatsToggleBinding(Binding(get: { storedValue }, set: { storedValue = $0 }))
+
+        viewModel.openFireproofSites()
+        binding.wrappedValue = true
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.parameters),
+                       [["source": "deepLink"], ["enabled": "true", "source": "deepLink"]])
+    }
+
+    func testWhenAIChatsToggleChangesThenValueIsStoredAndPixelFires() throws {
+        var storedValue = false
+        let binding = makeViewModel().aiChatsToggleBinding(Binding(get: { storedValue }, set: { storedValue = $0 }))
+
+        binding.wrappedValue = true
+        binding.wrappedValue = false
+
+        XCTAssertFalse(storedValue)
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), Array(repeating: "data_clearing_settings-duckai_chats_toggled", count: 2))
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.parameters), [["enabled": "true", "source": "settings"], ["enabled": "false", "source": "settings"]])
+        XCTAssertEqual(pixelFiring.actualFireCalls.last?.frequency, .dailyAndCount)
+    }
+
+    func testWhenAIChatsToggleIsSetToItsCurrentValueThenNoPixelFires() {
+        var storedValue = true
+        let binding = makeViewModel().aiChatsToggleBinding(Binding(get: { storedValue }, set: { storedValue = $0 }))
+
+        binding.wrappedValue = true
+
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    // MARK: - AI Chat Toggle Title Tests
+
+    func testWhenSettingsButtonFlagOffThenAIChatsToggleKeepsItsTitle() {
+        let viewModel = makeViewModel(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+
+        XCTAssertEqual(viewModel.aiChatsToggleTitle, UserText.settingsDeleteDuckAIChats)
+        XCTAssertEqual(viewModel.aiChatsToggleFooter, UserText.settingsClearAIChatHistoryFooter)
+    }
+
+    func testWhenSettingsButtonFlagOnThenAIChatsToggleSaysItAppliesToDeleteAll() {
+        let viewModel = makeViewModel(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireSheetSettingsButton]))
+
+        XCTAssertEqual(viewModel.aiChatsToggleTitle, UserText.settingsDeleteAllIncludesDuckAIChats)
+        XCTAssertEqual(viewModel.aiChatsToggleFooter, UserText.settingsDeleteAllIncludesDuckAIChatsFooter)
     }
 
     // MARK: - AI Chat Toggle Visibility Tests

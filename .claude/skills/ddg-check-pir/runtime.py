@@ -30,8 +30,39 @@ BUNDLES = {"ios": "com.duckduckgo.mobile.ios",
 BROWSER_BUNDLE = "com.duckduckgo.macos.browser.debug"
 SCHEDULER_LOCK = Path(f"/tmp/ddg-check-pir-scheduler-{os.getuid()}.lock")
 SCHEDULER_SETUP_TIMEOUT = 180
-FLAGS = ["isRunningUITests", "-ff.dbpCustomWebViewUserAgent", "true",
-         "-ff.dbpExtractedProfileRefresh", "true"]
+MACOS_FLAG_ARGUMENTS = ["isRunningUITests", "-ff.dbpCustomWebViewUserAgent", "true",
+                        "-ff.dbpExtractedProfileRefresh", "true"]
+IOS_LAUNCH_PROFILE = {"internalUser": True, "onboardingCompleted": True,
+                      "featureFlags.dbpCustomWebViewUserAgent": True, "featureFlags.dbpExtractedProfileRefresh": True}
+REQUIRED_LAUNCH_PROFILE_KEYS = ("internalUser", "onboardingCompleted", "featureFlags.dbpCustomWebViewUserAgent",
+                                "featureFlags.dbpExtractedProfileRefresh")
+LAUNCH_PROFILE_PREFIX = "LAUNCH_PROFILE_"
+LAUNCH_PROFILE_TIMEOUT = 60
+
+
+def _flatten(profile, prefix=""):
+    flat = {}
+    for key, value in profile.items():
+        if isinstance(value, dict) and value:
+            flat.update(_flatten(value, f"{prefix}{key}."))
+        else:
+            flat[prefix + key] = value
+    return flat
+
+
+def ios_launch_profile(profile=None):
+    """The base iOS launch profile updated by `profile`, as dotted keys."""
+    if profile is None:
+        profile = {}
+    if not isinstance(profile, dict):
+        raise ValueError("The launch profile must be a JSON object")
+    flat = _flatten(profile)
+    for key, value in flat.items():
+        if key == "tabs" or key.startswith("tabs."):
+            raise ValueError("The launch profile must not set tabs")
+        if key in REQUIRED_LAUNCH_PROFILE_KEYS and value is not True:
+            raise ValueError(f"The launch profile must keep {key} true; PIR runs need it")
+    return {**IOS_LAUNCH_PROFILE, **flat}
 
 
 def _run(command, root, timeout=120, *, env=None, log_path=None):
@@ -108,7 +139,7 @@ def _child_environment():
 
 class Runtime:
     def __init__(self, platform, evidence: Path, instance: str, port: int,
-                 device="iphone", keep=False, pir_environment="production"):
+                 device="iphone", keep=False, pir_environment="production", launch_profile=None):
         if platform not in BUNDLES or device not in ("iphone", "ipad"):
             raise RuntimeError("Unsupported platform or simulator device")
         try:
@@ -126,6 +157,8 @@ class Runtime:
         self.platform, self.device = platform, device
         self.instance, self.port, self.keep = instance, port, keep
         self.pir_environment = pir_environment
+        self.launch_profile = ios_launch_profile(launch_profile) if platform == "ios" else None
+        self.launch_profile_result = None
         self.base = self.root / "DerivedData" / "ddg-check-pir" / platform
         self.derived = self.base / "build"
         self.deployment = self.base / "deployment"
@@ -447,10 +480,11 @@ class Runtime:
 
     def _launch_simulator_app(self, identifier, product, environment):
         env = {**_child_environment(), **{f"SIMCTL_CHILD_{key}": value for key, value in environment.items()}}
+        profile = json.dumps(self.launch_profile, separators=(",", ":"))
         self._launch_attempted = True
         try:
             output = self._simctl("launch", f"--stdout={self.stdout}", f"--stderr={self.stderr}",
-                                  identifier, product["bundleId"], *FLAGS, env=env)
+                                  identifier, product["bundleId"], "-launchProfile", profile, env=env)
         except RuntimeError as error:
             # simctl can fail after starting the process. Retain its PID for owned cleanup.
             try:
@@ -459,12 +493,31 @@ class Runtime:
                 pass
             raise
         self._capture(self._simulator_pid(output, product), product)
+        self._await_launch_profile()
 
-    def launch_scheduler(self, mode, profile_json):
+    def _await_launch_profile(self):
+        deadline = time.monotonic() + LAUNCH_PROFILE_TIMEOUT
+        while True:
+            log = self.stderr.read_text(errors="replace")
+            lines = [line[line.index(LAUNCH_PROFILE_PREFIX):].strip() for line in log.splitlines() if LAUNCH_PROFILE_PREFIX in line]
+            if lines or time.monotonic() >= deadline:
+                break
+            time.sleep(1)
+        self.launch_profile_result = lines[-1] if lines else None
+        if not (self.launch_profile_result or "").startswith(LAUNCH_PROFILE_PREFIX + "APPLIED"):
+            raise RuntimeError("The app did not apply its launch profile: "
+                               f"{self.launch_profile_result or 'no ' + LAUNCH_PROFILE_PREFIX + ' line'}")
+
+    def _launch_profile_record(self):
+        return {"merged": self.launch_profile, "result": self.launch_profile_result}
+
+    def launch_scheduler(self, mode, profile_json, brokers=()):
         if mode not in ("seed", "reseed"):
             raise RuntimeError("Managed scheduler launches require seed or reseed")
         metadata, product = self._verified_build()
         environment = {"PIR_SCHEDULER_MODE": mode, "PIR_SCHEDULER_INSTANCE_ID": self.instance, "PIR_PROFILE_JSON": profile_json}
+        if brokers:
+            environment["PIR_SCHEDULER_BROKERS"] = json.dumps(list(brokers))
         if self.platform == "ios":
             self._reserve_port()
             self._secure_launch_logs()
@@ -475,7 +528,13 @@ class Runtime:
                 **environment, "PIR_SCHEDULER_RECEIPT": str(self._receipt),
                 "PIR_DEBUG_PORT": str(self.port), "PIR_DEBUG_INSTANCE_ID": self.instance})
             return {"platform": "ios", "instanceID": self.instance, "port": self.port, "process": self.identity,
-                    "product": product, "simulator": self.simulator, "sourceSHA256": metadata["sourceSHA256"]}
+                    "product": product, "simulator": self.simulator, "sourceSHA256": metadata["sourceSHA256"],
+                    "launchProfile": self._launch_profile_record()}
+        self._acquire_scheduler_lock(product)
+        environment["PIR_SCHEDULER_RECEIPT"] = str(self._receipt)
+        return self._launch_browser(environment, metadata, product)
+
+    def _acquire_scheduler_lock(self, product):
         descriptor = os.open(SCHEDULER_LOCK, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
         lock = os.fdopen(descriptor, "r+")
         try:
@@ -497,7 +556,9 @@ class Runtime:
                 # An iOS simulator app has the same executable name but a flat bundle.
                 if bundle and (bundle / "Contents/Info.plist").is_file() and _info(bundle).get("CFBundleIdentifier") == BROWSER_BUNDLE:
                     raise RuntimeError("A DEBUG browser is already running; close it before seeding")
-        environment["PIR_SCHEDULER_RECEIPT"] = str(self._receipt)
+
+    def _launch_browser(self, environment, metadata, product):
+        browser = Path(product["browserExecutable"])
         self._secure_launch_logs()
         with self.stdout.open("ab") as stdout, self.stderr.open("ab") as stderr:
             self._child = subprocess.Popen([str(browser)], cwd=self.root,
@@ -506,6 +567,28 @@ class Runtime:
         self._capture(self._child.pid, {"executable": str(browser), "bundleId": BROWSER_BUNDLE, "sha256": product["browserSHA256"]})
         return {"platform": "macos", "instanceID": self.instance, "port": self.port, "process": self.identity,
                 "product": product, "sourceSHA256": metadata["sourceSHA256"]}
+
+    def launch_existing(self, simulator=None):
+        """Launches this build on the existing PIR store with its debug server on, without saving or resetting a profile."""
+        metadata, product = self._verified_build()
+        if self.platform == "ios":
+            matches = [device for device in self._simulators() if device.get("udid") == simulator]
+            if len(matches) != 1 or not matches[0].get("name", "").startswith("ddg-check-pir-"):
+                raise RuntimeError("--simulator must name a simulator that a ddg-check-pir seed kept")
+            self.simulator, self.keep = {"udid": simulator, "name": matches[0]["name"]}, True
+            if matches[0].get("state") != "Booted":
+                self._simctl("boot", simulator)
+                self._simctl("bootstatus", simulator, "-b", timeout=180)
+            self._reserve_port()
+            self._secure_launch_logs()
+            self._simctl("install", simulator, product["path"])
+            self._launch_simulator_app(simulator, product, {"PIR_DEBUG_SERVER": "true", "PIR_DEBUG_PORT": str(self.port),
+                                                            "PIR_DEBUG_INSTANCE_ID": self.instance})
+            return {"platform": "ios", "instanceID": self.instance, "port": self.port, "process": self.identity,
+                    "product": product, "simulator": self.simulator, "sourceSHA256": metadata["sourceSHA256"],
+                    "launchProfile": self._launch_profile_record()}
+        self._acquire_scheduler_lock(product)
+        return self._launch_browser({"PIR_DEBUG_SERVER": "true"}, metadata, product)
 
     def scheduler_receipt(self):
         deadline = time.monotonic() + SCHEDULER_SETUP_TIMEOUT
@@ -547,7 +630,7 @@ class Runtime:
                 self._simulator_snapshots = container / "tmp" / f"pir-snapshots-{self.instance}"
             self._launch_simulator_app(identifier, product, environment)
         else:
-            arguments = [*FLAGS, "-pirDebugServer", "true", "-pirDebugPort", str(self.port),
+            arguments = [*MACOS_FLAG_ARGUMENTS, "-pirDebugServer", "true", "-pirDebugPort", str(self.port),
                          "-pirDebugInstanceID", self.instance, "-pirDebugEnvironment", self.pir_environment]
             with self.stdout.open("ab") as stdout, self.stderr.open("ab") as stderr:
                 self._child = subprocess.Popen([product["executable"], *arguments], cwd=self.root,
@@ -555,9 +638,12 @@ class Runtime:
             self._launch_attempted = True
             self._capture(self._child.pid, product)
         self._ready()
-        return {"platform": self.platform, "instanceID": self.instance, "port": self.port,
-                "process": self.identity, "product": product, "simulator": self.simulator,
-                "sourceSHA256": metadata["sourceSHA256"], "pirEnvironment": self.pir_environment}
+        launch = {"platform": self.platform, "instanceID": self.instance, "port": self.port,
+                  "process": self.identity, "product": product, "simulator": self.simulator,
+                  "sourceSHA256": metadata["sourceSHA256"], "pirEnvironment": self.pir_environment}
+        if self.platform == "ios":
+            launch["launchProfile"] = self._launch_profile_record()
+        return launch
 
     def collect_snapshots(self):
         source = self._simulator_snapshots

@@ -88,6 +88,7 @@ final class DBPHomeViewController: NSViewController {
             vpnBypassService: vpnBypassService,
             dataManager: dataBrokerProtectionManager.dataManager,
             privacyConfig: privacyConfigurationManager,
+            userAssistanceFlagger: DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger),
             prefs: prefs,
             webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
             isUserSubscribed: { Application.appDelegate.subscriptionManager.isUserAuthenticated },

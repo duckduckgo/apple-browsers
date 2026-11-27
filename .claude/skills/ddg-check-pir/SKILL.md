@@ -82,15 +82,13 @@ python3 "$P" run --platform ios --config ~/pir-runs/example/config.json \
 Use `--platform macos` for the macOS PIR agent and `--device ipad` on iOS build and run commands for an iPad.
 
 `build` records the source fingerprint and executable hash; later commands reject a stale build, so rebuild after source
-changes. On macOS it turns on debug deployment (`scripts/toggle-macos-debug-deployment.sh on`, preserving other local
-overrides), builds a private DEBUG browser under `DerivedData/ddg-check-pir/macos/` and finds its embedded PIR agent. It
-leaves `/Applications/DEBUG` alone and refuses while the private browser or agent runs; its error names the command to
-stop an agent a scheduler seed left registered.
+changes. On macOS it turns on debug deployment, builds a private DEBUG browser under `DerivedData/ddg-check-pir/macos/`
+and finds its embedded PIR agent. It leaves `/Applications/DEBUG` alone and refuses while the private browser or agent
+runs; its error names the command to stop an agent a scheduler seed left registered.
 
 `selftest` launches the recorded build in staging with a dummy credential, checks the prerequisites and native logs,
-writes the usual report and stops the runtime. It only reads local endpoints, takes no scenario, credential,
-check-config or keep options, and proves nothing about authentication, brokers, captcha, email or removal. Evidence or
-cleanup failures make it inconclusive.
+writes the usual report and stops. It only reads local endpoints and proves nothing about authentication,
+brokers, captcha, email or removal. Evidence or cleanup failures make it inconclusive.
 
 `--check-config` validates the configuration, inputs and token source without building, launching or sending requests.
 
@@ -110,6 +108,9 @@ bundle's embedded agent, without production scheduling or a login item, and leav
 running. Don't point another debug client at an attempt in progress.
 
 Cleanup stops the owned app or agent even with `--keep`, which only keeps the simulator. It cannot undo a broker request.
+
+iOS commands take `--launch-profile <json|path>`: `ddg-ios-launch-profile` keys over a fixed base (internal user, no
+onboarding, `dbp*` flags), without `tabs`. A `LAUNCH_PROFILE_FAILED` or missing result line is inconclusive.
 
 To inspect a running or stalled job, open the `snapshots/` folder the runner prints before launch (macOS writes PNGs
 directly; iOS copies them on each poll and before cleanup). Filenames give sequence, phase, action and capture point
@@ -141,6 +142,18 @@ Choose by what should happen to the DEBUG profile:
 - `scheduler reseed --profile-file <path>` replaces the DEBUG PIR profile and job history, then starts scans. Get
   explicit approval for the reset first.
 - `scheduler observe` watches scans triggered separately in the app, on macOS or an iOS simulator.
+
+`--broker <url>`, repeated, limits a seed or reseed to those brokers, still subject to the app's own eligibility. A
+listed broker with no eligible scan fails the seed, and `scheduler-launch.json` says why. On macOS the subset persists
+until a seed without `--broker`.
+
+`scheduler upgrade` runs a later build on a store an earlier build seeded (on iOS, seed with `--keep` and pass that
+seed's `--simulator <udid>`). It re-reads the broker JSON at once (`--reset-delivery` also re-downloads remote brokers),
+then scans the `--broker` brokers and observes them. `upgrade-refresh.json` lists the stored brokers after the refresh,
+and `upgrade-scans.json` the queued jobs.
+
+For a scenario that takes several commands, pass `--step <name>` with `--scenario` on each. The report counts each
+step's latest attempt as a run of its own.
 
 These make live broker scans. On macOS, close any DEBUG browser. A seed signs the DEBUG account out first, so the agent
 takes the Freemium path and plans scans only; sign in again afterwards if you need the subscription. The private browser saves through the real PIR data manager, starts its login item and debug server on

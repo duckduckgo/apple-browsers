@@ -17,7 +17,7 @@
 //
 
 /// Whether a pairing participant is a native DuckDuckGo client or a third-party (scoped) client.
-public enum PairingV2DeviceKind: String, Codable, Equatable {
+public enum PairingV2DeviceKind: String, Codable, Equatable, Sendable {
     case ddg
     case thirdParty = "3party"
 }

@@ -41,7 +41,7 @@ extension Tab: NavigationResponder {
 
             // Pop-ups and Navigation Key Modifiers handling
             .weak(nullable: self.popupHandling),
-            .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
+            .strong(NavigationPixelNavigationResponder()),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.pageSignals),
 

@@ -175,6 +175,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
             openSyncSettingsCallCount += 1
         }
 
+        func aiChatContextualSheetCoordinatorDidRequestOpenDataClearingSettings(_ coordinator: AIChatContextualSheetCoordinator) {}
+
         var contextualChatURLUpdates: [URL?] = []
 
         func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didUpdateContextualChatURL url: URL?) {
@@ -1677,7 +1679,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         presenter.holdDismissal = true
         sut.browserToolsPermissionPresenter = presenter
         let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
-        XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in XCTFail("Resize must not grant permission") })
+        XCTAssertTrue(presenter.present(prompt) { _ in XCTFail("Resize must not grant permission") })
         host.canPresentContextualSidebar = false
 
         sut.parkSurfaceForResize(animated: false)
@@ -1696,6 +1698,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertTrue(presenter.isPresentingPermission)
 
         presenter.completeDismissal()
+        XCTAssertFalse(presenter.isPresentingPermission)
         XCTAssertEqual(host.sidebarDetachments.count, 1)
         XCTAssertEqual(host.modalPresentationCount, 1)
         XCTAssertFalse(sut.hasParkedSurface)
@@ -1984,7 +1987,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         presenter.holdDismissal = true
         sut.browserToolsPermissionPresenter = presenter
         let prompt = ClientToolPermissionPrompt(requestID: "permission", callID: "call", toolName: "listOpenTabs", targetsOtherTab: false)
-        XCTAssertTrue(presenter.present(prompt, message: "Permission") { _ in XCTFail("Leaving must not grant permission") })
+        XCTAssertTrue(presenter.present(prompt) { _ in XCTFail("Leaving must not grant permission") })
         return presenter
     }
 

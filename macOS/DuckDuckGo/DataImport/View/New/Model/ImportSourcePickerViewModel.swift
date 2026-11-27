@@ -51,7 +51,6 @@ final class ImportSourcePickerViewModel: ObservableObject {
     @Published var typeButtonTitle: String = UserText.importTypeSelectionTitleAll
 
     let shouldShowSyncButton: Bool
-    let isSourceFilterEnabled: Bool
 
     private let onSourceSelected: (DataImport.Source) -> Void
     private let onTypesSelected: (Set<DataImport.DataType>) -> Void
@@ -62,7 +61,6 @@ final class ImportSourcePickerViewModel: ObservableObject {
          selectedImportTypes: [DataImport.DataType],
          selectableImportTypes: [DataImport.DataType],
          shouldShowSyncButton: Bool,
-         isSourceFilterEnabled: Bool = false,
          initialPickerExpanded: Bool = false,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
          onTypesSelected: @escaping (Set<DataImport.DataType>) -> Void,
@@ -72,7 +70,6 @@ final class ImportSourcePickerViewModel: ObservableObject {
         self.selectedImportTypes = selectedImportTypes
         self.selectableImportTypes = selectableImportTypes
         self.shouldShowSyncButton = shouldShowSyncButton
-        self.isSourceFilterEnabled = isSourceFilterEnabled
         self.onSourceSelected = onSourceSelected
         self.onTypesSelected = onTypesSelected
         self.onSyncSelected = onSyncSelected
@@ -107,10 +104,6 @@ final class ImportSourcePickerViewModel: ObservableObject {
         if visibleOptions.contains(selectedSource) == false {
             isPickerExpanded = true
         }
-    }
-
-    var shouldShowTypeSelector: Bool {
-        isSourceFilterEnabled || (selectedSource.isBrowser && !selectedSource.isSafari)
     }
 
     var shouldShowExpandButton: Bool {

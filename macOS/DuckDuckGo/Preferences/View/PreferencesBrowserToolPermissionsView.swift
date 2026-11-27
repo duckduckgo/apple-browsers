@@ -21,6 +21,7 @@ import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import PixelKit
+import PrivacyConfig
 import PreferencesUI_macOS
 import SwiftUI
 
@@ -39,22 +40,41 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
 
     @Published private(set) var rows: [Row] = []
     @Published private(set) var storedStates: [String: BrowserToolPermissionState] = [:]
+    @Published private(set) var translateMode: TranslatePagesMode = .alwaysAsk
+    @Published private(set) var translateExcludedLanguages: [String] = []
+    @Published private(set) var translateOfferedLanguages: [String] = []
+    @Published private(set) var isTranslateCustomized = false
+    @Published private(set) var showsTranslateRow = false
 
     private let catalog: BrowserToolCatalog
     private let permissions: BrowserToolPermissionStoring
     private let source: BrowserToolsPixel.PermissionSource
     private let pixelFiring: PixelFiring?
+    private let translatePages: TranslatePagesSetting
+    private let featureFlagger: FeatureFlagger
     private var permissionChanges: AnyCancellable?
+    private var translateChanges: AnyCancellable?
+    private var featureFlagChanges: AnyCancellable?
 
     init(catalog: BrowserToolCatalog = NSApp.delegateTyped.aiChatBrowserToolsService.catalog,
          permissions: BrowserToolPermissionStoring = NSApp.delegateTyped.aiChatBrowserToolsService.permissions,
          permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
          source: BrowserToolsPixel.PermissionSource = .settings,
-         pixelFiring: PixelFiring? = PixelKit.shared) {
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         translatePages: TranslatePagesSetting = TranslatePagesSetting(),
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.catalog = catalog
         self.permissions = permissions
         self.source = source
         self.pixelFiring = pixelFiring
+        self.translatePages = translatePages
+        self.featureFlagger = featureFlagger
+        featureFlagChanges = featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reload() }
+        translateChanges = translatePages.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reload() }
         // Every write, removal and burn, not only prompt answers.
         permissionChanges = permissionManager.persistedPermissionsPublisher
             .dropFirst()
@@ -68,6 +88,30 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
             .sorted { (Self.order.firstIndex(of: $0.name) ?? .max) < (Self.order.firstIndex(of: $1.name) ?? .max) }
             .map { Row(name: $0.name, defaultState: $0.permissionMode.defaultState, asksEveryTime: $0.asksEveryTime) }
         storedStates = permissions.storedDecisions
+        showsTranslateRow = featureFlagger.isFeatureOn(.aiChatOfferTranslationAndSummarize)
+        translateMode = translatePages.mode
+        translateExcludedLanguages = translatePages.excludedLanguageCodes
+        translateOfferedLanguages = translatePages.offeredLanguageCodes
+        isTranslateCustomized = translatePages.isCustomized
+    }
+
+    func setTranslateMode(_ mode: TranslatePagesMode) {
+        translatePages.mode = mode
+        reload()
+    }
+
+    func setTranslate(languageCode: String, excluded: Bool) {
+        if excluded {
+            translatePages.exclude(languageCode: languageCode)
+        } else {
+            translatePages.include(languageCode: languageCode)
+        }
+        reload()
+    }
+
+    func resetTranslate() {
+        translatePages.reset()
+        reload()
     }
 
     func state(of row: Row) -> BrowserToolPermissionState {
@@ -90,9 +134,17 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     }
 
     func resetAll() {
+        let hadStoredPermissions = rows.contains { storedStates[$0.name] != nil }
         permissions.clearAll()
+        // Read live, not the cached row state, which lags a flag update by a main-queue hop.
+        // A hidden row keeps its opt-outs, so a flag rollback and re-enable does not lose them.
+        if featureFlagger.isFeatureOn(.aiChatOfferTranslationAndSummarize) {
+            translatePages.reset()
+        }
         reload()
-        pixelFiring?.fire(BrowserToolsPixel.permissionsReset)
+        if hadStoredPermissions {
+            pixelFiring?.fire(BrowserToolsPixel.permissionsReset)
+        }
     }
 
     private func firePermissionChanged(_ row: Row, from previous: BrowserToolPermissionState) {
@@ -102,7 +154,7 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     }
 
     var canResetAll: Bool {
-        rows.contains { storedStates[$0.name] != nil }
+        rows.contains { storedStates[$0.name] != nil } || (showsTranslateRow && isTranslateCustomized)
     }
 }
 
@@ -111,7 +163,7 @@ struct PreferencesBrowserToolPermissionsView: View {
     @StateObject private var model = BrowserToolPermissionsPreferences()
 
     var body: some View {
-        if !model.rows.isEmpty {
+        if !model.rows.isEmpty || model.showsTranslateRow {
             PreferencePaneSection(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
@@ -131,6 +183,12 @@ struct PreferencesBrowserToolPermissionsView: View {
                                 WebsitePermissionListSeparator()
                             }
                             BrowserToolPermissionRow(row: row, model: model)
+                        }
+                        if model.showsTranslateRow {
+                            if !model.rows.isEmpty {
+                                WebsitePermissionListSeparator()
+                            }
+                            TranslatePagesRow(model: model)
                         }
                     }
                 }
@@ -275,6 +333,144 @@ struct BrowserToolPermissionRow: View {
         case .ask: UserText.permissionCenterAlwaysAsk
         case .allow: UserText.permissionCenterAlwaysAllow
         case .deny: UserText.permissionCenterNeverAllow
+        }
+    }
+}
+
+private final class LanguageMenuTarget: NSObject {
+    private let handler: () -> Void
+    init(handler: @escaping () -> Void) { self.handler = handler }
+    @objc func toggle() { handler() }
+}
+
+struct TranslatePagesRow: View {
+
+    @ObservedObject var model: BrowserToolPermissionsPreferences
+    @Environment(\.designSystemPalette) private var palette
+
+    // shortcut: a character count stands in for measuring the text (ViewThatFits needs macOS 13), tuned to the
+    // 544-point Settings column; move to ViewThatFits when the deployment target allows.
+    private static let inlineSummaryLimit = 20
+
+    private var detailPrefix: some View {
+        Text(UserText.translatePagesSettingsDetailPrefix)
+            .font(.system(size: 11))
+            .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+            .fixedSize()
+    }
+
+    private var systemCode: String? { TranslatePagesLanguages.systemCode() }
+
+    private var summary: String {
+        TranslatePagesLanguages.summary(excluded: model.translateExcludedLanguages, systemCode: systemCode)
+    }
+
+    // A Menu label never wraps and its control stays a few points wide, so the wrapping text is a Button
+    // that opens the same menu at the pointer.
+    private func languageMenu(wraps: Bool) -> some View {
+        Button(action: showLanguageMenu) {
+            HStack(alignment: .top, spacing: 2) {
+                Text(summary)
+                    .font(.system(size: 11))
+                    .underline()
+                    .foregroundColor(Color(designSystemColor: .accentTextPrimary, palette: palette))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: !wraps, vertical: true)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(Color(designSystemColor: .accentTextPrimary, palette: palette))
+                    .padding(.top, 3)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("Preferences.AIChat.translatePages.languages")
+    }
+
+    private func showLanguageMenu() {
+        let menu = NSMenu()
+        if let systemCode, let name = TranslatePagesLanguages.name(of: systemCode) {
+            let item = NSMenuItem(title: "\(name)  \(UserText.translatePagesSettingsSystemLanguage)", action: nil, keyEquivalent: "")
+            item.state = .on
+            menu.addItem(item)
+            menu.addItem(.separator())
+        }
+        let excluded = model.translateExcludedLanguages
+        for code in TranslatePagesLanguages.menuCodes(localizations: TranslatePagesLanguages.appLocalizations(),
+                                                      offered: model.translateOfferedLanguages,
+                                                      excluded: excluded,
+                                                      systemCode: systemCode) {
+            let target = LanguageMenuTarget { [model] in model.setTranslate(languageCode: code, excluded: !excluded.contains(code)) }
+            let item = NSMenuItem(title: TranslatePagesLanguages.name(of: code) ?? code,
+                                  action: #selector(LanguageMenuTarget.toggle), keyEquivalent: "")
+            item.target = target
+            item.representedObject = target
+            item.state = excluded.contains(code) ? .on : .off
+            menu.addItem(item)
+        }
+        menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.translate)
+                .renderingMode(.template)
+                .resizable()
+                .frame(width: 16, height: 16)
+                .foregroundColor(Color(designSystemColor: .iconsPrimary, palette: palette))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(UserText.translatePagesSettingsTitle)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                if summary.count > Self.inlineSummaryLimit {
+                    VStack(alignment: .leading, spacing: 2) {
+                        detailPrefix
+                        languageMenu(wraps: true)
+                    }
+                } else {
+                    HStack(spacing: 3) {
+                        detailPrefix
+                        languageMenu(wraps: false)
+                    }
+                }
+            }
+
+            Spacer(minLength: 10)
+
+            NSPopUpButtonView(selection: Binding(get: { model.translateMode }, set: { model.setTranslateMode($0) })) {
+                let button = BrowserToolStatePopUpButton()
+                for mode in TranslatePagesMode.allCases {
+                    button.menu?.addItem(withTitle: Self.title(for: mode), action: nil, keyEquivalent: "").representedObject = mode
+                }
+                return button
+            }
+            .fixedSize()
+            .accessibilityLabel(UserText.translatePagesSettingsTitle)
+            .accessibilityIdentifier("Preferences.AIChat.translatePages")
+
+            Button(action: model.resetTranslate) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.replay)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(HoverHighlightButtonStyle())
+            .disabled(!model.isTranslateCustomized)
+            .opacity(model.isTranslateCustomized ? 1 : 0.4)
+            .help(UserText.browserToolSettingsReset)
+            .accessibilityLabel(UserText.browserToolSettingsReset(toolName: UserText.translatePagesSettingsTitle))
+            .accessibilityIdentifier("Preferences.AIChat.translatePages.reset")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private static func title(for mode: TranslatePagesMode) -> String {
+        switch mode {
+        case .alwaysAsk: UserText.translatePagesSettingsAlwaysAsk
+        case .neverAsk: UserText.translatePagesSettingsNeverAsk
         }
     }
 }

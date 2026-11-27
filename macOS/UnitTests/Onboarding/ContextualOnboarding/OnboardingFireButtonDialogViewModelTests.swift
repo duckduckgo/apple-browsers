@@ -97,6 +97,36 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         onFireButtonPressed = nil
     }
 
+    func testWhenSkipMovedOnboardingToTryDuckAIThenTheFireDialogEndsWithTryDuckAI() {
+        var triedDuckAI = false
+        let viewModel = OnboardingFireButtonDialogViewModel(
+            onboardingPixelReporter: reporter,
+            fireCoordinator: fireCoordinator,
+            lastDialog: { .tryDuckAI },
+            onDismiss: onDismiss,
+            onGotItPressed: onGotItPressed,
+            onFireButtonPressed: onFireButtonPressed,
+            onTryDuckAI: { triedDuckAI = true }
+        )
+
+        XCTAssertTrue(viewModel.endsWithTryDuckAI)
+        viewModel.tryDuckAI()
+        XCTAssertTrue(triedDuckAI)
+    }
+
+    func testWhenSkipMovedOnboardingToHighFiveThenTheFireDialogDoesNotEndWithTryDuckAI() {
+        let viewModel = OnboardingFireButtonDialogViewModel(
+            onboardingPixelReporter: reporter,
+            fireCoordinator: fireCoordinator,
+            lastDialog: { .highFive },
+            onDismiss: onDismiss,
+            onGotItPressed: onGotItPressed,
+            onFireButtonPressed: onFireButtonPressed
+        )
+
+        XCTAssertFalse(viewModel.endsWithTryDuckAI)
+    }
+
     func testWhenHighFiveThenOnGotItAndOnDismissPressed() throws {
         viewModel.highFive()
 

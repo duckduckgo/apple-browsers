@@ -151,8 +151,8 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User clicks the website link on a summarize prompt in Duck.ai tab or sidebar
     case aiChatSummarizeSourceLinkClicked
 
-    /// Event Trigger: User triggers translate action (either via keyboard shortcut or a context menu action)
-    case aiChatTranslateText(source: AIChatSelectionActionSource)
+    /// Event Trigger: User triggers translate action (keyboard shortcut or context menu on a selection, or a page translation offer)
+    case aiChatTranslateText(source: AIChatTranslateTextSource)
 
     /// Event Trigger: User clicks the website link on a translation prompt in Duck.ai tab or sidebar
     case aiChatTranslationSourceLinkClicked
@@ -210,8 +210,8 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User changes toggle to search
     case aiChatAddressBarToggleChangedSearch
 
-    /// Event Trigger: User submits prompt from duck.ai panel
-    case aiChatAddressBarAIChatSubmitPrompt
+    /// Event Trigger: User submits prompt from duck.ai panel. `newChatModel` is set only while new chats start on the default.
+    case aiChatAddressBarAIChatSubmitPrompt(newChatModel: DuckAINewChatModelPixelParameters?)
 
     /// Event Trigger: User submits URL from duck.ai panel
     case aiChatAddressBarAIChatSubmitURL
@@ -1068,7 +1068,6 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatAddressBarActivatedToggleOff,
                 .aiChatAddressBarToggleChangedAIChat,
                 .aiChatAddressBarToggleChangedSearch,
-                .aiChatAddressBarAIChatSubmitPrompt,
                 .aiChatAddressBarAIChatSubmitURL,
                 .aiChatSuggestionAIChatSubmittedMouse,
                 .aiChatSuggestionAIChatSubmittedKeyboard,
@@ -1167,6 +1166,8 @@ enum AIChatPixel: PixelKit.Event {
                 params["first_prompt_new_install"] = "true"
             }
             return params
+        case .aiChatAddressBarAIChatSubmitPrompt(let newChatModel):
+            return newChatModel?.parameters
         case .aiChatAddressBarSubscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):
             return ["current_tier": currentTier, "required_tier": requiredTier, "flow_type": flowType, "origin": origin]
         case .aiChatAddressBarCreateImageModelSwitched(let fromModelId, let toModelId, let fromModelPrivacyPreserving):
@@ -1279,8 +1280,9 @@ enum AIChatPixel: PixelKit.Event {
         case .aiChatSidebarResized(let width):
             return ["width": String(width)]
         case .aiChatSummarizeText(let source),
-                .aiChatTranslateText(let source),
                 .aiChatAttachSelection(let source):
+            return ["source": source.rawValue]
+        case .aiChatTranslateText(let source):
             return ["source": source.rawValue]
         case .aiChatPageContextAdded(let automaticEnabled), .aiChatPageContextRemoved(let automaticEnabled):
             return ["automaticEnabled": String(automaticEnabled)]
@@ -1566,6 +1568,20 @@ enum AIChatDirectNavigationVia: String, CaseIterable {
 enum AIChatSelectionActionSource: String, CaseIterable {
     case contextMenu = "context-menu"
     case keyboardShortcut = "keyboard-shortcut"
+}
+
+/// How the user triggered a Duck.ai translation
+enum AIChatTranslateTextSource: String, CaseIterable {
+    case contextMenu = "context-menu"
+    case keyboardShortcut = "keyboard-shortcut"
+    case translateOffer = "translate-offer"
+
+    init(_ source: AIChatSelectionActionSource) {
+        switch source {
+        case .contextMenu: self = .contextMenu
+        case .keyboardShortcut: self = .keyboardShortcut
+        }
+    }
 }
 
 /// Source of AI Chat sidebar open action

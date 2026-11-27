@@ -21,6 +21,9 @@ import Testing
 
 struct DNSBlockDetectorTests {
 
+    /// A generous timeout, so a slow resolver can't turn a classification into `.unresolved`.
+    private let detector = DNSBlockDetector(timeout: 10)
+
     @available(iOS 16, macOS 13, *)
     @Test("Resolution reflects the addresses the host resolves to",
           .timeLimit(.minutes(1)),
@@ -45,7 +48,7 @@ struct DNSBlockDetectorTests {
             ("", .unresolved)
           ])
     func resolution(host: String, expected: DNSResolution) async {
-        #expect(await DNSBlockDetector().resolution(for: host) == expected)
+        #expect(await detector.resolution(for: host) == expected)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -84,7 +87,7 @@ struct DNSBlockDetectorTests {
             ("fec0::", .resolved)
           ])
     func privateResolution(host: String, expected: DNSResolution) async {
-        #expect(await DNSBlockDetector().resolution(for: host) == expected)
+        #expect(await detector.resolution(for: host) == expected)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -156,6 +159,6 @@ struct DNSBlockDetectorTests {
             ("100:0:0:2::", .resolved)
           ])
     func invalidResolution(host: String, expected: DNSResolution) async {
-        #expect(await DNSBlockDetector().resolution(for: host) == expected)
+        #expect(await detector.resolution(for: host) == expected)
     }
 }

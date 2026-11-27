@@ -70,7 +70,8 @@ extension MainViewController {
         let aiChatPreferences = AIChatPreferencesPersistor()
         let stateStore = UnifiedInputStateStore(
             preferences: aiChatPreferences,
-            toggleModeStorage: toggleModeStorage
+            toggleModeStorage: toggleModeStorage,
+            startsNewChatsOnDefault: featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
         )
         stateStore.observeTabsModel(tabManager.normalTabsModel)
         stateStore.observeTabsModel(tabManager.fireModeTabsModel)
@@ -92,7 +93,11 @@ extension MainViewController {
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            userDefaultModelStorage: { [weak self] isFireTab in
+                isFireTab ? self?.duckAiFireModeStorageHandler : self?.duckAiNativeStorageHandler
+            },
             floatingUIManager: floatingUIManager,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             scheduleInputFocus: { [weak self] focus in self?.newTabTransitions.scheduleInputFocus(focus) }
         )
         coordinator.delegate = self
@@ -137,6 +142,10 @@ extension MainViewController {
         let mentions = BrowserTabMentionSuggestionsController(coordinator: coordinator, parentView: view)
         browserTabMentionSuggestionsController = mentions
         coordinator.onTabMentionSuggestionsChanged = { [weak mentions] in mentions?.show($0) }
+        newChatHintsPresenter = NewChatHintsPresenter(coordinator: coordinator,
+                                                      parentView: view,
+                                                      swipeOverlay: swipeTabsCoordinator?.swipeOverlayView)
+        viewCoordinator.viewsFollowingAITabCollapsedBar = newChatHintsPresenter.map { [$0.row] } ?? []
         installFloatingReturnKeyViewController()
         installDuckAIKeyboardEdgeSweep()
         installSwipeTabsGesturesForUnifiedInput()
@@ -279,6 +288,9 @@ extension MainViewController {
         activateUnifiedToggleInput(for: tab.tabModel)
 
         let action = refreshAction(for: tab, coordinator: coordinator, isRefreshingCurrentTab: isRefreshingCurrentTab)
+        if !action.isAITab {
+            coordinator.tabLeftDuckAI(tab.tabModel.uid)
+        }
 
         switch action {
         case .unbindInactiveNonAITab(let needsLayoutRefresh):
@@ -446,6 +458,11 @@ enum UnifiedToggleInputRefreshAction: Equatable {
     case refreshNonAITab
     /// The coordinator is mid-omnibar session on a non-AI tab — leave it alone.
     case preserveOmnibarSession
+
+    var isAITab: Bool {
+        if case .refreshAITab = self { return true }
+        return false
+    }
 }
 
 enum AITabRefreshBehavior: Equatable {
@@ -969,6 +986,9 @@ extension MainViewController {
         // driven by the FE's `voiceModeOpened`/`Closed` events, which fire at the paint moment.
         if tab.isVoiceModeRequested, coordinator.aiChatInputBoxVisibility != .hidden {
             coordinator.aiChatInputBoxVisibility = .hidden
+        }
+        if tab.isVoiceModeRequested {
+            coordinator.holdNewChatForVoice()
         }
         tab.isVoiceModeRequested = false
         tab.isDuckAIDeepLinkSurfaceRequested = false

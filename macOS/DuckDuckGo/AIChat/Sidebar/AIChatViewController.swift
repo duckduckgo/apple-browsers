@@ -20,6 +20,7 @@ import AppKit
 import BrowserServicesKit
 import AIChat
 import Combine
+import DesignResourcesKit
 import PrivacyConfig
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
@@ -379,11 +380,12 @@ final class AIChatViewController: NSViewController {
         webViewContainer.translatesAutoresizingMaskIntoConstraints = false
         webViewContainer.wantsLayer = true
         webViewContainer.layer?.masksToBounds = true
-        webViewContainer.layer?.backgroundColor = NSColor(resource: .navigationBarBackground).cgColor
         container.addSubview(webViewContainer)
 
         // Pinch zoom does not make sense in the AI Chat sidebar.
         aiTab.webView.allowsMagnification = false
+
+        showDuckAIBackgroundUntilFirstLoad()
 
         aiTab.setDelegate(self)
 
@@ -393,6 +395,32 @@ final class AIChatViewController: NSViewController {
                                                selector: #selector(updateWebViewMask),
                                                name: NSView.frameDidChangeNotification,
                                                object: webViewContainer)
+    }
+
+    /// WebKit paints a fresh web view white until the page's first frame, which flashes in dark mode.
+    /// Keep the web view transparent over Duck.ai's own background until the first load finishes,
+    /// then restore the default so pages without a background of their own still get white.
+    private func showDuckAIBackgroundUntilFirstLoad() {
+        let webView = aiTab.webView
+        webView.setValue(false, forKey: "drawsBackground")
+
+        // A CGColor doesn't follow appearance changes, so resolve it again on each change.
+        let background = NSColor(singleUseColor: .duckAIWebViewBackground)
+        webViewContainer.publisher(for: \.effectiveAppearance)
+            .sink { [weak webViewContainer] appearance in
+                appearance.performAsCurrentDrawingAppearance {
+                    webViewContainer?.layer?.backgroundColor = background.cgColor
+                }
+            }
+            .store(in: &cancellables)
+
+        webView.publisher(for: \.isLoading)
+            .drop(while: { !$0 })
+            .first(where: { !$0 })
+            .sink { [weak webView] _ in
+                webView?.setValue(true, forKey: "drawsBackground")
+            }
+            .store(in: &cancellables)
     }
 
     @objc private func updateWebViewMask() {

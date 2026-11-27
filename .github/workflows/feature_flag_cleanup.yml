@@ -1,0 +1,60 @@
+name: Feature Flag Cleanup
+
+# Queues feature flag removals for the Apple agent worker. For each open
+# Apple Feature Flags Registry task with "Auto Removal" set, creates a
+# subtask whose description is the removal prompt, in iOS or macOS App
+# Development (by the task's Platform), with "Apple Agent Status" set to
+# Ready. The worker then removes the flag and opens the PR.
+#
+# Manual dispatches default to dry-run (no Asana writes): uncheck dry_run to
+# write for real. Scheduled runs are real (dry_run is unset → falsy), and only
+# run once the FEATURE_FLAG_CLEANUP_SCHEDULE_ENABLED repository variable is
+# "true", so the first real run can be a manual one.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Skip Asana writes"
+        type: boolean
+        default: true
+      limit:
+        description: "Maximum flags to queue"
+        type: string
+        default: "1"
+      task_gid:
+        description: "Only consider this Registry task gid"
+        type: string
+        default: ""
+  schedule:
+    - cron: '0 6 * * 1-5' # 06:00 UTC on weekdays
+
+permissions:
+  contents: read
+
+# Dry runs get their own group, so a queued dry run never replaces a pending write.
+concurrency:
+  group: feature-flag-cleanup-${{ inputs.dry_run && 'dry-run' || 'write' }}
+  cancel-in-progress: false
+
+jobs:
+  feature-flag-cleanup:
+    name: Queue feature flag removals
+    if: github.event_name != 'schedule' || vars.FEATURE_FLAG_CLEANUP_SCHEDULE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Test the script
+        run: python3 -m unittest discover -s scripts/feature-flag-cleanup
+
+      - name: Queue removals
+        env:
+          ASANA_PAT: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          FFC_DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+          FFC_LIMIT: ${{ inputs.limit || '1' }}
+          FFC_TASK_GID: ${{ inputs.task_gid }}
+        run: python3 scripts/feature-flag-cleanup/feature_flag_cleanup.py

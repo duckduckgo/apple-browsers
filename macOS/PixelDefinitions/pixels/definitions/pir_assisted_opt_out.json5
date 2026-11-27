@@ -1,0 +1,50 @@
+{
+    "pir_assisted_opt_out_started_macos": {
+        "description": "User begins an assisted opt-out from the introduction.",
+        "owners": ["quanganhdo"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "channel"]
+    },
+    "pir_assisted_opt_out_user_turn_macos": {
+        "description": "An assisted opt-out first hands control to the user.",
+        "owners": ["quanganhdo"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "duration_seconds_bucket",
+                "type": "string",
+                "enum": ["0", "30", "60", "120", "240", "480"],
+                "description": "Seconds from beginning the attempt to the first user turn, as the lower bound of its bucket."
+            }
+        ]
+    },
+    "pir_assisted_opt_out_ended_macos": {
+        "description": "An assisted opt-out ends after runner teardown.",
+        "owners": ["quanganhdo"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": ["submitted", "cancelled", "timedOut", "failed"],
+                "description": "The terminal outcome of the attempt."
+            },
+            {
+                "key": "total_duration_seconds_bucket",
+                "type": "string",
+                "enum": ["0", "30", "60", "120", "240", "480"],
+                "description": "Total attempt duration in seconds, as the lower bound of its bucket."
+            },
+            {
+                "key": "user_turn_duration_seconds_bucket",
+                "type": "string",
+                "enum": ["0", "30", "60", "120", "240", "480"],
+                "description": "Cumulative seconds spent in user turns, as the lower bound of their bucket."
+            }
+        ]
+    }
+}

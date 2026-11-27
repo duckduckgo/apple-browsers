@@ -33,6 +33,7 @@ struct AIChatDebugView: View {
     private let featureFlagger: FeatureFlagger?
     private let tabManager: TabManager?
     private let aiChatLocalModel: AIChatLocalModelDependencies?
+    @State private var localModelEngine = LocalModelEngineOverridePersistor().current
 
     init(duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
@@ -77,15 +78,31 @@ struct AIChatDebugView: View {
             if let aiChatLocalModel {
                 // Shows the prompt without needing a Duck.ai page that asks for access.
                 Section(header: Text(verbatim: "Local Model")) {
+                    // Back to a device that never set up local summaries, so the pop-up shows again whichever engine is active.
                     Button {
                         aiChatLocalModel.service.optOut()
+                        aiChatLocalModel.service.uninstallDownloadableModel()
                     } label: {
                         Text(verbatim: "Reset Local Summaries Opt-In")
                     }
+                    // The active engine's pop-up, Turn On or Install, and nothing once that engine is set up.
                     Button {
                         showLocalModelAccessPrompt(aiChatLocalModel)
                     } label: {
                         Text(verbatim: "Show Local Model Access Pop-Up")
+                    }
+                    // The downloaded model stays when switching away, so switching back is instant.
+                    Picker(selection: localModelEngineBinding) {
+                        ForEach(LocalModelEngineOverride.allCases, id: \.self) { engine in
+                            Text(verbatim: engine.title).tag(engine)
+                        }
+                    } label: {
+                        Text(verbatim: "On-Device Model Engine")
+                    }
+                    Button(role: .destructive) {
+                        aiChatLocalModel.service.uninstallDownloadableModel()
+                    } label: {
+                        Text(verbatim: "Delete Downloaded Model")
                     }
                 }
             }
@@ -146,12 +163,19 @@ struct AIChatDebugView: View {
         .navigationTitle("AI Chat")
     }
 
+    private var localModelEngineBinding: Binding<LocalModelEngineOverride> {
+        Binding(get: { localModelEngine },
+                set: { engine in
+                    localModelEngine = engine
+                    LocalModelEngineOverridePersistor().current = engine
+                })
+    }
+
     private func showLocalModelAccessPrompt(_ localModel: AIChatLocalModelDependencies) {
         Task { @MainActor in
             let window = UIApplication.shared.firstKeyWindow
-            let modelName = localModel.service.model.name
-            _ = try? await localModel.service.requestAccess {
-                await localModel.accessPrompt.ask(in: window, modelName: modelName)
+            _ = try? await localModel.service.requestAccess { request in
+                await localModel.accessPrompt.ask(in: window, request: request)
             }
         }
     }
@@ -377,6 +401,7 @@ private struct AIChatInputFooterDebugView: View {
         List {
             AIChatAttachmentPrivacySection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
             AIChatMultiTabPromotionSection()
+            AIChatNewChatHintsSection()
             AIChatTermsOfServiceSection(duckAiNativeStorageHandler: duckAiNativeStorageHandler)
         }
         .navigationTitle("Native Input Footer Messages")
@@ -705,6 +730,30 @@ private struct AIChatMultiTabPromotionSection: View {
             Text(verbatim: "Chat across multiple tabs")
         } footer: {
             Text(verbatim: "Clears the display count, dismissal, and feature usage. The feature flag and promotion dates still apply.")
+        }
+    }
+}
+
+private struct AIChatNewChatHintsSection: View {
+    @State private var ignoredChats = 0
+    private let capStore = NewChatHintsCapStore()
+
+    var body: some View {
+        Section {
+            Button {
+                capStore.reset()
+                ignoredChats = capStore.ignoredChats
+            } label: {
+                Text(verbatim: "Reset hints cap")
+            }
+            Text(verbatim: "Ignored new chats: \(ignoredChats) of \(NewChatHintsCapStore.hideAfterIgnoredChats)")
+                .onAppear {
+                    ignoredChats = capStore.ignoredChats
+                }
+        } header: {
+            Text(verbatim: "New chat hints")
+        } footer: {
+            Text(verbatim: "Hints stop after this many new chats where a prompt was sent without tapping one. Resetting brings them back.")
         }
     }
 }

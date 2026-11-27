@@ -52,6 +52,16 @@ enum UpsellFlowType: String {
     case upgrade
 }
 
+/// Who chose the model a chat opens with.
+enum UTIOpeningModelOrigin {
+    /// The user, through an entry point; it is kept as their pick.
+    case user
+    /// Onboarding: it applies to the onboarding chat only, and that chat's first prompt reports `onboarding`.
+    case onboarding
+
+    var persistsSelection: Bool { self == .user }
+}
+
 private struct PromptSubmissionConfiguration {
     let modelId: String?
     let reasoningEffort: AIChatReasoningEffort?
@@ -110,21 +120,35 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         )
     }
     var voicePromptSubmissionConfiguration: (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
-        (promptSubmissionModelId, nil)
+        let modelId = promptSubmissionModelId
+        return (modelId, modelId == nil ? nil : modelStore.voicePromptReasoningEffort)
     }
 
-    @Published var aiChatStatus: AIChatStatusValue = .unknown
+    @Published var aiChatStatus: AIChatStatusValue = .unknown {
+        didSet {
+            let wasFromEarlierDocument = isAIChatStatusFromEarlierDocument
+            isAIChatStatusFromEarlierDocument = false
+            guard oldValue != aiChatStatus || wasFromEarlierDocument else { return }
+            refreshNewChatState()
+        }
+    }
+    /// The bound page committed a new document that hasn't reported its state yet. Kept apart from `aiChatStatus`,
+    /// which feeds prompt telemetry and must only carry what a page reported.
+    private var isAIChatStatusFromEarlierDocument = false
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             guard oldValue != aiChatInputBoxVisibility else { return }
             Logger.unifiedInputState.debug("aiChatInputBoxVisibility \(oldValue.rawValue, privacy: .public) → \(self.aiChatInputBoxVisibility.rawValue, privacy: .public) [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
             persistDraftToStore()
+            refreshNewChatState()
         }
     }
     @Published var isVoiceSessionActive: Bool = false {
         didSet {
             guard oldValue != isVoiceSessionActive else { return }
             persistDraftToStore()
+            if oldValue, !isApplyingState { holdNewChatAfterVoiceCloses() }
+            refreshNewChatState()
         }
     }
     /// Hex colour the FE sends with `voiceModeOpened` so native chrome matches the web surface exactly.
@@ -139,6 +163,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         didSet {
             guard oldValue != isEditing else { return }
             applyEditMode()
+            refreshNewChatState()
         }
     }
 
@@ -148,6 +173,32 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.isSubmitBlockedByRecoveryCard = isSubmitBlockedByRecoveryCard
         }
     }
+
+    /// The bound page sets this on every bind, so only `unbind` clears it.
+    var isAIChatPromoVisible: Bool? {
+        didSet {
+            guard oldValue != isAIChatPromoVisible else { return }
+            if isAIChatPromoVisible == true, let currentTabUID {
+                newChatHintsUsage.promoShown(tab: currentTabUID)
+            }
+            if newChatHintsFeature.isEnabled {
+                logNewChatHintsState()
+            }
+            refreshNewChatState()
+        }
+    }
+
+    /// The hints to show above the input, in order. Empty hides the row.
+    @Published private(set) var newChatHints: [NewChatHint] = []
+    private let newChatHintsUsage: NewChatHintsUsage
+
+    @Published private(set) var newChatState = NewChatState.none
+    var isGuaranteedNewChat: Bool { newChatState.isGuaranteedNewChat }
+    private let newChatHintsEligibility: NewChatHintsEligibility
+    private let newChatHintsFeature: NewChatHintsFeatureProviding
+    private var isVoiceRequestedForPage = false
+    private var voiceHoldRelease: DispatchWorkItem?
+    var newChatVoiceHoldAfterClose: TimeInterval = 1
 
     /// The bound page sets this on every bind, so only `unbind` clears it.
     var isTermsOfServiceShownOnPage: Bool = false {
@@ -172,14 +223,22 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let stateMachine: UTIStateMachine
     var displayState: UnifiedToggleInputDisplayState {
         get { stateMachine.displayState }
-        set { stateMachine.transition(to: newValue) }
+        set {
+            stateMachine.transition(to: newValue)
+            refreshNewChatState()
+        }
     }
     var textState: InputTextState { textModel.textState }
     private var omnibarPrefilledText: String? {
         get { textModel.omnibarPrefilledText }
         set { textModel.omnibarPrefilledText = newValue }
     }
-    private(set) var inputMode: TextEntryMode = .aiChat
+    private(set) var inputMode: TextEntryMode = .aiChat {
+        didSet {
+            guard oldValue != inputMode else { return }
+            refreshNewChatState()
+        }
+    }
     private let stateStore: UnifiedInputStateStoring
     private let switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding
     private let featureDiscovery: FeatureDiscovery
@@ -300,6 +359,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isOmnibarSession && inputMode == .aiChat && !hasSubmittedPrompt
     }
 
+    /// The footer cards under the input, in order.
+    var footerItems: [UTIFooterItem] { footerController?.currentMessages ?? [] }
+
     /// Only tapping Ask with the disclaimer on screen accepts the terms, so Return adds a new line instead of sending.
     private var isTermsOfServiceDisclaimerShown: Bool {
         footerController?.isTermsOfServiceVisible == true
@@ -324,6 +386,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var cancellables = Set<AnyCancellable>()
     private weak var boundUserScript: AIChatUserScript?
     private var boundUserScriptIdentifier: ObjectIdentifier?
+    /// The tab `boundUserScript` was bound for, set once the bind has reset and synced the session. A tab switch
+    /// activates the incoming tab before it binds that tab's script, and in between nothing on the input is that tab's yet.
+    private var boundUserScriptTabUID: TabUID?
     private let lastUsedModelProvider: DuckAiLastUsedModelProviding?
     private let lastUsedReasoningModeProvider: DuckAiLastUsedReasoningModeProviding?
     private let lastUsedModelCache: NSCache<NSString, NSString> = {
@@ -357,6 +422,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     private let featureFlagger: FeatureFlagger
     private let simplifiedPromptBoxFeature: SimplifiedPromptBoxFeatureProviding
+    private var openingChatModelId: String?
+    /// The model onboarding opened this chat with, kept until its first prompt for the pixel.
+    private var onboardingModelId: String?
 
     private let attachmentsChangeSubject = PassthroughSubject<Void, Never>()
     var attachmentsChangePublisher: AnyPublisher<Void, Never> {
@@ -366,6 +434,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private let duckAIWideEventFlowScope: DuckAIWideEventFlowScope?
 
     private let usageLimitsStore: DuckAiUsageLimitsStore?
+    private let userDefaultModelStorage: (_ isFireTab: Bool) -> DuckAiNativeStorageHandling?
     private let subscriptionUpsellPresenter: DuckAISubscriptionUpselling
     var onSubscriptionUpsellAvailabilityChanged: (() -> Void)?
     var onFloatingReturnKeyAvailabilityChanged: (() -> Void)?
@@ -413,11 +482,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updatedModelPickerFeature: UpdatedModelPickerFeatureProviding = UpdatedModelPickerFeature(),
         updatedCreateImageFeature: UpdatedCreateImageFeatureProviding = UpdatedCreateImageFeature(),
         usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        userDefaultModelStorage: @escaping (_ isFireTab: Bool) -> DuckAiNativeStorageHandling? = { _ in nil },
         subscriptionUpsellPresenter: DuckAISubscriptionUpselling? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         floatingUIManager: FloatingUIManaging? = nil,
         nativeTermsOfServiceFeature: DuckAiNativeTermsOfServiceFeatureProviding? = nil,
         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+        duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+        newChatHintsFeature: NewChatHintsFeatureProviding? = nil,
+        newChatHintsUsage: NewChatHintsUsage? = nil,
         scheduleInputFocus: @escaping (@escaping () -> Void) -> Void = { DispatchQueue.main.async(execute: $0) }
     ) {
         let floatingUIManager = floatingUIManager ?? FloatingUIManager(
@@ -430,6 +503,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         self.isToggleEnabled = isToggleEnabled
         self.hidesToggleOnDuckAITab = hidesToggleOnDuckAITab
         self.featureFlagger = featureFlagger
+        let newChatHintsFeature = newChatHintsFeature ?? NewChatHintsFeature(featureFlagger: featureFlagger)
+        self.newChatHintsFeature = newChatHintsFeature
+        let newChatHintsUsage = newChatHintsUsage ?? NewChatHintsUsage(isFeatureEnabled: { newChatHintsFeature.isEnabled })
+        self.newChatHintsUsage = newChatHintsUsage
+        self.newChatHintsEligibility = NewChatHintsEligibility(storage: duckAiNativeStorageHandler,
+                                                               fireModeStorage: duckAiFireModeStorageHandler,
+                                                               termsOfServiceStore: termsOfServiceStore,
+                                                               isCapReached: { newChatHintsUsage.isCapReached })
         self.simplifiedPromptBoxFeature = SimplifiedPromptBoxFeature(featureFlagger: featureFlagger)
         self.scheduleInputFocus = scheduleInputFocus
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
@@ -441,19 +522,27 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             fireBothModesPixel: { pixelFiring.fireDailyAndCount(.aiChatExperimentalOmnibarSessionBothModes) }
         )
         self.stateMachine = UTIStateMachine(host: host, hidesToggleOnDuckAITab: hidesToggleOnDuckAITab)
+        let startsNewChatsOnDefault = featureFlagger.isFeatureOn(.aiChatNewChatDefaultModel)
+        let usageLimitsStore = usageLimitsStore
+            ?? duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: featureFlagger) }
         self.stateStore = stateStore ?? UnifiedInputStateStore(
             preferences: preferences,
-            toggleModeStorage: toggleModeStorage
+            toggleModeStorage: toggleModeStorage,
+            startsNewChatsOnDefault: startsNewChatsOnDefault
         )
         self.modelStore = UTIModelStore(
             modelsService: modelsService ?? AIChatModelsService(
-                baseURL: aiChatModelsBaseURL(forChatURL: aiChatSettings.aiChatURL),
+                baseURL: AIChatModelsService.baseURL(forChatURL: aiChatSettings.aiChatURL),
                 accessTokenProvider: subscriptionManager
             ),
             preferences: preferences,
             subscriptionManager: subscriptionManager,
-            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
+            startsNewChatsOnDefault: startsNewChatsOnDefault,
+            overLimitNewChatDefaults: usageLimitsStore?.overLimitNewChatDefaultPublisher(receivingUpdatesOn: DispatchQueue.main),
+            userDefaultModelStorage: userDefaultModelStorage(isFireTab)
         )
+        self.userDefaultModelStorage = userDefaultModelStorage
         self.lastUsedModelProvider = lastUsedModelProvider
             ?? duckAiNativeStorageHandler.map { DuckAiLastUsedModelProvider(storage: $0, pixelFiring: duckAiNativeStoragePixelFiring) }
         self.lastUsedReasoningModeProvider = lastUsedReasoningModeProvider
@@ -470,7 +559,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // One coordinator serves both normal and fire tabs, so the fire state is read per refresh
         // rather than bound here — see `setUpFooter`.
         self.usageLimitsStore = usageLimitsStore
-            ?? duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0, featureFlagger: featureFlagger) }
         contentViewController = UnifiedInputContentContainerViewController(
             switchBarHandler: viewController.handler,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
@@ -492,7 +580,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             persistDraft: { [weak self] in self?.persistDraftToStore() },
             updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
             clearAttachmentValidationErrorIfPossible: { [weak self] in self?.attachmentController.clearValidationErrorIfPossible() },
-            onTextChanged: { [weak self] in self?.promptLengthGate?.refresh() }
+            onTextChanged: { [weak self] in
+                self?.promptLengthGate?.refresh()
+                self?.refreshNewChatState()
+            }
         ))
         keyboardMonitor = UTIKeyboardMonitor(environment: .init(
             isOmnibarActiveTopCard: { [weak self] in
@@ -624,6 +715,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     onAttachmentsChanged?()
                     footerController?.refresh()
                     promptLengthGate.refresh()
+                    refreshNewChatState()
                 },
                 onExpandIfNeeded: { [weak self] in self?.expandIfOnExpandedInputHost() },
                 updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
@@ -665,6 +757,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         subscribeToAttachmentUsageChanges()
         subscribeToSubscriptionChanges()
         subscribeToAppLifecycle()
+        newChatHintsEligibility.updates
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshNewChatState() }
+            .store(in: &cancellables)
+        featureFlagger.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshNewChatState() }
+            .store(in: &cancellables)
         wideEventReporter.subscribe(
             aiChatStatus: $aiChatStatus.eraseToAnyPublisher(),
             stopGeneratingTapped: viewController.handler.stopGeneratingButtonTappedPublisher
@@ -698,26 +798,35 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             userScript.inputBoxHandler = self
             syncChipVisibility(hasExistingChat: hasExistingChat)
             refreshToolsPresentation()
+            boundUserScriptTabUID = currentTabUID
+            refreshNewChatState()
             return
         }
         let hadPreviousScript = boundUserScriptIdentifier != nil
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = userScript
         boundUserScriptIdentifier = newIdentifier
-        userScript.inputBoxHandler = self
         if hadPreviousScript {
             resetSessionState()
         }
+        // After the reset: attaching pushes the page's last reported state, which the reset must not wipe.
+        userScript.inputBoxHandler = self
         syncChipVisibility(hasExistingChat: hasExistingChat)
         refreshToolsPresentation()
+        // Last: until here the session state still mixes the outgoing chat with this page.
+        boundUserScriptTabUID = currentTabUID
+        refreshNewChatState()
     }
 
     func unbind() {
         boundUserScript?.inputBoxHandler = nil
         boundUserScript = nil
         boundUserScriptIdentifier = nil
+        boundUserScriptTabUID = nil
         isTermsOfServiceShownOnPage = false
+        isAIChatPromoVisible = nil
         resetSessionState()
+        refreshNewChatState()
     }
 
     /// Subscribes to bridge-side chat-update events so the UTI's model/tools reflect any
@@ -824,6 +933,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         }
         applyState(stateStore.state(for: uid))
         updateInitialPromptPreparationState()
+        refreshNewChatState()
     }
 
     func applyState(_ state: TabInputState) {
@@ -854,7 +964,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         // wrote that leaked value back into this tab's stored state.
         modelStore.applyPersistedSelection(
             modelID: state.selectedModelID,
-            reasoningMode: state.selectedReasoningMode
+            reasoningMode: state.selectedReasoningMode,
+            chatOnlyModelID: state.chatOnlyModelID
         )
         handleModelsUpdated()
         modelSelector.updateReasoningPicker()
@@ -873,13 +984,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             text: currentText,
             toggleMode: inputMode,
             attachments: attachmentsRetainedForDismiss ?? viewController.currentAttachments,
-            selectedModelID: modelStore.persistedModelId,
-            selectedReasoningMode: modelStore.selectedReasoningMode,
+            selectedModelID: modelSelectionForTabState.modelID,
+            chatOnlyModelID: modelStore.chatOnlyModelId,
+            selectedReasoningMode: modelSelectionForTabState.reasoningMode,
             selectedTool: toolsController.selectedTool,
             aiChatInputBoxVisibility: aiChatInputBoxVisibility,
             isVoiceSessionActive: isVoiceSessionActive,
             isModelPickerForcedVisible: isModelPickerForcedVisible
         )
+    }
+
+    private var modelSelectionForTabState: UTIModelSelection {
+        modelStore.selectionKeptOnTab(isNewChat: isNewChatContext)
     }
 
     /// A committed navigation replaces the tab's FE document: FE-asserted visibility/voice state
@@ -888,12 +1004,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.unifiedInputState.debug("handleNavigationCommit [\(tabUID, privacy: .public)] didChangeChat=\(didChangeChat, privacy: .public) startsHidden=\(startsWithHiddenInput, privacy: .public) — live tab [\(self.currentTabUID ?? "nil", privacy: .public)]")
         let visibility: AIChatInputBoxVisibility = startsWithHiddenInput ? .hidden : .unknown
         if tabUID == currentTabUID {
+            isAIChatStatusFromEarlierDocument = true
             aiChatInputBoxVisibility = visibility
             isVoiceSessionActive = false
             if didChangeChat {
                 if !currentText.isEmpty { setText("") }
                 clearAttachments()
                 if toolsController.selectedTool != nil { resetToolsSelection() }
+                resetModelSelectionForNewChat()
             }
         }
         let current = stateStore.state(for: tabUID)
@@ -902,10 +1020,33 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updated.isVoiceSessionActive = false
         if didChangeChat {
             updated.clearDraft()
+            updated.chatOnlyModelID = nil
+            let isCurrentTab = tabUID == currentTabUID
+            if let pick = modelStore.pickForNewChat(openedWithModelId: isCurrentTab ? openingChatModelId : nil) {
+                updated.startNewChat(on: pick)
+            }
+            if isCurrentTab { openingChatModelId = nil }
         }
         if updated != current {
             stateStore.update(updated, for: tabUID)
         }
+        refreshNewChatState()
+    }
+
+    /// A different chat starts on the model it was opened with, else the default; an existing chat's own model is restored after this.
+    private func resetModelSelectionForNewChat() {
+        endChatOnlyModel()
+        guard let pick = modelStore.pickForNewChat(openedWithModelId: openingChatModelId) else { return }
+        modelStore.applyPersistedSelection(modelID: pick.modelID, reasoningMode: pick.reasoningMode)
+        handleModelsUpdated()
+        Logger.unifiedInputState.debug("chat changed — model selection reset to '\(self.openingChatModelId ?? "new-chat default", privacy: .public)'")
+    }
+
+    /// A model a new chat hint moved this chat to is for that chat only: every chat change goes back to the user's pick.
+    private func endChatOnlyModel() {
+        guard modelStore.chatOnlyModelId != nil else { return }
+        modelStore.endChatOnlyModel()
+        handleModelsUpdated()
     }
 
     /// Persists per-tab-only state — text and attachments. These are drafts the user
@@ -938,8 +1079,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         !hasSubmittedPrompt
     }
 
+    /// Only the first prompt of a new chat reports where its model came from; image generation picks its own model.
+    private var newChatModelSourceForSubmitPixel: DuckAINewChatModelSource? {
+        guard isNewChatContext, toolsController.selectedTool != .imageGeneration else { return nil }
+        return modelStore.newChatModelSource(onboardingModelId: onboardingModelId)
+    }
+
     private func clearStoreEntryAfterSubmission() {
         textModel.resetToEmpty()
+        openingChatModelId = nil
         guard let uid = currentTabUID else {
             if let uid = lastActivatedTabUID {
                 var cleared = stateStore.state(for: uid)
@@ -1140,6 +1288,212 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
     }
 
+    // MARK: - New Chat Hints
+
+    /// Holds new chat hints off from when a page asks for voice until the FE has closed voice for a second:
+    /// the FE drops `mode=voice` from the URL before it paints, and settles the chat after it closes.
+    func holdNewChatForVoice() {
+        isVoiceRequestedForPage = true
+        voiceHoldRelease?.cancel()
+        voiceHoldRelease = nil
+        refreshNewChatState()
+    }
+
+    private func holdNewChatAfterVoiceCloses() {
+        isVoiceRequestedForPage = true
+        voiceHoldRelease?.cancel()
+        let release = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.voiceHoldRelease = nil
+            self.isVoiceRequestedForPage = false
+            self.refreshNewChatState()
+        }
+        voiceHoldRelease = release
+        DispatchQueue.main.asyncAfter(deadline: .now() + newChatVoiceHoldAfterClose, execute: release)
+    }
+
+    var isNewChatHintsEligibleUser: Bool {
+        newChatHintsEligibility.isEligibleUser(isFireTab: viewController.handler.isFireTab)
+    }
+
+    var isAIChatPromoClear: Bool { isAIChatPromoVisible == false }
+
+    /// Runs with the flag off too: `aichat_new_chat_shown` counts new chats either way.
+    private func refreshNewChatState() {
+        defer { refreshNewChatHints() }
+        guard newChatHintsFeature.isSupported else {
+            newChatState = .none
+            return
+        }
+        let url = boundUserScript?.webView?.url
+        let state = NewChatState(
+            isFullTabInput: host == .omnibar && isAITabState,
+            isTabSelected: currentTabUID != nil && boundUserScript != nil && boundUserScriptTabUID == currentTabUID,
+            // The page reports `ready` once it can take a prompt; it never sends `showChatInput` on a plain load.
+            isInputReady: aiChatStatus == .ready && !isAIChatStatusFromEarlierDocument && aiChatInputBoxVisibility != .hidden,
+            hasChat: hasSubmittedPrompt || url?.duckAIChatID != nil,
+            carriesPrompt: url.map(Self.autoSubmitsPrompt) ?? false,
+            isVoiceHeld: isVoiceSessionActive || isVoiceRequestedForPage || url?.isDuckAIVoiceMode == true,
+            isEditing: isEditing
+        )
+        guard state != newChatState else { return }
+        newChatState = state
+        if newChatHintsFeature.isEnabled {
+            logNewChatHintsState()
+        }
+    }
+
+    private var isTypeAtTipShown: Bool {
+        footerController?.currentMessages.contains { $0.id == .multiTabPromotion } == true
+    }
+
+    private var isDraftEmpty: Bool {
+        currentText.isEmpty && viewController.currentAttachments.isEmpty && toolsController.selectedTool == nil
+    }
+
+    /// Follows the new chat for the hint pixels and the cap, and publishes the hints to show.
+    /// Only `refreshNewChatState` calls this, so the state it reads is never left over from the previous tab.
+    private func refreshNewChatHints() {
+        let state = newChatState
+        guard let tab = currentTabUID, state.isTabSelected else {
+            publishNewChatHints([])
+            return
+        }
+        var isChatStarted = false
+        if state.isGuaranteedNewChat {
+            isChatStarted = newChatHintsUsage.newChatShown(tab: tab, isFireTab: viewController.handler.isFireTab)
+        } else if state.isFullTabInput, state.hasChat || state.carriesPrompt {
+            newChatHintsUsage.leftNewChat(tab: tab)
+        }
+        guard newChatHintsFeature.isEnabled, state.isGuaranteedNewChat else {
+            publishNewChatHints([])
+            return
+        }
+        // The cheap terms first: eligibility reads native storage. A spent usage limit disables the toolbar's
+        // image and tools buttons, so it hides the hints they stand in for; Search mode can't use them either.
+        guard isAIChatPromoClear, !isTypeAtTipShown, isDraftEmpty,
+              !viewController.isInputBlockedByUsageLimit, inputMode == .aiChat else {
+            publishNewChatHints([])
+            return
+        }
+        let inputs = NewChatHintsInputs(
+            isEligibleUser: isNewChatHintsEligibleUser,
+            isGuaranteedNewChat: true,
+            isPromoClear: true,
+            isTypeAtTipHidden: true,
+            isDraftEmpty: true,
+            availableHints: NewChatHint.displayOrder.filter(canOfferNewChatHint)
+        )
+        let hints = inputs.visibleHints
+        // New Chat in place starts a chat under hints already on screen; the row only reports a changed list.
+        if isChatStarted, !hints.isEmpty, hints == newChatHints {
+            newChatHintsDidAppear(hints)
+        }
+        publishNewChatHints(hints)
+    }
+
+    /// `tab` is on screen showing something other than Duck.ai, so any new chat it had is over. Not called for a tab
+    /// the user only switched away from, so returning to its blank chat doesn't count it again.
+    func tabLeftDuckAI(_ tab: TabUID) {
+        newChatHintsUsage.leftNewChat(tab: tab)
+    }
+
+    /// The row put `hints` on screen, so they count as shown.
+    /// Passed in rather than read back, as the row hears of new hints before `newChatHints` is set.
+    func newChatHintsDidAppear(_ hints: [NewChatHint]) {
+        guard let currentTabUID else { return }
+        newChatHintsUsage.hintsShown(hints, tab: currentTabUID)
+    }
+
+    private func publishNewChatHints(_ hints: [NewChatHint]) {
+        guard newChatHints != hints else { return }
+        newChatHints = hints
+    }
+
+    private func capableModel(for hint: NewChatHint) -> AIChatModel? {
+        NewChatHint.capableModel(for: hint, in: modelStore.models, selectedModelID: modelStore.persistedModelId)
+    }
+
+    /// A hint shows only if its tap can act: for photos and files, the picker it opens must accept the model the tap
+    /// moves to. Checked against an empty chat, so it tests the attachment limits, not the room left in this chat.
+    private func canOfferNewChatHint(_ hint: NewChatHint) -> Bool {
+        guard let model = capableModel(for: hint) else { return false }
+        let policy = UTIAttachmentPolicy(attachmentLimits: modelStore.attachmentLimits, attachmentUsage: nil, pendingAttachments: [], model: model)
+        switch hint {
+        case .imageGeneration: return true
+        case .photo: return policy.canAttachImages
+        case .documents: return policy.canAttachFiles && model.supportedFileTypes.contains { UTType(mimeType: $0) != nil }
+        }
+    }
+
+    /// Ignored with the flag off: a tap can land after the flag turns off but before its update clears the row.
+    func performNewChatHint(_ hint: NewChatHint) {
+        guard newChatHintsFeature.isEnabled,
+              let tab = currentTabUID, let index = newChatHints.firstIndex(of: hint),
+              let model = capableModel(for: hint) else { return }
+        newChatHintsUsage.hintTapped(hint, position: index + 1, tab: tab)
+        switch hint {
+        case .imageGeneration:
+            // The Create Image switch shows the "Now using …" notice when it moves the model.
+            if !(isUpdatedCreateImageEnabled && canSwitchModelForImageGeneration) {
+                switchModel(to: model)
+            }
+            selectTool(.imageGeneration, createImageEntryPoint: .newChatHint)
+            if isInputPaneExpanded {
+                activateInput()
+            } else {
+                showExpanded(inputMode: .aiChat)
+            }
+        case .documents, .photo:
+            switchModel(to: model)
+            // Moving the model can change the page, so only act if this is still the same blank chat.
+            guard newChatState.isGuaranteedNewChat, currentTabUID == tab, !isOnboardingLocked else { return }
+            // The sheet goes up over the input as it is: expanding first would raise the keyboard under it. Closing
+            // it, by a pick or a cancel, expands the input (`expandIfOnExpandedInputHost`).
+            if hint == .documents {
+                attachmentController.presentFilePicker(entryPoint: .newChatHint) { [weak self] in
+                    self?.newChatHintsUsage.filePickerCancelled()
+                }
+            } else {
+                attachmentController.presentPhotoPicker()
+            }
+        }
+    }
+
+    /// Call from every path that sends a prompt, before it marks the chat as started.
+    /// `prompt` is what was sent: a voice or suggestion prompt leaves the draft's attachments and tool behind.
+    private func reportNewChatPromptSubmitted(_ prompt: NewChatHintsPixel.FirstPrompt) {
+        guard let tab = currentTabUID else { return }
+        let state = newChatState
+        newChatHintsUsage.promptSubmitted(
+            tab: tab,
+            isNewChat: state.isFullTabInput && !state.hasChat && !state.carriesPrompt,
+            prompt: prompt
+        )
+    }
+
+    /// Moves this chat to `model` without a notice. Not kept as the user's pick, so the model new chats start on stays
+    /// theirs.
+    private func switchModel(to model: AIChatModel) {
+        guard model.id != modelStore.persistedModelId else { return }
+        modelSelector.switchModelForThisChat(model.id)
+    }
+
+    private func logNewChatHintsState() {
+        let state = newChatState
+        let promo = isAIChatPromoVisible.map { String($0) } ?? "nil"
+        let terms = "fullTab=\(state.isFullTabInput) selected=\(state.isTabSelected) "
+            + "inputReady=\(state.isInputReady) hasChat=\(state.hasChat) carriesPrompt=\(state.carriesPrompt) "
+            + "voice=\(state.isVoiceHeld) editing=\(state.isEditing)"
+        Logger.unifiedInputState.debug("[NewChatHints] isGuaranteedNewChat=\(state.isGuaranteedNewChat, privacy: .public) promoVisible=\(promo, privacy: .public) [\(terms, privacy: .public)]")
+    }
+
+    private static func autoSubmitsPrompt(_ url: URL) -> Bool {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.contains {
+            $0.name == AIChatURLParameters.autoSubmitPromptQueryName && $0.value == AIChatURLParameters.autoSubmitPromptQueryValue
+        } == true
+    }
+
     // MARK: - Usage Warnings
 
     private func setUpFooter(subscriptionManager: any SubscriptionManager, termsOfServiceStore: DuckAiTermsOfServiceStore?) {
@@ -1191,9 +1545,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             self?.pixelReporter.reportAttachmentPrivacy(action, kind: kind)
         }
         footerController?.presenter = viewController
+        // The "type @" tip hides the new chat hints while it shows.
+        footerController?.onMessagesChanged = { [weak self] in self?.refreshNewChatState() }
         footerController?.onInputBlockChanged = { [weak self] blocked in
             self?.viewController.isInputBlockedByUsageLimit = blocked
             self?.tabMentionController?.refresh()
+            self?.refreshNewChatState()
         }
         footerController?.onTermsOfServiceVisibilityChanged = { [weak self] isVisible in
             guard let self else { return }
@@ -1291,6 +1648,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             wideEventReporter.recordTabSwitchedAwayDuringGeneration(tabID: previousTabUID)
         }
         currentTabUID = nil
+        refreshNewChatState()
         resetToolsSelection()
         clearAttachments()
         setText("")
@@ -1692,6 +2050,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.handler.isFireTab = isFireTab
         viewController.refreshFireMode(fireMode: isFireTab)
         contentViewController.refreshFireMode(fireMode: isFireTab)
+        modelStore.observeUserDefaultModel(in: userDefaultModelStorage(isFireTab))
     }
 
     private func transitionOmnibarToInactive() {
@@ -1740,6 +2099,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             toolsSelected: false,
             attachmentsSelected: false
         )
+        reportNewChatPromptSubmitted(.init())
         markActiveChatPromptSubmitted()
         resetToolsSelection()
         clearStoreEntryAfterSubmission()
@@ -1755,6 +2115,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         Logger.aiChat.debug("[TermsOfService] External prompt submission: acceptance not recorded, termsAccepted=false")
         inputOutcomeMeasurement.record(.promptSubmitted(.other))
         let configuration = promptSubmissionConfiguration
+        reportNewChatPromptSubmitted(.init())
         markActiveChatPromptSubmitted()
         return (configuration.modelId, configuration.reasoningEffort)
     }
@@ -1865,6 +2226,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         didSet {
             guard oldValue != hasSubmittedPrompt else { return }
             Logger.unifiedInputState.debug("hasSubmittedPrompt \(oldValue, privacy: .public) → \(self.hasSubmittedPrompt, privacy: .public) [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
+            refreshNewChatState()
         }
     }
 
@@ -1889,6 +2251,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     func startNewChat() {
         Logger.unifiedInputState.debug("startNewChat [tab=\(self.currentTabUID ?? "nil", privacy: .public)]")
+        // The chat this replaces is over, even when both are blank, so the new one counts and reports fresh.
+        if let currentTabUID {
+            newChatHintsUsage.leftNewChat(tab: currentTabUID)
+        }
         attachmentController.resetPasteConversation()
         isNewChatPending = true
         multiTabPromotionSource?.startNewChat()
@@ -1899,13 +2265,19 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isModelPickerForcedVisible = false
         isSubmitBlockedByRecoveryCard = false
         resetToolsSelection()
+        endChatOnlyModel()
         modelSelector.updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         clearAttachments()
         setText("")
         attachmentUsage = nil
-        aiChatInputBoxVisibility = .visible
+        // End voice before clearing its hold: closing voice arms the post-close hold.
         isVoiceSessionActive = false
+        isVoiceRequestedForPage = false
+        voiceHoldRelease?.cancel()
+        voiceHoldRelease = nil
+        aiChatInputBoxVisibility = .visible
+        refreshNewChatState()
     }
 
     var attachmentCount: Int {
@@ -1925,10 +2297,12 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         attachmentController.clearRejectionBanner()
     }
 
-    /// - Parameter persistsSelection: When `false`, `modelId` applies to the current chat only and is not
-    ///   saved as the model that new chats start on.
-    func updateSelectedModel(_ modelId: String, persistsSelection: Bool = true) {
-        modelSelector.updateSelectedModel(modelId, persistsSelection: persistsSelection)
+    /// A model an entry point opens a chat with. It wins over the default for that chat only.
+    func updateSelectedModel(_ modelId: String, origin: UTIOpeningModelOrigin = .user) {
+        openingChatModelId = modelId
+        onboardingModelId = origin == .onboarding ? modelId : nil
+        Logger.unifiedInputState.debug("opening chat with explicit model '\(modelId, privacy: .public)'")
+        modelSelector.updateSelectedModel(modelId, persistsSelection: origin.persistsSelection)
     }
 
     /// Tells the FE to switch the active chat's model via the `submitChangeModelAction` bridge push.
@@ -2306,7 +2680,14 @@ extension UnifiedToggleInputCoordinator {
             modelStore: modelStore,
             canSwitchModel: canSwitchModelForImageGeneration,
             entryPoint: entryPoint,
-            applyModel: { modelSelector.updateSelectedModel($0) }
+            applyModel: { modelId in
+                // A hint moves this chat only, like the photo and file hints.
+                if entryPoint == .newChatHint {
+                    modelSelector.switchModelForThisChat(modelId)
+                } else {
+                    modelSelector.updateSelectedModel(modelId)
+                }
+            }
         )
         showModelSwitchNoticeIfNeeded(notice)
     }
@@ -2423,12 +2804,19 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             modelId: modelStore.persistedModelId,
             defaultOmnibarMode: aiChatSettings.defaultOmnibarMode,
             isFirstPromptNewInstall: featureDiscovery.isFirstDuckAIPromptNewInstall,
-            resubmitDelay: resubmitDelay(of: text, mode: .aiChat)
+            resubmitDelay: resubmitDelay(of: text, mode: .aiChat),
+            modelSource: newChatModelSourceForSubmitPixel
         )
+        onboardingModelId = nil
         pixelReporter.reportToolSubmittedIfNeeded(
             selectedTool: toolsController.selectedTool,
             attachments: viewController.currentAttachments
         )
+        // Read before the submit clears the draft.
+        let draftAttachments = viewController.currentAttachments
+        reportNewChatPromptSubmitted(.init(hasImageAttachment: draftAttachments.contains(where: \.isImage),
+                                           hasFileAttachment: draftAttachments.contains(where: \.isFile),
+                                           selectedTool: toolsController.selectedTool))
         inputOutcomeMeasurement.record(DuckAiInputOutcome(trigger: trigger))
         let termsAccepted = acceptTermsOfServiceIfAskTapped(trigger)
         footerController?.recordPromptSubmitted()
@@ -2788,6 +3176,7 @@ private extension UnifiedToggleInputCoordinator {
             // its URL never had a chatID yet, so there is no true → false transition to see.
             hasSubmittedPrompt = false
             multiTabPromotionSource?.startNewChat()
+            endChatOnlyModel()
             modelSelector.updateModelChipVisibility()
             syncHasSubmittedPromptToHandler()
             footerController?.refreshMultiTabPromotion()
@@ -2859,6 +3248,7 @@ private extension UnifiedToggleInputCoordinator {
     func resetSessionState() {
         endEditMode(collapses: false)
         isNewChatPending = false
+        isVoiceRequestedForPage = false
         aiChatStatus = .unknown
         attachmentUsage = nil
         hasSubmittedPrompt = false
@@ -2940,6 +3330,7 @@ private extension UnifiedToggleInputCoordinator {
         viewController.refreshPlaceholderForCurrentMode()
         footerController?.setTermsOfServiceSendButton(termsOfServiceSendButton)
         syncTermsOfServiceSendButtonToHandler()
+        refreshNewChatState()
     }
 
     func resetToolsSelection() {
@@ -3198,17 +3589,4 @@ extension UnifiedToggleInputCoordinator {
             hasPageContext: hasPageContext
         )
     }
-}
-
-/// Derives the AI Chat models API base (scheme + host) from the resolved chat URL, so `/models` is fetched
-/// from the same origin the chat loads from — production `duck.ai`, or a debug/dev host when the chat URL is
-/// overridden via Debug → "Set Custom AI Chat URL". Falls back to `AIChatModelsService.defaultBaseURL` if the
-/// chat URL lacks a host.
-func aiChatModelsBaseURL(forChatURL chatURL: URL) -> URL {
-    guard let scheme = chatURL.scheme, let host = chatURL.host else { return AIChatModelsService.defaultBaseURL }
-    var components = URLComponents()
-    components.scheme = scheme
-    components.host = host
-    components.port = chatURL.port
-    return components.url ?? AIChatModelsService.defaultBaseURL
 }

@@ -20,7 +20,9 @@
 import AIChat
 import Combine
 import Foundation
+@_spi(Testing) import PixelKit
 import Testing
+import UIKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -32,15 +34,36 @@ final class LocalModelAccessSettingsViewModelTests {
     private let flagUpdates = PassthroughSubject<Void, Never>()
     private let notificationCenter = NotificationCenter()
     private var isFlagOn = true
+    private let pixelFiring = PixelKitMock()
 
     private lazy var service = AIChatLocalModelService(isFeatureFlagOn: { [unowned self] in self.isFlagOn },
                                                        featureFlagUpdates: flagUpdates.eraseToAnyPublisher(),
                                                        storage: storage,
                                                        engine: engine,
-                                                       notificationCenter: notificationCenter)
+                                                       notificationCenter: notificationCenter,
+                                                       instrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
 
     private func makeViewModel() -> LocalModelAccessSettingsViewModel {
         LocalModelAccessSettingsViewModel(service: service)
+    }
+
+    private let llama = UnloadableStubEngine()
+    private let installer = RecordingInstaller()
+
+    private lazy var serviceWithDownloadableModel = AIChatLocalModelService(isFeatureFlagOn: { true },
+                                                                           featureFlagUpdates: flagUpdates.eraseToAnyPublisher(),
+                                                                           storage: storage,
+                                                                           engine: engine,
+                                                                           downloadableModel: AIChatDownloadableLocalModel(engine: llama, installer: installer),
+                                                                           notificationCenter: notificationCenter)
+
+    private func selectedInSettings(_ model: AIChatPageSummariesModel) -> ExpectedFireCall {
+        ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: .selected(model, source: .settings)), frequency: .standard)
+    }
+
+    /// The service also sends its daily state, which these tests don't look at.
+    private var selectedPixels: [ExpectedFireCall] {
+        pixelFiring.actualFireCalls.filter { $0.pixel.name == "aichat_local_model_selected" }
     }
 
     @available(iOS 16, macOS 13, *)
@@ -130,14 +153,148 @@ final class LocalModelAccessSettingsViewModelTests {
         #expect(!viewModel.isConfirmingTurnOn)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("The prompt answers No Thanks when there's no window to show it in", .timeLimit(.minutes(1)))
-    func promptWithoutWindowDeclines() async {
-        let prompt = LocalModelAccessPrompt()
+    // MARK: - Downloadable model
 
-        let answer = await prompt.ask(in: nil, modelName: "Apple Intelligence")
+    @available(iOS 16, macOS 13, *)
+    @Test("Without Apple Intelligence, the section shows the downloadable model", .timeLimit(.minutes(1)))
+    func showsTheDownloadableModelWithoutAppleIntelligence() {
+        engine.availability = .deviceNotEligible
+
+        let viewModel = LocalModelAccessSettingsViewModel(service: serviceWithDownloadableModel)
+
+        #expect(viewModel.isAvailable)
+        #expect(viewModel.downloadableModelState == .notInstalled)
+        #expect(viewModel.modelName == llama.model.name)
+        #expect(viewModel.downloadableModelBytes == installer.spec.bytes)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Where Apple Intelligence is ready, the section shows its switch", .timeLimit(.minutes(1)))
+    func showsTheSwitchWithAppleIntelligence() {
+        engine.availability = .available
+
+        let viewModel = LocalModelAccessSettingsViewModel(service: serviceWithDownloadableModel)
+
+        #expect(viewModel.isAvailable)
+        #expect(viewModel.downloadableModelState == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Install, Cancel and Uninstall reach the installer, and Uninstall frees the model", .timeLimit(.minutes(1)))
+    func rowActionsReachTheInstaller() {
+        engine.availability = .deviceNotEligible
+        let viewModel = LocalModelAccessSettingsViewModel(service: serviceWithDownloadableModel)
+
+        viewModel.installDownloadableModel()
+        viewModel.cancelDownloadableModelInstall()
+        viewModel.uninstallDownloadableModel()
+
+        #expect(installer.userCalls == ["install", "cancel", "uninstall"])
+        #expect(llama.unloadCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Download progress reaches the row", .timeLimit(.minutes(1)))
+    func progressReachesTheRow() async {
+        engine.availability = .deviceNotEligible
+        let viewModel = LocalModelAccessSettingsViewModel(service: serviceWithDownloadableModel)
+
+        installer.state = .downloading(receivedBytes: 500, totalBytes: 1_000)
+
+        await waitUntil { viewModel.downloadableModelState == .downloading(receivedBytes: 500, totalBytes: 1_000) }
+        #expect(viewModel.downloadableModelState == .downloading(receivedBytes: 500, totalBytes: 1_000))
+    }
+
+    // MARK: - Prompt
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The prompt answers No Thanks when there's no window to show it in, and counts no offer", .timeLimit(.minutes(1)))
+    func promptWithoutWindowDeclines() async {
+        let prompt = LocalModelAccessPrompt(instrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
+
+        let answer = await prompt.ask(in: nil, request: .connect(AIChatLocalModelInfo(id: "apple", name: "Apple Intelligence")))
 
         #expect(answer == .declined)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only the Apple Intelligence card counts as its offer; the Install card sends no promo pixels",
+          .timeLimit(.minutes(1)),
+          arguments: [AIChatLocalModelAccessRequest.connect(AIChatLocalModelInfo(id: "apple", name: "Apple Intelligence")),
+                      .install(AIChatLocalModelSpec.gemma4E2B.info, bytes: AIChatLocalModelSpec.gemma4E2B.bytes)])
+    func promoPixelsOnlyForAppleIntelligence(request: AIChatLocalModelAccessRequest) async {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        let prompt = LocalModelAccessPrompt(instrumentation: LocalModelPixelInstrumentation(pixelFiring: pixelFiring))
+
+        let answer = Task { await prompt.ask(in: window, request: request) }
+        await waitUntil { window.rootViewController?.presentedViewController != nil }
+        // Closing the card any other way than its buttons declines.
+        window.rootViewController?.dismiss(animated: false)
+
+        #expect(await answer.value == .declined)
+        let expected = request == .connect(AIChatLocalModelInfo(id: "apple", name: "Apple Intelligence"))
+            ? ["aichat_local_model_promo_shown", "aichat_local_model_promo_closed"]
+            : []
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == expected)
+    }
+
+    // MARK: - Pixels
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turning it on and off in Settings sends selected with the settings source", .timeLimit(.minutes(1)))
+    func settingsSendsSelected() {
+        let viewModel = makeViewModel()
+
+        viewModel.isOnBinding.wrappedValue = true
+        viewModel.confirmTurnOn()
+        viewModel.isOnBinding.wrappedValue = false
+
+        #expect(selectedPixels == [selectedInSettings(.appleIntelligence), selectedInSettings(.duckAI)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Cancel in the confirmation sends nothing", .timeLimit(.minutes(1)))
+    func cancelSendsNothing() {
+        let viewModel = makeViewModel()
+
+        viewModel.isOnBinding.wrappedValue = true
+        viewModel.cancelTurnOn()
+
+        #expect(selectedPixels.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each local-model pixel goes out under AIChat's name, parameters and frequency", .timeLimit(.minutes(1)))
+    func instrumentationUsesTheSharedDefinition() {
+        let instrumentation = LocalModelPixelInstrumentation(pixelFiring: pixelFiring)
+        let pixels: [AIChatLocalModelPixel] = [
+            .state(selected: .appleIntelligence, state: .ready, availability: .available),
+            .promoShown,
+            .promoClosed,
+            .selected(.appleIntelligence, source: .duckAIPromo),
+            .runStarted(engine: .appleIntelligence, task: .summarize)
+        ]
+
+        pixels.forEach(instrumentation.fire)
+
+        #expect(pixelFiring.actualFireCalls == [
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[0]), frequency: .daily),
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[1]), frequency: .dailyAndCount),
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[2]), frequency: .dailyAndCount),
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[3]), frequency: .standard),
+            ExpectedFireCall(pixel: LocalModelPixelEvent(pixel: pixels[4]), frequency: .daily)
+        ])
+        #expect(pixelFiring.actualFireCalls.map(\.pixel.name) == [
+            "aichat_local_model_state",
+            "aichat_local_model_promo_shown",
+            "aichat_local_model_promo_closed",
+            "aichat_local_model_selected",
+            "aichat_local_model_run_started"
+        ])
     }
 }
 
@@ -162,4 +319,52 @@ private final class InMemoryPageSummariesModelStore: AIChatPageSummariesModelSto
     var pageSummariesModelPublisher: AnyPublisher<AIChatPageSummariesModel, Never> {
         subject.eraseToAnyPublisher()
     }
+}
+
+private final class UnloadableStubEngine: AIChatLocalModelEngine, AIChatLocalModelUnloading {
+    let model = AIChatLocalModelSpec.gemma4E2B.info
+    var availability: AIChatLocalModelAvailability = .available
+    private(set) var unloadCount = 0
+
+    func run(_ request: AIChatLocalRunRequest) -> AsyncThrowingStream<AIChatLocalModelEngineEvent, Error> {
+        AsyncThrowingStream { $0.finish() }
+    }
+
+    func unloadModel() {
+        unloadCount += 1
+    }
+}
+
+private final class RecordingInstaller: AIChatLocalModelInstalling {
+    let spec = AIChatLocalModelSpec.gemma4E2B
+    let isActive = false
+    private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
+    private(set) var userCalls: [String] = []
+
+    var state: AIChatLocalModelInstallState {
+        get { subject.value }
+        set { subject.send(newValue) }
+    }
+
+    var statePublisher: AnyPublisher<AIChatLocalModelInstallState, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func install() {
+        userCalls.append("install")
+        state = .downloading(receivedBytes: 0, totalBytes: spec.bytes)
+    }
+
+    func cancel() {
+        userCalls.append("cancel")
+        state = .notInstalled
+    }
+
+    func uninstall() {
+        userCalls.append("uninstall")
+        state = .notInstalled
+    }
+
+    func pause() {}
+    func resumeIfNeeded() {}
 }

@@ -163,7 +163,8 @@ class Client:
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
     def request(self, method, path, body=None, timeout=10):
-        if method != "GET" and (self.instance is None or not self.owned):
+        # A seed or upgrade owns an instance-less listener once it has checked the listener's executable.
+        if method != "GET" and not self.owned:
             raise SetupFailed("PIR endpoint ownership has not been verified")
         headers = {"Content-Type": "application/json"}
         if self.instance is not None:
@@ -378,10 +379,32 @@ def selftest(context, client):
                        "selftest uses a dummy launch credential and only reads local debug endpoints")
 
 
+def load_launch_profile(value):
+    """Returns the user's launch profile and a reference to record, after checking it merges with the base profile."""
+    from runtime import ios_launch_profile
+    if value.strip().startswith("{"):
+        profile = json.loads(value)
+        source = dict(inline=profile)
+    else:
+        path = Path(value).expanduser().resolve()
+        raw = path.read_bytes()
+        profile = json.loads(raw)
+        source = dict(reference=str(path), sha256=sha256(raw))
+    ios_launch_profile(profile)
+    return profile, source
+
+
+def record_launch(context, launch, launch_profile_source):
+    if launch_profile_source:
+        launch["launchProfile"] = dict(source=launch_profile_source, **launch.get("launchProfile", {}))
+    context.result["launch"] = launch
+    context.write("launch.json", launch)
+
+
 def parser():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument("command", choices=("build", "run", "selftest", "scheduler"))
-    cli.add_argument("scheduler_mode", nargs="?", choices=("observe", "seed", "reseed"),
+    cli.add_argument("scheduler_mode", nargs="?", choices=("observe", "seed", "reseed", "upgrade"),
                      help="attach, seed an empty DEBUG store, or replace the DEBUG profile and history")
     cli.add_argument("--platform", choices=("ios", "macos"), required=True)
     cli.add_argument("--config", type=Path, help="scenario JSON, required for run")
@@ -392,6 +415,8 @@ def parser():
     token.add_argument("--token-env", metavar="NAME", help="read token from this environment variable")
     cli.add_argument("--check-config", action="store_true", help="validate inputs without building or launching")
     cli.add_argument("--keep", action="store_true", help="retain simulator after stopping owned app and agent")
+    cli.add_argument("--launch-profile", metavar="JSON_OR_PATH",
+                     help="iOS run, selftest, seed, reseed or upgrade: launch profile JSON or .json file merged over the base PIR profile")
     cli.add_argument("--scenario", help="title of the scenario this attempt runs; recorded in result.json")
     cli.add_argument("--expect", choices=("pass", "fail", "inconclusive"),
                      help="verdict the scenario expects; recorded in result.json (default: pass)")
@@ -402,6 +427,13 @@ def parser():
     scheduler.add_argument("--job", dest="scheduler_jobs", nargs=2, action="append", metavar=("BROKER_URL", "QUERY_ID"),
                            help="persisted scan to verify, repeat for each broker and profile query pair")
     scheduler.add_argument("--timeout", dest="scheduler_timeout", type=float, help="observation timeout in seconds (default: 600)")
+    scheduler.add_argument("--broker", dest="scheduler_brokers", action="append", metavar="BROKER_URL",
+                           help="seed or reseed: scan only this eligible broker; upgrade: scan it now; repeat for each")
+    scheduler.add_argument("--simulator", dest="scheduler_simulator", metavar="UDID",
+                           help="iOS upgrade: the simulator an earlier seed kept with --keep")
+    scheduler.add_argument("--reset-delivery", dest="scheduler_reset_delivery", action="store_true",
+                           help="upgrade: also clear stored broker delivery data so the remote update re-downloads every broker")
+    cli.add_argument("--step", help="with --scenario: this attempt is one step of that scenario, not its whole run")
     return cli
 
 
@@ -435,17 +467,29 @@ def rerun_command(args):
         command += ["--token-env", args.token_env]
     if args.keep:
         command += ["--keep"]
+    if args.launch_profile is not None:
+        value = args.launch_profile
+        command += ["--launch-profile", value if value.strip().startswith("{") else str(Path(value).expanduser().resolve())]
     if args.scenario:
         command += ["--scenario", args.scenario]
     if args.expect:
         command += ["--expect", args.expect]
+    if args.step:
+        command += ["--step", args.step]
     if args.command == "scheduler":
         if args.scheduler_mode == "observe":
             command += ["--since", args.scheduler_since]
             for broker, query in args.scheduler_jobs:
                 command += ["--job", broker, query]
         else:
-            command += ["--profile-file", str(args.scheduler_profile.expanduser().resolve())]
+            if args.scheduler_profile is not None:
+                command += ["--profile-file", str(args.scheduler_profile.expanduser().resolve())]
+            for broker in args.scheduler_brokers or []:
+                command += ["--broker", broker]
+            if args.scheduler_simulator:
+                command += ["--simulator", args.scheduler_simulator]
+            if args.scheduler_reset_delivery:
+                command += ["--reset-delivery"]
         if args.scheduler_port is not None:
             command += ["--port", str(args.scheduler_port)]
         if args.scheduler_timeout is not None:
@@ -500,6 +544,14 @@ def execute(args, runtime_factory=None):
         raise ValueError("--scenario applies only to run and scheduler")
     if args.expect is not None and args.scenario is None:
         raise ValueError("--expect applies only with --scenario")
+    if args.step is not None and args.scenario is None:
+        raise ValueError("--step applies only with --scenario")
+    if args.launch_profile is not None:
+        if args.platform != "ios":
+            raise ValueError("--launch-profile applies only to iOS")
+        if args.command == "build" or args.scheduler_mode == "observe":
+            raise ValueError("--launch-profile applies only to run, selftest and scheduler seed, reseed or upgrade")
+    upgrade = None
     if args.command == "scheduler":
         if args.config or args.token_file or args.token_env or args.check_config:
             raise ValueError("scheduler commands do not accept scenario, credential or check-config options")
@@ -507,15 +559,20 @@ def execute(args, runtime_factory=None):
             raise ValueError("--keep applies only to iOS scheduler seed and reseed")
         import scheduler
         if args.scheduler_mode == "observe":
-            if args.scheduler_profile is not None:
-                raise ValueError("scheduler observe does not take a profile file")
+            if args.scheduler_profile is not None or args.scheduler_brokers:
+                raise ValueError("scheduler observe does not take a profile file or brokers")
             scope = scheduler.parse_scope(args)
         elif args.scheduler_mode in ("seed", "reseed"):
+            if args.scheduler_simulator is not None or args.scheduler_reset_delivery:
+                raise ValueError("--simulator and --reset-delivery apply only to scheduler upgrade")
             seed = scheduler.parse_seed(args)
+        elif args.scheduler_mode == "upgrade":
+            upgrade = scheduler.parse_upgrade(args)
         else:
-            raise ValueError("Choose scheduler observe, seed or reseed")
+            raise ValueError("Choose scheduler observe, seed, reseed or upgrade")
     elif any(option is not None for option in (args.scheduler_mode, args.scheduler_profile, args.scheduler_port,
-                                               args.scheduler_since, args.scheduler_jobs, args.scheduler_timeout)):
+                                               args.scheduler_since, args.scheduler_jobs, args.scheduler_timeout,
+                                               args.scheduler_brokers, args.scheduler_simulator)) or args.scheduler_reset_delivery:
         raise ValueError("scheduler mode and options apply only to the scheduler command")
     if is_selftest and (args.config or args.token_file or args.token_env or args.check_config or args.keep):
         raise ValueError("selftest does not accept scenario, credential, check-config or keep options")
@@ -534,6 +591,8 @@ def execute(args, runtime_factory=None):
     redactor = Redactor(token)
     if inputs and token and any(any(form.encode() in raw for form in redactor.forms) for raw in inputs["inputBytes"]):
         raise ValueError("credential occurs in scenario inputs; keep it only in the token source")
+    launch_profile, launch_profile_source = (load_launch_profile(args.launch_profile) if args.launch_profile is not None
+                                             else (None, None))
     root = Path(__file__).resolve().parents[3]
     parent = args.evidence_dir.expanduser().resolve()
     if parent == root or root in parent.parents:
@@ -541,7 +600,10 @@ def execute(args, runtime_factory=None):
     if args.check_config:
         if inputs is None:
             raise ValueError("--check-config requires --config")
-        return dict(status="valid", inputs=inputs["references"])
+        valid = dict(status="valid", inputs=inputs["references"])
+        if launch_profile_source:
+            valid["launchProfile"] = launch_profile_source
+        return valid
     parent.mkdir(parents=True, exist_ok=True)
     evidence = Path(tempfile.mkdtemp(prefix=f"{args.platform}-{args.command}-", dir=parent))
     context = Context(evidence, redactor)
@@ -549,6 +611,8 @@ def execute(args, runtime_factory=None):
         instance, port = None, scope.port
     elif seed and seed.platform == "macos":
         instance, port = str(uuid.uuid4()), seed.port
+    elif upgrade and upgrade.platform == "macos":
+        instance, port = str(uuid.uuid4()), upgrade.port
     else:
         instance = str(uuid.uuid4())
         with socket.socket() as reserved:
@@ -556,10 +620,14 @@ def execute(args, runtime_factory=None):
             port = reserved.getsockname()[1]
         if seed:
             seed = dataclasses.replace(seed, port=port)
+        if upgrade:
+            upgrade = dataclasses.replace(upgrade, port=port)
     context.result.update(platform=args.platform, command=args.command, instanceID=instance, port=port,
                           startedAt=time.time(), rerun=rerun_command(args), evidence=str(evidence))
     if args.scenario:
         context.result.update(scenario=args.scenario, expected=args.expect or "pass")
+    if args.step:
+        context.result["step"] = args.step
     runtime, client = None, None
 
     def collect_snapshots():
@@ -571,6 +639,8 @@ def execute(args, runtime_factory=None):
     try:
         if seed:
             context.result["schedulerMode"] = seed.mode
+            if seed.brokers:
+                context.result["schedulerBrokers"] = list(seed.brokers)
             context.result["cleanup"] = {"mode": "managed-browser" if seed.platform == "macos" else "managed-simulator"}
             with seed.profile_path.open("rb") as profile_file:
                 profile = profile_file.read(65_537)
@@ -581,15 +651,31 @@ def execute(args, runtime_factory=None):
             if runtime_factory is None:
                 from runtime import Runtime
                 runtime_factory = Runtime
-            options = {} if seed.platform == "macos" else dict(device=args.device, keep=args.keep)
+            options = {} if seed.platform == "macos" else dict(device=args.device, keep=args.keep, launch_profile=launch_profile)
             runtime = runtime_factory(seed.platform, evidence, instance, port, **options)
-            launch = runtime.launch_scheduler(seed.mode, profile_json)
-            context.result["launch"] = launch
-            context.write("launch.json", launch)
+            launch = runtime.launch_scheduler(seed.mode, profile_json, seed.brokers)
+            record_launch(context, launch, launch_profile_source)
             scope = scheduler.receipt_scope(runtime.scheduler_receipt(), seed, instance)
             client = Client(evidence, port, None, redactor)
             listener = launch["product"] if seed.platform == "macos" else launch["process"]
             context.result.update(scheduler.observe(context, client, scope, expected_executable=listener["executable"]))
+        elif upgrade:
+            context.result.update(schedulerMode="upgrade", schedulerBrokers=list(upgrade.brokers))
+            context.result["cleanup"] = {"mode": "managed-browser" if upgrade.platform == "macos" else "kept-simulator"}
+            if runtime_factory is None:
+                from runtime import Runtime
+                runtime_factory = Runtime
+            options = {} if upgrade.platform == "macos" else dict(device=args.device, keep=True, launch_profile=launch_profile)
+            if upgrade.platform == "macos" and scheduler.listener_on(port):
+                raise SetupFailed(f"A PIR agent from an earlier launch is listening on port {port}. A seed leaves its agent "
+                                  f"registered; stop it with `launchctl bootout gui/{os.getuid()}/"
+                                  "com.duckduckgo.macos.DBP.backgroundAgent.debug` and rerun the upgrade.")
+            runtime = runtime_factory(upgrade.platform, evidence, instance, port, **options)
+            launch = runtime.launch_existing(upgrade.simulator)
+            record_launch(context, launch, launch_profile_source)
+            client = Client(evidence, port, instance if upgrade.platform == "ios" else None, redactor)
+            listener = launch["product"] if upgrade.platform == "macos" else launch["process"]
+            context.result.update(scheduler.upgrade(context, client, upgrade, listener["executable"]))
         elif scope:
             context.result["schedulerMode"] = "observe"
             context.result["cleanup"] = {"mode": "attached"}
@@ -610,7 +696,7 @@ def execute(args, runtime_factory=None):
                 runtime_factory = Runtime
             environment = "staging" if is_selftest else inputs["config"].get("pirEnvironment", "production") if inputs else "production"
             runtime = runtime_factory(args.platform, evidence, instance, port, device=args.device, keep=args.keep,
-                                      pir_environment=environment)
+                                      pir_environment=environment, launch_profile=launch_profile)
             runtime.snapshots_enabled = args.command == "run"
             if runtime.snapshots_enabled:
                 context.result["snapshots"] = {"directory": "snapshots"}
@@ -619,8 +705,7 @@ def execute(args, runtime_factory=None):
                 context.result["build"] = runtime.build()
                 context.write("build.json", context.result["build"])
             else:
-                context.result["launch"] = runtime.launch(access_token=token)
-                context.write("launch.json", context.result["launch"])
+                record_launch(context, runtime.launch(access_token=token), launch_profile_source)
                 client = Client(evidence, port, instance, redactor)
                 if is_selftest:
                     selftest(context, client)
@@ -640,6 +725,9 @@ def execute(args, runtime_factory=None):
     except Exception as error:
         context.result.update(status="inconclusive", reason=f"{type(error).__name__}: {error}")
     finally:
+        if "launch" not in context.result and getattr(runtime, "launch_profile", None):
+            context.result["launchProfile"] = dict(source=launch_profile_source, merged=runtime.launch_profile,
+                                                   result=getattr(runtime, "launch_profile_result", None))
         try:
             if args.command == "run" and client and client.last_run is not None:
                 try:

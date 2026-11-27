@@ -22,6 +22,7 @@ import PackageDescription
 
 let package = Package(
     name: "DataBrokerProtection-macOS",
+    defaultLocalization: "en",
     platforms: [ .macOS("12.3") ],
     products: [
         .library(
@@ -35,6 +36,8 @@ let package = Package(
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../AppKitExtensions"),
         .package(path: "../XPCHelper"),
@@ -53,6 +56,8 @@ let package = Package(
                 .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
                 .product(name: "DataBrokerProtectionDebugServer", package: "DataBrokerProtectionCore"),
+                .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "AppKitExtensions", package: "AppKitExtensions"),
                 .byName(name: "XPCHelper"),
@@ -69,6 +74,7 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
+            resources: [.process("Resources")],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

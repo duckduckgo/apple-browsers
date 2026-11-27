@@ -173,13 +173,15 @@ struct FireDialogView: ModalView {
                 }
                 .padding(.horizontal, Constants.horizontalPadding)
                 .background(alignment: .topTrailing) {
-                    moreOptionsMenu
-                        .menuIndicator(.hidden)
-                        .fixedSize()
-                        .accessibilityLabel(UserText.fireDialogMoreOptions)
-                        .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
-                        .padding(.top, 16)
-                        .padding(.trailing, Constants.toolbarHorizontalPadding)
+                    if viewModel.mode.shouldShowMoreOptionsMenu {
+                        moreOptionsMenu
+                            .menuIndicator(.hidden)
+                            .fixedSize()
+                            .accessibilityLabel(UserText.fireDialogMoreOptions)
+                            .accessibilityIdentifier("FireDialogView.toolbarMoreButton")
+                            .padding(.top, 16)
+                            .padding(.trailing, Constants.toolbarHorizontalPadding)
+                    }
 
                 }
 
@@ -396,49 +398,54 @@ struct FireDialogView: ModalView {
 
     private var sectionsView: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if viewModel.mode.shouldShowVisitsToggle {
-                // Row 1: History
+            // The Duck.ai onboarding dialog deletes Duck.ai chats only.
+            if viewModel.mode.shouldShowSiteDataRows {
+                if viewModel.mode.shouldShowVisitsToggle {
+                    // Row 1: History
+                    sectionRow(
+                        icon: DesignSystemImages.Glyphs.Size16.history,
+                        title: UserText.fireDialogHistoryTitle,
+                        detail: historyDetail,
+                        isOn: Binding {
+                            viewModel.includeHistory && viewModel.hasHistoryItemsInScope
+                        } set: {
+                            viewModel.includeHistory = $0
+                        },
+                        // the history items list isn't supported for the (deprecated, pending removal) Window scope
+                        detailAction: (viewModel.hasHistoryItemsInScope && viewModel.clearingOption != .currentWindow) ? { isShowingHistoryOverlay = true } : nil,
+                        detailActionEnabled: viewModel.includeHistory,
+                        detailAccessibilityIdentifier: "FireDialogView.historyDetailButton",
+                        isEnabled: viewModel.hasHistoryItemsInScope,
+                        toggleId: "FireDialogView.historyToggle"
+                    )
+                    .accessibilityHidden(isShowingAnyOverlay)
+                    sectionDivider()
+                }
+
+                // Row 2: Cookies and Site Data
                 sectionRow(
-                    icon: DesignSystemImages.Glyphs.Size16.history,
-                    title: UserText.fireDialogHistoryTitle,
-                    detail: historyDetail,
-                    isOn: Binding {
-                        viewModel.includeHistory && viewModel.hasHistoryItemsInScope
-                    } set: {
-                        viewModel.includeHistory = $0
-                    },
-                    // the history items list isn't supported for the (deprecated, pending removal) Window scope
-                    detailAction: (viewModel.hasHistoryItemsInScope && viewModel.clearingOption != .currentWindow) ? { isShowingHistoryOverlay = true } : nil,
-                    detailActionEnabled: viewModel.includeHistory,
-                    detailAccessibilityIdentifier: "FireDialogView.historyDetailButton",
-                    isEnabled: viewModel.hasHistoryItemsInScope,
-                    toggleId: "FireDialogView.historyToggle"
+                    icon: DesignSystemImages.Glyphs.Size16.cookie,
+                    title: viewModel.mode.shouldShowVisitsToggle ? UserText.fireDialogCookiesAndOtherData : UserText.fireDialogIncludeCookiesAndOtherData,
+                    subtitle: UserText.fireDialogCookiesSignOutWarning,
+                    detail: cookiesDetail,
+                    isOn: Binding { viewModel.includeCookiesAndSiteData && viewModel.hasCookiesAndSiteDataInScope } set: { viewModel.includeCookiesAndSiteData = $0 },
+                    // don‘t make the detail label clickable when there‘s no site data in scope
+                    detailAction: viewModel.hasCookiesAndSiteDataInScope ? { isShowingSitesOverlay = true } : nil,
+                    // grey-out the detail label when the toggle is Off
+                    detailActionEnabled: viewModel.includeCookiesAndSiteData,
+                    detailAccessibilityIdentifier: "FireDialogView.cookiesDetailButton",
+                    isEnabled: viewModel.hasCookiesAndSiteDataInScope,
+                    toggleId: "FireDialogView.cookiesToggle"
                 )
+                .disabled(!viewModel.hasCookiesAndSiteDataInScope)
                 .accessibilityHidden(isShowingAnyOverlay)
-                sectionDivider()
+                .padding(.top, viewModel.mode.shouldShowVisitsToggle ? 0 : -13)
             }
 
-            // Row 2: Cookies and Site Data
-            sectionRow(
-                icon: DesignSystemImages.Glyphs.Size16.cookie,
-                title: viewModel.mode.shouldShowVisitsToggle ? UserText.fireDialogCookiesAndOtherData : UserText.fireDialogIncludeCookiesAndOtherData,
-                subtitle: UserText.fireDialogCookiesSignOutWarning,
-                detail: cookiesDetail,
-                isOn: Binding { viewModel.includeCookiesAndSiteData && viewModel.hasCookiesAndSiteDataInScope } set: { viewModel.includeCookiesAndSiteData = $0 },
-                // don‘t make the detail label clickable when there‘s no site data in scope
-                detailAction: viewModel.hasCookiesAndSiteDataInScope ? { isShowingSitesOverlay = true } : nil,
-                // grey-out the detail label when the toggle is Off
-                detailActionEnabled: viewModel.includeCookiesAndSiteData,
-                detailAccessibilityIdentifier: "FireDialogView.cookiesDetailButton",
-                isEnabled: viewModel.hasCookiesAndSiteDataInScope,
-                toggleId: "FireDialogView.cookiesToggle"
-            )
-            .disabled(!viewModel.hasCookiesAndSiteDataInScope)
-            .accessibilityHidden(isShowingAnyOverlay)
-            .padding(.top, viewModel.mode.shouldShowVisitsToggle ? 0 : -13)
-
             if viewModel.shouldShowChatHistoryToggle {
-                sectionDivider()
+                if viewModel.mode.shouldShowSiteDataRows {
+                    sectionDivider()
+                }
 
                 // Row 3: Chat History
                 sectionRow(

@@ -38,6 +38,7 @@ public enum DuckDuckGoWebExtensionType: String, Codable, CaseIterable, Sendable 
     case embedded = "com.duckduckgo.web-extension.embedded"
     case darkReader = "org.duckduckgo.web-extension.darkreader"
     case adBlockingExtension = "com.duckduckgo.content-blocker-extension"
+    // shortcut: retired, kept so stored installs still decode and sync uninstalls them. Remove once most devices have synced.
     case searchToken = "com.duckduckgo.web-extension.search-token"
 
     /// Short human-readable label used in breakage reports.

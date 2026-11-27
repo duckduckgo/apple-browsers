@@ -47,3 +47,26 @@ Duck.ai contextual chat (details in [Duck.ai: contextual chat](./duck-ai-context
 - `send_contextual_prompt`, `read_contextual_answer`: the input is `role=textview id=searchEntry` (the address bar
   shares the id). The answer is read from the native tree, because the web channel reads the tab, not the sheet.
 - `fire_contextual_chat`, `expand_contextual_chat`: the controls differ by device (`CONTEXTUAL_IDS`).
+
+Sync & Backup (details in [Sync & Backup](./sync.md)):
+
+- `SYNC_FLAGS`: the `FLAGS` a sync proof pins: the setup UI (`syncImprovedPairingFlow`) and the V2 pairing protocol
+  (`syncCanUseV2ConnectFlow`, `syncCanShowV2ConnectCode`), all on.
+- `SYNC_DEV_PROFILE`: the `PROFILE` a sync proof sets, `{"debug.syncEnvironment": "Development"}`. Debug builds talk
+  to the production sync server otherwise.
+- `open_settings`, `open_sync_settings`: the browsing menu (`Browser.Toolbar.Button.Menu` on iPhone,
+  `Browser.OmniBar.Button.BrowsingMenu` on iPad), Settings, then the row whose label carries the state
+  (`Sync & Backup, Off` or `, On`).
+- `unlock_device`: answers the system passcode sheet ("Unlock device to set up Sync & Backup") when it appears. It
+  belongs to SpringBoard, so it types into `app=springboard id="Passcode field"` and taps `app=springboard id=Done`;
+  typing `0000\n` in one go reports no effect. One unlock stays valid for a while, so the next gated step may not ask:
+  the step returns whether it did.
+- `copy_in_app`: puts text on the clipboard through Settings > All debug options > Sync > "Paste and Copy Recovery
+  Code". Paste Sync Code doesn't see text written from the host with `simctl pbcopy`. Starts from the browser, ends
+  on the Settings list.
+- `clipboard`: reads the simulator's clipboard from the host (read-back only).
+- `turn_off_and_delete_server_data`: Turn Off Sync & Backup with "Also delete server data?" on (it starts off when more
+  than one device is synced), then Permanently Delete.
+- `close_settings`, `recover_with_code`, `allow_camera`, `answer_alert`: back to the browser; recover from the browser
+  with a code (True on "Sync & Backup enabled", False on "Sync failed."); allow the camera prompt each time it shows
+  (it can show twice in a row); press an alert button, waiting when the runner reports the alert still up.

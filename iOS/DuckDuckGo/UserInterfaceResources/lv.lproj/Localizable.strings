@@ -343,6 +343,12 @@
 /* Error message displayed when the user tries to upload an unsupported file type and we know which type is accepted. Parameter is a single accepted type. E.g. This file type is not supported, please attach a PDF. */
 "aichat.attachment.unsupported.file.type.single" = "Šis faila tips netiek atbalstīts, lūdzu, pievieno %@.";
 
+/* accessibility label for closing the tab attachment picker without applying changes */
+"aichat.choose-tabs.close.accessibility-label" = "Aizvērt";
+
+/* accessibility label for applying the tab attachment selection */
+"aichat.choose-tabs.confirm.accessibility-label" = "Pievienot atlasītās cilnes";
+
 /* empty state shown when no tabs match the search query */
 "aichat.choose-tabs.no-matches" = "Nav atbilstošu cilņu";
 
@@ -367,8 +373,17 @@
 /* Caption shown below the input while editing a message, warning that submitting the edit replaces the existing response */
 "aichat.edit.replaceResponseDisclaimer" = "Rediģējot atbilde tiks aizstāta ar jaunu.";
 
+/* Accessibility label for the close-tab button in the Duck.ai tab header */
+"aichat.header.closeTab.a11y" = "Aizvērt cilni";
+
 /* Title shown in the Duck.ai tab header while editing a previously sent message */
 "aichat.header.editMessage" = "Rediģēt ziņu";
+
+/* Label shown in the Duck.ai tab header for free plan users */
+"aichat.header.freePlan" = "Bezmaksas plāns";
+
+/* Label shown in the Duck.ai tab header for paid subscribers */
+"aichat.header.paidTitle" = "Duck.ai";
 
 /* Accessibility label for the Plus (+) button in the Duck.ai tab header that opens a menu of new-chat and new-tab actions */
 "aichat.header.plusMenu.a11y" = "Jauns";
@@ -403,6 +418,12 @@
 /* Title for the New Voice Chat row in the Duck.ai tab header Plus (+) menu */
 "aichat.header.plusMenu.newVoiceChat" = "Jauna balss tērzēšana";
 
+/* Accessibility label for the chat-list / recent-chats button in the Duck.ai tab header */
+"aichat.header.recentChats.a11y" = "Pēdējās tērzēšanas sarunas";
+
+/* Label shown in the Duck.ai tab header prompting free users to upgrade */
+"aichat.header.upgrade" = "Jaunināt";
+
 /* Error toast shown when a Duck.ai chat download fails and nothing was saved. */
 "aiChat.history.download.failed.message" = "Neizdevās lejupielādēt. Lūdzu, mēģini vēlreiz.";
 
@@ -411,6 +432,9 @@
 
 /* Title shown when the user has no Duck.ai chat history yet. */
 "aiChat.history.emptyState.title" = "Nav nesenu sarunu";
+
+/* Accessibility label for the fire button that deletes every Duck.ai chat from the chats list. */
+"aiChat.history.fireAll.a11y" = "Dzēst visas sarunas";
 
 /* Message of the alert shown when Duck.ai chat history fails to load. */
 "aiChat.history.loadError.message" = "Ielādējot tavas Duck.ai sarunas, radās kļūda. Lūdzu, vēlāk mēģini vēlreiz.";
@@ -459,6 +483,12 @@
 
 /* Multi-select toolbar button that deletes all chats when none are individually selected. */
 "aiChat.history.selection.deleteAll" = "Dzēst visus";
+
+/* Accessibility label for the close button of the iPad Duck.ai chats sidebar. */
+"aiChat.history.sidebar.hide.a11y" = "Paslēpt sarunas";
+
+/* Accessibility label for the iPad Duck.ai button that opens the chats sidebar. */
+"aiChat.history.sidebar.show.a11y" = "Rādīt sarunas";
 
 /* Accessibility label for the delete action revealed by swiping a Duck.ai chat row. */
 "aiChat.history.swipe.delete.a11y" = "Dzēst sarunu";
@@ -567,6 +597,27 @@
 
 /* Link inside the Duck.ai Terms of Service disclaimer that opens the Duck.ai Privacy Policy and Terms of Service page */
 "aichat.termsOfService.disclaimer.link" = "privātuma politikai un pakalpojumu sniegšanas noteikumiem";
+
+/* Accessibility label for the attachment button in the Duck.ai native input toolbar */
+"aichat.toolbar.attach.button.accessibility.label" = "Pievienot";
+
+/* Accessibility label for the reasoning mode button in the Duck.ai native input toolbar */
+"aichat.toolbar.reasoning.button.accessibility.label" = "Spriešanas režīms";
+
+/* Accessibility label for the return/new-line button in the Duck.ai native input toolbar */
+"aichat.toolbar.returnkey.button.accessibility.label" = "Ievietot jaunu rindu";
+
+/* Accessibility label for the stop generating button in the Duck.ai native input toolbar */
+"aichat.toolbar.stop.button.accessibility.label" = "Apturēt ģenerēšanu";
+
+/* Accessibility label for the submit button in the Duck.ai native input toolbar */
+"aichat.toolbar.submit.button.accessibility.label" = "Iesniegt";
+
+/* Accessibility label for the tools button in the unified input toolbar */
+"aichat.toolbar.tools.button.accessibility.label" = "Rīki";
+
+/* Accessibility label for the button that clears the selected Duck.ai tool in unified input */
+"aichat.toolbar.tools.clear.button.accessibility.label" = "Notīrīt atlasīto rīku";
 
 /* Subtitle for the customize responses action in the unified input tools menu */
 "aichat.toolbar.tools.customizeResponses.subtitle" = "Noteikts tonis, garums un uzvedība";
@@ -2095,6 +2146,18 @@
 /* Navigation bar title for Duck.ai Control Center education screen */
 "duckai.control.center.education.navBar.title" = "Pievieno Duck.ai balss saīsni savam vadības centram";
 
+/* Button that declines using the on-device model. Duck.ai uses its cloud model instead. */
+"duckai.local-model-access.no-thanks" = "Nē, paldies";
+
+/* Body of the pop-up asking whether Duck.ai may use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.local-model-access.prompt.message" = "Dažiem uzdevumiem, piemēram, lapu kopsavilkumu veidošanai, Duck.ai izmanto %@. Saruna paliek tavā ierīcē, un tu patērē mazāk no Duck.ai plānā iekļautā apjoma.";
+
+/* Title of the pop-up asking whether Duck.ai may use the on-device model. */
+"duckai.local-model-access.prompt.title" = "Lai labāk aizsargātu tavu privātumu, Duck.ai vēlas darbināt modeli tavā ierīcē";
+
+/* Button that lets Duck.ai use the on-device model. */
+"duckai.local-model-access.turn-on" = "Ieslēgt";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo MI funkcijas ir privātas un nav obligātas. Tavi dati netiek izmantoti mākslīgā intelekta apmācībai.";
 
@@ -2160,6 +2223,24 @@
 
 /* Used in the link to learn more about the AI features. */
 "duckai.settings.learn.more" = "Uzzināt vairāk";
+
+/* Footer of the On-Device Model section in AI Features settings. It explains the toggle above it. */
+"duckai.settings.local-model-access.footer" = "Ja modeļi darbojas tavā ierīcē, lapu saturs var palikt tajā un tu patērē mazāk no plānā iekļautā apjoma. Duck.ai izmantos šo modeli, piemēram, lapu kopsavilkumu veidošanai.";
+
+/* Section title in AI Features settings for on-device models Duck.ai may use. */
+"duckai.settings.local-model-access.title" = "Modelis, kas darbojas ierīcē";
+
+/* Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPad. */
+"duckai.settings.local-model-access.turn-on-confirmation.message.ipad" = "Duck.ai izmantos Apple Intelligence šajā iPad, lai veidotu lapu kopsavilkumus. Tavs iPad apstrādā lapas, neko nesūtot mākoņa modelim. Tā tu patērē mazāk no Duck.ai plānā iekļautā apjoma.";
+
+/* Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPhone. */
+"duckai.settings.local-model-access.turn-on-confirmation.message.iphone" = "Duck.ai izmantos Apple Intelligence šajā iPhone, lai veidotu lapu kopsavilkumus. Tavs iPhone apstrādā lapas, neko nesūtot mākoņa modelim. Tā tu patērē mazāk no Duck.ai plānā iekļautā apjoma.";
+
+/* Title of the alert shown before turning on Apple Intelligence for Duck.ai page summaries. */
+"duckai.settings.local-model-access.turn-on-confirmation.title" = "Ieslēgt Apple Intelligence?";
+
+/* Title of the toggle in AI Features settings that lets Duck.ai use the on-device model. %@ is the model's name, for example Apple Intelligence. */
+"duckai.settings.local-model-access.use-model.title" = "Izmantot %@";
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
@@ -2485,6 +2566,9 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Jautāt katru reizi";
 
+/* Button text to play a video in Duck Player */
+"duckplayer.floating.pill.title" = "Atskaņot ar Duck Player";
+
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nekad";
 
@@ -2760,6 +2844,9 @@
 
 /* Accessibility label for escape hatch card; first %@ is tab title, second %@ is subtitle/domain */
 "escapeHatch.returnTo.withSubtitle.accessibility.label" = "Atgriezties pie %1$@, %2$@";
+
+/* Button in the Return to module header that opens the tab switcher */
+"escapeHatch.showAllTabs.label" = "Rādīt visas cilnes";
 
 /* Swipe action that closes the open tab referenced by the escape hatch card */
 "escapeHatch.swipeAction.closeTab" = "Aizvērt cilni";
@@ -3781,6 +3868,18 @@
 /* Title for the Strict Routing setting item. */
 "network.protection.vpn.strict.routing.setting.title" = "Ieslēgt stingro maršrutēšanu (ieteicams)";
 
+/* Opens the app settings from the New Tab Page customization sheet */
+"new-tab-page.customization.all-settings" = "Iestatījumi";
+
+/* Setting to always show the keyboard when a new tab is opened */
+"new-tab-page.customization.always-show-keyboard" = "Vienmēr rādīt tastatūru";
+
+/* Name of the New Tab Page section showing messages, in the customization sheet */
+"new-tab-page.customization.messages" = "Ziņojumi";
+
+/* Title of the sheet for customizing the New Tab Page */
+"new-tab-page.customization.title" = "Pielāgo savu sākumlapu";
+
 /* Dax greeting on the New Tab page. Refers to private AI chat. */
 "new-tab-page.dax-greeting.askMe" = "Jautā man jebko.";
 
@@ -3837,6 +3936,21 @@
 
 /* Dax greeting on the New Tab page. */
 "new-tab-page.dax-greeting.whereToToday" = "Kurp šodien?";
+
+/* Name field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.name" = "Nosaukums";
+
+/* Error shown when saving a favorite fails */
+"new-tab-page.favorite.save-failed" = "Neizdevās saglabāt izlasē.";
+
+/* URL field placeholder in the Add Favorite sheet */
+"new-tab-page.favorite.url" = "URL";
+
+/* Button that expands the New Tab Page favorites grid to show all favorites */
+"new-tab-page.favorites.see-all" = "Skatīt visu";
+
+/* Button that collapses the New Tab Page favorites grid to show fewer favorites */
+"new-tab-page.favorites.see-less" = "Rādīt mazāk";
 
 /* Confirm button for the new address bar picker */
 "new.address.bar.picker.confirm" = "Apstiprināt";
@@ -4144,11 +4258,11 @@
 /* Button to continue to the next onboarding screen from the AI model personalization screen. */
 "onboarding.personalization.aiModel.cta" = "Tālāk";
 
-/* Message of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.message" = "Maini savu noklusējuma MI modeli tagad vai jebkurā brīdī tērzēšanas laikā.";
+/* Message of the onboarding AI model personalization screen. Duck.ai is a brand name and should not be translated */
+"onboarding.personalization.aiModel.message" = "Ar Duck.ai tu vari jebkurā laikā pārslēgties.";
 
 /* Title of the onboarding AI model personalization screen. */
-"onboarding.personalization.aiModel.title" = "Tavas sarunas, tavā stilā.";
+"onboarding.personalization.aiModel.title" = "Izvēlies MI, ko izmēģināt vispirms";
 
 /* Button to continue to the next onboarding screen from the AI search personalization screen. */
 "onboarding.personalization.aiSearch.cta" = "Tālāk";
@@ -4239,15 +4353,6 @@
 
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Izmēģini bez maksas!";
-
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGo ir arī drošs %1$@, kas pieejams ar %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "neobligāts maksas abonements";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN un vēl 2 premium klases aizsardzības līdzekļi";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Pievienot logrīku";
@@ -5165,12 +5270,6 @@
 "settings.subscription.DBP.title" = "Personal Information Removal";
 
 /* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.row" = "Abonenti saņem mūsu VPN un Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.us" = "Abonenti saņem mūsu VPN, Personal Information Removal un Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
 "settings.subscription.description.row" = "Abonenti saņem mūsu VPN, uzlabotus MI modeļus Duck.ai un Identity Theft Restoration.";
 
 /* Privacy pro description subtitle in settings */
@@ -5199,9 +5298,6 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe.title" = "Nodrošini sava Wi-Fi drošību un privāti tērzē ar uzlabotiem mākslīgā intelekta modeļiem";
-
-/* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe.title.no.ai.chat" = "Nodrošini sava Wi-Fi drošību un aizsargā identitāti";
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Izmēģini bez maksas";
@@ -5428,9 +5524,6 @@
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Tavs plāns tiks pazemināts uz %1$@, sākot ar %2$@.";
 
-/* Change plan or cancel title */
-"subscription.change.plan" = "Atjaunināt plānu vai atcelt";
-
 /* Navigation Button for closing subscription view */
 "subscription.close" = "Aizvērt";
 
@@ -5653,8 +5746,14 @@
 /* Button that confirms withdrawal from the subscription contract */
 "subscription.withdraw.confirm.button" = "Apstiprināt atteikšanos";
 
-/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
-"subscription.withdraw.confirm.features.message" = "Tiklīdz apstiprināsi, %@ pārstās darboties.";
+/* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.advanced.duckai" = "uzlabotie Duck.ai modeļi";
+
+/* VPN item in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.vpn" = "VPN";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models. */
+"subscription.withdraw.confirm.lose.access.message" = "Kad apstiprināsi, zaudēsi piekļuvi %@.";
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
 "subscription.withdraw.confirm.message" = "Tavs %1$@ abonements nekavējoties beigsies, un 14 dienu laikā mēs tev atmaksāsim %2$@, izmantojot sākotnējo maksājuma veidu.";
@@ -5877,6 +5976,12 @@
 
 /* Bookmark all tabs menu item */
 "tab.switcher.bookmarkAll" = "Pievienot grāmatzīmes visām cilnēm";
+
+/* Menu item that switches the tab switcher to a grid layout */
+"tab.switcher.grid.view.menu.title" = "Režģis";
+
+/* Menu item that switches the tab switcher to a list layout */
+"tab.switcher.list.view.menu.title" = "Saraksts";
 
 /* Action button to hide tracker count banner */
 "tab.switcher.tracker.count.hide.action" = "Paslēpt";

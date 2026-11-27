@@ -175,6 +175,59 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertEqual(service.startedRequestIds, ["r1"])
     }
 
+    /// Content-blocking updates replace the script while the page stays open.
+    @MainActor func testReplacingTheScriptKeepsThePagesRunGoing() async throws {
+        let service = RecordingLocalModelService()
+        let webView = ClientToolsDocumentWebView()
+        webView.documentURL = URL(string: "https://duck.ai/chat")
+        var script: AIChatUserScript? = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: nil, localModelService: service)
+        script?.webView = webView
+        let handler = try XCTUnwrap(script?.handler(forMethodNamed: AIChatUserScriptMessages.startAIChatLocalRun.rawValue))
+        let params: [String: Any] = ["requestId": "r1", "task": "summarize", "instruction": "Summarize", "content": "Page text"]
+        _ = try await handler(params, WKScriptMessage.mock(webView: webView))
+
+        script = nil
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(service.cancelledOwnerIDs, [])
+    }
+
+    @MainActor func testClosingThePageEndsItsRuns() async throws {
+        let service = RecordingLocalModelService()
+        let webView = ClientToolsDocumentWebView()
+        webView.documentURL = URL(string: "https://duck.ai/chat")
+        var script: AIChatUserScript? = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: nil, localModelService: service)
+        script?.webView = webView
+        let handler = try XCTUnwrap(script?.handler(forMethodNamed: AIChatUserScriptMessages.startAIChatLocalRun.rawValue))
+        let params: [String: Any] = ["requestId": "r1", "task": "summarize", "instruction": "Summarize", "content": "Page text"]
+        _ = try await handler(params, WKScriptMessage.mock(webView: webView))
+
+        // The web view goes first when its tab closes.
+        script?.webView = nil
+        script = nil
+        for _ in 0..<50 where service.cancelledOwnerIDs.isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        XCTAssertEqual(service.cancelledOwnerIDs, [ObjectIdentifier(webView)])
+    }
+
+    /// The run may have been started by the script this one replaced.
+    @MainActor func testClosingThePageEndsItsRunsThroughTheScriptThatServesItNow() async throws {
+        let service = RecordingLocalModelService()
+        let webView = ClientToolsDocumentWebView()
+        var script: AIChatUserScript? = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: nil, localModelService: service)
+        script?.webView = webView
+
+        script?.webView = nil
+        script = nil
+        for _ in 0..<50 where service.cancelledOwnerIDs.isEmpty {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        XCTAssertEqual(service.cancelledOwnerIDs, [ObjectIdentifier(webView)])
+    }
+
     @MainActor func testLocalModelAccessIsAskedOnlyOnPagesThatGetItsPushes() async throws {
         let prompt = StubLocalModelAccessPrompt(answer: .allowed)
         userScript = AIChatUserScript(handler: mockHandler, urlSettings: AIChatMockDebugSettings(), browserTools: nil,
@@ -189,12 +242,12 @@ final class AIChatUserScriptTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? AIChatLocalModelRequestError, .unavailable)
         }
-        XCTAssertEqual(prompt.askedModelNames, [])
+        XCTAssertEqual(prompt.askedRequests, [])
 
         webView.documentURL = URL(string: "https://duck.ai/chat")
         let reply = try await handler([String: String](), WKScriptMessage.mock(webView: webView)) as? AIChatLocalModelAccessReply
         XCTAssertEqual(reply, AIChatLocalModelAccessReply(result: .allowed))
-        XCTAssertEqual(prompt.askedModelNames, ["M"])
+        XCTAssertEqual(prompt.askedRequests, [.connect(AIChatLocalModelInfo(id: "m", name: "M"))])
     }
 
     @MainActor func testNativeConfigIncludesClientToolsForCustomChatHost() async throws {
@@ -1131,26 +1184,30 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
         return AIChatLocalRunStartReply(model: AIChatLocalModelInfo(id: "m", name: "M"))
     }
 
-    func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
-    func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing) {}
-    func cancelRuns(ownerID: ObjectIdentifier) {}
+    private(set) var cancelledOwnerIDs: [ObjectIdentifier] = []
 
-    func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
-        await ask()
+    func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
+
+    func cancelRuns(ownerID: ObjectIdentifier) {
+        cancelledOwnerIDs.append(ownerID)
+    }
+
+    func requestAccess(ask: @MainActor (AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
+        await ask(.connect(model))
     }
 }
 
 @MainActor
 private final class StubLocalModelAccessPrompt: LocalModelAccessAsking {
     let answer: AIChatLocalModelAccessReply.Result
-    private(set) var askedModelNames: [String] = []
+    private(set) var askedRequests: [AIChatLocalModelAccessRequest] = []
 
     init(answer: AIChatLocalModelAccessReply.Result) {
         self.answer = answer
     }
 
-    func ask(from webView: WKWebView?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
-        askedModelNames.append(modelName)
+    func ask(from webView: WKWebView?, request: AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result {
+        askedRequests.append(request)
         return answer
     }
 }

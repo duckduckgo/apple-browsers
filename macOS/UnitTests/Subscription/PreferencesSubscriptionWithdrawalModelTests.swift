@@ -165,13 +165,22 @@ final class PreferencesSubscriptionWithdrawalModelTests {
                                                                .identityTheftRestoration, .dataBrokerProtection, .unknown])
         let listFormatter = ListFormatter()
         listFormatter.locale = Locale(identifier: "en_US")
-        let features = listFormatter.string(from: [UserText.vpnServiceTitle,
+        let features = listFormatter.string(from: [UserText.withdrawDialogFeatureVPN,
                                                    UserText.personalInformationRemovalServiceTitle,
                                                    UserText.identityTheftRestorationServiceTitle,
-                                                   UserText.paidAIChatTitle])!
+                                                   UserText.withdrawDialogFeatureAdvancedDuckAI])!
 
         #expect(model.confirmationMessage(for: offer) == UserText.withdrawDialogMessage(tierName: "Plus", refundAmount: "£9.99")
-                + "\n\n" + UserText.withdrawDialogFeaturesMessage(features: features))
+                + "\n\n" + UserText.withdrawDialogLoseAccessMessage(features: features))
+    }
+
+    @available(macOS 13, *)
+    @Test("When Duck.ai is the only feature, the feature paragraph lists only advanced Duck.ai models", .timeLimit(.minutes(1)))
+    func confirmationMessageWithOnlyDuckAI() {
+        let model = makeModel()
+        let offer = SubscriptionWithdrawalOffer(eligibleUntil: nil, refundAmount: "£9.99", tierName: "Plus", entitlements: [.paidAIChat])
+
+        #expect(model.confirmationMessage(for: offer).hasSuffix("\n\nOnce you confirm, you will lose access to advanced Duck.ai models."))
     }
 
     @available(macOS 13, *)

@@ -56,6 +56,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user requests to open sync settings
     func aiChatContextualSheetViewControllerDidRequestOpenSyncSettings(_ viewController: AIChatContextualSheetViewController)
 
+    /// Called when the user taps the settings button on the Fire confirmation, after it has closed
+    func aiChatContextualSheetViewControllerDidRequestOpenDataClearingSettings(_ viewController: AIChatContextualSheetViewController)
+
     /// Called when the user taps the "Attach Page" button and context needs to be collected
     func aiChatContextualSheetViewControllerDidRequestAttachPage(_ viewController: AIChatContextualSheetViewController)
 
@@ -519,7 +522,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     /// Set while a window resize moves the surface between the sheet and the sidebar. The chat carries on, so leaving
     /// one presentation and arriving in the other neither closes nor opens it. Arriving clears it, in `viewDidAppear`.
-    private(set) var isChangingSurface = false
+    @Published private(set) var isChangingSurface = false
 
     func beginSurfaceChange() {
         isChangingSurface = true
@@ -912,6 +915,14 @@ private extension AIChatContextualSheetViewController {
             onConfirm: { _ in },
             onCancel: { [weak self] in
                 self?.dismissFireConfirmation()
+            },
+            onOpenSettings: { [weak self] in
+                guard let self else { return }
+                // The confirmation must close first: dismissing the chat sheet while it's up would only close the confirmation.
+                self.isShowingFireConfirmation = false
+                self.dismiss(animated: true) {
+                    self.delegate?.aiChatContextualSheetViewControllerDidRequestOpenDataClearingSettings(self)
+                }
             }
         )
 

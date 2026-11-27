@@ -38,7 +38,7 @@
         "owners": ["quanganhdo", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId", "channel"]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId", "dbpUserAssisted", "channel"]
     },
     "m_mac_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
@@ -55,6 +55,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -73,6 +74,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -91,6 +93,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -109,6 +112,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -127,6 +131,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -145,6 +150,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -163,6 +169,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -181,6 +188,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -199,6 +207,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -217,6 +226,7 @@
             "dbpStageDuration",
             "dbpStageTries",
             "dbpActionId",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -273,6 +283,7 @@
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
             },
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -360,6 +371,7 @@
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
             },
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -392,6 +404,7 @@
             "dbpAttemptId",
             "dbpActionId",
             "dbpActionDuration",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -415,6 +428,7 @@
             "dbpAttemptId",
             "dbpActionId",
             "dbpActionDuration",
+            "dbpUserAssisted",
             "channel"
         ]
     },
@@ -536,6 +550,7 @@
             "dbpActionId",
             "dbpActionDuration",
             "dbpActionTries",
+            "dbpUserAssisted",
             "channel"
         ]
     },

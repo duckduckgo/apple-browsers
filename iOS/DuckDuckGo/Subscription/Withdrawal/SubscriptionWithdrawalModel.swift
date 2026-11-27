@@ -106,15 +106,15 @@ final class SubscriptionWithdrawalModel: ObservableObject {
             .filter(features.contains)
             .map { feature in
                 switch feature {
-                case .vpn: return UserText.settingsPProVPNTitle
+                case .vpn: return UserText.subscriptionWithdrawConfirmFeatureVPN
                 case .pir: return UserText.settingsPProDBPTitle
                 case .idtr: return UserText.settingsPProITRTitle
-                case .duckAI: return UserText.settingsSubscriptionAiChatTitle
+                case .duckAI: return UserText.subscriptionWithdrawConfirmFeatureAdvancedDuckAI
                 }
             }
         guard !featureNames.isEmpty else { return message }
         guard let list = listFormatter.string(from: featureNames) else { return message }
-        return message + "\n\n" + UserText.subscriptionWithdrawConfirmFeaturesMessage(features: list)
+        return message + "\n\n" + UserText.subscriptionWithdrawConfirmLoseAccessMessage(features: list)
     }
 
     @MainActor

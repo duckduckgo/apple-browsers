@@ -127,8 +127,6 @@ final class DBPService: NSObject {
                         subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
-                        isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
-                        isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
                         source: .pir)
                     let view = UnifiedFeedbackRootView(viewModel: viewModel)
                     return view
@@ -266,6 +264,8 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
     var isExtractedProfileRefreshOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
+
+    var isUserAssistanceOn: Bool { false }
 
     var isChallengeSolverOn: Bool {
         // The challenge solver is macOS-only.

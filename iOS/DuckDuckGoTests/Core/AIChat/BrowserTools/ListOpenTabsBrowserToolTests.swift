@@ -43,8 +43,8 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         let selected = tab("selected", "https://selected.example")
         let chat = tab("chat", "https://duck.ai/chat")
         let custom = tab("custom", "https://dev.example/chat?x=1")
-        let ordinary = tab("ordinary", "about:blank")
-        var tabs = [ordinary, owner, tab("fire", "https://fire.example", fire: true), Tab(fireTab: false), chat, custom, selected]
+        let blank = tab("blank", "about:blank")
+        var tabs = [blank, owner, tab("fire", "https://fire.example", fire: true), Tab(fireTab: false), chat, custom, selected]
         var selectedID: String? = selected.uid
         var pageReads = 0
         var acquisitions = 0
@@ -54,15 +54,14 @@ final class ListOpenTabsBrowserToolTests: XCTestCase {
         let scope = BrowserToolScope(owner: owner, source: source, selectedTabID: { selectedID })
         let tool = ListOpenTabsBrowserTool(scopeProvider: { _ in scope })
         let first = try pages(await tool.execute(arguments: [:], context: context(scope)))
-        XCTAssertEqual(first.compactMap { $0["tabId"]?.stringValue }, ["ordinary", "owner", "custom", "selected"])
-        XCTAssertEqual(first.map { $0["isCurrentTab"] }, [.bool(false), .bool(false), .bool(false), .bool(true)])
-        XCTAssertEqual(first.first?["isAttachable"], .bool(false))
+        XCTAssertEqual(first.compactMap { $0["tabId"]?.stringValue }, ["owner", "custom", "selected"])
+        XCTAssertEqual(first.map { $0["isCurrentTab"] }, [.bool(false), .bool(false), .bool(true)])
         XCTAssertEqual(first.last?["isAttachable"], .bool(true))
         XCTAssertEqual(first.last?["title"], .string("selected"))
         XCTAssertEqual(first.last?["url"], .string("https://selected.example"))
 
         selectedID = chat.uid
-        tabs = [selected, chat, owner]
+        tabs = [tab("http", "http://example.com"), selected, chat, owner]
         let second = try pages(await tool.execute(arguments: ["limit": 1], context: context(scope)))
         XCTAssertEqual(second.compactMap { $0["tabId"]?.stringValue }, ["selected"])
         XCTAssertEqual(second.first?["isCurrentTab"], .bool(false))

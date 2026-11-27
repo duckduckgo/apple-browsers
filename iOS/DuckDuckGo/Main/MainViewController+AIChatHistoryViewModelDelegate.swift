@@ -81,20 +81,10 @@ extension MainViewController: AIChatHistoryViewModelDelegate {
         }
     }
 
-    func viewModelDidRequestDuckAISettings() {
+    func viewModelDidRequestDataClearingSettings() {
         duckAIInputFocus.forget()
         dismiss(animated: true) { [weak self] in
-            guard let self else { return }
-            if let tab = self.currentTab, tab.isAITab {
-                if let coordinator = self.unifiedToggleInputCoordinator, coordinator.isAITabExpanded {
-                    coordinator.showCollapsed()
-                }
-                tab.submitOpenSettingsAction()
-            } else if let tab = self.currentTab {
-                tab.openSettingsInNewTab()
-            } else {
-                self.loadUrlInNewTab(.duckAiSettings, inheritedAttribution: nil)
-            }
+            self?.segueToSettingsDataClearing()
         }
     }
 

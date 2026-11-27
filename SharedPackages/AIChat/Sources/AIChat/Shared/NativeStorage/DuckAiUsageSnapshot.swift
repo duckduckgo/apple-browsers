@@ -130,15 +130,21 @@ public struct DuckAiUsageSnapshot: Equatable {
     public let cta: DuckAiUsageCta?
     /// So "has web published a new snapshot since the user acted on this one?" is answerable.
     public let signature: String?
+    /// Web sends it only while the user is over their limit; new chats start on it instead of the `/models` default.
+    public let overLimitNewChatDefault: AIChatOverLimitNewChatDefault
 
     public static let noData = DuckAiUsageSnapshot(notice: nil, cta: nil, signature: nil)
 
     public var hasNotice: Bool { notice != nil }
 
-    public init(notice: DuckAiUsageNotice?, cta: DuckAiUsageCta?, signature: String? = nil) {
+    public init(notice: DuckAiUsageNotice?,
+                cta: DuckAiUsageCta?,
+                signature: String? = nil,
+                overLimitNewChatDefault: AIChatOverLimitNewChatDefault = .notOverLimit) {
         self.notice = notice
         self.cta = cta
         self.signature = signature
+        self.overLimitNewChatDefault = overLimitNewChatDefault
     }
 
     /// Anything unexpected degrades to no-data, and a notice past its reset is dropped — it would
@@ -152,7 +158,14 @@ public struct DuckAiUsageSnapshot: Equatable {
         }
         return DuckAiUsageSnapshot(notice: notice,
                                    cta: cta(from: root["cta"]),
-                                   signature: signature(for: entryValue))
+                                   signature: signature(for: entryValue),
+                                   overLimitNewChatDefault: overLimitNewChatDefault(from: root["newChatDefault"], notice: notice))
+    }
+
+    /// Read only next to a reached notice, so it expires with the limit.
+    private static func overLimitNewChatDefault(from value: Any?, notice: DuckAiUsageNotice) -> AIChatOverLimitNewChatDefault {
+        guard notice.reached else { return .notOverLimit }
+        return AIChatOverLimitNewChatDefault(.overLimitDefault(from: value), resetsAt: notice.resetsAt)
     }
 
     // MARK: - Notice

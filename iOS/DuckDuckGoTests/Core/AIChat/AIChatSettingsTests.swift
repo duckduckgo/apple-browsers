@@ -657,3 +657,102 @@ final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
     func reset() {}
     func matchesCustomURL(_ url: URL) -> Bool { false }
 }
+
+final class AIChatUserSettingsStoreTests: XCTestCase {
+
+    private let expectedPixelNames: [AIChatUserSettingsStore.Toggle: (on: String, off: String)] = [
+        .duckAI: ("m_aichat_settings_enabled", "m_aichat_settings_disabled"),
+        .browsingMenu: ("m_aichat_settings_browser_menu_turned_on", "m_aichat_settings_browser_menu_turned_off"),
+        .addressBar: ("m_aichat_settings_address_bar_turned_on", "m_aichat_settings_address_bar_turned_off"),
+        .searchInput: ("m_aichat_settings_search_input_turned_on", "m_aichat_settings_search_input_turned_off"),
+        .voiceSearch: ("m_aichat_settings_voice_turned_on", "m_aichat_settings_voice_turned_off"),
+        .tabSwitcher: ("m_aichat_settings_tab_manager_turned_on", "m_aichat_settings_tab_manager_turned_off"),
+        .chatSuggestions: ("m_aichat_settings_chat_suggestions_turned_on", "m_aichat_settings_chat_suggestions_turned_off"),
+        .automaticContextAttachment: ("m_aichat_settings_auto_context_enabled", "m_aichat_settings_auto_context_disabled"),
+    ]
+
+    func testEachToggleFiresItsDailyAndCountPixel() throws {
+        for toggle in AIChatUserSettingsStore.Toggle.allCases {
+            let expected = try XCTUnwrap(expectedPixelNames[toggle])
+            let pixelFiring = PixelKitMock()
+            let store = AIChatUserSettingsStore(keyValueStore: MockKeyValueStore(), pixelFiring: { pixelFiring })
+
+            store.set(toggle, isOn: true)
+            store.set(toggle, isOn: false)
+
+            XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [expected.on, expected.off], "\(toggle)")
+            XCTAssertEqual(pixelFiring.actualFireCalls.map(\.frequency), [.dailyAndCount, .dailyAndCount], "\(toggle)")
+        }
+    }
+
+    func testEachToggleIsReadBackByAIChatSettingsAndPostsChange() {
+        let reads: [AIChatUserSettingsStore.Toggle: (AIChatSettings) -> Bool] = [
+            .duckAI: \.isAIChatEnabled,
+            .browsingMenu: \.isAIChatBrowsingMenuUserSettingsEnabled,
+            .addressBar: \.isAIChatAddressBarUserSettingsEnabled,
+            .searchInput: \.isAIChatSearchInputUserSettingsEnabled,
+            .voiceSearch: \.isAIChatVoiceSearchUserSettingsEnabled,
+            .tabSwitcher: \.isAIChatTabSwitcherUserSettingsEnabled,
+            .chatSuggestions: \.isChatSuggestionsEnabled,
+            .automaticContextAttachment: \.isAutomaticContextAttachmentEnabled,
+        ]
+        for toggle in AIChatUserSettingsStore.Toggle.allCases {
+            for isOn in [false, true] {
+                let keyValueStore = MockKeyValueStore()
+                let notificationCenter = NotificationCenter()
+                let store = AIChatUserSettingsStore(keyValueStore: keyValueStore, notificationCenter: notificationCenter, pixelFiring: { nil })
+                expectation(forNotification: .aiChatSettingsChanged, object: nil, notificationCenter: notificationCenter)
+
+                store.set(toggle, isOn: isOn)
+
+                waitForExpectations(timeout: 1)
+                let settings = makeSettings(keyValueStore: keyValueStore)
+                XCTAssertEqual(reads[toggle]?(settings), isOn, "\(toggle) \(isOn)")
+            }
+        }
+    }
+
+    func testDefaultOmnibarModeIsReadBackAndFiresPixelWithValue() {
+        let keyValueStore = MockKeyValueStore()
+        let pixelFiring = PixelKitMock()
+        let store = AIChatUserSettingsStore(keyValueStore: keyValueStore, pixelFiring: { pixelFiring })
+
+        store.setDefaultOmnibarMode(.duckAI)
+
+        XCTAssertEqual(makeSettings(keyValueStore: keyValueStore).defaultOmnibarMode, .duckAI)
+        XCTAssertEqual(pixelFiring.actualFireCalls, [
+            ExpectedFireCall(pixel: Pixel.Event.aiChatSettingsDefaultTogglePositionChanged,
+                             frequency: .dailyAndCount,
+                             additionalParameters: ["value": "duckAI"])
+        ])
+    }
+
+    func testAIChatSettingsSettersWriteThroughTheStore() {
+        let keyValueStore = MockKeyValueStore()
+        let settings = makeSettings(keyValueStore: keyValueStore)
+
+        settings.enableAIChat(enable: true)
+        settings.enableAIChatAddressBarUserSettings(enable: false)
+        settings.enableAutomaticContextAttachment(enable: true)
+        settings.setDefaultOmnibarMode(.duckAI)
+        settings.pageSummariesModel = .appleIntelligence
+
+        let reloaded = makeSettings(keyValueStore: keyValueStore)
+        XCTAssertTrue(reloaded.isAIChatEnabled)
+        XCTAssertFalse(reloaded.isAIChatAddressBarUserSettingsEnabled)
+        XCTAssertTrue(reloaded.isAutomaticContextAttachmentEnabled)
+        XCTAssertEqual(reloaded.defaultOmnibarMode, .duckAI)
+        XCTAssertEqual(reloaded.pageSummariesModel, .appleIntelligence)
+    }
+
+    private func makeSettings(keyValueStore: KeyValueStoring) -> AIChatSettings {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarDefaultPosition]
+        return AIChatSettings(privacyConfigurationManager: PrivacyConfigurationManagerMock(),
+                              debugSettings: MockAIChatDebugSettings(),
+                              keyValueStore: keyValueStore,
+                              notificationCenter: NotificationCenter(),
+                              featureFlagger: featureFlagger,
+                              pixelFiring: nil)
+    }
+}

@@ -80,6 +80,8 @@ final class SearchHistoryBrowserToolTests: XCTestCase {
 
         let day = try await rows(["startDate": "1970-01-01", "endDate": "1970-01-01"])
         XCTAssertEqual(day.map { $0["visitedAt"] }, ["1970-01-01T23:59:59.999Z", "1970-01-01T00:00:00.500Z", "1970-01-01T00:00:00.000Z"])
+        let dayWithUnpaddedMonth = try await rows(["startDate": "1970-1-01", "endDate": "1970-1-01"])
+        XCTAssertEqual(dayWithUnpaddedMonth, day)
         let instants = try await rows(["startDate": "1970-01-01T00:00:00Z", "endDate": "1970-01-01T00:00:00.500Z"])
         XCTAssertEqual(instants.map { $0["visitedAt"] }, ["1970-01-01T00:00:00.500Z", "1970-01-01T00:00:00.000Z"])
     }
@@ -88,7 +90,7 @@ final class SearchHistoryBrowserToolTests: XCTestCase {
         let inputs: [JSONValue] = [
             "x", ["query": 1], ["query": true], ["limit": 0], ["limit": 51], ["limit": "10"],
             ["limit": .double(1.5)], ["limit": .null], ["startDate": "soon"], ["endDate": false],
-            ["startDate": "2026-02-30"], ["endDate": "2026-13-01"], ["startDate": "2026-2-03"],
+            ["startDate": "2026-02-30"], ["endDate": "2026-13-01"],
             ["startDate": "2026-09-24", "endDate": "2026-09-23"]
         ]
         for input in inputs {
@@ -189,8 +191,7 @@ final class SearchHistoryBrowserToolTests: XCTestCase {
         let stored = await fixture.handler.executeClientTool(params: params, source: fixture.script)
         XCTAssertEqual(first, expected)
         XCTAssertEqual(stored, expected)
-        XCTAssertEqual(fixture.presenter.prompts.count, 1)
-        XCTAssertEqual(fixture.presenter.messages, ["Duck.ai wants to search your browsing history."])
+        XCTAssertEqual(fixture.presenter.prompts.map(\.toolName), ["searchHistory"])
         XCTAssertEqual(fixture.service.permissions.state(forToolNamed: "searchHistory"), .allow)
         fixture.presenter.onPresent = nil
         fixture.service.permissions.setState(.ask, forToolNamed: "searchHistory")

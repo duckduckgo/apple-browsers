@@ -50,6 +50,14 @@ public final class BrowserToolCatalog {
         return offersRequestAccess ? tools + [.requestAccess] : tools
     }
 
+    public var clientToolsConfiguration: ClientToolsConfiguration? {
+        let capabilities = enabledClientToolCapabilities
+        guard !capabilities.isEmpty,
+              let configuration = try? ClientToolsConfiguration(capabilities: capabilities),
+              ClientToolPayloadLimits.fits(configuration, within: ClientToolPayloadLimits.configBytes) else { return nil }
+        return configuration
+    }
+
     /// `requestAccess` is offered only alongside at least one tool.
     public var offersRequestAccess: Bool {
         configuration.isRequestAccessEnabled && !enabledTools.isEmpty

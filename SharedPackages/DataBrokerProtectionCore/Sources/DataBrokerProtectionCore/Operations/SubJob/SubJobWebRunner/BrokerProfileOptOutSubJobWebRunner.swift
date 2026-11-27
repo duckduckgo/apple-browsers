@@ -82,6 +82,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public var fetchedEmail: String?
     public var emailData: ExtractedEmailData = [:]
     private let actionsHandlerMode: ActionsHandlerMode
+    public let assistanceObserver: OptOutAssistanceObserving?
 
     public var retriesCountOnError: Int = 0
 
@@ -98,7 +99,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 executionConfig: BrokerJobExecutionConfig,
                 actionsHandlerMode: ActionsHandlerMode,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
+                assistanceObserver: OptOutAssistanceObserving? = nil,
                 shouldRunNextStep: @escaping () -> Bool) {
+        self.assistanceObserver = assistanceObserver
         self.privacyConfig = privacyConfig
         self.prefs = prefs
         self.context = context
@@ -138,6 +141,33 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                     return
                 }
 
+                let modeActionsHandler: ActionsHandler? = context.dataBroker.optOutStep().flatMap { optOutStep in
+                    switch actionsHandlerMode {
+                    case .testing:
+                        if actionsHandler == nil {
+                            assertionFailure("Missing ActionsHandler")
+                        }
+                        return actionsHandler
+                    case .optOut:
+                        if actionsHandler != nil {
+                            assertionFailure("Use .testing actionsHandlerMode instead")
+                        }
+                        return ActionsHandler.forOptOut(optOutStep)
+                    case .emailConfirmation(let url):
+                        if actionsHandler != nil {
+                            assertionFailure("Use .testing actionsHandlerMode instead")
+                        }
+                        return ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: url)
+                    }
+                }
+
+                // Fail before loading the page: without a user to hand it to, this opt-out can't finish.
+                let needsUser = modeActionsHandler?.actions.contains(where: \.requiresUserAssistance) ?? false
+                if needsUser, assistanceObserver == nil {
+                    failed(with: DataBrokerProtectionError.userAssistanceRequired)
+                    return
+                }
+
                 task = Task {
                     do {
                         try await initialize(handler: webViewHandler,
@@ -148,24 +178,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                         return
                     }
 
-                    if let optOutStep = context.dataBroker.optOutStep() {
-                        switch actionsHandlerMode {
-                        case .testing:
-                            if let actionsHandler {
-                                self.actionsHandler = actionsHandler
-                            } else {
-                                assertionFailure("Missing ActionsHandler")
-                            }
-                        case .optOut:
-                            if actionsHandler != nil {
-                                assertionFailure("Use .testing actionsHandlerMode instead")
-                            }
-                            self.actionsHandler = ActionsHandler.forOptOut(optOutStep)
-                        case .emailConfirmation(let url):
-                            if actionsHandler != nil {
-                                assertionFailure("Use .testing actionsHandlerMode instead")
-                            }
-                            self.actionsHandler = ActionsHandler.forEmailConfirmationContinuation(optOutStep, confirmationURL: url)
+                    if context.dataBroker.optOutStep() != nil {
+                        if let modeActionsHandler {
+                            self.actionsHandler = modeActionsHandler
                         }
 
                         if self.shouldRunNextStep() {

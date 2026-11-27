@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
@@ -59,7 +60,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private let pageModel: NewTabPageViewModel?
     private let messagesModel: NewTabPageMessagesModel?
     private let searchInputModel: NewTabPageSearchInputModel?
-    private let isStickyInputEnabled: Bool
+    private let returnSettings: NewTabPageReturnSettings
     private let customizationStateReporter = NewTabPageCustomizationStateReporter()
     private var isRemoteMessageSurfacePresented = false
     private var areFavoritesHidden = false
@@ -93,7 +94,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         var isLeavingFocus = false
     }
 
-    private let backgroundImageView = UIImageView(image: UIImage(resource: .backgroundPond))
+    private let backgroundImageView = UIImageView()
+    private var themeCancellable: AnyCancellable?
 
     private let contentContainerView: UIView = {
         let view = UIView()
@@ -138,7 +140,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
          pageModel: NewTabPageViewModel? = nil,
          messagesModel: NewTabPageMessagesModel? = nil,
          searchInputModel: NewTabPageSearchInputModel? = nil,
-         isStickyInputEnabled: Bool = false,
+         returnSettings: NewTabPageReturnSettings,
          onboardingCoordinator: NewTabPageOnboardingCoordinator? = nil) {
         self.onboardingCoordinator = onboardingCoordinator
         self.blocks = blocks
@@ -146,7 +148,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         self.pageModel = pageModel
         self.messagesModel = messagesModel
         self.searchInputModel = searchInputModel
-        self.isStickyInputEnabled = isStickyInputEnabled
+        self.returnSettings = returnSettings
         super.init(nibName: nil, bundle: nil)
         onboardingCoordinator?.page = self
         messagesModel?.onMessageVisibilityChanged = { [weak self] in
@@ -172,11 +174,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         blocksStackView.onLayout = { [weak self] in
             self?.updateStickySearchInput()
         }
-        if isStickyInputEnabled {
-            // The bottom safe area is applied by hand, so it cannot change under the scroll view while the input is focused.
-            scrollView.contentInsetAdjustmentBehavior = .never
-            applyScrollInsets()
-        }
+        // The bottom safe area is applied by hand, so it cannot change under the scroll view while the input is focused.
+        scrollView.contentInsetAdjustmentBehavior = .never
+        applyScrollInsets()
+        observeTheme()
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
     }
@@ -215,7 +216,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     }
 
     @objc private func customizeButtonTapped() {
-        let model = NewTabPageCustomizationModel()
+        let model = NewTabPageCustomizationModel(returnSettings: returnSettings)
         model.reportOpening()
         let customizationViewController = NewTabPageCustomizationViewController(model: model)
         customizationViewController.onAllSettingsSelected = { [weak self] in
@@ -309,19 +310,30 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         restoreEntrancePose()
     }
 
+    private func observeTheme() {
+        let store = NewTabPageCustomizationStore()
+        applyBackground(of: store.theme)
+        themeCancellable = store.themePublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] theme in
+                self?.applyBackground(of: theme)
+            }
+    }
+
+    private func applyBackground(of theme: NewTabPageTheme) {
+        backgroundImageView.image = theme.backgroundImage
+        backgroundImageView.isHidden = theme.backgroundImage == nil
+    }
+
     private func addSubviews() {
         view.addSubview(backgroundImageView)
         view.addSubview(contentContainerView)
         contentContainerView.addSubview(scrollView)
         scrollView.addSubview(blocksStackView)
-        let customizeButtonHost: UIView = isStickyInputEnabled ? scrollView : contentContainerView
-        let customizeButtonTopAnchor = isStickyInputEnabled
-            ? scrollView.contentLayoutGuide.topAnchor
-            : contentContainerView.safeAreaLayoutGuide.topAnchor
-        let customizeButtonTrailingAnchor = isStickyInputEnabled
-            ? scrollView.frameLayoutGuide.trailingAnchor
-            : contentContainerView.safeAreaLayoutGuide.trailingAnchor
-        customizeButtonHost.addSubview(customizeButton)
+        let customizeButtonTopAnchor = scrollView.contentLayoutGuide.topAnchor
+        let customizeButtonTrailingAnchor = scrollView.frameLayoutGuide.trailingAnchor
+        scrollView.addSubview(customizeButton)
 
         contentContainerView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -365,14 +377,14 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
             blocksStackView.addArrangedSubview(blockController.view)
             blockController.didMove(toParent: self)
         }
-        if isStickyInputEnabled, let searchInputView {
+        if let searchInputView {
             blocksStackView.bringSubviewToFront(searchInputView)
         }
     }
 
     /// Keeps the search input just below the top of the visible page once scrolling would carry it offscreen, including while it is focused.
     private func updateStickySearchInput() {
-        guard isStickyInputEnabled, let searchInputView else { return }
+        guard let searchInputView else { return }
         // Center and bounds ignore the pinning transform, so they give the resting position.
         let pinning = StickyInputPinning(restingMinY: searchInputView.center.y - searchInputView.bounds.height / 2,
                                          height: searchInputView.bounds.height,
@@ -548,7 +560,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     }
 
     func setFocusedPose(_ pose: NewTabPageFocusedPose?) {
-        inputEditingLayout?.isLeavingFocus = isStickyInputEnabled && pose == nil
+        inputEditingLayout?.isLeavingFocus = pose == nil
         if pose == nil {
             UIView.performWithoutAnimation { unsettleFocusedPose() }
             restorePinnedEditingContentOffset()
@@ -611,7 +623,6 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
 
     /// The bottom safe area, such as the floating toolbar's, kept from shrinking below its pre-focus value while the input is focused.
     private var scrollBottomSafeAreaInset: CGFloat {
-        guard isStickyInputEnabled else { return 0 }
         if let inputEditingLayout, inputEditingLayout.isGeometryValid {
             // A shrinking inset clamps the scroll offset and makes the page jump, while a growing one must apply.
             return max(inputEditingLayout.bottomSafeAreaInset, view.safeAreaInsets.bottom)
@@ -621,7 +632,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
 
     /// While the input is focused the page cannot scroll back past where the modules sit right under the focused card.
     private var editingTopContentInset: CGFloat {
-        guard isStickyInputEnabled, let inputEditingLayout, inputEditingLayout.isGeometryValid else { return 0 }
+        guard let inputEditingLayout, inputEditingLayout.isGeometryValid else { return 0 }
         return -inputEditingLayout.scrolledInputDistance
     }
 
@@ -719,11 +730,11 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
                                                     scrolledInputDistance: scrollView.contentOffset.y + scrollView.adjustedContentInset.top
                                                         - stickySearchInputTranslation,
                                                     stickySearchInputTranslation: stickySearchInputTranslation)
-        } else if !isEditing, let savedLayout = inputEditingLayout {
+        } else if !isEditing, inputEditingLayout != nil {
             setFocusedPose(nil)
             inputEditingLayout = nil
             applyScrollInsets()
-            restoreScrollPosition(savedLayout.isGeometryValid && !isStickyInputEnabled ? savedLayout.contentOffset : scrollView.contentOffset)
+            restoreScrollPosition(scrollView.contentOffset)
         }
         searchInputView?.alpha = isEditing ? 0 : 1
         applyAccessibilityReach()

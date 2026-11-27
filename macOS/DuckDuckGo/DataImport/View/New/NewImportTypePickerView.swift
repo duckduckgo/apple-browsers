@@ -27,7 +27,6 @@ struct NewImportTypePickerView: View {
     let doneAction: () -> Void
     let cancelAction: () -> Void
     @Binding var isDoneDisabled: Bool
-    var keepsOneTypeSelected = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -97,6 +96,6 @@ struct NewImportTypePickerView: View {
     }
 
     private func isLastSelectedItem(_ item: ImportTypeItem) -> Bool {
-        keepsOneTypeSelected && item.isSelected && items.filter(\.isSelected).count == 1
+        item.isSelected && items.filter(\.isSelected).count == 1
     }
 }

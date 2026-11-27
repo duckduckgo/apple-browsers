@@ -31,10 +31,9 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
     func testClientRedirectFromHashedUrlToNonHashedUrl() throws {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
-        var counter = 0
+        let requestCount = RequestCounter()
         server.middleware = [{ [data] request in
-            counter += 1
-            if counter == 1 {
+            if requestCount.increment() == 1 {
                 return .ok(.html(data.clientRedirectData.utf8String()!))
             } else {
                 return .ok(.html(data.html.utf8String()!))
@@ -121,10 +120,9 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
     func testServerRedirectToSameDocument() throws {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
-        var counter = 0
+        let requestCount = RequestCounter()
         server.middleware = [{ [urls, data] request in
-            counter += 1
-            switch counter {
+            switch requestCount.increment() {
             case 1:
                 return .ok(.data(data.html))
             case 2:
@@ -284,14 +282,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             eDidFinish.fulfill()
         }
 
-        var clientRedirectMade = false
+        let redirectRequests = RequestCounter()
         server.middleware = [{ [urls, data] request in
             switch request.path {
             case "/":
                 return .ok(.data(data.metaRedirect))
             case urls.local3.path:
-                defer { clientRedirectMade = true }
-                return .ok(.data(clientRedirectMade ? data.clientRedirectData2 : data.clientRedirectData))
+                return .ok(.data(redirectRequests.increment() > 1 ? data.clientRedirectData2 : data.clientRedirectData))
             default:
                 return .ok(.data(data.html))
             }
@@ -666,12 +663,11 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             eDidFinish.fulfill()
         }
 
-        var counter = 0
+        let requestCount = RequestCounter()
         server.middleware = [{ [urls, data] request in
-            guard counter < 10 else {
+            guard requestCount.increment() <= 10 else {
                 return .ok(.data(data.html))
             }
-            counter += 1
             return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
                 try writer.write(data.empty)
             }
@@ -714,12 +710,11 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             eDidFail.fulfill()
         }
 
-        var counter = 0
+        let requestCount = RequestCounter()
         server.middleware = [{ [urls, data] request in
-            guard counter < 100 else {
+            guard requestCount.increment() <= 100 else {
                 return .ok(.data(data.html))
             }
-            counter += 1
             return .raw(301, "Moved", ["Location": urls.local2.path]) { writer in
                 try writer.write(data.empty)
             }
@@ -1203,12 +1198,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             lock.unlock()
         }
 
-        server.middleware = [{ [weak self, unowned navigationDelegateProxy, urls, data] request in
+        server.middleware = [{ [weak self, urls, data] request in
             switch request.path {
             case urls.local3.path:
-                DispatchQueue.main.async {
-                    navigationDelegateProxy!.nextNavigationActionShouldBeUserInitiated = true
-                    self!._webView!.evaluateJavaScript("window.location.href='\(urls.local2)'")
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    self.navigationDelegateProxy.nextNavigationActionShouldBeUserInitiated = true
+                    self._webView!.evaluateJavaScript("window.location.href='\(urls.local2)'")
                 }
                 lock.lock()
                 lock.unlock()
@@ -1615,6 +1611,19 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         }
     }
 
+}
+
+// Middleware can serve multiple requests concurrently. All access to count holds the lock.
+private final class RequestCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+
+    func increment() -> Int {
+        lock.withLock {
+            count += 1
+            return count
+        }
+    }
 }
 
 #endif

@@ -35,6 +35,7 @@ final class MockDefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPro
     private(set) var wasDismissPromptCalled = false
     private(set) var capturedConfirmationPrompt: DefaultBrowserAndDockPromptPresentationType?
     private(set) var capturedDismissAction: DefaultBrowserAndDockPromptDismissAction?
+    private(set) var displayedPrompts: [DefaultBrowserAndDockPromptPresentationType] = []
 
     func evaluateEligibility() {
         eligiblePrompt.send(evaluateEligibilityType)
@@ -42,6 +43,10 @@ final class MockDefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPro
 
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
         getPromptTypeResult
+    }
+
+    func promptDisplayed(_ prompt: DefaultBrowserAndDockPromptPresentationType) {
+        displayedPrompts.append(prompt)
     }
 
     func confirmAction(for prompt: DefaultBrowserAndDockPromptPresentationType) {

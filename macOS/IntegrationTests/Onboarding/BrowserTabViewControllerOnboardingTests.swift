@@ -722,6 +722,8 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
         }
     }
 
+    var isWaitingForDuckAIChatDeletion = false
+
     func fireButtonUsed() {}
 
     func turnOffFeature() {

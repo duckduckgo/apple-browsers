@@ -96,14 +96,14 @@ final class FaviconTests: XCTestCase {
         XCTAssertFalse(image.hasVisiblePixels())
     }
 
-    func testIsSVGImageDataDetectsSVGAfterLeadingComment() {
+    func testLooksLikeSVGDetectsSVGAfterLeadingComment() {
         let svg = "<!-- comment -->\n<?xml version=\"1.0\"?>\n<SVG xmlns=\"http://www.w3.org/2000/svg\"></SVG>"
-        XCTAssertTrue(Data(svg.utf8).isSVGImageData)
+        XCTAssertTrue(Data(svg.utf8).looksLikeSVG)
     }
 
-    func testIsSVGImageDataIsFalseForPNGData() throws {
+    func testLooksLikeSVGIsFalseForPNGData() throws {
         let data = try makePNGData(pixelsWide: 16, pixelsHigh: 16)
-        XCTAssertFalse(data.isSVGImageData)
+        XCTAssertFalse(data.looksLikeSVG)
     }
 
     // MARK: - Helpers

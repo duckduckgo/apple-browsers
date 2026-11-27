@@ -53,10 +53,9 @@ $V --device iphone setup && $V --device ipad setup   # this worktree's own simul
 $V build                                              # app (3–20 min) + runner (~20 s); rebuild the app after app changes
 ```
 
-Each proof deletes its simulator when it ends (pass, fail or cancel), so the next proof starts on a new device and
-nothing is left on the Mac. `prove`, `launch` and `build` recreate a missing simulator (about 30 s); `prove --keep`
-keeps it to look at after a failure. Builds live in the worktree under `DerivedData/verify-ios/` (gitignored), so
-removing the worktree removes them.
+A proof deletes its simulator when it ends; `setup`, `launch`, exploring and `--keep` leave it booted. `prove`,
+`launch` and `build` recreate it (~30 s). Builds live in the worktree's gitignored `DerivedData/verify-ios/`
+(`cleanup --builds`). Each command first reaps orphaned or idle (2 h) simulators: see `reap.py`.
 
 `build` targets a concrete simulator: a `generic/platform=iOS Simulator` build fails in the WebKit-workaround phase.
 One app build serves both devices. `build` records a fingerprint of the source it built from (HEAD plus every
@@ -81,8 +80,9 @@ from verify_ios import steps
 
 DEVICES = ["iphone", "ipad"]   # default: both
 LIVE = []                      # live services it depends on, e.g. ["duck.ai"]; empty = local fixture / app only
-FLAGS = {}                     # remote feature flags to pin for this proof (env.PINNED_FLAGS are always pinned)
-# LANGUAGE = {"language": "fr", "locale": "fr_FR"}   # only to test localization; default en-US (env.LANGUAGE)
+FLAGS = {}                     # remote feature flags to pin for this proof
+# PROFILE = {"tabs": [url]}     # launch profile keys for fresh_start
+# LANGUAGE = {"language": "fr", "locale": "fr_FR"}   # only to test localization
 
 def run(ios):
     steps.fresh_start(ios)                         # reinstall + launch: one blank tab, address bar not focused
@@ -98,7 +98,7 @@ def run(ios):
     ios.expect_wide_event("data-clearing", status="SUCCESS")
 ```
 
-`examples/` shows how to drive the harness (t1–t11, listed in [features/](features/README.md)); start from the closest.
+`examples/` shows how to drive the harness (t1–t13, listed in [features/](features/README.md)); start from the closest.
 
 **When a run passes:** the proof returned, recorded at least one passing check and no failing one (a failed check
 you caught still fails the run), and the app was still in the foreground at the end. A problem before the proof's
@@ -245,8 +245,10 @@ $V tap|long-press|type|key|swipe|alert …   # same actions and refusals as proo
 $V web url | eval '<js>' | navigate <url>
 $V capture screenshot --name step
 $V doctor                                  # read-only: simulator, build identity, runner, web channel
-$V cleanup [--all] [--shutdown] [--delete-sims]   # --delete-sims when you are done exploring
+$V cleanup [--all] [--shutdown] [--delete-sims] [--builds]
 ```
+
+**Done exploring or with a `--keep` simulator: run `$V cleanup --all --delete-sims`**.
 
 After a proof has deleted the simulator, `launch` creates a new one before the other commands work again.
 
@@ -272,7 +274,7 @@ and fails if the running binary is not this worktree's build.
   whole duration; `build` and the shared fixture server need both locks.
 - Cleanup signals only processes whose recorded identity (pid + start time + command) still matches, checked again
   right before each signal; survivors stay recorded and are reported. It deletes only this worktree's simulators,
-  never evidence or builds.
+  never evidence. Simulator runtimes are never deleted.
 
 After changing the runner, the driver or the library, run both test suites:
 
@@ -301,10 +303,10 @@ $V prove .agents/skills/verify-ios/examples/*.py                                
 | `lib/vrunner_start.sh` | start one runner and report its pids (called by the driver, which also stops it) |
 | `lib/ios_identity.sh` | running-binary sha256 vs build (called by doctor) |
 | `runner/` | Swift XCUITest runner, XcodeGen spec and generated project; regenerate with `cd runner && xcodegen generate` |
-| `examples/` | worked proofs t1–t11, harness examples |
-| `tests/` | `test_tool.py` (no simulator), `must_fail.py` (refusals and build identity, as a proof) |
+| `examples/` | worked proofs t1–t13, harness examples |
+| `tests/` | `test_*.py` (no simulator), `must_fail.py` (refusals and build identity, as a proof) |
 | `fixture/` | local test pages |
-| `features/` | the feature map: shared steps, Duck.ai |
+| `features/` | the feature map |
 
 Swift under `runner/` must pass `mint run swiftlint lint --strict --force-exclude .agents/skills/verify-ios/runner/Sources`.
 Keep the runner's fixes: the animation-idle swizzle, the `record(_:)` override, the alert handler (app + SpringBoard),

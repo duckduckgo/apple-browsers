@@ -43,10 +43,10 @@ enum SyncPromoContent {
         }
     }
 
-    var promoFlag: FeatureFlag {
+    var promoFlag: FeatureFlag? {
         switch self {
         case .bookmarks: .promoQueueSyncSetupBookmarksPromo
-        case .autofill: .promoQueueSyncSetupAutofillPromo
+        case .autofill: nil
         }
     }
 
@@ -202,7 +202,9 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
     }
 
     private func computeEligibility(authState: SyncAuthState?) -> Bool {
-        guard featureFlagger.isFeatureOn(content.promoFlag) else { return false }
+        if let promoFlag = content.promoFlag, !featureFlagger.isFeatureOn(promoFlag) {
+            return false
+        }
 
         let privacyConfig = privacyConfigurationManager.privacyConfig
         guard authState == .inactive,

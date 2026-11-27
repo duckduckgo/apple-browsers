@@ -46,8 +46,8 @@ final class AIChatHistoryCell: UITableViewCell {
     /// Burns this row's chat. Shown on every row so single-chat Fire is one tap away, not only behind swipe or long-press.
     let fireButton: UIButton = {
         let button = UIButton(type: .system)
-        // Same size and tint as the row's leading chat icon, so the row's main action doesn't read as faded.
-        button.setImage(DesignSystemImages.Glyphs.Size24.fire, for: .normal)
+        // 16pt like the Fire accessory on Duck.ai recent-chat suggestion rows; tinted like the row's leading chat icon.
+        button.setImage(DesignSystemImages.Glyphs.Size16.fire, for: .normal)
         button.tintColor = UIColor(designSystemColor: .icons)
         button.accessibilityLabel = UserText.aiChatHistoryDeleteSwipeAccessibilityLabel
         button.accessibilityIdentifier = "aiChatHistoryRowFireButton"
@@ -149,8 +149,8 @@ final class AIChatHistoryCell: UITableViewCell {
             titleLabel.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 11.5),
             titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -11.5),
 
-            // 44pt tap target; the 24pt glyph sits 16pt from the trailing edge, mirroring the leading icon.
-            fireButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -6),
+            // 44pt tap target; the 16pt glyph sits 16pt from the trailing edge, mirroring the leading icon's inset.
+            fireButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -2),
             fireButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             fireButton.widthAnchor.constraint(equalToConstant: 44),
             fireButton.heightAnchor.constraint(equalToConstant: 44)

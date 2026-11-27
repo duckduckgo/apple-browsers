@@ -22,14 +22,13 @@ import PrivacyConfig
 protocol TopSitesPickerExperimentProtocol {
     /// Whether onboarding lists the step when it starts. The page still asks `shouldShowStep()` right before it.
     var isStepOffered: Bool { get }
-    /// Whether to show the step, decided when the user reaches it, after the import step, so imported favorites count.
+    /// Enrols users with fewer than 5 favorites and returns whether they're in treatment.
+    /// The page asks when the user reaches the step, after the import step, so imported favorites count.
     func shouldShowStep() -> Bool
 }
 
-/// POC: reads the local `onboardingTopSitesPicker` flag and shows the step to users with fewer than 5 favorites.
-/// The experiment adds enrolment and the treatment cohort.
 final class TopSitesPickerExperiment: TopSitesPickerExperimentProtocol {
-    private let favoritesLimit = 5
+    private let favoritesLimitForEnrolment = 5
     private let featureFlagger: FeatureFlagger
     private let bookmarkManager: BookmarkManager
 
@@ -38,12 +37,22 @@ final class TopSitesPickerExperiment: TopSitesPickerExperimentProtocol {
         self.bookmarkManager = bookmarkManager
     }
 
+    /// Control users get the step listed too, so both cohorts see the same onboarding until they reach it.
     var isStepOffered: Bool {
-        featureFlagger.isFeatureOn(.onboardingTopSitesPicker)
+        featureFlagger.isFeatureOn(.onboardingFavoritesStepExperiment) || assignedCohort != nil
     }
 
     func shouldShowStep() -> Bool {
-        isStepOffered && favoritesCount < favoritesLimit
+        if let assignedCohort {
+            return assignedCohort == .treatment
+        }
+        guard favoritesCount < favoritesLimitForEnrolment else { return false }
+        let cohort = featureFlagger.resolveCohort(for: FeatureFlag.onboardingFavoritesStepExperiment) as? FeatureFlag.OnboardingFavoritesStepCohort
+        return cohort == .treatment
+    }
+
+    private var assignedCohort: FeatureFlag.OnboardingFavoritesStepCohort? {
+        featureFlagger.assignedCohort(for: FeatureFlag.onboardingFavoritesStepExperiment) as? FeatureFlag.OnboardingFavoritesStepCohort
     }
 
     private var favoritesCount: Int {

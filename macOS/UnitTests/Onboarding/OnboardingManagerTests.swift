@@ -748,6 +748,16 @@ class OnboardingManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testSearchExperienceClickedPixelNotFiredAgainOnFinish_WhenSearchOrChatStepFollows() {
+        let manager = makeManager(enabledFlags: [.onboardingSearchOrChat], aiChatPreferencesStorage: MockAIChatPreferencesStorage(),
+                                  homepageSearchModeSeedPersistor: HomepageSearchModeSeedUserDefaultsPersistor(keyValueStore: MockKeyValueStore()))
+
+        manager.goToAddressBar()
+
+        XCTAssertFalse(onboardingSharedPixelHandler.eventsReceived.contains { if case .searchExperience = $0 { true } else { false } })
+    }
+
+    @MainActor
     func testSearchExperienceClickedPixelFired_WithAddressBarSetting_WhenAddressBarModeIsFinalStep() {
         // Given
         let featureFlagger = MockFeatureFlagger()

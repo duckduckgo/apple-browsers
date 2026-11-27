@@ -565,7 +565,10 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     private func fireOnboardingFinishedPixels() {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
-        fireSharedPixelOnStepCompletion(for: .addressBarMode)
+        // The page reports the address bar step itself when the search or chat step follows it.
+        if !isStepActive(.searchOrChat) {
+            fireSharedPixelOnStepCompletion(for: .addressBarMode)
+        }
         chromeExtensionExperiment.fireMetric(.onboardingCompleted)
 
         let togglePixel: AIChatPixel = aiChatPreferencesStorage.showSearchAndDuckAIToggle

@@ -46,6 +46,16 @@ import WebKit
 
 extension AppDelegate {
 
+    @objc func previewUsageTime() {
+        usageTimeMonitor?.preview()
+    }
+
+#if DEBUG
+    @MainActor @objc func toggleUsageTimeReports() {
+        usageTimeMonitor?.togglePreviewEvery30Seconds()
+    }
+#endif
+
     // MARK: - DuckDuckGo
 
     @MainActor
@@ -2137,6 +2147,11 @@ extension AppDelegate: NSMenuItemValidation {
 
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
+#if DEBUG
+        case #selector(AppDelegate.toggleUsageTimeReports):
+            menuItem.state = usageTimeMonitor?.isPreviewingEvery30Seconds == true ? .on : .off
+            return usageTimeMonitor != nil
+#endif
         case #selector(AppDelegate.closeAllWindows(_:)):
             return isDisplayingOneOrMoreWindows
 

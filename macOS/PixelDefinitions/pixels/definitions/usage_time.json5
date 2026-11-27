@@ -1,0 +1,8 @@
+{
+    "usage-time_store-discarded_macos": {
+        "description": "The browser discarded an unreadable local usage-time store.",
+        "owners": ["diegoreymendez"],
+        "triggers": ["exception"],
+        "parameters": ["appVersion"]
+    }
+}

@@ -970,6 +970,10 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "Performance Debugging") {
+                NSMenuItem(title: "Preview Today’s Usage Time", action: #selector(AppDelegate.previewUsageTime))
+#if DEBUG
+                NSMenuItem(title: "Report Usage Time Every 30 Seconds", action: #selector(AppDelegate.toggleUsageTimeReports))
+#endif
                 NSMenuItem(title: "Export Allocation Stats", action: #selector(AppDelegate.exportMemoryAllocationStats), keyEquivalent: [.control, .command, .shift, .option, "m"])
                 NSMenuItem(title: "Export Startup Stats", action: #selector(AppDelegate.exportStartupStats), keyEquivalent: [.control, .command, .shift, .option, "s"])
             }

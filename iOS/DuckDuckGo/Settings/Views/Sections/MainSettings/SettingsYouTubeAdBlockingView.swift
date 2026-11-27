@@ -62,33 +62,26 @@ struct SettingsYouTubeAdBlockingView: View {
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 if viewModel.isYouTubeAdBlockingRemotelyDisabled {
-                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader)) {
+                    Section {
                         remotelyDisabledRow
                             .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                     }
                 } else if viewModel.isYouTubeAdBlockingDisclosureHidden {
-                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
-                            footer: Text(UserText.youTubeAdBlockingExplanation)) {
+                    Section(footer: Text(UserText.youTubeAdBlockingExplanation)) {
                         adBlockingToggleCell
                     }
                 } else {
-                    Section(header: Text(UserText.adBlockingYouTubeSectionHeader),
-                            footer: Text(footerAttributedString)) {
+                    Section(footer: Text(footerAttributedString)) {
                         adBlockingToggleCell
                     }
                 }
             }
 
             if viewModel.isSegmentSkipAvailable {
-                Section(header: Text(verbatim: SegmentSkipCopy.sectionHeader),
-                        footer: Text(verbatim: SegmentSkipCopy.footer)) {
-                    SettingsCellView(label: SegmentSkipCopy.toggle,
-                                     accessory: .toggle(isOn: viewModel.segmentSkipEnabled))
-                    if viewModel.segmentSkipEnabled.wrappedValue {
-                        SettingsPickerCellView(label: SegmentSkipCopy.skipModeLabel,
-                                               options: SegmentSkipMode.allCases,
-                                               selectedOption: viewModel.segmentSkipMode)
-                    }
+                Section(footer: Text(verbatim: "\(UserText.segmentSkipDescription)\n\n\(UserText.segmentSkipDisclaimer)")) {
+                    SettingsPickerCellView(label: UserText.segmentSkipTitle,
+                                           options: SegmentSkipSetting.allCases,
+                                           selectedOption: viewModel.segmentSkipSetting)
                 }
             }
 
@@ -159,20 +152,12 @@ struct SettingsYouTubeAdBlockingView: View {
     }
 }
 
-private enum SegmentSkipCopy {
-    static let sectionHeader = "Sponsor Segments"
-    static let toggle = "Skip Sponsor Segments"
-    static let footer = "Marks sponsored segments on the video progress bar. Manual mode shows a Skip button, Automatic mode skips them for you."
-    static let skipModeLabel = "Skip Mode"
-    static let manual = "Manual"
-    static let auto = "Automatic"
-}
-
-extension SegmentSkipMode: @retroactive CustomStringConvertible {
+extension SegmentSkipSetting: @retroactive CustomStringConvertible {
     public var description: String {
         switch self {
-        case .manual: SegmentSkipCopy.manual
-        case .auto: SegmentSkipCopy.auto
+        case .always: UserText.segmentSkipOptionAlways
+        case .askToSkip: UserText.segmentSkipOptionAskToSkip
+        case .off: UserText.segmentSkipOptionOff
         }
     }
 }

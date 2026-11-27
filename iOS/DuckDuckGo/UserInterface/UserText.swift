@@ -2434,11 +2434,18 @@ public struct UserText {
     // YouTube Ad Blocking
     public static let youTubeAdBlockingTitle = NSLocalizedString("youtube.ad.blocking.title", value: "Ad Blocking", comment: "Settings screen title for Ad Blocking")
     public static let adBlockingDescription = NSLocalizedString("ad.blocking.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Description of the Ad Blocking feature in settings")
-    public static let adBlockingYouTubeSectionHeader = NSLocalizedString("ad.blocking.youtube.section.header", value: "YouTube Ad Blocking", comment: "Section header for YouTube-specific ad blocking settings")
     public static let youTubeAdBlockingExplanation = NSLocalizedString("youtube.ad.blocking.explanation", value: "DuckDuckGo blocks video ads on YouTube, so you can watch videos without interruption.", comment: "Explanation text for YouTube Ad Blocking feature")
     public static let youTubeAdBlockingToggle = NSLocalizedString("youtube.ad.blocking.toggle", value: "Block ads on YouTube", comment: "Toggle label for enabling/disabling YouTube ad blocking")
     public static let youTubeAdBlockingToggleFooter = NSLocalizedString("youtube.ad.blocking.toggle.footer", value: "When on, DuckDuckGo will anonymously detect ad blocking interference or YouTube errors, to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.", comment: "Description shown below the YouTube ad blocking toggle")
     public static let youTubeAdBlockingLearnMoreButton = NSLocalizedString("youtube.ad.blocking.toggle.footer.learn-more", value: "Learn More", comment: "Learn More link appended after the YouTube ad blocking toggle description")
+
+    // Skip Sponsored Content (SegmentSkip)
+    public static let segmentSkipTitle = NSLocalizedString("segment.skip.title", value: "Skip Sponsored Content", comment: "Label of the setting that skips sponsored segments in YouTube videos")
+    public static let segmentSkipDescription = NSLocalizedString("segment.skip.description", value: "Skips sponsored segments, like a paid promotion read by the creator. Segments are identified by the SponsorBlock community, so not every video is covered.", comment: "Description below the Skip Sponsored Content setting. SponsorBlock is the name of a community project, do not translate")
+    public static let segmentSkipDisclaimer = NSLocalizedString("segment.skip.disclaimer", value: "When on, DuckDuckGo will anonymously detect sponsor blocking interference or YouTube errors to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.", comment: "Disclaimer below the Skip Sponsored Content setting description")
+    public static let segmentSkipOptionAlways = NSLocalizedString("segment.skip.option.always", value: "Always", comment: "Skip Sponsored Content option: always skip sponsored segments automatically")
+    public static let segmentSkipOptionAskToSkip = NSLocalizedString("segment.skip.option.ask-to-skip", value: "Ask to Skip", comment: "Skip Sponsored Content option: show a Skip button on sponsored segments")
+    public static let segmentSkipOptionOff = NSLocalizedString("segment.skip.option.off", value: "Off", comment: "Skip Sponsored Content option: don't skip sponsored segments")
 
     // YouTube Ad Blocking — browsing menu picker
     public static let youTubeAdBlockingMenuToggle = NSLocalizedString("youtube.ad.blocking.menu.toggle", value: "Disable YouTube Ad Blocking", comment: "Browsing menu row that opens the YouTube ad-block mode picker")

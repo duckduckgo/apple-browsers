@@ -67,7 +67,10 @@ public final class SegmentSkipSubfeature: NSObject, Subfeature {
     }
 
     /// The page is answered with no segments and `enabled: false` while either gate is off.
-    private var isEnabled: Bool { isFeatureFlagOn() && preferences.isEnabled }
+    private var isEnabled: Bool { isFeatureFlagOn() && preferences.setting != .off }
+
+    /// C-S-S contract value: "auto" skips on its own, "manual" shows a Skip button.
+    private var skipMode: String { preferences.setting == .always ? "auto" : "manual" }
 
     /// Message names that this subfeature handles.
     enum MessageNames: String, CaseIterable {
@@ -105,14 +108,14 @@ public final class SegmentSkipSubfeature: NSObject, Subfeature {
     @MainActor
     private func handleGetConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         webView = original.webView
-        let response = ConfigResponse(enabled: isEnabled, skipMode: preferences.skipMode.rawValue, version: Self.contractVersion)
+        let response = ConfigResponse(enabled: isEnabled, skipMode: skipMode, version: Self.contractVersion)
         Logger.segmentSkip.debug("getConfig answered: enabled=\(response.enabled) skipMode=\(response.skipMode, privacy: .public) version=\(Self.contractVersion)")
         return response
     }
 
     private func pushConfigChanged() {
         guard let broker, let webView else { return }
-        let update = ConfigResponse(enabled: isEnabled, skipMode: preferences.skipMode.rawValue)
+        let update = ConfigResponse(enabled: isEnabled, skipMode: skipMode)
         Logger.segmentSkip.debug("onConfigChanged pushed: enabled=\(update.enabled) skipMode=\(update.skipMode, privacy: .public)")
         broker.push(method: Self.onConfigChanged, params: update, for: self, into: webView)
     }
@@ -121,7 +124,7 @@ public final class SegmentSkipSubfeature: NSObject, Subfeature {
     private func handleGetSegments(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let query = try SegmentSkipSegmentsProvider.Query(params: params)
         guard isEnabled else {
-            Logger.segmentSkip.debug("getSegments skipped: featureFlag=\(self.isFeatureFlagOn()) userSetting=\(self.preferences.isEnabled)")
+            Logger.segmentSkip.debug("getSegments skipped: featureFlag=\(self.isFeatureFlagOn()) userSetting=\(self.preferences.setting.rawValue, privacy: .public)")
             return GetSegmentsResponse(segments: [])
         }
         do {

@@ -20,24 +20,24 @@ import Combine
 import Foundation
 import Persistence
 
-public enum SegmentSkipMode: String, CaseIterable {
-    case manual
-    case auto
+/// The user's choice, shown in Settings and the address bar popover.
+public enum SegmentSkipSetting: String, CaseIterable {
+    case always
+    case askToSkip
+    case off
 }
 
 public struct SegmentSkipSettings: StoringKeys {
-    public let isEnabled = StorageKey<Bool>(SegmentSkipStorageKey.isEnabled)
-    public let skipMode = StorageKey<SegmentSkipMode>(SegmentSkipStorageKey.skipMode)
+    public let setting = StorageKey<SegmentSkipSetting>(SegmentSkipStorageKey.setting)
 
     public init() {}
 }
 
 enum SegmentSkipStorageKey: String, StorageKeyDescribing {
-    case isEnabled = "segmentSkipMVPEnabled"
-    case skipMode = "segmentSkipMVPSkipMode"
+    case setting = "segmentSkipSetting"
 }
 
-/// User settings for sponsor skipping, shared by both apps. Unset values fall back to the MVP defaults: on, manual.
+/// User settings for sponsor skipping, shared by both apps. An unset value falls back to `.askToSkip`.
 ///
 /// Changes are posted on `didChangeNotification`, so observers re-read the store (the file-backed iOS store has no publisher).
 public final class SegmentSkipPreferences {
@@ -52,23 +52,16 @@ public final class SegmentSkipPreferences {
         self.notificationCenter = notificationCenter
     }
 
-    public var isEnabled: Bool {
-        get { (try? settings.isEnabled) ?? true }
-        set { set(newValue, for: \.isEnabled) }
-    }
-
-    public var skipMode: SegmentSkipMode {
-        get { (try? settings.skipMode) ?? .manual }
-        set { set(newValue, for: \.skipMode) }
+    public var setting: SegmentSkipSetting {
+        get { (try? settings.setting) ?? .askToSkip }
+        set {
+            try? settings.set(newValue, for: \.setting)
+            notificationCenter.post(name: Self.didChangeNotification, object: nil)
+        }
     }
 
     /// Emits after every write through this or any other instance backed by the same store.
     public var updates: AnyPublisher<Void, Never> {
         notificationCenter.publisher(for: Self.didChangeNotification).map { _ in () }.eraseToAnyPublisher()
-    }
-
-    private func set<Value>(_ value: Value, for keyPath: KeyPath<SegmentSkipSettings, StorageKey<Value>>) {
-        try? settings.set(value, for: keyPath)
-        notificationCenter.post(name: Self.didChangeNotification, object: nil)
     }
 }

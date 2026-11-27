@@ -196,9 +196,6 @@
 /* Description of the Ad Blocking feature in settings */
 "ad.blocking.description" = "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.";
 
-/* Section header for YouTube-specific ad blocking settings */
-"ad.blocking.youtube.section.header" = "YouTube Ad Blocking";
-
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Bottom";
 
@@ -4629,6 +4626,24 @@ https://duckduckgo.com/mac";
 
 /* No comment provided by engineer. */
 "section.title.favorites" = "Favorites";
+
+/* Description below the Skip Sponsored Content setting. SponsorBlock is the name of a community project, do not translate */
+"segment.skip.description" = "Skips sponsored segments, like a paid promotion read by the creator. Segments are identified by the SponsorBlock community, so not every video is covered.";
+
+/* Disclaimer below the Skip Sponsored Content setting description */
+"segment.skip.disclaimer" = "When on, DuckDuckGo will anonymously detect sponsor blocking interference or YouTube errors to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information.";
+
+/* Skip Sponsored Content option: always skip sponsored segments automatically */
+"segment.skip.option.always" = "Always";
+
+/* Skip Sponsored Content option: show a Skip button on sponsored segments */
+"segment.skip.option.ask-to-skip" = "Ask to Skip";
+
+/* Skip Sponsored Content option: don't skip sponsored segments */
+"segment.skip.option.off" = "Off";
+
+/* Label of the setting that skips sponsored segments in YouTube videos */
+"segment.skip.title" = "Skip Sponsored Content";
 
 /* Name of the option the user can chose to give general browser feedback */
 "send.browser.feedback.general-feedback" = "General feedback";

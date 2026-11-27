@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
@@ -114,6 +115,18 @@ final class YouTubeAdBlockViewModel: ObservableObject {
             apply(setting)
         }
     }
+    var isSegmentSkipAvailable: Bool {
+        preferences.isSegmentSkipAvailable
+    }
+
+    var segmentSkipSetting: SegmentSkipSetting {
+        get { preferences.segmentSkipSetting }
+        set {
+            objectWillChange.send()
+            preferences.segmentSkipSetting = newValue
+        }
+    }
+
     @Published var showBreakageReportBanner: Bool = false
     @Published var backgroundColor: NSColor = .clear
 
@@ -209,16 +222,22 @@ struct YouTubeAdBlockView: View {
                 YouTubeAdBlockUnavailableRowView()
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
+
+                // Sponsor skipping does not depend on ad blocking, so it stays usable here, as in Settings.
+                if viewModel.isSegmentSkipAvailable {
+                    SegmentSkipRowView(currentSetting: $viewModel.segmentSkipSetting)
+                        .popoverRowContainer()
+                }
             } else {
-                YouTubeAdBlockRowView(currentSetting: $viewModel.setting)
-                    .background(Color(designSystemColor: .permissionCenterContainerBackground))
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
+                VStack(spacing: 0) {
+                    YouTubeAdBlockRowView(currentSetting: $viewModel.setting)
+
+                    if viewModel.isSegmentSkipAvailable {
+                        Divider()
+                        SegmentSkipRowView(currentSetting: $viewModel.segmentSkipSetting)
+                    }
+                }
+                .popoverRowContainer()
 
                 if viewModel.showBreakageReportBanner {
                     YouTubeAdBlockBreakageReportRowView {
@@ -231,6 +250,19 @@ struct YouTubeAdBlockView: View {
         }
         .frame(width: Layout.width)
         .background(Color(viewModel.backgroundColor))
+    }
+}
+
+private extension View {
+    func popoverRowContainer() -> some View {
+        background(Color(designSystemColor: .permissionCenterContainerBackground))
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
     }
 }
 
@@ -292,6 +324,72 @@ struct YouTubeAdBlockRowView: View {
         }
         .fixedSize()
         .accessibilityIdentifier("YouTubeAdBlockPopover.modePicker")
+    }
+}
+
+// MARK: - SegmentSkipRowView
+
+struct SegmentSkipRowView: View {
+
+    @Binding var currentSetting: SegmentSkipSetting
+
+    private enum Layout {
+        static let iconSize: CGFloat = 16
+        static let iconTrailingSpacing: CGFloat = 8
+        static var descriptionLeadingInset: CGFloat { iconSize + iconTrailingSpacing }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: Layout.iconTrailingSpacing) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.playerVideoAuto)
+                    .resizable()
+                    .frame(width: Layout.iconSize, height: Layout.iconSize)
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                Text(UserText.segmentSkipTitle)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .lineLimit(1)
+                    .fixedSize()
+
+                Spacer()
+
+                NSPopUpButtonView(selection: $currentSetting) {
+                    let button = NSPopUpButton()
+                    button.bezelStyle = .accessoryBarAction
+                    button.isBordered = true
+                    button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+                    for setting in SegmentSkipSetting.allCases {
+                        let item = button.menu?.addItem(withTitle: setting.displayName, action: nil, keyEquivalent: "")
+                        item?.representedObject = setting
+                    }
+
+                    return button
+                }
+                .fixedSize()
+                .accessibilityIdentifier("YouTubeAdBlockPopover.segmentSkipPicker")
+            }
+
+            Text(UserText.segmentSkipDescription)
+                .font(.system(size: 12))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, Layout.descriptionLeadingInset)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+    }
+}
+
+extension SegmentSkipSetting {
+    var displayName: String {
+        switch self {
+        case .always: return UserText.segmentSkipOptionAlways
+        case .askToSkip: return UserText.segmentSkipOptionAskToSkip
+        case .off: return UserText.segmentSkipOptionOff
+        }
     }
 }
 

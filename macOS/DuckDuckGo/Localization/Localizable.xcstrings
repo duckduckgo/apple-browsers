@@ -99666,62 +99666,14 @@
         }
       }
     },
-    "preferences.ad-blocking.youtube-section-header" : {
-      "comment" : "Section header for YouTube-specific ad blocking settings",
+    "preferences.ad-blocking.youtube-section-title" : {
+      "comment" : "Section header for YouTube-specific settings on the Ad Blocking settings page",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "YouTube-Werbeblocker"
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "YouTube Ad Blocking"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bloqueo de anuncios en YouTube"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blocage des publicités sur YouTube"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blocco degli annunci su YouTube"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "YouTube-advertentieblokkering"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blokowanie reklam na YouTube"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bloqueio de anúncios do YouTube"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Блокировка рекламы на YouTube"
+            "value" : "YouTube"
           }
         }
       }
@@ -103322,6 +103274,78 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Предупреждать о мошеннических, фишинговых и вредоносных сайтах"
+          }
+        }
+      }
+    },
+    "preferences.segment-skip.description" : {
+      "comment" : "Description below the Skip Sponsored Content setting. SponsorBlock is the name of a community project, do not translate",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skips sponsored segments, like a paid promotion read by the creator. Segments are identified by the SponsorBlock community, so not every video is covered."
+          }
+        }
+      }
+    },
+    "preferences.segment-skip.disclaimer" : {
+      "comment" : "Disclaimer below the Skip Sponsored Content setting description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "When on, DuckDuckGo will anonymously detect sponsor blocking interference or YouTube errors to improve the experience for everyone. DuckDuckGo never sees which videos you view or any personally identifiable information."
+          }
+        }
+      }
+    },
+    "preferences.segment-skip.option.always" : {
+      "comment" : "Skip Sponsored Content option: always skip sponsored segments automatically",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always"
+          }
+        }
+      }
+    },
+    "preferences.segment-skip.option.ask-to-skip" : {
+      "comment" : "Skip Sponsored Content option: show a Skip button on sponsored segments",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask to Skip"
+          }
+        }
+      }
+    },
+    "preferences.segment-skip.option.off" : {
+      "comment" : "Skip Sponsored Content option in the YouTube address bar popover: don't skip sponsored segments",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "preferences.segment-skip.title" : {
+      "comment" : "Label of the setting that skips sponsored segments in YouTube videos, shown in Settings and the YouTube address bar popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skip Sponsored Content"
           }
         }
       }

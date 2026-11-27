@@ -94,7 +94,7 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
     }
 
     func testGetSegmentsAnswersEmptyWithoutLookupWhenSettingIsOff() async throws {
-        preferences.isEnabled = false
+        preferences.setting = .off
         let segments = try await getSegments(makeSubfeature(), params: ["videoID": "dQw4w9WgXcQ"])
         XCTAssertEqual(segments, [])
     }
@@ -125,15 +125,15 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
         let enabled = try await getConfig(subfeature)
         XCTAssertEqual(enabled, .init(enabled: true, skipMode: "manual", version: 1))
 
-        preferences.skipMode = .auto
+        preferences.setting = .always
         let auto = try await getConfig(subfeature)
         XCTAssertEqual(auto, .init(enabled: true, skipMode: "auto", version: 1))
 
-        preferences.isEnabled = false
+        preferences.setting = .off
         let settingOff = try await getConfig(subfeature)
-        XCTAssertFalse(settingOff.enabled)
+        XCTAssertEqual(settingOff, .init(enabled: false, skipMode: "manual", version: 1))
 
-        preferences.isEnabled = true
+        preferences.setting = .askToSkip
         isFeatureFlagOn = false
         let flagOff = try await getConfig(subfeature)
         XCTAssertFalse(flagOff.enabled)
@@ -155,7 +155,7 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
             XCTAssertFalse(js.contains(#""version""#), js)
             pushed.fulfill()
         }
-        preferences.skipMode = .auto
+        preferences.setting = .always
 
         await fulfillment(of: [pushed], timeout: 1)
     }
@@ -175,7 +175,7 @@ final class SegmentSkipSubfeatureTests: XCTestCase {
         let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getSegments"))
         _ = try await handler(["videoID": "dQw4w9WgXcQ"], WKScriptMessage.mock(name: "getSegments", body: [:], webView: webView))
 
-        preferences.skipMode = .auto
+        preferences.setting = .always
 
         await fulfillment(of: [unexpectedPush], timeout: 1)
     }

@@ -847,22 +847,12 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.segmentSkip)
     }
 
-    var segmentSkipEnabled: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.segmentSkipPreferences.isEnabled },
+    var segmentSkipSetting: Binding<SegmentSkipSetting> {
+        Binding<SegmentSkipSetting>(
+            get: { self.segmentSkipPreferences.setting },
             set: {
                 self.objectWillChange.send()
-                self.segmentSkipPreferences.isEnabled = $0
-            }
-        )
-    }
-
-    var segmentSkipMode: Binding<SegmentSkipMode> {
-        Binding<SegmentSkipMode>(
-            get: { self.segmentSkipPreferences.skipMode },
-            set: {
-                self.objectWillChange.send()
-                self.segmentSkipPreferences.skipMode = $0
+                self.segmentSkipPreferences.setting = $0
             }
         )
     }

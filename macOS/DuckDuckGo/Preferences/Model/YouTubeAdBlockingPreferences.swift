@@ -110,19 +110,17 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
         featureFlagger?.isFeatureOn(.segmentSkip) ?? false
     }
 
+    /// Settings checkbox: checking it always restores the default `.askToSkip`.
     var segmentSkipEnabled: Bool {
-        get { segmentSkipPreferences.isEnabled }
-        set {
-            objectWillChange.send()
-            segmentSkipPreferences.isEnabled = newValue
-        }
+        get { segmentSkipSetting != .off }
+        set { segmentSkipSetting = newValue ? .askToSkip : .off }
     }
 
-    var segmentSkipMode: SegmentSkipMode {
-        get { segmentSkipPreferences.skipMode }
+    var segmentSkipSetting: SegmentSkipSetting {
+        get { segmentSkipPreferences.setting }
         set {
             objectWillChange.send()
-            segmentSkipPreferences.skipMode = newValue
+            segmentSkipPreferences.setting = newValue
         }
     }
 
@@ -204,6 +202,13 @@ final class YouTubeAdBlockingPreferences: ObservableObject {
 
         self.duckPlayerPreferences.objectWillChange
             .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        // Keeps Settings in sync with changes made from the address bar popover, and vice versa.
+        segmentSkipPreferences.updates
+            .sink { [weak self] in
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)

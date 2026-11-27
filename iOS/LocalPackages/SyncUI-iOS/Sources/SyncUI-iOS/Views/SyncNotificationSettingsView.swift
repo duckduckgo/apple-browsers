@@ -19,51 +19,25 @@
 
 import DesignResourcesKit
 import DesignResourcesKitIcons
-import DuckUI
 import SwiftUI
 
 struct SyncNotificationPermissionCard: View {
     @ObservedObject var model: SyncNotificationSettingsViewModel
 
     var body: some View {
-        if model.shouldShowPermissionCard {
+        if #available(iOS 18.0, *), model.shouldShowPermissionCard {
             Section {
-                VStack(alignment: .leading, spacing: 24) {
-                    HStack(alignment: .top, spacing: 8) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(UserText.syncNotificationsTitle)
-                                .daxSubheadSemibold()
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
-                            Text(UserText.syncNotificationsDescription)
-                                .daxBodyRegular()
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        Button(action: model.dismissPermissionCard) {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
-                        }
-                        .buttonStyle(CloseButtonStyle())
-                        .accessibilityLabel(UserText.syncNotificationsDismiss)
-                        .accessibilityIdentifier("SyncNotificationPermissionCardDismiss")
-                    }
-                    Button {
-                        Task { await model.enableNotifications() }
-                    } label: {
-                        Label(title: {
-                            Text(UserText.syncNotificationsEnable)
-                        }, icon: {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.bell)
-                        })
-                    }
-                    .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
-                    .disabled(model.isRequestingPermission)
-                    .accessibilityIdentifier("SyncNotificationPermissionEnable")
-                }
-                .padding(24)
+                SyncSettingsTipView(
+                    tip: SyncSettingsTip(kind: .notificationPermission,
+                                         titleText: UserText.syncNotificationsTitle,
+                                         messageText: UserText.syncNotificationsDescription,
+                                         actionText: UserText.syncNotificationsEnable),
+                    action: { Task { await model.enableNotifications() } },
+                    dismiss: model.dismissPermissionCard
+                )
+                .disabled(model.isRequestingPermission)
+                .accessibilityIdentifier("SyncNotificationPermissionCard")
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
     }
 }

@@ -57,12 +57,11 @@ public struct UserText {
     // New devices card
     static let newDevicesCardTitle = NotLocalizedString("sync.new-devices-card.title", bundle: Bundle.module, value: "New synced device", comment: "Title of the Sync settings card for one new device")
     static let newDevicesCardPluralTitle = NotLocalizedString("sync.new-devices-card.plural-title", bundle: Bundle.module, value: "New synced devices", comment: "Title of the Sync settings card for multiple new devices")
-    static let newDevicesCardMessage = NotLocalizedString("sync.new-devices-card.message", bundle: Bundle.module, value: "%@ has been added to Sync & Backup.", comment: "Card message; placeholder is the new device's name")
-    static let newDevicesCardPluralMessage = NotLocalizedString("sync.new-devices-card.plural-message", bundle: Bundle.module, value: "%@ have been added to Sync & Backup.", comment: "Card message; placeholder is a formatted list of new device names")
+    static let newDevicesCardMessage = NotLocalizedString("sync.new-devices-card.message", bundle: Bundle.module, value: "%@ has been added to Sync & Backup.", comment: "Card message; placeholder is the new device's name")
+    static let newDevicesCardPluralMessage = NotLocalizedString("sync.new-devices-card.plural-message", bundle: Bundle.module, value: "%@ have been added to Sync & Backup.", comment: "Card message; placeholder is a formatted list of new device names")
     static let newDevicesCardReview = NotLocalizedString("sync.new-devices-card.review", bundle: Bundle.module, value: "Review Activity", comment: "Button to open Device Activity from the new-device card")
 
     static let newDevicesCardMore = NotLocalizedString("sync.new-devices-card.more", bundle: Bundle.module, value: "%d more", comment: "Last item in the device names list; placeholder is the number of additional devices")
-    static let newDevicesCardClose = NotLocalizedString("sync.new-devices-card.close", bundle: Bundle.module, value: "Close", comment: "Dismiss the new devices card")
 
     // Recovery Section
     static let recoverySectionHeader = NSLocalizedString("sync.settings.recovery.section.header", bundle: Bundle.module, value: "Recovery", comment: "Sync Settings - Recovery section header")
@@ -72,7 +71,6 @@ public struct UserText {
     static let syncNotificationsSettingLabel = NotLocalizedString("sync.notifications.setting.label", bundle: Bundle.module, value: "Notify on New Connections", comment: "Sync notification setting label")
     static let syncNotificationsDescription = NotLocalizedString("sync.notifications.description", bundle: Bundle.module, value: "Get notified whenever a new device is added to Sync & Backup.", comment: "Explains Sync notifications")
     static let syncNotificationsEnable = NotLocalizedString("sync.notifications.enable", bundle: Bundle.module, value: "Enable Notifications", comment: "Button requesting notification permission")
-    static let syncNotificationsDismiss = NotLocalizedString("sync.notifications.dismiss", bundle: Bundle.module, value: "Dismiss notification suggestion", comment: "Accessibility label for dismissing the permission card")
     static let syncNotificationsSettingsTitle = NotLocalizedString("sync.notifications.settings.title", bundle: Bundle.module, value: "Requires notification permission for DuckDuckGo", comment: "Title shown when notification permission was denied")
     static let syncNotificationsSettingsMessage = NotLocalizedString("sync.notifications.settings.message", bundle: Bundle.module, value: "Enable notifications for DuckDuckGo in system Settings to turn on New Device Notifications.", comment: "Explains how to enable Sync notifications after permission was denied")
     static let syncNotificationsOpenSettings = NotLocalizedString("sync.notifications.settings.open", bundle: Bundle.module, value: "Go to Settings…", comment: "Opens app notification settings")

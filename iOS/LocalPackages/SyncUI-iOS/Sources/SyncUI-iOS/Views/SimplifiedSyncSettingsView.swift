@@ -44,12 +44,12 @@ public struct SimplifiedSyncSettingsView: View {
     public var body: some View {
         List {
             syncWarningBanners
+            headerSection
             newDevicesCardSection
             if model.isSyncEnabled, model.areSyncNotificationsAvailable,
                let notificationModel = model.notificationSettingsViewModel {
                 SyncNotificationPermissionCard(model: notificationModel)
             }
-            headerSection
 
             if model.isSyncEnabled {
                 syncEnabledSections
@@ -119,38 +119,19 @@ extension SimplifiedSyncSettingsView {
 
     @ViewBuilder
     var newDevicesCardSection: some View {
-        if model.isNewDevicesCardVisible {
+        if #available(iOS 18.0, *), model.isNewDevicesCardVisible {
             // Capture the displayed IDs so dismissal cannot also remove events that arrive before the next render.
             let eventIDs = Set(model.pendingLoginEvents.map(\.id))
             Section {
-                VStack(alignment: .leading, spacing: 24) {
-                    HStack(alignment: .top, spacing: 8) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(model.newDevicesCardTitle)
-                                .daxBodyBold()
-                                .foregroundColor(Color(designSystemColor: .textPrimary))
-                            Text(model.newDevicesCardMessage)
-                                .daxBodyRegular()
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                        Button {
-                            model.dismissPendingLoginEvents(withIDs: eventIDs)
-                        } label: {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
-                        }
-                        .buttonStyle(CloseButtonStyle())
-                        .accessibilityLabel(UserText.newDevicesCardClose)
-                    }
-                    Button(UserText.newDevicesCardReview, action: model.showDeviceActivity)
-                        .buttonStyle(SecondaryFillButtonStyle(compact: true))
-                }
-                .padding(24)
+                SyncSettingsTipView(
+                    tip: SyncSettingsTip(kind: .newDevices(eventIDs),
+                                         titleText: model.newDevicesCardTitle,
+                                         messageText: model.newDevicesCardMessage,
+                                         actionText: UserText.newDevicesCardReview),
+                    action: model.showDeviceActivity,
+                    dismiss: { model.dismissPendingLoginEvents(withIDs: eventIDs) }
+                )
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         }
     }
 

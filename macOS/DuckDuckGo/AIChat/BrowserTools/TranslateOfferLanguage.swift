@@ -35,14 +35,14 @@ enum TranslateOfferLanguage {
         // Locale names these codes, but none is a language to translate from.
         guard let languageCode = primarySubtag(of: languageTag),
               !["und", "mul", "mis", "zxx"].contains(languageCode),
-              let name = locale.localizedString(forLanguageCode: languageCode),
-              name.lowercased() != languageCode else { return nil }
+              let name = locale.localizedString(forLanguageCode: languageCode) else { return nil }
         return name
     }
 
     private static func primarySubtag(of tag: String?) -> String? {
         guard let subtag = tag?.trimmingCharacters(in: .whitespacesAndNewlines)
-            .split(whereSeparator: { $0 == "-" || $0 == "_" }).first else { return nil }
+            .split(omittingEmptySubsequences: false, whereSeparator: { $0 == "-" || $0 == "_" }).first,
+              !subtag.isEmpty else { return nil }
         return subtag.lowercased()
     }
 }

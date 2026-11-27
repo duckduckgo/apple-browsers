@@ -16,8 +16,13 @@
 //  limitations under the License.
 //
 
+import Combine
+import FeatureFlags_macOS
 import Foundation
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import Testing
+import WebKit
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -104,4 +109,69 @@ struct TranslateOfferPresenterTests {
 
         #expect(presenter.translateOfferLanguageCode(for: tabID) == nil)
     }
+}
+
+@MainActor
+@Suite("Whether a tab may offer to translate its page")
+struct TranslateOfferEligibilityTests {
+
+    private static func canOffer(isFeatureOn: Bool = true, isWebPage: Bool = true, showsTranslationMenuItem: Bool = true,
+                                 isPageAttachable: Bool = true, isSidebarOpen: Bool = false) -> Bool {
+        PageContextTabExtension.canOfferTranslation(isFeatureOn: isFeatureOn, isWebPage: isWebPage, showsTranslationMenuItem: showsTranslationMenuItem,
+                                                    isPageAttachable: isPageAttachable, isSidebarOpen: isSidebarOpen)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An attachable web page offers while the flag and the translate setting are on and no sidebar is open", .timeLimit(.minutes(1)))
+    func eligible() {
+        #expect(Self.canOffer())
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Any failing condition stops the offer", .timeLimit(.minutes(1)))
+    func ineligible() {
+        #expect(!Self.canOffer(isFeatureOn: false))
+        #expect(!Self.canOffer(isWebPage: false))
+        #expect(!Self.canOffer(showsTranslationMenuItem: false))
+        #expect(!Self.canOffer(isPageAttachable: false))
+        #expect(!Self.canOffer(isSidebarOpen: true))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turning the flag off while an offer waits withdraws it", .timeLimit(.minutes(1)))
+    func flagTurnsOff() async {
+        let tab = Tab(content: .url(URL(string: "https://es.example")!, credential: nil, source: .ui))
+        let windows = WindowControllersManagerMock()
+        windows.customAllTabCollectionViewModels = [TabCollectionViewModel(tabCollection: TabCollection(tabs: [.loaded(tab)]), pinnedTabsManagerProvider: nil)]
+        let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue: true])
+        let browserTools = AIChatBrowserToolsService(featureFlagger: flags, windowControllersManager: windows, historyCoordinator: HistoryCoordinatingMock(),
+                                                     bookmarkManager: MockBookmarkManager(), permissionManager: PermissionManagerMock())
+        let pageContext = PageContextTabExtension(scriptsPublisher: Empty<UserScripts, Never>(),
+                                                  webViewPublisher: Empty<WKWebView, Never>(),
+                                                  contentPublisher: Empty<Tab.TabContent, Never>(),
+                                                  tabID: tab.uuid,
+                                                  featureFlagger: flags,
+                                                  privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                                  extractionPixelHandler: PageContextExtractionPixelHandler(firePixel: { _ in }),
+                                                  aiChatSessionStore: MockAIChatSessionStore(),
+                                                  aiChatMenuConfiguration: MockAIChatConfig(),
+                                                  isLoadedInSidebar: false,
+                                                  faviconManagement: FaviconManagerMock(),
+                                                  linkedPageLoader: NoLinkedPageLoader(),
+                                                  browserTools: browserTools)
+        browserTools.permissionPrompts.offerTranslation(languageCode: "es", tabID: tab.uuid)
+        #expect(browserTools.permissionPrompts.translateOfferLanguageCode(for: tab.uuid) == "es")
+
+        flags.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = false
+        flags.triggerUpdate()
+        for _ in 0..<20 { await Task.yield() }
+
+        #expect(browserTools.permissionPrompts.translateOfferLanguageCode(for: tab.uuid) == nil)
+        withExtendedLifetime(pageContext) {}
+    }
+}
+
+private final class NoLinkedPageLoader: LinkedPageContextLoading {
+    var sessionReadDomains = Set<String>()
+    func load(_ url: URL) async -> LinkedPageContextLoadResult { .prevented("") }
 }

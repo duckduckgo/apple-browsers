@@ -34,13 +34,13 @@ struct TranslateOfferPromptView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(UserText.translateOfferTitle)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .foregroundColor(Color(designSystemColor: .textPrimary, palette: themeManager.designColorPalette))
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("TranslateOfferPrompt.title")
 
                 Text(UserText.translateOfferDetail(userLanguage: userLanguageName))
                     .font(.system(size: 12))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: themeManager.designColorPalette))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -48,7 +48,7 @@ struct TranslateOfferPromptView: View {
             Toggle(UserText.translateOfferDontAskAgain(pageLanguage: pageLanguageName), isOn: $dontAskAgain)
                 .toggleStyle(.checkbox)
                 .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .foregroundColor(Color(designSystemColor: .textPrimary, palette: themeManager.designColorPalette))
                 .accessibilityIdentifier("TranslateOfferPrompt.dontAskAgain")
 
             HStack(spacing: 12) {

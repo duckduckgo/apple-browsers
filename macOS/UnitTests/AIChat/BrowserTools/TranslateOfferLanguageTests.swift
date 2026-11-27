@@ -45,6 +45,7 @@ struct TranslateOfferLanguageTests {
         #expect(code("ES") == "es")
         #expect(code(" fr-CA ") == "fr")
         #expect(code("en", preferred: "es-UY") == "en")
+        #expect(code("fon") == "fon")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -53,6 +54,7 @@ struct TranslateOfferLanguageTests {
         #expect(code(nil) == nil)
         #expect(code("") == nil)
         #expect(code("  ") == nil)
+        #expect(code("-fr") == nil)
     }
 
     @available(iOS 16, macOS 13, *)

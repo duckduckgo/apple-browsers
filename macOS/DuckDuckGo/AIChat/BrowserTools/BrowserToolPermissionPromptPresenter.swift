@@ -145,12 +145,14 @@ final class BrowserToolPermissionPromptPresenter {
 
     // MARK: - Translate offer
 
-    /// Offers to translate the page `tabID` just loaded, replacing its earlier offer; nil withdraws it.
-    func offerTranslation(languageCode: String?, tabID: TabIdentifier) {
+    /// Offers to translate the page `tabID` just loaded in `window`, replacing its earlier offer; nil withdraws it.
+    func offerTranslation(languageCode: String?, tabID: TabIdentifier, window: NSWindow? = nil) {
         guard translateOfferLanguageCode(for: tabID) != languageCode else { return }
         requests.removeAll { $0.ownerTabID == tabID && $0.translateOfferLanguageCode != nil }
+        // A pinned tab is in every window's collection, so only its web view's window tells them apart.
         if let languageCode, !translateOfferDismissedTabIDs.contains(tabID),
-           let collection = AIChatTabPickerSource.collection(containingTabID: tabID, in: windowControllersManager),
+           let collection = (window?.windowController as? MainWindowController)?.mainViewController.tabCollectionViewModel
+            ?? AIChatTabPickerSource.collection(containingTabID: tabID, in: windowControllersManager),
            !collection.isBurner,
            windowController(for: collection)?.mainViewController.aiChatCoordinator.isSidebarOpen(for: tabID) != true {
             requests.append(Request(id: UUID().uuidString, ownerTabID: tabID, collection: collection,

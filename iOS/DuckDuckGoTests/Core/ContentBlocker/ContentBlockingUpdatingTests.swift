@@ -250,6 +250,39 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenReloadHitsAFirstLoadHeldAtSetupThenTheLoadKeepsWaitingAndProceeds() async throws {
+        let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
+                                        featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true,
+                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
+        tab.specialErrorPageNavigationHandler.delegate = nil
+        defer { tab.prepareForDataClearing() }
+        tab.contentBlockingWaitPixelTimeout = 3600
+        let compilationPixels = PixelKitMock()
+        tab.rulesCompilationMonitor = RulesCompilationMonitor { compilationPixels }
+        let webView = try XCTUnwrap(tab.webView as? MockWebView)
+        let request = URLRequest(url: URL(string: "https://example.com/first")!)
+        let action = MockNavigationAction(request: request, navigationType: .other,
+                                          targetFrame: .mock(isMainFrame: true, securityOriginHost: "example.com", request: request))
+        let continued = expectation(description: "The held load proceeds once assets arrive")
+        continued.assertForOverFulfill = true
+        var decisions = [WKNavigationActionPolicy]()
+        tab.webView(webView, decidePolicyFor: action) { policy in
+            decisions.append(policy)
+            continued.fulfill()
+        }
+        await Task.yield()
+        tab.reload()
+        XCTAssertTrue(decisions.isEmpty, "Reload must not cancel a load that never committed")
+        XCTAssertFalse(webView.reloadCalled)
+        rulesManager.updatesSubject.send(Self.testUpdate())
+        await fulfillment(of: [continued], timeout: 10)
+        XCTAssertEqual(decisions.count, 1)
+        XCTAssertNotEqual(decisions.first, .cancel)
+        XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
+        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_success_time_"), true)
+    }
+
+    @MainActor
     func testWhenLegacyWaitsStallThenPixelCountsForegroundTimeAndClearingPreservesPendingDecisions() async throws {
         let pixelFiring = PixelKitMock()
         let notifications = NotificationCenter()

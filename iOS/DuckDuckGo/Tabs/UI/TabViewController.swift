@@ -2244,6 +2244,9 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        // A first load still held at the setup gates has nothing to reload. Cancelling it would leave the tab blank.
+        let isHeldAtSetupGates = webExtensionNavigationTask != nil || !sitePermissionsState.contentBlockingWaitTasks.isEmpty
+        if isHeldAtSetupGates, webView.backForwardList.currentItem == nil { return }
         closeDelegateSessionFindInPage()
         replaceWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()

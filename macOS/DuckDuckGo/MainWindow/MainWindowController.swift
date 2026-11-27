@@ -260,27 +260,13 @@ final class MainWindowController: NSWindowController {
         moveTabBarView(toTitlebarView: true)
     }
 
-    private var trafficLightsAlphaCancellables = [AnyCancellable]()
+    private var trafficLightAlphaObserver: TrafficLightAlphaObserver?
     private func subscribeToTrafficLightsAlpha() {
         guard let window else {
             return
         }
 
-        let semaphoreButtonTypes: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
-        let semaphoreButtons = semaphoreButtonTypes.compactMap { type in
-            window.standardWindowButton(type)
-        }
-
-        for button in semaphoreButtons {
-            button
-                .publisher(for: \.alphaValue)
-                .sink { [weak button] alphaValue in
-                    if let button, alphaValue != .activeViewAlpha {
-                        button.alphaValue = .activeViewAlpha
-                    }
-                }
-                .store(in: &trafficLightsAlphaCancellables)
-        }
+        trafficLightAlphaObserver = TrafficLightAlphaObserver(window: window)
     }
 
     private var burningDataCancellable: AnyCancellable?

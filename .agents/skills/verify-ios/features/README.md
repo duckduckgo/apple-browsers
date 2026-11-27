@@ -27,6 +27,8 @@ so the steps can be ported to Swift from this map when the app's XCUITest UI tes
 ## Driving conventions
 
 - Act only through native locators (`id=`, `label=`, `role=`, `text=`, `nth=`). `web:*` locators read; they never act.
+  `app=springboard` scopes a locator to SpringBoard, which owns system sheets such as the device-passcode prompt
+  (`app=springboard id="Passcode field"`); no other app can be named.
 - Use the user's path for the behavior under proof. `ios.navigate` / `ios.eval` are setup and read-back only.
 - `ios.navigate` fails on the new-tab page (it has no web view): load the first page through the address bar.
 - Many controls are labelled with their **icon asset name**, not words: `Add 24`, `Fire Solid 24`, `Share Apple 24`

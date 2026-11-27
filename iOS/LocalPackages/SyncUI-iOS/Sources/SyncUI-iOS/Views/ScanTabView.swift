@@ -184,13 +184,16 @@ struct ScanTabView: View {
 
     private var instructions: some View {
         VStack(spacing: 16) {
-            Text(UserText.simplifiedScanQRHeading)
+            Text(model.isSyncPairingUrlEnabled ? UserText.pairingURLScanHeading : UserText.simplifiedScanQRHeading)
                 .daxTitle2()
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
 
             VStack(spacing: 4) {
-                if model.isImprovedPairingFlowEnabled {
+                if model.isSyncPairingUrlEnabled {
+                    SyncOpenAppInstruction(format: UserText.pairingURLScanOpenInstruction, appName: UserText.simplifiedScanQRAppName)
+                    SyncPairingURLInstruction(format: UserText.pairingURLScanInstruction)
+                } else if model.isImprovedPairingFlowEnabled {
                     SyncOpenAppInstruction(format: UserText.simplifiedScanQRInstruction, appName: UserText.simplifiedScanQRAppName)
                 } else {
                     SyncOpenAppInstruction(format: UserText.simplifiedScanQROpenInstruction, appName: UserText.simplifiedScanQRAppName)
@@ -385,13 +388,15 @@ private struct QRCornerBrackets: Shape {
 private func scanTabPreviewModel(
     permission: ScanOrPasteCodeViewModel.VideoPermission,
     showCamera: Bool,
-    isImprovedPairingFlowEnabled: Bool = false
+    isImprovedPairingFlowEnabled: Bool = false,
+    isSyncPairingUrlEnabled: Bool = false
 ) -> ScanOrPasteCodeViewModel {
     let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
     let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: sampleCode,
                                          qrCodeString: sampleCode,
                                          source: .connect,
-                                         isImprovedPairingFlowEnabled: isImprovedPairingFlowEnabled)
+                                         isImprovedPairingFlowEnabled: isImprovedPairingFlowEnabled,
+                                         isSyncPairingUrlEnabled: isSyncPairingUrlEnabled)
     model.videoPermission = permission
     model.showCamera = showCamera
     return model
@@ -433,6 +438,12 @@ private struct ScanTabPreview: View {
 
 #Preview("Intro Animation - Improved Pairing Flow") {
     ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true, isImprovedPairingFlowEnabled: true),
+                   showIntroAnimation: true)
+        .environment(\.colorScheme, .dark)
+}
+
+#Preview("Intro - Pairing URL") {
+    ScanTabPreview(model: scanTabPreviewModel(permission: .authorised, showCamera: true, isSyncPairingUrlEnabled: true),
                    showIntroAnimation: true)
         .environment(\.colorScheme, .dark)
 }

@@ -65,6 +65,7 @@ public final class ManagementDialogModel: ObservableObject {
     @Published public var isConnectingAnotherDevice: Bool = false
     @Published public var isAuthenticating: Bool = false
     @Published public var isImprovedPairingFlowEnabled: Bool = false
+    @Published public var isSyncPairingUrlEnabled: Bool = false
     @Published public var authenticationCancelledPromptOffersRetry: Bool = false
 
     public var thisDeviceName: String?

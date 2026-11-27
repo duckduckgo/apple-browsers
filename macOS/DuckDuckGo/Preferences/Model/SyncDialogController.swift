@@ -220,6 +220,8 @@ final class SyncDialogController {
     @MainActor
     private func presentDialog(for currentDialog: ManagementDialogKind) {
         switch currentDialog {
+        case .syncWithAnotherDevice:
+            managementDialogModel.isSyncPairingUrlEnabled = featureFlagger.isFeatureOn(.syncPairingUrl)
         case .pairingSuccess, .saveRecoveryCode:
             managementDialogModel.thisDeviceName = deviceNameProvider()
         default:

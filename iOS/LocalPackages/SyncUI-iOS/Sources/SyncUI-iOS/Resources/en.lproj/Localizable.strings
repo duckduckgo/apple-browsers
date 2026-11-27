@@ -130,6 +130,36 @@
 /* Message included when sharing a url via the system share sheet */
 "sync.get.other.devices.share.link.message" = "Install the DuckDuckGo browser on your devices to start securely syncing your bookmarks and autofill data:";
 
+/* Manual pairing instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder. */
+"sync.pairing-url.enter-code.instruction" = "go to %@ and Copy Text Code.";
+
+/* Heading on the enter-code tab when pairing URL instructions are enabled */
+"sync.pairing-url.enter-code.title" = "Enter the Sync code";
+
+/* First pairing URL code-entry and QR-sharing instruction. %@ is the app name, preceded by its icon. Preserve the placeholder. */
+"sync.pairing-url.open-another-app" = "Open another %@";
+
+/* Heading on the scan-QR tab and intro when pairing URL instructions are enabled */
+"sync.pairing-url.scan.heading" = "Scan QR Code to Sync";
+
+/* Scanner instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder. */
+"sync.pairing-url.scan.instruction" = "go to %@";
+
+/* First pairing URL scanner instruction. %@ is the desktop app name, preceded by its icon. Preserve the placeholder and trailing comma. */
+"sync.pairing-url.scan.open-app" = "Open %@,";
+
+/* App name in the pairing URL QR-sharing instruction Open another %@, preceded by its icon */
+"sync.pairing-url.show-code.app-name" = "DuckDuckGo";
+
+/* Heading above this device's QR code when pairing URL instructions are enabled */
+"sync.pairing-url.show-code.heading" = "Scan from another device";
+
+/* QR code sharing instruction. %@ is duck.com/pair, shown in a rounded pill. Preserve the placeholder. */
+"sync.pairing-url.show-code.instruction" = "go to %@ and scan this code:";
+
+/* Navigation title of the QR-sharing sheet when pairing URL instructions are enabled */
+"sync.pairing-url.show-code.title" = "QR code";
+
 /* Sync passcode required alert - button */
 "sync.passcode.required.alert.go.to.settings.button" = "Go to Settings";
 

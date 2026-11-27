@@ -6659,6 +6659,30 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device-v2.enter-step-1" : {
+      "comment" : "First code-entry instruction. %@ is replaced by the emphasized DuckDuckGo App name, shown with the DuckDuckGo icon after it.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open another %@"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.enter-step-1-detail" : {
+      "comment" : "Emphasized app name inserted into the first code-entry instruction Open another %@",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo App"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device-v2.enter-step-3" : {
       "comment" : "Third pairing instruction when entering a code from another device",
       "extractionState" : "extracted_with_value",
@@ -6895,6 +6919,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пример кода:"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.pairing-url.enter-title" : {
+      "comment" : "Code-entry dialog title when pairing URL instructions are enabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enter the Sync code"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.pairing-url.scan-step-1" : {
+      "comment" : "First pairing URL QR-scanning instruction. %@ is the emphasized phrase DuckDuckGo App on your phone, followed by the app icon.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open the %@"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device-v2.pairing-url.scan-step-1-detail" : {
+      "comment" : "Emphasized phrase in the first pairing URL QR-scanning instruction Open the %@",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo App on your phone"
           }
         }
       }
@@ -7260,7 +7320,7 @@
       }
     },
     "preferences.sync.sync-with-another-device-v2.step-2" : {
-      "comment" : "Second pairing instruction. %@ is replaced by the emphasized Settings path (e.g. “Settings › Sync & Backup › Sync With Another Device”).",
+      "comment" : "Second pairing instruction. %@ is replaced by the Settings path or duck.com/pair.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

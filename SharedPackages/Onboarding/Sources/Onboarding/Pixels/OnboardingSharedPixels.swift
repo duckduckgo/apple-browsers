@@ -236,7 +236,7 @@ public enum OnboardingSharedPixelEvent: PixelKit.Event, Equatable {
     case trackersBlocked(EngagementEvent)
     case fireButton(EngagementEvent)
     case end(EngagementEvent)
-    case endTryDuckAI(EngagementEvent) // iOS only — the Try Duck.ai end-of-journey dialog
+    case endTryDuckAI(EngagementEvent) // The Try Duck.ai end-of-journey dialog
     case subscriptionPromo(EngagementEvent)
     case timeLimit(TimeLimitReason) // iOS only
 

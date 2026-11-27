@@ -36,6 +36,7 @@ protocol OnboardingDialogsReporting: AnyObject {
     func measureDialogDismissed(dialogType: ContextualDialogType)
     func measureDialogManuallyDismissed(dialogType: ContextualDialogType)
     func measureGotItPressed(dialogType: ContextualDialogType)
+    func measureTryDuckAIPressed()
     func measureSubscriptionUpsellAccepted()
     func measureSubscriptionUpsellDeclined()
 }
@@ -135,11 +136,8 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             fire(ContextualOnboardingPixel.tryFireButtonDismissed, .uniqueByName)
         case .highFive:
             fire(ContextualOnboardingPixel.finalDialogDismissed, .uniqueByName)
-        case .subscriptionUpsell:
-            // No legacy pixel; the upsell reports through the shared `subscriptionPromo` event.
-            break
-        case .thatsDuckAI, .tryDuckAI:
-            // To do: pixel
+        case .subscriptionUpsell, .thatsDuckAI, .tryDuckAI:
+            // No legacy pixel; these report through the shared events only.
             break
         }
     }
@@ -160,9 +158,10 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.end(.clicked(.dismiss)))
         case .subscriptionUpsell:
             sharedPixelHandler.fire(.subscriptionPromo(.clicked(.dismiss)))
-        case .thatsDuckAI, .tryDuckAI:
-            // To do: pixel
-            break
+        case .thatsDuckAI:
+            sharedPixelHandler.fire(.fireButton(.clicked(.dismiss)))
+        case .tryDuckAI:
+            sharedPixelHandler.fire(.endTryDuckAI(.clicked(.dismiss)))
         }
     }
 
@@ -190,9 +189,11 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.end(.shown))
         case .subscriptionUpsell:
             sharedPixelHandler.fire(.subscriptionPromo(.shown))
-        case .thatsDuckAI, .tryDuckAI:
-            // To do: pixel
-            break
+        case .thatsDuckAI:
+            // The Duck.ai path's Fire tip, measured like iOS's Duck.ai Fire dialog.
+            sharedPixelHandler.fire(.fireButton(.shown))
+        case .tryDuckAI:
+            sharedPixelHandler.fire(.endTryDuckAI(.shown))
         }
     }
 
@@ -209,7 +210,10 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
                 sharedPixelHandler.fire(.fireButton(.shown))
             }
         case .tryFireButton:
-            sharedPixelHandler.fire(.end(.shown))
+            // Skipping Fire swaps the dialog in place to the ending, which the manager has already picked.
+            let endingShown: OnboardingSharedPixelEvent = onboardingStateProvider?.lastDialog == .tryDuckAI ? .endTryDuckAI(.shown) : .end(.shown)
+            sharedPixelHandler.fire(endingShown)
+            measureLastDialogShown()
         case .highFive:
             sharedPixelHandler.fire(.end(.clicked(.engage)))
         case .tryASearch,
@@ -218,10 +222,16 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             // The upsell's buttons all advance through got-it, so they report through
             // `measureSubscriptionUpsellAccepted()` and `measureSubscriptionUpsellDeclined()` instead.
             break
-        case .thatsDuckAI, .tryDuckAI:
-            // To do: pixel
+        case .tryDuckAI:
+            // Skip
+            sharedPixelHandler.fire(.endTryDuckAI(.clicked(.dismiss)))
+        case .thatsDuckAI:
             break
         }
+    }
+
+    func measureTryDuckAIPressed() {
+        sharedPixelHandler.fire(.endTryDuckAI(.clicked(.engage)))
     }
 
     func measureSubscriptionUpsellAccepted() {

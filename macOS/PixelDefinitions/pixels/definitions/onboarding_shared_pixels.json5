@@ -241,6 +241,21 @@
             "onboardingVariantSearchExperience"
         ]
     },
+    "m_mac_onboarding_end-try-duckai": {
+        "description": "Fired on the Try Duck.ai dialog that ends the contextual onboarding search path for people who kept Search & Duck.ai: when it's shown, when they press Try Duck.ai (engage), and when they skip or close it (dismiss).",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["impression", "user_interaction"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            "onboardingEventType",
+            "onboardingClickedValue",
+            "onboardingInstallType",
+            "onboardingDaysSinceInstall",
+            "onboardingVariantSearchExperience"
+        ]
+    },
     "m_mac_onboarding_subscription-promo": {
         "description": "Fired during contextual onboarding on the subscription upsell step: shown when the step appears, clicked with engage for 'Try for free!', and clicked with dismiss for 'No thanks' or the close button.",
         "owners": ["jozsef-vesza"],

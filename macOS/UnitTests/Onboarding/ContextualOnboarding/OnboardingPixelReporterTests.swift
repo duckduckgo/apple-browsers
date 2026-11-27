@@ -329,9 +329,48 @@ final class OnboardingPixelReporterTests: XCTestCase {
         ])
     }
 
-    func test_WhenGotItPressed_OnTryFireButtonDialog_ThenEndShownEventSent() {
+    func test_WhenGotItPressed_OnTryFireButtonDialog_ThenEndShownAndOnboardingFinishedSent() {
+        onboardingState.lastDialog = .highFive
+
         reporter.measureGotItPressed(dialogType: .tryFireButton)
+
         XCTAssertEqual(sharedPixelHandler.eventsReceived, [.end(.shown)])
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFinished.name)
+    }
+
+    func test_WhenGotItPressed_OnTryFireButtonDialog_AndEndingIsTryDuckAI_ThenTryDuckAIShownAndOnboardingFinishedSent() {
+        onboardingState.lastDialog = .tryDuckAI
+
+        reporter.measureGotItPressed(dialogType: .tryFireButton)
+
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.endTryDuckAI(.shown)])
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFinished.name)
+    }
+
+    func test_ThatsDuckAIDialog_ReportsAsTheFireButtonStep() {
+        reporter.measureDialogShown(dialogType: .thatsDuckAI)
+        reporter.measureDialogManuallyDismissed(dialogType: .thatsDuckAI)
+        reporter.measureDialogDismissed(dialogType: .thatsDuckAI)
+        reporter.measureGotItPressed(dialogType: .thatsDuckAI)
+
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.fireButton(.shown), .fireButton(.clicked(.dismiss))])
+        XCTAssertNil(eventSent)
+    }
+
+    func test_TryDuckAIDialog_ReportsShownEngageAndDismiss() {
+        reporter.measureDialogShown(dialogType: .tryDuckAI)
+        reporter.measureTryDuckAIPressed()
+        reporter.measureGotItPressed(dialogType: .tryDuckAI)
+        reporter.measureDialogManuallyDismissed(dialogType: .tryDuckAI)
+        reporter.measureDialogDismissed(dialogType: .tryDuckAI)
+
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [
+            .endTryDuckAI(.shown),
+            .endTryDuckAI(.clicked(.engage)),
+            .endTryDuckAI(.clicked(.dismiss)),
+            .endTryDuckAI(.clicked(.dismiss))
+        ])
+        XCTAssertNil(eventSent)
     }
 
     func test_WhenGotItPressed_OnFinalDialog_ThenEndClickedEngageEventSent() {

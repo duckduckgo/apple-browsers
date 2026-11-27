@@ -871,6 +871,9 @@ private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
 
     func measureSubscriptionUpsellDeclined() {
     }
+
+    func measureTryDuckAIPressed() {
+    }
 }
  private class DockCustomizerMock: DockCustomization {
 

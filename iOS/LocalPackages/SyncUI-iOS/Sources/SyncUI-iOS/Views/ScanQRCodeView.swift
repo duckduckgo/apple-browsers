@@ -67,6 +67,7 @@ public struct ScanQRCodeView: View {
                 } label: {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.qr)
                 }
+                .accessibilityLabel(UserText.simplifiedSyncCodeSheetTitle)
             }
         }
         .sheet(isPresented: $model.isShowingSyncCodeSheet) {

@@ -59,7 +59,8 @@ final class IOSLaunchSettingsTests {
             appSettings: appSettings,
             appDefaults: defaults,
             appConfigurationDefaults: appConfigurationDefaults,
-            aiChatDebugSettings: AIChatDebugSettings(userDefault: defaults)
+            aiChatDebugSettings: AIChatDebugSettings(userDefault: defaults),
+            statistics: StatisticsUserDefaults(groupName: Self.suiteName)
         ))
         return settings.apply(try LaunchProfile(json: Data(json.utf8)))
     }
@@ -231,6 +232,7 @@ final class IOSLaunchSettingsTests {
                    "duckAI": {"customURL": "http://localhost:8080/chat"},
                    "idleReturnThresholdSeconds": 5,
                    "syncEnvironment": "Development",
+                   "daysSinceInstall": 8,
                    "configURLs": {"remoteMessagingConfig": "http://localhost:8080/rmf.json"}}}
         """#)
 
@@ -241,6 +243,8 @@ final class IOSLaunchSettingsTests {
         let idleReturnOverrides: some KeyedStoring<IdleReturnDebugOverridesKeys> = defaults.keyedStoring()
         #expect(idleReturnOverrides.thresholdSecondsOverride == 5)
         #expect(ServerEnvironment(UserDefaultsWrapper(key: .syncEnvironment, defaultValue: "", container: defaults).wrappedValue) == .development)
+        let installDate = try #require(StatisticsUserDefaults(groupName: Self.suiteName).installDate)
+        #expect(Calendar.current.dateComponents([.day], from: installDate, to: Date()).day == 8)
         #expect(CustomConfigurationURLStorage(defaults: appConfigurationDefaults).customRemoteMessagingConfigURL == URL(string: "http://localhost:8080/rmf.json"))
     }
 

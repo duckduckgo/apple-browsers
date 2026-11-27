@@ -49,6 +49,7 @@ enum IOSLaunchSettings {
         /// The app-configuration group: Duck.ai settings and custom configuration URLs.
         var appConfigurationDefaults: UserDefaults
         var aiChatDebugSettings: AIChatDebugSettingsHandling
+        var statistics: StatisticsUserDefaults
     }
 
     static func make(_ dependencies: Dependencies) -> LaunchSettings {
@@ -64,6 +65,7 @@ enum IOSLaunchSettings {
             + debugMenu(appSettings: dependencies.appSettings,
                         appDefaults: dependencies.appDefaults,
                         aiChatDebugSettings: dependencies.aiChatDebugSettings,
+                        statistics: dependencies.statistics,
                         customConfigurationURLs: CustomConfigurationURLStorage(defaults: dependencies.appConfigurationDefaults))
             + [tabs(persistence: dependencies.tabsPersistence, isPad: dependencies.isPad)]
         )

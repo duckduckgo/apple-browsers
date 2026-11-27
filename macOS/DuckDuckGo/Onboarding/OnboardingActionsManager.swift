@@ -400,7 +400,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     func addFavorites(_ sites: [OnboardingUserScript.FavoriteSite]) {
         var newFavorites: [WebsiteInfo] = []
         for site in sites {
-            if let bookmark = bookmarkManager.getBookmark(for: site.url) {
+            if let bookmark = bookmarkManager.getBookmark(forVariantUrl: site.url) {
                 guard !bookmark.isFavorite else { continue }
                 bookmark.isFavorite = true
                 bookmarkManager.update(bookmark: bookmark)

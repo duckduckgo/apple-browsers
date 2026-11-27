@@ -883,6 +883,19 @@ class OnboardingManagerTests: XCTestCase {
 
         XCTAssertEqual(answer, TopSitesPickerAnswer(show: false, existingFavorites: nil))
     }
+
+    @MainActor
+    func testAddFavorites_WhenSiteIsBookmarkedWithTrailingSlash_MarksThatBookmarkAsFavorite() {
+        let bookmark = Bookmark(id: UUID().uuidString, url: "https://www.youtube.com/", title: "YouTube", isFavorite: false)
+        let bookmarkManager = MockBookmarkManager()
+        bookmarkManager.bookmarkForVariantUrl = bookmark
+        let manager = makeTopSitesPickerManager(bookmarkManager: bookmarkManager)
+
+        manager.addFavorites([pickedSite("https://www.youtube.com")])
+
+        XCTAssertIdentical(bookmarkManager.updateBookmarkCalled, bookmark)
+        XCTAssertTrue(bookmark.isFavorite)
+    }
 }
 
 // MARK: - Chrome extension experiment test helpers
@@ -921,13 +934,17 @@ private extension OnboardingManagerTests {
 
     @MainActor
     func makeTopSitesPickerManager(favoriteURLs: [String]) -> OnboardingActionsManager {
+        let favorites = favoriteURLs.map { Bookmark(id: UUID().uuidString, url: $0, title: $0, isFavorite: true) }
+        return makeTopSitesPickerManager(bookmarkManager: MockBookmarkManager(list: BookmarkList(entities: favorites, favorites: favorites)))
+    }
+
+    @MainActor
+    func makeTopSitesPickerManager(bookmarkManager: MockBookmarkManager) -> OnboardingActionsManager {
         let featureFlagger = MockFeatureFlagger(
             featuresStub: [FeatureFlag.onboardingFavoritesStepExperiment.rawValue: true],
             resolveCohortStub: FeatureFlag.OnboardingFavoritesStepCohort.treatment,
             isAlreadyAssigned: false
         )
-        let favorites = favoriteURLs.map { Bookmark(id: UUID().uuidString, url: $0, title: $0, isFavorite: true) }
-        let bookmarkManager = MockBookmarkManager(list: BookmarkList(entities: favorites, favorites: favorites))
         return OnboardingActionsManager(
             navigationDelegate: navigationDelegate,
             pathStarter: { [unowned self] in self.pathStarter },
@@ -942,5 +959,9 @@ private extension OnboardingManagerTests {
             onboardingSharedPixelHandler: onboardingSharedPixelHandler,
             chromeExtensionInstaller: chromeExtensionInstaller
         )
+    }
+
+    func pickedSite(_ url: String) -> OnboardingUserScript.FavoriteSite {
+        OnboardingUserScript.FavoriteSite(id: url, url: URL(string: url)!, title: url)
     }
 }

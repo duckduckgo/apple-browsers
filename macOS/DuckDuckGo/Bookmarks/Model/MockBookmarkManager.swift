@@ -73,8 +73,9 @@ final class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, Re
         return nil
     }
 
+    var bookmarkForVariantUrl: Bookmark?
     func getBookmark(forVariantUrl url: URL) -> Bookmark? {
-        return nil
+        return bookmarkForVariantUrl
     }
 
     func getBookmarkFolder(withId id: String) -> BookmarkFolder? {

@@ -58,18 +58,22 @@ class AutocompleteViewModel: ObservableObject {
     @Published var emptySuggestion: [SuggestionModel]?
     @Published var isPad: Bool = false
     @Published var sectionTitle: String?
+    @Published var askDuckAIAppearance: AskDuckAIRowAppearance = .legacy
     weak var delegate: AutocompleteViewModelDelegate?
 
     let isAddressBarAtBottom: Bool
     let showAskAIChat: Bool
+    let isAskDuckAIRedesignEnabled: Bool
     var suggestionFilter: AutocompleteSuggestionFilter = .all
 
-    init(isAddressBarAtBottom: Bool, showAskAIChat: Bool) {
+    init(isAddressBarAtBottom: Bool, showAskAIChat: Bool, isAskDuckAIRedesignEnabled: Bool) {
         self.isAddressBarAtBottom = isAddressBarAtBottom
         self.showAskAIChat = showAskAIChat
+        self.isAskDuckAIRedesignEnabled = isAskDuckAIRedesignEnabled
     }
 
     func updateSuggestions(_ suggestions: SuggestionResult) {
+        askDuckAIAppearance = AskDuckAIRowAppearance.make(isRedesignEnabled: isAskDuckAIRedesignEnabled, result: suggestions)
         topHits = suggestions.topHits.map { SuggestionModel(suggestion: $0) }
         ddgSuggestions = suggestions.duckduckgoSuggestions.map { SuggestionModel(suggestion: $0) }
         localResults = suggestions.localSuggestions.map { SuggestionModel(suggestion: $0) }

@@ -19,7 +19,9 @@
 
 import AIChat
 import Combine
+import FeatureFlags_iOS
 import Foundation
+import PrivacyConfig
 import Suggestions
 
 /// Search-typing source: maps `SuggestionResult` categories to unified sections,
@@ -36,6 +38,7 @@ final class SearchSuggestionsSource: SuggestionsSource {
     init(loader: SearchSuggestionsLoader,
          query: @escaping () -> String,
          aiChatSettings: AIChatSettingsProvider,
+         featureFlagger: FeatureFlagger,
          notificationCenter: NotificationCenter = .default) {
         self.loader = loader
         self.query = query
@@ -46,7 +49,12 @@ final class SearchSuggestionsSource: SuggestionsSource {
             .map { _ in loader.result }
         sectionsPublisher = loader.$result
             .merge(with: settingsChanges)
-            .map { result in Self.sections(from: result, query: query(), showAskAIChat: aiChatSettings.isAIChatEnabled) }
+            .map { result in
+                Self.sections(from: result,
+                              query: query(),
+                              showAskAIChat: aiChatSettings.isAIChatEnabled,
+                              isAskDuckAIRedesignEnabled: featureFlagger.isFeatureOn(.askDuckAIRowRedesign))
+            }
             .removeDuplicates()
             .eraseToAnyPublisher()
     }
@@ -70,7 +78,10 @@ final class SearchSuggestionsSource: SuggestionsSource {
         return [.phrase(phrase: query)]
     }
 
-    static func sections(from result: SuggestionResult, query: String, showAskAIChat: Bool) -> [SuggestionSection] {
+    static func sections(from result: SuggestionResult,
+                         query: String,
+                         showAskAIChat: Bool,
+                         isAskDuckAIRedesignEnabled: Bool) -> [SuggestionSection] {
         var sections: [SuggestionSection] = []
 
         func section(_ id: String, _ suggestions: [Suggestion]) {
@@ -84,7 +95,16 @@ final class SearchSuggestionsSource: SuggestionsSource {
         section("ddg", result.duckduckgoSuggestions)
         section("local", result.localSuggestions)
         if showAskAIChat, !query.isEmpty {
-            section("askAIChat", [.askAIChat(value: query)])
+            let appearance = AskDuckAIRowAppearance.make(isRedesignEnabled: isAskDuckAIRedesignEnabled, result: result)
+            switch appearance {
+            case .legacy:
+                section("askAIChat", [.askAIChat(value: query)])
+            case .oneColour, .fullColour:
+                let row = SuggestionRowMapper.askDuckAIRow(value: query,
+                                                           isHighlighted: appearance == .fullColour,
+                                                           idPrefix: "askAIChat")
+                sections.append(SuggestionSection(id: "askAIChat", rows: [row]))
+            }
         }
         return sections
     }

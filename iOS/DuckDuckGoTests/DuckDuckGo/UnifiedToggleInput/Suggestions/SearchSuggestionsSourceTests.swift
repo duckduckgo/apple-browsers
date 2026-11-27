@@ -32,12 +32,12 @@ final class SearchSuggestionsSourceTests: XCTestCase {
             duckduckgoSuggestions: [.phrase(phrase: "cats")],
             localSuggestions: [.bookmark(title: "B", url: URL(string: "https://b.com")!, isFavorite: false, score: 0)]
         )
-        let sections = SearchSuggestionsSource.sections(from: result, query: "ca", showAskAIChat: false)
+        let sections = SearchSuggestionsSource.sections(from: result, query: "ca", showAskAIChat: false, isAskDuckAIRedesignEnabled: false)
         XCTAssertEqual(sections.map(\.id), ["topHits", "ddg", "local"])
     }
 
     func test_askAIChatSection_whenEnabled_withQuery() {
-        let sections = SearchSuggestionsSource.sections(from: .appEmpty, query: "weather", showAskAIChat: true)
+        let sections = SearchSuggestionsSource.sections(from: .appEmpty, query: "weather", showAskAIChat: true, isAskDuckAIRedesignEnabled: false)
         XCTAssertTrue(sections.contains { $0.id == "askAIChat" })
     }
 
@@ -48,7 +48,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
             duckduckgoSuggestions: [],
             localSuggestions: []
         )
-        let sections = SearchSuggestionsSource.sections(from: result, query: "h", showAskAIChat: false)
+        let sections = SearchSuggestionsSource.sections(from: result, query: "h", showAskAIChat: false, isAskDuckAIRedesignEnabled: false)
         XCTAssertEqual(sections.first?.rows.first?.accessory, .delete)
     }
 
@@ -63,7 +63,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
     func test_emptyResultFallbackPhraseRow_isResolvable() {
         // No results → a single phrase fallback row (the query). The displayed row must resolve back
         // to a suggestion so tapping it is handled (it previously resolved against the empty result → nil).
-        let sections = SearchSuggestionsSource.sections(from: .appEmpty, query: "zxqw", showAskAIChat: false)
+        let sections = SearchSuggestionsSource.sections(from: .appEmpty, query: "zxqw", showAskAIChat: false, isAskDuckAIRedesignEnabled: false)
         let rowID = try? XCTUnwrap(sections.first?.rows.first?.id)
         XCTAssertEqual(rowID, "topHits-phrase-zxqw")
         let resolved = SearchSuggestionsSource.suggestion(forRowID: "topHits-phrase-zxqw", in: .appEmpty, query: "zxqw", showAskAIChat: false)
@@ -74,7 +74,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
         let notifications = NotificationCenter()
         let settings = MockAIChatSettingsProvider(isAIChatEnabled: true)
         let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false, featureFlagger: MockFeatureFlagger())
-        let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, notificationCenter: notifications)
+        let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, featureFlagger: MockFeatureFlagger(), notificationCenter: notifications)
         var emissions = [[SuggestionSection]]()
         let subscription = source.sectionsPublisher.sink { emissions.append($0) }
         defer { subscription.cancel() }
@@ -102,7 +102,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
         let notifications = NotificationCenter()
         let settings = MockAIChatSettingsProvider(isAIChatEnabled: false)
         let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false, featureFlagger: MockFeatureFlagger())
-        let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, notificationCenter: notifications)
+        let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, featureFlagger: MockFeatureFlagger(), notificationCenter: notifications)
         var sections = [SuggestionSection]()
         let subscription = source.sectionsPublisher.sink { sections = $0 }
         defer { subscription.cancel() }
@@ -120,7 +120,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
     func test_disablingAIChatRejectsStaleRowBeforeSettingsNotification() throws {
         let settings = MockAIChatSettingsProvider(isAIChatEnabled: true)
         let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false, featureFlagger: MockFeatureFlagger())
-        let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, notificationCenter: NotificationCenter())
+        let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, featureFlagger: MockFeatureFlagger(), notificationCenter: NotificationCenter())
         var sections = [SuggestionSection]()
         let subscription = source.sectionsPublisher.sink { sections = $0 }
         defer { subscription.cancel() }
@@ -139,7 +139,7 @@ final class SearchSuggestionsSourceTests: XCTestCase {
         let settings = MockAIChatSettingsProvider(isAIChatEnabled: true)
         let dataSource = DelayedSearchSuggestionLoadingDataSource()
         let loader = SearchSuggestionsLoader(dataSource: dataSource, useUnifiedURLPrediction: false, featureFlagger: MockFeatureFlagger())
-        let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, notificationCenter: notifications)
+        let source = SearchSuggestionsSource(loader: loader, query: { "weather" }, aiChatSettings: settings, featureFlagger: MockFeatureFlagger(), notificationCenter: notifications)
         var sections = [SuggestionSection]()
         let subscription = source.sectionsPublisher.sink { sections = $0 }
         defer { subscription.cancel() }
@@ -168,6 +168,96 @@ final class SearchSuggestionsSourceTests: XCTestCase {
         XCTAssertEqual(sections.map(\.id), ["topHits"])
         XCTAssertEqual(source.suggestion(forRowID: "topHits-phrase-weather"), .phrase(phrase: "weather"))
         XCTAssertNil(source.suggestion(forRowID: "askAIChat-askAIChat-weather"))
+    }
+
+    // MARK: - Ask Duck.ai row
+
+    private func askDuckAIRow(in sections: [SuggestionSection]) -> SuggestionRow? {
+        sections.first { $0.id == "askAIChat" }?.rows.first
+    }
+
+    func test_askDuckAIRow_whenRedesignOff_isTodaysRow() throws {
+        let sections = SearchSuggestionsSource.sections(from: .appEmpty, query: "weather ", showAskAIChat: true, isAskDuckAIRedesignEnabled: false)
+        let row = try XCTUnwrap(askDuckAIRow(in: sections))
+
+        XCTAssertEqual(row.id, "askAIChat-askAIChat-weather ")
+        XCTAssertEqual(row.accessibilityID, "Autocomplete.Suggestions.ListItem.AskAIChat-weather ")
+        XCTAssertEqual(row.icon, .aiChat)
+        XCTAssertEqual(row.title, "weather ")
+        XCTAssertEqual(row.subtitle, UserText.autocompleteAskAIChat)
+    }
+
+    func test_askDuckAIRow_whenRedesignOn_readsAskDuckAIOverTheTrimmedQuery_withSameIDs() throws {
+        let sections = SearchSuggestionsSource.sections(from: .appEmpty, query: "weather ", showAskAIChat: true, isAskDuckAIRedesignEnabled: true)
+        let row = try XCTUnwrap(askDuckAIRow(in: sections))
+
+        XCTAssertEqual(row.id, "askAIChat-askAIChat-weather ")
+        XCTAssertEqual(row.accessibilityID, "Autocomplete.Suggestions.ListItem.AskAIChat-weather ")
+        XCTAssertEqual(row.title, "Ask Duck.ai")
+        XCTAssertEqual(row.subtitle, "weather")
+        XCTAssertNil(row.query)
+        XCTAssertEqual(row.accessory, .none)
+    }
+
+    func test_askDuckAIRow_whenRedesignOn_keepsOneListIdentityWhileTheQueryChanges() throws {
+        // The logo can only cross-fade if the row's view survives the keystroke that crosses the threshold.
+        let short = try XCTUnwrap(askDuckAIRow(in: SearchSuggestionsSource.sections(
+            from: .appEmpty, query: "wea", showAskAIChat: true, isAskDuckAIRedesignEnabled: true)))
+        let long = try XCTUnwrap(askDuckAIRow(in: SearchSuggestionsSource.sections(
+            from: .appEmpty, query: "weather tomorrow", showAskAIChat: true, isAskDuckAIRedesignEnabled: true)))
+
+        XCTAssertNotEqual(short.id, long.id)
+        XCTAssertEqual(short.viewID, long.viewID)
+    }
+
+    func test_askDuckAIRow_whenRedesignOff_isIdentifiedByItsIDAsToday() throws {
+        let row = try XCTUnwrap(askDuckAIRow(in: SearchSuggestionsSource.sections(
+            from: .appEmpty, query: "weather", showAskAIChat: true, isAskDuckAIRedesignEnabled: false)))
+
+        XCTAssertEqual(row.viewID, row.id)
+    }
+
+    func test_askDuckAIRow_whenRedesignOn_logoFollowsSearchSuggestionCount() throws {
+        let threshold = AskDuckAIRowAppearance.highlightThreshold
+        func icon(phraseCount: Int) throws -> SuggestionRowIcon {
+            let result = SuggestionResult(topHits: [],
+                                          duckduckgoSuggestions: (0..<phraseCount).map { .phrase(phrase: "weather \($0)") },
+                                          localSuggestions: [.website(url: URL(string: "https://weather.com")!)])
+            let sections = SearchSuggestionsSource.sections(from: result, query: "weather", showAskAIChat: true, isAskDuckAIRedesignEnabled: true)
+            return try XCTUnwrap(askDuckAIRow(in: sections)).icon
+        }
+
+        XCTAssertEqual(try icon(phraseCount: 0), .duckAI(highlighted: true))
+        XCTAssertEqual(try icon(phraseCount: threshold), .duckAI(highlighted: true))
+        XCTAssertEqual(try icon(phraseCount: threshold + 1), .duckAI(highlighted: false))
+    }
+
+    func test_askDuckAIRow_whenRedesignOn_otherRowsAreUnchanged() {
+        let result = SuggestionResult(topHits: [.website(url: URL(string: "https://a.com")!)],
+                                      duckduckgoSuggestions: [.phrase(phrase: "cats")],
+                                      localSuggestions: [])
+        let off = SearchSuggestionsSource.sections(from: result, query: "ca", showAskAIChat: true, isAskDuckAIRedesignEnabled: false)
+        let on = SearchSuggestionsSource.sections(from: result, query: "ca", showAskAIChat: true, isAskDuckAIRedesignEnabled: true)
+
+        XCTAssertEqual(on.map(\.id), off.map(\.id))
+        XCTAssertEqual(on.filter { $0.id != "askAIChat" }, off.filter { $0.id != "askAIChat" })
+    }
+
+    func test_askDuckAIRow_whenRedesignOn_tapResolvesToTheTypedQuery() throws {
+        let loader = SearchSuggestionsLoader(dataSource: EmptySuggestionLoadingDataSource(), useUnifiedURLPrediction: false, featureFlagger: MockFeatureFlagger())
+        let source = SearchSuggestionsSource(loader: loader,
+                                             query: { "weather" },
+                                             aiChatSettings: MockAIChatSettingsProvider(isAIChatEnabled: true),
+                                             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.askDuckAIRowRedesign]),
+                                             notificationCenter: NotificationCenter())
+        var sections = [SuggestionSection]()
+        let subscription = source.sectionsPublisher.sink { sections = $0 }
+        defer { subscription.cancel() }
+
+        let row = try XCTUnwrap(askDuckAIRow(in: sections))
+        XCTAssertEqual(row.title, "Ask Duck.ai")
+        XCTAssertEqual(row.id, "askAIChat-askAIChat-weather")
+        XCTAssertEqual(source.suggestion(forRowID: row.id), .askAIChat(value: "weather"))
     }
 
     private func postSettingsChanged(to notifications: NotificationCenter) async {

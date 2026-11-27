@@ -107,6 +107,18 @@ enum SuggestionRowMapper {
         }
     }
 
+    /// The redesigned Ask Duck.ai row: same id and accessibility id as the legacy row, so taps and
+    /// UI tests resolve it the same way.
+    static func askDuckAIRow(value: String, isHighlighted: Bool, idPrefix: String) -> SuggestionRow {
+        SuggestionRow(
+            id: "\(idPrefix)-askAIChat-\(value)",
+            icon: .duckAI(highlighted: isHighlighted),
+            title: UserText.autocompleteAskDuckAITitle,
+            query: nil,
+            subtitle: AskDuckAIRowAppearance.subtitle(for: value),
+            accessibilityID: "Autocomplete.Suggestions.ListItem.AskAIChat-\(value)")
+    }
+
     static func row(for chat: AIChatSuggestion) -> SuggestionRow {
         SuggestionRow(
             id: "chat-\(chat.id)",

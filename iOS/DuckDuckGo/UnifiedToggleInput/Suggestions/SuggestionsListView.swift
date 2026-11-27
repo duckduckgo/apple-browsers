@@ -84,14 +84,14 @@ struct SuggestionsListView: View {
             // Keep the keyboard-/pointer-highlighted row scrolled into view.
             .onReceive(viewModel.$selectedRowID) { id in
                 guard let id else { return }
-                withAnimation { proxy.scrollTo(id) }
+                withAnimation { proxy.scrollTo(viewModel.viewID(forRowID: id)) }
             }
         }
     }
 
     @ViewBuilder
     private func rows(for section: SuggestionSection) -> some View {
-        ForEach(section.rows) { row in
+        ForEach(section.rows, id: \.viewID) { row in
             Button {
                 viewModel.selectRow(id: row.id)
             } label: {
@@ -104,6 +104,7 @@ struct SuggestionsListView: View {
                     onFire: { frame in viewModel.fireDeleteRow(id: row.id, sourceRect: frame) })
             }
             .accessibilityIdentifier(row.accessibilityID)
+            .modifier(AskDuckAIRowAccessibilityLabel(row: row))
             .listRowInsets(rowInsets(for: row))
             .listRowBackground(rowBackground(for: row))
             .modifier(SeparatorTrailingToContentModifier())
@@ -180,10 +181,10 @@ private struct SuggestionsSectionCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(section.rows) { row in
+            ForEach(section.rows, id: \.viewID) { row in
                 SuggestionRowButton(viewModel: viewModel, row: row, isAddressBarAtBottom: isAddressBarAtBottom,
                                     restingBackground: usesCardSurface ? nil : Color(designSystemColor: .surface))
-                    .id(row.id)
+                    .id(row.viewID)
                     .overlay(alignment: .bottom) {
                         if row.id != section.rows.last?.id {
                             Color(uiColor: .separator)
@@ -237,6 +238,7 @@ private struct SuggestionRowButton: View {
         }
         .buttonStyle(SuggestionRowButtonStyle(isSelected: row.id == viewModel.selectedRowID, restingBackground: restingBackground))
         .accessibilityIdentifier(row.accessibilityID)
+        .modifier(AskDuckAIRowAccessibilityLabel(row: row))
         .onHover { isHovering in
             if isHovering { viewModel.selectedRowID = row.id }
         }
@@ -363,8 +365,29 @@ private struct SuggestionsCardListView: View {
             }
             .onReceive(viewModel.$selectedRowID) { id in
                 guard let id else { return }
-                withAnimation { proxy.scrollTo(id) }
+                withAnimation { proxy.scrollTo(viewModel.viewID(forRowID: id)) }
             }
         }
+    }
+}
+
+/// Reads the redesigned Ask Duck.ai row as "Ask Duck.ai, <query>"; every other row keeps its default label.
+private struct AskDuckAIRowAccessibilityLabel: ViewModifier {
+    let row: SuggestionRow
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if case .duckAI = row.icon, let query = row.subtitle {
+            content.accessibilityLabel(AskDuckAIRowAppearance.accessibilityLabel(query: query))
+        } else {
+            content
+        }
+    }
+}
+
+private extension SuggestionsListViewModel {
+    /// Scroll target for a selected row: rows are identified in the list by `viewID`, not `id`.
+    func viewID(forRowID id: String) -> String {
+        sections.lazy.flatMap(\.rows).first { $0.id == id }?.viewID ?? id
     }
 }

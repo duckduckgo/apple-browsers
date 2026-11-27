@@ -34,6 +34,7 @@ extension SuggestionRowIcon {
         case .aiChatPinned: return DesignSystemImages.Glyphs.Size24.chatPinned
         case .pin: return DesignSystemImages.Glyphs.Size24.pin
         case .chats: return DesignSystemImages.Glyphs.Size24.chats
+        case .duckAI: return DesignSystemImages.Glyphs.Size24.duckAi
         }
     }
 }

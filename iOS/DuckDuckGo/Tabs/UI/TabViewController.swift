@@ -1420,14 +1420,14 @@ class TabViewController: UIViewController {
                       bottom: max(first.bottom, second.bottom), right: max(first.right, second.right)))
     }
 
-    /// Sized from the bars alone, so the keyboard doesn't change `vh`, and only once the chrome settles, so the
-    /// page isn't relaid out on every frame of a collapse.
+    /// The range comes from the bars alone, so the keyboard doesn't change `vh`. The layout size only follows the
+    /// chrome once it settles, so the page isn't relaid out on every frame of a collapse.
     @available(iOS 26, *)
     private func updateWebViewViewportSizesOverride(obscuredInsets: UIEdgeInsets,
                                                     contextualOnboardingTopInset: CGFloat,
                                                     barsVisibilityPercent: CGFloat,
                                                     tracksChrome: Bool) {
-        guard let webView = webView as? WebView, barsVisibilityPercent == 0 || barsVisibilityPercent == 1 else { return }
+        guard let webView = webView as? WebView else { return }
         guard tracksChrome, !shouldUseFloatingAIChrome, !isAITab,
               webView.fullscreenState == .notInFullscreen,
               UIDevice.current.userInterfaceIdiom == .phone,
@@ -1447,7 +1447,9 @@ class TabViewController: UIViewController {
         } else {
             return
         }
-        webView.floatingChromeInsets = .init(minimum: range.minimum, maximum: range.maximum, current: obscuredInsets)
+        let isChromeSettled = barsVisibilityPercent == 0 || barsVisibilityPercent == 1
+        let current = isChromeSettled ? obscuredInsets : (webView.floatingChromeInsets?.current ?? obscuredInsets)
+        webView.floatingChromeInsets = .init(minimum: range.minimum, maximum: range.maximum, current: current)
     }
 
     private static func inset(_ insets: UIEdgeInsets, by offset: UIEdgeInsets) -> UIEdgeInsets {
@@ -1521,13 +1523,14 @@ class TabViewController: UIViewController {
         )
         // Clear before either setter: WebKit can synchronously call back into scrollViewDidScroll.
         hasDeferredFloatingUIInsets = false
-        updateWebViewObscuredInsetsFollowingChrome(obscuredInsets,
-                                                   barsVisibilityPercent: barsVisibilityPercent,
-                                                   tracksChrome: !isUnifiedToggleInputAffectingLayout)
+        // Before the obscured insets: changing them makes WebKit hold back an override sent in the same pass.
         updateWebViewViewportSizesOverride(obscuredInsets: obscuredInsets,
                                            contextualOnboardingTopInset: effectiveContextualOnboardingTopInset,
                                            barsVisibilityPercent: barsVisibilityPercent,
                                            tracksChrome: !isUnifiedToggleInputAffectingLayout)
+        updateWebViewObscuredInsetsFollowingChrome(obscuredInsets,
+                                                   barsVisibilityPercent: barsVisibilityPercent,
+                                                   tracksChrome: !isUnifiedToggleInputAffectingLayout)
         if shouldUpdateScrollInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets,
                                                isFloatingUIEnabled: true, animated: animateTopAlignment)
@@ -1659,6 +1662,7 @@ class TabViewController: UIViewController {
         super.viewWillTransition(to: size, with: coordinator)
         coordinator.animate(alongsideTransition: nil) { [weak self] _ in
             self?.updateContextualOnboardingLayoutForFloatingUIIfNeeded()
+            (self?.webView as? WebView)?.resendLayoutParametersOverride()
         }
     }
 

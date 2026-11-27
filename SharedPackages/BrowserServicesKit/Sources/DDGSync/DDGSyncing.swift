@@ -247,6 +247,10 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     @MainActor
     func makeAuditLogReader() throws -> any SyncAuditLogReading
 
+    /// Returns the current Sync account ID, or nil if there is no account.
+    /// Throws if the account cannot be read from storage.
+    func auditLogAccountIdentifier() throws -> String?
+
     /**
      Returns the locally persisted review state for this account, or nil if no state has been stored.
      */

@@ -178,6 +178,8 @@ class MockDDGSyncing: DDGSyncing {
         return registeredDevices
     }
 
+    func auditLogAccountIdentifier() throws -> String? { account?.userId }
+
     @MainActor
     func makeAuditLogReader() throws -> any SyncAuditLogReading { MockAuditLogReader() }
 

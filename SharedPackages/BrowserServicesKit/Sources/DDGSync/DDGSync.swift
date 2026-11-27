@@ -375,23 +375,27 @@ public class DDGSync: DDGSyncing {
         }
     }
 
+    public func auditLogAccountIdentifier() throws -> String? {
+        try dependencies.secureStore.account()?.userId
+    }
+
     @MainActor
     public func makeAuditLogReader() throws -> any SyncAuditLogReading {
         guard let account = try dependencies.secureStore.account() else { throw SyncError.accountNotFound }
         return SyncAuditLogReader(account: account) { [self] readerAccount, cursor in
-            guard isCurrent(readerAccount) else {
+            guard try isCurrent(readerAccount) else {
                 throw CancellationError()
             }
             do {
                 let page = try await dependencies.account.fetchAuditLog(for: readerAccount,
                                                                         cursor: cursor.map(AuditLogCursor.before),
                                                                         limit: Constants.auditLogPageSize)
-                guard isCurrent(readerAccount) else {
+                guard try isCurrent(readerAccount) else {
                     throw CancellationError()
                 }
                 return page
             } catch {
-                guard isCurrent(readerAccount) else {
+                guard try isCurrent(readerAccount) else {
                     throw CancellationError()
                 }
                 throw handleUnauthenticatedAndMap(error)
@@ -399,8 +403,8 @@ public class DDGSync: DDGSyncing {
         }
     }
 
-    private func isCurrent(_ account: SyncAccount) -> Bool {
-        guard let currentAccount = self.account else { return false }
+    private func isCurrent(_ account: SyncAccount) throws -> Bool {
+        guard let currentAccount = try dependencies.secureStore.account() else { return false }
         return currentAccount.userId == account.userId && currentAccount.deviceId == account.deviceId
     }
 

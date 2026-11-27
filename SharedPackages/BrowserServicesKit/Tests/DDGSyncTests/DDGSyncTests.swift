@@ -887,6 +887,38 @@ final class DDGSyncTests: XCTestCase {
         XCTAssertEqual((dependencies.errorEvents as! MockErrorHandler).handledErrors, [])
     }
 
+    func testAuditLogAccountIdentifierDistinguishesMissingAccountFromStorageFailure() throws {
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        let store = try XCTUnwrap(dependencies.secureStore as? SecureStorageStub)
+        let account = store.theAccount
+        XCTAssertEqual(try syncService.auditLogAccountIdentifier(), account?.userId)
+        store.theAccount = nil
+        XCTAssertNil(try syncService.auditLogAccountIdentifier())
+
+        store.theAccount = account
+        store.mockReadError = .failedToReadSecureStore(status: -25308)
+        XCTAssertThrowsError(try syncService.auditLogAccountIdentifier()) { error in
+            XCTAssertEqual(error as? SyncError, .failedToReadSecureStore(status: -25308))
+        }
+        XCTAssertEqual(store.theAccount?.userId, account?.userId)
+    }
+
+    @MainActor
+    func testAuditLogReaderPropagatesAccountStorageFailure() async throws {
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        let store = try XCTUnwrap(dependencies.secureStore as? SecureStorageStub)
+        let reader = try syncService.makeAuditLogReader()
+        store.mockReadError = .failedToReadSecureStore(status: -25308)
+
+        do {
+            _ = try await reader.nextPage()
+            XCTFail("Expected account storage failure")
+        } catch {
+            XCTAssertEqual(error as? SyncError, .failedToReadSecureStore(status: -25308))
+        }
+        XCTAssertNotNil(store.theAccount)
+    }
+
     func testAuditLogReviewStateDecodesPersistedFields() throws {
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
         let accountID = SyncAccount.mock.userId

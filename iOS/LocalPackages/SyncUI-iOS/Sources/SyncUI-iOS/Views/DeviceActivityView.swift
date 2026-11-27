@@ -18,25 +18,157 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
 struct DeviceActivityView: View {
 
+    @ObservedObject var model: DeviceActivityViewModel
+    private static let relativeDateFormatter = RelativeDateTimeFormatter()
+
+    private enum RelativeTime {
+        static let minute: TimeInterval = 60
+        static let hour = 60 * minute
+        static let day = 24 * hour
+        static let month = 30 * day
+        static let year = 365 * day
+    }
+
     var body: some View {
         List {
-            Section {
-                Text(UserText.deviceActivityIntro)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                Text(UserText.deviceActivityEmpty)
-                    .daxBodyRegular()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
+            if model.isLoading && model.entries.isEmpty {
+                Section {
+                    ProgressView().frame(maxWidth: .infinity)
+                        .listRowBackground(Color(designSystemColor: .background))
+                } header: {
+                    intro
+                }
+            } else if model.entries.isEmpty && model.hasLoaded && model.error == nil {
+                Section {
+                    Text(UserText.deviceActivityEmpty)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+                } header: {
+                    intro
+                }
+            } else {
+                ForEach(model.entries) { entry in
+                    Section {
+                        activityRow(entry)
+                            .task { await model.loadOlderIfNeeded(after: entry.id) }
+                    } header: {
+                        if entry.id == model.entries.first?.id {
+                            intro
+                        }
+                    }
+                }
+
+                if model.isLoading {
+                    ProgressView().frame(maxWidth: .infinity)
+                        .listRowBackground(Color(designSystemColor: .background))
+                }
             }
-            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+
+            if model.error != nil {
+                Section {
+                    Label {
+                        Text(UserText.deviceActivityLoadError)
+                            .daxBodyRegular()
+                    } icon: {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.infoSolid)
+                    }
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
+                } header: {
+                    if model.entries.isEmpty {
+                        intro
+                    }
+                }
+            }
         }
         .navigationTitle(UserText.deviceActivityTitle)
         .navigationBarTitleDisplayMode(.inline)
         .applyListStyle()
+        .task { await model.loadIfNeeded() }
+        .task(id: model.entries.isEmpty) { await model.markAsReviewedAfterDelay() }
+        .onDisappear { model.cancelAndClear() }
+    }
+
+    private var intro: some View {
+        Text(UserText.deviceActivityIntro)
+            .daxBodyRegular()
+            .textCase(nil)
+            .multilineTextAlignment(.center)
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .frame(maxWidth: .infinity)
+            .padding(.top, 48)
+            .padding(.bottom, 24)
+            .listRowInsets(EdgeInsets())
+    }
+
+    static func relativeDateString(for date: Date, relativeTo now: Date) -> String {
+        let seconds = now.timeIntervalSince(date)
+        let components: DateComponents
+        switch seconds {
+        case ..<RelativeTime.minute:
+            return UserText.deviceActivityJustNow
+        case ..<RelativeTime.hour:
+            components = DateComponents(minute: -Int(seconds / RelativeTime.minute))
+        case ..<RelativeTime.day:
+            components = DateComponents(hour: -Int(seconds / RelativeTime.hour))
+        case ..<RelativeTime.month:
+            components = DateComponents(day: -Int(seconds / RelativeTime.day))
+        case ..<RelativeTime.year:
+            components = DateComponents(month: -Int(seconds / RelativeTime.month))
+        default:
+            components = DateComponents(year: -Int(seconds / RelativeTime.year))
+        }
+        return relativeDateFormatter.localizedString(from: components)
+    }
+
+    private func activityRow(_ entry: DeviceActivityEntry) -> some View {
+        let isNewActivity = model.isNewActivity(entry)
+        let backgroundColor = isNewActivity ? Color(designSystemColor: .accentAltPrimary) : Color(designSystemColor: .surfaceTertiary)
+        return HStack(spacing: 12) {
+            ZStack(alignment: .bottomTrailing) {
+                SyncDeviceTypeImage(device: .init(id: entry.id,
+                                                  name: entry.deviceName,
+                                                  type: entry.deviceType,
+                                                  credentialId: entry.credentialId,
+                                                  isThisDevice: false))
+                if entry.action == .removed {
+                    Circle().fill(Color(designSystemColor: .statusRed))
+                        .frame(width: 9, height: 9)
+                        .background(
+                            Circle().fill(backgroundColor)
+                                .padding(-2)
+                                .animation(.easeInOut(duration: 1.0), value: isNewActivity)
+                        )
+                        .offset(x: -2, y: -2)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Self.relativeDateString(for: entry.date, relativeTo: Date()))
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                Text(entry.deviceName)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+            }
+            Spacer(minLength: 8)
+            Text(entry.action == .synced ? UserText.deviceActivitySynced : UserText.deviceActivityRemoved)
+                .daxFootnoteRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+        }
+        .padding(.vertical, 4)
+        .listRowBackground(
+            backgroundColor
+                .animation(.easeInOut(duration: 1.0), value: isNewActivity)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(isNewActivity ? Text(UserText.deviceActivityNotYetReviewed) : Text(verbatim: ""))
     }
 }

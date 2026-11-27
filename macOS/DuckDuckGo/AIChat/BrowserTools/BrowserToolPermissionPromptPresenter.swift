@@ -115,7 +115,7 @@ final class BrowserToolPermissionPromptPresenter {
               !collection.isBurner,
               let windowController = windowController(for: collection) else { return false }
 
-        suppressTranslateOffers(in: collection, by: .browserTool)
+        suppressTranslateOffers(in: collection, alsoOn: ownerTabID, by: .browserTool)
         requests.append(Request(id: prompt.requestID, ownerTabID: ownerTabID, collection: collection,
                                 kind: .toolPrompt(.init(prompt: prompt, prompter: prompter, selection: BrowserToolAccessSelection()))))
         observeSelection(of: collection)
@@ -180,9 +180,8 @@ final class BrowserToolPermissionPromptPresenter {
            let collection = ownerCollection(ofTabID: tabID, shownIn: window),
            !collection.isBurner,
            windowController(for: collection)?.mainViewController.aiChatCoordinator.isSidebarOpen(for: tabID) != true {
-            if let suppressor = promptHoldingDuckAIButton(of: collection) {
-                translateOfferSuppressedTabIDs.insert(tabID)
-                translateOfferSuppressed(suppressor)
+            if let suppressor = promptHoldingDuckAIButton(of: collection, for: tabID) {
+                suppressTranslateOffer(on: tabID, by: suppressor)
             } else {
                 requests.append(Request(id: UUID().uuidString, ownerTabID: tabID, collection: collection,
                                         kind: .translateOffer(languageCode: languageCode, choice: TranslateOfferChoice())))
@@ -205,26 +204,31 @@ final class BrowserToolPermissionPromptPresenter {
         localModelPromptWindow = nil
     }
 
-    // A tool prompt waiting on another tab comes back on a tab switch, so it holds the button too.
-    private func promptHoldingDuckAIButton(of collection: TabCollectionViewModel) -> TranslateOfferSuppressor? {
-        if requests.contains(where: { $0.collection === collection && $0.translateOfferLanguageCode == nil && $0.isLive }) {
-            return .browserTool
-        }
+    // A tool prompt waiting on the offer's own tab would show there first, so it holds that tab's button too.
+    private func promptHoldingDuckAIButton(of collection: TabCollectionViewModel, for tabID: TabIdentifier) -> TranslateOfferSuppressor? {
         if let localModelPromptWindow, localModelPromptWindow === windowController(for: collection)?.window {
             return .localModel
+        }
+        let shownID = shown[ObjectIdentifier(collection)]?.requestID
+        if requests.contains(where: { $0.translateOfferLanguageCode == nil && $0.isLive && ($0.id == shownID || $0.ownerTabID == tabID) }) {
+            return .browserTool
         }
         return nil
     }
 
-    // Offers hidden on other tabs go too, as they would return over the prompt on a tab switch.
-    private func suppressTranslateOffers(in collection: TabCollectionViewModel, by suppressor: TranslateOfferSuppressor) {
-        let isOffer: (Request) -> Bool = { $0.collection === collection && $0.translateOfferLanguageCode != nil }
-        let tabIDs = requests.filter(isOffer).map(\.ownerTabID)
-        requests.removeAll(where: isOffer)
-        for tabID in tabIDs {
-            translateOfferSuppressedTabIDs.insert(tabID)
-            translateOfferSuppressed(suppressor)
-        }
+    /// Closes the offer showing in `collection` and any on `tabID`; offers hidden on other tabs come back as usual (R8).
+    private func suppressTranslateOffers(in collection: TabCollectionViewModel, alsoOn tabID: TabIdentifier? = nil,
+                                         by suppressor: TranslateOfferSuppressor) {
+        let shownID = shown[ObjectIdentifier(collection)]?.requestID
+        let isSuppressed: (Request) -> Bool = { $0.translateOfferLanguageCode != nil && ($0.id == shownID || $0.ownerTabID == tabID) }
+        let tabIDs = requests.filter(isSuppressed).map(\.ownerTabID)
+        requests.removeAll(where: isSuppressed)
+        tabIDs.forEach { suppressTranslateOffer(on: $0, by: suppressor) }
+    }
+
+    private func suppressTranslateOffer(on tabID: TabIdentifier, by suppressor: TranslateOfferSuppressor) {
+        guard translateOfferSuppressedTabIDs.insert(tabID).inserted else { return }
+        translateOfferSuppressed(suppressor)
     }
 
     // A pinned tab is in every window's collection: its web view's window picks one, or, when it shows in none, the main window.

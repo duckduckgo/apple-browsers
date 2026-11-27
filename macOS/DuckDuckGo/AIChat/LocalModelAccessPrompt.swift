@@ -69,9 +69,10 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
     }
 
     private func show(from webView: WKWebView?, request: AIChatLocalModelAccessRequest) -> Bool {
-        guard let webView, webView.window != nil else { return false }
+        // AppKit skips the pop-up for a hidden window.
+        guard let webView, let window = webView.window, window.isVisible else { return false }
         // Before the anchor is picked: the offer it closes may have been all that revealed the Duck.ai button.
-        translateOffers?.localModelPromptWillShow(in: webView.window)
+        translateOffers?.localModelPromptWillShow(in: window)
 
         let content = LocalModelAccessPromptView(themeManager: themeManager,
                                                  request: request,

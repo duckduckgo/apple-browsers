@@ -203,7 +203,7 @@ struct TranslateOfferPriorityTests {
     private let prompter = CapturingPrompter()
 
     init() {
-        tabs = ["https://a.example", "https://b.example"].map { Tab(content: .url(URL(string: $0)!, credential: nil, source: .ui)) }
+        tabs = ["https://a.example", "https://b.example", "https://c.example"].map { Tab(content: .url(URL(string: $0)!, credential: nil, source: .ui)) }
         collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs), windowControllersManager: WindowControllersManagerMock())
         let mainViewController = MainViewController(tabCollectionViewModel: collection,
                                                     autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
@@ -225,20 +225,32 @@ struct TranslateOfferPriorityTests {
     private func showToolPrompt(for tab: Tab) async throws -> ClientToolPermissionPrompt {
         let coordinator = coordinator
         let prompter = prompter
+        prompter.prompt = nil
         Task { _ = await coordinator.authorize(callID: UUID().uuidString, tool: SearchDownloadsBrowserTool(), prompter: prompter) }
-        for _ in 0..<100 where prompter.prompt == nil { await Task.yield() }
+        for _ in 0..<1000 where prompter.prompt == nil { await Task.yield() }
         let prompt = try #require(prompter.prompt)
         #expect(presenter.present(prompt, chatWebView: tab.webView, prompter: prompter))
         return prompt
     }
 
+    /// Closes the prompt the way its chat does, so the call's authorization ends too.
+    private func closeToolPrompt(_ prompt: ClientToolPermissionPrompt) {
+        presenter.withdraw(requestID: prompt.requestID)
+        coordinator.respond(to: prompt, decision: .dismiss, from: prompter)
+    }
+
+    private func select(_ index: Int) async {
+        collection.select(at: .unpinned(index))
+        for _ in 0..<20 { await Task.yield() }
+    }
+
     @available(iOS 16, macOS 13, *)
-    @Test("A page that qualifies while a tool prompt waits gets no offer, and is reported once", .timeLimit(.minutes(1)))
-    func toolPromptWaiting() async throws {
+    @Test("A page that qualifies while a tool prompt shows gets no offer, then or after, and is reported once", .timeLimit(.minutes(1)))
+    func toolPromptShowing() async throws {
         let prompt = try await showToolPrompt(for: tab(0))
 
         presenter.offerTranslation(languageCode: "es", tabID: tab(1).uuid)
-        presenter.withdraw(requestID: prompt.requestID)
+        closeToolPrompt(prompt)
         presenter.offerTranslation(languageCode: "es", tabID: tab(1).uuid)
 
         #expect(presenter.translateOfferLanguageCode(for: tab(1).uuid) == nil)
@@ -246,33 +258,50 @@ struct TranslateOfferPriorityTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A tool prompt closes the offers in its window, and they don't return on that page", .timeLimit(.minutes(1)))
+    @Test("A tool prompt hidden by a tab switch skips offers only on its own tab", .timeLimit(.minutes(1)))
+    func toolPromptHidden() async throws {
+        let prompt = try await showToolPrompt(for: tab(1))
+        await select(0)
+
+        presenter.offerTranslation(languageCode: "de", tabID: tab(2).uuid)
+        presenter.offerTranslation(languageCode: "es", tabID: tab(1).uuid)
+
+        #expect(presenter.translateOfferLanguageCode(for: tab(2).uuid) == "de")
+        #expect(presenter.translateOfferLanguageCode(for: tab(1).uuid) == nil)
+        #expect(suppressions.values == [.browserTool])
+        closeToolPrompt(prompt)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A tool prompt closes the showing offer, which doesn't return on that page, and leaves hidden ones", .timeLimit(.minutes(1)))
     func toolPromptArrives() async throws {
         presenter.offerTranslation(languageCode: "es", tabID: tab(0).uuid)
-        presenter.offerTranslation(languageCode: "fr", tabID: tab(1).uuid)
+        presenter.offerTranslation(languageCode: "it", tabID: tab(2).uuid)
 
-        let prompt = try await showToolPrompt(for: tab(0))
+        let prompt = try await showToolPrompt(for: tab(1))
         #expect(presenter.translateOfferLanguageCode(for: tab(0).uuid) == nil)
-        #expect(presenter.translateOfferLanguageCode(for: tab(1).uuid) == nil)
-        #expect(suppressions.values == [.browserTool, .browserTool])
+        #expect(presenter.translateOfferLanguageCode(for: tab(2).uuid) == "it")
+        #expect(suppressions.values == [.browserTool])
 
-        presenter.withdraw(requestID: prompt.requestID)
+        closeToolPrompt(prompt)
         presenter.offerTranslation(languageCode: "es", tabID: tab(0).uuid)
         #expect(presenter.translateOfferLanguageCode(for: tab(0).uuid) == nil)
 
         presenter.offerTranslation(languageCode: nil, tabID: tab(0).uuid)
         presenter.offerTranslation(languageCode: "es", tabID: tab(0).uuid)
         #expect(presenter.translateOfferLanguageCode(for: tab(0).uuid) == "es")
-        #expect(suppressions.values.count == 2)
+        #expect(suppressions.values.count == 1)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The local-model prompt closes the offer and skips pages that qualify while it shows", .timeLimit(.minutes(1)))
+    @Test("The local-model prompt closes the showing offer and skips pages that qualify while it shows", .timeLimit(.minutes(1)))
     func localModelPrompt() {
         presenter.offerTranslation(languageCode: "es", tabID: tab(0).uuid)
+        presenter.offerTranslation(languageCode: "it", tabID: tab(2).uuid)
 
         presenter.localModelPromptWillShow(in: windowController.window)
         #expect(presenter.translateOfferLanguageCode(for: tab(0).uuid) == nil)
+        #expect(presenter.translateOfferLanguageCode(for: tab(2).uuid) == "it")
         presenter.offerTranslation(languageCode: "fr", tabID: tab(1).uuid)
         #expect(presenter.translateOfferLanguageCode(for: tab(1).uuid) == nil)
         #expect(suppressions.values == [.localModel, .localModel])

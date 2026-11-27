@@ -124,6 +124,7 @@ final class FaviconRasterizer {
 
     private var webView: WKWebView?
     private var activeCalls = 0
+    private let renderGate = RenderGate()
     private var releaseTask: Task<Void, Never>?
 
     /// Returns PNG data of the image rendered at its intrinsic size, within `minPixelSize...maxPixelSize`.
@@ -138,6 +139,11 @@ final class FaviconRasterizer {
             throw RasterizationError.unsupportedData
         }
         try Task.checkCancellation()
+
+        // One render at a time: a render that hangs or crashes the process then takes down only itself, and its
+        // `hardTimeout` doesn't run while it waits for its turn.
+        try await renderGate.enter()
+        defer { renderGate.leave() }
 
         let webView = acquireWebView()
         defer { releaseWebViewWhenIdle() }
@@ -227,6 +233,44 @@ final class FaviconRasterizer {
         Logger.favicons.debug("FaviconRasterizer: created a web view")
         webView = newWebView
         return newWebView
+    }
+
+    /// Lets one call at a time render, in the order the calls arrive. A waiting call that is cancelled leaves the
+    /// queue at once.
+    @MainActor
+    private final class RenderGate {
+
+        private var isBusy = false
+        private var waiters = [(id: UUID, continuation: CheckedContinuation<Void, Error>)]()
+
+        func enter() async throws {
+            try Task.checkCancellation()
+            guard isBusy else {
+                isBusy = true
+                return
+            }
+            let id = UUID()
+            try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { continuation in
+                    waiters.append((id, continuation))
+                }
+            } onCancel: {
+                Task { @MainActor in self.cancelWaiter(id) }
+            }
+        }
+
+        func leave() {
+            guard !waiters.isEmpty else {
+                isBusy = false
+                return
+            }
+            waiters.removeFirst().continuation.resume()
+        }
+
+        private func cancelWaiter(_ id: UUID) {
+            guard let index = waiters.firstIndex(where: { $0.id == id }) else { return }
+            waiters.remove(at: index).continuation.resume(throwing: CancellationError())
+        }
     }
 
     /// A web view that can do nothing but draw the image it is given: no stored data or credentials, no scripts from

@@ -191,8 +191,7 @@ final class FaviconRasterizerImportTests: XCTestCase {
 
     /// Decoding thousands of imported raster favicons must not block the main thread.
     func testImportingManyRasterFaviconsDoesNotBlockTheMainThread() async throws {
-        let png = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
-        let imported = ["https://example.com": (0..<3000).map { _ in ImportedFavicon(imageData: png) }]
+        let imported = ["https://example.com": (0..<3000).map { ImportedFavicon(imageData: Self.solidPNG(index: $0)) }]
         let rasterizer = self.rasterizer!
 
         let importTask = Task.detached { await rasterizer.favicons(fromImported: imported) }
@@ -214,6 +213,7 @@ final class FaviconRasterizerImportTests: XCTestCase {
         let result = await importTask.value
 
         XCTAssertEqual(result.values.first?.count, 3000)
+        XCTAssertEqual(result.values.first?.compactMap(\.image).count, 3000)
         XCTAssertLessThan(longestGap, 1)
     }
 
@@ -221,5 +221,18 @@ final class FaviconRasterizerImportTests: XCTestCase {
 
     private struct ImportedFavicon: ImportedFaviconDataProviding {
         let imageData: Data
+    }
+
+    /// A small PNG of a color no other index has, so that identical data doesn't collapse the favicons into one.
+    private static func solidPNG(index: Int) -> Data {
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 16, pixelsHigh: 16, bitsPerSample: 8, samplesPerPixel: 4,
+                                   hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        let color = NSColor(deviceRed: CGFloat(index % 256) / 255, green: CGFloat(index / 256 % 256) / 255, blue: 0.5, alpha: 1)
+        for x in 0..<16 {
+            for y in 0..<16 {
+                rep.setColor(color, atX: x, y: y)
+            }
+        }
+        return rep.representation(using: .png, properties: [:])!
     }
 }

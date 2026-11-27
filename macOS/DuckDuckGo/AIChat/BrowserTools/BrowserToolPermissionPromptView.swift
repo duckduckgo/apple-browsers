@@ -95,7 +95,6 @@ struct BrowserToolPermissionPromptView: View {
     private enum Constants {
         static let width: CGFloat = 252
         static let accessWidth: CGFloat = 360
-        static let buttonHeight: CGFloat = 32
     }
 
     let prompt: ClientToolPermissionPrompt
@@ -235,28 +234,51 @@ struct BrowserToolPermissionPromptView: View {
         }
     }
 
-    /// `fillsWidth: false` sizes the button to its title, leaving the rest of the row to the others.
     private func decisionButton(_ title: String, _ decision: ClientToolPermissionDecision, id: String, shortcutHint: String? = nil,
                                 fillsWidth: Bool = true) -> some View {
+        PromptDecisionButton(title: title, shortcutHint: shortcutHint, fillsWidth: fillsWidth,
+                             accessibilityID: "BrowserToolPermissionPrompt.\(id)") { decide(decision) }
+    }
+}
+
+/// A button of the prompts shown from the Duck.ai tab-bar button. One with a shortcut hint is the primary one.
+struct PromptDecisionButton: View {
+
+    let title: String
+    var icon: NSImage?
+    var shortcutHint: String?
+    /// False sizes the button to its title, leaving the rest of the row to the others.
+    var fillsWidth = true
+    let accessibilityID: String
+    let action: () -> Void
+
+    @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+
+    var body: some View {
         let palette = themeManager.theme.palette
         let primary = shortcutHint != nil
-        return Button(action: { decide(decision) }) {
+        let foreground = primary ? Color(palette.accentContentPrimary) : Color(designSystemColor: .textPrimary)
+        Button(action: action) {
             HStack(spacing: 6) {
+                if let icon {
+                    Image(nsImage: icon)
+                        .renderingMode(.template)
+                }
                 Text(title)
                 if let shortcutHint {
                     Text(shortcutHint).opacity(0.7)
                 }
             }
             .font(.system(size: 13))
-            .foregroundColor(primary ? Color(palette.accentContentPrimary) : Color(designSystemColor: .textPrimary))
+            .foregroundColor(foreground)
             .padding(.horizontal, fillsWidth ? 0 : 24)
             .frame(maxWidth: fillsWidth ? .infinity : nil)
-            .frame(height: Constants.buttonHeight)
+            .frame(height: 32)
             .background(primary ? Color(palette.accentPrimary) : Color(designSystemColor: .controlsFillPrimary))
             .clipShape(Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(PlainButtonStyle())
-        .accessibilityIdentifier("BrowserToolPermissionPrompt.\(id)")
+        .accessibilityIdentifier(accessibilityID)
     }
 }

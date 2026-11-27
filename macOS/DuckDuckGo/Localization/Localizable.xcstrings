@@ -337,6 +337,66 @@
         }
       }
     },
+    "translate-offer.detail" : {
+      "comment" : "Body of the pop-up that offers to translate a page with Duck.ai. Parameter is the user's language name, e.g. English",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get a summary of this page in %@ and continue the conversation."
+          }
+        }
+      }
+    },
+    "translate-offer.dont-ask-again" : {
+      "comment" : "Checkbox in the pop-up that offers to translate a page with Duck.ai. Parameter is the page's language name, e.g. Spanish",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't ask again for %@"
+          }
+        }
+      }
+    },
+    "translate-offer.no-thanks" : {
+      "comment" : "Button in the pop-up that offers to translate a page with Duck.ai. It closes the pop-up without translating",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        }
+      }
+    },
+    "translate-offer.title" : {
+      "comment" : "Title of the pop-up that offers to translate a page with Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Translate this page with Duck.ai?"
+          }
+        }
+      }
+    },
+    "translate-offer.translate" : {
+      "comment" : "Button in the pop-up that offers to translate a page with Duck.ai. It opens Duck.ai to translate and summarize the page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Translate"
+          }
+        }
+      }
+    },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
         "de" : {

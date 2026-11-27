@@ -63,9 +63,7 @@ public final class SyncSetupAttemptTracker {
                       existingAccount: Bool,
                       flowVersion: SyncSetupWideEventData.FlowVersion,
                       uiVersion: SyncSetupWideEventData.UIVersion) {
-        if let attempt {
-            close(attempt, status: .unknown(reason: SyncSetupWideEventData.StatusReason.duplicated))
-        }
+        end(Outcome(status: .unknown(reason: SyncSetupWideEventData.StatusReason.duplicated)))
         guard isEnabled() else { return }
 
         let attempt = SyncSetupWideEventData(existingAccount: existingAccount,
@@ -103,6 +101,7 @@ public final class SyncSetupAttemptTracker {
             $0.connectMethod = connectMethod
             $0.role = nil
             $0.peerKind = nil
+            $0.peerOutcome = nil
             if let supportedFlowVersion {
                 $0.flowVersion = supportedFlowVersion
             }
@@ -111,6 +110,29 @@ public final class SyncSetupAttemptTracker {
 
     func recordFlowVersion(_ version: SyncSetupWideEventData.FlowVersion) {
         update { $0.flowVersion = version }
+    }
+
+    func recordHostAwaitingJoiner() {
+        update {
+            $0.peerOutcome = .unknown
+            $0.recordStep(.hostAwaitingJoiner, at: now())
+        }
+    }
+
+    func stopAwaitingJoiner() {
+        guard attempt?.hasHostSentRecoveryCode == true else { return }
+        end(Outcome(status: .success))
+    }
+
+    func recordJoinerOutcome(_ peerOutcome: SyncSetupWideEventData.PeerOutcome) {
+        guard attempt?.hasHostSentRecoveryCode == true else { return }
+        endAsHost(peerOutcome: peerOutcome)
+    }
+
+    func endAsHost(peerOutcome: SyncSetupWideEventData.PeerOutcome) {
+        guard attempt?.role == .host else { return }
+        update { $0.peerOutcome = peerOutcome }
+        end(Outcome(status: .success))
     }
 
     public func recordDeviceAuthShown() {
@@ -157,17 +179,14 @@ public final class SyncSetupAttemptTracker {
 
     private func end(_ outcome: Outcome, underlyingError: Error?) {
         guard let attempt else { return }
+        let outcome = attempt.hasHostSentRecoveryCode ? Outcome(status: .success) : outcome
         attempt.statusReason = outcome.statusReason
         attempt.timeoutStage = outcome.timeoutStage
         if outcome.status == .failure, let underlyingError {
             attempt.errorData = WideEventErrorData(error: underlyingError)
         }
-        close(attempt, status: outcome.status)
-    }
-
-    private func close(_ attempt: SyncSetupWideEventData, status: WideEventStatus) {
         attempt.end(at: now())
-        wideEvent.completeFlow(attempt, status: status, onComplete: { _, _ in })
+        wideEvent.completeFlow(attempt, status: outcome.status, onComplete: { _, _ in })
         self.attempt = nil
         errorOnScreen = nil
     }
@@ -176,5 +195,11 @@ public final class SyncSetupAttemptTracker {
         guard let attempt else { return }
         change(attempt)
         wideEvent.updateFlow(attempt)
+    }
+}
+
+private extension SyncSetupWideEventData {
+    var hasHostSentRecoveryCode: Bool {
+        role == .host && peerOutcome != nil
     }
 }

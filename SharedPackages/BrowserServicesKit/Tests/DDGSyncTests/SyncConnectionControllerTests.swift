@@ -2423,6 +2423,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.account = AccountManagingMock()
         attemptTracker.recordPeer(role: .host, kind: .ddg)
         attemptTracker.recordFlowVersion(.v1)
+        attemptTracker.recordHostAwaitingJoiner()
 
         await controller.syncCodeEntered(code: Self.validRecoveryCode, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
 
@@ -2430,6 +2431,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(attempt.pixelParameters()["feature.data.ext.connect_method"], "scan_code")
         XCTAssertNil(attempt.pixelParameters()["feature.data.ext.role"])
         XCTAssertNil(attempt.pixelParameters()["feature.data.ext.peer_kind"])
+        XCTAssertNil(attempt.pixelParameters()["feature.data.ext.peer_outcome"])
         XCTAssertEqual(attempt.pixelParameters()["feature.data.ext.flow_version"], "v2.1")
     }
 
@@ -2459,20 +2461,17 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_attempt_v1ExchangeHost_reportsPairingFactsAndSteps() async throws {
+    func test_attempt_v1ExchangeHost_endsAsSuccessAfterSendingCode() async throws {
         startAttempt()
         givenExchangerPollForPublicKeySucceeds()
         dependencies.createExchangeRecoveryKeyTransmitterStub = MockExchangeRecoveryKeyTransmitting()
-        let willBeginTransmitting = expectation(description: "will begin transmitting")
-        delegate.didBeginTransmittingRecoveryKeyCalled = {
-            willBeginTransmitting.fulfill()
-        }
+        let didEnd = expectationForAttemptEnd()
 
         _ = try await controller.startExchangeMode()
-        await fulfillment(of: [willBeginTransmitting], timeout: 5)
+        await fulfillment(of: [didEnd], timeout: 5)
 
-        try assertOpenAttempt(role: "host", peerKind: "ddg", connectMethod: "show_code", flowVersion: "v1",
-                              steps: "started,preparing_code,code_accepted_by_other_device,preparing_sync")
+        try assertEndedHostAttempt(peerKind: "ddg", connectMethod: "show_code", flowVersion: "v1", peerOutcome: "unknown",
+                                   steps: "started,preparing_code,code_accepted_by_other_device,preparing_sync")
     }
 
     @MainActor
@@ -2513,7 +2512,7 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_attempt_v1ConnectHostWithoutAccount_reportsAccountCreated() async throws {
+    func test_attempt_v1ConnectHostWithoutAccount_endsAsSuccessAfterSendingCode() async throws {
         startAttempt()
         dependencies.account = AccountManagingMock()
         dependencies.createRecoveryTransmitterStub = MockRecoveryKeyTransmitting()
@@ -2521,12 +2520,27 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: Self.validConnectCode, canScanLegacyURLBarcodes: true, codeSource: .deepLink)
 
         XCTAssertTrue(result)
-        try assertOpenAttempt(role: "host", peerKind: "ddg", connectMethod: "link", flowVersion: "v1",
-                              steps: "started,preparing_sync,account_created")
+        try assertEndedHostAttempt(peerKind: "ddg", connectMethod: "link", flowVersion: "v1", peerOutcome: "unknown",
+                                   steps: "started,preparing_sync,account_created")
     }
 
     @MainActor
-    func test_attempt_v2ScannerHostForThirdPartyPeer_reportsPairingFactsAndSteps() async throws {
+    func test_attempt_v1ConnectHostWhenTransmitFails_staysOpen() async throws {
+        startAttempt()
+        dependencies.account = AccountManagingMock()
+        let transmitter = MockRecoveryKeyTransmitting()
+        transmitter.sendError = SyncError.noResponseBody
+        dependencies.createRecoveryTransmitterStub = transmitter
+
+        let result = await controller.syncCodeEntered(code: Self.validConnectCode, canScanLegacyURLBarcodes: true, codeSource: .deepLink)
+
+        XCTAssertFalse(result)
+        XCTAssertTrue(attemptWideEvent.completions.isEmpty)
+        XCTAssertNil((attemptWideEvent.started.last as? SyncSetupWideEventData)?.peerOutcome)
+    }
+
+    @MainActor
+    func test_attempt_v2ScannerHostForThirdPartyPeer_endsAsSuccessAfterSendingCode() async throws {
         startAttempt()
         let messageExchanger = PairingV2MessageExchangingMock()
         dependencies.createPairingV2MessageExchangerStub = messageExchanger
@@ -2549,18 +2563,82 @@ final class SyncConnectionControllerTests: XCTestCase {
         let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
 
         XCTAssertTrue(result)
-        try assertOpenAttempt(role: "host", peerKind: "3party", connectMethod: "scan_code", flowVersion: "v2",
-                              steps: "started,confirmation_screen,sync_confirmation,preparing_sync,account_created")
+        try assertEndedHostAttempt(peerKind: "3party", connectMethod: "scan_code", flowVersion: "v2", peerOutcome: "unknown",
+                                   steps: "started,confirmation_screen,sync_confirmation,preparing_sync,account_created")
     }
 
     @MainActor
-    func test_attempt_v2PresenterHost_reportsPairingFactsAndSteps() async throws {
-        try await assertPresenterHostAttempt(peerVersion: PairingV2ProtocolVersion.v2.rawValue, canUseExchangeV2Point1: false, expectedFlowVersion: "v2")
+    func test_attempt_v2PresenterHost_endsAsSuccessRightAfterSendingCode() async throws {
+        startAttempt()
+        let didEnd = expectationForAttemptEnd()
+
+        try await startPresenterHost(peerVersion: PairingV2ProtocolVersion.v2.rawValue, canUseExchangeV2Point1: false, joinerMessages: [])
+        await fulfillment(of: [didEnd], timeout: 5)
+
+        try assertEndedHostAttempt(peerKind: "ddg", connectMethod: "show_code", flowVersion: "v2", peerOutcome: "unknown",
+                                   steps: "started,preparing_code,code_accepted_by_other_device,confirmation_screen,sync_confirmation,preparing_sync")
     }
 
     @MainActor
-    func test_attempt_v21PresenterHost_reportsPairingFactsAndSteps() async throws {
-        try await assertPresenterHostAttempt(peerVersion: PairingV2ProtocolVersion.v2Point1.rawValue, canUseExchangeV2Point1: true, expectedFlowVersion: "v2.1")
+    func test_attempt_v21PresenterHost_whenJoinerSucceeds_endsWithPeerOutcomeSuccess() async throws {
+        try await assertV21PresenterHostEnds(afterJoinerSends: [.recoveryCodeDone(.init(reason: .success))], peerOutcome: "success")
+    }
+
+    @MainActor
+    func test_attempt_v21PresenterHost_whenJoinerFailsToLogIn_endsWithPeerOutcomeFailure() async throws {
+        try await assertV21PresenterHostEnds(afterJoinerSends: [.recoveryCodeDone(.init(reason: .loginFailed))], peerOutcome: "failure")
+    }
+
+    @MainActor
+    func test_attempt_v21PresenterHost_whenJoinerBacksOut_endsWithPeerOutcomeCancelled() async throws {
+        try await assertV21PresenterHostEnds(afterJoinerSends: [.bye(.init(reason: .cancelled))], peerOutcome: "cancelled")
+    }
+
+    @MainActor
+    func test_attempt_v21PresenterHost_whenJoinerSaysDoneBeforeReporting_waitsForTheReport() async throws {
+        try await assertV21PresenterHostEnds(afterJoinerSends: [.bye(.init(reason: .done)), .recoveryCodeDone(.init(reason: .success))],
+                                             peerOutcome: "success")
+    }
+
+    @MainActor
+    func test_attempt_v21PresenterHost_whenJoinerLeavesWithAnUnknownReason_endsWithPeerOutcomeUnknown() async throws {
+        try await assertV21PresenterHostEnds(afterJoinerSends: [.bye(.init(reason: .unknown("gone")))], peerOutcome: "unknown")
+    }
+
+    @MainActor
+    func test_attempt_v21PresenterHost_whenSessionTimesOutWithoutReport_endsWithPeerOutcomeUnknown() async throws {
+        startAttempt(pairingV2PollingTimeout: 1)
+        let didEnd = expectationForAttemptEnd()
+
+        try await startPresenterHost(peerVersion: PairingV2ProtocolVersion.v2Point1.rawValue, canUseExchangeV2Point1: true, joinerMessages: [])
+        await fulfillment(of: [didEnd], timeout: 5)
+
+        try assertEndedHostAttempt(peerKind: "ddg", connectMethod: "show_code", flowVersion: "v2.1", peerOutcome: "unknown",
+                                   steps: "started,preparing_code,code_accepted_by_other_device,confirmation_screen,sync_confirmation,preparing_sync,host_awaiting_joiner")
+    }
+
+    @MainActor
+    func test_attempt_v21PresenterHost_whileJoinerNeverReports_awaitsJoinerUntilUserCloses() async throws {
+        startAttempt()
+        let isAwaitingJoiner = expectation(description: "host awaiting joiner")
+        isAwaitingJoiner.assertForOverFulfill = false
+        attemptWideEvent.onUpdate = { data in
+            guard (data as? SyncSetupWideEventData)?.steps.last == .hostAwaitingJoiner else { return }
+            isAwaitingJoiner.fulfill()
+        }
+
+        try await startPresenterHost(peerVersion: PairingV2ProtocolVersion.v2Point1.rawValue, canUseExchangeV2Point1: true, joinerMessages: [])
+        await fulfillment(of: [isAwaitingJoiner], timeout: 5)
+        attemptWideEvent.onUpdate = nil
+
+        try assertOpenAttempt(role: "host", peerKind: "ddg", connectMethod: "show_code", flowVersion: "v2.1",
+                              steps: "started,preparing_code,code_accepted_by_other_device,confirmation_screen,sync_confirmation,preparing_sync,host_awaiting_joiner")
+
+        await controller.cancel()
+        attemptTracker.end(.userClosed)
+
+        try assertEndedHostAttempt(peerKind: "ddg", connectMethod: "show_code", flowVersion: "v2.1", peerOutcome: "unknown",
+                                   steps: "started,preparing_code,code_accepted_by_other_device,confirmation_screen,sync_confirmation,preparing_sync,host_awaiting_joiner")
     }
 
     @MainActor
@@ -2715,12 +2793,25 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    private func assertPresenterHostAttempt(peerVersion: String,
-                                            canUseExchangeV2Point1: Bool,
-                                            expectedFlowVersion: String,
+    private func assertV21PresenterHostEnds(afterJoinerSends joinerMessages: [PairingV2ApplicationMessage],
+                                            peerOutcome: String,
                                             file: StaticString = #filePath,
                                             line: UInt = #line) async throws {
         startAttempt()
+        let didEnd = expectationForAttemptEnd()
+
+        try await startPresenterHost(peerVersion: PairingV2ProtocolVersion.v2Point1.rawValue, canUseExchangeV2Point1: true, joinerMessages: joinerMessages)
+        await fulfillment(of: [didEnd], timeout: 5)
+
+        try assertEndedHostAttempt(peerKind: "ddg", connectMethod: "show_code", flowVersion: "v2.1", peerOutcome: peerOutcome,
+                                   steps: "started,preparing_code,code_accepted_by_other_device,confirmation_screen,sync_confirmation,preparing_sync,host_awaiting_joiner",
+                                   file: file, line: line)
+    }
+
+    @MainActor
+    private func startPresenterHost(peerVersion: String,
+                                    canUseExchangeV2Point1: Bool,
+                                    joinerMessages: [PairingV2ApplicationMessage]) async throws {
         dependencies.isPairingV2CodeEnabled = { true }
         dependencies.canUseExchangeV2Point1 = { canUseExchangeV2Point1 }
         try dependencies.secureStore.persistAccount(SyncAccount.mock)
@@ -2752,26 +2843,50 @@ final class SyncConnectionControllerTests: XCTestCase {
                 ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
             case 2:
                 guard lock.withLock({ hasSentRecoveryCode }) else { return [] }
-                return try Self.encryptedPresenterPeerMessages(messages: [
-                    .recoveryCodeDone(.init(reason: .success))
-                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+                return try Self.encryptedPresenterPeerMessages(messages: joinerMessages,
+                                                               presenterPayload: payload,
+                                                               peerKeyPair: peerKeyPair,
+                                                               initialSequence: sequence)
             default:
                 return []
             }
         }
-        let didFinishTransmitting = expectation(description: "did finish transmitting")
-        delegate.didFinishTransmittingRecoveryKeyCalled = {
-            didFinishTransmitting.fulfill()
-        }
-
         let pairingInfo = try await controller.startExchangeMode()
         let presenterPayload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
         lock.withLock { payload = presenterPayload }
-        await fulfillment(of: [didFinishTransmitting], timeout: 5)
+    }
 
-        try assertOpenAttempt(role: "host", peerKind: "ddg", connectMethod: "show_code", flowVersion: expectedFlowVersion,
-                              steps: "started,preparing_code,code_accepted_by_other_device,confirmation_screen,sync_confirmation,preparing_sync",
-                              file: file, line: line)
+    @MainActor
+    private func expectationForAttemptEnd() -> XCTestExpectation {
+        let didEnd = expectation(description: "attempt ended")
+        attemptWideEvent.onComplete = { _, _ in
+            didEnd.fulfill()
+        }
+        return didEnd
+    }
+
+    @MainActor
+    private func assertEndedHostAttempt(peerKind: String,
+                                        connectMethod: String,
+                                        flowVersion: String,
+                                        peerOutcome: String,
+                                        steps: String,
+                                        file: StaticString = #filePath,
+                                        line: UInt = #line) throws {
+        XCTAssertEqual(attemptWideEvent.completions.count, 1, file: file, line: line)
+        let (data, status) = try XCTUnwrap(attemptWideEvent.completions.first, file: file, line: line)
+        XCTAssertEqual(status, .success, file: file, line: line)
+        let parameters = data.pixelParameters()
+        let expected = [
+            "feature.data.ext.role": "host",
+            "feature.data.ext.peer_kind": peerKind,
+            "feature.data.ext.connect_method": connectMethod,
+            "feature.data.ext.flow_version": flowVersion,
+            "feature.data.ext.peer_outcome": peerOutcome,
+            "feature.data.ext.steps": steps
+        ]
+        XCTAssertEqual(parameters.filter { expected.keys.contains($0.key) }, expected, file: file, line: line)
+        XCTAssertNil(parameters["feature.data.ext.status_reason"], file: file, line: line)
     }
 
     @MainActor

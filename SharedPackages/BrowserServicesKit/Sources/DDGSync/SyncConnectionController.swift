@@ -681,6 +681,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         guard await state.isActivePairingV2Coordinator(coordinator) else {
             return
         }
+        await attemptTracker?.stopAwaitingJoiner()
 
         let timeoutStage: SyncSetupTimeoutStage?
         if let syncError = error as? SyncError, syncError == .pollingDidTimeOut {
@@ -857,6 +858,7 @@ public class SyncConnectionController: SyncConnectionControlling {
                 return
             }
 
+            attemptTracker?.endAsHost(peerOutcome: .unknown)
             delegate?.controllerDidFinishTransmittingRecoveryKey(shouldWaitForDevicesToChange: true)
             (await state.getExchanger())?.stopPolling()
         }
@@ -985,6 +987,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
         do {
             try await syncService.transmitRecoveryKey(connectKey)
+            await attemptTracker?.endAsHost(peerOutcome: .unknown)
             await delegate?.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: shouldShowSyncEnabled, setupSource: .connect, codeSource: codeSource)
         } catch {
             await delegate?.controllerDidError(.failedToTransmitConnectRecoveryKey, underlyingError: error, setupRole: .receiver(.connect, codeSource))
@@ -1222,9 +1225,20 @@ extension SyncConnectionController: PairingV2ConfirmationDelegate {
             await attemptTracker?.recordStep(.preparingSync)
         case .joinerWaitingForRecoveryCode(let session):
             await attemptTracker?.recordStep(session.hasHostConfirmed ? .preparingSync : .waitingForConfirmation)
+        case .hostWaitingForJoinStatus:
+            await attemptTracker?.recordHostAwaitingJoiner()
+        case .completed(.recoveryCodeSent):
+            await attemptTracker?.endAsHost(peerOutcome: .unknown)
         default:
             break
         }
+    }
+
+    func pairingV2CoordinatorDidReceiveJoinerMessage(_ message: PairingV2ApplicationMessage) async {
+        guard let peerOutcome = SyncSetupWideEventData.PeerOutcome(joinerMessage: message) else {
+            return
+        }
+        await attemptTracker?.recordJoinerOutcome(peerOutcome)
     }
 
     private func reportPeer(role: SyncSetupWideEventData.Role, session: PairingV2Session) async {
@@ -1269,6 +1283,36 @@ private extension SyncSetupWideEventData.PeerKind {
             self = .ddg
         case .thirdParty:
             self = .thirdParty
+        }
+    }
+}
+
+private extension SyncSetupWideEventData.PeerOutcome {
+
+    init?(joinerMessage: PairingV2ApplicationMessage) {
+        switch joinerMessage {
+        case .recoveryCodeDone(let message):
+            switch message.reason {
+            case .success:
+                self = .success
+            case .loginFailed, .scopeRejected:
+                self = .failure
+            case .unknown:
+                self = .unknown
+            }
+        case .bye(let message):
+            switch message.reason {
+            case .cancelled:
+                self = .cancelled
+            case .error:
+                self = .failure
+            case .unknown:
+                self = .unknown
+            case .done:
+                return nil
+            }
+        default:
+            return nil
         }
     }
 }

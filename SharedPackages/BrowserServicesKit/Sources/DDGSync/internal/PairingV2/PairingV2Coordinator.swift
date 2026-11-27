@@ -31,6 +31,7 @@ protocol PairingV2ConfirmationDelegate: AnyObject {
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async
     func pairingV2CoordinatorDidSendJoinReport(_ report: PairingV2JoinReport) async
     func pairingV2CoordinatorDidChangeState(_ state: PairingV2State, negotiatedVersion: PairingV2ProtocolVersion) async
+    func pairingV2CoordinatorDidReceiveJoinerMessage(_ message: PairingV2ApplicationMessage) async
 }
 
 /// Pairing V2 timing defaults and remote configuration bounds.
@@ -338,6 +339,12 @@ final class PairingV2Coordinator {
                         onStateChange: ((PairingV2State) async -> Void)?) async throws {
         let commands: [PairingV2Command]
         let stateBeforeMessage = stateMachine.state
+        switch stateBeforeMessage {
+        case .hostWaitingForJoinStatus, .hostJoinOutcomeUnknown:
+            await confirmationDelegate?.pairingV2CoordinatorDidReceiveJoinerMessage(message)
+        default:
+            break
+        }
         switch message {
         case .hello(let message):
             if shouldRejectRedundantHello(message, stateBeforeMessage: stateBeforeMessage) {

@@ -232,6 +232,23 @@ struct SyncSetupWideEventDataTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A host still waiting for its joiner at the next launch completes as UNKNOWN app_restart", .timeLimit(.minutes(1)))
+    func appLaunchCompletesWaitingHostAsAppRestart() async {
+        let data = SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,
+                                          launchID: "previous-launch", contextData: WideEventContextData())
+        data.role = .host
+        data.peerOutcome = .unknown
+
+        let decision = await data.completionDecision(for: .appLaunch)
+
+        guard case .complete(.unknown(let reason)) = decision else {
+            Issue.record("Expected UNKNOWN, got \(decision)")
+            return
+        }
+        #expect(reason == "app_restart")
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("An attempt closed at cold launch randomizes the classic pixel timestamp, not the POST payload", .timeLimit(.minutes(1)))
     func appLaunchCompletionRandomizesPixelTimestamp() async {
         let data = SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,

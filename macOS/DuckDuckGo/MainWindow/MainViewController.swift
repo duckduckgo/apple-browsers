@@ -45,6 +45,14 @@ final class MainViewController: NSViewController {
     let aiChatSummarizer: AIChatSummarizer
     let aiChatTranslator: AIChatTranslator
     let aiChatSelectionContextAttacher: AIChatSelectionContextAttaching
+    private(set) lazy var aiChatLinkContextAttacher: AIChatLinkContextAttaching = AIChatLinkContextAttacher(
+        aiChatMenuConfig: aiChatMenuConfig,
+        aiChatCoordinator: aiChatCoordinator,
+        pixelFiring: PixelKit.shared,
+        currentPageContextProvider: { [weak tabCollectionViewModel] in
+            tabCollectionViewModel?.selectedTabViewModel?.tab.pageContext
+        }
+    )
 
     private(set) lazy var findInPageViewController: FindInPageViewController = {
         let vc = FindInPageViewController.create()

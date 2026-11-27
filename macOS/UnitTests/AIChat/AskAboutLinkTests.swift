@@ -32,6 +32,173 @@ import WebKit
 import WebKitExtensions
 @testable import DuckDuckGo_Privacy_Browser
 
+// MARK: - Link context menu
+
+@MainActor
+@Suite("Ask About Page in a link's context menu")
+struct AskAboutLinkMenuTests {
+
+    private let featureFlagger = MockFeatureFlagger()
+    private let attacher = LinkContextAttacherSpy()
+    private static let page = URL(string: "https://example.com/article")!
+    private static let serp = URL(string: "https://duckduckgo.com/?q=privacy")!
+
+    init() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatPageContext.rawValue] = true
+    }
+
+    private func setFlags(serp: Bool, other: Bool) {
+        featureFlagger.featuresStub[FeatureFlag.aiChatAskAboutSerpPage.rawValue] = serp
+        featureFlagger.featuresStub[FeatureFlag.aiChatAskAboutLinkedPage.rawValue] = other
+    }
+
+    private func makeManager(tabContent: Tab.TabContent, isLoadedInSidebar: Bool = false) -> ContextMenuManager {
+        ContextMenuManager(contextMenuSubfeaturePublisher: Empty<ContextMenuSubfeature?, Never>(),
+                           contentPublisher: Just(tabContent),
+                           tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+                           isLoadedInSidebar: isLoadedInSidebar,
+                           internalUserDecider: MockInternalUserDecider(),
+                           aiChatMenuConfiguration: AIChatMenuConfiguration(storage: MockAIChatPreferencesStorage(),
+                                                                            remoteSettings: MockRemoteAISettings(),
+                                                                            featureFlagger: featureFlagger),
+                           aiChatLinkContextAttacher: attacher,
+                           tld: TLD())
+    }
+
+    private func openMenu(_ manager: ContextMenuManager, link: String) -> NSMenu {
+        let menu = NSMenu()
+        for identifier: WKMenuItemIdentifier in [.openLinkInNewWindow, .copyLink, .shareMenu] {
+            let item = NSMenuItem(title: identifier.rawValue, action: nil, keyEquivalent: "")
+            item.identifier = NSUserInterfaceItemIdentifier(identifier.rawValue)
+            menu.addItem(item)
+        }
+        manager.willShowContextMenu(withSelectedText: nil, linkURL: link)
+        let event = NSEvent.mouseEvent(with: .rightMouseDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0,
+                                       context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+        manager.webView(WebView(featureFlagger: featureFlagger, privacyConfig: MockPrivacyConfiguration()), willOpenContextMenu: menu, with: event)
+        return menu
+    }
+
+    private func click(_ item: NSMenuItem) {
+        _ = (item.target as? NSObject)?.perform(item.action, with: item)
+    }
+
+    private func askAboutPageItem(in menu: NSMenu) -> NSMenuItem? {
+        menu.items.first { $0.title == UserText.aiChatMenuAskAboutPage }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each page kind follows its own flag", .timeLimit(.minutes(1)),
+          arguments: [(false, false), (true, false), (false, true), (true, true)])
+    func eachPageKindFollowsItsFlag(serpFlag: Bool, otherFlag: Bool) {
+        setFlags(serp: serpFlag, other: otherFlag)
+
+        let onSERP = openMenu(makeManager(tabContent: .url(Self.serp, source: .link)), link: "https://example.com/result")
+        let onPage = openMenu(makeManager(tabContent: .url(Self.page, source: .link)), link: "https://example.com/other")
+
+        #expect((askAboutPageItem(in: onSERP) != nil) == serpFlag)
+        #expect((askAboutPageItem(in: onPage) != nil) == otherFlag)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("No item without page context", .timeLimit(.minutes(1)))
+    func noItemWithoutPageContext() {
+        setFlags(serp: true, other: true)
+        featureFlagger.featuresStub[FeatureFlag.aiChatPageContext.rawValue] = false
+        let menu = openMenu(makeManager(tabContent: .url(Self.page, source: .link)), link: "https://example.com/other")
+        #expect(askAboutPageItem(in: menu) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The item sits under a Duck.ai header after the link items", .timeLimit(.minutes(1)))
+    func itemSitsUnderDuckAIHeader() throws {
+        setFlags(serp: false, other: true)
+        let menu = openMenu(makeManager(tabContent: .url(Self.page, source: .link)), link: "https://example.com/other")
+
+        let index = try #require(menu.items.firstIndex { $0.title == UserText.aiChatMenuAskAboutPage })
+        #expect(menu.items[index - 1].title == UserText.aiChatTitle)
+        #expect(menu.items[index - 2].isSeparatorItem)
+        #expect(menu.items.last?.identifier?.rawValue == WKMenuItemIdentifier.shareMenu.rawValue)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Links that can't be read in the background get no item", .timeLimit(.minutes(1)),
+          arguments: ["mailto:someone@example.com", "ftp://example.com/file", "https://user:secret@example.com/", "javascript:alert(1)"])
+    func unsupportedLinksGetNoItem(link: String) {
+        setFlags(serp: true, other: true)
+        let menu = openMenu(makeManager(tabContent: .url(Self.page, source: .link)), link: link)
+        #expect(askAboutPageItem(in: menu) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Pages that aren't plain web pages get no item", .timeLimit(.minutes(1)),
+          arguments: ["file:///Users/someone/page.html", "https://user:secret@example.com/"])
+    func unsupportedPagesGetNoItem(page: String) throws {
+        setFlags(serp: true, other: true)
+        let menu = openMenu(makeManager(tabContent: .url(try #require(URL(string: page)), source: .link)), link: "https://example.com/a")
+        #expect(askAboutPageItem(in: menu) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("No item in the sidebar's own web view or on a Duck.ai tab", .timeLimit(.minutes(1)))
+    func noItemInSidebarOrDuckAITab() {
+        setFlags(serp: true, other: true)
+        let sidebar = openMenu(makeManager(tabContent: .url(Self.page, source: .link), isLoadedInSidebar: true), link: "https://example.com/a")
+        let duckAITab = openMenu(makeManager(tabContent: .aiChat(URL(string: "https://duck.ai")!)), link: "https://example.com/a")
+
+        #expect(askAboutPageItem(in: sidebar) == nil)
+        #expect(askAboutPageItem(in: duckAITab) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Turning the flag on while running shows the item on the next menu", .timeLimit(.minutes(1)))
+    func flagFlipWhileRunning() {
+        let manager = makeManager(tabContent: .url(Self.page, source: .link))
+        setFlags(serp: false, other: false)
+        #expect(askAboutPageItem(in: openMenu(manager, link: "https://example.com/a")) == nil)
+
+        setFlags(serp: false, other: true)
+        #expect(askAboutPageItem(in: openMenu(manager, link: "https://example.com/a")) != nil)
+
+        setFlags(serp: false, other: false)
+        #expect(askAboutPageItem(in: openMenu(manager, link: "https://example.com/a")) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Clicking asks about the link, typed by the page it's on", .timeLimit(.minutes(1)))
+    func clickAsksAboutTheLink() throws {
+        setFlags(serp: true, other: true)
+
+        // Menu items hold their target weakly, as WebKit's menu does.
+        let serpManager = makeManager(tabContent: .url(Self.serp, source: .link))
+        let serpMenu = openMenu(serpManager, link: "https://example.com/result")
+        let serpItem = try #require(askAboutPageItem(in: serpMenu))
+        click(serpItem)
+
+        let pageManager = makeManager(tabContent: .url(Self.page, source: .link))
+        let pageMenu = openMenu(pageManager, link: "https://example.com/other")
+        let pageItem = try #require(askAboutPageItem(in: pageMenu))
+        click(pageItem)
+        withExtendedLifetime((serpManager, pageManager)) {}
+
+        #expect(attacher.requests == [LinkContextAttacherSpy.Request(url: URL(string: "https://example.com/result")!, linkType: .serp),
+                                      LinkContextAttacherSpy.Request(url: URL(string: "https://example.com/other")!, linkType: .other)])
+    }
+}
+
+@MainActor
+private final class LinkContextAttacherSpy: AIChatLinkContextAttaching {
+    struct Request: Equatable {
+        let url: URL
+        let linkType: AIChatLinkAskAboutPageType
+    }
+    private(set) var requests: [Request] = []
+
+    func askAboutLink(_ url: URL, linkType: AIChatLinkAskAboutPageType) {
+        requests.append(Request(url: url, linkType: linkType))
+    }
+}
+
 // MARK: - Same-origin rule
 
 @Suite("Linked page main-frame navigations stay on their origin")
@@ -568,6 +735,100 @@ private final class PixelRecorder {
     var fired: [AIChatPixel] = []
     var names: [String] { fired.map(\.name) }
     var parameters: [[String: String]?] { fired.map(\.parameters) }
+}
+
+// MARK: - Attacher
+
+@MainActor
+@Suite("Ask About Page on a link opens the sidebar and attaches the page")
+struct AIChatLinkContextAttacherTests {
+
+    private let pixelFiring = PixelKitMock()
+    private let coordinator = LinkAttachCoordinatorMock()
+    private let pageContext = LinkedPageContextSpy()
+
+    private func makeAttacher() -> AIChatLinkContextAttacher {
+        AIChatLinkContextAttacher(aiChatMenuConfig: MockAIChatConfig(),
+                                  aiChatCoordinator: coordinator,
+                                  pixelFiring: pixelFiring,
+                                  currentPageContextProvider: { [pageContext] in pageContext },
+                                  aiChatConversationSourceHandler: AIChatConversationSourceHandler())
+    }
+
+    private func firedNames() -> [String] {
+        pixelFiring.actualFireCalls.map(\.pixel.name)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Opens the sidebar right away and attaches the link", .timeLimit(.minutes(1)))
+    func successOpensSidebarAndAttaches() async {
+        pageContext.result = .success(AIChatPageContextData(title: "", favicon: [], url: "https://example.com/a", content: "x", truncated: false, fullContentLength: 1))
+
+        makeAttacher().askAboutLink(URL(string: "https://example.com/a")!, linkType: .other)
+        await pageContext.lastTask?.value
+        await Task.yield()
+
+        #expect(pageContext.requestedURLs == [URL(string: "https://example.com/a")!])
+        #expect(coordinator.revealChatCallCount == 1)
+        #expect(firedNames() == ["aichat_link_ask_about_page_macos", AIChatPixel.aiChatSidebarOpened(source: .askAboutLink, shouldAutomaticallySendPageContext: nil, minutesSinceSidebarHidden: nil).name])
+        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["link_type": "other"])
+        #expect(pixelFiring.actualFireCalls.first?.frequency == .dailyAndCount)
+        #expect(pixelFiring.actualFireCalls.last?.pixel.parameters?["source"] == "ask-about-link")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A sidebar that's already open isn't reported as opened", .timeLimit(.minutes(1)))
+    func alreadyOpenSidebar() async {
+        coordinator.isChatPresented = true
+        pageContext.result = nil
+
+        makeAttacher().askAboutLink(URL(string: "https://duckduckgo.com/a")!, linkType: .serp)
+
+        #expect(firedNames() == ["aichat_link_ask_about_page_macos"])
+        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["link_type": "serp"])
+    }
+}
+
+@MainActor
+private final class LinkedPageContextSpy: PageContextProtocol {
+    var result: LinkedPageContextLoadResult?
+    private(set) var requestedURLs: [URL] = []
+    private(set) var lastTask: Task<LinkedPageContextLoadResult?, Never>?
+    var linkedPageDomains = Set<String>()
+
+    func appendSelectionContext(_ selection: AIChatSelectionContextData) {}
+    func suppressAutoPageContextForSelectionAction() {}
+    func requestPageContextAttachment() {}
+    func isPageAttachable(at url: URL) -> Bool { true }
+
+    func attachLinkedPage(_ url: URL) -> Task<LinkedPageContextLoadResult?, Never> {
+        requestedURLs.append(url)
+        let task = Task { [result] in result }
+        lastTask = task
+        return task
+    }
+}
+
+private final class LinkAttachCoordinatorMock: AIChatCoordinating {
+    var isChatPresented = false
+    var revealChatCallCount = 0
+
+    func toggleSidebar() {}
+    func collapseSidebar(withAnimation: Bool) {}
+    func isSidebarOpen(for tabID: TabIdentifier) -> Bool { isChatPresented }
+    func isSidebarOpenForCurrentTab() -> Bool { isChatPresented }
+    func isChatPresentedForCurrentTab() -> Bool { isChatPresented }
+    func sidebarHiddenAt(for tabID: TabIdentifier) -> Date? { nil }
+    func sidebarHiddenAtForCurrentTab() -> Date? { nil }
+    func hasHiddenChat(for tabID: TabIdentifier) -> Bool { false }
+    var sidebarPresenceDidChangePublisher: AnyPublisher<AIChatPresenceChange, Never> { Empty().eraseToAnyPublisher() }
+    func isChatFloating(for tabID: TabIdentifier) -> Bool { false }
+    var chatFloatingStateDidChangePublisher: AnyPublisher<TabIdentifier, Never> { Empty().eraseToAnyPublisher() }
+    func focusFloatingWindow(for tabID: TabIdentifier) {}
+    func closeFloatingWindow(for tabID: TabIdentifier) {}
+    func closeChat(for tabID: TabIdentifier, withAnimation: Bool) {}
+    func revealChat(for prompt: AIChatNativePrompt) {}
+    func revealChat() { revealChatCallCount += 1 }
 }
 
 // MARK: - Page attachability

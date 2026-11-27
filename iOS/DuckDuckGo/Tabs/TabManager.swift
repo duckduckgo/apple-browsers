@@ -1052,8 +1052,12 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
                                      clearTabHistory: clearTabHistory)
     }
 
+    @MainActor
     func cleanupTabsFaviconCache() {
         guard tabsCacheNeedsCleanup else { return }
+
+        // Tabs and their links are mutated on main, so read the hosts here rather than on the background queue
+        let tabHosts = Set(allTabsModel.tabs.compactMap { $0.link?.url.host })
 
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self,
@@ -1063,17 +1067,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
             let imageDomainURLs = contents.compactMap({ $0.filename })
 
-            // create a Set of all unique hosts in case there are hundreds of tabs with many duplicate hosts
-            let tabLink = Set(self.allTabsModel.tabs.compactMap { tab in
-                if let host = tab.link?.url.host {
-                    return host
-                }
-
-                return nil
-            })
-
             // hash the unique tab hosts
-            let tabLinksHashed = tabLink.map { FaviconHasher.createHash(ofDomain: $0) }
+            let tabLinksHashed = tabHosts.map { FaviconHasher.createHash(ofDomain: $0) }
 
             // filter images that don't have a corresponding tab
             let toDelete = imageDomainURLs.filter { !tabLinksHashed.contains($0) }

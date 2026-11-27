@@ -221,6 +221,34 @@ final class TabManagerTests: XCTestCase {
                       "Removing a tab should flag the tabs favicon cache for cleanup so orphaned favicons are swept on next launch")
     }
 
+    func testWhenTabsFaviconCacheCleanedUp_ThenFaviconsOfTabsOpenAtStartAreKeptAndOrphansRemoved() throws {
+        let keptHost = "kept-\(UUID().uuidString.lowercased()).example"
+        let orphanHost = "orphan-\(UUID().uuidString.lowercased()).example"
+        let tab = Tab(link: Link(title: "kept", url: URL(string: "https://\(keptHost)")!))
+        let tabsModel = TabsModel(tabs: [tab], desktop: false)
+        let favicons = RecordingFavicons()
+        let manager = try makeManager(tabsModel, favicons: favicons)
+
+        let cacheURL = try XCTUnwrap(FaviconsCacheType.tabs.cacheLocation()?.appendingPathComponent(Favicons.Constants.tabsCachePath))
+        try FileManager.default.createDirectory(at: cacheURL, withIntermediateDirectories: true)
+        let keptKey = FaviconHasher.createHash(ofDomain: keptHost)
+        let orphanKey = FaviconHasher.createHash(ofDomain: orphanHost)
+        let files = [keptKey, orphanKey].map { cacheURL.appendingPathComponent($0) }
+        try files.forEach { try Data().write(to: $0) }
+        defer { files.forEach { try? FileManager.default.removeItem(at: $0) } }
+
+        manager.tabsCacheNeedsCleanup = true
+        let finished = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !manager.tabsCacheNeedsCleanup }, object: nil)
+
+        manager.cleanupTabsFaviconCache()
+        tab.link = Link(title: "navigated", url: URL(string: "https://navigated.example")!)
+
+        // Background QoS work can take several seconds to start in the test host
+        wait(for: [finished], timeout: 30.0)
+        XCTAssertTrue(favicons.removedCacheKeys.contains(orphanKey))
+        XCTAssertFalse(favicons.removedCacheKeys.contains(keptKey))
+    }
+
     func testWhenViewModelRequested_ThenReturnsViewModelForTab() throws {
         let tabsModel = TabsModel(desktop: false)
         let tab = try XCTUnwrap(tabsModel.get(tabAt: 0))
@@ -1504,6 +1532,7 @@ final class TabManagerTests: XCTestCase {
                      privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager(),
                      applicationState: (@MainActor () -> UIApplication.State)? = nil,
                      isPad: Bool = false,
+                     favicons: FaviconManaging = Favicons(),
                      clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}) throws -> TabManager {
         FireModeCapability.resolve(using: featureFlagger)
         let normalStore = try normalStore ?? MockKeyValueFileStore(throwOnInit: nil)
@@ -1532,7 +1561,7 @@ final class TabManagerTests: XCTestCase {
                           autoconsentManagementProvider: MockAutoconsentManagementProvider(),
                           websiteDataManager: MockWebsiteDataManager(),
                           fireproofing: MockFireproofing(),
-                          favicons: Favicons(),
+                          favicons: favicons,
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
                           featureDiscovery: MockFeatureDiscovery(),
@@ -1603,6 +1632,19 @@ private final class CountingThrowingKeyValueStore: ThrowingKeyValueStoring, @unc
         lock.lock()
         storedValue = nil
         lock.unlock()
+    }
+}
+
+private final class RecordingFavicons: Favicons, @unchecked Sendable {
+    private let lock = NSLock()
+    private var keys: [String] = []
+
+    var removedCacheKeys: [String] {
+        lock.withLock { keys }
+    }
+
+    override func removeTabFavicon(forCacheKey key: String) {
+        lock.withLock { keys.append(key) }
     }
 }
 

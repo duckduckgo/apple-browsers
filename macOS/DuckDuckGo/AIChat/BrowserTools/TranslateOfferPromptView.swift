@@ -19,14 +19,17 @@
 import DesignResourcesKitIcons
 import SwiftUI
 
+final class TranslateOfferChoice: ObservableObject {
+    @Published var dontAskAgain = false
+}
+
 struct TranslateOfferPromptView: View {
 
     let pageLanguageName: String
     let userLanguageName: String
+    @ObservedObject var choice: TranslateOfferChoice
     let answer: (_ translate: Bool) -> Void
 
-    // shortcut: not stored or read yet, a later change wires it to excluded languages.
-    @State private var dontAskAgain = false
     @ObservedObject private var themeManager: ThemeManager = NSApp.delegateTyped.themeManager
 
     var body: some View {
@@ -45,7 +48,7 @@ struct TranslateOfferPromptView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Toggle(UserText.translateOfferDontAskAgain(pageLanguage: pageLanguageName), isOn: $dontAskAgain)
+            Toggle(UserText.translateOfferDontAskAgain(pageLanguage: pageLanguageName), isOn: $choice.dontAskAgain)
                 .toggleStyle(.checkbox)
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary, palette: themeManager.designColorPalette))

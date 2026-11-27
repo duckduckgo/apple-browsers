@@ -19,6 +19,7 @@
 import Combine
 import FeatureFlags_macOS
 import Foundation
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import Testing
@@ -31,10 +32,11 @@ struct TranslateOfferPresenterTests {
 
     private let collection: TabCollectionViewModel
     private let presenter: BrowserToolPermissionPromptPresenter
+    private let setting = TranslatePagesSetting(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter())
 
     init() {
         collection = Self.collection(urls: ["https://a.example", "https://b.example"])
-        presenter = Self.presenter(collections: [collection])
+        presenter = Self.presenter(collections: [collection], setting: setting)
     }
 
     private static func collection(urls: [String], burnerMode: BurnerMode = .regular) -> TabCollectionViewModel {
@@ -42,10 +44,11 @@ struct TranslateOfferPresenterTests {
         return TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs), pinnedTabsManagerProvider: nil, burnerMode: burnerMode)
     }
 
-    private static func presenter(collections: [TabCollectionViewModel]) -> BrowserToolPermissionPromptPresenter {
+    private static func presenter(collections: [TabCollectionViewModel], setting: TranslatePagesSetting? = nil) -> BrowserToolPermissionPromptPresenter {
         let manager = WindowControllersManagerMock()
         manager.customAllTabCollectionViewModels = collections
-        return BrowserToolPermissionPromptPresenter(windowControllersManager: manager) { _, _, _ in }
+        let setting = setting ?? TranslatePagesSetting(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter())
+        return BrowserToolPermissionPromptPresenter(windowControllersManager: manager, translatePages: setting) { _, _, _ in }
     }
 
     private func tabID(_ index: Int) -> TabIdentifier { collection.tabCollection.tabs[index].uuid }
@@ -85,6 +88,51 @@ struct TranslateOfferPresenterTests {
 
         presenter.offerTranslation(languageCode: "fr", tabID: tabID(0))
         #expect(presenter.translateOfferLanguageCode(for: tabID(0)) == "fr")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Each offered language is recorded for the Settings menu", .timeLimit(.minutes(1)))
+    func recordsOffered() {
+        presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
+        presenter.offerTranslation(languageCode: "ja", tabID: tabID(1))
+
+        #expect(setting.offeredLanguageCodes == ["es", "ja"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A ticked box excludes the language on Translate and on No Thanks, and later pages in it don't offer", .timeLimit(.minutes(1)),
+          arguments: [true, false])
+    func dontAskAgain(translate: Bool) {
+        presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
+        presenter.answerTranslateOffer(for: tabID(0), translate: translate, dontAskAgain: true)
+        #expect(setting.excludedLanguageCodes == ["es"])
+
+        presenter.offerTranslation(languageCode: "es", tabID: tabID(1))
+        #expect(presenter.translateOfferLanguageCode(for: tabID(1)) == nil)
+        presenter.offerTranslation(languageCode: "fr", tabID: tabID(1))
+        #expect(presenter.translateOfferLanguageCode(for: tabID(1)) == "fr")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An unticked box excludes nothing", .timeLimit(.minutes(1)))
+    func unticked() {
+        presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
+        presenter.answerTranslateOffer(for: tabID(0), translate: false)
+
+        #expect(setting.excludedLanguageCodes.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Never Ask and excluded languages stop the offer, and nothing is recorded for them", .timeLimit(.minutes(1)))
+    func settingGates() {
+        setting.exclude(languageCode: "es")
+        presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
+        #expect(presenter.translateOfferLanguageCode(for: tabID(0)) == nil)
+
+        setting.mode = .neverAsk
+        presenter.offerTranslation(languageCode: "fr", tabID: tabID(0))
+        #expect(presenter.translateOfferLanguageCode(for: tabID(0)) == nil)
+        #expect(setting.offeredLanguageCodes.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)

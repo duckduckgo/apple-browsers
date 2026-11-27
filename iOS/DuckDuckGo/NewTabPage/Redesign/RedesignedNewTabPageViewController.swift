@@ -570,7 +570,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         favoritesModel?.isFocussedState = pose != nil
         focusedModeSwitchSwipeController.isEnabled = pose?.showsModules == true
         if isFocusedPoseSettled {
-            updateFocusedScrollInset(keyboardTop: view.keyboardLayoutGuide.layoutFrame.minY)
+            updateFocusedScrollInset(keyboardTop: keyboardTopInView)
         }
         applyFocusedPose()
         applyAccessibilityReach()
@@ -582,7 +582,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     func settleFocusedPose() {
         guard focusedPose != nil, !isFocusedPoseSettled else { return }
         isFocusedPoseSettled = true
-        updateFocusedScrollInset(keyboardTop: view.keyboardLayoutGuide.layoutFrame.minY)
+        updateFocusedScrollInset(keyboardTop: keyboardTopInView)
         focusedKeyboardObserver = NotificationCenter.default.addObserver(
             forName: UIResponder.keyboardWillChangeFrameNotification, object: nil, queue: .main) { [weak self] notification in
             guard let self, let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
@@ -613,6 +613,12 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
     private var pinnedEditingContentOffset: CGPoint? {
         guard !isFocusedPoseSettled, let inputEditingLayout, inputEditingLayout.isGeometryValid, !inputEditingLayout.isLeavingFocus else { return nil }
         return inputEditingLayout.contentOffset
+    }
+
+    /// Read from the host's guide: this view's own guide would hold the page's bottom edge against the input anchored above the keyboard.
+    private var keyboardTopInView: CGFloat {
+        guard let hostView = parent?.view else { return view.bounds.maxY }
+        return view.convert(hostView.keyboardLayoutGuide.layoutFrame, from: hostView).minY
     }
 
     private func updateFocusedScrollInset(keyboardTop: CGFloat) {

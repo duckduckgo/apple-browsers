@@ -88,7 +88,9 @@ public extension URL {
         return url.isDuckDuckGo
     }
 
-    var isDuckDuckGo: Bool { isPart(ofDomain: URL.ddg.host!) }
+    private static let ddgHost: String = ddg.host ?? "duckduckgo.com"
+
+    var isDuckDuckGo: Bool { isPart(ofDomain: URL.ddgHost) }
 
     var isDuckDuckGoStatic: Bool {
         let staticPaths = ["/settings", "/params"]

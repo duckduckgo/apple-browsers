@@ -159,6 +159,30 @@ final class AppURLsTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
+    func testWhenDdgUrlHasNestedSubdomainThenIsDdgIsTrue() {
+        XCTAssertTrue(URL(string: "https://help.duckduckgo.com")!.isDuckDuckGo)
+        XCTAssertTrue(URL(string: "https://links.duckduckgo.com/search-token")!.isDuckDuckGo)
+    }
+
+    func testWhenUrlIsNonDdgThenIsDdgIsFalse() {
+        XCTAssertFalse(URL(string: "https://example.com")!.isDuckDuckGo)
+        XCTAssertFalse(URL(string: "https://notduckduckgo.com")!.isDuckDuckGo)
+        XCTAssertFalse(URL(string: "https://duckduckgo.com.example.com")!.isDuckDuckGo)
+    }
+
+    func testWhenUrlHasNoHostThenIsDdgIsFalse() {
+        XCTAssertFalse(URL(string: "about:blank")!.isDuckDuckGo)
+        XCTAssertFalse(URL(string: "file:///tmp/x")!.isDuckDuckGo)
+        XCTAssertFalse(URL(string: "data:text/plain,hi")!.isDuckDuckGo)
+    }
+
+    func testWhenDomainIsCheckedThenIsDdgMatchesHost() {
+        XCTAssertTrue(URL.isDuckDuckGo(domain: "duckduckgo.com"))
+        XCTAssertTrue(URL.isDuckDuckGo(domain: "help.duckduckgo.com"))
+        XCTAssertFalse(URL.isDuckDuckGo(domain: "example.com"))
+        XCTAssertFalse(URL.isDuckDuckGo(domain: nil))
+    }
+
     func testInitialAtbDoesNotContainAtbParams() throws {
         let url = URL.atb
         XCTAssertNil(url.getParameter(named: "atb"))

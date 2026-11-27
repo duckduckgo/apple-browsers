@@ -54,10 +54,9 @@ picks between two versions of some texts and of when the passcode is asked; ever
   (`syncPromotionRedesign` pinned off), and with an aged install the redesigned bookmarks promo and "sync another
   device" in the bookmarks list. Age the install with the launch-profile key `debug.daysSinceInstall` (for example 8)
   in `PROFILE`. `fresh_start` applies it, but a fresh install's first statistics request then resets the install date
-  to today, so relaunch with the profile once more: `ios.d.launch(flags=ios.flags, language=ios.language,
-  profile=ios.profile)` (`ios.launch()` doesn't reapply `PROFILE`). If that first request is still in flight at the
-  relaunch, it can reset the date again: check Remote Messaging's "Days Since Installed", or relaunch again when a
-  promo is missing. An aged install also gets launch prompts to answer first: "Set As Default Browser" (Don't Ask
+  to today, so relaunch once more with `ios.launch()`, which reapplies `PROFILE`. If that first request is still in
+  flight at the relaunch, it can reset the date again: check Remote Messaging's "Days Since Installed", or relaunch
+  again when a promo is missing. An aged install also gets launch prompts to answer first: "Set As Default Browser" (Don't Ask
   Again) and the subscription's "Did you know?" (No thanks). What each promo needs:
   - Bookmarks list header: sync off, `syncPromotionBookmarks` on, at least one bookmark, not dismissed, and with the
     redesign an install older than 3 days. Hidden while editing, searching or inside a folder. Standard: "Sync & Back Up
@@ -147,6 +146,7 @@ Steps (in `lib/verify_ios/steps.py`; quirks in [shared steps](./shared-steps.md)
   `role=alert label="Switch to a different Sync?"`. It is gone again within about a second, before it can be
   answered: prove that it appeared, and record Switch Sync / Cancel with `ios.unverified`.
 
+`examples/t13_sync_backup_manage.py` is the single-device backup and manage proof; rerun it after changing this map.
 Worked proofs (kept with the evidence, not committed): `sync_backup_manage` (environment, invalid code, backup, copy,
 PDF, devices, favorites, rename, turn off and delete), `sync_recover` (remove this device, reinstall, recover),
 `sync_pair` (pair with the other simulator, recorded on both; the switch-account alert; remove the other device),

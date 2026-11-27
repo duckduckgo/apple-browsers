@@ -462,6 +462,11 @@ def unlock_device(ios, timeout=5):
     return True
 
 
+def runner_code(e):
+    """The runner's error code on a Failed (ALERT_STILL_SHOWN, MATCHES_CHANGED, …), or None."""
+    return ((getattr(e, "extra", None) or {}).get("runner") or {}).get("code")
+
+
 def allow_camera(ios):
     """Allow the camera prompt the code scanner raises, as often as it comes back (it can show twice in a row).
     The simulator has no camera, so a code is always entered through Enter Code."""
@@ -471,7 +476,7 @@ def allow_camera(ios):
         try:
             ios.alert("accept", button="Allow")
         except Failed as e:
-            if ((getattr(e, "extra", None) or {}).get("runner") or {}).get("code") != "ALERT_STILL_SHOWN":
+            if runner_code(e) != "ALERT_STILL_SHOWN":
                 raise
 
 
@@ -481,7 +486,7 @@ def answer_alert(ios, button, timeout=10):
     try:
         return ios.alert("accept", button=button)
     except Failed as e:
-        if ((getattr(e, "extra", None) or {}).get("runner") or {}).get("code") != "ALERT_STILL_SHOWN":
+        if runner_code(e) != "ALERT_STILL_SHOWN":
             raise
     try:
         ios.wait("role=alert", "hidden", timeout)
@@ -538,7 +543,7 @@ def close_settings(ios):
     try:
         ios.tap('role=button label="Done"')
     except Failed as e:
-        if ((getattr(e, "extra", None) or {}).get("runner") or {}).get("code") != "MATCHES_CHANGED":
+        if runner_code(e) != "MATCHES_CHANGED":
             raise
         ios.tap('role=button label="Done"')
     ios.wait("id=searchEntry", "exists", 10)

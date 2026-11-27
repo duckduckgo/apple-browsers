@@ -83,4 +83,4 @@ before a proof uses a step, and update it when you change one.
 t3 and t9 the address bar, page reads and focus, t4 tabs, t5 a long-press menu, t6 a permission sheet and an iOS
 alert, t7 the Fire button with pixels and a wide event, t10 capture conditions. `selftest` runs t7 on each device
 because it needs no live service. t8 is the Duck.ai proof, t11 the contextual chat proof, and t12 deletes a chat and
-reads history and storage before and after.
+reads history and storage before and after. t13 backs up and manages Sync on the dev server ([sync](sync.md)).

@@ -63,7 +63,7 @@ class XCUITestRunner:
     # transport -----------------------------------------------------------------
     def call(self, body, timeout=180):
         body = scoped(body)
-        req =urllib.request.Request(f"http://127.0.0.1:{self.port}/", data=json.dumps({**body, "token": self.token}).encode(),
+        req = urllib.request.Request(f"http://127.0.0.1:{self.port}/", data=json.dumps({**body, "token": self.token}).encode(),
                                      method="POST", headers={"Content-Type": "application/json"})
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:

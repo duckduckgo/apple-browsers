@@ -28,6 +28,8 @@ public enum SubscriptionPixelType: Equatable {
     case invalidRefreshTokenSignedOut
     /// The invalid current token was recovered, by the method of the strategy that recovered it.
     case invalidRefreshTokenRecovered(TokenRecoveryMethod?)
+    /// The refresh was rejected again right after a successful recovery, so the recovery was deferred and the token kept.
+    case invalidRefreshTokenRecoveryDeferred
     case purchaseSuccessAfterPendingTransaction
     case pendingTransactionApproved
     /// The backup restored the token container, in a recovery with the associated trigger.
@@ -48,6 +50,7 @@ public enum SubscriptionPixelType: Equatable {
             (.subscriptionIsActive, .subscriptionIsActive),
             (.osDistributionActiveSubscription, .osDistributionActiveSubscription),
             (.invalidRefreshTokenSignedOut, .invalidRefreshTokenSignedOut),
+            (.invalidRefreshTokenRecoveryDeferred, .invalidRefreshTokenRecoveryDeferred),
             (.getTokensError, .getTokensError),
             (.purchaseSuccessAfterPendingTransaction, .purchaseSuccessAfterPendingTransaction),
             (.pendingTransactionApproved, .pendingTransactionApproved),

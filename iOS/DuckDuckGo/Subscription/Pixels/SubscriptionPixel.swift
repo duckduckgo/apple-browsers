@@ -331,6 +331,22 @@ enum SubscriptionBackupTokenPixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
 }
 
+/// The AuthV2 token recovery pixels that aren't about a single recovery method.
+enum SubscriptionTokenRecoveryPixel: PixelKit.Event {
+    /// The refresh was rejected again right after a successful recovery, so the recovery was deferred.
+    case deferred
+
+    var name: String {
+        switch self {
+        case .deferred: return "subscription_auth-recovery_deferred"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}
+
 // This is a separate definition in order to get the correct platform and form factor suffixes, which the subscription pixels above do not have.
 enum SubscriptionAutomaticSignOutPixel: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature to a legacy, and incorrect, suffix ordering.

@@ -507,6 +507,25 @@ enum SubscriptionBackupTokenPixel: PixelKit.Event {
     var standardParameters: [PixelKitStandardParameter]? { nil }
 }
 
+/// The AuthV2 token recovery pixels that aren't about a single recovery method.
+enum SubscriptionTokenRecoveryPixel: PixelKit.Event {
+    /// The names are complete: `_macos` replaces the `m_mac_` prefix.
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    /// The refresh was rejected again right after a successful recovery, so the recovery was deferred.
+    case deferred
+
+    var name: String {
+        switch self {
+        case .deferred: return "subscription_auth-recovery_deferred_macos"
+        }
+    }
+
+    var parameters: [String: String]? { nil }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}
+
 enum SubscriptionErrorPixel: PixelKit.Event {
 
     case subscriptionKeychainAccessError(accessType: AccountKeychainAccessType,

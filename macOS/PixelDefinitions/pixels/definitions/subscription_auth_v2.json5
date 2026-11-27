@@ -74,6 +74,13 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionTokenRecoveryMethod"]
     },
+    "subscription_auth-recovery_deferred_macos": {
+        "description": "Fired when the auth server rejects the refresh token again within a minute of a successful session recovery. The app keeps the token and skips the recovery instead of recovering in a loop",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "channel"]
+    },
     // Backup token
     "subscription_auth-backup_restored_macos": {
         "description": "Fired when the main app restores the subscription session from the backup token, so the user stays signed in",

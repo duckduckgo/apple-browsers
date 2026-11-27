@@ -182,6 +182,18 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         )
     }
 
+    func testInvalidRefreshTokenRecoveryDeferredPixel() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .invalidRefreshTokenRecoveryDeferred)
+
+        assertDailyAndCountPixel(
+            baseName: "subscription_auth-recovery_deferred_macos",
+            expectedParameters: [
+                PixelKit.Parameters.appVersion: "1.0.0"
+            ]
+        )
+    }
+
     func testPurchaseSuccessAfterPendingTransactionPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
         handler.handle(pixel: .purchaseSuccessAfterPendingTransaction)

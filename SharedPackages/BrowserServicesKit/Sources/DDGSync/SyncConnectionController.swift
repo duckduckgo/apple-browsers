@@ -947,7 +947,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
 
         await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource, codeVersion: recovery.syncSetupCodeVersion)
-        await attemptTracker?.recordConnectMethod(SyncSetupWideEventData.ConnectMethod(codeSource))
+        await attemptTracker?.recordRecoveryCodeEntered(connectMethod: SyncSetupWideEventData.ConnectMethod(codeSource))
         guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
             return false
         }

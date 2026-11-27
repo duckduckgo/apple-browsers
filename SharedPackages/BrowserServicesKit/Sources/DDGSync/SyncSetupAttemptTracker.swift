@@ -96,6 +96,14 @@ public final class SyncSetupAttemptTracker {
         update { $0.connectMethod = method }
     }
 
+    func recordRecoveryCodeEntered(connectMethod: SyncSetupWideEventData.ConnectMethod) {
+        update {
+            $0.connectMethod = connectMethod
+            $0.role = nil
+            $0.peerKind = nil
+        }
+    }
+
     func recordFlowVersion(_ version: SyncSetupWideEventData.FlowVersion) {
         update { $0.flowVersion = version }
     }

@@ -2418,15 +2418,42 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func test_attempt_recoveryCodeEntered_reportsConnectMethod() async throws {
+    func test_attempt_recoveryCodeEnteredAfterPairing_reportsConnectMethodAndDropsPeer() async throws {
         startAttempt()
         dependencies.account = AccountManagingMock()
+        attemptTracker.recordPeer(role: .host, kind: .ddg)
 
         await controller.syncCodeEntered(code: Self.validRecoveryCode, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
 
         let attempt = try XCTUnwrap(attemptWideEvent.started.last as? SyncSetupWideEventData)
         XCTAssertEqual(attempt.pixelParameters()["feature.data.ext.connect_method"], "scan_code")
         XCTAssertNil(attempt.pixelParameters()["feature.data.ext.role"])
+        XCTAssertNil(attempt.pixelParameters()["feature.data.ext.peer_kind"])
+    }
+
+    @MainActor
+    func test_attempt_v2JoinerWithRecoveryCodeReleasedBeforeConfirming_goesStraightToPreparingSync() async throws {
+        startAttempt()
+        let (messageExchanger, peerKeyPair) = try givenPairingV2Joiner()
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard sequence == 0 else { return [] }
+            return try self.encryptedPeerMessages(
+                [
+                    Self.hostRecoveryCodeAvailable,
+                    .recoveryCodeResponse(.init(recoveryCode: Self.validRecoveryCode))
+                ],
+                messageExchanger: messageExchanger,
+                peerKeyPair: peerKeyPair
+            )
+        }
+
+        let url = try pairingV2URL(version: PairingV2ProtocolVersion.v2.rawValue, peerKeyPair: peerKeyPair)
+
+        let result = await controller.syncCodeEntered(code: url, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
+
+        XCTAssertTrue(result)
+        try assertOpenAttempt(role: "joiner", peerKind: "ddg", connectMethod: "scan_code", flowVersion: "v2",
+                              steps: "started,confirmation_screen,sync_confirmation,preparing_sync")
     }
 
     @MainActor

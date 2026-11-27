@@ -213,6 +213,7 @@ final class PairingV2Coordinator {
                case .recoveryCodeResponse(let response) = applicationMessage {
                 // The peer may release its code before the local user confirms. Keep it while continuing to receive other messages.
                 pendingRecoveryCode = pendingRecoveryCode ?? response
+                try await execute(stateMachine.handle(.receivedRecoveryCodeConfirmed))
             } else {
                 try await handle(applicationMessage, onStateChange: onStateChange)
             }
@@ -411,6 +412,9 @@ final class PairingV2Coordinator {
             return
         }
         lastReportedState = state
+        if case .failed = state {
+            return
+        }
         await confirmationDelegate?.pairingV2CoordinatorDidChangeState(state, negotiatedVersion: negotiatedVersion)
     }
 

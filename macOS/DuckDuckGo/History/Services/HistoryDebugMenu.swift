@@ -99,7 +99,7 @@ final class HistoryDebugMenu: NSMenu {
                                             loginImporter: nil,
                                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                                             faviconManager: NSApp.delegateTyped.faviconManager,
-                                            faviconRasterizer: FaviconRasterizer(featureFlagger: Application.appDelegate.featureFlagger),
+                                            faviconRasterizer: NSApp.delegateTyped.faviconRasterizer,
                                             historyReader: ChromiumHistoryReader(chromiumDataDirectoryURL: profile.profileURL),
                                             historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
         importHistory(with: importer, browserName: "Chrome")
@@ -118,7 +118,7 @@ final class HistoryDebugMenu: NSMenu {
                                            loginImporter: SecureVaultLoginImporter(),
                                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                                            faviconManager: NSApp.delegateTyped.faviconManager,
-                                           faviconRasterizer: FaviconRasterizer(featureFlagger: Application.appDelegate.featureFlagger),
+                                           faviconRasterizer: NSApp.delegateTyped.faviconRasterizer,
                                            historyReader: FirefoxHistoryVisitsReader(firefoxDataDirectoryURL: profile.profileURL),
                                            historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
         importHistory(with: importer, browserName: "Firefox")

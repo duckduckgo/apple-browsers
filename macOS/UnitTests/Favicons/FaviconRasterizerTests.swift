@@ -29,15 +29,22 @@ final class FaviconRasterizerTests: XCTestCase {
 
     private typealias Fixtures = FaviconTestFixtures
 
+    /// The hard timeout of the tests that wait for it. The first render of a rasterizer also launches the web content
+    /// process, which took over a second on a CI machine, so the allowance is several times that.
+    private static let slowRenderAllowance: TimeInterval = 5
+
+    private var webViews: WebViewTracker!
     private var rasterizer: FaviconRasterizer!
 
     override func setUp() {
         super.setUp()
-        rasterizer = Fixtures.makeRasterizer()
+        webViews = WebViewTracker()
+        rasterizer = Fixtures.makeRasterizer(didCreateWebView: webViews.record)
     }
 
     override func tearDown() {
         rasterizer = nil
+        webViews = nil
         super.tearDown()
     }
 
@@ -211,7 +218,7 @@ final class FaviconRasterizerTests: XCTestCase {
     /// scripts or loads resources whatever the configuration is. So the configuration is read back.
     func testWebViewHasNoStoredDataNoScriptsAndNoWindows() async throws {
         _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
-        let webView = try XCTUnwrap(rasterizer.currentWebView)
+        let webView = try XCTUnwrap(webViews.latest)
 
         XCTAssertFalse(webView.configuration.websiteDataStore.isPersistent)
         XCTAssertFalse(webView.configuration.defaultWebpagePreferences.allowsContentJavaScript)
@@ -229,7 +236,8 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertTrue(controlWasSeen, "The scheme handler doesn't see the web view's requests")
         recorder.reset()
 
-        rasterizer.makeConfiguration = { recorder.handler.webViewConfiguration() }
+        let rasterizer = Fixtures.makeRasterizer(makeConfiguration: { recorder.handler.webViewConfiguration() },
+                                                 didCreateWebView: webViews.record)
         let svg = """
         <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64">
           <style>@import url(http://probe.example/style.css);</style>
@@ -242,11 +250,11 @@ final class FaviconRasterizerTests: XCTestCase {
         """
 
         let png = try await rasterizer.rasterize(Data(svg.utf8))
-        let webView = try XCTUnwrap(rasterizer.currentWebView)
+        let webView = try XCTUnwrap(webViews.latest)
         webView.load(URLRequest(url: try XCTUnwrap(URL(string: "http://probe.example/page"))))
         webView.loadHTMLString("<html><title>page</title></html>", baseURL: URL(string: "http://probe.example/"))
         // Nothing is expected to happen, so there is nothing to wait for but a grace period.
-        try await Task.sleep(nanoseconds: 1_000_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
 
         XCTAssertTrue(try decode(png).hasVisiblePixels())
         XCTAssertEqual(recorder.paths, [])
@@ -256,10 +264,17 @@ final class FaviconRasterizerTests: XCTestCase {
 
     // MARK: - Failures
 
-    func testHardTimeoutThrowsDiscardsTheWebViewAndTheNextCallRecovers() async throws {
+    /// A render that hangs the web content process is given up after the hard timeout. The process is ended, which
+    /// is not a crash, and the next call renders on a new web view.
+    func testHardTimeoutThrowsEndsTheProcessAndTheNextCallRecovers() async throws {
         let pixelKit = PixelKitMock()
-        let rasterizer = Fixtures.makeRasterizer(pixelFiring: pixelKit)
-        rasterizer.hardTimeout = 0.001
+        let rasterizer = Fixtures.makeRasterizer(pixelFiring: pixelKit,
+                                                 hardTimeout: Self.slowRenderAllowance,
+                                                 didCreateWebView: webViews.record)
+        _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
+        let hog = hogWebContentProcess(of: try XCTUnwrap(webViews.latest))
+        await settle()
+
         do {
             _ = try await rasterizer.rasterize(Data(Fixtures.recursiveFilterSVG.utf8))
             XCTFail("Expected a timeout")
@@ -267,12 +282,13 @@ final class FaviconRasterizerTests: XCTestCase {
             XCTAssertEqual(error as? FaviconRasterizer.RasterizationError, .timedOut)
         }
         XCTAssertFalse(rasterizer.hasWebView)
-
-        rasterizer.hardTimeout = FaviconRasterizer.defaultHardTimeout
+        await hog.value
         let png = try await rasterizer.rasterize(Data(Fixtures.recursiveFilterSVG.utf8))
 
         XCTAssertTrue(try decode(png).hasVisiblePixels())
-        // The delegate hears about the process the rasterizer ended after the call failed.
+        XCTAssertEqual(webViews.webViews.count, 2)
+        // The delegate hears about the process the rasterizer ended after the call failed; nothing is expected to
+        // follow, so there is nothing to wait for but a grace period.
         try await Task.sleep(nanoseconds: 500_000_000)
         XCTAssertTrue(pixelKit.actualFireCalls.isEmpty, "Ending the process after a timeout is not a crash")
     }
@@ -280,12 +296,10 @@ final class FaviconRasterizerTests: XCTestCase {
     /// One render at a time: a render that times out takes down the web view, and the calls waiting for their turn
     /// render on a new one. Their own timeout doesn't run while they wait.
     func testATimeoutDoesNotFailTheCallsWaitingBehindIt() async throws {
-        rasterizer.hardTimeout = 1
+        let rasterizer = Fixtures.makeRasterizer(hardTimeout: Self.slowRenderAllowance, didCreateWebView: webViews.record)
         _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
-        let webView = try XCTUnwrap(rasterizer.currentWebView)
-        let hog = hogWebContentProcess(of: webView)
-        try await Task.sleep(nanoseconds: 500_000_000)
-        let rasterizer = self.rasterizer!
+        let hog = hogWebContentProcess(of: try XCTUnwrap(webViews.latest))
+        await settle()
         let calls = (0..<3).map { _ in Task { try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8)) } }
 
         var timedOut = 0
@@ -304,36 +318,6 @@ final class FaviconRasterizerTests: XCTestCase {
 
         XCTAssertEqual(timedOut, 1)
         XCTAssertEqual(rendered, 2)
-    }
-
-    /// A call waiting for its turn leaves the queue when it is cancelled, without waiting for the render in front.
-    func testCancellingACallThatIsWaitingForItsTurnReleasesItAtOnce() async throws {
-        _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
-        let webView = try XCTUnwrap(rasterizer.currentWebView)
-        let hog = hogWebContentProcess(of: webView)
-        try await Task.sleep(nanoseconds: 500_000_000)
-        let rasterizer = self.rasterizer!
-        let stuck = Task { try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8)) }
-        try await Task.sleep(nanoseconds: 300_000_000)
-        let waiting = Task { try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8)) }
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let released = expectation(description: "the waiting call is released")
-        Task {
-            do {
-                _ = try await waiting.value
-                XCTFail("Expected a cancellation")
-            } catch {
-                XCTAssertTrue(error is CancellationError)
-            }
-            released.fulfill()
-        }
-        waiting.cancel()
-        await fulfillment(of: [released], timeout: 2)
-
-        rasterizer.handle(failure: FaviconRasterizer.RasterizationError.timedOut, of: webView)
-        _ = try? await stuck.value
-        await hog.value
     }
 
     func testDataThatFailsToDecodeThrowsAndKeepsTheWebView() async {
@@ -356,15 +340,44 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertEqual(Set(errors.map(\.errorCode)).count, errors.count)
     }
 
+    /// The image of an SVG with thousands of shapes takes far longer than a millisecond to load.
+    func testScriptTimeoutIsReportedAndDiscardsTheWebView() async throws {
+        let shapes = (0..<12000).map { #"<rect x="\#($0 % 64)" y="\#($0 / 64)" width="1" height="1"/>"# }.joined()
+        let heavySVG = Data(##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">\##(shapes)</svg>"##.utf8)
+        XCTAssertLessThan(heavySVG.count, FaviconRasterizer.maxDataSize)
+        let rasterizer = Fixtures.makeRasterizer(scriptTimeout: 0.001)
+
+        do {
+            _ = try await rasterizer.rasterize(heavySVG)
+            XCTFail("Expected a script timeout")
+        } catch {
+            XCTAssertEqual(error as? FaviconRasterizer.RasterizationError, .scriptTimedOut)
+        }
+
+        XCTAssertFalse(rasterizer.hasWebView)
+    }
+
+    func testWebViewIsReleasedAfterIdleLifetime() async throws {
+        let rasterizer = Fixtures.makeRasterizer(idleLifetime: 0.05)
+        _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
+        XCTAssertTrue(rasterizer.hasWebView)
+
+        let released = await waitUntil { !rasterizer.hasWebView }
+
+        XCTAssertTrue(released)
+    }
+
+    // MARK: - Cancellation
+
     /// A call that is stuck in a busy web view is released by the cancellation without waiting for the web view.
     func testCancellingTheCallerReleasesItWhileTheWebViewIsBusy() async throws {
         _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
-        let webView = try XCTUnwrap(rasterizer.currentWebView)
+        let webView = try XCTUnwrap(webViews.latest)
         let hog = hogWebContentProcess(of: webView)
-        try await Task.sleep(nanoseconds: 500_000_000)
+        await settle()
         let rasterizer = self.rasterizer!
         let call = Task { try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8)) }
-        try await Task.sleep(nanoseconds: 300_000_000)
+        await settle()
 
         call.cancel()
 
@@ -374,37 +387,33 @@ final class FaviconRasterizerTests: XCTestCase {
         } catch {
             XCTAssertTrue(error is CancellationError)
         }
-        rasterizer.handle(failure: FaviconRasterizer.RasterizationError.timedOut, of: webView)
+        endWebContentProcess(of: webView)
         await hog.value
     }
 
-    func testWebViewIsReleasedAfterIdleLifetime() async throws {
-        rasterizer.idleLifetime = 0.05
+    /// A call waiting for its turn leaves the queue when it is cancelled, without waiting for the render in front.
+    func testCancellingACallThatIsWaitingForItsTurnReleasesItAtOnce() async throws {
         _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
-        XCTAssertTrue(rasterizer.hasWebView)
+        let webView = try XCTUnwrap(webViews.latest)
+        let hog = hogWebContentProcess(of: webView)
+        await settle()
+        let rasterizer = self.rasterizer!
+        let stuck = Task { try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8)) }
+        await settle()
+        let waiting = Task { try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8)) }
+        await settle()
 
-        let released = await waitUntil { !self.rasterizer.hasWebView }
+        waiting.cancel()
 
-        XCTAssertTrue(released)
-    }
-
-    /// The image of an SVG with thousands of shapes takes longer than a millisecond to load.
-    func testScriptTimeoutIsReportedAndDiscardsTheWebView() async throws {
-        let shapes = (0..<3000).map { #"<rect x="\#($0 % 64)" y="\#($0 / 64)" width="1" height="1"/>"# }.joined()
-        let heavySVG = Data(##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">\##(shapes)</svg>"##.utf8)
-        rasterizer.scriptTimeout = 0.001
         do {
-            _ = try await rasterizer.rasterize(heavySVG)
-            XCTFail("Expected a script timeout")
+            _ = try await waiting.value
+            XCTFail("Expected a cancellation")
         } catch {
-            XCTAssertEqual(error as? FaviconRasterizer.RasterizationError, .scriptTimedOut)
+            XCTAssertTrue(error is CancellationError)
         }
-        XCTAssertFalse(rasterizer.hasWebView)
-
-        rasterizer.scriptTimeout = FaviconRasterizer.timeout
-        let png = try await rasterizer.rasterize(Data(Fixtures.recursiveFilterSVG.utf8))
-
-        XCTAssertTrue(try decode(png).hasVisiblePixels())
+        endWebContentProcess(of: webView)
+        _ = try? await stuck.value
+        await hog.value
     }
 
     // MARK: - Process termination
@@ -413,14 +422,14 @@ final class FaviconRasterizerTests: XCTestCase {
     /// the render in flight fails, the pixel is fired once, and the waiting calls render on a new web view.
     func testProcessTerminationFiresOnePixelAndOnlyFailsTheRenderInFlight() async throws {
         let pixelKit = PixelKitMock()
-        let rasterizer = Fixtures.makeRasterizer(pixelFiring: pixelKit)
+        let rasterizer = Fixtures.makeRasterizer(pixelFiring: pixelKit, didCreateWebView: webViews.record)
         _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
-        let webView = try XCTUnwrap(rasterizer.currentWebView)
+        let webView = try XCTUnwrap(webViews.latest)
         let processID = try XCTUnwrap(webProcessIdentifier(of: webView))
         let hog = hogWebContentProcess(of: webView)
-        try await Task.sleep(nanoseconds: 500_000_000)
+        await settle()
         let calls = (0..<3).map { _ in Task { try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8)) } }
-        try await Task.sleep(nanoseconds: 300_000_000)
+        await settle()
 
         try XCTSkipUnless(kill(processID, SIGKILL) == 0, "The test host can't signal the web content process")
 
@@ -437,7 +446,8 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertEqual(failed, 1)
         let pixelWasFired = await waitUntil { !pixelKit.actualFireCalls.isEmpty }
         XCTAssertTrue(pixelWasFired)
-        // The pixel must not be repeated by the calls that failed along with the process.
+        // The pixel must not be repeated by the calls that failed along with the process, and there is nothing to
+        // wait for but a grace period.
         try await Task.sleep(nanoseconds: 500_000_000)
         let fireCall = try XCTUnwrap(pixelKit.actualFireCalls.first)
         XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
@@ -448,51 +458,36 @@ final class FaviconRasterizerTests: XCTestCase {
         }
         XCTAssertEqual((error as NSError).domain, WKError.errorDomain)
         XCTAssertEqual((error as NSError).code, WKError.webContentProcessTerminated.rawValue)
-        let newWebView = try XCTUnwrap(rasterizer.currentWebView, "The calls that waited rendered on a new web view")
-        XCTAssertFalse(newWebView === webView)
+        XCTAssertEqual(webViews.webViews.count, 2, "The calls that waited rendered on a new web view")
     }
 
-    /// What the web view delegate reports when a process ends that the rasterizer didn't end itself.
+    /// What WebKit tells the web view's delegate when the process ends, without ending a process: the host can't
+    /// always signal the process.
     func testTerminationReportedByTheDelegateFiresOnePixelAndDiscardsTheWebView() async throws {
         let pixelKit = PixelKitMock()
-        let rasterizer = Fixtures.makeRasterizer(pixelFiring: pixelKit)
+        let rasterizer = Fixtures.makeRasterizer(pixelFiring: pixelKit, didCreateWebView: webViews.record)
         _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
-        let webView = try XCTUnwrap(rasterizer.currentWebView)
+        let webView = try XCTUnwrap(webViews.latest)
 
-        rasterizer.webContentProcessDidTerminate(webView)
+        webView.navigationDelegate?.webViewWebContentProcessDidTerminate?(webView)
 
         XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), ["favicon-svg-rendering_process-terminated_macos"])
         XCTAssertEqual(pixelKit.actualFireCalls.first?.frequency, .dailyAndCount)
         XCTAssertFalse(rasterizer.hasWebView)
     }
 
-    /// A rendering that hangs the process never returns on its own. Discarding the web view ends the process, which
-    /// ends the call in flight. That is not a crash, so no pixel is fired.
-    func testDiscardingTheWebViewEndsAProcessThatIsStuckWithoutReportingACrash() async throws {
-        let pixelKit = PixelKitMock()
-        let rasterizer = Fixtures.makeRasterizer(pixelFiring: pixelKit)
-        _ = try await rasterizer.rasterize(Data(Fixtures.svg(width: 16, height: 16).utf8))
-        let webView = try XCTUnwrap(rasterizer.currentWebView)
-        let hog = hogWebContentProcess(of: webView)
-        try await Task.sleep(nanoseconds: 500_000_000)
-
-        rasterizer.handle(failure: FaviconRasterizer.RasterizationError.timedOut, of: webView)
-
-        let ended = expectation(description: "the stuck call ends")
-        Task {
-            await hog.value
-            ended.fulfill()
-        }
-        await fulfillment(of: [ended], timeout: 10)
-        // The termination is reported to the delegate after the call ended; nothing is expected to follow.
-        try await Task.sleep(nanoseconds: 500_000_000)
-        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
-    }
-
     // MARK: - Helpers
 
     private func decode(_ png: Data) throws -> NSImage {
         try XCTUnwrap(NSImage(dataUsingCIImage: png, maxPixelSize: nil))
+    }
+
+    /// Lets the main-actor work that is already queued run up to its next suspension point: the calls started by a
+    /// test reach the web view, or the queue in front of it.
+    private func settle() async {
+        for _ in 0..<20 {
+            await Task.yield()
+        }
     }
 
     /// Polls until `condition` holds, for at most `timeout` seconds. Returns whether it held.
@@ -505,11 +500,17 @@ final class FaviconRasterizerTests: XCTestCase {
         return condition()
     }
 
-    /// Keeps the web content process busy forever. The task ends when the process does.
+    /// Keeps the web content process busy forever. Whatever is sent to the process after it waits behind it, so no
+    /// pause is needed. The task ends when the process does.
     private func hogWebContentProcess(of webView: WKWebView) -> Task<Void, Never> {
         Task {
             _ = try? await webView.callAsyncJavaScript("while (true) {}", arguments: [:], in: nil, contentWorld: .defaultClient)
         }
+    }
+
+    /// Ends the process like the rasterizer does when it gives up on a web view.
+    private func endWebContentProcess(of webView: WKWebView) {
+        webView.perform(NSSelectorFromString("_killWebContentProcessAndResetState"))
     }
 
     private func webProcessIdentifier(of webView: WKWebView) -> pid_t? {

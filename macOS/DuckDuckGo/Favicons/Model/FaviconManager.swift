@@ -173,6 +173,7 @@ final class FaviconManager: FaviconManagement {
         fireproofDomains: FireproofDomains,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         featureFlagger: FeatureFlagger,
+        faviconRasterizer: FaviconRasterizer,
         imageCache: ((FaviconStoring) -> FaviconImageCaching)? = nil,
         referenceCache: ((FaviconStoring) -> FaviconReferenceCaching)? = nil
     ) {
@@ -185,7 +186,7 @@ final class FaviconManager: FaviconManagement {
         self.bookmarkManager = bookmarkManager
         self.faviconDownloader = FaviconDownloader(privacyConfigurationManager: privacyConfigurationManager)
         self.featureFlagger = featureFlagger
-        self.faviconRasterizer = FaviconRasterizer(featureFlagger: featureFlagger)
+        self.faviconRasterizer = faviconRasterizer
         if let imageCache {
             self.imageCache = imageCache(store)
         } else if featureFlagger.isFeatureOn(.faviconLazyImageLoading) {
@@ -433,9 +434,7 @@ final class FaviconManager: FaviconManagement {
         // Download and decode every favicon at full resolution first. We need each favicon's original
         // size to decide which ones to keep — if we downscaled during the download (capping every favicon
         // at `maxStoredFaviconPixelSize`) we could no longer tell the redundant large ones apart.
-        // With the `faviconWebKitSVGRendering` flag off, SVGs are decoded the legacy way (`NSImage(data:)`).
-        let rasterizer = featureFlagger.isFeatureOn(.faviconWebKitSVGRendering) ? faviconRasterizer : nil
-        let (fetched, transparentSVGURLs) = await downloadFavicons(faviconLinks, webView: webView, rasterizer: rasterizer)
+        let (fetched, transparentSVGURLs) = await downloadFavicons(faviconLinks, webView: webView, rasterizer: faviconRasterizer)
         await rejectTransparentSVGFavicons(transparentSVGURLs)
 
         // With the storing improvements off, follow the pre-existing path: store every fetched favicon at
@@ -481,7 +480,7 @@ final class FaviconManager: FaviconManagement {
     /// that were rejected because they render fully transparent.
     private func downloadFavicons(_ faviconLinks: [FaviconUserScript.FaviconLink],
                                   webView: WKWebView?,
-                                  rasterizer: FaviconRasterizer?) async -> (fetched: [FetchedFavicon], transparentSVGURLs: Set<URL>) {
+                                  rasterizer: FaviconRasterizer) async -> (fetched: [FetchedFavicon], transparentSVGURLs: Set<URL>) {
         await withTaskGroup(of: FaviconDownloadResult.self) { [faviconDownloader] group in
             for faviconLink in faviconLinks {
                 let faviconUrl = faviconLink.href
@@ -546,12 +545,12 @@ final class FaviconManager: FaviconManagement {
         case transparentSVG
     }
 
-    /// With a `rasterizer`, data CoreImage can't decode (SVG, PDF) is rendered to a PNG by WebKit first, because
-    /// `NSImage(data:)` keeps a lazy vector image that CoreSVG renders later and can crash on. Without a
-    /// rasterizer, the legacy decoding is used.
+    /// With the `faviconWebKitSVGRendering` flag on, data CoreImage can't decode (SVG, PDF) is rendered to a PNG by
+    /// WebKit first, because `NSImage(data:)` keeps a lazy vector image that CoreSVG renders later and can crash on.
+    /// With the flag off, the legacy decoding is used.
     static func decodeFavicon(from data: Data,
                               link: FaviconUserScript.FaviconLink,
-                              rasterizer: FaviconRasterizer?) async throws -> FetchedFavicon {
+                              rasterizer: FaviconRasterizer) async throws -> FetchedFavicon {
         // Validate that we got actual image data
         guard !data.isEmpty else {
             throw URLError(.zeroByteResource, userInfo: [NSURLErrorKey: link.href])
@@ -559,7 +558,7 @@ final class FaviconManager: FaviconManagement {
 
         var imageData = data
         var isRasterizedVector = false
-        if let rasterizer, CIImage(data: data) == nil {
+        if await rasterizer.isEnabled, CIImage(data: data) == nil {
             imageData = try await rasterizer.rasterize(data)
             isRasterizedVector = true
         }

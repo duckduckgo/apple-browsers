@@ -18,8 +18,9 @@
 
 import AppKit
 import FeatureFlags_macOS
-import PrivacyConfig
 @_spi(Testing) import PixelKit
+import PrivacyConfig
+import WebKit
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -52,10 +53,41 @@ enum FaviconTestFixtures {
         return data as Data
     }
 
-    /// A rasterizer with the `faviconWebKitSVGRendering` flag on or off.
-    static func makeRasterizer(enabled: Bool = true, pixelFiring: PixelFiring? = nil) -> FaviconRasterizer {
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = enabled ? [.faviconWebKitSVGRendering] : []
-        return FaviconRasterizer(featureFlagger: featureFlagger, pixelFiring: pixelFiring)
+    /// A rasterizer with the `faviconWebKitSVGRendering` flag on or off, or reading the given feature flagger.
+    static func makeRasterizer(enabled: Bool = true,
+                               featureFlagger: MockFeatureFlagger? = nil,
+                               pixelFiring: PixelFiring? = nil,
+                               hardTimeout: TimeInterval = FaviconRasterizer.defaultHardTimeout,
+                               idleLifetime: TimeInterval = FaviconRasterizer.defaultIdleLifetime,
+                               scriptTimeout: TimeInterval = FaviconRasterizer.timeout,
+                               makeConfiguration: @escaping () -> WKWebViewConfiguration = { WKWebViewConfiguration() },
+                               didCreateWebView: ((WKWebView) -> Void)? = nil) -> FaviconRasterizer {
+        let flagger = featureFlagger ?? MockFeatureFlagger()
+        if featureFlagger == nil {
+            flagger.enabledFeatureFlags = enabled ? [.faviconWebKitSVGRendering] : []
+        }
+        return FaviconRasterizer(featureFlagger: flagger,
+                                 pixelFiring: pixelFiring,
+                                 hardTimeout: hardTimeout,
+                                 idleLifetime: idleLifetime,
+                                 scriptTimeout: scriptTimeout,
+                                 makeConfiguration: makeConfiguration,
+                                 didCreateWebView: didCreateWebView)
+    }
+}
+
+/// Keeps the web views a rasterizer creates, so that a test can reach them.
+@MainActor
+final class WebViewTracker {
+
+    private(set) var webViews = [WKWebView]()
+
+    var latest: WKWebView? { webViews.last }
+
+    /// Pass as `didCreateWebView` of the rasterizer.
+    var record: (WKWebView) -> Void {
+        { [weak self] webView in
+            MainActor.assumeMainThread { self?.webViews.append(webView) }
+        }
     }
 }

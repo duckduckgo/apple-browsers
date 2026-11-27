@@ -17,6 +17,8 @@
 //
 
 import AppKit
+import FeatureFlags_macOS
+import PrivacyConfig
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -90,6 +92,26 @@ final class FaviconRasterizerImportTests: XCTestCase {
         let largeImage = await rasterizer.storableImage(from: Data(Fixtures.svg(width: 1024, height: 512).utf8))
         let large = try XCTUnwrap(largeImage)
         XCTAssertEqual(large.size, NSSize(width: 64, height: 32))
+    }
+
+    /// The flag is read for every image, so switching it while the app runs takes effect at once, in both
+    /// directions, with the web view of the earlier renders still alive.
+    func testStorableImageFollowsTheFlagWhileTheRasterizerLives() async throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.faviconWebKitSVGRendering]
+        let rasterizer = Fixtures.makeRasterizer(featureFlagger: featureFlagger)
+        let svg = Data(Fixtures.svg(width: 16, height: 16).utf8)
+
+        let rendered = await rasterizer.storableImage(from: svg)
+        featureFlagger.enabledFeatureFlags = []
+        let legacy = await rasterizer.storableImage(from: svg)
+        featureFlagger.enabledFeatureFlags = [.faviconWebKitSVGRendering]
+        let renderedAgain = await rasterizer.storableImage(from: svg)
+
+        let isBitmap = try [rendered, legacy, renderedAgain].map { image in
+            try XCTUnwrap(image).representations.allSatisfy { $0 is NSBitmapImageRep }
+        }
+        XCTAssertEqual(isBitmap, [true, false, true])
     }
 
     func testStorableImageIsNilForDataThatIsNotAnImage() async {

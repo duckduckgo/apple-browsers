@@ -44,6 +44,7 @@ class FaviconManagerTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: featureFlagger,
+            faviconRasterizer: FaviconTestFixtures.makeRasterizer(featureFlagger: featureFlagger),
             imageCache: { _ in self.imageCache },
             referenceCache: { _ in self.referenceCache }
         )
@@ -63,7 +64,8 @@ class FaviconManagerTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             fireproofDomains: MockFireproofDomains(domains: []),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            featureFlagger: MockFeatureFlagger(),
+            faviconRasterizer: FaviconTestFixtures.makeRasterizer()
         )
         XCTAssertNotNil(faviconManager.store as? FaviconNullStore)
     }
@@ -195,15 +197,67 @@ class FaviconManagerTests: XCTestCase {
         }
     }
 
-    /// Without a rasterizer (the flag is off) the legacy decoding is used: the SVG data is kept, not rendered.
+    /// With the flag off the legacy decoding is used: the SVG data is kept, not rendered.
     @MainActor
-    func testDecodeFaviconWithoutRasterizerKeepsTheSVGData() async throws {
+    func testDecodeFaviconWithTheFlagOffKeepsTheSVGData() async throws {
         let svg = Data(FaviconTestFixtures.svg(width: 16, height: 16).utf8)
 
-        let fetched = try await FaviconManager.decodeFavicon(from: svg, link: faviconLink(), rasterizer: nil)
+        let fetched = try await FaviconManager.decodeFavicon(from: svg, link: faviconLink(), rasterizer: FaviconTestFixtures.makeRasterizer(enabled: false))
 
         XCTAssertFalse(fetched.isRasterizedVector)
         XCTAssertEqual(fetched.data, svg)
+    }
+
+    /// A PDF favicon is rendered by WebKit the same way.
+    @MainActor
+    func testDecodeFaviconRendersAPDFWithWebKit() async throws {
+        let pdf = FaviconTestFixtures.pdfData()
+
+        let fetched = try await FaviconManager.decodeFavicon(from: pdf, link: faviconLink("icon.pdf", type: "application/pdf"), rasterizer: FaviconTestFixtures.makeRasterizer())
+
+        XCTAssertTrue(fetched.isRasterizedVector)
+        XCTAssertNotEqual(fetched.data, pdf)
+        XCTAssertTrue(fetched.image.representations.allSatisfy { $0 is NSBitmapImageRep })
+        XCTAssertTrue(fetched.image.hasVisiblePixels())
+    }
+
+    /// The flag is read for every favicon, so switching it while the app runs takes effect at once, in both
+    /// directions, with the web view of the earlier renders still alive.
+    @MainActor
+    func testDecodeFaviconFollowsTheFlagWhileTheRasterizerLives() async throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.faviconWebKitSVGRendering]
+        let rasterizer = FaviconTestFixtures.makeRasterizer(featureFlagger: featureFlagger)
+        let svg = Data(FaviconTestFixtures.svg(width: 16, height: 16).utf8)
+
+        let rendered = try await FaviconManager.decodeFavicon(from: svg, link: faviconLink(), rasterizer: rasterizer)
+        featureFlagger.enabledFeatureFlags = []
+        let legacy = try await FaviconManager.decodeFavicon(from: svg, link: faviconLink(), rasterizer: rasterizer)
+        featureFlagger.enabledFeatureFlags = [.faviconWebKitSVGRendering]
+        let renderedAgain = try await FaviconManager.decodeFavicon(from: svg, link: faviconLink(), rasterizer: rasterizer)
+
+        XCTAssertTrue(rendered.isRasterizedVector)
+        XCTAssertFalse(legacy.isRasterizedVector)
+        XCTAssertEqual(legacy.data, svg)
+        XCTAssertTrue(renderedAgain.isRasterizedVector)
+    }
+
+    /// The same for the favicons stored from bookmarks and sync.
+    @MainActor
+    func testStoreFaviconFollowsTheFlagWhileTheManagerLives() async throws {
+        let documentURL = try XCTUnwrap("https://example.com".url)
+        let svg = Data(FaviconTestFixtures.svg(width: 16, height: 16).utf8)
+
+        try await faviconManager.storeFavicon(svg, with: nil, for: documentURL)
+        featureFlagger.enabledFeatureFlags = []
+        try await faviconManager.storeFavicon(svg, with: nil, for: documentURL)
+        featureFlagger.enabledFeatureFlags = [.faviconWebKitSVGRendering]
+        try await faviconManager.storeFavicon(svg, with: nil, for: documentURL)
+
+        let isBitmap = try imageCache.insertCalls.map { call in
+            try XCTUnwrap(call.first?.image).representations.allSatisfy { $0 is NSBitmapImageRep }
+        }
+        XCTAssertEqual(isBitmap, [true, false, true])
     }
 
     @MainActor
@@ -227,7 +281,7 @@ class FaviconManagerTests: XCTestCase {
             XCTAssertEqual(error as? FaviconRasterizer.RasterizationError, .unsupportedData)
         }
         do {
-            _ = try await FaviconManager.decodeFavicon(from: notAnImage, link: faviconLink(), rasterizer: nil)
+            _ = try await FaviconManager.decodeFavicon(from: notAnImage, link: faviconLink(), rasterizer: FaviconTestFixtures.makeRasterizer(enabled: false))
             XCTFail("Expected an error")
         } catch {
             XCTAssertEqual((error as? CocoaError)?.code, .fileReadCorruptFile)

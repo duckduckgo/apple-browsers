@@ -88,13 +88,15 @@ final class FaviconRasterizer {
     /// How long the web view (and its web content process) stays alive after the last call.
     nonisolated static let defaultIdleLifetime: TimeInterval = 30
 
-    /// Settable so tests can shorten them.
-    var hardTimeout: TimeInterval
-    var idleLifetime: TimeInterval
-    var scriptTimeout: TimeInterval
+    /// Injected so tests can shorten them.
+    private let hardTimeout: TimeInterval
+    private let idleLifetime: TimeInterval
+    private let scriptTimeout: TimeInterval
 
-    /// Creates the configuration the web view starts from. Tests replace it to observe the web view's requests.
-    var makeConfiguration: () -> WKWebViewConfiguration = { WKWebViewConfiguration() }
+    /// Create the configuration the web view starts from, and report each web view created. Tests use them to
+    /// observe the web view's requests and to reach the web views.
+    nonisolated(unsafe) private let makeConfiguration: () -> WKWebViewConfiguration
+    nonisolated(unsafe) private let didCreateWebView: ((WKWebView) -> Void)?
 
     nonisolated(unsafe) private let featureFlagger: FeatureFlagger
 
@@ -108,19 +110,20 @@ final class FaviconRasterizer {
                      pixelFiring: PixelFiring? = PixelKit.shared,
                      hardTimeout: TimeInterval = FaviconRasterizer.defaultHardTimeout,
                      idleLifetime: TimeInterval = FaviconRasterizer.defaultIdleLifetime,
-                     scriptTimeout: TimeInterval = FaviconRasterizer.timeout) {
+                     scriptTimeout: TimeInterval = FaviconRasterizer.timeout,
+                     makeConfiguration: @escaping () -> WKWebViewConfiguration = { WKWebViewConfiguration() },
+                     didCreateWebView: ((WKWebView) -> Void)? = nil) {
         self.featureFlagger = featureFlagger
         self.pixelFiring = pixelFiring
         self.hardTimeout = hardTimeout
         self.idleLifetime = idleLifetime
         self.scriptTimeout = scriptTimeout
+        self.makeConfiguration = makeConfiguration
+        self.didCreateWebView = didCreateWebView
     }
 
     /// Whether a web view (and its web content process) is currently alive.
     var hasWebView: Bool { webView != nil }
-
-    /// The current web view, for tests.
-    var currentWebView: WKWebView? { webView }
 
     private var webView: WKWebView?
     private var activeCalls = 0
@@ -163,7 +166,7 @@ final class FaviconRasterizer {
     /// A web content process that is stuck is ended here. One that is already gone is not touched: its termination is
     /// reported by `webContentProcessDidTerminate(_:)`, because the calls it leaves behind fail with an unrelated
     /// error (`WKErrorJavaScriptResultTypeIsUnsupported`), not with a termination error.
-    func handle(failure error: Error, of failedWebView: WKWebView) {
+    private func handle(failure error: Error, of failedWebView: WKWebView) {
         guard !(error is CancellationError) else { return }
 
         guard Self.isWebViewFailure(error) else {
@@ -179,7 +182,7 @@ final class FaviconRasterizer {
 
     /// Called when the web content process of `terminatedWebView` ended. Unless the rasterizer ended it on purpose
     /// (see `discardWebView`), it crashed or was killed by the system, which is reported with a pixel.
-    func webContentProcessDidTerminate(_ terminatedWebView: WKWebView) {
+    private func webContentProcessDidTerminate(_ terminatedWebView: WKWebView) {
         if webViewsEndedOnPurpose.contains(terminatedWebView) {
             webViewsEndedOnPurpose.remove(terminatedWebView)
             return
@@ -275,7 +278,7 @@ final class FaviconRasterizer {
 
     /// A web view that can do nothing but draw the image it is given: no stored data or credentials, no scripts from
     /// web content, no windows, and every navigation and authentication challenge is refused.
-    func makeWebView() -> WKWebView {
+    private func makeWebView() -> WKWebView {
         let configuration = makeConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
@@ -285,6 +288,7 @@ final class FaviconRasterizer {
             self?.webContentProcessDidTerminate(terminatedWebView)
         }
         newWebView.navigationDelegate = navigationGuard
+        didCreateWebView?(newWebView)
         return newWebView
     }
 
@@ -469,8 +473,8 @@ protocol ImportedFaviconDataProviding {
 
 extension FaviconRasterizer {
 
-    /// How many imported favicons are decoded at once. Raster data is decoded off the main thread, and
-    /// SVG renders queue up in the single web view, so the limit keeps each render well inside `hardTimeout`.
+    /// How many imported favicons are decoded at once. Raster data is decoded off the main thread; SVG and PDF
+    /// renders take turns in the web view whatever the limit is.
     nonisolated static let importConcurrency = 4
 
     /// Returns an image to store for the given favicon data.

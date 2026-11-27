@@ -156,3 +156,15 @@ final class WebViewSelectionMenuTests: XCTestCase {
         XCTAssertEqual(WebView.normalizedSelection(selection)?.count, 250_000)
     }
 }
+
+final class WebViewLayoutParametersOverrideAvailabilityTests: XCTestCase {
+
+    func testWebKitStillProvidesTheLayoutParametersOverride() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: WebView.LayoutParametersSelector.override))
+        XCTAssertTrue(WKWebView.instancesRespond(to: WebView.LayoutParametersSelector.clear))
+        let typeEncoding = class_getInstanceMethod(WKWebView.self, WebView.LayoutParametersSelector.override)
+            .flatMap(method_getTypeEncoding)
+            .map { String(cString: $0).filter { !$0.isNumber } }
+        XCTAssertEqual(typeEncoding, WebView.LayoutParametersSelector.overrideTypeEncoding)
+    }
+}

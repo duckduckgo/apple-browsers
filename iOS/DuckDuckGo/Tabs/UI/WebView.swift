@@ -63,7 +63,7 @@ final class WebView: WKWebView {
         let maximumUnobscuredSize: CGSize
     }
 
-    private enum LayoutParametersSelector {
+    enum LayoutParametersSelector {
         static let override = NSSelectorFromString("_overrideLayoutParametersWithMinimumLayoutSize:minimumUnobscuredSizeOverride:maximumUnobscuredSizeOverride:")
         static let clear = NSSelectorFromString("_clearOverrideLayoutParameters")
         static let overrideTypeEncoding = "v@:{CGSize=dd}{CGSize=dd}{CGSize=dd}"
@@ -91,16 +91,32 @@ final class WebView: WKWebView {
         let parameters = LayoutParameters(layoutSize: bounds.inset(by: floatingChromeInsets.current).size,
                                           minimumUnobscuredSize: bounds.inset(by: floatingChromeInsets.maximum).size,
                                           maximumUnobscuredSize: bounds.inset(by: floatingChromeInsets.minimum).size)
-        guard parameters != appliedLayoutParameters,
-              let method = class_getInstanceMethod(object_getClass(self), LayoutParametersSelector.override),
+        guard parameters != appliedLayoutParameters, send(parameters) else { return }
+        appliedLayoutParameters = parameters
+        // While a geometry update is pending (an obscured inset change, a rotation), WebKit only stores the override
+        // and the page can keep the previous sizes. Sending it again once that update has gone through applies it.
+        DispatchQueue.main.async { [weak self] in
+            self?.resendLayoutParametersOverride()
+        }
+    }
+
+    /// Sends the current override again, for after a transition that may have held it back.
+    func resendLayoutParametersOverride() {
+        guard let appliedLayoutParameters else { return }
+        send(appliedLayoutParameters)
+    }
+
+    @discardableResult
+    private func send(_ parameters: LayoutParameters) -> Bool {
+        guard let method = class_getInstanceMethod(object_getClass(self), LayoutParametersSelector.override),
               let typeEncoding = method_getTypeEncoding(method),
-              String(cString: typeEncoding).filter({ !$0.isNumber }) == LayoutParametersSelector.overrideTypeEncoding else { return }
+              String(cString: typeEncoding).filter({ !$0.isNumber }) == LayoutParametersSelector.overrideTypeEncoding else { return false }
         typealias Override = @convention(c) (WKWebView, Selector, CGSize, CGSize, CGSize) -> Void
         unsafeBitCast(method_getImplementation(method), to: Override.self)(self, LayoutParametersSelector.override,
                                                                            parameters.layoutSize,
                                                                            parameters.minimumUnobscuredSize,
                                                                            parameters.maximumUnobscuredSize)
-        appliedLayoutParameters = parameters
+        return true
     }
 
     private func clearLayoutParametersOverride() {

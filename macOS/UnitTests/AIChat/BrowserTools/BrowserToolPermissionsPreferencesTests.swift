@@ -60,6 +60,10 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
 
     override func tearDown() {
         model = nil
+        translatePages = nil
+        translateStore = nil
+        translateCenter = nil
+        featureFlagger = nil
         pixels = nil
         catalog = nil
         permissions = nil
@@ -266,9 +270,24 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         XCTAssertEqual(codes.map { TranslatePagesLanguages.name(of: $0, locale: locale) }, ["French", "German", "Japanese", "Swedish"])
     }
 
-    func testTheAppLocalizationsComeFromTheBundleWithoutBase() {
-        XCTAssertFalse(TranslatePagesLanguages.appLocalizations().contains("base"))
-        XCTAssertFalse(TranslatePagesLanguages.appLocalizations().contains("Base"))
+    func testTheAppLocalizationsDropBaseAndKeepThePrimarySubtag() {
+        XCTAssertEqual(TranslatePagesLanguages.appLocalizations(from: ["Base", "en", "pt-BR", "zh-Hans", "de"]),
+                       ["en", "pt", "zh", "de"])
+    }
+
+    func testTheRealBundleHasLocalizations() {
+        XCTAssertFalse(TranslatePagesLanguages.appLocalizations().isEmpty)
+    }
+
+    func testWhenAnotherInstanceRecordsAnOfferedLanguageThenTheOpenModelFollows() {
+        let expectation = expectation(description: "reloaded")
+        let cancellable = model.$translateOfferedLanguages.first { $0 == ["sv"] }.sink { _ in expectation.fulfill() }
+        let offer = TranslatePagesSetting(store: translateStore, notificationCenter: translateCenter)
+
+        offer.recordOffered(languageCode: "sv")
+
+        wait(for: [expectation], timeout: 1)
+        cancellable.cancel()
     }
 
     func testAnOfferedLanguageIsRecordedOnceAndSurvivesAReset() {

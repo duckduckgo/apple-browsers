@@ -337,9 +337,27 @@ struct BrowserToolPermissionRow: View {
     }
 }
 
+private final class LanguageMenuTarget: NSObject {
+    private let handler: () -> Void
+    init(handler: @escaping () -> Void) { self.handler = handler }
+    @objc func toggle() { handler() }
+}
+
 struct TranslatePagesRow: View {
 
     @ObservedObject var model: BrowserToolPermissionsPreferences
+    @Environment(\.designSystemPalette) private var palette
+
+    // shortcut: a character count stands in for measuring the text (ViewThatFits needs macOS 13), tuned to the
+    // 544-point Settings column; move to ViewThatFits when the deployment target allows.
+    private static let inlineSummaryLimit = 20
+
+    private var detailPrefix: some View {
+        Text(UserText.translatePagesSettingsDetailPrefix)
+            .font(.system(size: 11))
+            .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+            .fixedSize()
+    }
 
     private var systemCode: String? { TranslatePagesLanguages.systemCode() }
 
@@ -347,34 +365,50 @@ struct TranslatePagesRow: View {
         TranslatePagesLanguages.summary(excluded: model.translateExcludedLanguages, systemCode: systemCode)
     }
 
-    private var languageMenu: some View {
-        Menu {
-            if let systemCode, let name = TranslatePagesLanguages.name(of: systemCode) {
-                Toggle(isOn: .constant(true)) {
-                    Text(verbatim: "\(name)  \(UserText.translatePagesSettingsSystemLanguage)")
-                }
-                .disabled(true)
-                Divider()
+    // A Menu label never wraps and its control stays a few points wide, so the wrapping text is a Button
+    // that opens the same menu at the pointer.
+    private func languageMenu(wraps: Bool) -> some View {
+        Button(action: showLanguageMenu) {
+            HStack(alignment: .top, spacing: 2) {
+                Text(summary)
+                    .font(.system(size: 11))
+                    .underline()
+                    .foregroundColor(Color(designSystemColor: .accentTextPrimary, palette: palette))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: !wraps, vertical: true)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(Color(designSystemColor: .accentTextPrimary, palette: palette))
+                    .padding(.top, 3)
             }
-            ForEach(TranslatePagesLanguages.menuCodes(localizations: TranslatePagesLanguages.appLocalizations(),
-                                                                    offered: model.translateOfferedLanguages,
-                                                                    excluded: model.translateExcludedLanguages,
-                                                                    systemCode: systemCode), id: \.self) { code in
-                Toggle(isOn: Binding(
-                    get: { model.translateExcludedLanguages.contains(code) },
-                    set: { model.setTranslate(languageCode: code, excluded: $0) })) {
-                    Text(verbatim: TranslatePagesLanguages.name(of: code) ?? code)
-                }
-            }
-        } label: {
-            Text(summary)
-                .font(.system(size: 11))
-                .foregroundColor(Color(designSystemColor: .accentTextPrimary))
+            .contentShape(Rectangle())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.visible)
-        .fixedSize()
+        .buttonStyle(.plain)
         .accessibilityIdentifier("Preferences.AIChat.translatePages.languages")
+    }
+
+    private func showLanguageMenu() {
+        let menu = NSMenu()
+        if let systemCode, let name = TranslatePagesLanguages.name(of: systemCode) {
+            let item = NSMenuItem(title: "\(name)  \(UserText.translatePagesSettingsSystemLanguage)", action: nil, keyEquivalent: "")
+            item.state = .on
+            menu.addItem(item)
+            menu.addItem(.separator())
+        }
+        let excluded = model.translateExcludedLanguages
+        for code in TranslatePagesLanguages.menuCodes(localizations: TranslatePagesLanguages.appLocalizations(),
+                                                      offered: model.translateOfferedLanguages,
+                                                      excluded: excluded,
+                                                      systemCode: systemCode) {
+            let target = LanguageMenuTarget { [model] in model.setTranslate(languageCode: code, excluded: !excluded.contains(code)) }
+            let item = NSMenuItem(title: TranslatePagesLanguages.name(of: code) ?? code,
+                                  action: #selector(LanguageMenuTarget.toggle), keyEquivalent: "")
+            item.target = target
+            item.representedObject = target
+            item.state = excluded.contains(code) ? .on : .off
+            menu.addItem(item)
+        }
+        menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
     }
 
     var body: some View {
@@ -383,17 +417,22 @@ struct TranslatePagesRow: View {
                 .renderingMode(.template)
                 .resizable()
                 .frame(width: 16, height: 16)
-                .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                .foregroundColor(Color(designSystemColor: .iconsPrimary, palette: palette))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(UserText.translatePagesSettingsTitle)
                     .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                HStack(spacing: 3) {
-                    Text(UserText.translatePagesSettingsDetailPrefix)
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                    languageMenu
+                    .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                if summary.count > Self.inlineSummaryLimit {
+                    VStack(alignment: .leading, spacing: 2) {
+                        detailPrefix
+                        languageMenu(wraps: true)
+                    }
+                } else {
+                    HStack(spacing: 3) {
+                        detailPrefix
+                        languageMenu(wraps: false)
+                    }
                 }
             }
 
@@ -413,7 +452,7 @@ struct TranslatePagesRow: View {
             Button(action: model.resetTranslate) {
                 Image(nsImage: DesignSystemImages.Glyphs.Size12.replay)
                     .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
                     .frame(width: 24, height: 24)
                     .contentShape(Rectangle())
             }

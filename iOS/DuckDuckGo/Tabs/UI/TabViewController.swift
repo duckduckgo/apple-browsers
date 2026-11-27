@@ -2836,6 +2836,8 @@ class TabViewController: UIViewController {
         restoreWebViewBackgroundAfterFullscreen()
         updateBorderViewForFloatingUIIfNeeded()
         pullToRefreshViewAdapter?.setPullSuspended(false)
+        // Entering fullscreen cleared the viewport sizes override; restore it without waiting for the next scroll.
+        applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent, forceFloatingUIInsets: true)
     }
 
     private func removeObservers() {

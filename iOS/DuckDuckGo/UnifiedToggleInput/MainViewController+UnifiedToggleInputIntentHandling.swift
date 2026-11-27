@@ -224,7 +224,6 @@ private extension MainViewController {
     }
 
     func handleShowOmnibarEditingIntent(height: CGFloat, pendingHeight: CGFloat?) {
-        warmSearchTokenIfEligible()
         guard let coordinator = unifiedToggleInputCoordinator else { return }
         if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
             showInlineNewTabPageInput(coordinator: coordinator, height: height, pendingHeight: pendingHeight)

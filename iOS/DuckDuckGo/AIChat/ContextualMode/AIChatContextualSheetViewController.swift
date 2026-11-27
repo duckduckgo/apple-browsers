@@ -56,6 +56,9 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     /// Called when the user requests to open sync settings
     func aiChatContextualSheetViewControllerDidRequestOpenSyncSettings(_ viewController: AIChatContextualSheetViewController)
 
+    /// Called when the user taps the settings button on the Fire confirmation, after it has closed
+    func aiChatContextualSheetViewControllerDidRequestOpenDataClearingSettings(_ viewController: AIChatContextualSheetViewController)
+
     /// Called when the user taps the "Attach Page" button and context needs to be collected
     func aiChatContextualSheetViewControllerDidRequestAttachPage(_ viewController: AIChatContextualSheetViewController)
 
@@ -912,6 +915,14 @@ private extension AIChatContextualSheetViewController {
             onConfirm: { _ in },
             onCancel: { [weak self] in
                 self?.dismissFireConfirmation()
+            },
+            onOpenSettings: { [weak self] in
+                guard let self else { return }
+                // The confirmation must close first: dismissing the chat sheet while it's up would only close the confirmation.
+                self.isShowingFireConfirmation = false
+                self.dismiss(animated: true) {
+                    self.delegate?.aiChatContextualSheetViewControllerDidRequestOpenDataClearingSettings(self)
+                }
             }
         )
 

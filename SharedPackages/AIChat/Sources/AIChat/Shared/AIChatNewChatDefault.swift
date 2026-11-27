@@ -26,6 +26,11 @@ public enum AIChatNewChatDefault: Equatable, Sendable {
     case noDefault
     /// `reasoningEffort` is `nil` when the server omits it or sends one the app doesn't know.
     case model(id: String, reasoningEffort: AIChatReasoningEffort?)
+
+    var modelId: String? {
+        guard case let .model(id, _) = self else { return nil }
+        return id
+    }
 }
 
 extension AIChatNewChatDefault {
@@ -52,6 +57,7 @@ extension AIChatNewChatDefault {
 
 /// The default the usage-limits snapshot sends while the user is over their limit.
 public struct AIChatOverLimitNewChatDefault: Equatable, Sendable {
+    /// `.unavailable` when over the limit without a named model.
     public let newChatDefault: AIChatNewChatDefault
     public let resetsAt: Date
 
@@ -64,15 +70,24 @@ public struct AIChatOverLimitNewChatDefault: Equatable, Sendable {
 
     /// Lapses when the limit resets, so new chats go back to the regular default without a new snapshot.
     public func newChatDefault(at date: Date) -> AIChatNewChatDefault {
-        date < resetsAt ? newChatDefault : .unavailable
+        isOverLimit(at: date) ? newChatDefault : .unavailable
+    }
+
+    /// Over the limit until it resets.
+    public func isOverLimit(at date: Date) -> Bool {
+        date < resetsAt
     }
 }
 
 /// The model and effort a new chat starts on. A `nil` effort leaves it to the model's own default.
 public struct AIChatNewChatSelection: Equatable, Sendable {
-    /// Whether the selection is the server's default or a fallback because the server had no usable one.
+    /// Whether the selection is a server default, the user's own default, or a fallback because neither was usable.
     public enum Origin: Equatable, Sendable {
         case server
+        /// The "Default AI Model" setting from Duck.ai settings.
+        case user
+        /// The user set a default model the chat can't start on, so it starts on another default.
+        case userDefaultUnavailable
         case fallback
     }
 
@@ -107,9 +122,18 @@ public enum AIChatNewChatDefaultResolver {
 
     /// The first candidate the user can use wins, then the local tier default (when the tier is known), then the first accessible model.
     /// A candidate that deliberately has no default skips straight to the first accessible model.
+    /// Passing over a `.user` candidate reports `.userDefaultUnavailable`.
     public static func resolve(_ candidates: [Candidate],
                                models: [AIChatModel],
                                userTier: AIChatUserTier?) -> AIChatNewChatSelection? {
+        let selection = firstUsableSelection(candidates, models: models, userTier: userTier)
+        guard candidates.contains(where: { $0.origin == .user }), let selection, selection.origin != .user else { return selection }
+        return AIChatNewChatSelection(modelId: selection.modelId, reasoningEffort: selection.reasoningEffort, origin: .userDefaultUnavailable)
+    }
+
+    private static func firstUsableSelection(_ candidates: [Candidate],
+                                             models: [AIChatModel],
+                                             userTier: AIChatUserTier?) -> AIChatNewChatSelection? {
         for candidate in candidates {
             switch candidate.newChatDefault {
             case .unavailable:

@@ -36,6 +36,7 @@ enum ContextualDialogType: Equatable {
     case trackers(message: NSAttributedString, shouldFollowUp: Bool)
     case tryFireButton
     case highFive
+    case tryDuckAI
     case subscriptionUpsell
     case thatsDuckAI
 }
@@ -56,6 +57,8 @@ protocol ContextualOnboardingDialogTypeProviding {
 protocol ContextualOnboardingStateUpdater: AnyObject {
     var state: ContextualOnboardingState { get set }
     var isContextualOnboardingCompletedPublisher: Published<Bool>.Publisher { get }
+    /// Whether the Duck.ai path is waiting for the user to delete their chat with Fire.
+    var isWaitingForDuckAIChatDeletion: Bool { get }
     func gotItPressed()
     func fireButtonUsed()
     func turnOffFeature()
@@ -63,7 +66,7 @@ protocol ContextualOnboardingStateUpdater: AnyObject {
 
 /// Starts the contextual onboarding path the user picked on the junction.
 protocol ContextualOnboardingPathStarting: AnyObject {
-    func startPath(_ kind: ContextualOnboardingPathKind)
+    func startPath(_ kind: ContextualOnboardingPathKind, query: String)
 }
 
 /// Locks the browser UI while contextual onboarding needs the user to stay on one tab.
@@ -130,6 +133,9 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             if isContextualOnboardingCompleted != isCompleted {
                 isContextualOnboardingCompleted = isCompleted
             }
+            if isCompleted {
+                progress.duckAIPrompt = nil
+            }
 
             // If onboarding is restarted, clear all stored dialogs and flags.
             if newValue == .notStarted {
@@ -146,6 +152,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
          stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage(),
          settings: any ThrowingKeyedStoring<ContextualOnboardingSettings> = Application.appDelegate.keyValueStore.throwingKeyedStoring(),
          uiLocker: ContextualOnboardingUILocking? = nil,
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          makePath: ((ContextualOnboardingPathKind, ContextualOnboardingProgressReading) -> ContextualOnboardingPath)? = nil) {
         let progress = ContextualOnboardingProgress(storage: stateStorage, settings: settings)
         self.progress = progress
@@ -156,7 +163,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             case .search:
                 return SearchOnboardingPath(progress: progress,
                                             subscriptionManager: subscriptionManager,
-                                            trackerMessageProvider: trackerMessageProvider)
+                                            trackerMessageProvider: trackerMessageProvider,
+                                            aiChatMenuConfig: aiChatMenuConfig)
             case .duckAI:
                 return DuckAIOnboardingPath(progress: progress, subscriptionManager: subscriptionManager)
             }
@@ -191,9 +199,18 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         }
     }
 
+    var isWaitingForDuckAIChatDeletion: Bool {
+        state != .onboardingCompleted && progress.pathKind == .duckAI && !progress.fireButtonUsedOnce
+    }
+
     // Called when the user uses the fire button
     func fireButtonUsed() {
         progress.fireButtonUsedOnce = true
+        progress.duckAIPrompt = nil
+        // Fire can be used before a reopened chat shows "That's Duck.ai!"; the ending must still follow.
+        if progress.pathKind == .duckAI {
+            progress.markSeen(.thatsDuckAI)
+        }
         updateUILock()
     }
 
@@ -210,8 +227,8 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         DispatchQueue.main.async { [weak uiLocker] in uiLocker?.setUILock(lock) }
     }
 
-    /// Called from the junction with the path the user picked.
-    func startPath(_ kind: ContextualOnboardingPathKind) {
+    /// Called from the junction with the path the user picked and the text they sent.
+    func startPath(_ kind: ContextualOnboardingPathKind, query: String) {
         progress.pathKind = kind
         activePath = makePath(kind)
         switch kind {
@@ -221,8 +238,26 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         case .duckAI:
             // Only Fire used on this path unlocks it, not Delete All History during the welcome flow.
             progress.fireButtonUsedOnce = false
+            progress.duckAIPrompt = query
         }
         updateUILock()
+    }
+
+    /// Shows "That's Duck.ai!" again for the chat reopened in a new window.
+    func restartDuckAIChat() {
+        progress.markUnseen(.thatsDuckAI)
+    }
+
+    /// Moves to the search path, from Try a search, when the Duck.ai chat can't be reopened.
+    func fallBackToSearchPath() {
+        progress.pathKind = .search
+        progress.duckAIPrompt = nil
+        activePath = makePath(.search)
+        updateUILock()
+    }
+
+    var duckAIPrompt: String? {
+        progress.duckAIPrompt
     }
 
     // Called to turn off the contextual onboarding.
@@ -271,6 +306,8 @@ extension ContextualDialogType {
             return "tryFireButton"
         case .highFive:
             return "highFive"
+        case .tryDuckAI:
+            return "tryDuckAI"
         case .subscriptionUpsell:
             return "subscriptionUpsell"
         case .thatsDuckAI:

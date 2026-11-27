@@ -131,8 +131,9 @@ final class ContextualOnboardingDialogScheduler {
     /// The user dismissed `dialog`, and it's no longer on screen.
     func dialogDismissed(_ dialog: ContextualDialogType, in tab: Tab?) {
         wasDismissed = true
-        // High Five hands over to the upsell in a new dialog. Both facts matter, or dismissing the upsell would show it again.
-        if dialog == .highFive, dialogProvider.lastDialog == .subscriptionUpsell {
+        // The ending (High Five or Try Duck.ai's Skip) hands over to the upsell in a new dialog. Both facts matter,
+        // or dismissing the upsell would show it again.
+        if dialog == .highFive || dialog == .tryDuckAI, dialogProvider.lastDialog == .subscriptionUpsell {
             showLastDialog(in: tab)
         }
     }

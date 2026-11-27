@@ -138,7 +138,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .subscriptionUpsell:
             // No legacy pixel; the upsell reports through the shared `subscriptionPromo` event.
             break
-        case .thatsDuckAI:
+        case .thatsDuckAI, .tryDuckAI:
             // To do: pixel
             break
         }
@@ -160,7 +160,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.end(.clicked(.dismiss)))
         case .subscriptionUpsell:
             sharedPixelHandler.fire(.subscriptionPromo(.clicked(.dismiss)))
-        case .thatsDuckAI:
+        case .thatsDuckAI, .tryDuckAI:
             // To do: pixel
             break
         }
@@ -190,7 +190,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             sharedPixelHandler.fire(.end(.shown))
         case .subscriptionUpsell:
             sharedPixelHandler.fire(.subscriptionPromo(.shown))
-        case .thatsDuckAI:
+        case .thatsDuckAI, .tryDuckAI:
             // To do: pixel
             break
         }
@@ -218,7 +218,7 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             // The upsell's buttons all advance through got-it, so they report through
             // `measureSubscriptionUpsellAccepted()` and `measureSubscriptionUpsellDeclined()` instead.
             break
-        case .thatsDuckAI:
+        case .thatsDuckAI, .tryDuckAI:
             // To do: pixel
             break
         }

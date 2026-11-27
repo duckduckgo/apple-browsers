@@ -132,6 +132,8 @@ protocol DefaultBrowserAndDockPrompt {
     ///
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType?
 
+    func promptDisplayed(_ prompt: DefaultBrowserAndDockPromptPresentationType)
+
     /// Called when the prompt CTA is clicked.
     /// - Parameter prompt: The type of prompt the user interacted with.
     func confirmAction(for prompt: DefaultBrowserAndDockPromptPresentationType)
@@ -153,6 +155,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let dateProvider: () -> Date
     private let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting?
     private let featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
+    private let rolloutMonitor: AppStoreDockRolloutMonitoring?
 
     init(
         promptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding,
@@ -161,6 +164,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger,
         isOnboardingCompleted: @escaping () -> Bool,
         actionPerformer: DefaultBrowserAndDockActionPerforming,
+        rolloutMonitor: AppStoreDockRolloutMonitoring? = nil,
         pixelFiring: PixelFiring? = PixelKit.shared,
         dateProvider: @escaping () -> Date = Date.init
     ) {
@@ -168,6 +172,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         self.store = store
         self.isOnboardingCompleted = isOnboardingCompleted
         self.actionPerformer = actionPerformer
+        self.rolloutMonitor = rolloutMonitor
         self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
         self.notificationPresenter = notificationPresenter
@@ -281,6 +286,21 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         return prompt
     }
 
+    func promptDisplayed(_ prompt: DefaultBrowserAndDockPromptPresentationType) {
+        guard let promptType = evaluatePromptEligibility else { return }
+
+        let promptID: String
+        switch prompt {
+        case .active(.popover):
+            promptID = "popover"
+        case .active(.banner):
+            promptID = "banner-\(store.bannerShownOccurrences + 1)"
+        case .inactive:
+            promptID = "inactive-modal"
+        }
+        rolloutMonitor?.promptShown(promptType, promptID: promptID)
+    }
+
     /// **USER CLICKED PRIMARY BUTTON** (e.g., "Make Default Browser", "Add to Dock")
     ///
     /// Called when user confirms the prompt. This triggers the actual system actions.
@@ -320,7 +340,9 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         setPromptSeen()
         fireConfirmActionPixel()
         MainActor.assumeMainThread {
-            actionPerformer.performPendingActions()
+            actionPerformer.performPendingActions(from: prompt.addToDockVideoEntryPoint) { [rolloutMonitor] in
+                rolloutMonitor?.setAsDefaultRequested()
+            }
         }
         promptDismissedSubject.send((prompt, .actioned()))
         activePrompt = nil
@@ -435,4 +457,14 @@ private extension DefaultBrowserAndDockPromptCoordinator {
         return value > 10 ? "10+" : String(value)
     }
 
+}
+
+private extension DefaultBrowserAndDockPromptPresentationType {
+    var addToDockVideoEntryPoint: AddToDockVideoEntryPoint {
+        switch self {
+        case .active(.popover): return .popover
+        case .active(.banner): return .banner
+        case .inactive: return .inactiveModal
+        }
+    }
 }

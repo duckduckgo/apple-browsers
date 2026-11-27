@@ -485,6 +485,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.disableChatInput
         case .enableChatInput:
             return handler.enableChatInput
+        case .aiChatPromoVisibility:
+            return handler.aiChatPromoVisibility
         case .focusChatInput:
             return handler.focusChatInput
         case .editPrompt:
@@ -571,6 +573,18 @@ final class AIChatUserScript: NSObject, Subfeature {
     var isTermsOfServiceShownOnPage: Bool {
         get { handler.isTermsOfServiceShownOnPage }
         set { handler.isTermsOfServiceShownOnPage = newValue }
+    }
+
+    @MainActor
+    var isAIChatPromoVisible: Bool? {
+        get { handler.isAIChatPromoVisible }
+        set { handler.isAIChatPromoVisible = newValue }
+    }
+
+    @MainActor
+    var aiChatStatusOnPage: AIChatStatusValue? {
+        get { handler.aiChatStatusOnPage }
+        set { handler.aiChatStatusOnPage = newValue }
     }
 
     func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?) {
@@ -1034,9 +1048,8 @@ extension AIChatUserScript: AIChatLocalModelPushing {
             throw AIChatLocalModelRequestError.unavailable
         }
         let window = message.messageWebView?.window
-        let modelName = localModelService.model.name
-        let result = try await localModelService.requestAccess { _ in
-            await localModelAccessPrompt.ask(in: window, modelName: modelName)
+        let result = try await localModelService.requestAccess { request in
+            await localModelAccessPrompt.ask(in: window, request: request)
         }
         return AIChatLocalModelAccessReply(result: result)
     }

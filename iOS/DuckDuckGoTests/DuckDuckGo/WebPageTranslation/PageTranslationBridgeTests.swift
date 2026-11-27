@@ -67,6 +67,16 @@ final class PageTranslationBridgeTests: XCTestCase {
         try XCTUnwrap(json(pushes[push].params)["requestId"] as? String)
     }
 
+    /// Extracts nothing, and returns the document ID to apply to.
+    @discardableResult
+    private func extractEmpty(_ bridge: PageTranslationBridge) async throws -> UUID {
+        let count = pushes.count
+        let extraction = Task { try await bridge.extract() }
+        await waitForPush(count: count + 1)
+        try await reply(bridge, "extractResult", ["units": []])
+        return try await extraction.value.documentID
+    }
+
     private func json(_ value: Encodable) throws -> NSDictionary {
         try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(value)) as? NSDictionary)
     }
@@ -78,7 +88,7 @@ final class PageTranslationBridgeTests: XCTestCase {
         await waitForPush()
         try await reply(bridge, "extractResult", ["units": [["id": 1, "text": "Hola", "html": false, "vp": 1]]])
 
-        let units = try await extraction.value
+        let units = try await extraction.value.units
         XCTAssertEqual(pushes.map(\.method), ["extract"])
         XCTAssertFalse(try requestID(of: 0).isEmpty)
         XCTAssertEqual(units, [PageTranslationUnit(id: 1, text: "Hola", html: false, vp: 1)])
@@ -88,16 +98,17 @@ final class PageTranslationBridgeTests: XCTestCase {
     func testApplyPushesUpdatesAndReturnsCount() async throws {
         let bridge = makeBridge()
         let updates = [PageTranslationUpdate(id: 1, text: "Hello"), PageTranslationUpdate(id: 2, tree: "{\"t\":1}")]
+        let documentID = try await extractEmpty(bridge)
 
-        let application = Task { try await bridge.apply(updates, from: "es", to: "en") }
-        await waitForPush()
+        let application = Task { try await bridge.apply(updates, from: "es", to: "en", in: documentID) }
+        await waitForPush(count: 2)
         try await reply(bridge, "applyResult", ["count": 2])
 
         let count = try await application.value
         XCTAssertEqual(count, 2)
-        XCTAssertEqual(pushes.map(\.method), ["apply"])
-        XCTAssertEqual(try json(pushes[0].params), [
-            "requestId": try requestID(of: 0),
+        XCTAssertEqual(pushes.map(\.method), ["extract", "apply"])
+        XCTAssertEqual(try json(pushes[1].params), [
+            "requestId": try requestID(of: 1),
             "sourceLanguage": "es",
             "targetLanguage": "en",
             "updates": [["id": 1, "text": "Hello"], ["id": 2, "tree": "{\"t\":1}"]]
@@ -150,7 +161,7 @@ final class PageTranslationBridgeTests: XCTestCase {
         try await reply(bridge, "extractResult", ["units": [["id": 1, "text": "Hola", "html": false, "vp": 1]]], to: 0)
         try await reply(bridge, "extractResult", ["units": []], to: 1)
 
-        let units = try await extraction.value
+        let units = try await extraction.value.units
         XCTAssertEqual(units, [])
     }
 
@@ -185,8 +196,9 @@ final class PageTranslationBridgeTests: XCTestCase {
 
     func testReplyMissingFieldsFailsTheRequest() async throws {
         let bridge = makeBridge()
-        let application = Task { try await bridge.apply([], from: "es", to: "en") }
-        await waitForPush()
+        let documentID = try await extractEmpty(bridge)
+        let application = Task { try await bridge.apply([], from: "es", to: "en", in: documentID) }
+        await waitForPush(count: 2)
 
         try await reply(bridge, "applyResult", ["counted": 2])
 
@@ -261,7 +273,7 @@ final class PageTranslationBridgeTests: XCTestCase {
         try await reply(bridge, "applyResult", ["count": 3])
         try await reply(bridge, "extractResult", ["units": []])
 
-        let units = try await extraction.value
+        let units = try await extraction.value.units
         XCTAssertEqual(units, [])
     }
 
@@ -276,7 +288,23 @@ final class PageTranslationBridgeTests: XCTestCase {
         let extraction = Task { try await bridge.extract() }
         await waitForPush(count: 2)
         try await reply(bridge, "extractResult", ["units": []])
-        let units = try await extraction.value
+        let units = try await extraction.value.units
         XCTAssertEqual(units, [])
+    }
+
+    func testApplyWithAnEarlierDocumentsUnitsSendsNothing() async throws {
+        let bridge = makeBridge()
+        let earlier = try await extractEmpty(bridge)
+
+        // The new document numbers its units from 0 too, so the earlier updates would hit the wrong ones.
+        bridge.documentDidChange()
+        _ = try await extractEmpty(bridge)
+
+        do {
+            _ = try await bridge.apply([PageTranslationUpdate(id: 0, text: "Hello")], from: "es", to: "en", in: earlier)
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+        }
+        XCTAssertEqual(pushes.map(\.method), ["extract", "extract"])
     }
 }

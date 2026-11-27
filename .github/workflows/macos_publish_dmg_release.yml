@@ -52,6 +52,8 @@ on:
         required: true
       SPARKLE_PRIVATE_KEY:
         required: true
+      SPARKLE_PRIVATE_KEY_V2:
+        required: true
 
 jobs:
 
@@ -225,10 +227,17 @@ jobs:
         env:
           DMG_PATH: ${{ steps.fetch-dmg.outputs.dmg-path }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SPARKLE_PRIVATE_KEY_V2: ${{ secrets.SPARKLE_PRIVATE_KEY_V2 }}
           VERSION: ${{ steps.verify-tag.outputs.release-version }}
         run: |
-          echo -n "$SPARKLE_PRIVATE_KEY" > sparkle_private_key
-          chmod 600 sparkle_private_key
+          if [[ -f ./scripts/select_sparkle_private_key.swift ]]; then
+            ./scripts/select_sparkle_private_key.swift "${DMG_PATH}" sparkle_private_key
+          else
+            # Release branches cut before the key selection script was added ship apps with the original key
+            echo "::warning::select_sparkle_private_key.swift not found on this branch, using SPARKLE_PRIVATE_KEY"
+            echo -n "$SPARKLE_PRIVATE_KEY" > sparkle_private_key
+            chmod 600 sparkle_private_key
+          fi
 
           case "$RELEASE_TYPE" in
             "internal")

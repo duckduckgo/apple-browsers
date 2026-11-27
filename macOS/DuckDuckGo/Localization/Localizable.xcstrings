@@ -31576,6 +31576,42 @@
         }
       }
     },
+    "contextual.onboarding.try-duck-ai.button" : {
+      "comment" : "Button on the last tip new users of the browser see after trying a search; it opens Duck.ai, DuckDuckGo's private AI chat. \"Duck.ai\" is a product name: keep it as is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Duck.ai"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.try-duck-ai.message" : {
+      "comment" : "Message of the last tip new users of the browser see after trying a search. It describes Duck.ai, DuckDuckGo's private AI chat.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chats are anonymized, no account required. And it’s free!"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.try-duck-ai.title" : {
+      "comment" : "Title of the last tip new users of the browser see after trying a search, when they kept Duck.ai, DuckDuckGo's private AI chat, in the address bar. \"Duck.ai\" is a product name: keep it as is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat privately with popular AIs in Duck.ai"
+          }
+        }
+      }
+    },
     "contextual.onboarding.try-fire-button.button" : {
       "comment" : "Button on the browser that invites the user to try the Fire Button.",
       "extractionState" : "extracted_with_value",
@@ -52602,6 +52638,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подробнее"
+          }
+        }
+      }
+    },
+    "fire.dialog.duck-ai-onboarding.title" : {
+      "comment" : "Title of the dialog that deletes browsing data, opened from the browser's Fire Button. New users see this version after their first chat in Duck.ai, DuckDuckGo's private AI chat, and it offers to delete only their Duck.ai chats. \"Duck.ai\" is not part of this text.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Chat Data"
           }
         }
       }

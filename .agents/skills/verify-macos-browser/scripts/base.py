@@ -151,7 +151,7 @@ def base_worktree(sha, root=ROOT, trees=BASE_TREES):
     p = _git(root, "worktree", "add", "--detach", tree, sha)
     if p.returncode:
         raise ProofError(f"git worktree add {sha[:12]} failed: {harness._line(p.stderr[-400:])}")
-    os.makedirs(os.path.join(tree, ".build", "DerivedData"), exist_ok=True)   # verify.sh builds there: its own
+    os.makedirs(os.path.join(tree, ".build", "DerivedData-verify"), exist_ok=True)   # verify.sh builds there: its own
     return tree
 
 

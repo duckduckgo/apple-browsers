@@ -352,7 +352,8 @@ final class MainViewController: NSViewController {
             // from the regular session can't be opened here, so suppress them.
             isBurner: tabCollectionViewModel.isBurner,
             preferences: NSApp.delegateTyped.aiChatPreferencesPersistor,
-            usageLimitsStore: DuckAiUsageLimitsStore(storageHandler: duckAiNativeStorageHandler)
+            usageLimitsStore: DuckAiUsageLimitsStore(storageHandler: duckAiNativeStorageHandler),
+            userDefaultModelStorage: duckAiNativeStorageHandler
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(

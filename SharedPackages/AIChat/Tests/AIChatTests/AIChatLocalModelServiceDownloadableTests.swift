@@ -314,7 +314,8 @@ private final class FakeInstaller: AIChatLocalModelInstalling {
         case install, cancel, uninstall, pause, resumeIfNeeded
     }
 
-    let spec = AIChatLocalModelSpec.granite
+    let spec = AIChatLocalModelSpec.gemma4E2B
+    let isActive = false
     private let subject = CurrentValueSubject<AIChatLocalModelInstallState, Never>(.notInstalled)
     var calls: [Call] = []
 

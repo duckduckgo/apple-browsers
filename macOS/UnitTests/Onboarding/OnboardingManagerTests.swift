@@ -243,6 +243,7 @@ class OnboardingManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(pathStarter.startedPaths, [.search])
+        XCTAssertEqual(pathStarter.startedQueries, ["best pizza"])
         XCTAssertEqual(tabReplacedWhenPathStarted, false)
         XCTAssertEqual(navigationDelegate.tab?.url, URL.makeSearchUrl(from: "best pizza"))
         XCTAssertFalse(navigationDelegate.preventUserInteraction ?? true)
@@ -267,6 +268,7 @@ class OnboardingManagerTests: XCTestCase {
         XCTAssertTrue(queryItems.contains(URLQueryItem(name: "q", value: "Plan a day in London")))
         XCTAssertTrue(queryItems.contains(URLQueryItem(name: "flow", value: "desktop-app-onboarding")))
         XCTAssertEqual(pathStarter.startedPaths, [.duckAI])
+        XCTAssertEqual(pathStarter.startedQueries, ["Plan a day in London"])
         XCTAssertEqual(tabReplacedWhenPathStarted, true)
         XCTAssertFalse(navigationDelegate.preventUserInteraction ?? true)
         XCTAssertTrue(isOnboardingFinished.wrappedValue)

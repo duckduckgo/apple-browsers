@@ -532,6 +532,7 @@ public extension DesignSystemImages {
             public static var covid: DesignSystemImage { .init(resource: .covid24) }
             public static var creditCard: DesignSystemImage { .init(resource: .creditCard24) }
             public static var crossRecolorable: DesignSystemImage { .init(resource: .crossRecolorable24) }
+            public static var crossSolid: DesignSystemImage { .init(resource: .crossSolid24) }
             public static var crossSolidSmall: DesignSystemImage { .init(resource: .crossSolidSmall24) }
             public static var cut: DesignSystemImage { .init(resource: .cut24) }
             public static var deviceAll: DesignSystemImage { .init(resource: .deviceAll24) }
@@ -647,6 +648,7 @@ public extension DesignSystemImages {
             public static var sheetOpen: DesignSystemImage { .init(resource: .sheetOpen24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
             public static var sortAccending: DesignSystemImage { .init(resource: .sortAccending24) }
+            public static var stopSolid: DesignSystemImage { .init(resource: .stopSolid24) }
             public static var stopSquare: DesignSystemImage { .init(resource: .stopSquare24) }
             public static var subItem: DesignSystemImage { .init(resource: .subItem24) }
             public static var searchFind: DesignSystemImage { .init(resource: .searchFind24) }

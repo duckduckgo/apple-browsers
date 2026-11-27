@@ -56,10 +56,11 @@ public enum TranslationModelsError: DDGError {
 }
 
 /// The translation models on this device: which pairs the server offers, and installing and removing them.
-public final class TranslationModels: @unchecked Sendable {
+public final class TranslationModels: TranslationModelsProviding, @unchecked Sendable {
 
     private let store: ModelStore
     private let manifestStore: TranslationManifestStore
+    private let downloads = SharedDownloads()
 
     /// `directory` holds one folder per installed pair.
     public init(directory: URL,
@@ -94,7 +95,8 @@ public final class TranslationModels: @unchecked Sendable {
         }
     }
 
-    /// Installs a pair the manifest lists, reporting progress from 0 to 1.
+    /// Installs a pair the manifest lists, reporting progress from 0 to 1. Every caller, a tab or settings, shares one
+    /// download per pair, and a caller that stops listening leaves it running.
     public func install(_ pairID: String) -> AsyncThrowingStream<Double, Error> {
         guard let manifest else {
             return AsyncThrowingStream { $0.finish(throwing: TranslationModelsError.manifestUnavailable) }
@@ -103,7 +105,12 @@ public final class TranslationModels: @unchecked Sendable {
             return AsyncThrowingStream { $0.finish(throwing: TranslationModelsError.unknownPair(pairID)) }
         }
 
-        return store.install(bundle, policy: Self.decompressingPolicy(for: pair))
+        let store = store
+        return downloads.download(pairID) { store.install(bundle, policy: Self.decompressingPolicy(for: pair)) }
+    }
+
+    public func isDownloading(_ pairID: String) async -> Bool {
+        await downloads.isRunning(pairID)
     }
 
     public func installed() -> [InstalledBundle] {
@@ -112,6 +119,15 @@ public final class TranslationModels: @unchecked Sendable {
 
     public func delete(_ pairID: String) throws {
         try store.delete(pairID)
+    }
+
+    /// Looks the pair up in the cached manifest and the installed models.
+    public func installedPair(_ pairID: String) -> (pair: TranslationManifest.Pair, folder: URL)? {
+        guard let pair = manifest?.models[pairID],
+              let installed = installed().first(where: { $0.id == pairID }) else {
+            return nil
+        }
+        return (pair, installed.folder)
     }
 
     /// Decompresses each downloaded `.zst` and checks the result's size and sha256 against the manifest.

@@ -26,3 +26,37 @@ public protocol DomainsProtectionStore: AnyObject {
 
     func enableProtection(forDomain domain: String)
 }
+
+/// Forwards to another store and calls `didChange` after a write changes the stored domains, so the user's allowlist
+/// can be observed when it is written rather than when something derived from it, such as content blocking rules, is
+/// rebuilt. Writes that change nothing, such as turning protections on for a site that isn't listed, don't call it.
+final class ObservedDomainsProtectionStore: DomainsProtectionStore {
+
+    private let store: DomainsProtectionStore
+    private let didChange: () -> Void
+
+    init(_ store: DomainsProtectionStore, didChange: @escaping () -> Void) {
+        self.store = store
+        self.didChange = didChange
+    }
+
+    var unprotectedDomains: Set<String> {
+        store.unprotectedDomains
+    }
+
+    func disableProtection(forDomain domain: String) {
+        notifyIfChanged { store.disableProtection(forDomain: domain) }
+    }
+
+    func enableProtection(forDomain domain: String) {
+        notifyIfChanged { store.enableProtection(forDomain: domain) }
+    }
+
+    private func notifyIfChanged(_ write: () -> Void) {
+        let before = store.unprotectedDomains
+        write()
+        if store.unprotectedDomains != before {
+            didChange()
+        }
+    }
+}

@@ -544,4 +544,31 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         XCTAssertTrue(didReceiveBannerDismissed)
     }
 
+    // MARK: - App Store Dock rollout
+
+    func testTryToShowPromptReportsDisplayedPromptToCoordinator() {
+        coordinatorMock.getPromptTypeResult = .active(.banner)
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        let expectation = expectation(description: "Banner shown")
+
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in expectation.fulfill() }, inactiveUserModalWindowProvider: { nil })
+        wait(for: [expectation], timeout: 1)
+
+        XCTAssertEqual(coordinatorMock.displayedPrompts, [.active(.banner)])
+    }
+
+    func testTryToShowPromptDoesNotReportDisplayedPromptWhenPopoverAnchorIsMissing() {
+        coordinatorMock.getPromptTypeResult = .active(.popover)
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        let expectation = expectation(description: "Not shown")
+
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil },
+                            bannerViewHandler: { _ in },
+                            inactiveUserModalWindowProvider: { nil },
+                            onNoShow: { expectation.fulfill() })
+        wait(for: [expectation], timeout: 1)
+
+        XCTAssertTrue(coordinatorMock.displayedPrompts.isEmpty)
+    }
+
 }

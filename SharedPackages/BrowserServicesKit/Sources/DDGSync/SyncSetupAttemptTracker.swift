@@ -197,3 +197,9 @@ public final class SyncSetupAttemptTracker {
         wideEvent.updateFlow(attempt)
     }
 }
+
+private extension SyncSetupWideEventData {
+    var hasHostSentRecoveryCode: Bool {
+        role == .host && peerOutcome != nil
+    }
+}

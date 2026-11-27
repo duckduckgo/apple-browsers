@@ -476,6 +476,26 @@ struct LinkedPageLoadTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A page that never stops redirecting fails without waiting for the timeout", .timeLimit(.minutes(1)))
+    func endlessRedirectorFails() async {
+        schemeHandler.middleware = [{ request in
+            let next = (Int(request.url?.lastPathComponent ?? "") ?? 0) + 1
+            return .ok(.html("<html><body>Hop<script>location.href = '/\(next)'</script></body></html>"))
+        }]
+        #expect(await load("https://a.test/0", extracted: "") == .failed(.navigationFailed))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only the server's certificate is checked: sign-in and client certificate requests are refused", .timeLimit(.minutes(1)))
+    func authenticationChallenges() {
+        #expect(LinkedPageLoad.disposition(forAuthenticationMethod: NSURLAuthenticationMethodServerTrust) == .performDefaultHandling)
+        for method in [NSURLAuthenticationMethodHTTPBasic, NSURLAuthenticationMethodHTTPDigest, NSURLAuthenticationMethodNTLM,
+                       NSURLAuthenticationMethodNegotiate, NSURLAuthenticationMethodClientCertificate] {
+            #expect(LinkedPageLoad.disposition(forAuthenticationMethod: method) == .cancelAuthenticationChallenge)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Only plain web links without credentials are loaded", .timeLimit(.minutes(1)))
     func supportedLinks() async {
         #expect(LinkedPageContextLoader.isSupported(URL(string: "https://example.com/a")!))

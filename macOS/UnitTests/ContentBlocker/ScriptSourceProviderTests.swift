@@ -108,7 +108,8 @@ final class ScriptSourceProviderTests: XCTestCase {
             webExtensionAvailability: nil,
             dockCustomization: DockCustomizerMock(),
             reinstallUserDetection: MockReinstallingUserDetecting(),
-            installDateProvider: { Date() }
+            installDateProvider: { Date() },
+            topSitesPickerFaviconSeeder: MockTopSitesPickerFaviconSeeder()
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

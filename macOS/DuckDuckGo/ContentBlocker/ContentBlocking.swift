@@ -99,7 +99,8 @@ final class AppContentBlocking {
         webExtensionAvailability: WebExtensionAvailabilityProviding?,
         dockCustomization: DockCustomization,
         reinstallUserDetection: ReinstallingUserDetecting,
-        installDateProvider: @escaping () -> Date
+        installDateProvider: @escaping () -> Date,
+        topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeederProtocol
     ) {
         let buildType = StandardApplicationBuildType()
         // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use embedded (test) config
@@ -145,7 +146,8 @@ final class AppContentBlocking {
             webExtensionAvailability: webExtensionAvailability,
             dockCustomization: dockCustomization,
             reinstallUserDetection: reinstallUserDetection,
-            installDateProvider: installDateProvider
+            installDateProvider: installDateProvider,
+            topSitesPickerFaviconSeeder: topSitesPickerFaviconSeeder
         )
     }
 
@@ -178,7 +180,8 @@ final class AppContentBlocking {
         webExtensionAvailability: WebExtensionAvailabilityProviding?,
         dockCustomization: DockCustomization,
         reinstallUserDetection: ReinstallingUserDetecting,
-        installDateProvider: @escaping () -> Date
+        installDateProvider: @escaping () -> Date,
+        topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeederProtocol
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.tld = tld
@@ -231,7 +234,8 @@ final class AppContentBlocking {
                                                   webExtensionAvailability: webExtensionAvailability,
                                                   dockCustomization: dockCustomization,
                                                   reinstallUserDetection: reinstallUserDetection,
-                                                  installDateProvider: installDateProvider)
+                                                  installDateProvider: installDateProvider,
+                                                  topSitesPickerFaviconSeeder: topSitesPickerFaviconSeeder)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

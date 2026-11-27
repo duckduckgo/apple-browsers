@@ -137,6 +137,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let featureFlagger: FeatureFlagger
     private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
     private let topSitesPickerExperiment: TopSitesPickerExperimentProtocol
+    private let topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeederProtocol
     /// Read when the page starts: the OS region as an ISO 3166-1 alpha-2 code
     private let regionCode: () -> String?
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
@@ -241,7 +242,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         pinningManager: PinningManager,
         featureFlagger: FeatureFlagger,
         reinstallUserDetection: ReinstallingUserDetecting,
-        installDateProvider: @escaping () -> Date
+        installDateProvider: @escaping () -> Date,
+        topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeederProtocol
     ) {
         let chromeExtensionInstaller = ChromeExtensionInstaller(
             buildType: StandardApplicationBuildType(),
@@ -262,6 +264,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             aiChatPreferencesStorage: DefaultAIChatPreferencesStorage(),
             featureFlagger: featureFlagger,
             topSitesPickerExperiment: TopSitesPickerExperiment(featureFlagger: featureFlagger, bookmarkManager: bookmarkManager),
+            topSitesPickerFaviconSeeder: topSitesPickerFaviconSeeder,
             onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
                 platform: .macOS,
                 installTypeProvider: {
@@ -287,6 +290,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
         topSitesPickerExperiment: TopSitesPickerExperimentProtocol,
+        topSitesPickerFaviconSeeder: TopSitesPickerFaviconSeederProtocol,
         regionCode: @escaping () -> String? = { Locale.current.regionCode },
         onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
         chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
@@ -305,6 +309,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.featureFlagger = featureFlagger
         self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
         self.topSitesPickerExperiment = topSitesPickerExperiment
+        self.topSitesPickerFaviconSeeder = topSitesPickerFaviconSeeder
         self.regionCode = regionCode
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
         self.chromeExtensionInstaller = chromeExtensionInstaller
@@ -397,6 +402,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     /// New bookmarks go in one batch: each bookmark store save uses its own context, so separate saves can land out of order.
     /// Sites already bookmarked are marked as favorites separately, so their order relative to the new ones isn't kept.
+    /// Each site without a favicon then gets the icon the page showed for it.
     func addFavorites(_ sites: [OnboardingUserScript.FavoriteSite]) {
         var newFavorites: [WebsiteInfo] = []
         for site in sites {
@@ -409,6 +415,9 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             }
         }
         bookmarkManager.makeBookmarks(for: newFavorites, isFavorite: true, index: nil, parent: nil)
+        Task { @MainActor [topSitesPickerFaviconSeeder] in
+            await topSitesPickerFaviconSeeder.seedFavicons(for: sites)
+        }
     }
 
     func setAsDefault() {

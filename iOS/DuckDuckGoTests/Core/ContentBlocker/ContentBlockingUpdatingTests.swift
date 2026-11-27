@@ -204,14 +204,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         await fulfillment(of: [cancelled], timeout: 1)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertTrue(newDecisions.isEmpty)
-        XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A superseded wait must not report the rules as compiled")
+        XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A replaced wait hands its sample to the replacement")
         rulesManager.updatesSubject.send(Self.testUpdate())
         await fulfillment(of: [continued], timeout: 10)
         XCTAssertEqual(oldDecisions, [.cancel])
         XCTAssertEqual(newDecisions.count, 1)
         XCTAssertNotEqual(newDecisions.first, .cancel)
         XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
-        XCTAssertTrue(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("m_compilation_result_success_") == true)
+        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_success_time_"), true,
+                       "The replacement reports one sample for the whole wait, not a cancelled one")
         XCTAssertFalse(tab.isError, "The superseded wait must not replace the new page with an error")
         XCTAssertEqual(webView.loadCallCount, 0)
     }
@@ -246,6 +247,39 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         XCTAssertEqual(webView.lastLoadedRequest?.url, replacementURL)
         XCTAssertEqual(tab.url, replacementURL)
         XCTAssertFalse(tab.isError, "The replaced wait must not show an error page")
+    }
+
+    @MainActor
+    func testWhenReloadHitsAFirstLoadHeldAtSetupThenTheLoadKeepsWaitingAndProceeds() async throws {
+        let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },
+                                        featureFlagger: MockFeatureFlagger(), sitePermissionsEnabled: true,
+                                        contentBlockingAssetsPublisher: updating.userContentBlockingAssets)
+        tab.specialErrorPageNavigationHandler.delegate = nil
+        defer { tab.prepareForDataClearing() }
+        tab.contentBlockingWaitPixelTimeout = 3600
+        let compilationPixels = PixelKitMock()
+        tab.rulesCompilationMonitor = RulesCompilationMonitor { compilationPixels }
+        let webView = try XCTUnwrap(tab.webView as? MockWebView)
+        let request = URLRequest(url: URL(string: "https://example.com/first")!)
+        let action = MockNavigationAction(request: request, navigationType: .other,
+                                          targetFrame: .mock(isMainFrame: true, securityOriginHost: "example.com", request: request))
+        let continued = expectation(description: "The held load proceeds once assets arrive")
+        continued.assertForOverFulfill = true
+        var decisions = [WKNavigationActionPolicy]()
+        tab.webView(webView, decidePolicyFor: action) { policy in
+            decisions.append(policy)
+            continued.fulfill()
+        }
+        await Task.yield()
+        tab.reload()
+        XCTAssertTrue(decisions.isEmpty, "Reload must not cancel a load that never committed")
+        XCTAssertFalse(webView.reloadCalled)
+        rulesManager.updatesSubject.send(Self.testUpdate())
+        await fulfillment(of: [continued], timeout: 10)
+        XCTAssertEqual(decisions.count, 1)
+        XCTAssertNotEqual(decisions.first, .cancel)
+        XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
+        XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_success_time_"), true)
     }
 
     @MainActor
@@ -506,7 +540,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             await fulfillment(of: [installed], timeout: 10)
             subscription.cancel()
             XCTAssertEqual(decisions, [.cancel])
-            XCTAssertTrue(compilationPixels.actualFireCalls.isEmpty, "A stopped wait must not report the rules as compiled")
+            XCTAssertEqual(compilationPixels.actualFireCalls.count, 1)
+            XCTAssertEqual(compilationPixels.actualFireCalls.first?.pixel.name.hasPrefix("navigation_setup_wait_cancelled_time_"), true,
+                           "A stopped wait reports cancelled, and late assets must not add a success sample")
             XCTAssertFalse(tab.isError)
             XCTAssertTrue(tab.sitePermissionsState.contentBlockingWaitTasks.isEmpty)
         }

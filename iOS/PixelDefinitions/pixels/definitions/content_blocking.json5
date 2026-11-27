@@ -5,5 +5,197 @@
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "navigation_setup_wait_success_time": {
+        "description": "Reports once per process how long the first foreground main-frame HTTP(S) navigation waited for setup before it could proceed, and how much of that each setup stage added. Replaces the m_compilation_result_* pixels, which measured only the content-blocking rules wait and, once navigation also waited for web extensions, no longer covered the whole delay. The outcome and the total wait, bucketed, are part of the pixel name so they aggregate over time; the Web Extension gate and the content-blocking gate are waited at in sequence, so the name's time covers both, and rules and extensions prepare in parallel, so preparation time is not summed. Each stage time is bucketed independently to the first inclusive upper bound, so the stage buckets need not add up to the name's bucket. A navigation with no asynchronous wait reports time_0. Subframes and non-HTTP(S) navigations do not consume the sample. Compare app versions separately across the change from m_compilation_result_*. No URLs or extension identifiers are sent. The setup gates released navigation.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "state",
+                "type": "string",
+                "enum": ["onboarding", "regular"],
+                "description": "Whether onboarding had not been seen when the process-wide monitor was created."
+            },
+            {
+                "key": "web_extensions_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting at the Web Extension startup gate, including its deadline. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "content_blocking_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting for installed content-blocking assets, including geolocation when required and accumulated across readiness retries. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "is_serp",
+                "type": "boolean",
+                "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
+            }
+        ]
+    },
+    "navigation_setup_wait_cancelled_time": {
+        "description": "Reports once per process how long the first foreground main-frame HTTP(S) navigation waited for setup before it could proceed, and how much of that each setup stage added. Replaces the m_compilation_result_* pixels, which measured only the content-blocking rules wait and, once navigation also waited for web extensions, no longer covered the whole delay. The outcome and the total wait, bucketed, are part of the pixel name so they aggregate over time; the Web Extension gate and the content-blocking gate are waited at in sequence, so the name's time covers both, and rules and extensions prepare in parallel, so preparation time is not summed. Each stage time is bucketed independently to the first inclusive upper bound, so the stage buckets need not add up to the name's bucket. A navigation with no asynchronous wait reports time_0. Subframes and non-HTTP(S) navigations do not consume the sample. Compare app versions separately across the change from m_compilation_result_*. No URLs or extension identifiers are sent. The navigation was stopped, intercepted by policy or cleared before release. A navigation replaced by another in the same tab hands its sample over instead: the wait keeps counting from its start and is_serp reflects the last navigation. Reports the partial wait once; a late completion cannot report success.",
+        "owners": ["mallexxx"],
+        "triggers": ["user_interaction", "feature_lifecycle", "exception"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "state",
+                "type": "string",
+                "enum": ["onboarding", "regular"],
+                "description": "Whether onboarding had not been seen when the process-wide monitor was created."
+            },
+            {
+                "key": "web_extensions_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting at the Web Extension startup gate, including its deadline. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "content_blocking_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting for installed content-blocking assets, including geolocation when required and accumulated across readiness retries. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "is_serp",
+                "type": "boolean",
+                "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
+            }
+        ]
+    },
+    "navigation_setup_wait_timeout_time": {
+        "description": "Reports once per process how long the first foreground main-frame HTTP(S) navigation waited for setup before it could proceed, and how much of that each setup stage added. Replaces the m_compilation_result_* pixels, which measured only the content-blocking rules wait and, once navigation also waited for web extensions, no longer covered the whole delay. The outcome and the total wait, bucketed, are part of the pixel name so they aggregate over time; the Web Extension gate and the content-blocking gate are waited at in sequence, so the name's time covers both, and rules and extensions prepare in parallel, so preparation time is not summed. Each stage time is bucketed independently to the first inclusive upper bound, so the stage buckets need not add up to the name's bucket. A navigation with no asynchronous wait reports time_0. Subframes and non-HTTP(S) navigations do not consume the sample. Compare app versions separately across the change from m_compilation_result_*. No URLs or extension identifiers are sent. The Web Extension startup gate's deadline released navigation before extensions were ready. This is not a network or page-load timeout; the navigation then continued.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "state",
+                "type": "string",
+                "enum": ["onboarding", "regular"],
+                "description": "Whether onboarding had not been seen when the process-wide monitor was created."
+            },
+            {
+                "key": "web_extensions_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting at the Web Extension startup gate, including its deadline. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "content_blocking_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting for installed content-blocking assets, including geolocation when required and accumulated across readiness retries. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "is_serp",
+                "type": "boolean",
+                "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
+            }
+        ]
+    },
+    "navigation_setup_wait_tab_closed_time": {
+        "description": "Reports once per process how long the first foreground main-frame HTTP(S) navigation waited for setup before it could proceed, and how much of that each setup stage added. Replaces the m_compilation_result_* pixels, which measured only the content-blocking rules wait and, once navigation also waited for web extensions, no longer covered the whole delay. The outcome and the total wait, bucketed, are part of the pixel name so they aggregate over time; the Web Extension gate and the content-blocking gate are waited at in sequence, so the name's time covers both, and rules and extensions prepare in parallel, so preparation time is not summed. Each stage time is bucketed independently to the first inclusive upper bound, so the stage buckets need not add up to the name's bucket. A navigation with no asynchronous wait reports time_0. Subframes and non-HTTP(S) navigations do not consume the sample. Compare app versions separately across the change from m_compilation_result_*. No URLs or extension identifiers are sent. The tab closed before setup released navigation. Reports the partial wait once.",
+        "owners": ["mallexxx"],
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "state",
+                "type": "string",
+                "enum": ["onboarding", "regular"],
+                "description": "Whether onboarding had not been seen when the process-wide monitor was created."
+            },
+            {
+                "key": "web_extensions_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting at the Web Extension startup gate, including its deadline. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "content_blocking_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting for installed content-blocking assets, including geolocation when required and accumulated across readiness retries. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "is_serp",
+                "type": "boolean",
+                "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
+            }
+        ]
+    },
+    "navigation_setup_wait_app_quit_time": {
+        "description": "Reports once per process how long the first foreground main-frame HTTP(S) navigation waited for setup before it could proceed, and how much of that each setup stage added. Replaces the m_compilation_result_* pixels, which measured only the content-blocking rules wait and, once navigation also waited for web extensions, no longer covered the whole delay. The outcome and the total wait, bucketed, are part of the pixel name so they aggregate over time; the Web Extension gate and the content-blocking gate are waited at in sequence, so the name's time covers both, and rules and extensions prepare in parallel, so preparation time is not summed. Each stage time is bucketed independently to the first inclusive upper bound, so the stage buckets need not add up to the name's bucket. A navigation with no asynchronous wait reports time_0. Subframes and non-HTTP(S) navigations do not consume the sample. Compare app versions separately across the change from m_compilation_result_*. No URLs or extension identifiers are sent. The app was terminating before setup released navigation. Reports the partial wait once.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "state",
+                "type": "string",
+                "enum": ["onboarding", "regular"],
+                "description": "Whether onboarding had not been seen when the process-wide monitor was created."
+            },
+            {
+                "key": "web_extensions_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting at the Web Extension startup gate, including its deadline. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "content_blocking_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting for installed content-blocking assets, including geolocation when required and accumulated across readiness retries. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "is_serp",
+                "type": "boolean",
+                "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
+            }
+        ]
+    },
+    "navigation_setup_wait_app_backgrounded_time": {
+        "description": "Reports once per process how long the first foreground main-frame HTTP(S) navigation waited for setup before it could proceed, and how much of that each setup stage added. Replaces the m_compilation_result_* pixels, which measured only the content-blocking rules wait and, once navigation also waited for web extensions, no longer covered the whole delay. The outcome and the total wait, bucketed, are part of the pixel name so they aggregate over time; the Web Extension gate and the content-blocking gate are waited at in sequence, so the name's time covers both, and rules and extensions prepare in parallel, so preparation time is not summed. Each stage time is bucketed independently to the first inclusive upper bound, so the stage buckets need not add up to the name's bucket. A navigation with no asynchronous wait reports time_0. Subframes and non-HTTP(S) navigations do not consume the sample. Compare app versions separately across the change from m_compilation_result_*. No URLs or extension identifiers are sent. The app entered the background before setup released navigation. The wait ends there so suspended time is never counted.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["time_bucket", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "state",
+                "type": "string",
+                "enum": ["onboarding", "regular"],
+                "description": "Whether onboarding had not been seen when the process-wide monitor was created."
+            },
+            {
+                "key": "web_extensions_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting at the Web Extension startup gate, including its deadline. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "content_blocking_wait_time",
+                "type": "string",
+                "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"],
+                "description": "Seconds spent waiting for installed content-blocking assets, including geolocation when required and accumulated across readiness retries. 0 when the navigation did not wait there. Bucketed."
+            },
+            {
+                "key": "is_serp",
+                "type": "boolean",
+                "description": "Whether the measured navigation was a DuckDuckGo search results page, to see how long SERP waits on setup."
+            }
+        ]
     }
 }

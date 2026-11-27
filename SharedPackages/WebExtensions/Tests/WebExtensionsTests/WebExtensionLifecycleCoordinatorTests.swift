@@ -124,7 +124,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         var waitCompleted = false
         let initialLoadWaiter = try XCTUnwrap(sut.initialLoadWaiter)
         let waiter = Task { @MainActor in
-            await initialLoadWaiter()
+            _ = await initialLoadWaiter()
             waitCompleted = true
         }
         await Task.yield()
@@ -155,7 +155,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         var waitCompleted = false
         let initialLoadWaiter = try XCTUnwrap(sut.initialLoadWaiter)
         let waiter = Task { @MainActor in
-            await initialLoadWaiter()
+            _ = await initialLoadWaiter()
             waitCompleted = true
         }
         await Task.yield()
@@ -195,7 +195,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         let started = expectation(description: "Navigation starts waiting before load is scheduled")
         let waiter = Task { @MainActor in
             started.fulfill()
-            await initialLoadWaiter()
+            _ = await initialLoadWaiter()
             waitCompleted = true
         }
         await fulfillment(of: [started], timeout: 1)
@@ -232,12 +232,12 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
         let sut = WebExtensionLifecycleCoordinator(manager: manager, initialLoadTimeout: 1, enabledTypesProvider: { [.embedded] })
         let launch = sut.loadAndSync()
-        try await XCTUnwrap(sut.initialLoadWaiter)()
+        _ = try await XCTUnwrap(sut.initialLoadWaiter)()
         await launch.value
         XCTAssertNotNil(release)
         let released = expectation(description: "Launch already consumed the same startup deadline")
         let waiter = try XCTUnwrap(sut.initialLoadWaiter)
-        let navigation = Task { @MainActor in await waiter(); released.fulfill() }
+        let navigation = Task { @MainActor in _ = await waiter(); released.fulfill() }
         await fulfillment(of: [released], timeout: 0.2)
         release?.resume()
         await navigation.value
@@ -252,7 +252,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
         let backgroundWaiter = try XCTUnwrap(sut.initialLoadWaiter)
         var completed = false
-        let task = Task { @MainActor in await backgroundWaiter(); completed = true }
+        let task = Task { @MainActor in _ = await backgroundWaiter(); completed = true }
         while release == nil { await Task.yield() }
         XCTAssertFalse(completed)
         release?.resume()
@@ -269,7 +269,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
         let waiter = try XCTUnwrap(sut.initialLoadWaiter)
         let released = expectation(description: "Navigation released without the WebKit callback")
-        let task = Task { @MainActor in await waiter(); released.fulfill() }
+        let task = Task { @MainActor in _ = await waiter(); released.fulfill() }
         await fulfillment(of: [released], timeout: 1)
         XCTAssertNotNil(release, "The background load remains pending after the navigation deadline")
         release?.resume()
@@ -286,14 +286,14 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         manager.navigationBackgroundWaiter = { await startup.value }
         let firstWaiter = try XCTUnwrap(sut.initialLoadWaiter)
         let alreadyPreparedWaiter = try XCTUnwrap(sut.initialLoadWaiter)
-        await firstWaiter()
+        _ = await firstWaiter()
         XCTAssertNotNil(release, "The shared WebKit startup is still pending after the first timeout")
 
         let laterNavigation = expectation(description: "Later navigation bypasses the expired startup wait")
         let preparedNavigation = expectation(description: "Already prepared navigation shares the expired deadline")
         let waiter = try XCTUnwrap(sut.initialLoadWaiter)
-        let navigation = Task { @MainActor in await waiter(); laterNavigation.fulfill() }
-        let prepared = Task { @MainActor in await alreadyPreparedWaiter(); preparedNavigation.fulfill() }
+        let navigation = Task { @MainActor in _ = await waiter(); laterNavigation.fulfill() }
+        let prepared = Task { @MainActor in _ = await alreadyPreparedWaiter(); preparedNavigation.fulfill() }
         await fulfillment(of: [laterNavigation, preparedNavigation], timeout: 0.5)
         release?.resume()
         await navigation.value
@@ -308,7 +308,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         var release: CheckedContinuation<Void, Never>?
         let original = Task { @MainActor in await withCheckedContinuation { release = $0 } }
         manager.navigationBackgroundWaiter = { await original.value }
-        try await XCTUnwrap(sut.initialLoadWaiter)()
+        _ = try await XCTUnwrap(sut.initialLoadWaiter)()
         release?.resume()
         await original.value
 
@@ -316,7 +316,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         manager.navigationBackgroundWaiter = { await withCheckedContinuation { releaseReplacement = $0 } }
         let waiter = try XCTUnwrap(sut.initialLoadWaiter)
         var completed = false
-        let navigation = Task { @MainActor in await waiter(); completed = true }
+        let navigation = Task { @MainActor in _ = await waiter(); completed = true }
         while releaseReplacement == nil { await Task.yield() }
         XCTAssertFalse(completed, "An earlier timeout must not disable protection for a new startup")
         releaseReplacement?.resume()
@@ -332,7 +332,7 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         manager.navigationBackgroundWaiter = { await withCheckedContinuation { release = $0 } }
         let waiter = try XCTUnwrap(sut.initialLoadWaiter)
         let cancelled = expectation(description: "Cancelled navigation releases its waiter")
-        let task = Task { @MainActor in await waiter(); cancelled.fulfill() }
+        let task = Task { @MainActor in _ = await waiter(); cancelled.fulfill() }
         while release == nil { await Task.yield() }
         task.cancel()
         await fulfillment(of: [cancelled], timeout: 1)
@@ -364,10 +364,11 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         }
 
         let gate = WebExtensionNavigationGate()
-        await gate.waitIfNeeded(isMainFrame: true,
-                                url: URL(string: "https://example.com")!,
-                                initialLoadWaiter: sut.initialLoadWaiter)
+        let result = await gate.waitIfNeeded(isMainFrame: true,
+                                             url: URL(string: "https://example.com")!,
+                                             initialLoadWaiter: sut.initialLoadWaiter)
 
+        XCTAssertEqual(result, .timedOut)
         XCTAssertTrue(sut.isInitialLoadAndSyncPending)
         XCTAssertNil(sut.initialLoadWaiter, "A timeout must open the gate for every subsequent navigation")
         XCTAssertEqual(manager.started, [.syncCPM(true), .load])
@@ -421,20 +422,23 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         let completed = expectation(description: "Both tabs are released without scheduling a load")
         completed.expectedFulfillmentCount = 2
         let waiters = (0..<2).map { _ in
-            Task { @MainActor in
-                await initialLoadWaiter()
+            Task { @MainActor () -> WebExtensionInitialLoadResult in
+                let result = await initialLoadWaiter()
                 completed.fulfill()
+                return result
             }
         }
         await fulfillment(of: [completed], timeout: 1)
+        for waiter in waiters {
+            let result = await waiter.value
+            XCTAssertEqual(result, .timedOut)
+        }
 
         XCTAssertNil(sut.initialLoadWaiter)
         XCTAssertTrue(manager.started.isEmpty)
         // Even a waiter captured before the timeout must not start a fresh wait.
-        await initialLoadWaiter()
-        for waiter in waiters {
-            await waiter.value
-        }
+        let lateResult = await initialLoadWaiter()
+        XCTAssertEqual(lateResult, .ready)
         await sut.loadAndSync().value
         XCTAssertNil(sut.initialLoadWaiter)
     }
@@ -448,12 +452,12 @@ final class WebExtensionLifecycleCoordinatorTests: XCTestCase {
         started.expectedFulfillmentCount = 2
         let cancelledWaiter = Task { @MainActor in
             started.fulfill()
-            await initialLoadWaiter()
+            _ = await initialLoadWaiter()
         }
         var secondWaitCompleted = false
         let secondWaiter = Task { @MainActor in
             started.fulfill()
-            await initialLoadWaiter()
+            _ = await initialLoadWaiter()
             secondWaitCompleted = true
         }
         await fulfillment(of: [started], timeout: 1)
@@ -773,7 +777,7 @@ private final class RecordingWebExtensionManager: WebExtensionManaging {
         backgroundContentLoadContinuation = nil
     }
 
-    var navigationBackgroundWaiter: WebExtensionInitialLoadWaiter? {
+    var navigationBackgroundWaiter: (@MainActor () async -> Void)? {
         didSet { navigationBackgroundStartup = nil }
     }
     private var navigationBackgroundStartup: Task<Void, Never>?

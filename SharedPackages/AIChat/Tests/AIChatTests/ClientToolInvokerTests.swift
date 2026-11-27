@@ -383,6 +383,37 @@ extension ClientToolInvokerTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [JSONValue.object([:]), .object(["tabIds": []]), .object(["tabIds": [1]])])
+    func invalidCloseTabsArgumentsCannotGrantChatAccess(input: JSONValue) async throws {
+        let tool = CloseTabsBrowserTool { _, _ in
+            Issue.record("Invalid arguments must never resolve tabs")
+            return .failure(.unavailable)
+        }
+        let coordinator = ClientToolPermissionCoordinator(permissions: ClientToolTestPermissions())
+        let configuration = ClientToolTestConfiguration()
+        configuration.isRequestAccessEnabled = true
+        let invoker = BrowserToolInvoker(catalog: BrowserToolCatalog(tools: [tool], configuration: configuration),
+                                         clientToolPermissions: coordinator)
+        let source = ClientToolTestSource()
+        source.onPush = { [weak source] prompt in
+            guard let source else { return false }
+            coordinator.respond(to: prompt, decision: .allowForChat, from: source)
+            return true
+        }
+        let payload: JSONValue = [
+            "callId": "close", "chatId": "chat", "capability": ["name": "closeTabs", "version": 1], "input": input
+        ]
+        let request = try JSONDecoder().decode(ExecuteClientToolRequest.self, from: JSONEncoder().encode(payload))
+        let context = BrowserToolCallContext(ownerTabID: "owner", isBurner: false)
+
+        let response = await invoker.invokeClientTool(request, context: context, permissionPrompter: source)
+
+        #expect(response == .failure(callId: "close", error: .invalidArguments))
+        #expect(source.prompts.isEmpty)
+        #expect(coordinator.state(for: tool, chatID: "chat") == .ask)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)), arguments: [
         ("auto", BrowserToolPermissionPath.auto, true), ("always", .always, true), ("never", .never, false),
         ("allowOnce", .prompt, true), ("dontAllow", .prompt, false), ("dismiss", .prompt, false)

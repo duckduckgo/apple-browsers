@@ -1332,6 +1332,25 @@ final class TabManagerTests: XCTestCase {
         XCTAssertEqual(manager.currentBrowsingMode, .fire)
     }
 
+    func testCloseTabsRejectsTheWholeRequestWhenAnyTabBelongsToFire() async throws {
+        let owner = Tab(uid: "owner", fireTab: false)
+        let target = Tab(link: Link(title: "Kyoto", url: URL(string: "https://example.com/kyoto")!))
+        let fireTab = Tab(link: Link(title: "Osaka", url: URL(string: "https://example.com/osaka")!), fireTab: true)
+        let normalModel = TabsModel(tabs: [owner, target], desktop: false)
+        let fireModel = TabsModel(tabs: [fireTab], desktop: false, mode: .fire)
+        let manager = try makeManager(normalModel, fireModel: fireModel,
+                                      featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.fireMode]))
+        let scope = try XCTUnwrap(manager.makeBrowserToolScope(for: owner))
+        let tool = CloseTabsBrowserTool(scopeProvider: { _ in scope })
+        let context = BrowserToolCallContext(ownerTabID: owner.uid, ownerWindowToken: scope.token, isBurner: false)
+
+        let result = await tool.execute(arguments: ["tabIds": [.string(target.uid), .string(fireTab.uid)]], context: context)
+
+        XCTAssertEqual(result, .failure(.notFound))
+        XCTAssertEqual(normalModel.tabs.map(\.uid), [owner.uid, target.uid])
+        XCTAssertEqual(fireModel.tabs.map(\.uid), [fireTab.uid])
+    }
+
     private func makeAttachmentManager() throws -> (TabManager, [Tab]) {
         let tabs = (0..<3).map {
             Tab(link: Link(title: "Page \($0)", url: URL(string: "https://example.com/\($0)")!))

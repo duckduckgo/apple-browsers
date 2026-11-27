@@ -44,9 +44,9 @@ struct RMFSheetPlaygroundView: View {
             Section("Sheet") {
                 OnOffPicker(title: "Full height", isOn: $fullHeight)
                 Picker("Close", selection: $exit) {
-                    Text("Close button").tag(ExitOption.close)
-                    Text("Secondary button").tag(ExitOption.secondary)
-                    Text("Both").tag(ExitOption.both)
+                    Text(verbatim: "Close button").tag(ExitOption.close)
+                    Text(verbatim: "Secondary button").tag(ExitOption.secondary)
+                    Text(verbatim: "Both").tag(ExitOption.both)
                 }
             }
             Section("Parts") {
@@ -65,7 +65,7 @@ struct RMFSheetPlaygroundView: View {
         }
         .accessibilityIdentifier("rmfPlaygroundList")
         .safeAreaInset(edge: .bottom) {
-            Text("Last action: \(lastAction)")
+            Text(verbatim: "Last action: \(lastAction)")
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(.bar)
@@ -94,8 +94,8 @@ struct RMFSheetPlaygroundView: View {
 
         var body: some View {
             Picker(title, selection: $isOn) {
-                Text("On").tag(true)
-                Text("Off").tag(false)
+                Text(verbatim: "On").tag(true)
+                Text(verbatim: "Off").tag(false)
             }
         }
     }

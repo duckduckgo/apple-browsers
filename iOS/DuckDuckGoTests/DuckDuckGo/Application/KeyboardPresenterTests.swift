@@ -75,8 +75,12 @@ final class KeyboardPresenterTests {
     private var promptPending = false
     private var promptRequestIsValid: (@MainActor () -> Bool)?
     private var promptCloseHandler: (@MainActor () -> Void)?
+    private var isProtectionEnabled = true
     private lazy var presenter = KeyboardPresenter(
         mainViewController: target,
+        foregroundScreen: IdleReturnForegroundScreen(presented: target.presentedViewController,
+                                                     wasOnNewTabPage: true,
+                                                     isProtectionEnabled: isProtectionEnabled),
         runOnceModalPromptCloses: { [unowned self] isValid, handler in
             guard promptPending else { return false }
             promptRequestIsValid = isValid
@@ -424,5 +428,33 @@ final class KeyboardPresenterTests {
 
         #expect((target.windowVisibleHandler == nil) == endsBeforeRequest)
         #expect(target.allowedKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An idle return closes only the screen open when the foreground began, not one opened during the launch wait",
+          .timeLimit(.minutes(1)))
+    func idleReturnKeepsScreenOpenedDuringLaunchWait() {
+        _ = presenter
+        target.presentedViewController = UIViewController()
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+
+        #expect(target.closeScreensCallCount == 1)
+        #expect(target.closedScreen == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the launch wait protection off, an idle return closes the screen open when launch handling runs",
+          .timeLimit(.minutes(1)))
+    func idleReturnClosesCurrentScreenWithProtectionOff() {
+        isProtectionEnabled = false
+        _ = presenter
+        let openedDuringWait = UIViewController()
+        target.presentedViewController = openedDuringWait
+
+        presenter.showKeyboardOnLaunch(lastBackgroundDate: nil, isAfterIdleReturn: true)
+
+        #expect(target.closeScreensCallCount == 1)
+        #expect(target.closedScreen === openedDuringWait)
     }
 }

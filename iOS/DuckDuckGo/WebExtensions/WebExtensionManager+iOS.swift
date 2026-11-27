@@ -60,7 +60,6 @@ public enum WebExtensionManagerFactory {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferences,
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
-        searchTokenProvider: SearchTokenProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil,
         eventHub: EventHubManaging,
         isAppleSurrogateRedirectionEnabled: @escaping @MainActor () -> Bool = { false }
@@ -94,7 +93,6 @@ public enum WebExtensionManagerFactory {
                 autoconsentPreferences: preferencesAdapter,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
-                searchTokenProvider: searchTokenProvider,
                 eventHub: eventHub,
                 isAppleSurrogateRedirectionEnabled: isAppleSurrogateRedirectionEnabled
             ),

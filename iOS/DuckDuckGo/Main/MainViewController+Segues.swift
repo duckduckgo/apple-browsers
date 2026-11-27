@@ -426,6 +426,12 @@ extension MainViewController {
         }
     }
 
+    func segueToSettingsDataClearing() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(deepLinkTarget: .dataClearing)
+    }
+
     func segueToSettingsPrivateSearch(completion: (() -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()

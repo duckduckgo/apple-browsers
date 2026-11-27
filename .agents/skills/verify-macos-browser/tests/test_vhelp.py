@@ -244,55 +244,65 @@ class FlagTests(unittest.TestCase):
 
 
 class DerivedDataTests(unittest.TestCase):
-    """verify.sh's resolve_derived_data: which DerivedData `build` uses for a checkout, and why."""
+    """verify.sh's resolve_derived_data: which DerivedData `build` uses for a checkout, and why. Never Xcode's: a
+    DerivedData keeps the package manifests as first evaluated, and only verify.sh sets SPM_FORCE_DEBUG=1."""
 
     def setUp(self):
         self.home = tmp()
 
-    def xcode_folder(self, name, checkout, mtime):
-        d = os.path.join(self.home, "Library/Developer/Xcode/DerivedData", name)
+    def xcode_folder(self, checkout):
+        d = os.path.join(self.home, "Library/Developer/Xcode/DerivedData", "DuckDuckGo-a")
         os.makedirs(d)
         with open(os.path.join(d, "info.plist"), "wb") as f:
             plistlib.dump({"WorkspacePath": os.path.join(checkout, "DuckDuckGo.xcworkspace")}, f)
-        os.utime(d, (mtime, mtime))
         return d
 
     def resolve(self, checkout, **env):
-        functions = f'sed -n "/^derived_data_of()/,/^}}/p; /^resolve_derived_data()/,/^}}/p" "{VERIFY_SH}"'
+        functions = f'sed -n "/^resolve_derived_data()/,/^}}/p" "{VERIFY_SH}"'
         code, out = run(["bash", "-c", f'eval "$({functions})"; resolve_derived_data "$1"', "-", checkout],
                         env={"HOME": self.home, **env})
         self.assertEqual(code, 0, out)
         return tuple(out.rstrip("\n").split("\t"))
 
-    def test_the_environment_wins(self):
-        checkout = tmp()
-        self.xcode_folder("DuckDuckGo-a", checkout, 1000)
-        self.assertEqual(self.resolve(checkout, VERIFY_DERIVED_DATA="/dd"), ("/dd", "VERIFY_DERIVED_DATA"))
-
-    def test_the_newest_xcode_folder_of_this_checkout(self):
-        checkout, other = tmp(), tmp()
-        self.xcode_folder("DuckDuckGo-old", checkout, 1000)
-        newest = self.xcode_folder("DuckDuckGo-new", checkout, 2000)
-        self.xcode_folder("DuckDuckGo-other", other, 3000)
-        self.assertEqual(self.resolve(checkout), (newest, "this checkout"))
-
-    def test_the_runners_folder_when_xcode_has_none(self):
-        checkout = tmp()
-        os.makedirs(os.path.join(checkout, ".build/DerivedData"))
-        self.assertEqual(self.resolve(checkout), (os.path.join(checkout, ".build/DerivedData"), "this checkout"))
-
-    def test_a_worktree_shares_the_main_checkouts(self):
+    def main_and_worktree(self):
         main = tmp()
         git = ["git", "-c", "user.name=t", "-c", "user.email=t@example.com", "-C", main]
         for args in (["init", "-q"], ["commit", "-q", "--allow-empty", "-m", "x"], ["worktree", "add", "-q", "wt"]):
             self.assertEqual(run(git + args)[0], 0)
-        shared = self.xcode_folder("DuckDuckGo-main", main, 1000)
-        self.assertEqual(self.resolve(os.path.join(main, "wt")), (shared, f"main checkout {main}"))
+        return main, os.path.join(main, "wt")
 
-    def test_otherwise_a_new_one_in_the_checkout(self):
+    def test_the_environment_wins(self):
         checkout = tmp()
+        os.makedirs(os.path.join(checkout, ".build/DerivedData-verify"))
+        self.assertEqual(self.resolve(checkout, VERIFY_DERIVED_DATA="/dd"), ("/dd", "VERIFY_DERIVED_DATA"))
+
+    def test_never_xcodes_or_the_runners_folder(self):
+        checkout = tmp()
+        self.xcode_folder(checkout)
+        os.makedirs(os.path.join(checkout, ".build/DerivedData"))
         self.assertEqual(self.resolve(checkout),
-                         (os.path.join(checkout, ".build/DerivedData"), "new (first build is a full build)"))
+                         (os.path.join(checkout, ".build/DerivedData-verify"), "new (first build is a full build)"))
+
+    def test_this_checkouts_own_folder(self):
+        checkout = tmp()
+        os.makedirs(os.path.join(checkout, ".build/DerivedData-verify"))
+        self.assertEqual(self.resolve(checkout), (os.path.join(checkout, ".build/DerivedData-verify"), "this checkout"))
+
+    def test_a_worktree_with_its_own_folder_keeps_it(self):
+        main, wt = self.main_and_worktree()
+        os.makedirs(os.path.join(main, ".build/DerivedData-verify"))
+        os.makedirs(os.path.join(wt, ".build/DerivedData-verify"))
+        self.assertEqual(self.resolve(wt), (os.path.join(wt, ".build/DerivedData-verify"), "this checkout"))
+
+    def test_a_worktree_shares_the_main_checkouts(self):
+        main, wt = self.main_and_worktree()
+        os.makedirs(os.path.join(main, ".build/DerivedData-verify"))
+        self.assertEqual(self.resolve(wt), (os.path.join(main, ".build/DerivedData-verify"), f"main checkout {main}"))
+
+    def test_a_worktrees_first_one_goes_in_the_main_checkout(self):
+        main, wt = self.main_and_worktree()
+        self.assertEqual(self.resolve(wt), (os.path.join(main, ".build/DerivedData-verify"),
+                                            "new in the main checkout (first build is a full build)"))
 
 
 class VMLockTests(unittest.TestCase):

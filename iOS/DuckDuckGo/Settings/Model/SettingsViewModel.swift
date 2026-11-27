@@ -328,6 +328,8 @@ final class SettingsViewModel: ObservableObject {
     // Used to automatically navigate to a specific section
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
+    /// `deepLinkTarget` is cleared after navigating, so keep whether Settings opened straight to Data Clearing.
+    private let opensAtDataClearing: Bool
 
     var afterInactivityOption: AfterInactivityOption {
         afterInactivityOptionAdapter.afterInactivityOption
@@ -387,6 +389,8 @@ final class SettingsViewModel: ObservableObject {
             appSettings: appSettings,
             aiChatSettings: aiChatSettings,
             fireproofing: legacyViewProvider.fireproofing,
+            featureFlagger: featureFlagger,
+            source: opensAtDataClearing ? .deepLink : .settings,
             delegate: self
         )
     }()
@@ -1146,6 +1150,7 @@ final class SettingsViewModel: ObservableObject {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.deepLinkTarget = deepLink
+        self.opensAtDataClearing = deepLink == .dataClearing
         self.historyManager = historyManager
         self.syncPausedStateManager = syncPausedStateManager
         self.subscriptionDataReporter = subscriptionDataReporter
@@ -1890,6 +1895,7 @@ extension SettingsViewModel {
         case appearance
         case general
         case cookiePopupProtection
+        case dataClearing
         case about
         // Add other cases as needed
 
@@ -1911,6 +1917,7 @@ extension SettingsViewModel {
             case .appearance: return "appearance"
             case .general: return "general"
             case .cookiePopupProtection: return "cookiePopupProtection"
+            case .dataClearing: return "dataClearing"
             case .about: return "about"
             // Ensure all cases are covered
             }
@@ -1920,7 +1927,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection, .about:
+            case .netP, .dbp, .itr, .subscriptionFlow, .subscriptionPlanChangeFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .subscriptionWelcome, .customizeToolbarButton, .customizeAddressBarButton, .appearance, .general, .cookiePopupProtection, .dataClearing, .about:
                 return .navigationLink
             }
         }

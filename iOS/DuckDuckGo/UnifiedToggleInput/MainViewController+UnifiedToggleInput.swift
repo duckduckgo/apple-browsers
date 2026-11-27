@@ -93,7 +93,11 @@ extension MainViewController {
             recentModalPromptStatusProvider: promoCoordinationService,
             duckAIWideEventInstrumentation: duckAIWideEventInstrumentation,
             attachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled,
+            userDefaultModelStorage: { [weak self] isFireTab in
+                isFireTab ? self?.duckAiFireModeStorageHandler : self?.duckAiNativeStorageHandler
+            },
             floatingUIManager: floatingUIManager,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
             scheduleInputFocus: { [weak self] focus in self?.newTabTransitions.scheduleInputFocus(focus) }
         )
         coordinator.delegate = self
@@ -970,6 +974,9 @@ extension MainViewController {
         // driven by the FE's `voiceModeOpened`/`Closed` events, which fire at the paint moment.
         if tab.isVoiceModeRequested, coordinator.aiChatInputBoxVisibility != .hidden {
             coordinator.aiChatInputBoxVisibility = .hidden
+        }
+        if tab.isVoiceModeRequested {
+            coordinator.holdNewChatForVoice()
         }
         tab.isVoiceModeRequested = false
         tab.isDuckAIDeepLinkSurfaceRequested = false

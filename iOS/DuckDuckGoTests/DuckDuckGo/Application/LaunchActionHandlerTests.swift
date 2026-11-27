@@ -603,3 +603,46 @@ final class LaunchActionHandlerTests {
     }
 
 }
+
+@MainActor
+struct IdleReturnForegroundScreenTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A screen or page opened during the launch wait counts as the user acting", .timeLimit(.minutes(1)))
+    func userActedDuringLaunchWait() {
+        let screenLeftOpen = UIViewController()
+        let onNewTabPage = IdleReturnForegroundScreen(presented: nil, wasOnNewTabPage: true, isProtectionEnabled: true)
+        let withScreenLeftOpen = IdleReturnForegroundScreen(presented: screenLeftOpen, wasOnNewTabPage: false, isProtectionEnabled: true)
+
+        #expect(!onNewTabPage.userActed(presented: nil, isOnNewTabPage: true))
+        #expect(onNewTabPage.userActed(presented: UIViewController(), isOnNewTabPage: true))
+        #expect(onNewTabPage.userActed(presented: nil, isOnNewTabPage: false))
+        #expect(!withScreenLeftOpen.userActed(presented: screenLeftOpen, isOnNewTabPage: false))
+        #expect(!withScreenLeftOpen.userActed(presented: nil, isOnNewTabPage: true))
+        #expect(withScreenLeftOpen.userActed(presented: UIViewController(), isOnNewTabPage: false))
+        withExtendedLifetime(screenLeftOpen) {}
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the launch wait protection on, the screen left open is the one captured at foreground", .timeLimit(.minutes(1)))
+    func screenLeftOpenWithProtectionOn() {
+        let screenLeftOpen = UIViewController()
+        let screen = IdleReturnForegroundScreen(presented: screenLeftOpen, wasOnNewTabPage: true, isProtectionEnabled: true)
+
+        #expect(screen.screenLeftOpen(current: UIViewController()) === screenLeftOpen)
+        withExtendedLifetime(screenLeftOpen) {}
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the launch wait protection off, nothing counts as acting and the current screen is the one closed",
+          .timeLimit(.minutes(1)))
+    func protectionOff() {
+        let screenLeftOpen = UIViewController()
+        let openedDuringWait = UIViewController()
+        let screen = IdleReturnForegroundScreen(presented: screenLeftOpen, wasOnNewTabPage: true, isProtectionEnabled: false)
+
+        #expect(!screen.userActed(presented: openedDuringWait, isOnNewTabPage: false))
+        #expect(screen.screenLeftOpen(current: openedDuringWait) === openedDuringWait)
+        withExtendedLifetime(screenLeftOpen) {}
+    }
+}

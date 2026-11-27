@@ -159,9 +159,8 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
 
         let dbpFeatureFlagger = DBPFeatureFlagger(configurationManager: configurationManager,
                                                   privacyConfigurationManager: privacyConfigurationManager)
-        let buildType = StandardApplicationBuildType()
         let wideEvent = WideEvent(
-            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            isDevMode: !BuildFlags.isProductionBuild,
             featureFlagProvider: dbpFeatureFlagger
         )
 

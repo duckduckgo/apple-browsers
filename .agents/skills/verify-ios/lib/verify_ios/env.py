@@ -3,7 +3,7 @@
 Everything is keyed to the git worktree the caller runs from, so two worktrees never share simulators, ports,
 build products, recorded pids or evidence. Build products live inside the worktree; the rest lives under HOME.
 """
-import contextlib, fcntl, hashlib, json, os, secrets, socket, subprocess
+import contextlib, fcntl, hashlib, json, os, secrets, socket, subprocess, time
 
 SKILL = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 BUNDLE = "com.duckduckgo.mobile.ios"
@@ -58,8 +58,8 @@ def git_root():
 
 ROOT = git_root()
 KEY = os.path.basename(ROOT) + "-" + hashlib.sha1(ROOT.encode()).hexdigest()[:6]
-HOME = os.path.join(os.path.expanduser(os.environ.get("VERIFY_IOS_HOME", "~/.ddg-verify-ios")), KEY)
-STATE = f"{HOME}/state.json"
+BASE = os.path.expanduser(os.environ.get("VERIFY_IOS_HOME", "~/.ddg-verify-ios"))   # one folder per worktree key
+HOME = os.path.join(BASE, KEY)
 # Builds live in the worktree (gitignored), so removing the worktree removes them. HOME keeps state, logs and evidence,
 # which must outlive it: pull requests link to the evidence.
 BUILD = f"{ROOT}/DerivedData/verify-ios"
@@ -81,31 +81,43 @@ def fixture_port():
 
 # ---------------------------------------------------------------- state
 @contextlib.contextmanager
-def _state_lock():
-    os.makedirs(HOME, exist_ok=True)
-    with open(f"{HOME}/state.lock", "w") as f:
+def _state_lock(home):
+    os.makedirs(home, exist_ok=True)
+    with open(f"{home}/state.lock", "w") as f:
         fcntl.flock(f, fcntl.LOCK_EX)
         yield
 
 
-def load_state():
+def load_state(home=None):
+    """This worktree's state, or another worktree's when `home` is its folder (the reaper reads those)."""
     try:
-        with open(STATE) as f:
+        with open(f"{home or HOME}/state.json") as f:
             return json.load(f)
     except (OSError, ValueError):
         return {}
 
 
-def update_state(change):
+def update_state(change, home=None):
     """Read-modify-write under a lock: iPhone and iPad commands may update state at the same moment."""
-    with _state_lock():
-        st = load_state()
+    home = home or HOME
+    with _state_lock(home):
+        st = load_state(home)
         result = change(st)
-        tmp = STATE + ".tmp"
+        path = f"{home}/state.json"
+        tmp = path + ".tmp"
         with os.fdopen(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:   # it holds the runner token
             json.dump(st, f, indent=1)
-        os.replace(tmp, STATE)
+        os.replace(tmp, path)
         return result
+
+
+def touch(device):
+    """Record that this worktree (at ROOT) is using its `device` simulator now. The reaper reads both: a simulator whose
+    worktree is gone, or that nobody used for a while, is deleted by the next command from any worktree (reap.py)."""
+    def stamp(st):
+        st["root"] = ROOT
+        st.setdefault("devices", {}).setdefault(device, {})["lastUsed"] = time.time()
+    update_state(stamp)
 
 
 FEATURE_FLAG_SWIFT = "iOS/LocalPackages/FeatureFlags-iOS/Sources/FeatureFlags/FeatureFlag.swift"

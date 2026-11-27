@@ -31,6 +31,10 @@ class ProgressView: UIView, CAAnimationDelegate {
         static let completionThreshold = 1 - CGFloat.ulpOfOne
     }
     
+    /// WebKit's load estimate is rough, so a page load fills half the bar until it finishes; an exact fraction,
+    /// such as a translation's, fills it as reported.
+    var fillsLinearly = false
+
     private var progressLayer = CAGradientLayer()
     private var progressMask = CALayer()
 
@@ -108,7 +112,7 @@ class ProgressView: UIView, CAAnimationDelegate {
             return bounds
         }
         var progressRect = bounds
-        progressRect.size.width *= currentProgress * 0.5
+        progressRect.size.width *= fillsLinearly ? currentProgress : currentProgress * 0.5
         return progressRect
     }
     

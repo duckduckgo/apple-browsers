@@ -163,6 +163,8 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestSettingsToSync(_ tab: DuckDuckGo.TabViewController) {}
 
+    func tabDidRequestSettingsToDataClearing(_ tab: DuckDuckGo.TabViewController) {}
+
     func tabDidRequestFindInPage(tab: DuckDuckGo.TabViewController) {}
 
     func closeFindInPage(tab: DuckDuckGo.TabViewController) {}

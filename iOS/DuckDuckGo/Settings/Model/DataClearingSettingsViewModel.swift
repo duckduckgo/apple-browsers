@@ -22,6 +22,8 @@ import SwiftUI
 import Core
 import AIChat
 import PixelKit
+import PrivacyConfig
+import FeatureFlags_iOS
 
 @MainActor
 protocol DataClearingSettingsViewModelDelegate: AnyObject {
@@ -43,6 +45,9 @@ final class DataClearingSettingsViewModel: ObservableObject {
     private let aiChatSettings: AIChatSettingsProvider
     private let animator: FireButtonAnimator
     private let fireproofing: Fireproofing
+    private let featureFlagger: FeatureFlagger
+    private let pixelFiring: PixelFiring?
+    private let source: DataClearingPixels.SettingsSource
     
     // MARK: - Delegate
     
@@ -67,7 +72,15 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     var aiChatsToggleTitle: String {
-        UserText.settingsDeleteDuckAIChats
+        featureFlagger.isFeatureOn(.fireSheetSettingsButton)
+            ? UserText.settingsDeleteAllIncludesDuckAIChats
+            : UserText.settingsDeleteDuckAIChats
+    }
+
+    var aiChatsToggleFooter: String {
+        featureFlagger.isFeatureOn(.fireSheetSettingsButton)
+            ? UserText.settingsDeleteAllIncludesDuckAIChatsFooter
+            : UserText.settingsClearAIChatHistoryFooter
     }
     
     var fireproofedSitesTitle: String {
@@ -114,7 +127,13 @@ final class DataClearingSettingsViewModel: ObservableObject {
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          aiChatSettings: AIChatSettingsProvider,
          fireproofing: Fireproofing,
+         featureFlagger: FeatureFlagger,
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         source: DataClearingPixels.SettingsSource,
          delegate: DataClearingSettingsViewModelDelegate) {
+        self.featureFlagger = featureFlagger
+        self.pixelFiring = pixelFiring
+        self.source = source
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
         self.animator = FireButtonAnimator(appSettings: appSettings)
@@ -136,7 +155,20 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Actions
     
     func openFireproofSites() {
+        pixelFiring?.fire(DataClearingPixels.fireproofSitesOpened(source: source), frequency: .dailyAndCount)
         delegate?.navigateToFireproofSites()
+    }
+
+    /// Wraps the Duck.ai chats toggle's binding so each change is counted.
+    func aiChatsToggleBinding(_ binding: Binding<Bool>) -> Binding<Bool> {
+        Binding(
+            get: { binding.wrappedValue },
+            set: { [pixelFiring, source] isOn in
+                guard isOn != binding.wrappedValue else { return }
+                binding.wrappedValue = isOn
+                pixelFiring?.fire(DataClearingPixels.aiChatsToggled(enabled: isOn, source: source), frequency: .dailyAndCount)
+            }
+        )
     }
     
     func openAutoClearData() {

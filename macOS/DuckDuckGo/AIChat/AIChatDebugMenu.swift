@@ -107,6 +107,9 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem(title: "Show Local Model Access Pop-Up", action: #selector(showLocalModelAccessPrompt))
                 .targetting(self)
 
+            NSMenuItem(title: "Translate Current Page", action: #selector(translateCurrentPage))
+                .targetting(self)
+
             NSMenuItem(title: "On-Device Model Engine")
                 .submenu(LocalModelEngineDebugMenu())
 
@@ -186,6 +189,14 @@ final class AIChatDebugMenu: NSMenu {
         let service = NSApp.delegateTyped.localModelService
         service.optOut()
         service.uninstallDownloadableModel()
+    }
+
+    @MainActor
+    @objc private func translateCurrentPage() {
+        let translator = NSApp.delegateTyped.windowControllersManager.lastKeyMainWindowController?.mainViewController.aiChatTranslator
+        Task { @MainActor in
+            await translator?.translateCurrentPage()
+        }
     }
 
     /// Runs `requestAIChatLocalModelAccess` the way Duck.ai would, until Duck.ai sends it. It shows the

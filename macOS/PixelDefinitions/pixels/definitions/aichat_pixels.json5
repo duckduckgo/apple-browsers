@@ -40,7 +40,7 @@
         ]
     },
     "m_mac_aichat_translate_text": {
-        "description": "Fired when the AI Chat translation action was triggered",
+        "description": "Fired when the AI Chat translation action was triggered, on selected text or on the whole page",
         "owners": ["miasma13"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_standard"],
@@ -50,9 +50,9 @@
             "channel",
             {
                 "key": "source",
-                "description": "How the user triggered translation",
+                "description": "How the user triggered translation: on selected text via the context menu or keyboard shortcut, or on the whole page via a translation offer",
                 "type": "string",
-                "enum": ["context-menu", "keyboard-shortcut"]
+                "enum": ["context-menu", "keyboard-shortcut", "translate-offer"]
             }
         ]
     },

@@ -283,6 +283,12 @@ final class MainViewController: NSViewController {
             pixelFiring: pixelFiring,
             currentPageContextProvider: { [weak tabCollectionViewModel] in
                 tabCollectionViewModel?.selectedTabViewModel?.tab.pageContext
+            },
+            currentTabProvider: { [weak tabCollectionViewModel] in
+                tabCollectionViewModel?.selectedTabViewModel?.tab
+            },
+            pageContentExtractor: { tab in
+                await AIChatUserScriptHandler.extractPageContext(from: tab)
             }
         )
 

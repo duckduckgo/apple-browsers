@@ -481,7 +481,6 @@ class Runtime:
     def _launch_simulator_app(self, identifier, product, environment):
         env = {**_child_environment(), **{f"SIMCTL_CHILD_{key}": value for key, value in environment.items()}}
         profile = json.dumps(self.launch_profile, separators=(",", ":"))
-        since = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() - 1))
         self._launch_attempted = True
         try:
             output = self._simctl("launch", f"--stdout={self.stdout}", f"--stderr={self.stderr}",
@@ -494,16 +493,12 @@ class Runtime:
                 pass
             raise
         self._capture(self._simulator_pid(output, product), product)
-        self._await_launch_profile(identifier, since)
+        self._await_launch_profile()
 
-    def _await_launch_profile(self, identifier, since):
+    def _await_launch_profile(self):
         deadline = time.monotonic() + LAUNCH_PROFILE_TIMEOUT
         while True:
-            try:
-                log = self._simctl("spawn", identifier, "log", "show", "--start", since, "--style", "compact", "--predicate",
-                                   f'subsystem == "{BUNDLES["ios"]}" AND category == "LaunchProfile"')
-            except RuntimeError:
-                log = ""
+            log = self.stderr.read_text(errors="replace")
             lines = [line[line.index(LAUNCH_PROFILE_PREFIX):].strip() for line in log.splitlines() if LAUNCH_PROFILE_PREFIX in line]
             if lines or time.monotonic() >= deadline:
                 break

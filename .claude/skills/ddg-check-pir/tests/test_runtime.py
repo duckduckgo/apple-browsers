@@ -40,8 +40,7 @@ class FakeTools:
         self.child = None
         self.extra_pids = []
         self.products_override = None
-        self.launch_profile_log = ("2026-11-26 12:00:00.000 Df DuckDuckGo[412:1a] [com.duckduckgo.mobile.ios:LaunchProfile] "
-                                   "LAUNCH_PROFILE_APPLIED keys=internalUser\n")
+        self.launch_profile_log = "LAUNCH_PROFILE_APPLIED keys=internalUser\n"
 
     def materialize(self, mac):
         app = self.root / ("DerivedData/ddg-check-pir/macos/deployment/Applications/DEBUG/DuckDuckGo.app" if mac else
@@ -137,13 +136,13 @@ class FakeTools:
                     executable.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(self.installed / "DuckDuckGo", executable)
                     self.processes[412] = str(executable)
+                    stderr = next(arg for arg in args if arg.startswith("--stderr="))
+                    Path(stderr.removeprefix("--stderr=")).write_text(self.launch_profile_log)
                     output = runtime.BUNDLES["ios"] + ": 412\n"
                     code = int(self.fail_launch_after_start)
                     if self.timeout_launch or self.timeout_launch_without_pid:
                         captured = b"launch started" if self.timeout_launch_without_pid else output.encode()
                         raise subprocess.TimeoutExpired(command, 120, output=captured, stderr=b"private timeout detail")
-            elif args[0] == "spawn":
-                output = self.launch_profile_log
             elif args[0] == "terminate":
                 self.processes.pop(412, None)
             elif args[0] == "shutdown":
@@ -790,7 +789,7 @@ class LifecycleTests(unittest.TestCase):
         instance.stop()
 
     def test_rejected_or_missing_launch_profile_line_stops_before_the_runner_and_keeps_cleanup(self):
-        for log, message in (("[LaunchProfile] LAUNCH_PROFILE_FAILED Unknown key \"featureFlags.x\".\n",
+        for log, message in (("LAUNCH_PROFILE_FAILED Unknown key \"featureFlags.x\".\n",
                               'LAUNCH_PROFILE_FAILED Unknown key "featureFlags.x".'),
                              ("", "no LAUNCH_PROFILE_ line")):
             with self.subTest(message=message), patch.object(runtime, "LAUNCH_PROFILE_TIMEOUT", 0):

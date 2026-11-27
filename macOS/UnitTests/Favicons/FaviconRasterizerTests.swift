@@ -18,10 +18,10 @@
 
 import CoreImage
 import FeatureFlags_macOS
-import Network
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+import SharedTestUtilities
 import WebKit
 import XCTest
 
@@ -362,37 +362,37 @@ final class FaviconRasterizerTests: XCTestCase {
         XCTAssertNotNil(webView.navigationDelegate)
     }
 
-    /// Everything an SVG can reference or run points at a local server. None of it may reach the network.
+    /// An SVG that references the network, and a navigation attempt, must not make a request. The scheme handler sees
+    /// every http(s) request of the web views it configures; the control shows that it does see requests.
     func testRenderingAnSVGThatReferencesTheNetworkMakesNoRequests() async throws {
-        let server = try await LoopbackServer.start()
-        defer { server.stop() }
-        let url = "http://127.0.0.1:\(server.port)/probe"
+        let recorder = RequestRecorder()
+
+        let control = WKWebView(frame: .zero, configuration: recorder.handler.webViewConfiguration())
+        control.loadHTMLString(#"<img src="http://probe.example/control.png">"#, baseURL: URL(string: "http://probe.example/"))
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        XCTAssertFalse(recorder.paths.isEmpty, "The scheme handler doesn't see the web view's requests")
+        recorder.reset()
+
+        rasterizer.makeConfiguration = { recorder.handler.webViewConfiguration() }
         let svg = """
         <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="64" height="64">
-          <style>@import url(\(url)/style.css);</style>
-          <script>fetch('\(url)/script'); new Image().src = '\(url)/script-image'; navigator.sendBeacon('\(url)/beacon');</script>
-          <image href="\(url)/image.png" width="64" height="64"/>
-          <use xlink:href="\(url)/use.svg#u"/>
-          <circle r="8" fill="url(\(url)/paint.svg#p)"/>
+          <style>@import url(http://probe.example/style.css);</style>
+          <script>fetch('http://probe.example/script'); new Image().src = 'http://probe.example/script-image';</script>
+          <image href="http://probe.example/image.png" width="64" height="64"/>
+          <use xlink:href="http://probe.example/use.svg#u"/>
+          <circle r="8" fill="url(http://probe.example/paint.svg#p)"/>
           <rect width="64" height="64" fill="#000"/>
         </svg>
         """
 
         let png = try await rasterizer.rasterize(Data(svg.utf8))
+        let webView = try XCTUnwrap(rasterizer.currentWebView)
+        webView.load(URLRequest(url: try XCTUnwrap(URL(string: "http://probe.example/page"))))
+        webView.loadHTMLString("<html><title>page</title></html>", baseURL: URL(string: "http://probe.example/"))
         try await Task.sleep(nanoseconds: 1_000_000_000)
 
         XCTAssertTrue(try decode(png).hasVisiblePixels())
-        XCTAssertEqual(server.connectionCount, 0)
-    }
-
-    func testTheWebViewRefusesToNavigate() async throws {
-        _ = try await rasterizer.rasterize(Data(Self.svg(width: 16, height: 16).utf8))
-        let webView = try XCTUnwrap(rasterizer.currentWebView)
-
-        webView.load(URLRequest(url: try XCTUnwrap(URL(string: "http://127.0.0.1:1/page"))))
-        webView.loadHTMLString("<html><title>page</title></html>", baseURL: nil)
-        try await Task.sleep(nanoseconds: 1_000_000_000)
-
+        XCTAssertEqual(recorder.paths, [])
         XCTAssertNil(webView.url)
         XCTAssertFalse(webView.isLoading)
     }
@@ -602,65 +602,21 @@ final class FaviconRasterizerTests: XCTestCase {
     }
 }
 
-/// Counts the TCP connections made to 127.0.0.1.
-private final class LoopbackServer {
+/// Records the paths of the http(s) requests that web views configured by `handler` make.
+@MainActor
+private final class RequestRecorder {
 
-    private let listener: NWListener
-    private let lock = NSLock()
-    private var connections = 0
+    private(set) var paths = [String]()
+    private(set) var handler: TestSchemeHandler!
 
-    private(set) var port: UInt16 = 0
-
-    var connectionCount: Int {
-        lock.withLock { connections }
-    }
-
-    private init(listener: NWListener) {
-        self.listener = listener
-    }
-
-    static func start() async throws -> LoopbackServer {
-        let parameters = NWParameters.tcp
-        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
-        let server = LoopbackServer(listener: try NWListener(using: parameters))
-        server.listener.newConnectionHandler = { [weak server] connection in
-            server?.lock.withLock { server?.connections += 1 }
-            connection.cancel()
-        }
-        server.port = try await withCheckedThrowingContinuation { continuation in
-            let resumeOnce = ResumeOnce()
-            server.listener.stateUpdateHandler = { [weak server] state in
-                switch state {
-                case .ready:
-                    guard resumeOnce.claim() else { return }
-                    continuation.resume(returning: server?.listener.port?.rawValue ?? 0)
-                case .failed(let error):
-                    guard resumeOnce.claim() else { return }
-                    continuation.resume(throwing: error)
-                default:
-                    break
-                }
-            }
-            server.listener.start(queue: .global())
-        }
-        return server
-    }
-
-    /// Lets the state handler, which can run more than once, resume the continuation once.
-    private final class ResumeOnce: @unchecked Sendable {
-        private let lock = NSLock()
-        private var isClaimed = false
-
-        func claim() -> Bool {
-            lock.withLock {
-                guard !isClaimed else { return false }
-                isClaimed = true
-                return true
-            }
+    init() {
+        handler = TestSchemeHandler { [weak self] request in
+            MainActor.assumeMainThread { self?.paths.append(request.url?.path ?? "") }
+            return nil
         }
     }
 
-    func stop() {
-        listener.cancel()
+    func reset() {
+        paths = []
     }
 }

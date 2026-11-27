@@ -93,6 +93,9 @@ final class FaviconRasterizer {
     var idleLifetime: TimeInterval
     var scriptTimeout: TimeInterval
 
+    /// Creates the configuration the web view starts from. Tests replace it to observe the web view's requests.
+    var makeConfiguration: () -> WKWebViewConfiguration = { WKWebViewConfiguration() }
+
     nonisolated(unsafe) private let featureFlagger: FeatureFlagger
 
     /// Whether favicons are rendered with WebKit (the temporary `faviconWebKitSVGRendering` flag).
@@ -215,7 +218,7 @@ final class FaviconRasterizer {
     /// A web view that can do nothing but draw the image it is given: no stored data or credentials, no scripts from
     /// web content, no windows, and every navigation and authentication challenge is refused.
     func makeWebView() -> WKWebView {
-        let configuration = WKWebViewConfiguration()
+        let configuration = makeConfiguration()
         configuration.websiteDataStore = .nonPersistent()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false

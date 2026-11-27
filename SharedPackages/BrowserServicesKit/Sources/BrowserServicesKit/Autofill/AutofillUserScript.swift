@@ -99,6 +99,9 @@ public class AutofillUserScript: NSObject, UserScript, UserScriptMessageEncrypti
     }()
 
     public var injectionTime: WKUserScriptInjectionTime { .atDocumentStart }
+
+    /// When this script starts in blank subframes; set before it's installed
+    public var blankFrameStart: BlankFrameStart = .immediately
     public var forMainFrameOnly: Bool {
         if isTopAutofillContext { return true }
         if #available(iOS 14, macOS 11, *) {

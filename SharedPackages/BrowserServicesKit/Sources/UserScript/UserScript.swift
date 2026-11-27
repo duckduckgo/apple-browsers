@@ -23,12 +23,29 @@ import CryptoKit
 public struct WKUserScriptBox: @unchecked Sendable {
     public let wkUserScript: WKUserScript
 }
+
+/// When a script that runs in subframes starts in a blank subframe: one with no `src` (or `about:blank`) and no `srcdoc`,
+/// including frames the page writes into. Pages can create hundreds of these, and most never touch anything a script
+/// protects, so holding a script back in them saves the memory it would keep in each.
+public enum BlankFrameStart: Sendable {
+    /// As soon as the frame is created, as in any other frame.
+    case immediately
+    /// When the frame first reads an API that Content Scope Scripts protects, or its document is opened or written to.
+    /// The read that starts it gets the value from the protected API. For page-world Content Scope Scripts.
+    case onProtectedAPIAccess
+    /// When the frame's document has content.
+    case onContent
+    /// When the frame's document has a form field.
+    case onFormField
+}
+
 public protocol UserScript: WKScriptMessageHandler {
 
     var source: String { get }
     var injectionTime: WKUserScriptInjectionTime { get }
     var forMainFrameOnly: Bool { get }
     var requiresRunInPageContentWorld: Bool { get }
+    var blankFrameStart: BlankFrameStart { get }
 
     var messageNames: [String] { get }
 
@@ -44,6 +61,10 @@ extension UserScript {
 
     public var requiresRunInPageContentWorld: Bool {
         return false
+    }
+
+    public var blankFrameStart: BlankFrameStart {
+        return .immediately
     }
 
     @available(macOS 11.0, iOS 14.0, *)
@@ -72,16 +93,41 @@ extension UserScript {
         return js.applyingReplacements(replacements)
     }
 
-    fileprivate nonisolated static func prepareScriptSource(from source: String) -> String {
+    fileprivate nonisolated static func prepareScriptSource(from source: String, blankFrameStart: BlankFrameStart = .immediately) -> String {
         let hash = SHA256.hash(data: Data(source.utf8)).hashValue
 
         // This prevents the script being executed twice which appears to be a WKWebKit issue for about:blank frames when the location changes
+        guard blankFrameStart != .immediately else {
+            return """
+            (() => {
+                if (window.navigator._duckduckgoloader_ && window.navigator._duckduckgoloader_.includes('\(hash)')) {return}
+                \(source)
+                window.navigator._duckduckgoloader_ = window.navigator._duckduckgoloader_ || [];
+                window.navigator._duckduckgoloader_.push('\(hash)')
+            })()
+            """
+        }
+
+        // In a blank subframe the source is held as an unrun function: JavaScriptCore only pre-parses it, so it creates
+        // nothing in the frame until something starts it
         return """
         (() => {
-            if (window.navigator._duckduckgoloader_ && window.navigator._duckduckgoloader_.includes('\(hash)')) {return}
-            \(source)
-            window.navigator._duckduckgoloader_ = window.navigator._duckduckgoloader_ || [];
-            window.navigator._duckduckgoloader_.push('\(hash)')
+            const isLoaded = () => Boolean(window.navigator._duckduckgoloader_ && window.navigator._duckduckgoloader_.includes('\(hash)'));
+            const markLoaded = () => {
+                window.navigator._duckduckgoloader_ = window.navigator._duckduckgoloader_ || [];
+                window.navigator._duckduckgoloader_.push('\(hash)');
+            };
+            if (isLoaded()) {return}
+            const run = () => {
+                \(source)
+            };
+            \(BlankFrameDeferral.isBlankSubframe)
+            if (!isBlankSubframe) {
+                run();
+                markLoaded();
+                return;
+            }
+            \(BlankFrameDeferral.start(blankFrameStart))
         })()
         """
     }
@@ -103,7 +149,7 @@ extension UserScript {
     }
 
     public func makeWKUserScript() async -> WKUserScriptBox {
-        let source = await Task.detached { [source] in Self.prepareScriptSource(from: source) }.result.get()
+        let source = await Task.detached { [source, blankFrameStart] in Self.prepareScriptSource(from: source, blankFrameStart: blankFrameStart) }.result.get()
         return await Self.makeWKUserScript(from: source,
                                            injectionTime: injectionTime,
                                            forMainFrameOnly: forMainFrameOnly,
@@ -112,7 +158,7 @@ extension UserScript {
 
     @MainActor
     public func makeWKUserScriptSync() -> WKUserScript {
-        return Self.makeWKUserScript(from: Self.prepareScriptSource(from: source),
+        return Self.makeWKUserScript(from: Self.prepareScriptSource(from: source, blankFrameStart: blankFrameStart),
                                      injectionTime: injectionTime,
                                      forMainFrameOnly: forMainFrameOnly,
                                      requiresRunInPageContentWorld: requiresRunInPageContentWorld).wkUserScript

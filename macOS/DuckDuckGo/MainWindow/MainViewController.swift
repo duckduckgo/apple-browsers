@@ -1105,6 +1105,23 @@ extension MainViewController: NSDraggingDestination {
 
 // MARK: - Mouse & Keyboard Events
 
+/// Decides when a keyDown local monitor may read `characters` / `charactersIgnoringModifiers`.
+///
+/// Those properties interpret the event through the active input method. A plain key, including
+/// Hangul jamo and Backspace, must not be interpreted here: that commits the syllable before
+/// WKWebView sees the key, so a page editor deletes the whole character instead of the last jamo.
+/// Only command shortcuts need the character, and not while a composition is in progress.
+/// `hasMarkedText` runs only for those shortcuts, so a plain key never queries the editor.
+enum IMECompositionKeyMonitor {
+
+    static func mayReadCharacters(modifierFlags: NSEvent.ModifierFlags, hasMarkedText: () -> Bool) -> Bool {
+        let flags = modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting(.capsLock)
+        guard flags.contains(.command) else { return false }
+        return !hasMarkedText()
+    }
+
+}
+
 // This needs to be handled here or else there will be a "beep" even if handled in a different view controller. This now
 //  matches Safari behaviour.
 extension MainViewController {
@@ -1125,8 +1142,6 @@ extension MainViewController {
               NSApplication.shared.keyWindow === locWindow else { return false }
 
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting(.capsLock)
-        let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
-        let isWebViewFocused = view.window?.firstResponder is WebView
 
         if handleReturnKey(event: event, flags: flags) {
             return true
@@ -1136,11 +1151,20 @@ extension MainViewController {
             return true
         }
 
-        if handleTabSwitching(event: event, flags: flags, key: key, isWebViewFocused: isWebViewFocused) {
+        if handleControlTab(event: event, flags: flags) {
             return true
         }
 
-        if handleControlTab(event: event, flags: flags) {
+        guard IMECompositionKeyMonitor.mayReadCharacters(modifierFlags: event.modifierFlags, hasMarkedText: {
+            self.focusedInputClientHasMarkedText()
+        }) else {
+            return false
+        }
+
+        let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
+        let isWebViewFocused = view.window?.firstResponder is WebView
+
+        if handleTabSwitching(event: event, flags: flags, key: key, isWebViewFocused: isWebViewFocused) {
             return true
         }
 
@@ -1149,6 +1173,12 @@ extension MainViewController {
         }
 
         return false
+    }
+
+    /// The focused field editor or web content view, when it is in the middle of an IME composition.
+    private func focusedInputClientHasMarkedText() -> Bool {
+        guard let client = view.window?.firstResponder as? any NSTextInputClient else { return false }
+        return client.hasMarkedText()
     }
 
     private func handleReturnKey(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {

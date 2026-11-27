@@ -54,8 +54,13 @@ struct ScopedFireConfirmationView: View {
                     .padding(contentPadding)
             }
             .modifier(ScrollBounceBehaviorModifier())
-            closeButton
-                .padding(16)
+            HStack(spacing: Constants.toolbarButtonSpacing) {
+                if let onOpenSettings = viewModel.onOpenSettings {
+                    settingsButton(action: onOpenSettings)
+                }
+                closeButton
+            }
+            .padding(16)
         }
         .background(Color(designSystemColor: .backgroundTertiary))
     }
@@ -71,10 +76,53 @@ struct ScopedFireConfirmationView: View {
         Button(action: viewModel.cancel) {
             Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
-        .buttonStyle(CloseButtonStyle())
+        .buttonStyle(ToolbarButtonStyle(isClose: true))
         .accessibilityIdentifier("Fire.Confirmation.Button.Close")
     }
     
+    private func settingsButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.options)
+        }
+        .buttonStyle(ToolbarButtonStyle(isClose: false))
+        .accessibilityLabel(UserText.scopedFireConfirmationSettingsButton)
+        .accessibilityIdentifier("Fire.Confirmation.Button.Settings")
+    }
+
+    /// 44pt circle like default iOS buttons. On iOS 26+ the close button adopts the native glass look;
+    /// earlier versions keep the filled circle. The settings button has no resting background so close stays first in the hierarchy.
+    private struct ToolbarButtonStyle: ButtonStyle {
+        let isClose: Bool
+        @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+        func makeBody(configuration: Configuration) -> some View {
+            background(for: configuration)
+                .contentShape(Circle())
+        }
+
+        @ViewBuilder
+        private func background(for configuration: Configuration) -> some View {
+            if #available(iOS 26.0, *), isClose, !reduceTransparency {
+                label(configuration, color: .icons)
+                    .glassEffect(.regular.interactive(), in: Circle())
+            } else {
+                label(configuration, color: .iconsSecondary)
+                    .background(backgroundColor(isPressed: configuration.isPressed), in: Circle())
+            }
+        }
+
+        private func label(_ configuration: Configuration, color: DesignSystemColor) -> some View {
+            configuration.label
+                .foregroundColor(Color(designSystemColor: color))
+                .frame(width: Constants.toolbarButtonSize, height: Constants.toolbarButtonSize)
+        }
+
+        private func backgroundColor(isPressed: Bool) -> Color {
+            if isPressed { return Color(designSystemColor: .controlsFillTertiary) }
+            return isClose ? Color(designSystemColor: .controlsFillPrimary) : .clear
+        }
+    }
+
     private var headerSection: some View {
         VStack(spacing: SheetMetrics.contentSpacing) {
             if viewModel.showAnimation {
@@ -176,6 +224,8 @@ private extension ScopedFireConfirmationView {
         static let headerSectionPaddingNoAnimation: EdgeInsets = .init(top: 36, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96
         static let closeButtonPadding: CGFloat = 8
+        static let toolbarButtonSize: CGFloat = 44
+        static let toolbarButtonSpacing: CGFloat = 10
         static let animationDelay: Double = 0.5
     }
 }

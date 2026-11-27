@@ -21,6 +21,10 @@ import Foundation
 import PrivacyConfig
 
 public class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
+    public var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
+
     public var currentConfigString: String = ""
     public var currentConfig: Data {
         currentConfigString.data(using: .utf8)!

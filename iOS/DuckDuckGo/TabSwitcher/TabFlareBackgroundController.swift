@@ -94,6 +94,7 @@ final class TabFlareBackgroundController {
             view.isHidden = true
             return
         }
+        collectionView.layoutIfNeeded()
         // Reordering can temporarily remove layout attributes without removing the selected tab.
         guard let layout = collectionView.collectionViewLayout as? TabsBarCollectionViewLayout,
               let restingFrame = layout.frameForCurrentTabAtRest() else { return }

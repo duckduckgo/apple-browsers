@@ -2,11 +2,11 @@
 
 Run it on a new Mac, a new checkout, after an Xcode or macOS update, or after setting up a VM. Steps run in order and
 a target stops at its first failure:
-  this Mac: Xcode, the build (incremental, into the DerivedData `build` picks), the unit tests;
+  this Mac: Xcode, the build (incremental, into the DerivedData `build` picks), its Developer ID signature and a
+    profile for any Mac, the unit tests;
   each VM: ssh without a prompt, its lock, the same macOS major as this Mac, an auto-login session, a display that
-    never sleeps, an unlocked screen, the Accessibility and Screen Recording grants over ssh (`ax grants`), its
-    Provisioning UDID in the built
-    app's profile, a launch that shows a window; then the must-fail proof and the offline example through `prove`,
+    never sleeps, an unlocked screen, the Accessibility and Screen Recording grants over ssh (`ax grants`), a launch
+    that shows a window; then the must-fail proof and the offline example through `prove`,
     nothing left running and the VM released;
   --target mac: the Accessibility and Screen Recording grants of the process that will drive (read only, never a
     prompt), then the same proofs ON YOUR SCREEN. `all` is vm-1 and vm-2, never your screen.
@@ -23,6 +23,7 @@ import time
 import harness
 
 STEPS_DOC = "VM-SETUP.md"
+SIGNING_DOC = "SKILL.md, Signing"
 TARGETS = ("mac", "vm-1", "vm-2", "all")
 PROOFS = (os.path.join(harness.SKILL, "tests", "must_fail.py"), os.path.join(harness.SKILL, "examples", "t3_fixture_page.py"))
 LEFT_RUNNING = "DuckDuckGo - verify-.*[.]app/Contents/MacOS"   # the app, on this Mac or in a VM
@@ -32,6 +33,9 @@ LOCAL_LEFT = "ServerAliveInterval=15|" + LEFT_RUNNING           # also verify.sh
 FIX = {
     "Xcode selected": "sudo xcode-select -s /Applications/Xcode.app && xcodebuild -runFirstLaunch",
     "build is current": {
+        "signing certificate": f"{SIGNING_DOC} (the Developer ID certificate and the CI profiles from match)",
+        "match Direct": f"{SIGNING_DOC} (the Developer ID certificate and the CI profiles from match)",
+        "PACKAGES NOT DEBUG": f"remove the DerivedData named and rerun ({SIGNING_DOC})",
         "BROKEN BUILD PRODUCT": "remove the app target's assetcatalog_output under DerivedData's Build/Intermediates.noindex, rerun",
         "": "fix the first error in host/build.log; after switching branches, 'has no member' for code that is there is a "
             "stale module: move DerivedData aside and rerun",
@@ -48,11 +52,10 @@ FIX = {
     "screen not locked": f"unlock it in the VM window, then {STEPS_DOC} section 2, Lock Screen: Require password → Never",
     "Accessibility grant over ssh": f"{STEPS_DOC} section 2, Accessibility: add /usr/libexec/sshd-keygen-wrapper",
     "Screen Recording grant over ssh": f"{STEPS_DOC} section 2, Screen & System Audio Recording: add /usr/libexec/sshd-keygen-wrapper",
-    "Provisioning UDID in the app's profile": f"{STEPS_DOC} section 4 (register the UDID, rebuild with "
-                                               "-allowProvisioningUpdates)",
+    "build signed with Developer ID": f"{SIGNING_DOC}; then rerun (the build is incremental)",
     "app launches and shows a window": {
-        "NOT LAUNCHED": f"AMFI rejected the app: {STEPS_DOC} section 4 (the VM's Provisioning UDID in the profile)",
-        "NOT READY": f"a keychain dialog waits in the VM: {STEPS_DOC} section 5 (click Always Allow in the VM window)",
+        "NOT LAUNCHED": f"AMFI rejected the app: check the step 'build signed with Developer ID', then {SIGNING_DOC}",
+        "NOT READY": f"a keychain dialog waits in the VM: {STEPS_DOC} section 4 (click Always Allow in the VM window)",
         "ONBOARDING NOT SKIPPED": f"the app wasn't frontmost or the screen is locked: open the VM window, unlock it, "
                                   f"{STEPS_DOC} section 2 Lock Screen",
         "": "read the last lines of <target>/build.log and transcript in the selftest folder",
@@ -145,14 +148,16 @@ def judge_display_sleep(pmset_out):
     return f"display sleeps after {m[1]} min" if m else "pmset -g shows no displaysleep"
 
 
-def profile_devices(profile_xml):
-    return plistlib.loads(profile_xml.encode() if isinstance(profile_xml, str) else profile_xml).get("ProvisionedDevices", [])
-
-
-def judge_udid(udid, devices):
-    if udid and udid.lower() in {d.lower() for d in devices}:
-        return None
-    return f"Provisioning UDID {udid or '(unknown)'} is not among the {len(devices)} devices in the built app's profile"
+def judge_signing(codesign_out, profile_xml):
+    """The app runs on any Mac, a new VM included: signed with Developer ID, with a profile that has no device list."""
+    m = re.search(r"^Authority=(.*)$", codesign_out, re.M)
+    if not m or not m[1].startswith("Developer ID Application:"):
+        return f"signed by {m[1] if m else '(no authority)'}, not Developer ID Application"
+    profile = plistlib.loads(profile_xml.encode() if isinstance(profile_xml, str) else profile_xml)
+    if not profile.get("ProvisionsAllDevices") or profile.get("ProvisionedDevices"):
+        return (f"the profile '{profile.get('Name', '?')}' lists {len(profile.get('ProvisionedDevices') or [])} devices: "
+                "the app runs only on those")
+    return None
 
 
 def judge_grant(out, grant):
@@ -206,12 +211,24 @@ class Run:
         def build():
             code, out = self.sh("host", "build", harness.ROOT, "--no-launch")
             if code:
-                return _last(out) if "BROKEN BUILD PRODUCT" not in out else out[out.index("BROKEN"):].splitlines()[0]
+                marker = next((m for m in ("BROKEN BUILD PRODUCT", "PACKAGES NOT DEBUG") if m in out), None)
+                return out[out.index(marker):].splitlines()[0] if marker else _last(out)
             with open(os.path.join(self.folder, "host", "build.json")) as f:
                 self.info["app"] = json.load(f)["app"]
             self.info["derived_data"] = re.search(r"^DerivedData: (.*)$", out, re.M)[1]
             _say(f"     DerivedData: {self.info['derived_data']}")
             return None
+
+        def signing():
+            app = self.info["app"]
+            code, sig = _run(["codesign", "-dvv", app], timeout=120)
+            if code:
+                return f"codesign: {_last(sig)}"
+            code, out = _run(["security", "cms", "-D", "-i", os.path.join(app, "Contents", "embedded.provisionprofile")],
+                             timeout=120)
+            if code or "<?xml" not in out:
+                return f"no embedded profile in the built app: {_last(out)}"
+            return judge_signing(sig, out[out.index("<?xml"):])
 
         def unit_tests():
             code, out = _run([sys.executable, "-I", "-m", "unittest", "discover", "-s",
@@ -221,6 +238,7 @@ class Run:
 
         return [("Xcode selected", lambda: judge_exit(*_run(["xcodebuild", "-version"], timeout=120))),
                 ("build is current", build),
+                ("build signed with Developer ID", signing),
                 ("unit tests", unit_tests)]
 
     # one target
@@ -275,12 +293,6 @@ class Run:
                 remote("grants", "cd ~/verify && ./ax grants")
             return state["grants"]
 
-        def udid():
-            code, out = _run(["security", "cms", "-D", "-i", os.path.join(self.info["app"], "Contents", "embedded.provisionprofile")])
-            if code:
-                return f"no embedded profile in the built app: {_last(out)}"
-            return judge_udid(state.get("provisioning_udid"), profile_devices(out[out.index("<?xml"):]))
-
         def launch():
             code, out = self.sh(host, "build", harness.ROOT, timeout=3600)
             return None if code == 0 else _last(out)
@@ -311,7 +323,6 @@ class Run:
             # the grants themselves: a screencapture without Screen Recording still writes the wallpaper
             ("Accessibility grant over ssh", lambda: judge_grant(grants(), "accessibility")),
             ("Screen Recording grant over ssh", lambda: judge_grant(grants(), "screen-recording")),
-            ("Provisioning UDID in the app's profile", udid),
             ("app launches and shows a window", launch),
             ("VM released", release),
         ]

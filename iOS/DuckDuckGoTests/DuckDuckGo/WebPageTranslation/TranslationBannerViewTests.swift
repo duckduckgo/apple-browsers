@@ -24,13 +24,13 @@ import XCTest
 final class TranslationBannerViewTests: XCTestCase {
 
     func testSubtitleUsesLocalizedNames() {
-        let subtitle = TranslationBannerView.subtitle(for: TranslationOffer(source: "es", target: "en"),
+        let subtitle = TranslationBannerView.subtitle(for: TranslationOffer(source: "es", target: "en", pairID: "es-en", downloadBytes: 0),
                                                       locale: Locale(identifier: "en_US"))
         XCTAssertEqual(subtitle, "Spanish to English")
     }
 
     func testSubtitleFallsBackToTheCodeForAnUnknownLanguage() {
-        let subtitle = TranslationBannerView.subtitle(for: TranslationOffer(source: "xx", target: "en"),
+        let subtitle = TranslationBannerView.subtitle(for: TranslationOffer(source: "xx", target: "en", pairID: "xx-en", downloadBytes: 0),
                                                       locale: Locale(identifier: "en_US"))
         XCTAssertEqual(subtitle, "xx to English")
     }

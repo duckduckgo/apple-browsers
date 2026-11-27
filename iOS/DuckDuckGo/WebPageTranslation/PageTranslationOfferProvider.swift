@@ -76,15 +76,6 @@ final class PageTranslationOfferProvider {
         }
     }
 
-    /// The offer to show as a banner; nil when there's none, or when the tab moved to another page while detecting.
-    func bannerOffer(in webView: WKWebView) async -> TranslationOffer? {
-        let url = webView.url
-        guard case .banner(let offer) = await decision(in: webView), webView.url == url else {
-            return nil
-        }
-        return offer
-    }
-
     /// nil when translation is off or there's no manifest yet; otherwise the offer rules' decision.
     func decision(forSample sample: String) async -> TranslationOfferDecision? {
         guard isEnabled else {

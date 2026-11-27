@@ -609,6 +609,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             fireFreemiumUpsellPixel()
             setTransactionStatus(.idle)
             NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
+            NotificationCenter.default.post(name: .userDidStartNewSubscription, object: self)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 
             if let purchaseWideEventData {
@@ -1078,4 +1079,10 @@ extension Pixel {
         )
     }
 
+}
+
+extension NSNotification.Name {
+    /// A purchase started a new subscription. Unlike `.userDidPurchaseSubscription`, plan changes and restores of an
+    /// existing subscription don't post it.
+    static let userDidStartNewSubscription = Notification.Name("com.duckduckgo.subscription.userDidStartNewSubscription")
 }

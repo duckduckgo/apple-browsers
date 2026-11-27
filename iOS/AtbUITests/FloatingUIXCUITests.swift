@@ -87,6 +87,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let fixedFooterHeading = "Floating UI Fixed Footer"
         static let scrollEdgeHeading = "Floating UI Scroll Edge"
         static let edgeHeading = "Floating UI Edge Controls"
+        static let viewportHeightHeading = "Floating UI Viewport Height"
         static let slowHeading = "Floating UI Slow Page"
         static let swipeOneHeading = "Floating UI Swipe Page One"
         static let swipeTwoHeading = "Floating UI Swipe Page Two"
@@ -610,6 +611,35 @@ class FloatingUIXCUITestCase: XCTestCase {
         expandedScreenshot.name = "Fixed footer above expanded glass"
         expandedScreenshot.lifetime = .keepAlways
         add(expandedScreenshot)
+    }
+
+    /// `100vh` content must end where `100lvh` does, above the collapsed chrome, not under the glass at the
+    /// bottom of the screen.
+    func verifyViewportHeightUnitClearsTheChrome() {
+        openPage(path: "/viewport-height", heading: Page.viewportHeightHeading)
+        let units = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Units'")).firstMatch
+        let bottomControl = app.buttons["Viewport bottom control"]
+        XCTAssertTrue(units.waitForExistence(timeout: timeout))
+        XCTAssertTrue(bottomControl.waitForExistence(timeout: timeout))
+
+        XCTAssertTrue(waitUntil(timeout: 5) { Self.viewportHeightMatchesLargeViewport(units.label) },
+                      "100vh should match 100lvh with the chrome shown: \(units.label).")
+
+        collapseChrome()
+        XCTAssertTrue(waitUntil(timeout: 5) { Self.viewportHeightMatchesLargeViewport(units.label) },
+                      "100vh should match 100lvh with the chrome collapsed: \(units.label).")
+        XCTAssertLessThanOrEqual(bottomControl.frame.maxY, app.frame.maxY, "The bottom control is off screen.")
+        if domainCapsule.frame.midY > app.frame.midY {
+            XCTAssertLessThanOrEqual(bottomControl.frame.maxY, domainCapsule.frame.minY + 1,
+                                     "The bottom control should clear the pill: \(bottomControl.frame), pill \(domainCapsule.frame).")
+        }
+    }
+
+    /// Reads `Units vh <n> lvh <n>` from the viewport height page.
+    private static func viewportHeightMatchesLargeViewport(_ label: String) -> Bool {
+        let words = label.split(separator: " ")
+        guard words.count == 5, let viewportHeight = Int(words[2]), let largeViewportHeight = Int(words[4]) else { return false }
+        return viewportHeight == largeViewportHeight
     }
 
     /// The footer's frame from its label, which is vertically centred in the 56pt footer.
@@ -1404,6 +1434,7 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-isInternalUser", "true",
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
+            "-ff.floatingUIWebViewportInset", "true",
             "-ff.omniBarLongPressMenu", "true",
             "-ff.newTabPageRedesign", "false",
             "-AppleLanguages", "(en)",
@@ -1676,6 +1707,9 @@ class FloatingUIXCUITestCase: XCTestCase {
         server["/edge-controls"] = { _ in
             .ok(.html(Self.edgeControlsHTML))
         }
+        server["/viewport-height"] = { _ in
+            .ok(.html(Self.viewportHeightHTML))
+        }
         server["/bottom-pinned-chat"] = { _ in
             .ok(.html(Self.bottomPinnedChatHTML))
         }
@@ -1835,6 +1869,38 @@ class FloatingUIXCUITestCase: XCTestCase {
     </html>
     """
 
+    private static let viewportHeightHTML = """
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <title>Viewport Height</title>
+        <style>
+          body { min-height: 5000px; margin: 0; }
+          #overlay { position: fixed; top: 0; left: 0; right: 0; height: 100vh; display: flex; flex-direction: column;
+                     justify-content: space-between; background: #eef3ff; }
+          #overlay button { min-height: 44px; }
+          .probe { position: absolute; top: 0; left: -10px; width: 1px; }
+        </style>
+      </head>
+      <body>
+        <div id="overlay">
+          <div><h1>\(Page.viewportHeightHeading)</h1><p id="units">Units</p></div>
+          <button aria-label="Viewport bottom control">Bottom</button>
+        </div>
+        <div id="vh" class="probe" style="height: 100vh"></div>
+        <div id="lvh" class="probe" style="height: 100lvh"></div>
+        <script>
+          const height = id => Math.round(document.getElementById(id).getBoundingClientRect().height);
+          const update = () => { document.getElementById('units').textContent = 'Units vh ' + height('vh') + ' lvh ' + height('lvh'); };
+          addEventListener('resize', update);
+          setInterval(update, 200);
+          update();
+        </script>
+      </body>
+    </html>
+    """
+
     private static let bottomPinnedChatHTML = """
     <!doctype html>
     <html lang="en">
@@ -1940,6 +2006,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testNewTabPageAddressBarRelocation() { verifyNewTabPageAddressBarRelocation() }
     func testStatusBarScrollEdgeInBothBarPositions() { verifyStatusBarScrollEdgeInBothBarPositions() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
+    func testViewportHeightUnitClearsTheChrome() { verifyViewportHeightUnitClearsTheChrome() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testBottomPinnedInputSurvivesKeyboardDismissal() { verifyBottomPinnedInputSurvivesKeyboardDismissal() }
     func testWebInputChromeAfterAddressBarRelocation() { verifyWebInputChromeAfterAddressBarRelocation() }
@@ -1981,6 +2048,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
     func testNewTabPageAddressBarRelocation() { verifyNewTabPageAddressBarRelocation() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
+    func testViewportHeightUnitClearsTheChrome() { verifyViewportHeightUnitClearsTheChrome() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testBottomPinnedInputSurvivesKeyboardDismissal() { verifyBottomPinnedInputSurvivesKeyboardDismissal() }
     func testWebInputChromeAfterAddressBarRelocation() { verifyWebInputChromeAfterAddressBarRelocation() }

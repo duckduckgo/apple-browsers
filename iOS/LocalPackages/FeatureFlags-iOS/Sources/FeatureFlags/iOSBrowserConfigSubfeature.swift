@@ -136,6 +136,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
     case floatingUIiOS27
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220969131024441
+    case floatingUIWebViewportInset
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220300732211487
     case duckAIAndInputLiquidGlass
 

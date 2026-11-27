@@ -1368,7 +1368,11 @@ class TabViewController: UIViewController {
                 setInteractiveObscuredInsetsChange(active: true)
             }
         }
-        setWebViewObscuredContentInsetsIfSupported(insets)
+        if setWebViewObscuredContentInsetsIfSupported(insets), let appliedViewportInsetRange {
+            (webView as? WebView)?.floatingChromeInsets = featureFlagger.isFeatureOn(.floatingUIWebViewportInset)
+                ? .init(minimum: appliedViewportInsetRange.minimum, maximum: appliedViewportInsetRange.maximum, current: insets)
+                : nil
+        }
         if !isChromeMidTransition {
             setInteractiveObscuredInsetsChange(active: false)
         }
@@ -1584,6 +1588,7 @@ class TabViewController: UIViewController {
         WebViewScrollViewInsetUpdater.endManaging(webView.scrollView, restoring: behavior)
         scrollViewAdjustmentBehaviorBeforeFloatingUI = nil
         setInteractiveObscuredInsetsChange(active: false)
+        (webView as? WebView)?.floatingChromeInsets = nil
         if #available(iOS 15.5, *), appliedViewportInsetRange != nil {
             appliedViewportInsetRange = nil
             webView.setMinimumViewportInset(.zero, maximumViewportInset: .zero)

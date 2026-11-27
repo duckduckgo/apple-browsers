@@ -51,6 +51,72 @@ final class WebView: WKWebView {
 
     private var findInPageQueryObserver: NSObjectProtocol?
 
+    /// The obscured insets the floating chrome moves between, and what it covers now.
+    struct FloatingChromeInsets: Equatable {
+        let minimum: UIEdgeInsets
+        let maximum: UIEdgeInsets
+        let current: UIEdgeInsets
+    }
+
+    private struct LayoutParameters: Equatable {
+        let layoutSize: CGSize
+        let minimumUnobscuredSize: CGSize
+        let maximumUnobscuredSize: CGSize
+    }
+
+    private enum LayoutParametersSelector {
+        static let override = NSSelectorFromString("_overrideLayoutParametersWithMinimumLayoutSize:minimumUnobscuredSizeOverride:maximumUnobscuredSizeOverride:")
+        static let clear = NSSelectorFromString("_clearOverrideLayoutParameters")
+    }
+
+    /// Nil leaves viewport sizing to WebKit.
+    var floatingChromeInsets: FloatingChromeInsets? {
+        didSet {
+            guard floatingChromeInsets != oldValue else { return }
+            updateLayoutParametersOverride()
+        }
+    }
+
+    private var appliedLayoutParameters: LayoutParameters?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateLayoutParametersOverride()
+    }
+
+    /// WebKit sizes `vh` to the full bounds unless the layout parameters are overridden. Under the floating
+    /// chrome the web view spans the whole screen, so the bottom of `100vh` content would sit under the bar.
+    /// The override makes `vh` match `lvh`, as in Safari; `setMinimumViewportInset` only sizes `svh` and `lvh`.
+    /// Once overridden, WebKit stops deriving the layout size itself, so it is kept to what WebKit would
+    /// compute: the bounds minus the current obscured insets.
+    private func updateLayoutParametersOverride() {
+        guard let floatingChromeInsets, !bounds.isEmpty else {
+            clearLayoutParametersOverride()
+            return
+        }
+        let parameters = LayoutParameters(layoutSize: bounds.inset(by: floatingChromeInsets.current).size,
+                                          minimumUnobscuredSize: bounds.inset(by: floatingChromeInsets.maximum).size,
+                                          maximumUnobscuredSize: bounds.inset(by: floatingChromeInsets.minimum).size)
+        guard parameters != appliedLayoutParameters,
+              let method = class_getInstanceMethod(object_getClass(self), LayoutParametersSelector.override) else { return }
+        typealias Override = @convention(c) (WKWebView, Selector, CGSize, CGSize, CGSize) -> Void
+        unsafeBitCast(method_getImplementation(method), to: Override.self)(self, LayoutParametersSelector.override,
+                                                                           parameters.layoutSize,
+                                                                           parameters.minimumUnobscuredSize,
+                                                                           parameters.maximumUnobscuredSize)
+        appliedLayoutParameters = parameters
+    }
+
+    private func clearLayoutParametersOverride() {
+        guard appliedLayoutParameters != nil else { return }
+        appliedLayoutParameters = nil
+        if responds(to: LayoutParametersSelector.clear) {
+            perform(LayoutParametersSelector.clear)
+        }
+        // WebKit re-derives its own sizes on the next layout pass.
+        setNeedsLayout()
+    }
+
     /// Tracks the system find navigator's query so the last term is remembered per tab, even when dismissed via the
     /// system Done button (which bypasses our own dismissal path). The navigator's search field posts
     /// `textDidChangeNotification` as the user types, so we snapshot the query while the navigator is visible.

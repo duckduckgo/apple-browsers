@@ -232,6 +232,22 @@ struct SyncSetupWideEventDataTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A host still waiting for its joiner at the next launch completes as SUCCESS", .timeLimit(.minutes(1)))
+    func appLaunchCompletesWaitingHostAsSuccess() async {
+        let data = SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,
+                                          launchID: "previous-launch", contextData: WideEventContextData())
+        data.role = .host
+        data.peerOutcome = .unknown
+
+        let decision = await data.completionDecision(for: .appLaunch)
+
+        guard case .complete(.success) = decision else {
+            Issue.record("Expected SUCCESS, got \(decision)")
+            return
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("An attempt closed at cold launch randomizes the classic pixel timestamp, not the POST payload", .timeLimit(.minutes(1)))
     func appLaunchCompletionRandomizesPixelTimestamp() async {
         let data = SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,

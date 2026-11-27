@@ -63,9 +63,7 @@ public final class SyncSetupAttemptTracker {
                       existingAccount: Bool,
                       flowVersion: SyncSetupWideEventData.FlowVersion,
                       uiVersion: SyncSetupWideEventData.UIVersion) {
-        if let attempt {
-            close(attempt, status: .unknown(reason: SyncSetupWideEventData.StatusReason.duplicated))
-        }
+        end(Outcome(status: .unknown(reason: SyncSetupWideEventData.StatusReason.duplicated)))
         guard isEnabled() else { return }
 
         let attempt = SyncSetupWideEventData(existingAccount: existingAccount,
@@ -113,6 +111,18 @@ public final class SyncSetupAttemptTracker {
         update { $0.flowVersion = version }
     }
 
+    func recordHostAwaitingJoiner() {
+        update {
+            $0.peerOutcome = .unknown
+            $0.recordStep(.hostAwaitingJoiner, at: now())
+        }
+    }
+
+    func endAsHost(peerOutcome: SyncSetupWideEventData.PeerOutcome) {
+        update { $0.peerOutcome = peerOutcome }
+        end(Outcome(status: .success))
+    }
+
     public func recordDeviceAuthShown() {
         update {
             $0.deviceAuthShown = true
@@ -157,17 +167,14 @@ public final class SyncSetupAttemptTracker {
 
     private func end(_ outcome: Outcome, underlyingError: Error?) {
         guard let attempt else { return }
+        let outcome = attempt.hasHostSentRecoveryCode ? Outcome(status: .success) : outcome
         attempt.statusReason = outcome.statusReason
         attempt.timeoutStage = outcome.timeoutStage
         if outcome.status == .failure, let underlyingError {
             attempt.errorData = WideEventErrorData(error: underlyingError)
         }
-        close(attempt, status: outcome.status)
-    }
-
-    private func close(_ attempt: SyncSetupWideEventData, status: WideEventStatus) {
         attempt.end(at: now())
-        wideEvent.completeFlow(attempt, status: status, onComplete: { _, _ in })
+        wideEvent.completeFlow(attempt, status: outcome.status, onComplete: { _, _ in })
         self.attempt = nil
         errorOnScreen = nil
     }

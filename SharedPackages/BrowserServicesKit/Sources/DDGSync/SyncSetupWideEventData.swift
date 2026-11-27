@@ -69,6 +69,10 @@ public final class SyncSetupWideEventData: WideEventData {
     public private(set) var preparingSyncDuration: WideEvent.MeasuredInterval?
     public private(set) var closedAtColdLaunch = false
 
+    var hasHostSentRecoveryCode: Bool {
+        role == .host && peerOutcome != nil
+    }
+
     public init(existingAccount: Bool,
                 flowVersion: FlowVersion,
                 uiVersion: UIVersion,
@@ -119,7 +123,7 @@ public final class SyncSetupWideEventData: WideEventData {
         case .appLaunch:
             guard launchID != Self.currentLaunchID else { return .keepPending }
             closedAtColdLaunch = true
-            return .complete(.unknown(reason: StatusReason.appRestart))
+            return .complete(hasHostSentRecoveryCode ? .success : .unknown(reason: StatusReason.appRestart))
         }
     }
 

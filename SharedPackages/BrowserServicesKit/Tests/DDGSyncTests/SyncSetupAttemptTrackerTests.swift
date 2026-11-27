@@ -308,6 +308,113 @@ final class SyncSetupAttemptTrackerTests {
         #expect(sent.first?.parameters["feature.data.ext.total_latency_ms_bucketed"] == "3000")
     }
 
+    private func startHostAwaitingJoiner() {
+        start()
+        tracker.recordPeer(role: .host, kind: .ddg)
+        tracker.recordStep(.preparingSync)
+        advance(milliseconds: 2500)
+        tracker.recordHostAwaitingJoiner()
+        advance(milliseconds: 45000)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A v2.1 host ends as SUCCESS with what the joiner reported, and the wait is left out of preparing sync",
+          .timeLimit(.minutes(1)),
+          arguments: SyncSetupWideEventData.PeerOutcome.allCases)
+    func hostEndsWithJoinerOutcome(peerOutcome: SyncSetupWideEventData.PeerOutcome) {
+        startHostAwaitingJoiner()
+
+        tracker.endAsHost(peerOutcome: peerOutcome)
+
+        #expect(sent.count == 1)
+        #expect(sent.first?.status == .success)
+        #expect(sent.first?.parameters["feature.data.ext.peer_outcome"] == peerOutcome.rawValue)
+        #expect(sent.first?.parameters["feature.data.ext.status_reason"] == nil)
+        #expect(sent.first?.parameters["feature.data.ext.steps"] == "started,preparing_sync,host_awaiting_joiner")
+        #expect(sent.first?.parameters["feature.data.ext.last_step"] == "host_awaiting_joiner")
+        #expect(sent.first?.parameters["feature.data.ext.preparing_sync_latency_ms_bucketed"] == "2000")
+        #expect(sent.first?.parameters["feature.data.ext.last_step_latency_ms_bucketed"] == "30000")
+        #expect(sent.first?.parameters["feature.data.ext.total_latency_ms_bucketed"] == "30000")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A v2.1 host that stops waiting without a report ends as SUCCESS with peer_outcome unknown",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            SyncConnectionError.pairingV2SessionTimedOut(timeoutStage: .waitingForJoinStatus),
+            .syncCancelledFromOtherDevice,
+            .transportFailure
+          ])
+    func hostStopsWaitingWithoutReport(error: SyncConnectionError) {
+        startHostAwaitingJoiner()
+
+        tracker.end(with: error, underlyingError: underlyingError)
+
+        #expect(sent.count == 1)
+        #expect(sent.first?.status == .success)
+        #expect(sent.first?.parameters["feature.data.ext.peer_outcome"] == "unknown")
+        #expect(sent.first?.parameters["feature.data.ext.status_reason"] == nil)
+        #expect(sent.first?.parameters["feature.data.ext.timeout_stage"] == nil)
+        #expect(sent.first?.parameters["feature.data.ext.error.domain"] == nil)
+        #expect(sent.first?.parameters["feature.data.ext.last_step"] == "host_awaiting_joiner")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A v2.1 host whose user closes the waiting screen ends as SUCCESS with peer_outcome unknown", .timeLimit(.minutes(1)))
+    func hostUserClosesWhileWaiting() {
+        startHostAwaitingJoiner()
+
+        tracker.end(.userClosed)
+
+        #expect(sent.first?.status == .success)
+        #expect(sent.first?.parameters["feature.data.ext.peer_outcome"] == "unknown")
+        #expect(sent.first?.parameters["feature.data.ext.status_reason"] == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new attempt while a v2.1 host waits ends the waiting one as SUCCESS", .timeLimit(.minutes(1)))
+    func newAttemptWhileHostWaits() {
+        startHostAwaitingJoiner()
+
+        start()
+
+        #expect(sent.count == 1)
+        #expect(sent.first?.status == .success)
+        #expect(sent.first?.parameters["feature.data.ext.peer_outcome"] == "unknown")
+        #expect(wideEvent.started.count == 2)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A host before v2.1 ends as SUCCESS right after sending the code, with peer_outcome unknown", .timeLimit(.minutes(1)))
+    func hostBeforeV21EndsAfterSendingCode() {
+        start()
+        tracker.recordPeer(role: .host, kind: .ddg)
+        tracker.recordStep(.preparingSync)
+        advance(milliseconds: 2500)
+
+        tracker.endAsHost(peerOutcome: .unknown)
+
+        #expect(sent.count == 1)
+        #expect(sent.first?.status == .success)
+        #expect(sent.first?.parameters["feature.data.ext.peer_outcome"] == "unknown")
+        #expect(sent.first?.parameters["feature.data.ext.last_step"] == "preparing_sync")
+        #expect(sent.first?.parameters["feature.data.ext.preparing_sync_latency_ms_bucketed"] == "2000")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The other device leaving before the host sent the code ends as CANCELLED peer_left", .timeLimit(.minutes(1)))
+    func peerLeavesBeforeHostSentCode() {
+        start()
+        tracker.recordPeer(role: .host, kind: .ddg)
+        tracker.recordStep(.confirmationScreen)
+
+        tracker.end(with: .syncCancelledFromOtherDevice, underlyingError: nil)
+
+        #expect(sent.first?.status == .cancelled)
+        #expect(sent.first?.parameters["feature.data.ext.status_reason"] == "peer_left")
+        #expect(sent.first?.parameters["feature.data.ext.peer_outcome"] == nil)
+    }
+
     private let underlyingError = NSError(domain: "TestDomain", code: 42, userInfo: [
         NSUnderlyingErrorKey: NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut)
     ])

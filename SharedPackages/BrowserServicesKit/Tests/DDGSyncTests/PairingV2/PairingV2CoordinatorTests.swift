@@ -84,6 +84,8 @@ private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDele
     func pairingV2CoordinatorDidChangeState(_ state: PairingV2State, negotiatedVersion: PairingV2ProtocolVersion) async {
         await didChangeStateHandler?(state)
     }
+
+    func pairingV2CoordinatorDidReceiveJoinerMessage(_ message: PairingV2ApplicationMessage) async {}
 }
 
 private actor PairingV2CoordinatorTestGate {

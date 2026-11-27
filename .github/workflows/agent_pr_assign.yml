@@ -5,9 +5,14 @@ name: Agent PR Assign
 # mapped to a GitHub login through the GitHub → Asana user map. For feature
 # flag removals that's the flag's owner. Leaves the PR unassigned, with a
 # warning, when the task has no assignee or they aren't in the map.
+#
+# Runs on pull_request_target, only for PRs into the default branch, so the
+# workflow and the script come from that branch, never from the PR: the job
+# holds an Asana token, and the PR's code was written by the agent. The PR is
+# only read as data (its body and number); its code is never checked out.
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened]
 
 permissions:
@@ -17,13 +22,22 @@ permissions:
 jobs:
   assign:
     name: Assign to the task owner
-    if: startsWith(github.head_ref, 'agent/worker-') && github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event.pull_request.user.login == 'ddg-apple-agent-publish[bot]' &&
+      github.event.pull_request.user.type == 'Bot' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.base.ref == github.event.repository.default_branch &&
+      startsWith(github.event.pull_request.head.ref, 'agent/worker-')
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Check out repository
+      - name: Check out the assign script from the base branch
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+          sparse-checkout: scripts/agent-pr-assign
 
       - name: Fetch GitHub → Asana user map
         env:

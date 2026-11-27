@@ -130,6 +130,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let keyValueStore: ThrowingKeyValueStoring
 
     let faviconManager: FaviconManager
+    /// The only favicon rasterizer: one web view and web content process for the whole app, shared by the favicon
+    /// managers (the burner windows' too) and the data importers.
+    let faviconRasterizer: FaviconRasterizer
     let pinnedTabsManager = PinnedTabsManager()
     let pinningManager = LocalPinningManager()
     let tabDragAndDropManager: TabDragAndDropManager
@@ -1104,19 +1107,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autoplayPreferences: autoplayPreferences
         )
         self.websitePermissionDefaults = websitePermissionDefaults
+        let faviconRasterizer = FaviconRasterizer(featureFlagger: featureFlagger)
+        self.faviconRasterizer = faviconRasterizer
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
+            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger, faviconRasterizer: faviconRasterizer)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
-            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
+            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger, faviconRasterizer: faviconRasterizer)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
+        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger, faviconRasterizer: faviconRasterizer)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), decisionOverride: voiceChatPermissionOverride, defaults: websitePermissionDefaults)
 #endif
         aiChatBrowserToolsService = AIChatBrowserToolsService(featureFlagger: featureFlagger,

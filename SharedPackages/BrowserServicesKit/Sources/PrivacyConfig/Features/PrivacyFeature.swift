@@ -1086,9 +1086,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    /// Kill switch for the "Sync your bookmarks" promo.
-    case syncSetupBookmarksPromo
-
     /// Kill switch for the "Sync your autofill data" promo.
     case syncSetupAutofillPromo
 

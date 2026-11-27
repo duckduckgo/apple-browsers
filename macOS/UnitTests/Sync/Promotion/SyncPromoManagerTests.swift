@@ -45,7 +45,7 @@ final class SyncPromoManagerTests: XCTestCase {
         privacyConfigurationManager.privacyConfig = config
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.promoQueueSyncSetupBookmarksPromo, .promoQueueSyncSetupAutofillPromo]
+        featureFlagger.enabledFeatureFlags = [.promoQueueSyncSetupAutofillPromo]
         contentCount = 1
         isDuckDuckGoPasswordManager = true
         contentCountCallCount = 0
@@ -136,14 +136,9 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertTrue(makePromoManager(.autofill).isEligible)
     }
 
-    func testWhenPromoFlagIsOffThenOnlyThatPromoIsNotEligible() {
+    func testWhenAutofillPromoFlagIsOffThenOnlyAutofillPromoIsNotEligible() {
         enableAllSubfeatures()
-        featureFlagger.enabledFeatureFlags = [.promoQueueSyncSetupAutofillPromo]
-
-        XCTAssertFalse(makePromoManager(.bookmarks).isEligible)
-        XCTAssertTrue(makePromoManager(.autofill).isEligible)
-
-        featureFlagger.enabledFeatureFlags = [.promoQueueSyncSetupBookmarksPromo]
+        featureFlagger.enabledFeatureFlags = []
 
         XCTAssertTrue(makePromoManager(.bookmarks).isEligible)
         XCTAssertFalse(makePromoManager(.autofill).isEligible)
@@ -211,7 +206,7 @@ final class SyncPromoManagerTests: XCTestCase {
 
     func testWhenPromoFlagTurnsOffThenPromoBecomesNotEligible() {
         enableAllSubfeatures()
-        let sut = makePromoManager(.bookmarks)
+        let sut = makePromoManager(.autofill)
         XCTAssertTrue(sut.isEligible)
 
         featureFlagger.enabledFeatureFlags = []

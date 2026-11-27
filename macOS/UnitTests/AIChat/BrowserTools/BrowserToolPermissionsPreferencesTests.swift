@@ -60,6 +60,10 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
 
     override func tearDown() {
         model = nil
+        translatePages = nil
+        translateStore = nil
+        translateCenter = nil
+        featureFlagger = nil
         pixels = nil
         catalog = nil
         permissions = nil

@@ -707,12 +707,11 @@ final class PageContextTabExtension {
         }
     }
 
-    /// Whether the current page may be sent to Duck.ai: a web page the tab picker would list, not
-    /// prevented by the page-context blocklist.
+    /// Whether the page at `url` may be sent to Duck.ai: one the tab picker would list, not prevented
+    /// by the page-context blocklist.
     @MainActor
-    var isCurrentPageAttachable: Bool {
-        guard case .url(let url, _, _) = content, !AIChatTabMetadata.shouldExcludeFromTabPicker(url) else { return false }
-        return preventedAttachReason(for: url) == nil
+    func isPageAttachable(at url: URL) -> Bool {
+        !AIChatTabMetadata.shouldExcludeFromTabPicker(url) && preventedAttachReason(for: url) == nil
     }
 
     /// Forces page-context collection into the sidebar regardless of the auto-send preference — the
@@ -1110,8 +1109,8 @@ protocol PageContextProtocol: AnyObject, NavigationResponder {
     /// auto-send preference (used by the tab-bar "Ask About Page" action).
     @MainActor func requestPageContextAttachment()
 
-    /// Whether the current page may be sent to Duck.ai at all.
-    @MainActor var isCurrentPageAttachable: Bool { get }
+    /// Whether the page at `url` may be sent to Duck.ai at all.
+    @MainActor func isPageAttachable(at url: URL) -> Bool
 
     @MainActor func attachLinkedPage(_ url: URL) -> Task<LinkedPageContextLoadResult?, Never>
 

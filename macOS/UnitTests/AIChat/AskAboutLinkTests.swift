@@ -570,56 +570,39 @@ private final class PixelRecorder {
     var parameters: [[String: String]?] { fired.map(\.parameters) }
 }
 
-// MARK: - Current page attachability
+// MARK: - Page attachability
 
-@Suite("Whether the current page may be sent to Duck.ai")
+@Suite("Whether a page may be sent to Duck.ai")
 @MainActor
-struct PageContextCurrentPageAttachabilityTests {
+struct PageContextPageAttachabilityTests {
 
-    private let content = CurrentValueSubject<Tab.TabContent, Never>(.none)
-    private let pageContext: PageContextTabExtension
-
-    init() {
+    private let pageContext: PageContextTabExtension = {
         let privacyConfig = MockPrivacyConfiguration()
         privacyConfig.featureSettings = ["aiPageContextBlocklist": ["image": ["urlExtensions": [".png"]]]]
-        pageContext = PageContextTabExtension(scriptsPublisher: Empty<UserScripts, Never>(),
-                                              webViewPublisher: Empty<WKWebView, Never>(),
-                                              contentPublisher: content,
-                                              tabID: "tab",
-                                              featureFlagger: MockFeatureFlagger(),
-                                              privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig),
-                                              extractionPixelHandler: PageContextExtractionPixelHandler(firePixel: { _ in }),
-                                              aiChatSessionStore: MockAIChatSessionStore(),
-                                              aiChatMenuConfiguration: MockAIChatConfig(),
-                                              isLoadedInSidebar: false,
-                                              faviconManagement: FaviconManagerMock(),
-                                              linkedPageLoader: ControlledLinkedPageLoader())
-    }
-
-    private static let webPage = Tab.TabContent.url(URL(string: "https://es.example/articulo")!, source: .link)
-
-    /// Content reaches the extension through a 100 ms debounce.
-    @available(iOS 16, macOS 13, *)
-    private func isAttachable(_ newContent: Tab.TabContent) async -> Bool {
-        content.send(newContent)
-        try? await Task.sleep(for: .milliseconds(300))
-        return pageContext.isCurrentPageAttachable
-    }
+        return PageContextTabExtension(scriptsPublisher: Empty<UserScripts, Never>(),
+                                       webViewPublisher: Empty<WKWebView, Never>(),
+                                       contentPublisher: Empty<Tab.TabContent, Never>(),
+                                       tabID: "tab",
+                                       featureFlagger: MockFeatureFlagger(),
+                                       privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig),
+                                       extractionPixelHandler: PageContextExtractionPixelHandler(firePixel: { _ in }),
+                                       aiChatSessionStore: MockAIChatSessionStore(),
+                                       aiChatMenuConfiguration: MockAIChatConfig(),
+                                       isLoadedInSidebar: false,
+                                       faviconManagement: FaviconManagerMock(),
+                                       linkedPageLoader: ControlledLinkedPageLoader())
+    }()
 
     @available(iOS 16, macOS 13, *)
     @Test("A web page is attachable", .timeLimit(.minutes(1)))
-    func webPage() async {
-        #expect(await isAttachable(Self.webPage))
+    func webPage() {
+        #expect(pageContext.isPageAttachable(at: URL(string: "https://es.example/articulo")!))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Blocklisted, excluded and non-web pages are not", .timeLimit(.minutes(1)),
-          arguments: [Tab.TabContent.url(URL(string: "https://example.com/photo.png")!, source: .link),
-                      .url(URL(string: "about:blank")!, source: .link),
-                      .url(URL(string: "https://duck.ai/")!, source: .link),
-                      .newtab])
-    func notAttachable(_ page: Tab.TabContent) async {
-        #expect(await isAttachable(Self.webPage))
-        #expect(await !isAttachable(page))
+    @Test("Blocklisted and excluded pages are not", .timeLimit(.minutes(1)),
+          arguments: ["https://example.com/photo.png", "about:blank", "https://duck.ai/", "file:///tmp/page.html"])
+    func notAttachable(_ url: String) {
+        #expect(!pageContext.isPageAttachable(at: URL(string: url)!))
     }
 }

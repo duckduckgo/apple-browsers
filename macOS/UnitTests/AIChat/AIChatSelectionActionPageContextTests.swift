@@ -153,7 +153,7 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
     }
 
     func testTranslateCurrentPageDoesNothingWhenPageIsNotAttachable() async {
-        pageContext.isCurrentPageAttachable = false
+        pageContext.notAttachableURLs = [URL(string: "https://example.es/")!]
         var didExtract = false
         onExtract = { didExtract = true }
 
@@ -162,6 +162,24 @@ final class AIChatSelectionActionPageContextTests: XCTestCase {
         XCTAssertFalse(didExtract)
         XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
         XCTAssertTrue(firedParameters(named: "aichat_translate_text").isEmpty)
+    }
+
+    func testTranslateCurrentPageDropsPageReadFromAnotherDocument() async {
+        let photo = AIChatPageContextData(title: "Photo", favicon: [], url: "https://example.es/photo.png", content: "x", truncated: false, fullContentLength: 1)
+        pageContext.notAttachableURLs = [URL(string: photo.url)!]
+
+        await makeTranslator(pageContent: photo).translateCurrentPage()
+
+        XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
+        XCTAssertTrue(firedParameters(named: "aichat_translate_text").isEmpty)
+    }
+
+    func testTranslateCurrentPageDoesNothingOnNonWebTab() async {
+        currentTab = Tab(content: .newtab)
+
+        await makeTranslator(pageContent: .translatablePage).translateCurrentPage()
+
+        XCTAssertEqual(coordinator.revealChatWithPromptCallCount, 0)
     }
 
     func testTranslateCurrentPageDoesNothingWithoutCurrentTab() async {
@@ -273,7 +291,11 @@ private final class PageContextMock: PageContextProtocol {
     var appendSelectionContextCallCount = 0
     var suppressCallCount = 0
     var requestPageContextAttachmentCallCount = 0
-    var isCurrentPageAttachable = true
+    var notAttachableURLs: Set<URL> = []
+
+    func isPageAttachable(at url: URL) -> Bool {
+        !notAttachableURLs.contains(url)
+    }
 
     func appendSelectionContext(_ selection: AIChatSelectionContextData) {
         appendSelectionContextCallCount += 1

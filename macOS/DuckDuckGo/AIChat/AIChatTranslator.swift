@@ -134,14 +134,17 @@ final class AIChatTranslator: AIChatTranslating {
     func translateCurrentPage() async {
         guard aiChatMenuConfig.shouldDisplayTranslationMenuItem,
               let tab = currentTabProvider(),
-              currentPageContextProvider()?.isCurrentPageAttachable == true else {
+              case .url(let url, _, _) = tab.content,
+              let pageContext = currentPageContextProvider(),
+              pageContext.isPageAttachable(at: url) else {
             return
         }
-        let url = tab.url
         // Reading the page is async: drop it if the user moved to another tab or page meanwhile,
-        // since the prompt goes to whichever tab is current.
+        // since the prompt goes to whichever tab is current. The page read is checked too, as the
+        // web view can still hold the previous document.
         guard let page = await pageContentExtractor(tab), page.hasAttachedPage,
-              currentTabProvider() === tab, tab.url == url else {
+              currentTabProvider() === tab, tab.url == url,
+              let pageURL = URL(string: page.url), pageContext.isPageAttachable(at: pageURL) else {
             return
         }
 

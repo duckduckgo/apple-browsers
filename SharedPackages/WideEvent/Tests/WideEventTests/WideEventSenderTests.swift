@@ -76,10 +76,13 @@ final class WideEventSenderTests: XCTestCase {
         )
     }
 
-    private func makeSender(pixelKitProvider: (() -> PixelKit?)? = nil, storage: WideEventStoring? = nil) -> DefaultWideEventSender {
+    private func makeSender(pixelKitProvider: (() -> PixelKit?)? = nil,
+                            isDevMode: Bool = false,
+                            storage: WideEventStoring? = nil) -> DefaultWideEventSender {
         return DefaultWideEventSender(
             pixelKitProvider: pixelKitProvider ?? { PixelKit.shared },
             postRequestHandler: mockPostRequestHandler,
+            isDevMode: isDevMode,
             storage: storage ?? WideEventUserDefaultsStorage(userDefaults: testDefaults)
         )
     }
@@ -798,6 +801,74 @@ final class WideEventSenderTests: XCTestCase {
         let json = try? JSONSerialization.jsonObject(with: body, options: []) as? [String: Any]
         let global = json?["global"] as? [String: Any]
         XCTAssertNil(global?["is_first_daily_occurrence"])
+    }
+
+    // MARK: - Dev Mode Tests
+
+    func testPOSTRequestIncludesDevModeAsBooleanWhenDevModeEnabled() {
+        let sender = makeSender(isDevMode: true)
+
+        let app = sendAndCapturePOSTAppSection(with: sender)
+
+        XCTAssertEqual(app?["dev_mode"] as? Bool, true)
+    }
+
+    func testPOSTRequestOmitsDevModeWhenDevModeDisabled() {
+        let sender = makeSender(isDevMode: false)
+
+        let app = sendAndCapturePOSTAppSection(with: sender)
+
+        XCTAssertNotNil(app)
+        XCTAssertNil(app?["dev_mode"])
+    }
+
+    func testPOSTRequestOmitsDevModeByDefault() {
+        let sender = DefaultWideEventSender(
+            pixelKitProvider: { PixelKit.shared },
+            postRequestHandler: mockPostRequestHandler,
+            storage: WideEventUserDefaultsStorage(userDefaults: testDefaults)
+        )
+
+        let app = sendAndCapturePOSTAppSection(with: sender)
+
+        XCTAssertNotNil(app)
+        XCTAssertNil(app?["dev_mode"])
+    }
+
+    func testPixelsNeverIncludeDevModeWhenDevModeEnabled() {
+        let sender = makeSender(isDevMode: true)
+
+        _ = sendAndCapturePOSTAppSection(with: sender)
+
+        XCTAssertEqual(capturedPixels.count, 2)
+        for pixel in capturedPixels {
+            XCTAssertNil(pixel.parameters["app.dev_mode"])
+        }
+    }
+
+    #if os(macOS)
+    func testPOSTRequestOmitsVerificationTopicFromAppName() {
+        let data = makeTestData()
+        data.appData.name = "DuckDuckGo - verify-test-topic"
+
+        let app = sendAndCapturePOSTAppSection(with: makeSender(isDevMode: true), data: data)
+
+        XCTAssertEqual(app?["name"] as? String, "DuckDuckGo")
+    }
+    #endif
+
+    private func sendAndCapturePOSTAppSection(with sender: DefaultWideEventSender, data: SenderTestWideEventData? = nil) -> [String: Any]? {
+        let expectation = XCTestExpectation(description: "Request sent")
+        sender.send(data ?? makeTestData(), status: .success, featureFlagProvider: MockWideEventFeatureFlagProvider()) { _, _ in
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+
+        XCTAssertEqual(capturedPOSTRequests.count, 1)
+        guard let body = capturedPOSTRequests.first?.body else { return nil }
+        let json = try? JSONSerialization.jsonObject(with: body, options: []) as? [String: Any]
+        return json?["app"] as? [String: Any]
     }
 }
 

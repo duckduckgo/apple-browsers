@@ -68,6 +68,7 @@ final class VPNNotificationsObserver {
     /// - Test notifications for debugging
     /// - Server selection events (triggers notification authorization request)
     /// - Expired entitlement notifications
+    /// - Signed-out notifications
     ///
     /// All notification handlers are dispatched to the main queue to ensure UI updates
     /// occur on the main thread.
@@ -125,6 +126,12 @@ final class VPNNotificationsObserver {
             .sink { [weak self] _ in
                 self?.showEntitlementNotification()
             }.store(in: &cancellables)
+
+        distributedNotificationCenter.publisher(for: .showSignedOutNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.showSignedOutNotification()
+            }.store(in: &cancellables)
     }
 
     // MARK: - Showing Notifications
@@ -180,6 +187,13 @@ final class VPNNotificationsObserver {
         Logger.networkProtection.info("Presenting Entitlements notification")
 
         notificationsPresenter.showEntitlementNotification()
+    }
+
+    /// Displays a notification asking the user to open the app, shown when the VPN can't start because no auth token is stored.
+    func showSignedOutNotification() {
+        Logger.networkProtection.info("Presenting signed-out notification")
+
+        notificationsPresenter.showSignedOutNotification()
     }
 
     /// Displays a test notification for debugging purposes.

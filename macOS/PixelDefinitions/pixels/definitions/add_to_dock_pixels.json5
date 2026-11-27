@@ -1,0 +1,34 @@
+{
+    "add-to-dock-video_button-clicked_macos": {
+        "description": "Fired in the App Store build when the user clicks a button on the Add to Dock instructions video sheet.",
+        "owners": ["rachelmcr"],
+        "triggers": ["user_interaction"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "button",
+                "type": "string",
+                "description": "The button clicked. 'done' and 'cancel' both close the sheet; 'next' continues to the Set as Default prompt.",
+                "enum": ["done", "next", "cancel"]
+            },
+            {
+                "key": "entry_point",
+                "type": "string",
+                "description": "Where the video sheet was opened from.",
+                "enum": [
+                    "settings",
+                    "new_tab_page_card",
+                    "main_menu",
+                    "more_options_menu",
+                    "popover",
+                    "banner",
+                    "inactive_modal",
+                    "win_back_modal"
+                ]
+            }
+        ]
+    }
+}

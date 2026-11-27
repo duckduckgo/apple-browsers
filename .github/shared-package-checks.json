@@ -3,7 +3,7 @@
   {"path": "AutomationServer", "testTargets": ["AutomationServerTests"]},
   {"path": "Common", "macosTestOnly": true},
   {"path": "DDGError"},
-  {"path": "DebugServer", "testTargets": ["DebugServerTests"]},
+  {"path": "DebugServer", "scheme": "DebugServer-Package", "testTargets": ["DebugServerTests", "LaunchProfileTests"]},
   {"path": "HangMetrics", "testTargets": ["HangMetricsTests"]},
   {"path": "ICSParser"},
   {"path": "LlamaRuntime"},

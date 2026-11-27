@@ -100,11 +100,21 @@ final class AIChatUserScriptLocalModelTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? AIChatLocalModelRequestError, .unavailable)
         }
-        XCTAssertEqual(prompt.askedModelNames, [])
+        XCTAssertEqual(prompt.askedRequests, [])
 
         let reply = try await accessHandler([:], message(from: "https://duck.ai/chat")) as? AIChatLocalModelAccessReply
         XCTAssertEqual(reply, AIChatLocalModelAccessReply(result: .allowed))
-        XCTAssertEqual(prompt.askedModelNames, [service.model.name])
+        XCTAssertEqual(prompt.askedRequests, [.connect(service.model)])
+    }
+
+    func testTheServicesRequestReachesThePrompt() async throws {
+        service.accessRequest = .install(service.model, bytes: 974_984_960)
+        let script = makeScript()
+        let accessHandler = try XCTUnwrap(script.handler(forMethodNamed: AIChatUserScriptMessages.requestAIChatLocalModelAccess.rawValue))
+
+        _ = try await accessHandler([:], message(from: "https://duck.ai/chat"))
+
+        XCTAssertEqual(prompt.askedRequests, [.install(service.model, bytes: 974_984_960)])
     }
 
     func testRunsAreThePagesNotTheScripts() {
@@ -153,6 +163,7 @@ private final class StubURLWebView: WKWebView {
 @MainActor
 private final class RecordingLocalModelService: AIChatLocalModelServing {
     let model = AIChatLocalModelInfo(id: "m", name: "M")
+    var accessRequest: AIChatLocalModelAccessRequest?
     var configToReturn: AIChatLocalModelConfig?
     var onCancelRuns: ((ObjectIdentifier) -> Void)?
     private(set) var startedRequestIds: [String] = []
@@ -172,21 +183,21 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
     }
 
     func requestAccess(ask: @MainActor (AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
-        await ask(.connect(model))
+        await ask(accessRequest ?? .connect(model))
     }
 }
 
 @MainActor
 private final class StubLocalModelAccessPrompt: LocalModelAccessAsking {
     let answer: AIChatLocalModelAccessReply.Result
-    private(set) var askedModelNames: [String] = []
+    private(set) var askedRequests: [AIChatLocalModelAccessRequest] = []
 
     init(answer: AIChatLocalModelAccessReply.Result) {
         self.answer = answer
     }
 
-    func ask(in window: UIWindow?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
-        askedModelNames.append(modelName)
+    func ask(in window: UIWindow?, request: AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result {
+        askedRequests.append(request)
         return answer
     }
 }

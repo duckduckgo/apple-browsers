@@ -17,6 +17,7 @@
 //
 
 import Common
+import DDGSync
 import FoundationExtensions
 import Foundation
 @_spi(Testing) import WideEvent
@@ -31,14 +32,17 @@ final class WideEventServiceTests: XCTestCase {
     private var sut: WideEventService!
     private var mockWideEvent: WideEventMock!
     private var mockSubscriptionManager: SubscriptionManagerMock!
+    private var isSyncSetupWideEventEnabled = true
 
     override func setUp() {
         super.setUp()
         mockWideEvent = WideEventMock()
         mockSubscriptionManager = SubscriptionManagerMock()
+        isSyncSetupWideEventEnabled = true
         sut = WideEventService(
             wideEvent: mockWideEvent,
-            subscriptionManager: mockSubscriptionManager
+            subscriptionManager: mockSubscriptionManager,
+            isSyncSetupWideEventEnabled: { [unowned self] in isSyncSetupWideEventEnabled }
         )
     }
 
@@ -94,6 +98,37 @@ final class WideEventServiceTests: XCTestCase {
         guard case .unknown = completion?.1 else {
             return XCTFail("Expected the stale refresh to complete as UNKNOWN")
         }
+    }
+
+    func test_sendPendingEvents_openSyncSetupAttemptCompletesAsAppRestart() async {
+        mockWideEvent.started.append(SyncSetupWideEventData(existingAccount: false,
+                                                            flowVersion: .v21,
+                                                            uiVersion: .v1,
+                                                            launchID: "previous-launch",
+                                                            contextData: WideEventContextData()))
+
+        await sut.sendPendingEvents()
+
+        let completion = mockWideEvent.completions.first { $0.0 is SyncSetupWideEventData }
+        guard case .unknown(let reason) = completion?.1 else {
+            return XCTFail("Expected the open sync setup attempt to complete as UNKNOWN")
+        }
+        XCTAssertEqual(reason, "app_restart")
+    }
+
+    func test_sendPendingEvents_withSyncSetupFlagOff_discardsOpenSyncSetupAttemptWithoutSending() async {
+        isSyncSetupWideEventEnabled = false
+        let data = SyncSetupWideEventData(existingAccount: false,
+                                          flowVersion: .v21,
+                                          uiVersion: .v1,
+                                          launchID: "previous-launch",
+                                          contextData: WideEventContextData())
+        mockWideEvent.started.append(data)
+
+        await sut.sendPendingEvents()
+
+        XCTAssertFalse(mockWideEvent.completions.contains { $0.0 is SyncSetupWideEventData })
+        XCTAssertTrue(mockWideEvent.discarded.contains { $0.globalData.id == data.globalData.id })
     }
 
     // MARK: - processSubscriptionPurchasePixels - Happy Path

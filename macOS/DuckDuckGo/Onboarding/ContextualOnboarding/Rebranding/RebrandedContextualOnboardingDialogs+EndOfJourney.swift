@@ -21,33 +21,39 @@ import Onboarding
 
 // MARK: - End Of Journey Dialog
 
+/// Layout values unique to the end-of-journey dialogs. Shared metrics live on
+/// `OnboardingRebranding.Layout`.
+private enum EndOfJourneyLayout {
+    /// Bubble tail anchor — pushed further down the leading edge so the tip lands
+    /// next to Dax's mouth area rather than near the top of the bubble.
+    static let tailOffset: CGFloat = 0.85
+    /// Locally smaller tail than the shared `OnboardingRebranding.Layout.bubbleArrow*`
+    /// metrics so the high-five bubble's arrow doesn't dominate the tighter layout.
+    static let arrowLength: CGFloat = 18
+    static let arrowWidth: CGFloat = 28
+}
+
 extension OnboardingRebranding {
 
-    struct OnboardingEndOfJourneyDialog: View {
-        /// Layout values unique to the highFive dialog. Shared metrics live on
-        /// `OnboardingRebranding.Layout`.
-        private enum Layout {
-            /// Bubble tail anchor — pushed further down the leading edge so the tip lands
-            /// next to Dax's mouth area rather than near the top of the bubble.
-            static let tailOffset: CGFloat = 0.85
-            /// Locally smaller tail than the shared `OnboardingRebranding.Layout.bubbleArrow*`
-            /// metrics so the high-five bubble's arrow doesn't dominate the tighter layout.
-            static let arrowLength: CGFloat = 18
-            static let arrowWidth: CGFloat = 28
-        }
-
-        let highFiveAction: () -> Void
+    /// The last dialog of onboarding, with waving Dax: High Five, or Try Duck.ai.
+    struct OnboardingEndOfJourneyDialog<Content: View>: View {
         let onManualDismiss: () -> Void
+        let content: Content
+
+        init(onManualDismiss: @escaping () -> Void, @ViewBuilder content: () -> Content) {
+            self.onManualDismiss = onManualDismiss
+            self.content = content()
+        }
 
         var body: some View {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 OnboardingBubbleView(
-                    tailPosition: .leading(offset: Layout.tailOffset, direction: .top),
-                    arrowLength: Layout.arrowLength,
-                    arrowWidth: Layout.arrowWidth,
+                    tailPosition: .leading(offset: EndOfJourneyLayout.tailOffset, direction: .top),
+                    arrowLength: EndOfJourneyLayout.arrowLength,
+                    arrowWidth: EndOfJourneyLayout.arrowWidth,
                     content: {
-                        OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
+                        content
                     }
                 )
                 .onboardingDismissable(onManualDismiss)
@@ -96,4 +102,14 @@ extension OnboardingRebranding {
         }
     }
 
+}
+
+extension OnboardingRebranding.OnboardingEndOfJourneyDialog where Content == OnboardingRebranding.OnboardingEndOfJourneyDialogContent {
+
+    /// High Five.
+    init(highFiveAction: @escaping () -> Void, onManualDismiss: @escaping () -> Void) {
+        self.init(onManualDismiss: onManualDismiss) {
+            OnboardingRebranding.OnboardingEndOfJourneyDialogContent(highFiveAction: highFiveAction)
+        }
+    }
 }

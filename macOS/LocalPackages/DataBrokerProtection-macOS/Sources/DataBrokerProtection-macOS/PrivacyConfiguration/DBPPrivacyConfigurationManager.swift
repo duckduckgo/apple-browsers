@@ -26,6 +26,10 @@ import PrivacyConfig
 import DataBrokerProtectionCore
 
 public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging {
+    /// Never fires: this manager doesn't store the user's allowlist.
+    public var userUnprotectedDomainsPublisher: AnyPublisher<Void, Never> {
+        Empty(completeImmediately: false).eraseToAnyPublisher()
+    }
 
     private let lock = NSLock()
 

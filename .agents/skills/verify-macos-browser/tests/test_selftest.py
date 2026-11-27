@@ -55,8 +55,8 @@ class RunStepsTests(unittest.TestCase):
 class FixTests(unittest.TestCase):
     def test_launch_failures_point_at_their_setup_section(self):
         step = "app launches and shows a window"
-        self.assertIn("section 4", selftest.fix_for(step, "NOT LAUNCHED: no app process after 60 s in vm-1 (AMFI? …)"))
-        self.assertIn("section 5", selftest.fix_for(step, "NOT READY: no window after 60 s (keychain dialog in vm-1?)"))
+        self.assertIn("SKILL.md, Signing", selftest.fix_for(step, "NOT LAUNCHED: no app process after 60 s in vm-1 (AMFI? …)"))
+        self.assertIn("section 4", selftest.fix_for(step, "NOT READY: no window after 60 s (keychain dialog in vm-1?)"))
         self.assertIn("unlock", selftest.fix_for(step, "ONBOARDING NOT SKIPPED: no regular tab"))
         self.assertIn("build.log", selftest.fix_for(step, "COPY FAILED: vm-1"))
 
@@ -64,14 +64,27 @@ class FixTests(unittest.TestCase):
         self.assertIn("assetcatalog_output", selftest.fix_for("build is current", "BROKEN BUILD PRODUCT: Assets.car is 512 bytes"))
         self.assertIn("first error", selftest.fix_for("build is current", "error: cannot find type 'X'"))
 
+    def test_missing_signing_assets_point_at_the_signing_setup(self):
+        for why in ('error: No signing certificate "Developer ID Application" found',
+                    "error: No profile for team 'HKE973VLUW' matching 'match Direct com.duckduckgo.macos.browser.debug macos' found"):
+            self.assertIn("SKILL.md, Signing", selftest.fix_for("build is current", why), why)
+        self.assertIn("SKILL.md, Signing", selftest.fix_for("build signed with Developer ID", "x"))
+
+    def test_a_build_whose_packages_miss_debug_names_that_failure(self):
+        run = selftest.Run("/tmp/20261119-120000-selftest-abcd")
+        run.sh = lambda *a, **k: (2, "DerivedData: /dd (this checkout)\\nPACKAGES NOT DEBUG: AppKitExtensions compiled "
+                                     "without DEBUG (x).\\n  Build into a DerivedData only verify.sh uses: remove /dd\\n")
+        why = dict(run.host_steps())["build is current"]()
+        self.assertTrue(why.startswith("PACKAGES NOT DEBUG"), why)
+        self.assertIn("remove the DerivedData", selftest.fix_for("build is current", why))
+
     def test_every_proof_step_shares_the_proof_fix(self):
         self.assertEqual(selftest.fix_for("prove must_fail.py", "FAIL: …"), selftest.FIX["proof"])
 
     def test_vm_setup_steps_point_into_vm_setup(self):
         for step, section in (("ssh without a prompt", "section 3"), ("same macOS major as this Mac", "section 1"),
                               ("auto-login session up", "section 2"), ("Accessibility grant over ssh", "Accessibility"),
-                              ("Screen Recording grant over ssh", "Screen & System Audio Recording"),
-                              ("Provisioning UDID in the app's profile", "section 4")):
+                              ("Screen Recording grant over ssh", "Screen & System Audio Recording")):
             self.assertIn("VM-SETUP.md", selftest.fix_for(step, "x"), step)
             self.assertIn(section, selftest.fix_for(step, "x"), step)
 
@@ -81,7 +94,7 @@ class FixTests(unittest.TestCase):
         names = [n for n, _ in run.host_steps() + setup + rest + run.mac_steps([], set())]
         for name in names:
             self.assertTrue(selftest.fix_for(name, "why"), name)
-        self.assertEqual(names[:3], ["Xcode selected", "build is current", "unit tests"])
+        self.assertEqual(names[:4], ["Xcode selected", "build is current", "build signed with Developer ID", "unit tests"])
         self.assertEqual([n for n, _ in setup][:2], ["ssh without a prompt", "VM free and reserved"])
         self.assertEqual([n for n, _ in rest], ["prove must_fail.py", "prove t3_fixture_page.py", "nothing left running",
                                                 "VM lock released at the end"])
@@ -123,13 +136,17 @@ class JudgeTests(unittest.TestCase):
         self.assertEqual(selftest.judge_display_sleep(" displaysleep         10\n"), "display sleeps after 10 min")
         self.assertEqual(selftest.judge_display_sleep(" sleep 0\n"), "pmset -g shows no displaysleep")
 
-    def test_udid(self):
-        devices = selftest.profile_devices(plistlib.dumps({"ProvisionedDevices": ["AAA111", "fa22a9"]}).decode())
-        self.assertIsNone(selftest.judge_udid("aaa111", devices))
-        self.assertIsNone(selftest.judge_udid("FA22A9", devices))
-        self.assertEqual(selftest.judge_udid("bbb222", devices),
-                         "Provisioning UDID bbb222 is not among the 2 devices in the built app's profile")
-        self.assertIsNotNone(selftest.judge_udid(None, devices))
+    def test_signing(self):
+        developer_id = "Executable=/x\nAuthority=Developer ID Application: Duck Duck Go, Inc. (HKE973VLUW)\nAuthority=Developer ID Certification Authority\n"
+        any_mac = plistlib.dumps({"Name": "match Direct com.duckduckgo.macos.browser.debug macos", "ProvisionsAllDevices": True}).decode()
+        self.assertIsNone(selftest.judge_signing(developer_id, any_mac))
+        development = "Authority=Apple Development: Someone (ABC123)\n"
+        self.assertEqual(selftest.judge_signing(development, any_mac),
+                         "signed by Apple Development: Someone (ABC123), not Developer ID Application")
+        self.assertEqual(selftest.judge_signing("Signature=adhoc\n", any_mac), "signed by (no authority), not Developer ID Application")
+        team = plistlib.dumps({"Name": "Mac Team Provisioning Profile: x", "ProvisionedDevices": ["AAA111", "fa22a9"]}).decode()
+        self.assertEqual(selftest.judge_signing(developer_id, team),
+                         "the profile 'Mac Team Provisioning Profile: x' lists 2 devices: the app runs only on those")
 
     def test_grants(self):
         both = "accessibility=true screen-recording=true\n"

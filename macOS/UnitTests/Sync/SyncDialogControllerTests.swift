@@ -2422,7 +2422,7 @@ final class SyncDialogControllerTests: XCTestCase {
     }
 
     func testControllerDidError_updateRequired_setsTitleOnlyErrorMessage() async {
-        await syncDialogController.controllerDidError(.updateRequired, underlyingError: nil, setupRole: .sharer)
+        await syncDialogController.controllerDidError(.updateRequired(detectedDuring: .codeRead), underlyingError: nil, setupRole: .sharer)
 
         XCTAssertEqual(managementDialogModel.syncErrorMessage?.type, .updateRequired)
         XCTAssertNil(managementDialogModel.syncErrorMessage?.errorDescription)

@@ -227,4 +227,27 @@ struct AIChatOverLimitNewChatDefaultSnapshotTests {
         let value = snapshot(notice: true, newChatDefault: "null")
         #expect(value.overLimitNewChatDefault.newChatDefault(at: now) == .unavailable)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A reached notice is over the limit, with or without a named model", .timeLimit(.minutes(1)),
+          arguments: ["null", #"{"modelId": "gpt-6-luna"}"#])
+    func reachedNoticeIsOverLimit(newChatDefault: String) {
+        #expect(snapshot(notice: true, newChatDefault: newChatDefault).overLimitNewChatDefault.isOverLimit(at: now))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An approaching notice is not over the limit", .timeLimit(.minutes(1)))
+    func approachingNoticeIsNotOverLimit() {
+        let entry = #"{"notice": {"id": "approaching", "window": "weekly", "percentUsed": 80, "resetsAt": "2030-01-01T00:00:00Z"}}"#
+        let value = DuckAiUsageSnapshot.make(entryValue: entry, now: now)
+
+        #expect(value.hasNotice)
+        #expect(!value.overLimitNewChatDefault.isOverLimit(at: now))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Without a notice, nothing is over the limit", .timeLimit(.minutes(1)))
+    func noNoticeIsNotOverLimit() {
+        #expect(!snapshot(notice: false, newChatDefault: "null").overLimitNewChatDefault.isOverLimit(at: now))
+    }
 }

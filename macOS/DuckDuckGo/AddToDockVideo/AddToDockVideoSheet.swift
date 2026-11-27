@@ -25,12 +25,14 @@ import FoundationExtensions
 import os.log
 import PrivacyConfig
 import SwiftUI
+import DesignResourcesKitIcons
+import SwiftUIExtensions
 
 struct AddToDockVideoSheet: View {
 
     private enum Layout {
-        static let minWidth: CGFloat = 416
-        static let maxWidth: CGFloat = 544
+        static let minWidth: CGFloat = 384
+        static let maxWidth: CGFloat = 424
     }
 
     let videoURL: URL
@@ -40,6 +42,7 @@ struct AddToDockVideoSheet: View {
     let showsInstructions: Bool
     let onAction: (AddToDockVideoAction) -> Void
     private let featureFlagger: FeatureFlagger
+    @ObservedObject private var themeManager: ThemeManager
 
     @Binding var isPresented: Bool
     @StateObject private var coordinator = VideoPlayerCoordinator()
@@ -50,13 +53,15 @@ struct AddToDockVideoSheet: View {
          showsInstructions: Bool = false,
          isPresented: Binding<Bool>,
          onAction: @escaping (AddToDockVideoAction) -> Void = { _ in },
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
         self.videoURL = videoURL
         self.videoSize = videoSize
         self.primaryAction = primaryAction
         self.showsInstructions = showsInstructions
         self.onAction = onAction
         self.featureFlagger = featureFlagger
+        self.themeManager = themeManager
         self._isPresented = isPresented
     }
 
@@ -68,9 +73,13 @@ struct AddToDockVideoSheet: View {
                 .frame(minWidth: Layout.minWidth, maxWidth: Layout.maxWidth)
 
             if showsInstructions {
-                Text(.init(UserText.addToDockInstructionsCaption))
-                    .frame(minWidth: Layout.minWidth, maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .top, spacing: 8) {
+                    Image(nsImage: DesignSystemImages.Color.Size16.addToDock)
+                        .accessibilityHidden(true)
+                    Text(.init(UserText.addToDockInstructionsCaption))
+                }
+                .frame(minWidth: Layout.minWidth, maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
             }
 
             HStack {
@@ -79,15 +88,18 @@ struct AddToDockVideoSheet: View {
                     Button(UserText.cancel) {
                         select(.cancel)
                     }
+                    .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
                     .keyboardShortcut(.cancelAction)
                 }
                 Button(primaryButtonTitle) {
                     select(primaryAction.action)
                 }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
                 .keyboardShortcut(.defaultAction)
             }
         }
         .padding()
+        .background(Color(designSystemColor: .surfaceTertiary, palette: themeManager.designColorPalette))
         .frame(maxWidth: Layout.maxWidth)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear {

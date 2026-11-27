@@ -94,6 +94,23 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
             state = .notInstalled
         }
         stateSubject = CurrentValueSubject(state)
+        removeRetiredModelFiles()
+    }
+
+    /// Models the app used to offer by default. Their files stayed on disk after the switch until the
+    /// user tapped Install or Uninstall.
+    static let retiredSHA256s: Set<String> = [
+        "227e78e2fb9a3e5699190be0ce0885fd2ea72a242ed1bf718c2148c45dd090b5" // Granite 4.0 1B, Q4_0
+    ]
+
+    /// Only files of retired models. Any other model may be one that remote config names again after a
+    /// rollback, so it goes only when the user installs or uninstalls.
+    private func removeRetiredModelFiles() {
+        for sha256 in Self.retiredSHA256s where sha256 != spec.sha256 {
+            for name in ["\(sha256).gguf", "\(sha256).gguf.part"] {
+                try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))
+            }
+        }
     }
 
     public var statePublisher: AnyPublisher<AIChatLocalModelInstallState, Never> {
@@ -107,6 +124,8 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
     }
 
     private var partURL: URL { directory.appendingPathComponent(spec.fileName + ".part") }
+
+    public var isActive: Bool { download != nil || isVerifying }
     private var isWaitingToRetry: Bool { retry != nil }
     private var isRequested: Bool { defaults.string(forKey: Self.installRequestKey) == spec.sha256 }
 
@@ -315,9 +334,13 @@ public final class AIChatLocalModelDownloader: AIChatLocalModelInstalling {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
         defer { try? handle.close() }
         var hasher = SHA256()
-        while let chunk = try? handle.read(upToCount: 1_048_576), !chunk.isEmpty {
+        // Each chunk is autoreleased. Without a pool per read, the whole file stays in memory until the end:
+        // 2.7 GB for Gemma 4 E2B, which would get the app ended on iOS.
+        while autoreleasepool(invoking: { () -> Bool in
+            guard let chunk = try? handle.read(upToCount: 1_048_576), !chunk.isEmpty else { return false }
             hasher.update(data: chunk)
-        }
+            return true
+        }) {}
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 

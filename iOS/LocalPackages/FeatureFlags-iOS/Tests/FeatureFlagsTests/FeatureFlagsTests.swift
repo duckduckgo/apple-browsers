@@ -41,6 +41,22 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertTrue(flag.supportsLocalOverriding)
     }
 
+    func testIdleReturnLaunchWaitProtectionIsARemoteKillSwitchEnabledByDefault() {
+        let flag = FeatureFlag.idleReturnLaunchWaitProtection
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .idleReturnLaunchWaitProtection)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "idleReturnLaunchWaitProtection")
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testContextualOnboardingTimeLimitUsesIOSBrowserConfigAndInternalOnlyDefault() {
         let flag = FeatureFlag.contextualOnboardingTimeLimit
         guard case let .remoteReleasable(subfeature) = flag.source else {
@@ -206,22 +222,10 @@ final class FeatureFlagsTests: XCTestCase {
     }
 
     func testWhenReadingIOSBrowserConfigSubfeatureThenParentAndRawValueAreStable() {
-        let subfeature = iOSBrowserConfigSubfeature.searchTokenExperimentV4
+        let subfeature = iOSBrowserConfigSubfeature.tabEvictionOnMemoryWarning
 
         XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
-        XCTAssertEqual(subfeature.rawValue, "searchTokenExperimentV4")
-    }
-
-    func testWhenReadingSearchTokenFeatureFlagThenSourceAndCohortUseSearchTokenConfiguration() {
-        guard case let .remoteReleasable(subfeature) = FeatureFlag.searchTokenExperimentV4.source else {
-            XCTFail("Expected remote-releasable source")
-            return
-        }
-
-        XCTAssertEqual((subfeature as? iOSBrowserConfigSubfeature)?.rawValue,
-                       iOSBrowserConfigSubfeature.searchTokenExperimentV4.rawValue)
-        XCTAssertEqual(FeatureFlag.searchTokenExperimentV4.cohortType.map(ObjectIdentifier.init),
-                       ObjectIdentifier(FeatureFlag.SearchTokenExperimentCohort.self))
+        XCTAssertEqual(subfeature.rawValue, "tabEvictionOnMemoryWarning")
     }
 
     func testTabEvictionFlagsAreDefaultEnabledRemoteReleasableAndLocallyOverridable() {

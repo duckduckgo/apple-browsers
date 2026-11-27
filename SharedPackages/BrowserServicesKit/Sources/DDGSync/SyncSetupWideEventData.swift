@@ -67,6 +67,7 @@ public final class SyncSetupWideEventData: WideEventData {
     public private(set) var totalDuration: WideEvent.MeasuredInterval
     public private(set) var lastStepDuration: WideEvent.MeasuredInterval
     public private(set) var preparingSyncDuration: WideEvent.MeasuredInterval?
+    public private(set) var closedAtColdLaunch = false
 
     public init(existingAccount: Bool,
                 flowVersion: FlowVersion,
@@ -117,6 +118,7 @@ public final class SyncSetupWideEventData: WideEventData {
         switch trigger {
         case .appLaunch:
             guard launchID != Self.currentLaunchID else { return .keepPending }
+            closedAtColdLaunch = true
             return .complete(.unknown(reason: StatusReason.appRestart))
         }
     }
@@ -143,6 +145,12 @@ extension SyncSetupWideEventData {
     public enum StatusReason {
         public static let appRestart = "app_restart"
         public static let duplicated = "duplicated"
+        public static let userClosed = "user_closed"
+        public static let userClosedSyncThisDeviceFallback = "user_closed_sync_this_device_fallback"
+        public static let deviceAuthCancelled = "device_auth_cancelled"
+        public static let deviceAuthUnavailable = "device_auth_unavailable"
+        public static let syncConfirmationDenied = "sync_confirmation_denied"
+        public static let accountSwitchDeclined = "account_switch_declined"
         public static let codeRejected = "code_rejected"
         public static let alreadyUpgraded = "already_upgraded"
         public static let alreadyPaired = "already_paired"
@@ -163,6 +171,12 @@ extension SyncSetupWideEventData {
 
         public static let alreadyPaired = Outcome(status: .cancelled, statusReason: StatusReason.alreadyPaired)
         public static let accountSwitchBlocked = Outcome(status: .cancelled, statusReason: StatusReason.accountSwitchBlocked)
+        public static let userClosed = Outcome(status: .cancelled, statusReason: StatusReason.userClosed)
+        public static let userClosedSyncThisDeviceFallback = Outcome(status: .cancelled, statusReason: StatusReason.userClosedSyncThisDeviceFallback)
+        public static let deviceAuthCancelled = Outcome(status: .cancelled, statusReason: StatusReason.deviceAuthCancelled)
+        public static let deviceAuthUnavailable = Outcome(status: .cancelled, statusReason: StatusReason.deviceAuthUnavailable)
+        public static let syncConfirmationDenied = Outcome(status: .cancelled, statusReason: StatusReason.syncConfirmationDenied)
+        public static let accountSwitchDeclined = Outcome(status: .cancelled, statusReason: StatusReason.accountSwitchDeclined)
     }
 
     public enum SetupMode: String, Codable, CaseIterable {
@@ -257,6 +271,17 @@ extension SyncSetupWideEventData {
         static let totalLatency = "feature.data.ext.total_latency_ms_bucketed"
         static let lastStepLatency = "feature.data.ext.last_step_latency_ms_bucketed"
         static let preparingSyncLatency = "feature.data.ext.preparing_sync_latency_ms_bucketed"
+        static let petal = "petal"
+    }
+
+    private static let petalRandomize = "randomize"
+
+    public func pixelParameters() -> [String: String] {
+        var parameters = Self.pixelParameters(from: jsonParameters())
+        if closedAtColdLaunch {
+            parameters[Key.petal] = Self.petalRandomize
+        }
+        return parameters
     }
 
     public func jsonParameters() -> [String: Encodable] {

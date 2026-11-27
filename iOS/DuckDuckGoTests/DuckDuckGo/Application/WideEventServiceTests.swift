@@ -32,12 +32,16 @@ final class WideEventServiceTests: XCTestCase {
     private var wideEventMock: WideEventMock!
     private var subscriptionManager: SubscriptionManagerMock!
     private var service: WideEventService!
+    private var isSyncSetupWideEventEnabled = true
 
     override func setUp() {
         super.setUp()
         wideEventMock = WideEventMock()
         subscriptionManager = SubscriptionManagerMock()
-        service = WideEventService(wideEvent: wideEventMock, subscriptionManager: subscriptionManager)
+        isSyncSetupWideEventEnabled = true
+        service = WideEventService(wideEvent: wideEventMock,
+                                   subscriptionManager: subscriptionManager,
+                                   isSyncSetupWideEventEnabled: { [unowned self] in isSyncSetupWideEventEnabled })
     }
 
     override func tearDown() {
@@ -241,6 +245,17 @@ final class WideEventServiceTests: XCTestCase {
             return XCTFail("Expected the open sync setup attempt to complete as UNKNOWN")
         }
         XCTAssertEqual(reason, "app_restart")
+    }
+
+    func testColdLaunch_withSyncSetupFlagOff_discardsSyncSetupAttemptWithoutSending() async {
+        isSyncSetupWideEventEnabled = false
+        let data = makeSyncSetupData()
+        wideEventMock.started = [data]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertFalse(wideEventMock.completions.contains { $0.0 is SyncSetupWideEventData })
+        XCTAssertTrue(wideEventMock.discarded.contains { $0.globalData.id == data.globalData.id })
     }
 
     private func makeSyncSetupData() -> SyncSetupWideEventData {

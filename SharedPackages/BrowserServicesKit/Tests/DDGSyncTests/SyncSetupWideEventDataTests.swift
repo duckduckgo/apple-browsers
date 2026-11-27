@@ -232,6 +232,39 @@ struct SyncSetupWideEventDataTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("An attempt closed at cold launch randomizes the classic pixel timestamp, not the POST payload", .timeLimit(.minutes(1)))
+    func appLaunchCompletionRandomizesPixelTimestamp() async {
+        let data = SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,
+                                          launchID: "previous-launch", contextData: WideEventContextData())
+        _ = await data.completionDecision(for: .appLaunch)
+
+        #expect(params(data)["petal"] == "randomize")
+        #expect(data.jsonParameters()["petal"] == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An attempt that ends in the app doesn't randomize the pixel timestamp", .timeLimit(.minutes(1)))
+    func attemptEndedInAppKeepsPixelTimestamp() async {
+        let data = makeData()
+        _ = await data.completionDecision(for: .appLaunch)
+        data.end(at: at(1000))
+
+        #expect(params(data)["petal"] == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The cold launch mark survives storage", .timeLimit(.minutes(1)))
+    func coldLaunchMarkSurvivesStorage() async throws {
+        let data = SyncSetupWideEventData(existingAccount: false, flowVersion: .v21, uiVersion: .v2,
+                                          launchID: "previous-launch", contextData: WideEventContextData())
+        _ = await data.completionDecision(for: .appLaunch)
+
+        let stored = try JSONDecoder().decode(SyncSetupWideEventData.self, from: JSONEncoder().encode(data))
+
+        #expect(params(stored)["petal"] == "randomize")
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("An attempt started in this launch stays open at app launch cleanup", .timeLimit(.minutes(1)))
     func currentLaunchAttemptStaysPending() async {
         let decision = await makeData().completionDecision(for: .appLaunch)

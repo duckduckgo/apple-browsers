@@ -29,12 +29,14 @@ actor WideEventService {
     private let wideEvent: WideEventManaging
     private let subscriptionManager: SubscriptionManager
     private let subscriptionCancellationObserver: SubscriptionCancellationWideEventObserving
+    private let isSyncSetupWideEventEnabled: () -> Bool
 
     private var isProcessing = false
 
-    init(wideEvent: WideEventManaging, subscriptionManager: SubscriptionManager) {
+    init(wideEvent: WideEventManaging, subscriptionManager: SubscriptionManager, isSyncSetupWideEventEnabled: @escaping () -> Bool) {
         self.wideEvent = wideEvent
         self.subscriptionManager = subscriptionManager
+        self.isSyncSetupWideEventEnabled = isSyncSetupWideEventEnabled
         self.subscriptionCancellationObserver = Self.makeSubscriptionCancellationObserver(wideEvent: wideEvent,
                                                                                          subscriptionManager: subscriptionManager)
     }
@@ -64,16 +66,19 @@ actor WideEventService {
         if includingLaunchOnlyEvents {
             // Launch-only: only a cold launch proves a still-pending refresh is genuinely stalled.
             await processCompletion(AuthV2TokenRefreshWideEventData.self, trigger: trigger)
-            await processCompletion(SyncSetupWideEventData.self, trigger: trigger)
+            await processCompletion(SyncSetupWideEventData.self, trigger: trigger, isEnabled: isSyncSetupWideEventEnabled())
         }
 
         isProcessing = false
     }
 
-    private func processCompletion<T: WideEventData>(_ type: T.Type, trigger: WideEventCompletionTrigger) async {
+    private func processCompletion<T: WideEventData>(_ type: T.Type, trigger: WideEventCompletionTrigger, isEnabled: Bool = true) async {
         for data in wideEvent.getAllFlowData(T.self) {
-            if case .complete(let status) = await data.completionDecision(for: trigger) {
+            guard case .complete(let status) = await data.completionDecision(for: trigger) else { continue }
+            if isEnabled {
                 _ = try? await wideEvent.completeFlow(data, status: status)
+            } else {
+                wideEvent.discardFlow(data)
             }
         }
     }

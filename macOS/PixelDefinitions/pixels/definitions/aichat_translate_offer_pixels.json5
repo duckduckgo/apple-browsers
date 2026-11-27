@@ -1,0 +1,69 @@
+{
+    "m_mac_aichat_translate_offer_shown": {
+        "description": "The offer to translate and summarize a page in another language showed under the Duck.ai button. Fired once per offer, not when the user returns to its tab.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["impression"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "channel"]
+    },
+    "m_mac_aichat_translate_offer_answered": {
+        "description": "The translate offer closed. Translate also starts the translation, which sends m_mac_aichat_translate_text.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "answer",
+                "description": "How the offer closed: translate (the button or Command-Return), no_thanks (the button), escape (the Esc key) or close (the close on the Duck.ai button, shown on hover).",
+                "type": "string",
+                "enum": ["translate", "no_thanks", "escape", "close"]
+            },
+            {
+                "key": "dont_ask_again",
+                "description": "Whether the \"Don't ask again\" checkbox for the page's language was ticked, whatever the answer.",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
+    "m_mac_aichat_translate_pages_setting_changed": {
+        "description": "The Translate Pages mode changed in Settings > AI Features > Browser Access. Not fired when a reset leaves the mode as it was, or for changes to the language list.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "value",
+                "description": "The mode after the change.",
+                "type": "string",
+                "enum": ["always_ask", "never_ask"]
+            },
+            {
+                "key": "via",
+                "description": "What changed it: dropdown (the mode menu), reset (the row's reset) or reset_all (Reset All).",
+                "type": "string",
+                "enum": ["dropdown", "reset", "reset_all"]
+            }
+        ]
+    },
+    "m_mac_aichat_translate_offer_suppressed": {
+        "description": "A prompt with priority kept the translate offer from showing on a page, or closed it. Fired once per page.",
+        "owners": ["jotaemepereira"],
+        "triggers": ["impression"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "by",
+                "description": "The prompt that took the Duck.ai button: browser_tool (a browser tool permission prompt) or local_model (the on-device model prompt).",
+                "type": "string",
+                "enum": ["browser_tool", "local_model"]
+            }
+        ]
+    }
+}

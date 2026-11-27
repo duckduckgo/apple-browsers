@@ -96,8 +96,12 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     }
 
     func setTranslateMode(_ mode: TranslatePagesMode) {
+        let previous = translatePages.mode
         translatePages.mode = mode
         reload()
+        if mode != previous {
+            pixelFiring?.fire(TranslateOfferPixel.settingChanged(mode, via: .dropdown), frequency: .dailyAndCount)
+        }
     }
 
     func setTranslate(languageCode: String, excluded: Bool) {
@@ -110,8 +114,16 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     }
 
     func resetTranslate() {
+        resetTranslatePages(via: .reset)
+    }
+
+    private func resetTranslatePages(via source: TranslateOfferPixel.SettingChangeSource) {
+        let previous = translatePages.mode
         translatePages.reset()
         reload()
+        if previous != .alwaysAsk {
+            pixelFiring?.fire(TranslateOfferPixel.settingChanged(.alwaysAsk, via: source), frequency: .dailyAndCount)
+        }
     }
 
     func state(of row: Row) -> BrowserToolPermissionState {
@@ -139,9 +151,10 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
         // Read live, not the cached row state, which lags a flag update by a main-queue hop.
         // A hidden row keeps its opt-outs, so a flag rollback and re-enable does not lose them.
         if featureFlagger.isFeatureOn(.aiChatOfferTranslationAndSummarize) {
-            translatePages.reset()
+            resetTranslatePages(via: .resetAll)
+        } else {
+            reload()
         }
-        reload()
         if hadStoredPermissions {
             pixelFiring?.fire(BrowserToolsPixel.permissionsReset)
         }

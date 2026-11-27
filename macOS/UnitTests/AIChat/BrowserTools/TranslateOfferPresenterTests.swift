@@ -23,6 +23,7 @@ import Foundation
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+@_spi(Testing) import PixelKit
 import SharedTestUtilities
 import Testing
 import WebKit
@@ -34,11 +35,12 @@ struct TranslateOfferPresenterTests {
 
     private let collection: TabCollectionViewModel
     private let presenter: BrowserToolPermissionPromptPresenter
+    private let pixels = PixelKitMock()
     private let setting = TranslatePagesSetting(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter())
 
     init() {
         collection = Self.collection(urls: ["https://a.example", "https://b.example"])
-        presenter = Self.presenter(collections: [collection], setting: setting)
+        presenter = Self.presenter(collections: [collection], setting: setting, pixels: pixels)
     }
 
     private static func collection(urls: [String], burnerMode: BurnerMode = .regular) -> TabCollectionViewModel {
@@ -46,11 +48,12 @@ struct TranslateOfferPresenterTests {
         return TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs), pinnedTabsManagerProvider: nil, burnerMode: burnerMode)
     }
 
-    private static func presenter(collections: [TabCollectionViewModel], setting: TranslatePagesSetting? = nil) -> BrowserToolPermissionPromptPresenter {
+    private static func presenter(collections: [TabCollectionViewModel], setting: TranslatePagesSetting? = nil,
+                                  pixels: PixelKitMock? = nil) -> BrowserToolPermissionPromptPresenter {
         let manager = WindowControllersManagerMock()
         manager.customAllTabCollectionViewModels = collections
         let setting = setting ?? TranslatePagesSetting(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter())
-        return BrowserToolPermissionPromptPresenter(windowControllersManager: manager, translatePages: setting) { _, _, _ in }
+        return BrowserToolPermissionPromptPresenter(windowControllersManager: manager, translatePages: setting, pixelFiring: pixels) { _, _, _ in }
     }
 
     private func tabID(_ index: Int) -> TabIdentifier { collection.tabCollection.tabs[index].uuid }
@@ -72,7 +75,7 @@ struct TranslateOfferPresenterTests {
     @Test("Dismissing keeps that tab from offering again, while other tabs still offer", .timeLimit(.minutes(1)))
     func dismissal() {
         presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
-        presenter.answerTranslateOffer(for: tabID(0), translate: false)
+        presenter.answerTranslateOffer(for: tabID(0), .noThanks)
         #expect(presenter.translateOfferLanguageCode(for: tabID(0)) == nil)
 
         presenter.offerTranslation(languageCode: "fr", tabID: tabID(0))
@@ -85,7 +88,7 @@ struct TranslateOfferPresenterTests {
     @Test("Translating closes the offer without keeping the tab from offering again", .timeLimit(.minutes(1)))
     func translate() {
         presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
-        presenter.answerTranslateOffer(for: tabID(0), translate: true)
+        presenter.answerTranslateOffer(for: tabID(0), .translate)
         #expect(presenter.translateOfferLanguageCode(for: tabID(0)) == nil)
 
         presenter.offerTranslation(languageCode: "fr", tabID: tabID(0))
@@ -125,7 +128,7 @@ struct TranslateOfferPresenterTests {
         collection.select(at: .unpinned(1))
         collection.select(at: .unpinned(0))
 
-        presenter.answerTranslateOffer(for: tabID(0), translate: false)
+        presenter.answerTranslateOffer(for: tabID(0), .noThanks)
         #expect(setting.excludedLanguageCodes == ["es"])
     }
 
@@ -135,7 +138,7 @@ struct TranslateOfferPresenterTests {
     func dontAskAgain(translate: Bool) {
         presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
         presenter.translateOfferChoice(for: tabID(0))?.dontAskAgain = true
-        presenter.answerTranslateOffer(for: tabID(0), translate: translate)
+        presenter.answerTranslateOffer(for: tabID(0), translate ? .translate : .noThanks)
         #expect(setting.excludedLanguageCodes == ["es"])
 
         presenter.offerTranslation(languageCode: "es", tabID: tabID(1))
@@ -145,10 +148,30 @@ struct TranslateOfferPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Each answer fires one pixel with the box's state, daily and count", .timeLimit(.minutes(1)),
+          arguments: [TranslateOfferAnswer.translate, .noThanks, .escape, .close], [true, false])
+    func answeredPixel(answer: TranslateOfferAnswer, dontAskAgain: Bool) {
+        presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
+        presenter.translateOfferChoice(for: tabID(0))?.dontAskAgain = dontAskAgain
+        presenter.answerTranslateOffer(for: tabID(0), answer)
+
+        #expect(pixels.actualFireCalls == [ExpectedFireCall(pixel: TranslateOfferPixel.answered(answer, dontAskAgain: dontAskAgain),
+                                                            frequency: .dailyAndCount)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An answer for a tab with no offer fires nothing", .timeLimit(.minutes(1)))
+    func answerWithoutOffer() {
+        presenter.answerTranslateOffer(for: tabID(0), .translate)
+
+        #expect(pixels.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("An unticked box excludes nothing", .timeLimit(.minutes(1)))
     func unticked() {
         presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
-        presenter.answerTranslateOffer(for: tabID(0), translate: false)
+        presenter.answerTranslateOffer(for: tabID(0), .noThanks)
 
         #expect(setting.excludedLanguageCodes.isEmpty)
     }
@@ -213,10 +236,9 @@ struct TranslateOfferPriorityTests {
                                                 fireViewModel: Application.appDelegate.fireCoordinator.fireViewModel,
                                                 themeManager: MockThemeManager())
         windows.mainWindowControllers = [windowController]
-        let suppressions = suppressions
         presenter = BrowserToolPermissionPromptPresenter(windowControllersManager: windows,
                                                          translatePages: TranslatePagesSetting(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter()),
-                                                         translateOfferSuppressed: { suppressions.values.append($0) }) { _, _, _ in }
+                                                         pixelFiring: suppressions.pixels) { _, _, _ in }
     }
 
     private func tab(_ index: Int) -> Tab { tabs[index] }
@@ -328,9 +350,17 @@ struct TranslateOfferPriorityTests {
     }
 }
 
+/// The suppressed pixels fired so far, each daily and count.
 @MainActor
 private final class Suppressions {
-    var values: [TranslateOfferSuppressor] = []
+    let pixels = PixelKitMock()
+
+    var values: [TranslateOfferSuppressor] {
+        pixels.actualFireCalls.compactMap { call in
+            guard call.frequency == .dailyAndCount, case .suppressed(let suppressor)? = call.pixel as? TranslateOfferPixel else { return nil }
+            return suppressor
+        }
+    }
 }
 
 @MainActor

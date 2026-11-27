@@ -233,11 +233,40 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
 
     func testWhenOnlyTranslatePagesIsCustomizedThenResetAllFiresNoToolResetPixel() {
         model.setTranslateMode(.neverAsk)
+        let fired = pixels.actualFireCalls.count
 
         model.resetAll()
 
-        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
+        XCTAssertEqual(pixels.actualFireCalls.dropFirst(fired).map(\.pixel.name), ["aichat_translate_pages_setting_changed"])
         XCTAssertEqual(model.translateMode, .alwaysAsk)
+    }
+
+    func testTranslateModeChangesFireOneDailyAndCountPixelEach() {
+        model.setTranslateMode(.neverAsk)
+        model.setTranslateMode(.neverAsk)
+        model.resetTranslate()
+        model.resetTranslate()
+        model.setTranslateMode(.neverAsk)
+        model.resetAll()
+
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.name), Array(repeating: "aichat_translate_pages_setting_changed", count: 4))
+        XCTAssertEqual(pixels.actualFireCalls.map(\.frequency), Array(repeating: .dailyAndCount, count: 4))
+        XCTAssertEqual(pixels.actualFireCalls.map(\.pixel.parameters), [
+            ["value": "never_ask", "via": "dropdown"],
+            ["value": "always_ask", "via": "reset"],
+            ["value": "never_ask", "via": "dropdown"],
+            ["value": "always_ask", "via": "reset_all"]
+        ])
+    }
+
+    func testResetAllWithTheFlagOffFiresNoTranslatePixel() {
+        model.setTranslateMode(.neverAsk)
+        let fired = pixels.actualFireCalls.count
+        featureFlagger.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = false
+
+        model.resetAll()
+
+        XCTAssertEqual(pixels.actualFireCalls.count, fired)
     }
 
     func testIncludingAnExcludedLanguageBringsItBack() {

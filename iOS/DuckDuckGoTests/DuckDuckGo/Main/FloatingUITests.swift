@@ -3548,3 +3548,117 @@ final class SwipeTabsNewTabDestinationTests: XCTestCase {
         return (sut, collection)
     }
 }
+
+@MainActor
+final class SwipeTabsCoordinatorRefreshTests: XCTestCase {
+
+    // The coordinator holds these weakly.
+    private var mainViewCoordinator: MainViewCoordinator!
+    private var tabsModel: TabsModel!
+    private var refreshedTabsModel: TabsModel!
+    private var latestTabsModel: TabsModel!
+    private var onSelectTab: (() -> Void)?
+
+    override func setUp() {
+        super.setUp()
+        tabsModel = makeTabsModel()
+        refreshedTabsModel = makeTabsModel()
+        latestTabsModel = makeTabsModel()
+    }
+
+    override func tearDown() {
+        mainViewCoordinator = nil
+        tabsModel = nil
+        refreshedTabsModel = nil
+        latestTabsModel = nil
+        onSelectTab = nil
+        super.tearDown()
+    }
+
+    func testWhenRefreshedOutsideAScrollCallbackThenItReloadsImmediately() {
+        let (sut, _) = makeSUT()
+
+        sut.refresh(tabsModel: refreshedTabsModel, scrollToSelected: true)
+
+        XCTAssertTrue(sut.tabsModel === refreshedTabsModel)
+    }
+
+    func testWhenSwipeLandingRefreshesThenTheReloadWaitsForTheScrollCallbackToEnd() async {
+        let (sut, collection) = makeSUT()
+        var tabsModelSeenDuringCallback: TabsModelManaging?
+        onSelectTab = { [unowned self] in
+            sut.refresh(tabsModel: self.refreshedTabsModel, scrollToSelected: true)
+            sut.refresh(tabsModel: self.latestTabsModel)
+            tabsModelSeenDuringCallback = sut.tabsModel
+        }
+        sut.state = .swiping(.zero, .minus)
+
+        sut.scrollViewDidEndDecelerating(collection)
+
+        XCTAssertTrue(tabsModelSeenDuringCallback === tabsModel)
+        XCTAssertTrue(sut.tabsModel === tabsModel)
+        await drainMainQueue()
+        XCTAssertTrue(sut.tabsModel === latestTabsModel)
+    }
+
+    func testWhenSwipeLandingRefreshesThenLaterRefreshesAreImmediateAgain() async {
+        let (sut, collection) = makeSUT()
+        onSelectTab = { [unowned self] in
+            sut.refresh(tabsModel: self.latestTabsModel)
+        }
+        sut.state = .swiping(.zero, .minus)
+        sut.scrollViewDidEndDecelerating(collection)
+        await drainMainQueue()
+
+        sut.refresh(tabsModel: refreshedTabsModel)
+
+        XCTAssertTrue(sut.tabsModel === refreshedTabsModel)
+    }
+
+    private func drainMainQueue() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
+
+    private func makeTabsModel() -> TabsModel {
+        TabsModel(tabs: [Tab(link: Link(title: "Example", url: URL(string: "https://example.com")!))], desktop: false)
+    }
+
+    private func makeSUT() -> (SwipeTabsCoordinator, UICollectionView) {
+        let coordinator = MainViewCoordinator(parentController: UIViewController())
+        mainViewCoordinator = coordinator
+        let collection = MainViewFactory.NavigationBarCollectionView(
+            frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
+            collectionViewLayout: UICollectionViewFlowLayout()
+        )
+        coordinator.navigationBarCollectionView = collection
+        coordinator.omniBar = MockOmniBar()
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        let sut = SwipeTabsCoordinator(
+            coordinator: coordinator,
+            tabPreviewsSource: MockTabPreviewsSource(),
+            appSettings: AppSettingsMock(),
+            omnibarDependencies: MockOmnibarDependency(),
+            floatingUIManager: FloatingUIManager(
+                isFloatingUIFeatureEnabled: true,
+                isPadProvider: { false },
+                isSupportedOSProvider: { true },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            ),
+            liveTabControllerProvider: { _ in nil },
+            inputStateProvider: { _ in TabInputState() },
+            placeholderStateProvider: { _ in .newChat },
+            isPaidAIChatEnabledProvider: { false },
+            allowsSubscriptionUpsellProvider: { false },
+            pixelFiring: nil,
+            selectTab: { [weak self] _ in self?.onSelectTab?() },
+            newTab: { [weak self] in self?.onSelectTab?() },
+            onSwipeStarted: {}
+        )
+        sut.tabsModel = tabsModel
+        sut.isEnabled = true
+        collection.layoutIfNeeded()
+        return (sut, collection)
+    }
+}

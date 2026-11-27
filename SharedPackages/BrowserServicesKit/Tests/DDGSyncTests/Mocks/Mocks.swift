@@ -93,21 +93,6 @@ class AccountManagingMock: AccountManaging {
         return loginStub ?? .mock
     }
 
-    var refreshTokenStub: LoginResult?
-    var refreshTokenError: Error?
-    var refreshTokenHandler: ((SyncAccount, String) async throws -> LoginResult)?
-    var refreshTokenCalled: Bool = false
-    func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult {
-        refreshTokenCalled = true
-        if let refreshTokenHandler {
-            return try await refreshTokenHandler(account, deviceName)
-        }
-        if let refreshTokenError {
-            throw refreshTokenError
-        }
-        return refreshTokenStub ?? .mock
-    }
-
     var logoutCalls: [(deviceId: String, token: String)] = []
     var logoutError: Error?
     func logout(deviceId: String, token: String) async throws {
@@ -340,7 +325,6 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var canUseExchangeV2Point1: () -> Bool = { false }
     var canSendExchangeChannelSecret: () -> Bool = { true }
     var canWriteUnifiedDeviceList: () -> Bool = { false }
-    var canUsePatchEndpointForLegacyDeviceRename: () -> Bool = { true }
     var canReadUnifiedDeviceList: () -> Bool = { false }
     var isLoginAuditLogEnabled: () -> Bool = { false }
     lazy var syncFeatureFlags: any SyncFeatureFlagProviding = SyncFeatureFlagProvider(
@@ -350,7 +334,6 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
         canUseExchangeV2Point1: { [weak self] in self?.canUseExchangeV2Point1() == true },
         canSendExchangeChannelSecret: { [weak self] in self?.canSendExchangeChannelSecret() == true },
         canWriteUnifiedDeviceList: { [weak self] in self?.canWriteUnifiedDeviceList() == true },
-        canUsePatchEndpointForLegacyDeviceRename: { [weak self] in self?.canUsePatchEndpointForLegacyDeviceRename() == true },
         canReadUnifiedDeviceList: { [weak self] in self?.canReadUnifiedDeviceList() == true },
         isLoginAuditLogEnabled: { [weak self] in self?.isLoginAuditLogEnabled() == true }
     )

@@ -758,7 +758,7 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertTrue(deviceInfoCodec.encryptUsingProtectedKeyCalls.isEmpty)
     }
 
-    func testWhenRefreshingTokenWithoutAccessCredentialsThenResultAccessCredentialsIsNil() async throws {
+    func testWhenLoginWithoutAccessCredentialsThenResultAccessCredentialsIsNil() async throws {
         let api = RemoteAPIRequestCreatingMock()
         let endpoints = Endpoints(baseURL: Self.baseURL)
         let accountManager = AccountManager(endpoints: endpoints,
@@ -773,7 +773,7 @@ final class AccountManagerTests: XCTestCase {
         }
         """)
 
-        let result = try await accountManager.refreshToken(makeAccount(primaryKey: Data()), deviceName: "Updated iPhone")
+        let result = try await accountManager.login(.init(userId: "user-1", primaryKey: Data()), deviceName: "iPhone", deviceType: "iOS")
 
         XCTAssertNil(result.accessCredentials)
     }

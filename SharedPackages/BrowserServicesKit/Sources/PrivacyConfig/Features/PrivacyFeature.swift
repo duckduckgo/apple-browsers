@@ -803,7 +803,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canUseExchangeV2Point1
     case canSendExchangeChannelSecret
     case canWriteUnifiedDeviceList
-    case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
     case loginAuditLog
     case loginNotification

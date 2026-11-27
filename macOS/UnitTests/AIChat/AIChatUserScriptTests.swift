@@ -553,6 +553,14 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertNil(result, "Expected result to be nil")
     }
 
+    @MainActor func testAskAboutPage() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.askAboutPage.rawValue))
+        let result = try await handler(["url": "https://example.com/"], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didAskAboutPage, "askAboutPage should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
     @MainActor func testStoreMigrationData() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.storeMigrationData.rawValue))
         let result = try await handler([""], WKScriptMessage.mock())
@@ -1067,6 +1075,12 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getAIChats(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    var didAskAboutPage = false
+    func askAboutPage(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        didAskAboutPage = true
         return nil
     }
 

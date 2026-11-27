@@ -128,7 +128,7 @@
         ]
     },
     "aichat_link_ask_about_page_macos": {
-        "description": "Fired when the user picks Ask about page in a link's context menu, to attach the linked page to the Duck.ai sidebar",
+        "description": "Fired when the user picks Ask about page for a link, in its context menu or in a DuckDuckGo search result's menu, to attach the linked page to the Duck.ai sidebar",
         "owners": ["jotaemepereira"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_count"],
@@ -141,6 +141,12 @@
                 "description": "Where the link sits: serp for a link on DuckDuckGo search results, other for a link on any other page.",
                 "type": "string",
                 "enum": ["serp", "other"]
+            },
+            {
+                "key": "source",
+                "description": "Where Ask about page was picked: context_menu for the link's context menu, serp_menu for a DuckDuckGo search result's menu.",
+                "type": "string",
+                "enum": ["context_menu", "serp_menu"]
             }
         ]
     },

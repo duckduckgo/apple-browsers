@@ -2898,3 +2898,184 @@ private final class BonusHandlingSpy: AIChatBonusHandling {
         calls.append("end")
     }
 }
+
+// MARK: - Ask about a search result
+
+@Suite("DuckDuckGo search results ask Duck.ai about a result")
+@MainActor
+struct AIChatUserScriptAskAboutPageTests {
+
+    private let menuConfig = MockAIChatConfig()
+    private let attacher = AskAboutPageAttacherSpy()
+    private let messageHandler = MockAIChatMessageHandler()
+    private let handler: AIChatUserScriptHandler
+    private let senders = SenderLog()
+
+    private static let serp = "https://duckduckgo.com/?q=example"
+
+    init() {
+        menuConfig.shouldDisplayAskAboutSERPLinkMenuItem = true
+        handler = AIChatUserScriptHandler(
+            storage: MockAIChatPreferencesStorage(),
+            messageHandling: messageHandler,
+            windowControllersManager: WindowControllersManagerMock(),
+            pixelFiring: PixelKitMock(),
+            statisticsLoader: MockDuckAIPromptAtbRefresher(),
+            syncServiceProvider: { nil },
+            syncErrorHandler: SyncErrorHandler(alertPresenter: CapturingAlertPresenter()),
+            featureFlagger: MockFeatureFlagger(),
+            freeTrialConversionService: MockFreeTrialConversionInstrumentationService(),
+            notificationCenter: NotificationCenter(),
+            conversationSourceHandler: AIChatConversationSourceHandler(),
+            aiChatMenuConfiguration: menuConfig,
+            linkContextAttacherProvider: { [attacher, senders] webView in
+                senders.webViews.append(webView)
+                return senders.isSenderSelected ? attacher : nil
+            }
+        )
+    }
+
+    /// Bind the web view to a local for the message's lifetime: the mock holds it weakly.
+    private func message(from webView: WKWebView, isMainFrame: Bool = true, body: Any = [:]) -> WKScriptMessage {
+        WKScriptMessage.mock(webView: webView,
+                             frameInfo: WKFrameInfo.mock(isMainFrame: isMainFrame, securityOriginHost: webView.url?.host ?? ""),
+                             body: body)
+    }
+
+    private func webView(_ url: String) -> WKWebView {
+        SubscriptionTestingUtilities.MockWKWebView(url: URL(string: url)!)
+    }
+
+    private func supportsAskAboutPage(_ webView: WKWebView, isMainFrame: Bool = true) async -> Bool? {
+        let config = await handler.getAIChatNativeConfigValues(params: [], message: message(from: webView, isMainFrame: isMainFrame))
+        return (config as? AIChatNativeConfigValues)?.supportsAskAboutPage
+    }
+
+    // MARK: getAIChatNativeConfigValues
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only search results in a tab's main frame are told they can ask", .timeLimit(.minutes(1)),
+          arguments: [
+            (Self.serp, true),
+            ("https://duckduckgo.com/", false),
+            ("https://duckduckgo.com/?q=example&ia=chat", false),
+            ("https://duck.ai/", false),
+            ("https://example.com/?q=example", false),
+          ])
+    func configOnlyOnSearchResults(url: String, expected: Bool) async {
+        let sender = webView(url)
+        #expect(await supportsAskAboutPage(sender) == expected)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A frame inside search results isn't told it can ask", .timeLimit(.minutes(1)))
+    func configNotInSubframe() async {
+        let sender = webView(Self.serp)
+        #expect(await supportsAskAboutPage(sender, isMainFrame: false) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the flag, AI features or page context off, search results aren't told they can ask", .timeLimit(.minutes(1)))
+    func configFollowsTheMenuGate() async {
+        let sender = webView(Self.serp)
+        menuConfig.shouldDisplayAskAboutSERPLinkMenuItem = false
+        #expect(await supportsAskAboutPage(sender) == false)
+
+        menuConfig.shouldDisplayAskAboutSERPLinkMenuItem = true
+        #expect(await supportsAskAboutPage(sender) == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Search results in the sidebar aren't told they can ask", .timeLimit(.minutes(1)))
+    func configNotInSidebar() async {
+        let sender = webView(Self.serp)
+        handler.isSidebarProvider = { true }
+        #expect(await supportsAskAboutPage(sender) == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The capability is sent to Duck.ai under supportsAskAboutPage", .timeLimit(.minutes(1)))
+    func configJSONKey() async throws {
+        let sender = webView(Self.serp)
+        let config = try #require(await handler.getAIChatNativeConfigValues(params: [], message: message(from: sender)) as? AIChatNativeConfigValues)
+        let json = try #require(try JSONSerialization.jsonObject(with: JSONEncoder().encode(config)) as? [String: Any])
+        #expect(json["supportsAskAboutPage"] as? Bool == true)
+    }
+
+    // MARK: askAboutPage
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A result's page is asked about for the search tab, as a search result from the result's menu", .timeLimit(.minutes(1)))
+    func askAboutPageAttachesTheResult() async {
+        let sender = webView(Self.serp)
+        _ = await handler.askAboutPage(params: ["url": "https://example.com/article"], message: message(from: sender))
+
+        #expect(senders.webViews == [sender])
+        #expect(attacher.requests == [.init(url: URL(string: "https://example.com/article")!, linkType: .serp, source: .serpMenu)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Links that can't be read in the background, or no link at all, are ignored", .timeLimit(.minutes(1)),
+          arguments: [["url": "javascript:alert(1)"], ["url": "ftp://example.com/file"], ["url": "https://user:password@example.com/"],
+                      ["url": "file:///etc/hosts"], ["url": ""], ["link": "https://example.com/"], [:]])
+    func unsupportedLinksAreIgnored(params: [String: String]) async {
+        let sender = webView(Self.serp)
+        _ = await handler.askAboutPage(params: params, message: message(from: sender))
+        #expect(attacher.requests.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Pages other than search results can't ask", .timeLimit(.minutes(1)),
+          arguments: ["https://duckduckgo.com/", "https://duckduckgo.com/?q=example&ia=chat", "https://duck.ai/", "https://example.com/?q=example"])
+    func nonSearchSendersAreIgnored(url: String) async {
+        let sender = webView(url)
+        _ = await handler.askAboutPage(params: ["url": "https://example.com/article"], message: message(from: sender))
+        #expect(attacher.requests.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A frame inside search results can't ask", .timeLimit(.minutes(1)))
+    func subframeIsIgnored() async {
+        let sender = webView(Self.serp)
+        _ = await handler.askAboutPage(params: ["url": "https://example.com/article"], message: message(from: sender, isMainFrame: false))
+        #expect(attacher.requests.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the flag, AI features or page context off, search results can't ask", .timeLimit(.minutes(1)))
+    func flagOffIsIgnored() async {
+        let sender = webView(Self.serp)
+        menuConfig.shouldDisplayAskAboutSERPLinkMenuItem = false
+        _ = await handler.askAboutPage(params: ["url": "https://example.com/article"], message: message(from: sender))
+        #expect(attacher.requests.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Search results in a tab that isn't its window's selected one can't ask", .timeLimit(.minutes(1)))
+    func backgroundTabIsIgnored() async {
+        let sender = webView(Self.serp)
+        senders.isSenderSelected = false
+        _ = await handler.askAboutPage(params: ["url": "https://example.com/article"], message: message(from: sender))
+        #expect(attacher.requests.isEmpty)
+    }
+}
+
+@MainActor
+private final class AskAboutPageAttacherSpy: AIChatLinkContextAttaching {
+    struct Request: Equatable {
+        let url: URL
+        let linkType: AIChatLinkAskAboutPageType
+        let source: AIChatLinkAskAboutPageSource
+    }
+    private(set) var requests: [Request] = []
+
+    func askAboutLink(_ url: URL, linkType: AIChatLinkAskAboutPageType, source: AIChatLinkAskAboutPageSource) {
+        requests.append(Request(url: url, linkType: linkType, source: source))
+    }
+}
+
+@MainActor
+private final class SenderLog {
+    var webViews: [WKWebView] = []
+    var isSenderSelected = true
+}

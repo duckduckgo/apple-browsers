@@ -112,12 +112,13 @@ struct PageContextExtractionPixelHandlerTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Ask about page on a link sends its link type, with no legacy name prefix", .timeLimit(.minutes(1)))
+    @Test("Ask about page on a link sends its link type and where it was picked, with no legacy name prefix", .timeLimit(.minutes(1)))
     func linkAskAboutPagePixelNameAndParameters() {
-        let serp = AIChatPixel.aiChatLinkAskAboutPage(linkType: .serp)
+        let serp = AIChatPixel.aiChatLinkAskAboutPage(linkType: .serp, source: .serpMenu)
         #expect(serp.name == "aichat_link_ask_about_page_macos")
         #expect(serp.namePrefix == .none)
-        #expect(serp.parameters == ["link_type": "serp"])
-        #expect(AIChatPixel.aiChatLinkAskAboutPage(linkType: .other).parameters == ["link_type": "other"])
+        #expect(serp.parameters == ["link_type": "serp", "source": "serp_menu"])
+        #expect(AIChatPixel.aiChatLinkAskAboutPage(linkType: .other, source: .contextMenu).parameters
+                == ["link_type": "other", "source": "context_menu"])
     }
 }

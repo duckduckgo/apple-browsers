@@ -23,7 +23,7 @@ import PixelKit
 
 @MainActor
 protocol AIChatLinkContextAttaching {
-    func askAboutLink(_ url: URL, linkType: AIChatLinkAskAboutPageType)
+    func askAboutLink(_ url: URL, linkType: AIChatLinkAskAboutPageType, source: AIChatLinkAskAboutPageSource)
 }
 
 @MainActor
@@ -49,8 +49,8 @@ final class AIChatLinkContextAttacher: AIChatLinkContextAttaching {
         self.aiChatConversationSourceHandler = aiChatConversationSourceHandler
     }
 
-    func askAboutLink(_ url: URL, linkType: AIChatLinkAskAboutPageType) {
-        pixelFiring?.fire(AIChatPixel.aiChatLinkAskAboutPage(linkType: linkType), frequency: .dailyAndCount)
+    func askAboutLink(_ url: URL, linkType: AIChatLinkAskAboutPageType, source: AIChatLinkAskAboutPageSource) {
+        pixelFiring?.fire(AIChatPixel.aiChatLinkAskAboutPage(linkType: linkType, source: source), frequency: .dailyAndCount)
         guard let pageContext = currentPageContextProvider() else { return }
 
         if !aiChatCoordinator.isChatPresentedForCurrentTab() {

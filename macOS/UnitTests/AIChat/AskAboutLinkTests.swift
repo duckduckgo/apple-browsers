@@ -191,11 +191,12 @@ private final class LinkContextAttacherSpy: AIChatLinkContextAttaching {
     struct Request: Equatable {
         let url: URL
         let linkType: AIChatLinkAskAboutPageType
+        var source: AIChatLinkAskAboutPageSource = .contextMenu
     }
     private(set) var requests: [Request] = []
 
-    func askAboutLink(_ url: URL, linkType: AIChatLinkAskAboutPageType) {
-        requests.append(Request(url: url, linkType: linkType))
+    func askAboutLink(_ url: URL, linkType: AIChatLinkAskAboutPageType, source: AIChatLinkAskAboutPageSource) {
+        requests.append(Request(url: url, linkType: linkType, source: source))
     }
 }
 
@@ -764,14 +765,14 @@ struct AIChatLinkContextAttacherTests {
     func successOpensSidebarAndAttaches() async {
         pageContext.result = .success(AIChatPageContextData(title: "", favicon: [], url: "https://example.com/a", content: "x", truncated: false, fullContentLength: 1))
 
-        makeAttacher().askAboutLink(URL(string: "https://example.com/a")!, linkType: .other)
+        makeAttacher().askAboutLink(URL(string: "https://example.com/a")!, linkType: .other, source: .contextMenu)
         await pageContext.lastTask?.value
         await Task.yield()
 
         #expect(pageContext.requestedURLs == [URL(string: "https://example.com/a")!])
         #expect(coordinator.revealChatCallCount == 1)
         #expect(firedNames() == ["aichat_link_ask_about_page_macos", AIChatPixel.aiChatSidebarOpened(source: .askAboutLink, shouldAutomaticallySendPageContext: nil, minutesSinceSidebarHidden: nil).name])
-        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["link_type": "other"])
+        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["link_type": "other", "source": "context_menu"])
         #expect(pixelFiring.actualFireCalls.first?.frequency == .dailyAndCount)
         #expect(pixelFiring.actualFireCalls.last?.pixel.parameters?["source"] == "ask-about-link")
     }
@@ -782,10 +783,10 @@ struct AIChatLinkContextAttacherTests {
         coordinator.isChatPresented = true
         pageContext.result = nil
 
-        makeAttacher().askAboutLink(URL(string: "https://duckduckgo.com/a")!, linkType: .serp)
+        makeAttacher().askAboutLink(URL(string: "https://duckduckgo.com/a")!, linkType: .serp, source: .serpMenu)
 
         #expect(firedNames() == ["aichat_link_ask_about_page_macos"])
-        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["link_type": "serp"])
+        #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == ["link_type": "serp", "source": "serp_menu"])
     }
 }
 

@@ -578,7 +578,7 @@ private extension ContextMenuManager {
             return
         }
         let linkType: AIChatLinkAskAboutPageType = tabContent?.urlForWebView?.isDuckDuckGoSearch == true ? .serp : .other
-        (aiChatLinkContextAttacher ?? mainViewController?.aiChatLinkContextAttacher)?.askAboutLink(url, linkType: linkType)
+        (aiChatLinkContextAttacher ?? mainViewController?.aiChatLinkContextAttacher)?.askAboutLink(url, linkType: linkType, source: .contextMenu)
     }
 
     func translate(_ sender: NSMenuItem) {

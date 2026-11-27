@@ -115,6 +115,7 @@ public struct AIChatNativeConfigValues: Codable {
     /// `true` when native accepts the `browserToolsAnswerCompleted` and `browserToolsAnswerRated` metrics.
     /// Older apps don't decode them and log an error, so Duck.ai sends them only when this is set.
     public var supportsBrowserToolsAnswerMetrics = false
+    public var supportsAskAboutPage = false
     /// `true` when native applies the user's "Default AI Model" setting to new chats, so Duck.ai shows that setting.
     public var supportsDefaultModelSetting = false
     public let supportsURLChatIDRestoration: Bool

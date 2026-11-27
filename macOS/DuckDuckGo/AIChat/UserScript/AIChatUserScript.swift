@@ -327,6 +327,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.customizeResponsesModalClosed
         case .getAIChats:
             return handler.getAIChats
+        case .askAboutPage:
+            return handler.askAboutPage
 
         // Main-actor closures, so the reply isn't held up by a hop in the middle of the handler.
         case .startAIChatLocalRun:

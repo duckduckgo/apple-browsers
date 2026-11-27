@@ -31,6 +31,7 @@ import UserScript
 import OSLog
 import PrivacyConfig
 import DDGSync
+import WebKit
 
 protocol AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)?)
@@ -177,6 +178,8 @@ protocol AIChatUserScriptHandling: AnyObject {
     /// Requested by the duckduckgo.com homepage for the chats it lists under its chat box.
     @MainActor func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable?
 
+    @MainActor func askAboutPage(params: Any, message: UserScriptMessage) async -> Encodable?
+
     // Bonus offer
     /// The record to push to Duck.ai after every change, while the offer is enabled.
     var bonusRecordPayloadPublisher: AnyPublisher<AIChatBonusRecordPayload, Never> { get }
@@ -232,6 +235,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let bonusHandler: AIChatBonusHandling
     private let bonusMessageLog: AIChatBonusMessageLogging?
     private let isSparkleBuild: Bool
+    private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    /// The attacher for the tab whose web view sent the message, or nil when that tab isn't its window's selected one.
+    private let linkContextAttacherProvider: @MainActor (WKWebView) -> AIChatLinkContextAttaching?
 
     var isFireWindowProvider: (() -> Bool)?
     var isSidebarProvider: (() -> Bool)?
@@ -289,8 +295,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         localModelService: AIChatLocalModelServing? = nil,
         bonusHandler: AIChatBonusHandling = Application.appDelegate.aiChatBonusOffer.handler,
         bonusMessageLog: AIChatBonusMessageLogging? = nil,
-        isSparkleBuild: Bool = StandardApplicationBuildType().isSparkleBuild
+        isSparkleBuild: Bool = StandardApplicationBuildType().isSparkleBuild,
+        aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = Application.appDelegate.aiChatMenuConfiguration,
+        linkContextAttacherProvider: @escaping @MainActor (WKWebView) -> AIChatLinkContextAttaching? = AIChatUserScriptHandler.selectedTabLinkContextAttacher
     ) {
+        self.aiChatMenuConfiguration = aiChatMenuConfiguration
+        self.linkContextAttacherProvider = linkContextAttacherProvider
         self.storage = storage
         self.localModelService = localModelService
         self.termsOfServiceStore = termsOfServiceStore
@@ -363,7 +373,45 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let isFireWindow = isFireWindowProvider?() ?? false
         var config = messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
         config.localModel = localModelService?.config()
+        config.supportsAskAboutPage = canAskAboutPage(from: message)
         return config
+    }
+
+    // MARK: - Ask about a search result
+
+    @MainActor public func askAboutPage(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard canAskAboutPage(from: message),
+              let payload: AskAboutPage = DecodableHelper.decode(from: params),
+              let url = URL(string: payload.url),
+              LinkedPageContextLoader.isSupported(url),
+              let webView = message.messageWebView,
+              let attacher = linkContextAttacherProvider(webView) else {
+            return nil
+        }
+        attacher.askAboutLink(url, linkType: .serp, source: .serpMenu)
+        return nil
+    }
+
+    /// Only DuckDuckGo search results in a tab's main frame may ask, and only where a link's context menu
+    /// would offer "Ask About Page" on them.
+    @MainActor
+    private func canAskAboutPage(from message: UserScriptMessage) -> Bool {
+        guard message.isMainFrame,
+              isSidebarProvider?() != true,
+              let url = message.messageWebView?.url,
+              url.isDuckDuckGoSearch, !url.isDuckAIURL else {
+            return false
+        }
+        return aiChatMenuConfiguration.shouldDisplayAskAboutLinkMenuItem(onSERP: true)
+    }
+
+    @MainActor
+    static func selectedTabLinkContextAttacher(for webView: WKWebView) -> AIChatLinkContextAttaching? {
+        guard let mainViewController = (webView.window?.windowController as? MainWindowController)?.mainViewController,
+              mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab.webView === webView else {
+            return nil
+        }
+        return mainViewController.aiChatLinkContextAttacher
     }
 
     @MainActor
@@ -1244,6 +1292,10 @@ extension AIChatUserScriptHandler {
 
     struct GetPageContext: Codable, Equatable {
         let reason: String
+    }
+
+    struct AskAboutPage: Codable, Equatable {
+        let url: String
     }
 
     struct TogglePageContextTelemetry: Codable, Equatable {

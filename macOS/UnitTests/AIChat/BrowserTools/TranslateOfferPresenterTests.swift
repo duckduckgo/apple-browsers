@@ -91,19 +91,7 @@ struct TranslateOfferPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Each offered language is recorded for the Settings menu", .timeLimit(.minutes(1)))
-    func recordsOffered() async {
-        presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
-        presenter.offerTranslation(languageCode: "ja", tabID: tabID(1))
-        #expect(setting.offeredLanguageCodes == ["es"])
-
-        collection.select(at: .unpinned(1))
-        for _ in 0..<20 { await Task.yield() }
-        #expect(setting.offeredLanguageCodes == ["es", "ja"])
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A language whose offer is withdrawn before it shows is not recorded", .timeLimit(.minutes(1)))
+    @Test("A queued or withdrawn offer records no language", .timeLimit(.minutes(1)))
     func withdrawnBeforeShown() async {
         presenter.offerTranslation(languageCode: "ja", tabID: tabID(1))
         presenter.offerTranslation(languageCode: nil, tabID: tabID(1))

@@ -251,7 +251,6 @@ final class BrowserToolPermissionPromptPresenter {
     }
 
     private func show(_ request: Request, in collection: TabCollectionViewModel, key: ObjectIdentifier) {
-        if let languageCode = request.translateOfferLanguageCode { translatePages.recordOffered(languageCode: languageCode) }
         guard let tabBar = windowController(for: collection)?.mainViewController.tabBarViewController else { return }
         let popover = NSPopover()
         popover.behavior = .applicationDefined
@@ -309,6 +308,8 @@ final class BrowserToolPermissionPromptPresenter {
             popover.show(positionedBelow: anchor.bounds.insetFromLineOfDeath(flipped: anchor.isFlipped), in: anchor)
             // Key, so its shortcuts only answer it and never a key press meant for the page or address bar.
             popover.contentViewController?.view.window?.makeKey()
+            // Only an offer the user could see counts, and the reveal can be cut short by a tab switch.
+            if let languageCode = request.translateOfferLanguageCode { self?.translatePages.recordOffered(languageCode: languageCode) }
         }
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: requestID, popover: popover, tabBar: tabBar,

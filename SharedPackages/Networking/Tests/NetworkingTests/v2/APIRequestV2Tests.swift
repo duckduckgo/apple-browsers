@@ -113,6 +113,18 @@ final class APIRequestV2Tests: XCTestCase {
         XCTAssertNil(apiRequest?.responseConstraints)
     }
 
+    func testDefaultAcceptLanguageHeaderListsPreferredLanguagesWithDescendingQValues() {
+        let expected = Locale.preferredLanguages.prefix(6).enumerated().map { index, language in
+            "\(language);q=\(1.0 - (Double(index) * 0.1))"
+        }.joined(separator: ", ")
+
+        let first = APIRequestV2.HeadersV2().httpHeaders[HTTPHeaderKey.acceptLanguage]
+        let second = APIRequestV2.HeadersV2(userAgent: "UserAgent").httpHeaders[HTTPHeaderKey.acceptLanguage]
+
+        XCTAssertEqual(first, expected)
+        XCTAssertEqual(second, expected)
+    }
+
     func testAllowedQueryReservedCharacters() {
         let url = URL(string: "https://www.example.com")!
         let queryItems: QueryItems = [(key: "k#e,y", value: "val#ue")]

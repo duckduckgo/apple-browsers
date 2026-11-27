@@ -50,7 +50,8 @@ public extension APIRequestV2 {
 
         private var userAgent: String?
         let acceptEncoding: String = "gzip;q=1.0, compress;q=0.5"
-        let acceptLanguage: String = {
+        /// Built once per process: changing the system language relaunches the app.
+        static let acceptLanguage: String = {
             let languages = Locale.preferredLanguages.prefix(6)
             return languages.enumerated().map { index, language in
                 let q = 1.0 - (Double(index) * 0.1)
@@ -80,7 +81,7 @@ public extension APIRequestV2 {
         public var httpHeaders: HTTPHeaders {
             var headers = [
                 HTTPHeaderKey.acceptEncoding: acceptEncoding,
-                HTTPHeaderKey.acceptLanguage: acceptLanguage
+                HTTPHeaderKey.acceptLanguage: Self.acceptLanguage
             ]
             if let userAgent {
                 headers[HTTPHeaderKey.userAgent] = userAgent

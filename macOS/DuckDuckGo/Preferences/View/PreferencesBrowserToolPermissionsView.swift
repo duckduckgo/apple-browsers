@@ -358,8 +358,8 @@ struct TranslatePagesRow: View {
         TranslatePagesLanguages.summary(excluded: model.translateExcludedLanguages, systemCode: systemCode)
     }
 
-    private func languageMenu(wraps: Bool) -> some View {
-        Menu {
+    private var languageMenuItems: some View {
+        Group {
             if let systemCode, let name = TranslatePagesLanguages.name(of: systemCode) {
                 Toggle(isOn: .constant(true)) {
                     Text(verbatim: "\(name)  \(UserText.translatePagesSettingsSystemLanguage)")
@@ -368,25 +368,41 @@ struct TranslatePagesRow: View {
                 Divider()
             }
             ForEach(TranslatePagesLanguages.menuCodes(localizations: TranslatePagesLanguages.appLocalizations(),
-                                                                    offered: model.translateOfferedLanguages,
-                                                                    excluded: model.translateExcludedLanguages,
-                                                                    systemCode: systemCode), id: \.self) { code in
+                                                      offered: model.translateOfferedLanguages,
+                                                      excluded: model.translateExcludedLanguages,
+                                                      systemCode: systemCode), id: \.self) { code in
                 Toggle(isOn: Binding(
                     get: { model.translateExcludedLanguages.contains(code) },
                     set: { model.setTranslate(languageCode: code, excluded: $0) })) {
                     Text(verbatim: TranslatePagesLanguages.name(of: code) ?? code)
                 }
             }
-        } label: {
+        }
+    }
+
+    // A Menu label never wraps, so the wrapping text is drawn here and the Menu sits over it as the click target.
+    private func languageMenu(wraps: Bool) -> some View {
+        HStack(alignment: .top, spacing: 2) {
             Text(summary)
                 .font(.system(size: 11))
                 .underline()
                 .foregroundColor(Color(designSystemColor: .accentTextPrimary))
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: !wraps, vertical: true)
+            Image(systemName: "chevron.down")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundColor(Color(designSystemColor: .accentTextPrimary))
+                .padding(.top, 3)
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.visible)
+        .overlay(
+            Menu {
+                languageMenuItems
+            } label: {
+                Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity).contentShape(Rectangle())
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+        )
         .accessibilityIdentifier("Preferences.AIChat.translatePages.languages")
     }
 

@@ -136,7 +136,7 @@ enum TranslatePagesLanguages {
     }
 
     /// The codes the locale can name, without the system language, by name. The one ordering the menu and summary share.
-    private static func named(_ codes: [String], systemCode: String?, locale: Locale) -> [(code: String, name: String)] {
+    private static func sortedNamedLanguages(_ codes: [String], systemCode: String?, locale: Locale) -> [(code: String, name: String)] {
         Set(codes).subtracting([systemCode].compactMap { $0 })
             .compactMap { code in name(of: code, locale: locale).map { (code: code, name: $0) } }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
@@ -145,13 +145,13 @@ enum TranslatePagesLanguages {
     /// App localizations, offered and excluded languages, without the system language, by name.
     static func menuCodes(localizations: [String], offered: [String], excluded: [String], systemCode: String?,
                           locale: Locale = .current) -> [String] {
-        named(localizations + offered + excluded, systemCode: systemCode, locale: locale).map(\.code)
+        sortedNamedLanguages(localizations + offered + excluded, systemCode: systemCode, locale: locale).map(\.code)
     }
 
     /// The system language, then each excluded language by name.
     static func summary(excluded: [String], systemCode: String?, locale: Locale = .current) -> String {
         let system = systemCode.flatMap { name(of: $0, locale: locale) }
-        return ([system].compactMap { $0 } + named(excluded, systemCode: systemCode, locale: locale).map(\.name))
+        return ([system].compactMap { $0 } + sortedNamedLanguages(excluded, systemCode: systemCode, locale: locale).map(\.name))
             .joined(separator: ", ")
     }
 }

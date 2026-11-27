@@ -82,13 +82,13 @@ final class TopSitesPickerExperimentTests: XCTestCase {
         XCTAssertTrue(experiment.isStepOffered)
     }
 
-    func testIsStepOffered_WhenFlagTurnsOffAfterAssignment_KeepsOfferingStep() {
-        let featureFlagger = flagger(cohort: .control, isAlreadyAssigned: true)
+    func testIsStepOffered_WhenFlagOffButCohortStillAssigned_OffersStep() {
+        let featureFlagger = flagger(cohort: .control, isAlreadyAssigned: true, isFlagOn: false)
         let experiment = makeExperiment(featureFlagger: featureFlagger, favoritesCount: 0)
 
-        featureFlagger.featuresStub = [:]
+        let isOffered = experiment.isStepOffered
 
-        XCTAssertTrue(experiment.isStepOffered)
+        XCTAssertTrue(isOffered)
     }
 }
 

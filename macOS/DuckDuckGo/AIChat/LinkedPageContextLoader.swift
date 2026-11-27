@@ -129,7 +129,10 @@ final class LinkedPageContextLoader: LinkedPageContextLoading {
 
     private func read(_ request: URLRequest, withSession: Bool) async -> LinkedPageContextLoadResult {
         let configuration = WKWebViewConfiguration()
-        configuration.applyStandardConfiguration(featureFlagger: featureFlagger, contentBlocking: contentBlocking, burnerMode: burnerMode)
+        let userContentController = UserContentController(assetsPublisher: contentBlocking.contentBlockingAssetsPublisher.map(LinkedPageContent.init),
+                                                          privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
+        configuration.applyStandardConfiguration(featureFlagger: featureFlagger, contentBlocking: contentBlocking, burnerMode: burnerMode,
+                                                 userContentController: userContentController)
         // The user didn't open this page, so it mustn't show as visited in their tabs.
         configuration.visitedLinkStore = WKWebViewConfiguration().visitedLinkStore
         if !withSession {
@@ -140,9 +143,6 @@ final class LinkedPageContextLoader: LinkedPageContextLoading {
             // The user didn't open this page, so their browser extensions don't get to see it.
             configuration.webExtensionController = nil
         }
-        guard let userContentController = configuration.userContentController as? UserContentController else {
-            return .failed(.scriptError)
-        }
         let userContentControllerDelegate = IgnoringUserContentControllerDelegate()
         userContentController.delegate = userContentControllerDelegate
         defer { userContentController.cleanUpBeforeClosing() }
@@ -150,7 +150,7 @@ final class LinkedPageContextLoader: LinkedPageContextLoading {
         // The tab's tracker blocking only applies once the rule lists are installed.
         await userContentController.awaitContentBlockingAssetsInstalled()
         guard !Task.isCancelled else { return .failed(.timeout) }
-        guard let pageContextUserScript = (userContentController.contentBlockingAssets?.userScripts as? UserScripts)?.pageContextUserScript else {
+        guard let pageContextUserScript = (userContentController.contentBlockingAssets?.userScripts as? LinkedPageUserScripts)?.pageContextUserScript else {
             return .failed(.scriptError)
         }
 
@@ -161,6 +161,39 @@ final class LinkedPageContextLoader: LinkedPageContextLoading {
             pageContextUserScript.webView = webView
             return await pageContextUserScript.collectAndWait(timeout: 10)
         }.run(request)
+    }
+}
+
+/// The tab's content with only the scripts reading a page needs: nobody sees this page, so it gets none of
+/// a tab's native features (autofill, Duck.ai, subscriptions, special pages and the rest).
+private struct LinkedPageContent: UserContentControllerNewContent {
+    let content: UserContentUpdating.NewContent
+
+    var rulesUpdate: ContentBlockerRulesManager.UpdateEvent { content.rulesUpdate }
+    var sourceProvider: ScriptSourceProviding { content.sourceProvider }
+    var makeUserScripts: @MainActor (ScriptSourceProviding) -> LinkedPageUserScripts {
+        { [content] in LinkedPageUserScripts(content.makeUserScripts($0)) }
+    }
+}
+
+@MainActor
+final class LinkedPageUserScripts: UserScriptsProvider {
+
+    let pageContextUserScript: PageContextUserScript?
+    /// Content scope carries page reading and tracker protection; autoconsent handles cookie popups.
+    let userScripts: [UserScript]
+
+    init(_ tabScripts: UserScripts) {
+        pageContextUserScript = tabScripts.pageContextUserScript
+        userScripts = tabScripts.userScripts.filter { $0 === tabScripts.contentScopeUserScript || $0 === tabScripts.autoconsentUserScript }
+    }
+
+    func loadWKUserScripts() async -> [WKUserScript] {
+        var wkUserScripts = [WKUserScript]()
+        for userScript in userScripts {
+            wkUserScripts.append(await userScript.makeWKUserScript().wkUserScript)
+        }
+        return wkUserScripts
     }
 }
 
@@ -189,6 +222,10 @@ final class LinkedPageLoad: NSObject {
     /// A protected request loaded in place of a hop; it isn't protected again when it comes back.
     private var protectedRequestURL: URL?
     private var loadedProtectedURLs = Set<URL>()
+    /// Main-frame navigations the page has asked for: a page that never stops redirecting doesn't hold the read until the timeout.
+    private var navigationCount = 0
+    /// A protected hop asks twice: once as sent, once as protected.
+    static let maxNavigations = 20
     private var continuation: CheckedContinuation<LinkedPageContextLoadResult, Never>?
 
     init(configuration: WKWebViewConfiguration,
@@ -310,7 +347,8 @@ extension LinkedPageLoad: WKNavigationDelegate {
             decisionHandler(navigationAction.shouldPerformDownload ? .cancel : .allow)
             return
         }
-        if navigationAction.shouldPerformDownload {
+        navigationCount += 1
+        if navigationAction.shouldPerformDownload || navigationCount > Self.maxNavigations {
             decisionHandler(.cancel)
             finish(.failed(.navigationFailed))
             return
@@ -421,6 +459,15 @@ extension LinkedPageLoad: WKNavigationDelegate {
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         finish(.failed(.navigationFailed))
+    }
+
+    func webView(_ webView: WKWebView, respondTo challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+        (Self.disposition(forAuthenticationMethod: challenge.protectionSpace.authenticationMethod), nil)
+    }
+
+    /// Only the server's certificate is checked: a page nobody sees mustn't ask for a sign-in or a client certificate.
+    nonisolated static func disposition(forAuthenticationMethod method: String) -> URLSession.AuthChallengeDisposition {
+        method == NSURLAuthenticationMethodServerTrust ? .performDefaultHandling : .cancelAuthenticationChallenge
     }
 }
 

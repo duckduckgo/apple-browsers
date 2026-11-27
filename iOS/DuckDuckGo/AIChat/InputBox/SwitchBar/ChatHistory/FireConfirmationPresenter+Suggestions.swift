@@ -31,7 +31,7 @@ extension FireConfirmationPresenter {
             attachPopoverTo: source,
             tabViewModel: nil,
             pixelSource: .chatSuggestions,
-            fireContext: fireContext(for: suggestion),
+            fireContext: deleteChatFireContext(chatTitle: suggestion.title),
             browsingMode: .normal,
             onConfirm: { _ in onConfirm() },
             onCancel: { onCancel() }
@@ -47,17 +47,18 @@ extension FireConfirmationPresenter {
             sourceRect: sourceRect,
             tabViewModel: nil,
             pixelSource: .chatSuggestions,
-            fireContext: fireContext(for: suggestion),
+            fireContext: deleteChatFireContext(chatTitle: suggestion.title),
             browsingMode: .normal,
             onConfirm: { _ in onConfirm() },
             onCancel: { onCancel() }
         )
     }
 
-    private static func fireContext(for suggestion: AIChatSuggestion) -> ScopedFireConfirmationViewModel.FireContext {
+    /// "Delete this chat?" confirmation for a single chat; shared by recent-chat suggestions and the chat history list.
+    static func deleteChatFireContext(chatTitle: String) -> ScopedFireConfirmationViewModel.FireContext {
         .custom(
             title: UserText.removeRecentChatConfirmationTitle,
-            subtitle: String(format: UserText.removeRecentChatConfirmationMessage, suggestion.title),
+            subtitle: String(format: UserText.removeRecentChatConfirmationMessage, chatTitle),
             action: UserText.removeRecentChatConfirmationButton
         )
     }

@@ -62,6 +62,8 @@ final class AIChatHistoryViewController: UIViewController {
     /// Set while a swipe-driven animation is in flight to suppress reactive reloads that
     /// would otherwise cancel the slide.
     private var isApplyingLocalUpdate = false
+    /// Chats whose single-chat delete has started; a repeat Fire or Delete on the same row is ignored.
+    private var pendingDeleteChatIds = Set<String>()
 
     private var isEditingChats = false
     private weak var fireBarButtonItem: UIBarButtonItem?
@@ -757,9 +759,10 @@ extension AIChatHistoryViewController: UITableViewDataSource {
         chatCell.titleLabel.text = viewModel.title(forRowAt: indexPath)
         chatCell.iconImageView.image = viewModel.icon(forRowAt: indexPath)
         let chatId = viewModel.chatId(forRowAt: indexPath)
-        chatCell.onFireTapped = { [weak self] in
+        let chatTitle = viewModel.title(forRowAt: indexPath) ?? ""
+        chatCell.onFireTapped = { [weak self] fireButton in
             guard let self, let chatId, !self.isEditingChats else { return }
-            self.performDelete(chatId: chatId)
+            self.confirmDelete(chatId: chatId, title: chatTitle, from: fireButton)
         }
         if isSidebar {
             chatCell.applySidebarAppearance(isCurrentChat: chatId != nil && chatId == currentChatId)
@@ -833,6 +836,7 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         // Long-press actions target a single chat; suppress while multi-selecting.
         guard !isEditingChats, let chatId = viewModel.chatId(forRowAt: indexPath) else { return nil }
         let isPinned = viewModel.isPinned(chatId: chatId)
+        let chatTitle = viewModel.title(forRowAt: indexPath) ?? ""
 
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
             guard let self else { return nil }
@@ -847,7 +851,9 @@ extension AIChatHistoryViewController: UITableViewDelegate {
             let delete = UIAction(title: UserText.aiChatHistoryRowMenuDelete,
                                   image: DesignSystemImages.Glyphs.Size24.fire,
                                   attributes: .destructive) { [weak self] _ in
-                self?.performDelete(chatId: chatId)
+                guard let self else { return }
+                let source: UIView = self.tableView.cellForRow(at: indexPath) ?? self.tableView
+                self.confirmDelete(chatId: chatId, title: chatTitle, from: source)
             }
             // Select is disabled (not removed) while filtering: multi-selecting a filtered subset
             // is ambiguous.
@@ -893,8 +899,25 @@ extension AIChatHistoryViewController: UITableViewDelegate {
         })
     }
 
-    /// Deletes a single chat from the row's Fire Button or the long-press menu, animating the row out like the swipe action.
+    /// Asks before deleting a single chat from the row's Fire Button or the long-press menu, so a stray tap can't burn it.
+    /// Uses the same "Delete this chat?" confirmation as recent-chat suggestions; deletes once it dismisses.
+    private func confirmDelete(chatId: String, title: String, from source: UIView) {
+        FireConfirmationPresenter().presentFireConfirmation(
+            on: self,
+            attachPopoverTo: source,
+            tabViewModel: nil,
+            pixelSource: .browsing,
+            fireContext: FireConfirmationPresenter.deleteChatFireContext(chatTitle: title),
+            browsingMode: .normal,
+            onConfirm: { [weak self] _ in self?.performDelete(chatId: chatId) },
+            onCancel: {}
+        )
+    }
+
+    /// Deletes a single chat, animating the row out like the swipe action.
     private func performDelete(chatId: String) {
+        // The last visible row stays tappable until the async burn reloads the list; delete each chat once.
+        guard pendingDeleteChatIds.insert(chatId).inserted else { return }
         viewModel.deleteChat(chatId: chatId)
         // Animate only when a row remains afterwards. Removing the last visible chat flips the
         // table to the empty-state / no-search-results layout (different section+row structure),

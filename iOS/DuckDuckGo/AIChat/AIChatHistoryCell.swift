@@ -46,15 +46,17 @@ final class AIChatHistoryCell: UITableViewCell {
     /// Burns this row's chat. Shown on every row so single-chat Fire is one tap away, not only behind swipe or long-press.
     let fireButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(DesignSystemImages.Glyphs.Size24.fire, for: .normal)
-        button.tintColor = UIColor(designSystemColor: .icons)
+        // Same glyph size and tint as the Fire accessory on Duck.ai recent-chat suggestion rows.
+        button.setImage(DesignSystemImages.Glyphs.Size16.fire, for: .normal)
+        button.tintColor = UIColor(designSystemColor: .iconsSecondary)
         button.accessibilityLabel = UserText.aiChatHistoryDeleteSwipeAccessibilityLabel
         button.accessibilityIdentifier = "aiChatHistoryRowFireButton"
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
 
-    var onFireTapped: (() -> Void)?
+    /// Receives the Fire Button so a confirmation popover can anchor to it on iPad.
+    var onFireTapped: ((UIView) -> Void)?
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -101,7 +103,7 @@ final class AIChatHistoryCell: UITableViewCell {
         let foreground = UIColor(designSystemColor: isMarked ? .accentContentPrimary : .textPrimary)
         titleLabel.textColor = foreground
         iconImageView.tintColor = isMarked ? foreground : UIColor(designSystemColor: .icons)
-        fireButton.tintColor = iconImageView.tintColor
+        fireButton.tintColor = isMarked ? foreground : UIColor(designSystemColor: .iconsSecondary)
     }
 
     private func setupViews() {
@@ -139,8 +141,8 @@ final class AIChatHistoryCell: UITableViewCell {
             titleLabel.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 11.5),
             titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -11.5),
 
-            // 44pt tap target; the 24pt glyph sits 16pt from the trailing edge, mirroring the leading icon.
-            fireButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -6),
+            // 44pt tap target; the 16pt glyph sits 16pt from the trailing edge, mirroring the leading icon's inset.
+            fireButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -2),
             fireButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             fireButton.widthAnchor.constraint(equalToConstant: 44),
             fireButton.heightAnchor.constraint(equalToConstant: 44)
@@ -153,6 +155,6 @@ final class AIChatHistoryCell: UITableViewCell {
     }
 
     @objc private func fireButtonTapped() {
-        onFireTapped?()
+        onFireTapped?(fireButton)
     }
 }

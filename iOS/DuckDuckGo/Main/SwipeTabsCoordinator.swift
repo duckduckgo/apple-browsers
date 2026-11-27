@@ -593,20 +593,24 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     func updateFullScreenSnapshot(forTab tab: Tab) {
         guard !floatingUIManager.isFloatingUIEnabled else { return }
         // Tab-switcher entry can dismiss editing synchronously in the same run loop.
-        // Capture the restored layout rather than the last rendered focused frame.
+        // Apply the restored layout before capturing.
         coordinator.superview.layoutIfNeeded()
-        guard let snapshot = makeFullScreenSnapshot(afterScreenUpdates: true) else { return }
+        guard let snapshot = makeFullScreenSnapshot() else { return }
         tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
     }
-
 
     /// Renders the live `MainViewController.view` (`coordinator.superview`) into a `UIImage`,
     /// transiently zeroing the overlay's alpha so the overlay doesn't appear in its own
     /// snapshot. The alpha flip happens entirely within a single synchronous block, so UIKit
     /// only paints once — no visible flash.
-    private func makeFullScreenSnapshot(afterScreenUpdates: Bool = false) -> UIImage? {
+    ///
+    /// Returns nil when the view can't be captured safely: off-window, empty, or while its
+    /// scene isn't in the foreground, when the rendered content it would read may be gone.
+    /// Never forces a screen update. Callers capture while the hierarchy is changing.
+    private func makeFullScreenSnapshot() -> UIImage? {
         let superview = coordinator.superview
-        guard superview.bounds.width > 0, superview.bounds.height > 0 else { return nil }
+        guard superview.bounds.width > 0, superview.bounds.height > 0,
+              superview.window?.windowScene?.activationState == .foregroundActive else { return nil }
 
         let priorAlpha = swipeOverlayView?.alpha ?? 0
         swipeOverlayView?.alpha = 0
@@ -614,7 +618,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         let renderer = UIGraphicsImageRenderer(size: superview.bounds.size)
         return renderer.image { _ in
-            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: afterScreenUpdates)
+            superview.drawHierarchy(in: superview.bounds, afterScreenUpdates: false)
         }
     }
 

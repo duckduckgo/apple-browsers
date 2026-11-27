@@ -18,28 +18,29 @@
 
 import Foundation
 import UserScript
+import WebKit
 
 extension UserScriptMessage {
 
-    /// Returns `true` if the message was sent by the main frame of an https Duck.ai page.
+    /// Returns `true` if the message was sent by the main frame of an https duck.ai page.
     ///
     /// The aiChat script accepts messages from any duckduckgo.com page, so handlers exposing
-    /// sync secrets use this to narrow the sender to Duck.ai itself.
+    /// sync secrets use this to narrow the sender to Duck.ai itself. The check reads the sending
+    /// frame's security origin, not the web view's URL: a page can change its own URL with
+    /// `history.replaceState`, and the web view's URL can belong to a page that hasn't loaded yet.
     ///
-    /// - Parameter customHostname: Debug-only hostname that is also treated as Duck.ai.
+    /// - Parameter customHostname: Debug-only hostname that is also treated as Duck.ai, over any
+    ///   scheme so a local http server works.
     @MainActor
     public func isFromDuckAIMainFrame(customHostname: String? = nil) -> Bool {
-        guard isMainFrame,
-              let url = messageWebView?.url,
-              url.scheme?.lowercased() == "https" else {
+        guard let frame = (self as? WKScriptMessage)?.frameInfo, frame.isMainFrame else {
             return false
         }
-        if url.isDuckAIURL {
+        let origin = frame.securityOrigin
+        let host = origin.host.lowercased()
+        if let customHostname, !customHostname.isEmpty, host == customHostname.lowercased() {
             return true
         }
-        guard let customHostname, !customHostname.isEmpty, let host = url.host else {
-            return false
-        }
-        return host.lowercased() == customHostname.lowercased()
+        return origin.protocol.lowercased() == "https" && host == URL.duckAIHost
     }
 }

@@ -92,11 +92,51 @@ struct TranslateOfferPresenterTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("Each offered language is recorded for the Settings menu", .timeLimit(.minutes(1)))
-    func recordsOffered() {
+    func recordsOffered() async {
         presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
         presenter.offerTranslation(languageCode: "ja", tabID: tabID(1))
+        #expect(setting.offeredLanguageCodes == ["es"])
 
+        collection.select(at: .unpinned(1))
+        for _ in 0..<20 { await Task.yield() }
         #expect(setting.offeredLanguageCodes == ["es", "ja"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A language whose offer is withdrawn before it shows is not recorded", .timeLimit(.minutes(1)))
+    func withdrawnBeforeShown() async {
+        presenter.offerTranslation(languageCode: "ja", tabID: tabID(1))
+        presenter.offerTranslation(languageCode: nil, tabID: tabID(1))
+        collection.select(at: .unpinned(1))
+        for _ in 0..<20 { await Task.yield() }
+
+        #expect(setting.offeredLanguageCodes.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Excluding a language or choosing Never Ask withdraws offers already waiting", .timeLimit(.minutes(1)))
+    func settingChangesWithdrawWaitingOffers() {
+        presenter.offerTranslation(languageCode: "fr", tabID: tabID(0))
+        presenter.offerTranslation(languageCode: "fr", tabID: tabID(1))
+        setting.exclude(languageCode: "fr")
+        #expect(presenter.translateOfferLanguageCode(for: tabID(0)) == nil)
+        #expect(presenter.translateOfferLanguageCode(for: tabID(1)) == nil)
+
+        presenter.offerTranslation(languageCode: "de", tabID: tabID(1))
+        setting.mode = .neverAsk
+        #expect(presenter.translateOfferLanguageCode(for: tabID(1)) == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("The box stays ticked when the offer's popover is rebuilt on a tab switch", .timeLimit(.minutes(1)))
+    func choiceSurvivesTabSwitch() {
+        presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
+        presenter.translateOfferChoice(for: tabID(0))?.dontAskAgain = true
+        collection.select(at: .unpinned(1))
+        collection.select(at: .unpinned(0))
+
+        presenter.answerTranslateOffer(for: tabID(0), translate: false)
+        #expect(setting.excludedLanguageCodes == ["es"])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -104,7 +144,8 @@ struct TranslateOfferPresenterTests {
           arguments: [true, false])
     func dontAskAgain(translate: Bool) {
         presenter.offerTranslation(languageCode: "es", tabID: tabID(0))
-        presenter.answerTranslateOffer(for: tabID(0), translate: translate, dontAskAgain: true)
+        presenter.translateOfferChoice(for: tabID(0))?.dontAskAgain = true
+        presenter.answerTranslateOffer(for: tabID(0), translate: translate)
         #expect(setting.excludedLanguageCodes == ["es"])
 
         presenter.offerTranslation(languageCode: "es", tabID: tabID(1))
@@ -193,7 +234,8 @@ struct TranslateOfferEligibilityTests {
         windows.customAllTabCollectionViewModels = [TabCollectionViewModel(tabCollection: TabCollection(tabs: [.loaded(tab)]), pinnedTabsManagerProvider: nil)]
         let flags = MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue: true])
         let browserTools = AIChatBrowserToolsService(featureFlagger: flags, windowControllersManager: windows, historyCoordinator: HistoryCoordinatingMock(),
-                                                     bookmarkManager: MockBookmarkManager(), permissionManager: PermissionManagerMock())
+                                                     bookmarkManager: MockBookmarkManager(), permissionManager: PermissionManagerMock(),
+                                                     translatePages: TranslatePagesSetting(store: InMemoryKeyValueStore(), notificationCenter: NotificationCenter()))
         let pageContext = PageContextTabExtension(scriptsPublisher: Empty<UserScripts, Never>(),
                                                   webViewPublisher: Empty<WKWebView, Never>(),
                                                   contentPublisher: Empty<Tab.TabContent, Never>(),

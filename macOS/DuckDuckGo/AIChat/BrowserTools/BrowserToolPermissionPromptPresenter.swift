@@ -31,7 +31,7 @@ final class BrowserToolPermissionPromptPresenter {
     private struct Request {
         enum Kind {
             case toolPrompt(ToolPrompt)
-            case translateOffer(languageCode: String)
+            case translateOffer(languageCode: String, choice: TranslateOfferChoice)
         }
 
         struct ToolPrompt {
@@ -55,8 +55,13 @@ final class BrowserToolPermissionPromptPresenter {
         }
 
         var translateOfferLanguageCode: String? {
-            guard case .translateOffer(let languageCode) = kind else { return nil }
+            guard case .translateOffer(let languageCode, _) = kind else { return nil }
             return languageCode
+        }
+
+        var translateOfferChoice: TranslateOfferChoice? {
+            guard case .translateOffer(_, let choice) = kind else { return nil }
+            return choice
         }
     }
 
@@ -81,6 +86,7 @@ final class BrowserToolPermissionPromptPresenter {
     private var selectionChanges: [ObjectIdentifier: AnyCancellable] = [:]
     private var translateOfferDismissedTabIDs: Set<TabIdentifier> = []
     private let translatePages: TranslatePagesSetting
+    private var translatePagesChanges: AnyCancellable?
 
     init(windowControllersManager: WindowControllersManagerProtocol,
          translatePages: TranslatePagesSetting = TranslatePagesSetting(),
@@ -88,6 +94,7 @@ final class BrowserToolPermissionPromptPresenter {
         self.windowControllersManager = windowControllersManager
         self.translatePages = translatePages
         self.respond = respond
+        translatePagesChanges = translatePages.changes.sink { [weak self] in self?.refresh() }
     }
 
     func present(_ prompt: ClientToolPermissionPrompt, chatWebView: WKWebView?, prompter: any ClientToolPermissionPrompting) -> Bool {
@@ -154,13 +161,12 @@ final class BrowserToolPermissionPromptPresenter {
         guard translateOfferLanguageCode(for: tabID) != languageCode else { return }
         requests.removeAll { $0.ownerTabID == tabID && $0.translateOfferLanguageCode != nil }
         if let languageCode, !translateOfferDismissedTabIDs.contains(tabID),
-           translatePages.mode == .alwaysAsk, !translatePages.isExcluded(languageCode: languageCode),
+           isAllowedByTranslatePages(languageCode),
            let collection = ownerCollection(ofTabID: tabID, shownIn: window),
            !collection.isBurner,
            windowController(for: collection)?.mainViewController.aiChatCoordinator.isSidebarOpen(for: tabID) != true {
             requests.append(Request(id: UUID().uuidString, ownerTabID: tabID, collection: collection,
-                                    kind: .translateOffer(languageCode: languageCode)))
-            translatePages.recordOffered(languageCode: languageCode)
+                                    kind: .translateOffer(languageCode: languageCode, choice: TranslateOfferChoice())))
             observeSelection(of: collection)
         }
         refresh()
@@ -178,15 +184,24 @@ final class BrowserToolPermissionPromptPresenter {
         return (owners.first { $0.window?.isMainWindow == true } ?? owners.first)?.mainViewController.tabCollectionViewModel
     }
 
+    private func isAllowedByTranslatePages(_ languageCode: String) -> Bool {
+        translatePages.mode == .alwaysAsk && !translatePages.isExcluded(languageCode: languageCode)
+    }
+
+    /// The box's state lives with the offer, so a popover rebuilt on a tab switch keeps it.
+    func translateOfferChoice(for tabID: TabIdentifier) -> TranslateOfferChoice? {
+        requests.lazy.compactMap { $0.ownerTabID == tabID ? $0.translateOfferChoice : nil }.first
+    }
+
     func translateOfferLanguageCode(for tabID: TabIdentifier) -> String? {
         requests.lazy.compactMap { $0.ownerTabID == tabID ? $0.translateOfferLanguageCode : nil }.first
     }
 
     /// Anything but Translate keeps the tab from offering again (R6).
-    func answerTranslateOffer(for tabID: TabIdentifier, translate: Bool, dontAskAgain: Bool = false) {
+    func answerTranslateOffer(for tabID: TabIdentifier, translate: Bool) {
         guard let index = requests.firstIndex(where: { $0.ownerTabID == tabID && $0.translateOfferLanguageCode != nil }) else { return }
         let request = requests.remove(at: index)
-        if dontAskAgain, let languageCode = request.translateOfferLanguageCode {
+        if request.translateOfferChoice?.dontAskAgain == true, let languageCode = request.translateOfferLanguageCode {
             translatePages.exclude(languageCode: languageCode)
         }
         if translate {
@@ -199,8 +214,14 @@ final class BrowserToolPermissionPromptPresenter {
         refresh()
     }
 
+    private var isRefreshing = false
+
     private func refresh() {
-        requests.removeAll { !$0.isLive }
+        // Showing an offer records its language, and that write notifies back here.
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+        requests.removeAll { !$0.isLive || !($0.translateOfferLanguageCode.map(isAllowedByTranslatePages) ?? true) }
         let collections = Dictionary(requests.compactMap { request in request.collection.map { (ObjectIdentifier($0), $0) } },
                                      uniquingKeysWith: { first, _ in first })
 
@@ -230,6 +251,7 @@ final class BrowserToolPermissionPromptPresenter {
     }
 
     private func show(_ request: Request, in collection: TabCollectionViewModel, key: ObjectIdentifier) {
+        if let languageCode = request.translateOfferLanguageCode { translatePages.recordOffered(languageCode: languageCode) }
         guard let tabBar = windowController(for: collection)?.mainViewController.tabBarViewController else { return }
         let popover = NSPopover()
         popover.behavior = .applicationDefined
@@ -263,21 +285,19 @@ final class BrowserToolPermissionPromptPresenter {
                 }
                 self?.answer(prompt.requestID, with: decision)
             }
-        case .translateOffer(let languageCode):
+        case .translateOffer(let languageCode, let choice):
             let tabID = request.ownerTabID
-            // Shared with the keys and the tab-bar button, which answer without going through the view.
-            let choice = TranslateOfferChoice()
             content = NSHostingController(rootView: TranslateOfferPromptView(
                 pageLanguageName: TranslateOfferLanguage.name(of: languageCode) ?? languageCode,
                 userLanguageName: TranslateOfferLanguage.name(of: Locale.preferredLanguages.first) ?? "",
                 choice: choice
             ) { [weak self] translate in
-                self?.answerTranslateOffer(for: tabID, translate: translate, dontAskAgain: choice.dontAskAgain)
+                self?.answerTranslateOffer(for: tabID, translate: translate)
             })
             icon = DesignSystemImages.Glyphs.Size16.translate
             title = UserText.translateOfferTitle
-            dismiss = { [weak self] in self?.answerTranslateOffer(for: tabID, translate: false, dontAskAgain: choice.dontAskAgain) }
-            primary = { [weak self] in self?.answerTranslateOffer(for: tabID, translate: true, dontAskAgain: choice.dontAskAgain) }
+            dismiss = { [weak self] in self?.answerTranslateOffer(for: tabID, translate: false) }
+            primary = { [weak self] in self?.answerTranslateOffer(for: tabID, translate: true) }
         }
         popover.contentViewController = content
         // Resized after showing, a popover drifts off its anchor.

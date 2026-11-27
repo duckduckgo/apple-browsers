@@ -51,8 +51,7 @@ final class WebView: WKWebView {
 
     private var findInPageQueryObserver: NSObjectProtocol?
 
-    /// The obscured insets the floating chrome moves between, and what it covers now.
-    struct FloatingChromeInsets: Equatable {
+    struct FloatingChromeInsets {
         let minimum: UIEdgeInsets
         let maximum: UIEdgeInsets
         let current: UIEdgeInsets
@@ -69,12 +68,8 @@ final class WebView: WKWebView {
         static let clear = NSSelectorFromString("_clearOverrideLayoutParameters")
     }
 
-    /// Nil leaves viewport sizing to WebKit.
     var floatingChromeInsets: FloatingChromeInsets? {
-        didSet {
-            guard floatingChromeInsets != oldValue else { return }
-            updateLayoutParametersOverride()
-        }
+        didSet { updateLayoutParametersOverride() }
     }
 
     private var appliedLayoutParameters: LayoutParameters?
@@ -84,11 +79,9 @@ final class WebView: WKWebView {
         updateLayoutParametersOverride()
     }
 
-    /// WebKit sizes `vh` to the full bounds unless the layout parameters are overridden. Under the floating
-    /// chrome the web view spans the whole screen, so the bottom of `100vh` content would sit under the bar.
-    /// The override makes `vh` match `lvh`, as in Safari; `setMinimumViewportInset` only sizes `svh` and `lvh`.
-    /// Once overridden, WebKit stops deriving the layout size itself, so it is kept to what WebKit would
-    /// compute: the bounds minus the current obscured insets.
+    /// WebKit sizes `vh` to the full bounds unless the layout parameters are overridden, and
+    /// `setMinimumViewportInset` only sizes `svh` and `lvh`. Once overridden, WebKit stops deriving the layout
+    /// size, so it must be supplied as the bounds minus the current obscured insets.
     private func updateLayoutParametersOverride() {
         guard let floatingChromeInsets, !bounds.isEmpty else {
             clearLayoutParametersOverride()
@@ -113,7 +106,6 @@ final class WebView: WKWebView {
         if responds(to: LayoutParametersSelector.clear) {
             perform(LayoutParametersSelector.clear)
         }
-        // WebKit re-derives its own sizes on the next layout pass.
         setNeedsLayout()
     }
 

@@ -1369,7 +1369,9 @@ class TabViewController: UIViewController {
             }
         }
         if setWebViewObscuredContentInsetsIfSupported(insets), let appliedViewportInsetRange {
-            (webView as? WebView)?.floatingChromeInsets = featureFlagger.isFeatureOn(.floatingUIWebViewportInset)
+            let overridesViewportSizes = UIDevice.current.userInterfaceIdiom == .phone
+                && featureFlagger.isFeatureOn(.floatingUIWebViewportInset)
+            (webView as? WebView)?.floatingChromeInsets = overridesViewportSizes
                 ? .init(minimum: appliedViewportInsetRange.minimum, maximum: appliedViewportInsetRange.maximum, current: insets)
                 : nil
         }

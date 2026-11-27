@@ -613,33 +613,23 @@ class FloatingUIXCUITestCase: XCTestCase {
         add(expandedScreenshot)
     }
 
-    /// `100vh` content must end where `100lvh` does, above the collapsed chrome, not under the glass at the
-    /// bottom of the screen.
     func verifyViewportHeightUnitClearsTheChrome() {
         openPage(path: "/viewport-height", heading: Page.viewportHeightHeading)
-        let units = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Units'")).firstMatch
+        let units = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH '100vh'")).firstMatch
+        let unitsMatch = app.staticTexts["100vh matches 100lvh"]
         let bottomControl = app.buttons["Viewport bottom control"]
         XCTAssertTrue(units.waitForExistence(timeout: timeout))
         XCTAssertTrue(bottomControl.waitForExistence(timeout: timeout))
 
-        XCTAssertTrue(waitUntil(timeout: 5) { Self.viewportHeightMatchesLargeViewport(units.label) },
-                      "100vh should match 100lvh with the chrome shown: \(units.label).")
+        XCTAssertTrue(unitsMatch.waitForExistence(timeout: 5), "With the chrome shown: \(units.label).")
 
         collapseChrome()
-        XCTAssertTrue(waitUntil(timeout: 5) { Self.viewportHeightMatchesLargeViewport(units.label) },
-                      "100vh should match 100lvh with the chrome collapsed: \(units.label).")
+        XCTAssertTrue(unitsMatch.waitForExistence(timeout: 5), "With the chrome collapsed: \(units.label).")
         XCTAssertLessThanOrEqual(bottomControl.frame.maxY, app.frame.maxY, "The bottom control is off screen.")
         if domainCapsule.frame.midY > app.frame.midY {
             XCTAssertLessThanOrEqual(bottomControl.frame.maxY, domainCapsule.frame.minY + 1,
                                      "The bottom control should clear the pill: \(bottomControl.frame), pill \(domainCapsule.frame).")
         }
-    }
-
-    /// Reads `Units vh <n> lvh <n>` from the viewport height page.
-    private static func viewportHeightMatchesLargeViewport(_ label: String) -> Bool {
-        let words = label.split(separator: " ")
-        guard words.count == 5, let viewportHeight = Int(words[2]), let largeViewportHeight = Int(words[4]) else { return false }
-        return viewportHeight == largeViewportHeight
     }
 
     /// The footer's frame from its label, which is vertically centred in the 56pt footer.
@@ -1885,14 +1875,20 @@ class FloatingUIXCUITestCase: XCTestCase {
       </head>
       <body>
         <div id="overlay">
-          <div><h1>\(Page.viewportHeightHeading)</h1><p id="units">Units</p></div>
+          <div><h1>\(Page.viewportHeightHeading)</h1><p id="units">100vh</p></div>
           <button aria-label="Viewport bottom control">Bottom</button>
         </div>
         <div id="vh" class="probe" style="height: 100vh"></div>
         <div id="lvh" class="probe" style="height: 100lvh"></div>
         <script>
           const height = id => Math.round(document.getElementById(id).getBoundingClientRect().height);
-          const update = () => { document.getElementById('units').textContent = 'Units vh ' + height('vh') + ' lvh ' + height('lvh'); };
+          const update = () => {
+            const viewportHeight = height('vh');
+            const largeViewportHeight = height('lvh');
+            document.getElementById('units').textContent = viewportHeight === largeViewportHeight
+              ? '100vh matches 100lvh'
+              : '100vh is ' + viewportHeight + ', 100lvh is ' + largeViewportHeight;
+          };
           addEventListener('resize', update);
           setInterval(update, 200);
           update();

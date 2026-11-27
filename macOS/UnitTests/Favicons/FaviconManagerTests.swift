@@ -17,9 +17,11 @@
 //
 
 import Combine
+import CoreImage
 import FeatureFlags_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
+import UserScript
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -34,7 +36,8 @@ class FaviconManagerTests: XCTestCase {
     override func setUp() async throws {
         imageCache = CapturingFaviconImageCache()
         referenceCache = CapturingFaviconReferenceCache()
-        featureFlagger = MockFeatureFlagger.enabling([.faviconWebKitSVGRendering])
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.faviconWebKitSVGRendering]
         faviconManager = FaviconManager(
             cacheType: .inMemory,
             bookmarkManager: MockBookmarkManager(),
@@ -106,9 +109,8 @@ class FaviconManagerTests: XCTestCase {
     @MainActor
     func testStoreFaviconRasterizesSVGWithWebKit() async throws {
         let documentURL = try XCTUnwrap("https://example.com".url)
-        let svg = ##"<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" filter="url(#f)"><filter id="f"><feOffset/></filter><rect width="180" height="180" fill="#000" filter="url(#f)"/></svg>"##
 
-        try await faviconManager.storeFavicon(Data(svg.utf8), with: nil, for: documentURL)
+        try await faviconManager.storeFavicon(Data(FaviconTestFixtures.recursiveFilterSVG.utf8), with: nil, for: documentURL)
 
         let stored = try XCTUnwrap(imageCache.insertCalls.first?.first?.image)
         XCTAssertTrue(stored.representations.allSatisfy { $0 is NSBitmapImageRep })
@@ -136,6 +138,100 @@ class FaviconManagerTests: XCTestCase {
         try await faviconManager.storeFavicon(Data("not an image".utf8), with: nil, for: documentURL)
 
         XCTAssertTrue(imageCache.insertCalls.isEmpty)
+    }
+
+    // MARK: - decodeFavicon (favicons found on a page)
+
+    private func faviconLink(_ path: String = "icon.svg", type: String? = nil) throws -> FaviconUserScript.FaviconLink {
+        FaviconUserScript.FaviconLink(href: try XCTUnwrap(URL(string: "https://example.com/\(path)")), rel: "icon", type: type)
+    }
+
+    /// An SVG that crashes CoreSVG is rendered by WebKit, and the page favicon is the rendered PNG.
+    @MainActor
+    func testDecodeFaviconRendersSVGWithWebKit() async throws {
+        let svg = Data(FaviconTestFixtures.recursiveFilterSVG.utf8)
+
+        let fetched = try await FaviconManager.decodeFavicon(from: svg, link: faviconLink(), rasterizer: FaviconTestFixtures.makeRasterizer())
+
+        XCTAssertTrue(fetched.isRasterizedVector)
+        XCTAssertTrue(fetched.isSVG)
+        XCTAssertNotNil(CIImage(data: fetched.data), "The data is the rendered PNG")
+        XCTAssertNotEqual(fetched.data, svg)
+        XCTAssertTrue(fetched.image.representations.allSatisfy { $0 is NSBitmapImageRep })
+        XCTAssertTrue(fetched.image.hasVisiblePixels())
+    }
+
+    /// An SVG without a hint in its link (no type, no `.svg` extension) is still recognized as an SVG once rendered.
+    @MainActor
+    func testDecodeFaviconTreatsARenderedVectorAsSVGWhateverTheLinkSays() async throws {
+        let svg = Data(FaviconTestFixtures.svg(width: 16, height: 16).utf8)
+
+        let fetched = try await FaviconManager.decodeFavicon(from: svg, link: faviconLink("icon"), rasterizer: FaviconTestFixtures.makeRasterizer())
+
+        XCTAssertTrue(fetched.isSVG)
+    }
+
+    @MainActor
+    func testDecodeFaviconKeepsRasterDataAsIs() async throws {
+        let rasterizer = FaviconTestFixtures.makeRasterizer()
+        let png = try await rasterizer.rasterize(Data(FaviconTestFixtures.svg(width: 16, height: 16).utf8))
+
+        let fetched = try await FaviconManager.decodeFavicon(from: png, link: faviconLink("icon.png"), rasterizer: rasterizer)
+
+        XCTAssertFalse(fetched.isRasterizedVector)
+        XCTAssertEqual(fetched.data, png)
+    }
+
+    /// An SVG that WebKit renders fully transparent is rejected, so that another favicon is picked.
+    @MainActor
+    func testDecodeFaviconRejectsAnSVGThatRendersTransparent() async throws {
+        let svg = Data(##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="none"/></svg>"##.utf8)
+
+        do {
+            _ = try await FaviconManager.decodeFavicon(from: svg, link: faviconLink(), rasterizer: FaviconTestFixtures.makeRasterizer())
+            XCTFail("Expected the SVG to be rejected")
+        } catch {
+            XCTAssertEqual(error as? FaviconManager.FaviconDecodingError, .transparentSVG)
+        }
+    }
+
+    /// Without a rasterizer (the flag is off) the legacy decoding is used: the SVG data is kept, not rendered.
+    @MainActor
+    func testDecodeFaviconWithoutRasterizerKeepsTheSVGData() async throws {
+        let svg = Data(FaviconTestFixtures.svg(width: 16, height: 16).utf8)
+
+        let fetched = try await FaviconManager.decodeFavicon(from: svg, link: faviconLink(), rasterizer: nil)
+
+        XCTAssertFalse(fetched.isRasterizedVector)
+        XCTAssertEqual(fetched.data, svg)
+    }
+
+    @MainActor
+    func testDecodeFaviconThrowsForEmptyData() async throws {
+        do {
+            _ = try await FaviconManager.decodeFavicon(from: Data(), link: faviconLink(), rasterizer: FaviconTestFixtures.makeRasterizer())
+            XCTFail("Expected an error")
+        } catch {
+            XCTAssertEqual((error as? URLError)?.code, .zeroByteResource)
+        }
+    }
+
+    @MainActor
+    func testDecodeFaviconThrowsForDataThatIsNotAnImage() async throws {
+        let notAnImage = Data("not an image".utf8)
+
+        do {
+            _ = try await FaviconManager.decodeFavicon(from: notAnImage, link: faviconLink(), rasterizer: FaviconTestFixtures.makeRasterizer())
+            XCTFail("Expected an error")
+        } catch {
+            XCTAssertEqual(error as? FaviconRasterizer.RasterizationError, .unsupportedData)
+        }
+        do {
+            _ = try await FaviconManager.decodeFavicon(from: notAnImage, link: faviconLink(), rasterizer: nil)
+            XCTFail("Expected an error")
+        } catch {
+            XCTAssertEqual((error as? CocoaError)?.code, .fileReadCorruptFile)
+        }
     }
 
     // MARK: - fallBackToSmaller

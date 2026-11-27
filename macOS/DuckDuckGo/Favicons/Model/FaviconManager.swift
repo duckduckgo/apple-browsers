@@ -539,7 +539,7 @@ final class FaviconManager: FaviconManagement {
         await imageCache.removeFavicons(withIdentifiers: identifiers)
     }
 
-    private enum FaviconDecodingError: Error {
+    enum FaviconDecodingError: Error {
         /// AppKit's SVG renderer ignores CSS, so an SVG that colors its paths only through a `<style>` rule
         /// (e.g. chatgpt.com: `fill="none"` on the root, overridden by `:root { fill: #000 }`) decodes into
         /// a fully transparent image.
@@ -549,9 +549,9 @@ final class FaviconManager: FaviconManagement {
     /// With a `rasterizer`, data CoreImage can't decode (SVG, PDF) is rendered to a PNG by WebKit first, because
     /// `NSImage(data:)` keeps a lazy vector image that CoreSVG renders later and can crash on. Without a
     /// rasterizer, the legacy decoding is used.
-    private static func decodeFavicon(from data: Data,
-                                      link: FaviconUserScript.FaviconLink,
-                                      rasterizer: FaviconRasterizer?) async throws -> FetchedFavicon {
+    static func decodeFavicon(from data: Data,
+                              link: FaviconUserScript.FaviconLink,
+                              rasterizer: FaviconRasterizer?) async throws -> FetchedFavicon {
         // Validate that we got actual image data
         guard !data.isEmpty else {
             throw URLError(.zeroByteResource, userInfo: [NSURLErrorKey: link.href])
@@ -579,7 +579,7 @@ final class FaviconManager: FaviconManagement {
     }
 
     /// A favicon downloaded at full resolution, retained while we decide which favicons to keep.
-    private struct FetchedFavicon: FaviconSizeRepresentable {
+    struct FetchedFavicon: FaviconSizeRepresentable {
         let link: FaviconUserScript.FaviconLink
         let data: Data
         let image: NSImage

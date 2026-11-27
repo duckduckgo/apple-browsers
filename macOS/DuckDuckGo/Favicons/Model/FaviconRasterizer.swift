@@ -152,8 +152,11 @@ final class FaviconRasterizer {
         }
     }
 
-    /// Logs a failed rendering and discards the web view when the web view itself failed. When its web content
-    /// process terminated, a pixel is fired too.
+    /// Logs a failed rendering and discards the web view when the web view itself failed.
+    ///
+    /// A web content process that is stuck is ended here. One that is already gone is not touched: its termination is
+    /// reported by `webContentProcessDidTerminate(_:)`, because the calls it leaves behind fail with an unrelated
+    /// error (`WKErrorJavaScriptResultTypeIsUnsupported`), not with a termination error.
     func handle(failure error: Error, of failedWebView: WKWebView) {
         guard !(error is CancellationError) else { return }
 
@@ -165,15 +168,22 @@ final class FaviconRasterizer {
         guard webView === failedWebView else { return }
 
         Logger.favicons.error("FaviconRasterizer: the web view failed (\(error.localizedDescription)), discarding it")
-        if Self.isProcessTermination(error) {
-            pixelFiring?.fire(FaviconPixel.svgRenderingProcessTerminated(error: error), frequency: .dailyAndCount)
-        }
-        discardWebView(failedWebView)
+        discardWebView(failedWebView, endingItsProcess: error is RasterizationError)
     }
 
-    private static func isProcessTermination(_ error: Error) -> Bool {
-        let nsError = error as NSError
-        return nsError.domain == WKError.errorDomain && nsError.code == WKError.webContentProcessTerminated.rawValue
+    /// Called when the web content process of `terminatedWebView` ended. Unless the rasterizer ended it on purpose
+    /// (see `discardWebView`), it crashed or was killed by the system, which is reported with a pixel.
+    func webContentProcessDidTerminate(_ terminatedWebView: WKWebView) {
+        if webViewsEndedOnPurpose.contains(terminatedWebView) {
+            webViewsEndedOnPurpose.remove(terminatedWebView)
+            return
+        }
+        Logger.favicons.error("FaviconRasterizer: the web content process terminated")
+        pixelFiring?.fire(FaviconPixel.svgRenderingProcessTerminated(error: WKError(.webContentProcessTerminated)),
+                          frequency: .dailyAndCount)
+        if webView === terminatedWebView {
+            webView = nil
+        }
     }
 
     /// Data that isn't an image leaves the web view healthy; a timeout, or anything unexpected, doesn't.
@@ -190,11 +200,15 @@ final class FaviconRasterizer {
         return !isScriptException
     }
 
-    /// Drops the failed web view and ends its web content process. Releasing the web view is not enough: the call in
-    /// flight keeps it, and a process stuck in a rendering never exits on its own.
-    private func discardWebView(_ failedWebView: WKWebView) {
+    /// Web views whose process the rasterizer ended itself. Their termination is not a crash, so it isn't reported.
+    private let webViewsEndedOnPurpose = NSHashTable<WKWebView>.weakObjects()
+
+    /// Drops the failed web view and, when asked, ends its web content process. Releasing the web view is not
+    /// enough: the call in flight keeps it, and a process stuck in a rendering never exits on its own.
+    private func discardWebView(_ failedWebView: WKWebView, endingItsProcess: Bool) {
         webView = nil
-        guard failedWebView.responds(to: Selector.killWebContentProcessAndResetState) else { return }
+        guard endingItsProcess, failedWebView.responds(to: Selector.killWebContentProcessAndResetState) else { return }
+        webViewsEndedOnPurpose.add(failedWebView)
         failedWebView.perform(Selector.killWebContentProcessAndResetState)
     }
 
@@ -223,14 +237,24 @@ final class FaviconRasterizer {
         configuration.defaultWebpagePreferences.allowsContentJavaScript = false
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         let newWebView = WKWebView(frame: .zero, configuration: configuration)
+        navigationGuard.onProcessTermination = { [weak self] terminatedWebView in
+            self?.webContentProcessDidTerminate(terminatedWebView)
+        }
         newWebView.navigationDelegate = navigationGuard
         return newWebView
     }
 
     private let navigationGuard = NavigationGuard()
 
-    /// Refuses everything the web view could load or ask for. The rendering needs neither.
+    /// Refuses everything the web view could load or ask for. The rendering needs neither. It also tells the
+    /// rasterizer when the web content process ends.
     private final class NavigationGuard: NSObject, WKNavigationDelegate {
+
+        var onProcessTermination: ((WKWebView) -> Void)?
+
+        func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            onProcessTermination?(webView)
+        }
 
         func webView(_ webView: WKWebView,
                      decidePolicyFor navigationAction: WKNavigationAction,

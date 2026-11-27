@@ -16,12 +16,10 @@
 //  limitations under the License.
 //
 
-import FeatureFlags_macOS
 import Foundation
+import GRDB
 import History
 @_spi(Testing) import PixelKit
-import PrivacyConfig
-import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 
@@ -113,6 +111,45 @@ class FirefoxDataImporterTests: XCTestCase {
         XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
     }
 
+    @MainActor
+    func testWhenImportingBookmarks_FaviconsAreHandledAsBitmaps_IncludingSVGsThatCrashCoreSVG() async throws {
+        let profileURL = try makeProfileWithFavicons(["https://svg.example": Data(FaviconTestFixtures.recursiveFilterSVG.utf8),
+                                                      "https://broken.example": Data("not an image".utf8)])
+        let faviconManager = FaviconManagerMock()
+        let importer = makeImporter(profileURL: profileURL, faviconManager: faviconManager)
+
+        _ = await importer.importData(types: [.bookmarks])
+
+        let handled = try XCTUnwrap(faviconManager.handledFaviconsByDocumentUrl.first)
+        let svgImage = try XCTUnwrap(handled[try XCTUnwrap(URL(string: "https://svg.example"))]?.first?.image)
+        XCTAssertTrue(svgImage.representations.allSatisfy { $0 is NSBitmapImageRep })
+        XCTAssertTrue(svgImage.hasVisiblePixels())
+        XCTAssertNil(handled[try XCTUnwrap(URL(string: "https://broken.example"))]?.first?.image)
+        XCTAssertEqual(handled.count, 5, "The three icons of the fixture are imported along with the two added ones")
+    }
+
+    /// A copy of the test profile whose favicons database has the given icons (page URL to image data) added.
+    private func makeProfileWithFavicons(_ dataByPageURL: [String: Data]) throws -> URL {
+        let profileURL = missingProfileURL
+        try FileManager.default.createDirectory(at: profileURL, withIntermediateDirectories: true)
+        for file in ["places.sqlite", "favicons.sqlite"] {
+            try FileManager.default.copyItem(at: resourceURL().appendingPathComponent(file), to: profileURL.appendingPathComponent(file))
+        }
+        addTeardownBlock { try? FileManager.default.removeItem(at: profileURL) }
+
+        let queue = try DatabaseQueue(path: profileURL.appendingPathComponent("favicons.sqlite").path)
+        try queue.write { database in
+            for (index, entry) in dataByPageURL.enumerated() {
+                let id = 1000 + index
+                try database.execute(sql: "INSERT INTO moz_icons (id, icon_url, fixed_icon_url_hash, width, data) VALUES (?, ?, ?, 16, ?)",
+                                     arguments: [id, entry.key + "/icon", id, entry.value])
+                try database.execute(sql: "INSERT INTO moz_pages_w_icons (id, page_url, page_url_hash) VALUES (?, ?, ?)", arguments: [id, entry.key, id])
+                try database.execute(sql: "INSERT INTO moz_icons_to_pages (page_id, icon_id) VALUES (?, ?)", arguments: [id, id])
+            }
+        }
+        return profileURL
+    }
+
     private var historyReadError: FirefoxHistoryVisitsReader.ImportError {
         FirefoxHistoryVisitsReader.ImportError(type: .copyTemporaryFile, underlyingError: nil)
     }
@@ -136,7 +173,7 @@ class FirefoxDataImporterTests: XCTestCase {
         loginImporter: LoginImporter = MockLoginImporter(),
         bookmarkImporter: BookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 0, duplicates: 0, failed: 0) }),
         faviconManager: FaviconManagement = FaviconManagerMock(),
-        faviconRasterizer: FaviconRasterizer = FaviconRasterizer(featureFlagger: MockFeatureFlagger.enabling([.faviconWebKitSVGRendering])),
+        faviconRasterizer: FaviconRasterizer = FaviconTestFixtures.makeRasterizer(),
         historyReader: FirefoxHistoryVisitsReaderProtocol = MockFirefoxHistoryVisitsReader(),
         historyImporter: HistoryImporterProtocol = MockHistoryImporter(),
         pixelFiring: PixelFiring? = nil

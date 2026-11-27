@@ -108,6 +108,54 @@ struct OnboardingIntroContentProviderTests {
         }
 
         @Test(
+            "When the install source and download reason are set in the default flow, the intro shows the matching message",
+            arguments: [
+                // Duck.ai CPP install on iPhone: the AI chat reason is preset.
+                (.duckAICPP, .privateAIChat, UserText.Onboarding.DuckAICPP.Intro.message),
+                // Duck.ai CPP install on iPad: no reason is preset.
+                (.duckAICPP, nil, UserText.Onboarding.Rebranding.Intro.message),
+                // Organic install that picked AI chat on the Download Screen.
+                (.default, .privateAIChat, UserText.Onboarding.Rebranding.Intro.message),
+            ] as [(OnboardingSource, OnboardingDownloadReason?, String)]
+        )
+        func whenSourceAndReasonSetInDefaultFlowThenIntroShowsMatchingMessage(
+            source: OnboardingSource,
+            reason: OnboardingDownloadReason?,
+            expectedMessage: String
+        ) {
+            // GIVEN
+            let sut = makeDefaultFlowProvider(source: source, reason: reason)
+
+            // WHEN
+            let result = sut.introStepContent
+
+            // THEN
+            #expect(result.message == expectedMessage)
+        }
+
+        @Test("When a Duck.ai CPP install has the AI chat reason, the skip dialog keeps the default copy")
+        func whenDuckAICPPInstallHasAIChatReasonThenSkipDialogKeepsDefaultCopy() {
+            // GIVEN
+            let sut = makeDefaultFlowProvider(source: .duckAICPP, reason: .privateAIChat)
+
+            // WHEN
+            let result = sut.introStepContent.skipFlowStepContent
+
+            // THEN
+            #expect(result.message == UserText.Onboarding.Skip.message)
+            #expect(result.primaryCTA == UserText.Onboarding.Skip.confirmSkipOnboardingCTA)
+        }
+
+        private func makeDefaultFlowProvider(source: OnboardingSource, reason: OnboardingDownloadReason?) -> OnboardingIntroContentProvider {
+            OnboardingIntroContentProvider(
+                flowType: .default,
+                featureFlagger: MockFeatureFlagger(),
+                downloadReasonProvider: { reason },
+                onboardingSourceProvider: { source }
+            )
+        }
+
+        @Test(
             "Check intro primary CTA is continue",
             arguments: [.default, .duckAI] as [OnboardingFlowType]
         )

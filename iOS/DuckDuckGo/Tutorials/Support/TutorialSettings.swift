@@ -38,6 +38,11 @@ protocol TutorialSettings: AnyObject {
     /// with a different launch context. This prevents flow switching mid-onboarding.
     var onboardingFlowType: OnboardingFlowType? { get set }
 
+    /// Where the user installed the app from (e.g. the Duck.ai App Store Custom Product Page), or `nil` before the flow is configured.
+    ///
+    /// Set together with ``onboardingFlowType`` and, like it, kept for the rest of onboarding.
+    var onboardingSource: OnboardingSource? { get set }
+
     /// The download reason the user selected on the Download Screen, or `nil` if not yet chosen.
     ///
     /// Persisted alongside ``onboardingFlowType`` so the tailored default flow can be
@@ -59,6 +64,7 @@ final class DefaultTutorialSettings: TutorialSettings {
         static let hasSeenOnboarding = "com.duckduckgo.tutorials.hasSeenOnboarding"
         static let hasSkippedOnboarding = "com.duckduckgo.tutorials.hasSkippedOnboarding"
         static let onboardingFlowType = "com.duckduckgo.tutorials.onboardingFlowType"
+        static let onboardingSource = "com.duckduckgo.tutorials.onboardingSource"
         static let onboardingDownloadReason = OnboardingDownloadReasonStore.key
     }
 
@@ -101,6 +107,18 @@ final class DefaultTutorialSettings: TutorialSettings {
         }
         set {
             userDefaults().set(newValue?.rawValue, forKey: Keys.onboardingFlowType)
+        }
+    }
+
+    public var onboardingSource: OnboardingSource? {
+        get {
+            guard let rawValue = userDefaults().string(forKey: Keys.onboardingSource) else {
+                return nil
+            }
+            return OnboardingSource(rawValue: rawValue)
+        }
+        set {
+            userDefaults().set(newValue?.rawValue, forKey: Keys.onboardingSource)
         }
     }
 

@@ -264,6 +264,8 @@ final class OnboardingDebugViewModel: ObservableObject {
         tutorialSettings.hasSeenOnboarding = false
         // Clear the persisted flow type so the next launch re-evaluates default vs Duck.ai.
         tutorialSettings.onboardingFlowType = nil
+        // Clear the persisted install source.
+        tutorialSettings.onboardingSource = nil
         // Clear the persisted download reason.
         tutorialSettings.onboardingDownloadReason = nil
         // Drop any resume-step checkpoint left over from a partial onboarding run, and

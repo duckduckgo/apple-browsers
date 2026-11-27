@@ -189,7 +189,12 @@ final class UTIModelStore {
     }
 
     var selectedReasoningMode: AIChatReasoningMode? {
-        pickStore.reasoningMode ?? newChatDefaultReasoningMode
+        // A chat-only model may not offer the user's mode; the mode stays theirs for their own model.
+        if let mode = pickStore.reasoningMode,
+           chatOnlyModelId == nil || selectedModel?.availableReasoningModes.contains(mode) != false {
+            return mode
+        }
+        return newChatDefaultReasoningMode
     }
 
     private var newChatDefaultReasoningMode: AIChatReasoningMode? {
@@ -348,7 +353,6 @@ final class UTIModelStore {
     /// Moves this chat to `modelId` without making it the user's pick: new chats keep starting on theirs.
     func switchModelForThisChat(_ modelId: String) {
         chatOnlyModelId = modelId
-        clearStaleReasoningModeIfNeeded()
     }
 
     /// A different chat goes back to the user's pick.
@@ -414,15 +418,16 @@ final class UTIModelStore {
         }
     }
 
+    /// Checks the user's mode against their own model, not a chat-only one, so a hint never clears it.
     func clearStaleReasoningModeIfNeeded() {
         guard let pickedMode = pickStore.reasoningMode else { return }
 
-        guard let selectedModel else {
+        guard let userModel = models.first(where: { $0.id == persistedModelId(live: userModelId) }) else {
             pickStore.reasoningMode = nil
             return
         }
 
-        if !selectedModel.availableReasoningModes.contains(pickedMode) {
+        if !userModel.availableReasoningModes.contains(pickedMode) {
             pickStore.reasoningMode = nil
         }
     }

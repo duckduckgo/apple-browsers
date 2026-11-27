@@ -598,6 +598,26 @@ final class UnifiedToggleInputCoordinatorNewChatHintsTests {
         #expect(preferences.selectedModelId == Self.textOnlyModel.id)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("A New Chat started in place after a hint moved the model goes back to the user's model",
+          .timeLimit(.minutes(1)))
+    func newChatInPlaceEndsTheHintModel() async throws {
+        preferences.selectedModelId = Self.textOnlyModel.id
+        let sut = try makeSUT(models: [Self.textOnlyModel, Self.everyModel])
+        let presenter = RecordingPresenter {}
+        sut.attachmentPresentingViewController = presenter
+        try await openBlankChat(sut)
+
+        sut.performNewChatHint(.documents)
+        try presenter.cancelPicker()
+        try #require(sut.persistedModelId == Self.everyModel.id)
+        submitPrompt(sut)
+
+        sut.startNewChat()
+
+        #expect(sut.persistedModelId == Self.textOnlyModel.id)
+    }
+
     private static let weeklyLimitReached: String = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

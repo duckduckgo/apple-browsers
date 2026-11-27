@@ -1035,15 +1035,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
     /// A different chat starts on the model it was opened with, else the default; an existing chat's own model is restored after this.
     private func resetModelSelectionForNewChat() {
-        let hadChatOnlyModel = modelStore.chatOnlyModelId != nil
-        modelStore.endChatOnlyModel()
-        guard let pick = modelStore.pickForNewChat(openedWithModelId: openingChatModelId) else {
-            if hadChatOnlyModel { handleModelsUpdated() }
-            return
-        }
+        endChatOnlyModel()
+        guard let pick = modelStore.pickForNewChat(openedWithModelId: openingChatModelId) else { return }
         modelStore.applyPersistedSelection(modelID: pick.modelID, reasoningMode: pick.reasoningMode)
         handleModelsUpdated()
         Logger.unifiedInputState.debug("chat changed — model selection reset to '\(self.openingChatModelId ?? "new-chat default", privacy: .public)'")
+    }
+
+    /// A model a new chat hint moved this chat to is for that chat only: every chat change goes back to the user's pick.
+    private func endChatOnlyModel() {
+        guard modelStore.chatOnlyModelId != nil else { return }
+        modelStore.endChatOnlyModel()
+        handleModelsUpdated()
     }
 
     /// Persists per-tab-only state — text and attachments. These are drafts the user
@@ -2260,6 +2263,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         isModelPickerForcedVisible = false
         isSubmitBlockedByRecoveryCard = false
         resetToolsSelection()
+        endChatOnlyModel()
         modelSelector.updateModelChipVisibility()
         syncHasSubmittedPromptToHandler()
         clearAttachments()
@@ -3170,6 +3174,7 @@ private extension UnifiedToggleInputCoordinator {
             // its URL never had a chatID yet, so there is no true → false transition to see.
             hasSubmittedPrompt = false
             multiTabPromotionSource?.startNewChat()
+            endChatOnlyModel()
             modelSelector.updateModelChipVisibility()
             syncHasSubmittedPromptToHandler()
             footerController?.refreshMultiTabPromotion()

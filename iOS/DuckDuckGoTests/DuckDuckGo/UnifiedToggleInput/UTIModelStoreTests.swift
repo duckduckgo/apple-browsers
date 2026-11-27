@@ -397,6 +397,26 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(preferences.selectedReasoningMode, .extendedReasoning)
     }
 
+    func test_switchModelForThisChat_toModelWithoutTheUsersMode_keepsTheirModeForTheirOwnModel() {
+        sut.models = [
+            makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low, .medium]),
+            makeModel(id: "plain", access: true)
+        ]
+        sut.updateSelectedModel("gpt-5", isNewChatContext: true)
+        sut.updateSelectedReasoningMode(.extendedReasoning)
+
+        sut.switchModelForThisChat("plain")
+        sut.clearStaleReasoningModeIfNeeded()
+
+        XCTAssertEqual(sut.persistedModelId, "plain")
+        XCTAssertEqual(preferences.selectedReasoningMode, .extendedReasoning)
+
+        sut.endChatOnlyModel()
+
+        XCTAssertEqual(sut.persistedModelId, "gpt-5")
+        XCTAssertEqual(sut.selectedReasoningMode, .extendedReasoning)
+    }
+
     func test_updateSelectedReasoningMode_whenModeIsUnsupported_doesNotWritePreference() {
         preferences.selectedReasoningMode = .fast
         preferences.selectedModelId = "gpt-5"

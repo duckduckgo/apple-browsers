@@ -287,6 +287,7 @@ final class BrowserToolPermissionPromptPresenter {
         isRefreshing = true
         defer { isRefreshing = false }
         requests.removeAll { !$0.isLive || !($0.translateOfferLanguageCode.map(isAllowedByTranslatePages) ?? true) }
+        shownTranslateOfferIDs.formIntersection(requests.map(\.id))
         let collections = Dictionary(requests.compactMap { request in request.collection.map { (ObjectIdentifier($0), $0) } },
                                      uniquingKeysWith: { first, _ in first })
 
@@ -382,6 +383,8 @@ final class BrowserToolPermissionPromptPresenter {
             popover.show(positionedBelow: anchor.bounds.insetFromLineOfDeath(flipped: anchor.isFlipped), in: anchor)
             // Key, so its shortcuts only answer it and never a key press meant for the page or address bar.
             popover.contentViewController?.view.window?.makeKey()
+            // AppKit skips the popover for a hidden window; only an offer that opened counts.
+            guard popover.isShown else { return }
             // Only an offer the user could see counts, and the reveal can be cut short by a tab switch.
             if let languageCode = request.translateOfferLanguageCode {
                 self?.translatePages.recordOffered(languageCode: languageCode)

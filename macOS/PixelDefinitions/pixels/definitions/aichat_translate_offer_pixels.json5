@@ -23,8 +23,7 @@
             {
                 "key": "dont_ask_again",
                 "description": "Whether the \"Don't ask again\" checkbox for the page's language was ticked, whatever the answer.",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },
@@ -53,7 +52,7 @@
     "m_mac_aichat_translate_offer_suppressed": {
         "description": "A prompt with priority kept the translate offer from showing on a page, or closed it. Fired once per page.",
         "owners": ["jotaemepereira"],
-        "triggers": ["impression"],
+        "triggers": ["feature_lifecycle"],
         "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",

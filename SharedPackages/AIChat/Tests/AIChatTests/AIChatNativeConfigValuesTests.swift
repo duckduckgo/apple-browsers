@@ -93,6 +93,14 @@ final class AIChatNativeConfigValuesTests: XCTestCase {
         XCTAssertEqual(json["supportsNativeUsageWarnings"] as? Bool, true)
     }
 
+    func testSupportsDefaultModelSettingDefaultsToFalseAndEncodesWhenSet() throws {
+        var config = makeConfig(supportsSuggestions: false)
+        XCTAssertEqual(try jsonObject(config)["supportsDefaultModelSetting"] as? Bool, false)
+
+        config.supportsDefaultModelSetting = true
+        XCTAssertEqual(try jsonObject(config)["supportsDefaultModelSetting"] as? Bool, true)
+    }
+
     func testSupportsNativeUsageWarningsDefaultsToFalse() throws {
         let json = try jsonObject(AIChatNativeConfigValues.defaultValues)
         XCTAssertEqual(json["supportsNativeUsageWarnings"] as? Bool, false)

@@ -181,6 +181,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             // Start subscribing to status updates for SAD/ATT.
             // It's possible that the user may set SAD/ATT outside the prompt (e.g. from Settings). If that happens we want to dismiss the prompt.
             subscribeToStatusUpdates()
+            coordinator.promptDisplayed(type)
         }
 
         // If we are switching prompt types, ensure the previous prompt is dismissed before showing the new one.

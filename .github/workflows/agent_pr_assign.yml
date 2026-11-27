@@ -1,0 +1,68 @@
+name: Agent PR Assign
+
+# Assigns pull requests opened by the agent worker (agent/* branches)
+# to the assignee of the Asana task linked in their "Task/Issue URL:" line,
+# mapped to a GitHub login through the GitHub → Asana user map. For feature
+# flag removals that's the flag's owner. Leaves the PR unassigned, with a
+# warning, when the task has no assignee or they aren't in the map.
+#
+# Runs on pull_request_target, only for PRs into the default branch, so the
+# workflow and the script come from that branch, never from the PR: the job
+# holds an Asana token, and the PR's code was written by the agent. The PR is
+# only read as data (its body and number); its code is never checked out.
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  assign:
+    name: Assign to the task owner
+    if: >-
+      github.event.pull_request.user.login == 'ddg-apple-agent-publish[bot]' &&
+      github.event.pull_request.user.type == 'Bot' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.base.ref == github.event.repository.default_branch &&
+      startsWith(github.event.pull_request.head.ref, 'agent/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out the assign script from the base branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+          sparse-checkout: scripts/agent-pr-assign
+
+      - name: Fetch GitHub → Asana user map
+        env:
+          GH_TOKEN: ${{ secrets.APPLE_GH_RO_PAT }}
+        run: |
+          if gh api repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content \
+              | base64 -d > "$RUNNER_TEMP/user_map.yml" && [ -s "$RUNNER_TEMP/user_map.yml" ]; then
+            echo "Fetched user_map.yml"
+          else
+            echo "::warning::Couldn't fetch user_map.yml, so the PR stays unassigned"
+            : > "$RUNNER_TEMP/user_map.yml"
+          fi
+
+      - name: Find the task owner
+        id: owner
+        env:
+          ASANA_PAT: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          USER_MAP_PATH: ${{ runner.temp }}/user_map.yml
+        run: python3 scripts/agent-pr-assign/agent_pr_assign.py
+
+      - name: Assign the pull request
+        if: steps.owner.outputs.login != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOGIN: ${{ steps.owner.outputs.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-assignee "$LOGIN"

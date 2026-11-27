@@ -82,6 +82,26 @@ struct OnboardingEndingStepsTests {
         #expect(sut.gotItPressed(after: .subscriptionUpsell) == .completed)
     }
 
+    // MARK: - Try Duck.ai
+
+    @available(iOS 16, macOS 13, *)
+    @Test("When Duck.ai is offered, the ending starts with Try Duck.ai instead of High Five", .timeLimit(.minutes(1)))
+    func offeredDuckAIStartsWithTryDuckAI() {
+        #expect(sut.start(offeringDuckAI: true) == .next(.tryDuckAI))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("After Try Duck.ai, eligible users get the upsell and the others complete", .timeLimit(.minutes(1)),
+          arguments: [(true, ContextualOnboardingDecision.next(.subscriptionUpsell)),
+                      (false, .completed)])
+    func afterTryDuckAI(isEligible: Bool, expected: ContextualOnboardingDecision) {
+        subscriptionManager.hasAppStoreProductsAvailable = isEligible
+        progress.markSeen(.tryDuckAI)
+
+        #expect(sut.decisionForNextDialog() == .decided(expected))
+        #expect(sut.gotItPressed(after: .tryDuckAI) == expected)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("Got it on a dialog that isn't part of the ending shows nothing", .timeLimit(.minutes(1)),
           arguments: [ContextualDialogType.tryASearch, .tryASite, .defaultTrackers, .tryFireButton, .defaultSearchDone])

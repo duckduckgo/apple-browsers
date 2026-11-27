@@ -778,7 +778,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
         switch error {
-        case .unableToRecognizeCode:
+        case .unableToRecognizeCode, .unreadablePairingMessage:
             sendCodeParsingFailedPixel(setupRole: setupRole, reason: error.syncSetupFailureReason)
             await handleError(.unableToRecognizeCode, error: underlyingError, event: nil)
         case .updateRequired:

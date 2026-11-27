@@ -20,6 +20,7 @@
 import DDGError
 import Foundation
 import LocalModels
+import TranslateKit
 
 /// The list of translation models the server offers, one entry per language pair.
 public struct TranslationManifest: Decodable, Equatable, Sendable {
@@ -74,9 +75,45 @@ public struct TranslationManifest: Decodable, Equatable, Sendable {
         return ModelBundle(id: pairID, version: pair.version, files: files)
     }
 
-    private static func name(of path: String) -> String {
+    static func name(of path: String) -> String {
         let name = (path as NSString).lastPathComponent
         return name.hasSuffix(".zst") ? String(name.dropLast(4)) : name
+    }
+}
+
+extension TranslationManifest.Pair {
+
+    /// Keys of `files`, named for how TranslateKit uses each file.
+    enum FileRole {
+        static let model = "model"
+        /// One vocabulary for both languages; pairs without it have `sourceVocab` and `targetVocab`.
+        static let vocab = "vocab"
+        static let sourceVocab = "srcVocab"
+        static let targetVocab = "trgVocab"
+        static let lexicalShortlist = "lexicalShortlist"
+    }
+
+    /// The files of this pair installed in `folder`, as TranslateKit loads them.
+    public func modelSpec(in folder: URL) throws -> ModelSpec {
+        ModelSpec(sourceLang: sourceLanguage,
+                  targetLang: targetLanguage,
+                  modelPath: try installedPath(of: FileRole.model, in: folder),
+                  vocabPaths: try vocabPaths(in: folder),
+                  shortlistPath: try installedPath(of: FileRole.lexicalShortlist, in: folder))
+    }
+
+    /// The shared vocabulary, or the source's then the target's.
+    private func vocabPaths(in folder: URL) throws -> [String] {
+        if files[FileRole.vocab] != nil {
+            return [try installedPath(of: FileRole.vocab, in: folder)]
+        }
+        return [try installedPath(of: FileRole.sourceVocab, in: folder),
+                try installedPath(of: FileRole.targetVocab, in: folder)]
+    }
+
+    private func installedPath(of role: String, in folder: URL) throws -> String {
+        guard let file = files[role] else { throw PageTranslatorError.missingFile(role) }
+        return folder.appendingPathComponent(TranslationManifest.name(of: file.path)).path
     }
 }
 

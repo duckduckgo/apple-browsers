@@ -205,6 +205,73 @@ final class WebExtensionManagerTests: XCTestCase {
         return dir
     }
 
+    // MARK: - Subscription events
+
+    @MainActor
+    func testWhenEmbeddedExtensionIsNotLoaded_ThenSubscriptionEventStaysQueued() {
+        let manager = makeManager()
+
+        manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
+
+        XCTAssertEqual(manager.subscriptionEventOutbox.drain().map(\.subscriptionName), ["s"])
+    }
+
+    @MainActor
+    func testWhenEmbeddedExtensionIsUnloaded_ThenSubscriptionEventStaysQueued() async throws {
+        let manager = makeManager()
+        let context = try await loadCommandRecordingEmbeddedContext(into: manager)
+        try manager.controller.unload(context)
+
+        manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
+
+        XCTAssertEqual(manager.subscriptionEventOutbox.drain().map(\.subscriptionName), ["s"])
+        XCTAssertTrue(context.performedCommands.isEmpty)
+    }
+
+    @MainActor
+    func testWhenEmbeddedExtensionIsLoaded_ThenSubscriptionEventIsQueuedAndTheEventCommandPerformed() async throws {
+        let manager = makeManager()
+        let context = try await loadCommandRecordingEmbeddedContext(into: manager)
+        defer { manager.unloadAllExtensions() }
+
+        manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
+
+        XCTAssertEqual(context.performedCommands, [WebExtensionSubscriptionEvents.commandIdentifier])
+        XCTAssertEqual(manager.subscriptionEventOutbox.drain().map(\.subscriptionName), ["s"],
+                       "The extension collects the event after the command, so it must still be queued")
+    }
+
+    @MainActor
+    func testWhenEmbeddedExtensionHasNoEventCommand_ThenSubscriptionEventStaysQueued() async throws {
+        let manager = makeManager()
+        let context = try await loadCommandRecordingEmbeddedContext(into: manager, declaresEventCommand: false)
+        defer { manager.unloadAllExtensions() }
+
+        manager.sendSubscriptionEvent(WebExtensionSubscriptionEvent(featureName: "f", subscriptionName: "s"))
+
+        XCTAssertTrue(context.performedCommands.isEmpty)
+        XCTAssertEqual(manager.subscriptionEventOutbox.drain().map(\.subscriptionName), ["s"])
+    }
+
+    @MainActor
+    private func loadCommandRecordingEmbeddedContext(into manager: WebExtensionManager,
+                                                     declaresEventCommand: Bool = true) async throws -> CommandRecordingContext {
+        let identifier = "embedded"
+        let directory = try makeTestExtensionDirectory(embeddedType: .embedded)
+        if declaresEventCommand {
+            let manifestURL = directory.appendingPathComponent("manifest.json")
+            var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+            manifest["commands"] = [WebExtensionSubscriptionEvents.commandIdentifier: ["description": "Native events"]]
+            try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+        }
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        let context = CommandRecordingContext(for: webExtension)
+        context.uniqueIdentifier = identifier
+        try manager.controller.load(context)
+        installedExtensionStoringMock.add(makeInstalledWebExtension(uniqueIdentifier: identifier, embeddedType: .embedded))
+        return context
+    }
+
     // MARK: - Background wake selection and recovery safety
 
     @MainActor
@@ -2794,13 +2861,15 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     func testLaunchLoadsAllContextsBeforeWaitingForAdBlockScriptletDownload() async throws {
+        // The retired search-token extension no longer ships a bundle.
+        let shippedDescriptors = EmbeddedWebExtensionRegistry.all.filter { $0.type != .searchToken }
         for upgradeCPM in [false, true] {
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CPMLaunchScriptlets-\(UUID().uuidString)")
             createdTestExtensionDirs.append(directory)
             let storage = WebExtensionStorageProvider(extensionsDirectory: directory)
             installedExtensionStoringMock.installedExtensions = []
             var identifiers: [DuckDuckGoWebExtensionType: String] = [:]
-            for descriptor in EmbeddedWebExtensionRegistry.all {
+            for descriptor in shippedDescriptors {
                 let bundledURL = try XCTUnwrap(descriptor.bundledURL)
                 let metadata = try await WebExtensionMetadata.fromZip(at: bundledURL)
                 let identifier = UUID().uuidString
@@ -2835,12 +2904,12 @@ final class WebExtensionManagerTests: XCTestCase {
                                                 cacheRootDirectory: directory.appendingPathComponent("cache")))
             let coordinator = WebExtensionLifecycleCoordinator(manager: manager,
                                                                initialLoadGateEnabledProvider: { false },
-                                                               enabledTypesProvider: { Set(EmbeddedWebExtensionRegistry.all.map(\.type)) })
+                                                               enabledTypesProvider: { Set(shippedDescriptors.map(\.type)) })
             let launch = coordinator.loadAndSync()
             await fulfillment(of: [downloadStarted], timeout: 5)
 
             // A stalled scriptlet request must not hold back CPM or any other installed context.
-            XCTAssertEqual(manager.loadedEmbeddedExtensionTypes, Set(EmbeddedWebExtensionRegistry.all.map(\.type)))
+            XCTAssertEqual(manager.loadedEmbeddedExtensionTypes, Set(shippedDescriptors.map(\.type)))
             for (type, identifier) in identifiers where type != .embedded {
                 XCTAssertNotNil(manager.context(for: identifier), "\(type) must load before its scriptlets are fetched")
             }
@@ -3342,6 +3411,16 @@ private final class CapturingCPMRemovalMonitor: CPMMessagingHealthMonitoring {
     func handle(_ event: CPMMessagingHealthEvent) {
         guard case .embeddedExtensionRemoved = event else { return }
         removalCount += 1
+    }
+}
+
+/// Records the commands the manager performs instead of sending them to the extension.
+@available(macOS 15.4, iOS 18.4, *)
+private final class CommandRecordingContext: WKWebExtensionContext {
+    var performedCommands: [String] = []
+
+    override func performCommand(_ command: WKWebExtension.Command) {
+        performedCommands.append(command.id)
     }
 }
 

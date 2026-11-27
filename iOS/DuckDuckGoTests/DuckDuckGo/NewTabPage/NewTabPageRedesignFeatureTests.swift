@@ -37,26 +37,20 @@ struct NewTabPageRedesignFeatureTests {
     }
 
     @available(iOS 16, *)
-    @Test("Sticky input is enabled when the redesign and its flag are on", .timeLimit(.minutes(1)))
-    func stickyInputEnabledWhenBothFlagsOn() {
-        #expect(makeFeature(enabledFlags: [.newTabPageRedesign, .newTabPageStickyInput]).isStickyInputEnabled)
+    @Test("Redesign is available on iPhone when its flag is on", .timeLimit(.minutes(1)))
+    func availableOnIphoneWhenFlagOn() {
+        #expect(makeFeature(enabledFlags: [.newTabPageRedesign]).isAvailable)
     }
 
     @available(iOS 16, *)
-    @Test("Sticky input is disabled when its own flag is off", .timeLimit(.minutes(1)))
-    func stickyInputDisabledWhenOwnFlagOff() {
-        #expect(!makeFeature(enabledFlags: [.newTabPageRedesign]).isStickyInputEnabled)
+    @Test("Redesign is unavailable when its flag is off", .timeLimit(.minutes(1)))
+    func unavailableWhenFlagOff() {
+        #expect(!makeFeature(enabledFlags: []).isAvailable)
     }
 
     @available(iOS 16, *)
-    @Test("Sticky input is disabled when the redesign is off", .timeLimit(.minutes(1)))
-    func stickyInputDisabledWhenRedesignOff() {
-        #expect(!makeFeature(enabledFlags: [.newTabPageStickyInput]).isStickyInputEnabled)
-    }
-
-    @available(iOS 16, *)
-    @Test("Sticky input is disabled on iPad even with both flags on", .timeLimit(.minutes(1)))
-    func stickyInputDisabledOnIPad() {
-        #expect(!makeFeature(enabledFlags: [.newTabPageRedesign, .newTabPageStickyInput], isIphone: false).isStickyInputEnabled)
+    @Test("Redesign is unavailable on iPad even with its flag on", .timeLimit(.minutes(1)))
+    func unavailableOnIPad() {
+        #expect(!makeFeature(enabledFlags: [.newTabPageRedesign], isIphone: false).isAvailable)
     }
 }

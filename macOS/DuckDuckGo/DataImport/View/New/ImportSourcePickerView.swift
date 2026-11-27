@@ -39,7 +39,6 @@ struct ImportSourcePickerView: View {
          selectedImportTypes: [DataImport.DataType],
          selectableImportTypes: [DataImport.DataType],
          shouldShowSyncFeature: Bool,
-         isSourceFilterEnabled: Bool,
          isPickerExpanded: Bool,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
          onTypesSelected: @escaping (Set<DataImport.DataType>) -> Void,
@@ -56,7 +55,6 @@ struct ImportSourcePickerView: View {
             selectedImportTypes: selectedImportTypes,
             selectableImportTypes: selectableImportTypes,
             shouldShowSyncButton: shouldShowSyncFeature,
-            isSourceFilterEnabled: isSourceFilterEnabled,
             initialPickerExpanded: isPickerExpanded,
             onSourceSelected: onSourceSelected,
             onTypesSelected: onTypesSelected,
@@ -73,8 +71,7 @@ struct ImportSourcePickerView: View {
                             items: $viewModel.importTypeItems,
                             doneAction: viewModel.typeSelectionDone,
                             cancelAction: viewModel.typeSelectionCancelled,
-                            isDoneDisabled: $viewModel.isDoneButtonDisabled,
-                            keepsOneTypeSelected: viewModel.isSourceFilterEnabled
+                            isDoneDisabled: $viewModel.isDoneButtonDisabled
                         )
                     }
                     .padding(.top, 20)
@@ -113,13 +110,7 @@ struct ImportSourcePickerView: View {
             Text(UserText.importChooseSourceTitle)
                 .font(.title2.weight(.semibold))
                 .padding(.top, 20)
-            if viewModel.shouldShowTypeSelector {
-                typeSelectionButton
-            } else {
-                Text(UserText.importDataImportTypeTitleSelected)
-                    .font(.body)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-            }
+            typeSelectionButton
         }
     }
 

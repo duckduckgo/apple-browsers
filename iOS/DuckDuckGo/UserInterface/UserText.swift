@@ -64,6 +64,7 @@ public struct UserText {
     public static let scopedFireConfirmationAlertFireModeTitle = NSLocalizedString("scoped.fire.confirmation.alert.fireMode.title", value: "Delete Fire Tabs and their data?", comment: "Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data")
     public static let scopedFireConfirmationAlertTitleWithAIChat = NSLocalizedString("scoped.fire.confirmation.alert.title.with.aichat", value: "Delete tabs, site data, and chats?", comment: "Title for scoped fire confirmation dialog when AI chat clearing is enabled")
     public static let scopedFireConfirmationSlideToDeleteAll = NotLocalizedString("scoped.fire.confirmation.slide.to.delete.all", value: "Slide To Delete All", comment: "Slider to delete all tabs and site data in the fire confirmation dialog")
+    public static let scopedFireConfirmationSettingsButton = NSLocalizedString("scoped.fire.confirmation.settings.button", value: "Data Clearing Settings", comment: "Accessibility label for the button in the fire confirmation dialog that opens Data Clearing settings")
     public static let scopedFireConfirmationDeleteAllButton = NSLocalizedString("scoped.fire.confirmation.delete.all.button", value: "Delete All", comment: "Button to delete all tabs and data in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteChatsButton = NSLocalizedString("scoped.fire.confirmation.delete.chats.button", value: "Delete Chats", comment: "Button to delete all chats in scoped fire confirmation dialog")
     public static let scopedFireConfirmationDeleteThisTabButton = NSLocalizedString("scoped.fire.confirmation.delete.this.tab.button", value: "Delete This Tab", comment: "Button to delete only the current tab in scoped fire confirmation dialog")
@@ -1600,6 +1601,8 @@ public struct UserText {
     static let networkProtectionConnectionInterruptedNotificationBody = NSLocalizedString("network.protection.interrupted.notification.body", value: "DuckDuckGo VPN was interrupted. Attempting to reconnect now...", comment: "The body of the notification shown when VPN connection is interrupted")
     static let networkProtectionConnectionFailureNotificationBody = NSLocalizedString("network.protection.failure.notification.body", value: "DuckDuckGo VPN failed to connect. Please try again later.", comment: "The body of the notification shown when VPN fails to reconnect")
     static let networkProtectionEntitlementExpiredNotificationBody = NSLocalizedString("network.protection.entitlement.expired.notification.body", value: "VPN disconnected due to expired subscription. Subscribe to DuckDuckGo to reconnect the VPN.", comment: "The body of the notification when Privacy Pro subscription expired")
+    static let networkProtectionSignedOutNotificationTitle = NSLocalizedString("network.protection.signed.out.notification.title", value: "DuckDuckGo VPN disconnected", comment: "The title of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
+    static let networkProtectionSignedOutNotificationBody = NSLocalizedString("network.protection.signed.out.notification.body", value: "Open DuckDuckGo to restore VPN connection.", comment: "The body of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing")
 
     static func networkProtectionSnoozedNotificationBody(duration: String) -> String {
         let localized = NSLocalizedString(
@@ -1800,6 +1803,8 @@ public struct UserText {
     // MARK: Scoped Fire Data Clearing Settings
 
     public static let settingsDeleteDuckAIChats = NSLocalizedString("settings.delete.duckai.chats", value: "Delete Duck.ai Chats", comment: "Settings screen cell text for option to delete Duck.ai chats when using scoped fire")
+    public static let settingsDeleteAllIncludesDuckAIChats = NSLocalizedString("settings.delete.all.includes.duckai.chats", value: "Delete All Includes Duck.ai Chats", comment: "Settings screen toggle text for the option that makes the Fire Button's Delete All also delete Duck.ai chats")
+    public static let settingsDeleteAllIncludesDuckAIChatsFooter = NSLocalizedString("settings.delete.all.includes.duckai.chats.footer", value: "When on, choosing Delete All with the Fire Button also deletes your Duck.ai chats, including pinned chats.", comment: "Settings screen footer text explaining that the Fire Button's Delete All also deletes Duck.ai chats when the toggle is on")
     public static let settingsAutomaticallyDeleteData = NSLocalizedString("settings.automatically.delete.data", value: "Automatically Delete Data", comment: "Settings screen cell text for automatic data deletion option")
     public static let settingsDeleteTabsAndData = NSLocalizedString("settings.delete.tabs.and.data", value: "Delete Tabs and Data", comment: "Settings screen cell text for option to delete tabs and data")
     public static let settingsAutomaticDataClearingDeleteSectionTitle = NSLocalizedString("settings.automatic.data.clearing.delete.section.title", value: "Delete", comment: "Section title in automatic data clearing settings")
@@ -2217,12 +2222,13 @@ public struct UserText {
                                            comment: "Message of the alert confirming withdrawal from the subscription contract, used when the refund amount is unknown. Parameter is the tier name (e.g. Plus).")
         return String(format: localized, tierName)
     }
-    static func subscriptionWithdrawConfirmFeaturesMessage(features: String) -> String {
-        let localized = NSLocalizedString("subscription.withdraw.confirm.features.message",
-                                           value: "%@ stop working once you confirm.",
-                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models.")
+    static func subscriptionWithdrawConfirmLoseAccessMessage(features: String) -> String {
+        let localized = NSLocalizedString("subscription.withdraw.confirm.lose.access.message",
+                                           value: "Once you confirm, you will lose access to %@.",
+                                           comment: "Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models.")
         return String(format: localized, features)
     }
+    public static let subscriptionWithdrawConfirmFeatureVPN = NSLocalizedString("subscription.withdraw.confirm.feature.vpn", value: "the VPN", comment: "VPN item in the list of features the user loses access to after withdrawing from the subscription contract, e.g. the VPN, Identity Theft Restoration and advanced Duck.ai models")
     public static let subscriptionWithdrawConfirmFeatureAdvancedDuckAI = NSLocalizedString("subscription.withdraw.confirm.feature.advanced.duckai", value: "advanced Duck.ai models", comment: "Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models")
     public static let subscriptionWithdrawConfirmButton = NSLocalizedString("subscription.withdraw.confirm.button", value: "Confirm Withdrawal", comment: "Button that confirms withdrawal from the subscription contract")
     public static let subscriptionWithdrawKeepButton = NSLocalizedString("subscription.withdraw.keep.button", value: "Keep Subscription", comment: "Button that dismisses the withdrawal confirmation and keeps the subscription")
@@ -2495,6 +2501,9 @@ public struct UserText {
     public static let aiChatReasoningModeReasoningSubtitle = NSLocalizedString("aichat.reasoning.reasoning.subtitle", value: "For complex tasks", comment: "Subtitle for the reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeExtendedTitle = NSLocalizedString("aichat.reasoning.extended.title", value: "Extended Reasoning", comment: "Title for the extended reasoning mode in the Duck.ai reasoning picker")
     public static let aiChatReasoningModeExtendedSubtitle = NSLocalizedString("aichat.reasoning.extended.subtitle", value: "For analytical tasks", comment: "Subtitle for the extended reasoning mode in the Duck.ai reasoning picker")
+    public static let aiChatNewChatHintDocuments = NSLocalizedString("aichat.new-chat-hint.documents", value: "Summarize a PDF", comment: "Suggestion chip above the Duck.ai input on a new chat. Tapping it opens the file picker so the user can attach a PDF or other document for Duck.ai to summarize.")
+    public static let aiChatNewChatHintPhoto = NSLocalizedString("aichat.new-chat-hint.photo", value: "Ask about photos", comment: "Suggestion chip above the Duck.ai input on a new chat. Tapping it opens the photo library so the user can ask about a photo.")
+    public static let aiChatNewChatHintImageGeneration = NSLocalizedString("aichat.new-chat-hint.image-generation", value: "Create an image", comment: "Suggestion chip above the Duck.ai input on a new chat. Tapping it selects the image generation tool.")
     public static let aiChatAttachmentOptionAttachPhoto = NSLocalizedString("aichat.attachment.option.attach.photo", value: "Add Image", comment: "Top-level attachment menu option to add an image to an AI chat message")
     public static let aiChatAttachmentOptionAttachFile = NSLocalizedString("aichat.attachment.option.attach.file", value: "Add File", comment: "Top-level attachment menu option to add a file to an AI chat message")
     public static let aiChatAttachmentOptionAddImages = NSLocalizedString("aichat.attachment.option.add.images", value: "Add Images", comment: "Attachment menu option to add one or more images to a Duck.ai message")
@@ -2725,6 +2734,19 @@ public struct UserText {
     public static let localModelAccessTurnOnConfirmationTitle = NSLocalizedString("duckai.settings.local-model-access.turn-on-confirmation.title", value: "Turn On Apple Intelligence?", comment: "Title of the alert shown before turning on Apple Intelligence for Duck.ai page summaries.")
     public static let localModelAccessTurnOnConfirmationMessageIPhone = NSLocalizedString("duckai.settings.local-model-access.turn-on-confirmation.message.iphone", value: "Duck.ai will use Apple Intelligence on this iPhone for page summaries. Pages are processed on your iPhone, nothing is sent to a cloud model, and it uses less of your Duck.ai plan.", comment: "Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPhone.")
     public static let localModelAccessTurnOnConfirmationMessageIPad = NSLocalizedString("duckai.settings.local-model-access.turn-on-confirmation.message.ipad", value: "Duck.ai will use Apple Intelligence on this iPad for page summaries. Pages are processed on your iPad, nothing is sent to a cloud model, and it uses less of your Duck.ai plan.", comment: "Message of the alert shown before turning on Apple Intelligence for Duck.ai page summaries, on iPad.")
+    public static let localModelInstallPromptFutureUse = NSLocalizedString("duckai.local-model-install.prompt.future-use", value: "Once installed, the on-device AI will be used for future page summaries.", comment: "Second paragraph of the pop-up that offers to download an on-device AI for Duck.ai page summaries.")
+    public static let localModelInstallButton = NSLocalizedString("duckai.local-model-install.install", value: "Install %@", comment: "Button that downloads the on-device model for Duck.ai page summaries. %@ is the download size, such as 975 MB.")
+    public static let localModelSettingsLocalAITitle = NSLocalizedString("duckai.settings.local-model.local-ai.title", value: "Local AI", comment: "Name of the row for the downloadable on-device AI in the On-Device Model section of AI Features settings, on devices without Apple Intelligence.")
+    public static let localModelSettingsSizeFormat = NSLocalizedString("duckai.settings.local-model.size", value: "(%@)", comment: "The on-device model's download size next to its name in AI Features settings, such as (975 MB).")
+    public static let localModelSettingsProgressFormat = NSLocalizedString("duckai.settings.local-model.progress", value: "(%1$@/%2$@)", comment: "Download progress next to the on-device model's name in AI Features settings. %1$@ is how much has downloaded and %2$@ the total, such as (400 MB/975 MB).")
+    public static let localModelSettingsModelCaption = NSLocalizedString("duckai.settings.local-model.model.caption", value: "Uses %@ for tasks like page summaries.", comment: "Caption under the downloadable on-device AI in AI Features settings. %@ is the AI's name, such as Granite 4.0 1B.")
+    public static let localModelSettingsInstall = NSLocalizedString("duckai.settings.local-model.install", value: "Install", comment: "Button in AI Features settings that downloads the on-device model for Duck.ai page summaries.")
+    public static let localModelSettingsUninstall = NSLocalizedString("duckai.settings.local-model.uninstall", value: "Uninstall", comment: "Button in AI Features settings that deletes the downloaded on-device model.")
+    public static let localModelSettingsCancelDownload = NSLocalizedString("duckai.settings.local-model.cancel-download", value: "Cancel Download", comment: "Accessibility label of the button in AI Features settings that stops downloading the on-device model.")
+    public static let localModelSettingsDownloadFailed = NSLocalizedString("duckai.settings.local-model.download-failed", value: "Couldn't download the model. Check your connection and try again.", comment: "Shown in AI Features settings when downloading the on-device model failed.")
+    public static let localModelSettingsDiskFullIPhone = NSLocalizedString("duckai.settings.local-model.disk-full.iphone", value: "There isn't enough space on your iPhone for the model.", comment: "Shown in AI Features settings on iPhone when there isn't enough storage to download the on-device model.")
+    public static let localModelSettingsDiskFullIPad = NSLocalizedString("duckai.settings.local-model.disk-full.ipad", value: "There isn't enough space on your iPad for the model.", comment: "Shown in AI Features settings on iPad when there isn't enough storage to download the on-device model.")
+    public static let localModelSettingsTryAgain = NSLocalizedString("duckai.settings.local-model.try-again", value: "Try Again", comment: "Button in AI Features settings that retries downloading the on-device model.")
 
     public static let settingsDuckAiSectionHeader = NSLocalizedString("settings.aifeatures.duckai.section.header", value: "Duck.ai", comment: "Section header for the Duck.ai settings group on the AI Features screen")
 
@@ -2917,7 +2939,7 @@ public struct UserText {
             public static let chatWithAI = NSLocalizedString("onboarding.downloadReason.chatWithAI", value: "Chat with AI\nprivately", comment: "Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let removeAI = NSLocalizedString("onboarding.downloadReason.removeAI", value: "Disable\nAI features", comment: "Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let blockAds = NSLocalizedString("onboarding.downloadReason.blockAds", value: "Block ads\nand pop-ups", comment: "Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation.")
-            public static let vpn = NotLocalizedString("onboarding.downloadReason.vpn", value: "VPN-protect my connection", comment: "Label for the option to set up the app to protect the user's connection with a VPN.")
+            public static let vpn = NotLocalizedString("onboarding.downloadReason.vpn", value: "Protect connection with VPN", comment: "Label for the option to set up the app to protect the user's connection with a VPN.")
 
             /// Single-line labels for the list layout (VPN experiment treatment).
             public enum List {
@@ -2932,13 +2954,13 @@ public struct UserText {
         public enum TryVPN {
             public static let title = NotLocalizedString("onboarding.tryVPN.title", value: "Try our VPN free for 7 days", comment: "Title of the onboarding screen offering a VPN free trial to users who chose VPN as their download reason.")
             public static let message = NotLocalizedString("onboarding.tryVPN.message", value: "The VPN is part of an optional DuckDuckGo paid subscription.", comment: "Message of the onboarding screen offering a VPN free trial.")
-            public static let footer = NotLocalizedString("onboarding.tryVPN.footer", value: "The subscription also includes personal information removal, identity theft restoration and additional AI models with higher usage", comment: "Small print on the onboarding screen offering a VPN free trial, listing the other subscription features.")
+            public static let footer = NotLocalizedString("onboarding.tryVPN.footer", value: "Our subscription also includes Personal Information Removal, Identity Theft Restoration, and more AI models with higher limits in Duck.ai.", comment: "Small print on the onboarding screen offering a VPN free trial, listing the other subscription features.")
             public static let cta = NotLocalizedString("onboarding.tryVPN.cta", value: "Try for Free", comment: "Button on the onboarding screen to start the VPN free trial.")
         }
 
         public enum SubscriptionReminder {
-            public static let title = NotLocalizedString("onboarding.subscriptionReminder.title", value: "If you change your mind…", comment: "Title of the onboarding screen shown to users who chose VPN as their download reason but didn't subscribe.")
-            public static let message = NotLocalizedString("onboarding.subscriptionReminder.message", value: "Add the subscription anytime in **Settings > Subscription**", comment: "Message of the onboarding screen telling users where to subscribe later. The text between ** is shown in bold.")
+            public static let title = NotLocalizedString("onboarding.subscriptionReminder.title", value: "If you change your mind", comment: "Title of the onboarding screen shown to users who chose VPN as their download reason but didn't subscribe.")
+            public static let message = NotLocalizedString("onboarding.subscriptionReminder.message", value: "Add the subscription anytime in **Settings > DuckDuckGo Subscription**.", comment: "Message of the onboarding screen telling users where to subscribe later. The text between ** is shown in bold.")
             public static let cta = NotLocalizedString("onboarding.subscriptionReminder.cta", value: "Next", comment: "Button to continue to the next onboarding screen.")
         }
 
@@ -3008,8 +3030,9 @@ public struct UserText {
             public static let cta = NSLocalizedString("onboarding.browsers.cta", value: "Choose Your Browser", comment: "Button to change the default browser")
 
             public static let titleGenericDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-generic", value: "You’re in the right place!\nProtections activated.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation.")
+            public static let titleVPNDownloadReasonExperiment = NotLocalizedString("onboarding.downloadReason.comparison.title-vpn", value: "You’re in the right place!\nVPN protections available.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose VPN as their download reason. The text is split over two lines; keep a line break at a natural position in the translation.")
             public static let titleNoAIDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-no-ai", value: "You’re in the right place!\nAI features disabled.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation.")
-            public static let vpnSubscriptionFooter = NotLocalizedString("onboarding.downloadReason.comparison.vpn.footer", value: "VPN is included with a paid DuckDuckGo subscription.", comment: "Note below the onboarding browser comparison chart for users who chose VPN as their download reason.")
+            public static let vpnSubscriptionFooter = NotLocalizedString("onboarding.downloadReason.comparison.vpn.footer", value: "VPN available with a paid subscription.", comment: "Note below the onboarding browser comparison chart for users who chose VPN as their download reason.")
             public static let titleNoAdsDownloadReasonExperiment = NSLocalizedString("onboarding.downloadReason.comparison.title-no-ads", value: "You’re in the right place!\nAd Blocking activated.", comment: "Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation.")
         }
 
@@ -3525,6 +3548,32 @@ public struct UserText {
     // MARK: - vCard Contact Links
     public static let vcardAddContactParseFailure = NSLocalizedString("vcard.add-contact.parse-failure", value: "Unable to add contact. Try opening the contact file from Downloads instead.", comment: "Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content)")
     public static let vcardContactAdded = NSLocalizedString("vcard.contact-added", value: "Contact added", comment: "Toast shown after the user successfully adds a contact from a .vcf contact link to their Contacts")
+
+    // MARK: - Web Page Translation
+    public static let translationBannerTitle = NSLocalizedString("translation.banner.title", value: "Translate this page?", comment: "Title of the banner offering to translate a web page that is in another language")
+    public static let translationBannerTranslateButton = NSLocalizedString("translation.banner.translate", value: "Translate", comment: "Button in the translation banner that translates the current web page")
+
+    public static func translationBannerSubtitle(source: String, target: String) -> String {
+        String(format: NSLocalizedString("translation.banner.subtitle", value: "%1$@ to %2$@", comment: "Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to"), source, target)
+    }
+
+    public static func translationDownloadSheetTitle(language: String) -> String {
+        let message = NSLocalizedString("translation.download-sheet.title", value: "Download %@ language pack?", comment: "Title of the sheet asking to download what's needed to translate pages in a language on the device, e.g. Download Spanish language pack?. %@ is the page's language")
+        return message.format(arguments: language)
+    }
+
+    public static func translationDownloadSheetMessage(language: String) -> String {
+        let message = NSLocalizedString("translation.download-sheet.message", value: "This one-time download lets you translate %@ pages privately on your device.", comment: "Explains the language pack download in the translation sheet. %@ is the page's language, e.g. Spanish")
+        return message.format(arguments: language)
+    }
+
+    public static func translationDownloadSheetSize(_ size: String) -> String {
+        let message = NSLocalizedString("translation.download-sheet.size", value: "Download size: %@", comment: "Size of the language pack download in the translation sheet. %@ is a formatted file size, e.g. 23 MB")
+        return message.format(arguments: size)
+    }
+
+    public static let translationDownloadSheetButton = NSLocalizedString("translation.download-sheet.download", value: "Download and Translate", comment: "Button in the translation sheet that downloads the language pack and translates the current web page")
+    public static let translationDownloadSheetClose = NSLocalizedString("translation.download-sheet.close", value: "Close", comment: "Accessibility label of the button that closes the translation download sheet without downloading")
 
     // MARK: - OmniBar Long Press Menu
     public static let omnibarLongPressMoveToBottom = NSLocalizedString("omnibar.menu.move-to-bottom", value: "Move Address Bar to Bottom", comment: "Label for moving the address bar to the bottom of the screen")

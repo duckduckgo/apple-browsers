@@ -32,3 +32,5 @@ the file and how it was made.
 | --- | --- | --- |
 | `fresh-simulator` | A simulator ddg-check-pir creates for one iOS attempt and deletes afterwards. | Every iOS scenario. |
 | `signed-out-empty-store` | The macOS DEBUG account signed out, with no saved PIR profile. | `scheduler seed` on macOS. |
+
+An iOS app state can name a launch profile, which the scenario passes with `--launch-profile`.

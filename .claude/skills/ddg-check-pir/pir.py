@@ -379,6 +379,28 @@ def selftest(context, client):
                        "selftest uses a dummy launch credential and only reads local debug endpoints")
 
 
+def load_launch_profile(value):
+    """Returns the user's launch profile and a reference to record, after checking it merges with the base profile."""
+    from runtime import ios_launch_profile
+    if value.strip().startswith("{"):
+        profile = json.loads(value)
+        source = dict(inline=profile)
+    else:
+        path = Path(value).expanduser().resolve()
+        raw = path.read_bytes()
+        profile = json.loads(raw)
+        source = dict(reference=str(path), sha256=sha256(raw))
+    ios_launch_profile(profile)
+    return profile, source
+
+
+def record_launch(context, launch, launch_profile_source):
+    if launch_profile_source:
+        launch["launchProfile"] = dict(source=launch_profile_source, **launch.get("launchProfile", {}))
+    context.result["launch"] = launch
+    context.write("launch.json", launch)
+
+
 def parser():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument("command", choices=("build", "run", "selftest", "scheduler"))
@@ -393,6 +415,8 @@ def parser():
     token.add_argument("--token-env", metavar="NAME", help="read token from this environment variable")
     cli.add_argument("--check-config", action="store_true", help="validate inputs without building or launching")
     cli.add_argument("--keep", action="store_true", help="retain simulator after stopping owned app and agent")
+    cli.add_argument("--launch-profile", metavar="JSON_OR_PATH",
+                     help="iOS run, selftest, seed, reseed or upgrade: launch profile JSON or .json file merged over the base PIR profile")
     cli.add_argument("--scenario", help="title of the scenario this attempt runs; recorded in result.json")
     cli.add_argument("--expect", choices=("pass", "fail", "inconclusive"),
                      help="verdict the scenario expects; recorded in result.json (default: pass)")
@@ -443,6 +467,9 @@ def rerun_command(args):
         command += ["--token-env", args.token_env]
     if args.keep:
         command += ["--keep"]
+    if args.launch_profile is not None:
+        value = args.launch_profile
+        command += ["--launch-profile", value if value.strip().startswith("{") else str(Path(value).expanduser().resolve())]
     if args.scenario:
         command += ["--scenario", args.scenario]
     if args.expect:
@@ -519,6 +546,11 @@ def execute(args, runtime_factory=None):
         raise ValueError("--expect applies only with --scenario")
     if args.step is not None and args.scenario is None:
         raise ValueError("--step applies only with --scenario")
+    if args.launch_profile is not None:
+        if args.platform != "ios":
+            raise ValueError("--launch-profile applies only to iOS")
+        if args.command == "build" or args.scheduler_mode == "observe":
+            raise ValueError("--launch-profile applies only to run, selftest and scheduler seed, reseed or upgrade")
     upgrade = None
     if args.command == "scheduler":
         if args.config or args.token_file or args.token_env or args.check_config:
@@ -559,6 +591,8 @@ def execute(args, runtime_factory=None):
     redactor = Redactor(token)
     if inputs and token and any(any(form.encode() in raw for form in redactor.forms) for raw in inputs["inputBytes"]):
         raise ValueError("credential occurs in scenario inputs; keep it only in the token source")
+    launch_profile, launch_profile_source = (load_launch_profile(args.launch_profile) if args.launch_profile is not None
+                                             else (None, None))
     root = Path(__file__).resolve().parents[3]
     parent = args.evidence_dir.expanduser().resolve()
     if parent == root or root in parent.parents:
@@ -566,7 +600,10 @@ def execute(args, runtime_factory=None):
     if args.check_config:
         if inputs is None:
             raise ValueError("--check-config requires --config")
-        return dict(status="valid", inputs=inputs["references"])
+        valid = dict(status="valid", inputs=inputs["references"])
+        if launch_profile_source:
+            valid["launchProfile"] = launch_profile_source
+        return valid
     parent.mkdir(parents=True, exist_ok=True)
     evidence = Path(tempfile.mkdtemp(prefix=f"{args.platform}-{args.command}-", dir=parent))
     context = Context(evidence, redactor)
@@ -614,11 +651,10 @@ def execute(args, runtime_factory=None):
             if runtime_factory is None:
                 from runtime import Runtime
                 runtime_factory = Runtime
-            options = {} if seed.platform == "macos" else dict(device=args.device, keep=args.keep)
+            options = {} if seed.platform == "macos" else dict(device=args.device, keep=args.keep, launch_profile=launch_profile)
             runtime = runtime_factory(seed.platform, evidence, instance, port, **options)
             launch = runtime.launch_scheduler(seed.mode, profile_json, seed.brokers)
-            context.result["launch"] = launch
-            context.write("launch.json", launch)
+            record_launch(context, launch, launch_profile_source)
             scope = scheduler.receipt_scope(runtime.scheduler_receipt(), seed, instance)
             client = Client(evidence, port, None, redactor)
             listener = launch["product"] if seed.platform == "macos" else launch["process"]
@@ -629,15 +665,14 @@ def execute(args, runtime_factory=None):
             if runtime_factory is None:
                 from runtime import Runtime
                 runtime_factory = Runtime
-            options = {} if upgrade.platform == "macos" else dict(device=args.device, keep=True)
+            options = {} if upgrade.platform == "macos" else dict(device=args.device, keep=True, launch_profile=launch_profile)
             if upgrade.platform == "macos" and scheduler.listener_on(port):
                 raise SetupFailed(f"A PIR agent from an earlier launch is listening on port {port}. A seed leaves its agent "
                                   f"registered; stop it with `launchctl bootout gui/{os.getuid()}/"
                                   "com.duckduckgo.macos.DBP.backgroundAgent.debug` and rerun the upgrade.")
             runtime = runtime_factory(upgrade.platform, evidence, instance, port, **options)
             launch = runtime.launch_existing(upgrade.simulator)
-            context.result["launch"] = launch
-            context.write("launch.json", launch)
+            record_launch(context, launch, launch_profile_source)
             client = Client(evidence, port, instance if upgrade.platform == "ios" else None, redactor)
             listener = launch["product"] if upgrade.platform == "macos" else launch["process"]
             context.result.update(scheduler.upgrade(context, client, upgrade, listener["executable"]))
@@ -661,7 +696,7 @@ def execute(args, runtime_factory=None):
                 runtime_factory = Runtime
             environment = "staging" if is_selftest else inputs["config"].get("pirEnvironment", "production") if inputs else "production"
             runtime = runtime_factory(args.platform, evidence, instance, port, device=args.device, keep=args.keep,
-                                      pir_environment=environment)
+                                      pir_environment=environment, launch_profile=launch_profile)
             runtime.snapshots_enabled = args.command == "run"
             if runtime.snapshots_enabled:
                 context.result["snapshots"] = {"directory": "snapshots"}
@@ -670,8 +705,7 @@ def execute(args, runtime_factory=None):
                 context.result["build"] = runtime.build()
                 context.write("build.json", context.result["build"])
             else:
-                context.result["launch"] = runtime.launch(access_token=token)
-                context.write("launch.json", context.result["launch"])
+                record_launch(context, runtime.launch(access_token=token), launch_profile_source)
                 client = Client(evidence, port, instance, redactor)
                 if is_selftest:
                     selftest(context, client)
@@ -691,6 +725,9 @@ def execute(args, runtime_factory=None):
     except Exception as error:
         context.result.update(status="inconclusive", reason=f"{type(error).__name__}: {error}")
     finally:
+        if "launch" not in context.result and getattr(runtime, "launch_profile", None):
+            context.result["launchProfile"] = dict(source=launch_profile_source, merged=runtime.launch_profile,
+                                                   result=getattr(runtime, "launch_profile_result", None))
         try:
             if args.command == "run" and client and client.last_run is not None:
                 try:

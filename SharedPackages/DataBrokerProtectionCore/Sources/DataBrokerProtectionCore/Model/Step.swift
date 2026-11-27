@@ -121,8 +121,18 @@ public struct Step: Codable, Sendable {
             case .condition:
                 let action = try JSONDecoder().decode(ConditionAction.self, from: jsonData).with(json: jsonData)
                 actionList.append(action)
+            case .userAssist:
+                let action = try JSONDecoder().decode(UserAssistAction.self, from: jsonData).with(json: jsonData)
+                actionList.append(action)
             }
         }
+
+#if os(iOS)
+        // iOS can't hand a page to the user, so it keeps its stored broker version as it did before userAssist existed.
+        if actionList.contains(where: \.requiresUserAssistance) {
+            throw DecodingError.unsupportedActionType
+        }
+#endif
 
         return actionList
     }
@@ -164,6 +174,8 @@ extension Array where Element == Action {
                 try container.encode(executeScriptAction)
             } else if let conditionAction = action as? ConditionAction {
                 try container.encode(conditionAction)
+            } else if let userAssistAction = action as? UserAssistAction {
+                try container.encode(userAssistAction)
             } else {
                 assertionFailure("Failed to encode action: \(action.actionType.rawValue)")
             }

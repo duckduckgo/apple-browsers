@@ -69,13 +69,9 @@ final class SafariFaviconsReader {
         }
     }
 
-    final class SafariFavicon {
+    final class SafariFavicon: ImportedFaviconDataProviding {
         let host: String
         let imageData: Data
-
-        var image: NSImage? {
-            NSImage(data: imageData)
-        }
 
         fileprivate init(host: String, imageData: Data) {
             self.host = host

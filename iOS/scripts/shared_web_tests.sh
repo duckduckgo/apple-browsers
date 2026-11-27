@@ -1,15 +1,5 @@
 #!/bin/sh
 
-# If we're not in python 3.9, switch to it
-if ! python3 --version | grep -q "3.9"; then
-    # If we have 3.9 installed don't call remotely.
-    if ! brew list python@3.9 >/dev/null 2>&1; then
-        brew install python@3.9
-    fi
-    # shellcheck source=/dev/null
-    /opt/homebrew/bin/python3.9 -m venv /tmp/venv39 && [ -f /tmp/venv39/bin/activate ] && . /tmp/venv39/bin/activate
-fi
-
 # Check that we have Rust installed:
 if ! command -v cargo > /dev/null 2>&1; then
     echo "‼️ Error: Rust is not installed. Please install Rust from https://rustup.rs/"
@@ -155,8 +145,3 @@ DERIVED_DATA_PATH="$(pwd)/../../DerivedData/"
 export DERIVED_DATA_PATH
 npm run test | tee "../../tmp/test_out_$(date +"%Y%m%d_%H%M%S").log"
 cd ../.. || exit
-# Deactivate the Python virtual environment
-if [ -n "$VIRTUAL_ENV" ]; then
-    echo "Deactivating Python virtual environment"
-    deactivate
-fi

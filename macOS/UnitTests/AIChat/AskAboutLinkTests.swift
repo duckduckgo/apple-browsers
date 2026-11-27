@@ -799,6 +799,7 @@ private final class LinkedPageContextSpy: PageContextProtocol {
     func appendSelectionContext(_ selection: AIChatSelectionContextData) {}
     func suppressAutoPageContextForSelectionAction() {}
     func requestPageContextAttachment() {}
+    func isPageAttachable(at url: URL) -> Bool { true }
 
     func attachLinkedPage(_ url: URL) -> Task<LinkedPageContextLoadResult?, Never> {
         requestedURLs.append(url)
@@ -828,4 +829,41 @@ private final class LinkAttachCoordinatorMock: AIChatCoordinating {
     func closeChat(for tabID: TabIdentifier, withAnimation: Bool) {}
     func revealChat(for prompt: AIChatNativePrompt) {}
     func revealChat() { revealChatCallCount += 1 }
+}
+
+// MARK: - Page attachability
+
+@Suite("Whether a page may be sent to Duck.ai")
+@MainActor
+struct PageContextPageAttachabilityTests {
+
+    private let pageContext: PageContextTabExtension = {
+        let privacyConfig = MockPrivacyConfiguration()
+        privacyConfig.featureSettings = ["aiPageContextBlocklist": ["image": ["urlExtensions": [".png"]]]]
+        return PageContextTabExtension(scriptsPublisher: Empty<UserScripts, Never>(),
+                                       webViewPublisher: Empty<WKWebView, Never>(),
+                                       contentPublisher: Empty<Tab.TabContent, Never>(),
+                                       tabID: "tab",
+                                       featureFlagger: MockFeatureFlagger(),
+                                       privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig),
+                                       extractionPixelHandler: PageContextExtractionPixelHandler(firePixel: { _ in }),
+                                       aiChatSessionStore: MockAIChatSessionStore(),
+                                       aiChatMenuConfiguration: MockAIChatConfig(),
+                                       isLoadedInSidebar: false,
+                                       faviconManagement: FaviconManagerMock(),
+                                       linkedPageLoader: ControlledLinkedPageLoader())
+    }()
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A web page is attachable", .timeLimit(.minutes(1)))
+    func webPage() {
+        #expect(pageContext.isPageAttachable(at: URL(string: "https://es.example/articulo")!))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Blocklisted and excluded pages are not", .timeLimit(.minutes(1)),
+          arguments: ["https://example.com/photo.png", "about:blank", "https://duck.ai/", "file:///tmp/page.html"])
+    func notAttachable(_ url: String) {
+        #expect(!pageContext.isPageAttachable(at: URL(string: url)!))
+    }
 }

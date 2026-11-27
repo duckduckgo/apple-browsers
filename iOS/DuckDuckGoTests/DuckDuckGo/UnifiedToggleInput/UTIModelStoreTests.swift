@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import Combine
 import SubscriptionTestingUtilities
 import XCTest
@@ -396,6 +397,28 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(preferences.selectedReasoningMode, .extendedReasoning)
     }
 
+    func test_switchModelForThisChat_toModelWithoutTheUsersMode_keepsTheirModeForTheirOwnModel() {
+        sut.models = [
+            makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low, .medium]),
+            makeModel(id: "plain", access: true)
+        ]
+        sut.updateSelectedModel("gpt-5", isNewChatContext: true)
+        sut.updateSelectedReasoningMode(.extendedReasoning)
+
+        sut.switchModelForThisChat("plain")
+        sut.clearStaleReasoningModeIfNeeded()
+
+        XCTAssertEqual(sut.persistedModelId, "plain")
+        XCTAssertEqual(preferences.selectedReasoningMode, .extendedReasoning)
+        XCTAssertEqual(sut.selectionKeptOnTab(isNewChat: false), UTIModelSelection(modelID: "gpt-5", reasoningMode: .extendedReasoning))
+        XCTAssertEqual(sut.selectionKeptOnTab(isNewChat: true).reasoningMode, .extendedReasoning)
+
+        sut.endChatOnlyModel()
+
+        XCTAssertEqual(sut.persistedModelId, "gpt-5")
+        XCTAssertEqual(sut.selectedReasoningMode, .extendedReasoning)
+    }
+
     func test_updateSelectedReasoningMode_whenModeIsUnsupported_doesNotWritePreference() {
         preferences.selectedReasoningMode = .fast
         preferences.selectedModelId = "gpt-5"
@@ -662,6 +685,42 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(sut.persistedModelId, "gpt-6-luna")
     }
 
+    func test_newChatDefault_whenUserDefaultIsSet_startsOnItWithItsOwnDefaultEffort() async throws {
+        let sut = await makeSUTWithFetchedDefault(.model(id: "gpt-6-luna", reasoningEffort: .high),
+                                                  userDefaultModelStorage: try makeUserDefaultStorage("gpt-5.6-terra"))
+
+        XCTAssertEqual(sut.persistedModelId, "gpt-5.6-terra")
+        XCTAssertNil(sut.selectedReasoningMode)
+        XCTAssertEqual(sut.submissionReasoningEffort, AIChatReasoningEffort.none)
+        XCTAssertEqual(sut.newChatModelSource(onboardingModelId: nil), .userDefault)
+    }
+
+    func test_newChatDefault_whenUserDefaultChangesOffTheMainQueue_theUpdateArrivesOnMain() async throws {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        let sut = await makeSUTWithFetchedDefault(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none),
+                                                  userDefaultModelStorage: storage)
+        let updated = expectation(description: "models updated")
+        sut.onModelsUpdated = {
+            XCTAssertTrue(Thread.isMainThread)
+            updated.fulfill()
+        }
+
+        DispatchQueue.global().async { try? storage.putUserDefaultModel("gpt-5.6-terra") }
+
+        await fulfillment(of: [updated], timeout: 1)
+        XCTAssertEqual(sut.persistedModelId, "gpt-5.6-terra")
+    }
+
+    func test_newChatDefault_whenAPickIsMadeOnTheTab_itWinsOverTheUserDefault() async throws {
+        let sut = await makeSUTWithFetchedDefault(.model(id: "gpt-6-luna", reasoningEffort: AIChatReasoningEffort.none),
+                                                  userDefaultModelStorage: try makeUserDefaultStorage("gpt-5.6-terra"))
+
+        sut.updateSelectedModel("gpt-6-luna", isNewChatContext: true)
+
+        XCTAssertEqual(sut.persistedModelId, "gpt-6-luna")
+        XCTAssertEqual(sut.newChatModelSource(onboardingModelId: nil), .picked)
+    }
+
     func test_newChatModelSource_whenOnlyTheEffortIsPicked_isPicked() async {
         let sut = await makeSUTWithFetchedDefault(.model(id: "gpt-5.6-terra", reasoningEffort: AIChatReasoningEffort.none))
 
@@ -801,26 +860,35 @@ final class UTIModelStoreTests: XCTestCase {
 
     private func makeSUT(isUpdatedModelPickerEnabled: Bool,
                          startsNewChatsOnDefault: Bool = false,
-                         overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil) -> UTIModelStore {
+                         overLimitNewChatDefaults: AnyPublisher<AIChatOverLimitNewChatDefault, Never>? = nil,
+                         userDefaultModelStorage: DuckAiNativeStorageHandling? = nil) -> UTIModelStore {
         UTIModelStore(
             modelsService: modelsService,
             preferences: preferences,
             subscriptionManager: subscriptionManager,
             isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled,
             startsNewChatsOnDefault: startsNewChatsOnDefault,
-            overLimitNewChatDefaults: overLimitNewChatDefaults
+            overLimitNewChatDefaults: overLimitNewChatDefaults,
+            userDefaultModelStorage: userDefaultModelStorage
         )
     }
 
+    private func makeUserDefaultStorage(_ modelId: String) throws -> DuckAiNativeStorageHandler {
+        let storage = try DuckAiNativeStorageHandler(.memory())
+        try storage.putUserDefaultModel(modelId)
+        return storage
+    }
+
     private func makeSUTWithFetchedDefault(_ newChatDefault: AIChatNewChatDefault,
-                                           startsNewChatsOnDefault: Bool = true) async -> UTIModelStore {
+                                           startsNewChatsOnDefault: Bool = true,
+                                           userDefaultModelStorage: DuckAiNativeStorageHandling? = nil) async -> UTIModelStore {
         let efforts: [AIChatReasoningEffort] = [.none, .low, .high]
         let remoteModels = ["gpt-6-luna", "gpt-5.6-terra"].map {
             AIChatRemoteModel(id: $0, name: $0, provider: "openai", entityHasAccess: true, supportsImageUpload: false,
                               supportedTools: [], accessTier: [], supportedReasoningEffort: efforts)
         }
         modelsService.result = .success(AIChatModelsResponse(models: remoteModels, newChatDefault: newChatDefault))
-        let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: startsNewChatsOnDefault)
+        let sut = makeSUT(isUpdatedModelPickerEnabled: false, startsNewChatsOnDefault: startsNewChatsOnDefault, userDefaultModelStorage: userDefaultModelStorage)
         let didUpdate = expectation(description: "models updated")
         sut.onModelsUpdated = { didUpdate.fulfill() }
         sut.fetchModels()

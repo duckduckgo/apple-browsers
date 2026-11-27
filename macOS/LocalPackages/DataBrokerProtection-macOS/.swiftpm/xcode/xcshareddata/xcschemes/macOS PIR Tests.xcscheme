@@ -4,7 +4,24 @@
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
+      <BuildActionEntries>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtection-macOS"
+               BuildableName = "DataBrokerProtection-macOS"
+               BlueprintName = "DataBrokerProtection-macOS"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+      </BuildActionEntries>
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"
@@ -17,9 +34,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionTests"
-               BuildableName = "DataBrokerProtectionTests"
-               BlueprintName = "DataBrokerProtectionTests"
+               BlueprintIdentifier = "DataBrokerProtection-macOSTests"
+               BuildableName = "DataBrokerProtection-macOSTests"
+               BlueprintName = "DataBrokerProtection-macOSTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

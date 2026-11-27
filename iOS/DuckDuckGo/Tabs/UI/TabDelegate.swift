@@ -34,10 +34,6 @@ protocol TabDelegate: AnyObject {
 
     func tabWillRequestNewTab(_ tab: TabViewController) -> UIKeyModifierFlags?
 
-    /// The current cached search token, or nil if none is live. Used by the SERP interceptor
-    /// to attach the `X-DDG-Search-Token` header for the treatment cohort of the Search Token experiment.
-    func searchToken(for tab: TabViewController) -> String?
-
     func tabDidRequestNewTab(_ tab: TabViewController)
 
     func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource)
@@ -179,6 +175,8 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestSettingsToSync(_ tab: TabViewController)
 
+    func tabDidRequestSettingsToDataClearing(_ tab: TabViewController)
+
     func tabDidRequestFindInPage(tab: TabViewController)
     func closeFindInPage(tab: TabViewController)
 
@@ -251,6 +249,10 @@ protocol TabDelegate: AnyObject {
     func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool)
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool)
+
+    /// Whether a prompt such as a notification banner, find in page, the Duck Player pill or a Dax dialog is already on screen,
+    /// so the tab skips its own.
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool
 }
 
 extension TabDelegate {
@@ -285,6 +287,6 @@ extension TabDelegate {
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
 
-    func searchToken(for tab: TabViewController) -> String? { nil }
+    func tabIsShowingOtherPrompt(_ tab: TabViewController) -> Bool { false }
 
 }

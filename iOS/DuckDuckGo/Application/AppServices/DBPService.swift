@@ -265,6 +265,8 @@ final class DBPFeatureFlagger: DBPFeatureFlagging, FreemiumPIRFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
+    var isUserAssistanceOn: Bool { false }
+
     var isChallengeSolverOn: Bool {
         // The challenge solver is macOS-only.
         false

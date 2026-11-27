@@ -54,6 +54,7 @@ import SitePermissions
 import WebExtensions
 import DesignResourcesKitIcons
 import FeatureFlags_iOS
+import WebPageTranslation
 
 enum WebViewPreviewSnapshotGeometry {
 
@@ -871,6 +872,14 @@ class TabViewController: UIViewController {
         if let script = userScripts?.aiChatUserScript { browserToolsService?.sourceWillDisappear(script) }
     }
 
+    var pageTranslationOfferProvider: PageTranslationOfferProvider?
+    private lazy var translationBannerPresenter = TranslationBannerPresenter(appSettings: appSettings)
+    var pageTranslator: PageTranslating?
+    private var pageTranslationBridge: PageTranslationBridge?
+    /// Made on the first Translate, for the current bridge.
+    private var pageTranslationSession: PageTranslationSession?
+    /// Counts main-frame loads, so work started on a page can tell the tab has left it; pushState and replaceState don't count.
+    private var pageLoads = 0
     var browserToolScopeFactory: (@MainActor () -> BrowserToolScope?)?
     var tabAttachmentSource: MultiTabAttachmentSource?
 
@@ -1186,6 +1195,7 @@ class TabViewController: UIViewController {
         duckAISwipeNewChat?.cancel()
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
+        translationBannerPresenter.dismiss(animated: false)
 
         unregisterFromResignActive()
         unregisterFromKeyboardNotifications()
@@ -1300,9 +1310,15 @@ class TabViewController: UIViewController {
     private func applyWebViewLayout(for barsVisibilityPercent: CGFloat, forceFloatingUIInsets: Bool = false) {
         if floatingUIManager.isFloatingUIEnabled {
             updateWebViewLayoutForFloatingUI(for: barsVisibilityPercent, forceInsets: forceFloatingUIInsets)
+            if translationBannerPresenter.isPresented {
+                translationBannerPresenter.chromeInsets = chromeDelegate?.floatingWebViewObscuredInsets(for: 0) ?? .zero
+            }
         } else {
             updateWebViewBottomConstraint(for: barsVisibilityPercent)
             updateWebViewLayoutForClassicUI(for: barsVisibilityPercent)
+        }
+        if translationBannerPresenter.isPresented {
+            translationBannerPresenter.followAddressBar()
         }
     }
 
@@ -1389,16 +1405,54 @@ class TabViewController: UIViewController {
     /// page-fixed content continuously while the obscured insets change mid-scroll.
     private func updateWebViewViewportInsetRange() {
         guard #available(iOS 15.5, *), let webView, let chromeDelegate else { return }
-        let hidden = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
-        let shown = chromeDelegate.floatingWebViewObscuredInsets(for: 1)
-        // WebKit rejects a range whose minimum exceeds its maximum on any edge.
-        let minimum = UIEdgeInsets(top: min(hidden.top, shown.top), left: min(hidden.left, shown.left),
-                                   bottom: min(hidden.bottom, shown.bottom), right: min(hidden.right, shown.right))
-        let maximum = UIEdgeInsets(top: max(hidden.top, shown.top), left: max(hidden.left, shown.left),
-                                   bottom: max(hidden.bottom, shown.bottom), right: max(hidden.right, shown.right))
+        let (minimum, maximum) = Self.edgewiseRange(chromeDelegate.floatingWebViewObscuredInsets(for: 0),
+                                                    chromeDelegate.floatingWebViewObscuredInsets(for: 1))
         if let applied = appliedViewportInsetRange, applied.minimum == minimum, applied.maximum == maximum { return }
         appliedViewportInsetRange = (minimum, maximum)
         webView.setMinimumViewportInset(minimum, maximumViewportInset: maximum)
+    }
+
+    /// WebKit rejects a range whose minimum exceeds its maximum on any edge.
+    private static func edgewiseRange(_ first: UIEdgeInsets, _ second: UIEdgeInsets) -> (minimum: UIEdgeInsets, maximum: UIEdgeInsets) {
+        (UIEdgeInsets(top: min(first.top, second.top), left: min(first.left, second.left),
+                      bottom: min(first.bottom, second.bottom), right: min(first.right, second.right)),
+         UIEdgeInsets(top: max(first.top, second.top), left: max(first.left, second.left),
+                      bottom: max(first.bottom, second.bottom), right: max(first.right, second.right)))
+    }
+
+    /// Sized from the bars alone, so the keyboard doesn't change `vh`, and only once the chrome settles, so the
+    /// page isn't relaid out on every frame of a collapse.
+    @available(iOS 26, *)
+    private func updateWebViewViewportSizesOverride(obscuredInsets: UIEdgeInsets,
+                                                    contextualOnboardingTopInset: CGFloat,
+                                                    barsVisibilityPercent: CGFloat,
+                                                    tracksChrome: Bool) {
+        guard let webView = webView as? WebView, barsVisibilityPercent == 0 || barsVisibilityPercent == 1 else { return }
+        guard tracksChrome, !shouldUseFloatingAIChrome, !isAITab,
+              webView.fullscreenState == .notInFullscreen,
+              UIDevice.current.userInterfaceIdiom == .phone,
+              featureFlagger.isFeatureOn(.floatingUIWebViewportInset),
+              let chromeDelegate else {
+            webView.floatingChromeInsets = nil
+            return
+        }
+        let range: (minimum: UIEdgeInsets, maximum: UIEdgeInsets)
+        if let hidden = chromeDelegate.floatingChromeObscuredInsets(for: 0),
+           let shown = chromeDelegate.floatingChromeObscuredInsets(for: 1) {
+            // The onboarding dialog moves the web view down, so the bars cover that much less of it.
+            let onboardingOffset = UIEdgeInsets(top: contextualOnboardingTopInset, left: 0, bottom: 0, right: 0)
+            range = Self.edgewiseRange(Self.inset(hidden, by: onboardingOffset), Self.inset(shown, by: onboardingOffset))
+        } else if let previous = webView.floatingChromeInsets {
+            range = (previous.minimum, previous.maximum)
+        } else {
+            return
+        }
+        webView.floatingChromeInsets = .init(minimum: range.minimum, maximum: range.maximum, current: obscuredInsets)
+    }
+
+    private static func inset(_ insets: UIEdgeInsets, by offset: UIEdgeInsets) -> UIEdgeInsets {
+        UIEdgeInsets(top: max(0, insets.top - offset.top), left: max(0, insets.left - offset.left),
+                     bottom: max(0, insets.bottom - offset.bottom), right: max(0, insets.right - offset.right))
     }
 
     private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat, forceInsets: Bool = false) {
@@ -1470,6 +1524,10 @@ class TabViewController: UIViewController {
         updateWebViewObscuredInsetsFollowingChrome(obscuredInsets,
                                                    barsVisibilityPercent: barsVisibilityPercent,
                                                    tracksChrome: !isUnifiedToggleInputAffectingLayout)
+        updateWebViewViewportSizesOverride(obscuredInsets: obscuredInsets,
+                                           contextualOnboardingTopInset: effectiveContextualOnboardingTopInset,
+                                           barsVisibilityPercent: barsVisibilityPercent,
+                                           tracksChrome: !isUnifiedToggleInputAffectingLayout)
         if shouldUpdateScrollInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: obscuredInsets,
                                                isFloatingUIEnabled: true, animated: animateTopAlignment)
@@ -1584,6 +1642,7 @@ class TabViewController: UIViewController {
         WebViewScrollViewInsetUpdater.endManaging(webView.scrollView, restoring: behavior)
         scrollViewAdjustmentBehaviorBeforeFloatingUI = nil
         setInteractiveObscuredInsetsChange(active: false)
+        (webView as? WebView)?.floatingChromeInsets = nil
         if #available(iOS 15.5, *), appliedViewportInsetRange != nil {
             appliedViewportInsetRange = nil
             webView.setMinimumViewportInset(.zero, maximumViewportInset: .zero)
@@ -2736,6 +2795,7 @@ class TabViewController: UIViewController {
     /// WebKit sizes the web view by setting its frame while it owns it in the fullscreen window.
     /// Auto Layout would zero that frame back out, leaving the fullscreen surface blank.
     private func handOverWebViewLayoutToWebKit() {
+        (webView as? WebView)?.floatingChromeInsets = nil
         NSLayoutConstraint.deactivate(webViewLayoutConstraints)
         webView.translatesAutoresizingMaskIntoConstraints = true
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -2792,6 +2852,8 @@ class TabViewController: UIViewController {
         restoreWebViewBackgroundAfterFullscreen()
         updateBorderViewForFloatingUIIfNeeded()
         pullToRefreshViewAdapter?.setPullSuspended(false)
+        // Entering fullscreen cleared the viewport sizes override; restore it without waiting for the next scroll.
+        applyWebViewLayout(for: chromeDelegate?.currentBarsVisibility ?? lastAppliedBarsVisibilityPercent, forceFloatingUIInsets: true)
     }
 
     private func removeObservers() {
@@ -2900,6 +2962,7 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        Task { @MainActor [pageTranslationSession] in pageTranslationSession?.cancel() }
         let browserToolsScript = userScripts?.aiChatUserScript
         Task { @MainActor in browserToolsScript?.detachBrowserTools() }
         delegateSessionFindInPage?.done()
@@ -2954,6 +3017,22 @@ extension TabViewController: LoginFormDetectionDelegate {
         detectedLoginURL = webView.url
     }
     
+}
+
+// The page's translation shows on the same bar as page loads.
+extension TabViewController: PageTranslationProgress {
+
+    func translationDidStart() {
+        progressWorker.didStartLoading(.translation)
+    }
+
+    func translationDidProgress(_ fraction: Double) {
+        progressWorker.progressDidChange(fraction, for: .translation)
+    }
+
+    func translationDidFinish() {
+        progressWorker.didFinishLoading(.translation)
+    }
 }
 
 // MARK: - WKNavigationDelegate
@@ -3014,6 +3093,9 @@ extension TabViewController: WKNavigationDelegate {
             browserToolsService?.ownerDidNavigate(tabID: tabModel.uid, url: webView.url)
             firstPaintCover.didCommit(navigation)
             signpostSearchCommit(url: webView.url)
+            pageTranslationBridge?.documentDidChange()
+            // The old page's translation may still be running; the new page gets its own session.
+            cancelPageTranslation()
         }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
@@ -3048,6 +3130,10 @@ extension TabViewController: WKNavigationDelegate {
         lastCommittedDuckAIChatID = committedChatID
 
         url = webView.url
+
+        // Before any of the new page's scripts run: its load messages can arrive after its first promo report.
+        userScripts?.aiChatUserScript.isAIChatPromoVisible = nil
+        userScripts?.aiChatUserScript.aiChatStatusOnPage = nil
 
         if isAITab {
             delegate?.tab(self, didCommitDuckAINavigationChangingChat: didChangeDuckAIChat)
@@ -3122,6 +3208,89 @@ extension TabViewController: WKNavigationDelegate {
             return nil
         }
         return PageContextAttachabilityPolicy(settings: blocklist)
+    }
+
+    /// Detects the page's language once per page load and shows the translation banner when it applies.
+    private func offerTranslationIfNeeded(in webView: WKWebView) {
+        guard let provider = pageTranslationOfferProvider, provider.isEnabled,
+              webView === self.webView, !isError,
+              let url = webView.url,
+              PageTranslationOfferProvider.isEligible(url),
+              lastMainFramePageContextMIMEType(for: url) != "application/pdf" else {
+            return
+        }
+
+        let pageLoad = pageLoads
+        Task { [weak self, weak webView] in
+            // Dropped if another page started loading while detecting; a URL change within the page, such as replaceState, keeps it.
+            guard let webView, case .banner(let offer) = await provider.decision(in: webView),
+                  let self, pageLoads == pageLoad else { return }
+            showTranslationBanner(offer)
+        }
+    }
+
+    /// One prompt at a time, and only on the tab the user is looking at.
+    private func showTranslationBanner(_ offer: TranslationOffer) {
+        guard view.window != nil,
+              delegate?.tabIsShowingOtherPrompt(self) != true,
+              let addressBar = chromeDelegate?.addressBarChromeView,
+              addressBar.window === view.window else {
+            return
+        }
+        if floatingUIManager.isFloatingUIEnabled, let chromeDelegate {
+            translationBannerPresenter.chromeInsets = chromeDelegate.floatingWebViewObscuredInsets(for: 0)
+        }
+        translationBannerPresenter.present(offer, in: self, nextTo: addressBar) { [weak self] in
+            self?.translatePage(offer)
+        }
+    }
+
+    /// One bridge per tab: rebuilt scripts (a config refresh, protections toggled) keep the page and its bundle, whose
+    /// replies now reach the new scripts' broker, so the same bridge re-registers there and a request in flight carries on.
+    private func installPageTranslationBridge(in userScripts: UserScripts) {
+        let bridge = pageTranslationBridge ?? PageTranslationBridge(inject: { [weak self] in
+            guard let self, let webView, let userScripts = self.userScripts else { return }
+            _ = try await webView.evaluateJavaScript(try userScripts.pageTranslationSource(), in: nil, contentWorld: .defaultClient)
+        })
+        bridge.webView = webView
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: bridge)
+        pageTranslationBridge = bridge
+    }
+
+    /// Translates at once when the pair is installed or already downloading; otherwise asks first, since the user decides on the download.
+    private func translatePage(_ offer: TranslationOffer) {
+        guard let pageTranslator else { return }
+        let pageLoad = pageLoads
+        Task { [weak self] in
+            guard await pageTranslator.needsDownload(offer.pairID) else {
+                self?.startTranslation(offer)
+                return
+            }
+            let sheet = TranslationDownloadSheet.makeController(for: offer) { [weak self] in
+                // The page can navigate on its own while the sheet is up; the offer was for the page that showed it.
+                guard let self, pageLoads == pageLoad else { return }
+                self.startTranslation(offer)
+            }
+            self?.present(sheet, animated: true)
+        }
+    }
+
+    private func startTranslation(_ offer: TranslationOffer) {
+        guard let bridge = pageTranslationBridge, let pageTranslator else { return }
+        let settings = WebPageTranslationSettings(privacyConfigurationManager: privacyConfigurationManager)
+        let session = pageTranslationSession ?? PageTranslationSession(bridge: bridge,
+                                                                       translator: pageTranslator,
+                                                                       batchCharacterLimit: { settings.batchCharacterLimit },
+                                                                       progress: self)
+        pageTranslationSession = session
+        session.start(offer)
+    }
+
+    /// Stops the page's translation, if any, and clears its bar; a bar that a page load has taken over stays.
+    private func cancelPageTranslation() {
+        pageTranslationSession?.cancel()
+        pageTranslationSession = nil
+        progressWorker.didCancelLoading(.translation)
     }
 
     /// `nil` unless the last observed main-frame response was for this URL.
@@ -3237,6 +3406,9 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         if webView === self.webView {
             firstPaintCover.didStartNavigation(navigation)
+            pageLoads += 1
+            translationBannerPresenter.dismiss(animated: false)
+            cancelPageTranslation()
         }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
@@ -3319,6 +3491,7 @@ extension TabViewController: WKNavigationDelegate {
                                               to: webView)
         }
         updateFloatingPageBackgroundColor(in: webView)
+        offerTranslationIfNeeded(in: webView)
         navigationPixelResponder.didFinish(navigation)
         self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
@@ -4150,8 +4323,8 @@ extension TabViewController: WKNavigationDelegate {
             }
         }
 
-        // Compose the synchronous main-frame request mutations (referrer trimming -> GPC -> search-token
-        // signals) in one pass and reload at most once.
+        // Compose the synchronous main-frame request mutations (referrer trimming -> GPC) in one pass
+        // and reload at most once.
         var modifiedRequest = navigationAction.request
         var didModifyRequest = false
 
@@ -4172,30 +4345,6 @@ extension TabViewController: WKNavigationDelegate {
            let gpcRequest = requestForDoNotSell(basedOn: modifiedRequest) {
             modifiedRequest = gpcRequest
             didModifyRequest = true
-        }
-
-        // Attach Search Token experiment signals (dindexexp param + X-DDG-Search-Token header) to SERP navigations.
-        // Enrolled devices only, skipping back/forward so we don't wipe forward history.
-        if navigationAction.isTargetingMainFrame,
-           navigationAction.navigationType != .backForward,
-           let url = navigationAction.request.url,
-           SerpSearchTokenInterceptor.isSerpURL(url),
-           let cohort = featureFlagger.assignedCohort(for: FeatureFlag.searchTokenExperimentV4) as? FeatureFlag.SearchTokenExperimentCohort {
-            // Pin the UA this SERP navigation will send so it can't inherit a stale `customUserAgent`
-            // from a prior (non-DDG) navigation. Matches the UA the token was warmed against.
-            webView.customUserAgent = userAgentManager.userAgent(isDesktop: tabModel.isDesktop, url: url)
-            let token = cohort == .treatment ? delegate?.searchToken(for: self) : nil
-            if let signalled = SerpSearchTokenInterceptor.signalledRequest(for: modifiedRequest,
-                                                                           cohort: cohort,
-                                                                           token: token) {
-                modifiedRequest = signalled
-                didModifyRequest = true
-                // Fires only when we mutate the request, i.e. the first pass — the cancel+reload re-enters
-                // with signals already present so `signalledRequest` returns nil, avoiding a double count.
-                if cohort == .treatment {
-                    fireSearchTokenAttachPixel(token: token)
-                }
-            }
         }
 
         if didModifyRequest {
@@ -5441,6 +5590,8 @@ extension TabViewController: UserContentControllerDelegate {
         siteLoadingPerformanceSubfeature = SiteLoadingPerformanceSubfeature()
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: siteLoadingPerformanceSubfeature!)
 
+        installPageTranslationBridge(in: userScripts)
+
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         
         cachedMapper = nil
@@ -6566,6 +6717,12 @@ extension TabViewController: DuckPlayerHosting {
     var contentBottomConstraint: NSLayoutConstraint? {
         return webViewBottomAnchorConstraint
     }
+
+    /// Read from the pill itself: its visibility notification also fires when no pill exists.
+    var isDuckPlayerPillVisible: Bool {
+        let duckPlayer = duckPlayerNavigationHandler.duckPlayer as? DuckPlayer
+        return (duckPlayer?.nativeUIPresenter as? DuckPlayerNativeUIPresenter)?.containerViewModel?.sheetVisible == true
+    }
     
     var floatingBottomChromeObscuredHeight: CGFloat {
         guard let chromeDelegate else { return 0 }
@@ -6655,30 +6812,6 @@ private extension WKProcessTerminationReason {
         case .requestedByClient: return "requested_by_client"
         case .crash: return "crash"
         case .exceededSharedProcessCrashLimit: return "exceeded_shared_process_crash_limit"
-        }
-    }
-}
-
-// MARK: - Search Token (Dindex) experiment diagnostics
-
-private extension TabViewController {
-
-    /// Fires the treatment-only `search-token_serp-attach` diagnostic for a SERP navigation the interceptor
-    /// just decorated: whether a token was attached and its length bucket. Daily+count, low-cardinality, no PII.
-    func fireSearchTokenAttachPixel(token: String?) {
-        PixelKit.fire(SearchTokenPixel.serpAttach(outcome: token != nil ? "attached" : "no_token",
-                                                  tokenLength: Self.tokenLengthBucket(token?.count ?? 0)),
-                      frequency: .dailyAndCount)
-    }
-
-    // A normal token is ~347 chars; buckets bracket that so truncation (1_256) and oversize (513_plus)
-    // stand out from the normal range (257_512).
-    static func tokenLengthBucket(_ length: Int) -> String {
-        switch length {
-        case 0: return "0"
-        case 1...256: return "1_256"
-        case 257...512: return "257_512"
-        default: return "513_plus"
         }
     }
 }

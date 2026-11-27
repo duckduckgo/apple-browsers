@@ -199,6 +199,8 @@ class SwitchBarButtonsView: UIView {
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.alignment = .center
         stack.isLayoutMarginsRelativeArrangement = true
+        // The floating bottom bar overlaps the safe area; inheriting it would push the buttons off center.
+        stack.insetsLayoutMarginsFromSafeArea = false
         stack.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: Constants.stackTrailingInset)
 
         addSubview(stack)

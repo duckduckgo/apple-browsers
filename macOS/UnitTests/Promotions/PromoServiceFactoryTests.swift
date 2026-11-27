@@ -134,6 +134,28 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
+    func testFactoryCreatesDeclaredAgePromoWithCorrectConfiguration() async {
+        let promo = await PromoServiceFactory.declaredAge(dependencies: dependencies)
+
+        XCTAssertEqual(promo.id, "declared-age")
+        XCTAssertEqual(promo.triggers, [.windowBecameKey, .declaredAgeBecameEligible])
+        XCTAssertEqual(promo.initiated, .app)
+        XCTAssertEqual(promo.promoType.severity, .high)
+        XCTAssertNil(promo.promoType.timeoutInterval)
+        XCTAssertEqual(promo.context, .global)
+        XCTAssertFalse(promo.respectsGlobalCooldown)
+        XCTAssertFalse(promo.setsGlobalCooldown)
+        XCTAssertTrue(promo.canShowDuringOnboarding)
+        XCTAssertTrue(promo.showsOverVisiblePromos)
+        XCTAssertNotNil(promo.delegate)
+    }
+
+    func testDeclaredAgePromoHasTopPriority() async {
+        let promos = await PromoServiceFactory.makeAllPromos(dependencies: dependencies)
+
+        XCTAssertEqual(promos.first?.id, "declared-age")
+    }
+
     func testFactoryCreatesSubscriptionPromoWithCorrectConfiguration() {
         let promo = PromoServiceFactory.subscriptionPromo(delegate: FireWindowSubscriptionPromoDelegate())
 
@@ -220,7 +242,6 @@ extension PromoServiceFactoryTests {
             syncBookmarksAdapter: nil,
             pinningManager: MockPinningManager(),
             cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 keyValueStore: InMemoryThrowingKeyValueStore(),
                 windowControllersManager: windowControllersManager,
                 cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
@@ -249,12 +270,10 @@ extension PromoServiceFactoryTests {
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
             quitSurveyPromoObserver: QuitSurveyPromoObserver(),
             vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
             ),
             vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
-                featureFlagger: MockFeatureFlagger(),
                 visibilityManager: makeVPNUpsellVisibilityManager(),
                 persistor: MockVPNUpsellUserDefaultsPersistor()
             ),

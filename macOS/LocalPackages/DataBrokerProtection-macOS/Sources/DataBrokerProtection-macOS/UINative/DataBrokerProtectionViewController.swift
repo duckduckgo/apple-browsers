@@ -44,6 +44,7 @@ final public class DataBrokerProtectionViewController: NSViewController {
                 vpnBypassService: VPNBypassFeatureProvider,
                 dataManager: DataBrokerProtectionDataManaging?,
                 privacyConfig: PrivacyConfigurationManaging? = nil,
+                userAssistanceFlagger: UserAssistanceFeatureFlagging? = nil,
                 prefs: ContentScopeProperties? = nil,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 isUserSubscribed: @escaping () -> Bool,
@@ -66,7 +67,8 @@ final public class DataBrokerProtectionViewController: NSViewController {
                                              pixelHandler: sharedPixelsHandler,
                                              privacyConfig: privacyConfig,
                                              prefs: prefs,
-                                             webView: webView)
+                                             webView: webView,
+                                             userAssistanceFlagger: userAssistanceFlagger)
 
         // Prepare the profile cache to avoid stuttering later
         // It's in a task to avoid stuttering now
@@ -93,6 +95,16 @@ final public class DataBrokerProtectionViewController: NSViewController {
                                                                 queue: .main) { [weak self] _ in
             self?.webView?.reload()
         }
+    }
+
+    public override func viewDidAppear() {
+        super.viewDidAppear()
+        if let webView { webUIViewModel.startAssistedOptOutsPolling(in: webView) }
+    }
+
+    public override func viewWillDisappear() {
+        webUIViewModel.stopAssistedOptOutsPolling()
+        super.viewWillDisappear()
     }
 
     override public func loadView() {

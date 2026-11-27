@@ -38,6 +38,9 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         static let blockedLoad = NSSelectorFromString("blockedLoad")
         static let webContentProcessInfo = NSSelectorFromString("_webContentProcessInfo")
         static let pid = NSSelectorFromString("pid")
+        static let overrideLayoutParameters = NSSelectorFromString(
+            "_overrideLayoutParametersWithMinimumLayoutSize:minimumUnobscuredSizeOverride:maximumUnobscuredSizeOverride:")
+        static let clearOverrideLayoutParameters = NSSelectorFromString("_clearOverrideLayoutParameters")
 #if _ORIGINAL_DATA_AS_STRING_ENABLED
         static let originalDataAsString = NSSelectorFromString(URL.Selector.originalDataAsString)
 #endif
@@ -60,6 +63,17 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
     func testWebViewRespondsTo_webProcessIdentifier() {
         XCTAssertTrue(WKWebView.instancesRespond(to: Selector.webProcessIdentifier))
     }
+
+#if os(iOS)
+    func testWebViewRespondsTo_overrideLayoutParameters() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: Selector.overrideLayoutParameters))
+        XCTAssertTrue(WKWebView.instancesRespond(to: Selector.clearOverrideLayoutParameters))
+        let typeEncoding = class_getInstanceMethod(WKWebView.self, Selector.overrideLayoutParameters)
+            .flatMap(method_getTypeEncoding)
+            .map { String(cString: $0).filter { !$0.isNumber } }
+        XCTAssertEqual(typeEncoding, "v@:{CGSize=dd}{CGSize=dd}{CGSize=dd}")
+    }
+#endif
 
 #if PRIVATE_PAGE_SIGNALS_ENABLED
     func testWebViewRespondsTo_resourceLoadDelegate() {

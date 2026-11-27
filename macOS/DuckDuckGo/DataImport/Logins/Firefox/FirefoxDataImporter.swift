@@ -28,6 +28,7 @@ internal class FirefoxDataImporter: DataImporter {
     private let loginImporter: LoginImporter
     private let bookmarkImporter: BookmarkImporter
     private let faviconManager: FaviconManagement
+    private let faviconRasterizer: FaviconRasterizer
     private let historyReader: FirefoxHistoryVisitsReaderProtocol
     private let historyImporter: HistoryImporterProtocol
     private let pixelFiring: PixelFiring?
@@ -44,6 +45,7 @@ internal class FirefoxDataImporter: DataImporter {
         loginImporter: LoginImporter,
         bookmarkImporter: BookmarkImporter,
         faviconManager: FaviconManagement,
+        faviconRasterizer: FaviconRasterizer,
         historyReader: FirefoxHistoryVisitsReaderProtocol,
         historyImporter: HistoryImporterProtocol,
         pixelFiring: PixelFiring? = PixelKit.shared
@@ -53,6 +55,7 @@ internal class FirefoxDataImporter: DataImporter {
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.faviconRasterizer = faviconRasterizer
         self.historyReader = historyReader
         self.historyImporter = historyImporter
         self.pixelFiring = pixelFiring
@@ -64,6 +67,7 @@ internal class FirefoxDataImporter: DataImporter {
                   loginImporter: loginImporter,
                   bookmarkImporter: bookmarkImporter,
                   faviconManager: NSApp.delegateTyped.faviconManager,
+                  faviconRasterizer: NSApp.delegateTyped.faviconRasterizer,
                   historyReader: FirefoxHistoryVisitsReader(firefoxDataDirectoryURL: profile.profileURL),
                   historyImporter: HistoryImporter(historyCoordinator: NSApp.delegateTyped.historyCoordinator))
     }
@@ -211,18 +215,7 @@ internal class FirefoxDataImporter: DataImporter {
 
         switch faviconsResult {
         case .success(let faviconsByURL):
-            let faviconsByDocument = faviconsByURL.reduce(into: [URL: [Favicon]]()) { result, pair in
-                guard let pageURL = URL(string: pair.key) else { return }
-                let favicons = pair.value.map {
-                    Favicon(identifier: UUID(),
-                            url: pageURL,
-                            image: $0.image,
-                            relation: .icon,
-                            documentUrl: pageURL,
-                            dateCreated: Date())
-                }
-                result[pageURL] = favicons
-            }
+            let faviconsByDocument = await faviconRasterizer.favicons(fromImported: faviconsByURL)
             await faviconManager.handleFaviconsByDocumentUrl(faviconsByDocument)
             PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .favicons, source: source.pixelSourceParameterName, sourceVersion: sourceVersion), frequency: .dailyAndStandard)
 

@@ -42,7 +42,7 @@ def tap_first_present(ios, locators, timeout=1.5):
 # ---------------------------------------------------------------- session and pages
 def fresh_start(ios):
     """Known state: reinstalled app, onboarding skipped, pinned flags, default capture conditions (light, default text
-    size, portrait, live status bar), one blank tab, address bar not focused.
+    size, portrait, live status bar), one blank tab (or the proof's PROFILE), address bar not focused.
     (A fresh tab sometimes opens with the bar focused and sometimes not; this always leaves it unfocused.)"""
     ios.reset()
     ios.default_capture_conditions()
@@ -421,3 +421,153 @@ def expand_contextual_chat(ios):
     """Move the sheet's chat to its own Duck.ai tab."""
     ios.tap(CONTEXTUAL_IDS[ios.device]["expand"])
     return ios.expect_url_contains("chatID=", 15)
+
+
+# ---------------------------------------------------------------- Sync & Backup
+BROWSING_MENU = {"iphone": "id=Browser.Toolbar.Button.Menu", "ipad": "id=Browser.OmniBar.Button.BrowsingMenu"}
+PASSCODE_FIELD = 'app=springboard id="Passcode field"'
+CAMERA_PROMPT = 'app=springboard role=alert contains="access your camera"'
+SYNC_DEV_PROFILE = {"debug.syncEnvironment": "Development"}
+SYNC_FLAGS = {"syncImprovedPairingFlow": True, "syncCanUseV2ConnectFlow": True, "syncCanShowV2ConnectCode": True}
+
+
+def open_settings(ios):
+    """Browsing menu, then Settings. On iPad a tap while the menu is still animating in can do nothing, so it taps
+    Settings again if the Settings screen hasn't appeared."""
+    dismiss_address_bar(ios)
+    ios.tap(BROWSING_MENU[ios.device])
+    ios.tap('role=button label="Settings"')
+    if not ios.exists('role=button label="Done"', 5):
+        ios.tap('role=button label="Settings"')
+    ios.wait('role=button label="Done"', "visible", 10)
+
+
+def open_sync_settings(ios):
+    """Settings, then the Sync & Backup row (its label carries the state: "Sync & Backup, Off" or ", On")."""
+    open_settings(ios)
+    ios.scroll_to('contains="Sync & Backup,"')
+    ios.tap('role=button contains="Sync & Backup,"')
+    ios.wait('label="Sync & Backup"', "exists", 10)
+
+
+def unlock_device(ios, timeout=5):
+    """Answer the system passcode sheet ("Unlock device to set up Sync & Backup") if it appears; the simulator takes
+    any passcode. One unlock stays valid for a short while, so a later gated step may not ask: returns whether it did.
+    The sheet belongs to SpringBoard, so its locators carry `app=springboard`."""
+    if not ios.exists(PASSCODE_FIELD, timeout):
+        return False
+    ios.type(PASSCODE_FIELD, "0000")
+    ios.tap("app=springboard id=Done")
+    ios.expect_hidden(PASSCODE_FIELD, 10)
+    return True
+
+
+def runner_code(e):
+    """The runner's error code on a Failed (ALERT_STILL_SHOWN, MATCHES_CHANGED, …), or None."""
+    return ((getattr(e, "extra", None) or {}).get("runner") or {}).get("code")
+
+
+def allow_camera(ios):
+    """Allow the camera prompt the code scanner raises, as often as it comes back (it can show twice in a row).
+    The simulator has no camera, so a code is always entered through Enter Code."""
+    for _ in range(3):
+        if not ios.exists(CAMERA_PROMPT, 4):
+            return
+        try:
+            ios.alert("accept", button="Allow")
+        except Failed as e:
+            if runner_code(e) != "ALERT_STILL_SHOWN":
+                raise
+
+
+def answer_alert(ios, button, timeout=10):
+    """Press `button` on the alert showing. A SwiftUI alert can still be up when the runner checks right after the
+    press, so wait for it to go and press again only if it stays."""
+    try:
+        return ios.alert("accept", button=button)
+    except Failed as e:
+        if runner_code(e) != "ALERT_STILL_SHOWN":
+            raise
+    try:
+        ios.wait("role=alert", "hidden", timeout)
+    except Failed:
+        ios.alert("accept", button=button)
+
+
+def copy_in_app(ios, text):
+    """Put `text` on the clipboard from inside the app, through Settings > All debug options > Sync > "Paste and Copy
+    Recovery Code". Text written from the host (`simctl pbcopy`) never reaches the app's Paste Sync Code. Ends back on
+    the Settings list."""
+    open_settings(ios)
+    ios.scroll_to('label="All debug options"')
+    ios.tap('role=button label="All debug options"')
+    ios.scroll_to('role=button label="Sync"')
+    ios.tap('role=button label="Sync"')
+    ios.tap('label="Paste and Copy Recovery Code"')
+    ios.type("-", text)
+    ios.alert("accept", button="Copy")
+    ios.tap("id=BackButton")
+    ios.tap("id=BackButton")
+
+
+def clipboard(ios):
+    """The simulator's clipboard, read from the host (read-back only)."""
+    p = env.run(["xcrun", "simctl", "pbpaste", ios.d.udid])
+    return p.stdout.strip()
+
+
+def turn_off_and_delete_server_data(ios):
+    """From the synced Sync & Backup screen: Turn Off Sync & Backup, "Also delete server data?" on, Turn Off and Delete
+    Server Data, Permanently Delete. Ends on the screen with sync off. Refuses unless the screen shows the
+    "Dev environment" badge: it never deletes an account on the production server."""
+    if not ios.exists('label="Dev environment"', 3):
+        raise Failed("refusing to delete Sync server data: the Sync & Backup screen doesn't show \"Dev environment\"")
+    ios.scroll_to('role=button label="Turn Off Sync & Backup"')
+    ios.tap('role=button label="Turn Off Sync & Backup"')
+    unlock_device(ios)
+    ios.wait("id=DeleteServerDataToggle", "visible", 10)
+    if ios.get("id=DeleteServerDataToggle") != "1":
+        ios.tap("id=DeleteServerDataToggle")
+    ios.wait("id=TurnOffAndDeleteServerDataButton", "visible", 10)
+    ios.tap("id=TurnOffAndDeleteServerDataButton")
+    ios.wait('role=alert label="You Can’t Undo This Action."', "exists", 10)
+    answer_alert(ios, "Permanently Delete")
+    ios.wait('role=button label="I Have a Recovery Code"', "visible", 30)
+
+
+def close_settings(ios):
+    """From Settings or a screen one level inside it (Sync & Backup): back, then Done, to the browser."""
+    if ios.exists("id=BackButton", 1):
+        ios.tap("id=BackButton")
+    ios.wait('role=button label="Done"', "visible", 10)
+    try:
+        ios.tap('role=button label="Done"')
+    except Failed as e:
+        if runner_code(e) != "MATCHES_CHANGED":
+            raise
+        ios.tap('role=button label="Done"')
+    ios.wait("id=searchEntry", "exists", 10)
+
+
+def recover_with_code(ios, code):
+    """From the browser, with sync off: I Have a Recovery Code > Recover Synced Data > Enter Code > Paste Sync Code with
+    `code`. Returns True on "Sync & Backup enabled" and False on "Sync failed.", which also covers server and network
+    errors, so False alone doesn't prove the account is gone."""
+    copy_in_app(ios, code)
+    ios.scroll_to('contains="Sync & Backup,"')
+    ios.tap('role=button label="Sync & Backup, Off"')
+    ios.tap('role=button label="I Have a Recovery Code"')
+    ios.tap('role=button label="Recover Synced Data"')
+    unlock_device(ios, 10)
+    allow_camera(ios)
+    ios.tap('role=button label="Enter Code"')
+    ios.tap('role=button label="Paste Sync Code"')
+    end = time.time() + 60
+    while time.time() < end:
+        if ios.exists("id=SyncSuccessTitle", 1):
+            return True
+        if ios.exists('role=alert label="Sync failed."', 1):
+            ios.alert("accept", button="Got It")
+            return False
+    raise Failed("recovery showed neither the success screen nor \"Sync failed.\" within 60 s",
+                 runner=dict(code="TIMEOUT"))

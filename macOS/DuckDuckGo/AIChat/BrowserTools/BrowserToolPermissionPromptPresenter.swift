@@ -23,6 +23,12 @@ import DesignResourcesKitIcons
 import SwiftUI
 import WebKit
 
+/// What took the Duck.ai button from a translate offer (R10).
+enum TranslateOfferSuppressor: String {
+    case browserTool = "browser_tool"
+    case localModel = "local_model"
+}
+
 @MainActor
 final class BrowserToolPermissionPromptPresenter {
 
@@ -85,14 +91,20 @@ final class BrowserToolPermissionPromptPresenter {
     private var uses: [String: Use] = [:]
     private var selectionChanges: [ObjectIdentifier: AnyCancellable] = [:]
     private var translateOfferDismissedTabIDs: Set<TabIdentifier> = []
+    /// Tabs whose current page lost its offer to another prompt; the next page may offer again.
+    private var translateOfferSuppressedTabIDs: Set<TabIdentifier> = []
+    private weak var localModelPromptWindow: NSWindow?
     private let translatePages: TranslatePagesSetting
     private var translatePagesChanges: AnyCancellable?
+    private let translateOfferSuppressed: (TranslateOfferSuppressor) -> Void
 
     init(windowControllersManager: WindowControllersManagerProtocol,
          translatePages: TranslatePagesSetting = TranslatePagesSetting(),
+         translateOfferSuppressed: @escaping (TranslateOfferSuppressor) -> Void = { _ in },
          respond: @escaping Respond) {
         self.windowControllersManager = windowControllersManager
         self.translatePages = translatePages
+        self.translateOfferSuppressed = translateOfferSuppressed
         self.respond = respond
         translatePagesChanges = translatePages.changes.sink { [weak self] in self?.refresh() }
     }
@@ -103,6 +115,7 @@ final class BrowserToolPermissionPromptPresenter {
               !collection.isBurner,
               let windowController = windowController(for: collection) else { return false }
 
+        suppressTranslateOffers(in: collection, alsoOn: ownerTabID, by: .browserTool)
         requests.append(Request(id: prompt.requestID, ownerTabID: ownerTabID, collection: collection,
                                 kind: .toolPrompt(.init(prompt: prompt, prompter: prompter, selection: BrowserToolAccessSelection()))))
         observeSelection(of: collection)
@@ -156,20 +169,67 @@ final class BrowserToolPermissionPromptPresenter {
 
     // MARK: - Translate offer
 
-    /// Offers to translate the page `tabID` just loaded in `window`, replacing its earlier offer; nil withdraws it.
+    /// Offers to translate the page `tabID` just loaded in `window`, replacing its earlier offer; nil withdraws it
+    /// and is sent for every new document.
     func offerTranslation(languageCode: String?, tabID: TabIdentifier, window: NSWindow? = nil) {
+        if languageCode == nil { translateOfferSuppressedTabIDs.remove(tabID) }
         guard translateOfferLanguageCode(for: tabID) != languageCode else { return }
         requests.removeAll { $0.ownerTabID == tabID && $0.translateOfferLanguageCode != nil }
-        if let languageCode, !translateOfferDismissedTabIDs.contains(tabID),
+        if let languageCode, !translateOfferDismissedTabIDs.contains(tabID), !translateOfferSuppressedTabIDs.contains(tabID),
            isAllowedByTranslatePages(languageCode),
            let collection = ownerCollection(ofTabID: tabID, shownIn: window),
            !collection.isBurner,
            windowController(for: collection)?.mainViewController.aiChatCoordinator.isSidebarOpen(for: tabID) != true {
-            requests.append(Request(id: UUID().uuidString, ownerTabID: tabID, collection: collection,
-                                    kind: .translateOffer(languageCode: languageCode, choice: TranslateOfferChoice())))
-            observeSelection(of: collection)
+            if let suppressor = promptHoldingDuckAIButton(of: collection, for: tabID) {
+                suppressTranslateOffer(on: tabID, by: suppressor)
+            } else {
+                requests.append(Request(id: UUID().uuidString, ownerTabID: tabID, collection: collection,
+                                        kind: .translateOffer(languageCode: languageCode, choice: TranslateOfferChoice())))
+                observeSelection(of: collection)
+            }
         }
         refresh()
+    }
+
+    /// The local-model prompt opens at `window`'s Duck.ai button.
+    func localModelPromptWillShow(in window: NSWindow?) {
+        localModelPromptWindow = window
+        guard let collection = windowControllersManager.mainWindowControllers.first(where: { $0.window === window })?
+            .mainViewController.tabCollectionViewModel else { return }
+        suppressTranslateOffers(in: collection, by: .localModel)
+        refresh()
+    }
+
+    func localModelPromptDidClose() {
+        localModelPromptWindow = nil
+        refresh()
+    }
+
+    // A tool prompt waiting on the offer's own tab would show there first, so it holds that tab's button too.
+    private func promptHoldingDuckAIButton(of collection: TabCollectionViewModel, for tabID: TabIdentifier) -> TranslateOfferSuppressor? {
+        if showsLocalModelPrompt(collection) {
+            return .localModel
+        }
+        let shownID = shown[ObjectIdentifier(collection)]?.requestID
+        if requests.contains(where: { $0.translateOfferLanguageCode == nil && $0.isLive && ($0.id == shownID || $0.ownerTabID == tabID) }) {
+            return .browserTool
+        }
+        return nil
+    }
+
+    /// Closes the offer showing in `collection` and any on `tabID`; offers hidden on other tabs come back as usual (R8).
+    private func suppressTranslateOffers(in collection: TabCollectionViewModel, alsoOn tabID: TabIdentifier? = nil,
+                                         by suppressor: TranslateOfferSuppressor) {
+        let shownID = shown[ObjectIdentifier(collection)]?.requestID
+        let isSuppressed: (Request) -> Bool = { $0.translateOfferLanguageCode != nil && ($0.id == shownID || $0.ownerTabID == tabID) }
+        let tabIDs = requests.filter(isSuppressed).map(\.ownerTabID)
+        requests.removeAll(where: isSuppressed)
+        tabIDs.forEach { suppressTranslateOffer(on: $0, by: suppressor) }
+    }
+
+    private func suppressTranslateOffer(on tabID: TabIdentifier, by suppressor: TranslateOfferSuppressor) {
+        guard translateOfferSuppressedTabIDs.insert(tabID).inserted else { return }
+        translateOfferSuppressed(suppressor)
     }
 
     // A pinned tab is in every window's collection: its web view's window picks one, or, when it shows in none, the main window.
@@ -247,7 +307,13 @@ final class BrowserToolPermissionPromptPresenter {
 
     private func oldestRequest(selectedIn collection: TabCollectionViewModel) -> Request? {
         guard let selectedTabID = collection.selectedTabViewModel?.tab.uuid else { return nil }
-        return requests.first { $0.collection === collection && $0.ownerTabID == selectedTabID }
+        // An offer on a tab switched to under the local-model prompt waits until that prompt closes.
+        let holdsOffers = showsLocalModelPrompt(collection)
+        return requests.first { $0.collection === collection && $0.ownerTabID == selectedTabID && !(holdsOffers && $0.translateOfferLanguageCode != nil) }
+    }
+
+    private func showsLocalModelPrompt(_ collection: TabCollectionViewModel) -> Bool {
+        localModelPromptWindow != nil && localModelPromptWindow === windowController(for: collection)?.window
     }
 
     private func show(_ request: Request, in collection: TabCollectionViewModel, key: ObjectIdentifier) {

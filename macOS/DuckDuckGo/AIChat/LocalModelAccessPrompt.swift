@@ -36,14 +36,18 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
 
     private let themeManager: ThemeManager
     private let instrumentation: AIChatLocalModelInstrumentation
+    private weak var translateOffers: BrowserToolPermissionPromptPresenter?
     private var popover: NSPopover?
     private var answer: AIChatLocalModelAccessReply.Result?
     private var isInstallPrompt = false
     private var waiting: [CheckedContinuation<AIChatLocalModelAccessReply.Result, Never>] = []
 
-    init(themeManager: ThemeManager, instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation()) {
+    init(themeManager: ThemeManager,
+         instrumentation: AIChatLocalModelInstrumentation = LocalModelPixelInstrumentation(),
+         translateOffers: BrowserToolPermissionPromptPresenter? = nil) {
         self.themeManager = themeManager
         self.instrumentation = instrumentation
+        self.translateOffers = translateOffers
     }
 
     func ask(from webView: WKWebView?, request: AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result {
@@ -65,7 +69,10 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
     }
 
     private func show(from webView: WKWebView?, request: AIChatLocalModelAccessRequest) -> Bool {
-        guard let webView, webView.window != nil else { return false }
+        // AppKit skips the pop-up for a hidden window.
+        guard let webView, let window = webView.window, window.isVisible else { return false }
+        // Before the anchor is picked: the offer it closes may have been all that revealed the Duck.ai button.
+        translateOffers?.localModelPromptWillShow(in: window)
 
         let content = LocalModelAccessPromptView(themeManager: themeManager,
                                                  request: request,
@@ -107,6 +114,7 @@ final class LocalModelAccessPrompt: NSObject, LocalModelAccessAsking {
     private func finish(_ result: AIChatLocalModelAccessReply.Result) {
         let waiting = self.waiting
         self.waiting = []
+        translateOffers?.localModelPromptDidClose()
         popover = nil
         answer = nil
         isInstallPrompt = false

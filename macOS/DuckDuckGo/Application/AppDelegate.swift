@@ -306,7 +306,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
-    private(set) lazy var localModelAccessPrompt = LocalModelAccessPrompt(themeManager: themeManager)
+    private(set) lazy var localModelAccessPrompt = LocalModelAccessPrompt(themeManager: themeManager,
+                                                                            translateOffers: aiChatBrowserToolsService.permissionPrompts)
 
     @MainActor
     private(set) lazy var aiChatScreenshotCaptureService = AIChatScreenshotCaptureService()

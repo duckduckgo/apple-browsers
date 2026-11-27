@@ -138,7 +138,8 @@ lists them. Add a step when a second proof needs a quirk handled; document every
 
 Locators: `id=searchEntry`, `label="Fire Solid 24"`, `role=button label="New Tab"`, `text="Done"`, `contains="token"`,
 plus `nth=<n>` when several match (otherwise the action fails with AMBIGUOUS; it never guesses). `web:css=#token` and
-`web:text="…"` only read.
+`web:text="…"` only read. `app=springboard` scopes a locator to SpringBoard, which owns system sheets such as the
+device-passcode prompt: `app=springboard id="Passcode field"`.
 
 ### Proof rules
 
@@ -306,7 +307,7 @@ $V prove .agents/skills/verify-ios/examples/*.py                                
 | `examples/` | worked proofs t1–t12, harness examples |
 | `tests/` | `test_*.py` (no simulator), `must_fail.py` (refusals and build identity, as a proof) |
 | `fixture/` | local test pages |
-| `features/` | the feature map: shared steps, Duck.ai |
+| `features/` | the feature map: shared steps, Duck.ai, Sync & Backup |
 
 Swift under `runner/` must pass `mint run swiftlint lint --strict --force-exclude .agents/skills/verify-ios/runner/Sources`.
 Keep the runner's fixes: the animation-idle swizzle, the `record(_:)` override, the alert handler (app + SpringBoard),

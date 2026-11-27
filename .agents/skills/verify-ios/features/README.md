@@ -72,6 +72,8 @@ before a proof uses a step, and update it when you change one.
     deleting a chat; native input on iPhone, web input on iPad (examples t8, t12).
   - [Contextual chat](./duck-ai-contextual.md): Duck.ai over a web page with the page attached; floating
     input then sheet on iPhone, sheet on iPad (example t11).
+- [Sync & Backup](./sync.md): back up, pair with a second simulator, recover with the recovery code, manage devices,
+  turn off and delete server data, setup errors and promos; always against the dev sync server.
 
 ## Worked examples
 

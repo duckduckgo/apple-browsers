@@ -223,6 +223,15 @@ class LocatorTests(unittest.TestCase):
         self.assertEqual(parse_locator("name=x")["sel"], {"label": "x"})
         self.assertEqual(parse_locator("web:css=#token"), {"web": "css", "value": "#token"})
 
+    def test_system_app_scope(self):
+        from verify_ios.driver import scoped
+        sel = parse_locator('app=springboard id="Passcode field"')["sel"]
+        self.assertEqual(scoped({"op": "type", "sel": sel}),
+                         {"op": "type", "sel": {"id": "Passcode field"}, "app": "com.apple.springboard"})
+        self.assertEqual(scoped({"op": "tap", "sel": {"id": "x"}}), {"op": "tap", "sel": {"id": "x"}})
+        with self.assertRaises(env.Failed):
+            scoped({"op": "tap", "sel": {"app": "com.apple.Preferences", "id": "x"}})
+
 
 class LaunchProfileTests(unittest.TestCase):
     def test_profile_pins_the_flags_without_internal_user(self):

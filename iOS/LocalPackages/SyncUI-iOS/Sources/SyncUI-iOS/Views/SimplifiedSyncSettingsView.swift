@@ -45,6 +45,7 @@ public struct SimplifiedSyncSettingsView: View {
         List {
             syncWarningBanners
             headerSection
+            newDevicesCardSection
 
             if model.isSyncEnabled {
                 syncEnabledSections
@@ -57,6 +58,7 @@ public struct SimplifiedSyncSettingsView: View {
         .animation(.easeInOut(duration: 0.3), value: model.isSyncEnabled)
         .animation(.easeInOut(duration: 0.3), value: model.devices.isEmpty)
         .applyListStyle()
+        .background(deviceActivityNavigationLink)
         .environmentObject(model)
         .onChange(of: model.isSyncEnabled) { isEnabled in
             if !isEnabled {
@@ -106,6 +108,24 @@ extension SimplifiedSyncSettingsView {
                 SyncWarningMessageView(title: UserText.syncUnavailableTitle, message: UserText.syncUnavailableMessageUpgradeRequired)
             } else {
                 SyncWarningMessageView(title: UserText.syncUnavailableTitle, message: UserText.syncUnavailableMessage)
+            }
+        }
+    }
+
+    @ViewBuilder
+    var newDevicesCardSection: some View {
+        if #available(iOS 18.0, *), model.isNewDevicesCardVisible {
+            // Capture the displayed IDs so dismissal cannot also remove events that arrive before the next render.
+            let eventIDs = Set(model.pendingLoginEvents.map(\.id))
+            Section {
+                SyncSettingsTipView(
+                    tip: SyncSettingsTip(kind: .newDevices(eventIDs),
+                                         titleText: model.newDevicesCardTitle,
+                                         messageText: model.newDevicesCardMessage,
+                                         actionText: UserText.newDevicesCardReview),
+                    action: model.showDeviceActivity,
+                    dismiss: { model.dismissPendingLoginEvents(withIDs: eventIDs) }
+                )
             }
         }
     }
@@ -593,19 +613,36 @@ extension SimplifiedSyncSettingsView {
     }
 
     @ViewBuilder
-    var deviceActivitySection: some View {
-        if model.isDeviceActivityAvailable,
+    var deviceActivityNavigationLink: some View {
+        if model.canShowDeviceActivity,
            let deviceActivityViewModel = model.deviceActivityViewModel {
+            // Keep programmatic navigation mounted even when the entry-point row is below the fold.
+            NavigationLink(destination: DeviceActivityView(model: deviceActivityViewModel)
+                .onAppear(perform: model.deviceActivityDidOpen), isActive: $model.isDeviceActivityPresented) {
+                EmptyView()
+            }
+            .accessibilityHidden(true)
+        }
+    }
+
+    @ViewBuilder
+    var deviceActivitySection: some View {
+        if model.canShowDeviceActivity {
             Section {
-                NavigationLink(destination: DeviceActivityView(model: deviceActivityViewModel), isActive: $model.isDeviceActivityPresented) {
-                    Label(title: {
-                        Text(UserText.deviceActivityTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                    }, icon: {
-                        Image(uiImage: DesignSystemImages.Glyphs.Size24.history)
-                            .foregroundColor(Color(designSystemColor: .icons))
-                    })
+                Button(action: model.showDeviceActivity) {
+                    HStack {
+                        Label(title: {
+                            Text(UserText.deviceActivityTitle)
+                                .daxBodyRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                        }, icon: {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.history)
+                                .foregroundColor(Color(designSystemColor: .icons))
+                        })
+                        Spacer()
+                        disclosureChevron
+                    }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }

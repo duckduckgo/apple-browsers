@@ -29,6 +29,14 @@ import PixelKit
 
 extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
+    func dismissPendingLoginEvents(withIDs ids: Set<String>) {
+        do {
+            try syncService.dismissPendingLoginEvents(withIDs: ids)
+        } catch {
+            Logger.sync.error("Failed to dismiss pending Sync logins: \(String(reflecting: error), privacy: .private)")
+        }
+    }
+
     var syncBookmarksPausedTitle: String? {
         UserText.syncLimitExceededTitle
     }

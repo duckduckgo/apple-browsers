@@ -443,9 +443,19 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     @MainActor
     func customizeResponsesState(requestingWebView: WKWebView?) -> NewTabPageDataModel.OmnibarCustomizeResponsesState {
         guard let windowControllersManager else { return .none }
-        let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
+        let burnerMode = originBurnerMode(for: requestingWebView, in: windowControllersManager)
         let state = CustomizeResponsesStore(storageHandler: duckAiStorageHandlerProvider(burnerMode)).currentState()
         return NewTabPageDataModel.OmnibarCustomizeResponsesState(subLabel: state.subLabel, hasCustomization: state.hasCustomization, active: state.isActive)
+    }
+
+    /// Only the mode is read here, never tab data, so a broadcast with no requesting web view may
+    /// still follow the key window.
+    @MainActor
+    private func originBurnerMode(for requestingWebView: WKWebView?, in windowControllersManager: WindowControllersManagerProtocol) -> BurnerMode {
+        let origin = requestingWebView == nil
+            ? windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
+            : AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)
+        return origin?.burnerMode ?? .regular
     }
 
     var customizeResponsesStatePublisher: AnyPublisher<Void, Never> {
@@ -502,7 +512,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?) {
         guard let windowControllersManager else { return }
-        let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
+        let burnerMode = originBurnerMode(for: requestingWebView, in: windowControllersManager)
         let store = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
                                            featureFlagger: featureFlagger)
         usageLimitsCancellables.removeAll()

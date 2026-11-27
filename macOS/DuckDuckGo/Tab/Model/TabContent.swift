@@ -154,14 +154,15 @@ extension TabContent {
         }
 
         /// Duck.ai keeps only the sources that tell how it was reached, so every other load of it
-        /// (restoration, reload, web view updates) still behaves as `.ui` did. It never downloads the page.
+        /// (restoration, reload) still behaves as `.ui` did. It never downloads the page.
+        /// Web view updates are kept so the Address Bar doesn‘t trust a page-initiated provisional navigation.
         fileprivate var aiChatSource: Self {
             switch self {
             case .userEntered(let value, downloadRequested: _):
                 .userEntered(value)
-            case .bookmark, .historyEntry, .appOpenUrl, .link, .attributedUI:
+            case .bookmark, .historyEntry, .appOpenUrl, .link, .attributedUI, .webViewUpdated:
                 self
-            case .pendingStateRestoration, .loadedByStateRestoration, .ui, .reload, .switchToOpenTab, .webViewUpdated:
+            case .pendingStateRestoration, .loadedByStateRestoration, .ui, .reload, .switchToOpenTab:
                 .ui
             }
         }

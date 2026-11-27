@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
+import SharedTestUtilities
+import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -97,6 +100,82 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         let second = collection([.unloaded(shared())])
 
         XCTAssertNil(AIChatTabPickerSource.ownerCollection(for: nil, ownerTabID: "shared", in: manager(with: [first, second])))
+    }
+
+    // MARK: - originTabCollectionViewModel (picker scoping)
+
+    /// A background tab's web view has no window. Its own tab decides, never the key window —
+    /// which here is a Fire Window the caller has nothing to do with.
+    func testWhenCallerIsInABackgroundTabThenOriginIsItsOwnWindow() {
+        let fireWindow = burnerCollection()
+        let callerWindow = regularCollection(urls: ["https://a.example"])
+        guard case .loaded(let callerTab) = callerWindow.tabCollection.tabs[0] else { return XCTFail("Expected a loaded tab") }
+        XCTAssertNil(callerTab.webView.window)
+
+        let resolved = AIChatTabPickerSource.originTabCollectionViewModel(for: callerTab.webView, in: manager(with: [fireWindow, callerWindow]))
+
+        XCTAssertTrue(resolved === callerWindow)
+    }
+
+    func testWhenCallerCannotBePlacedThenNoOriginIsResolved() {
+        let fireWindow = burnerCollection()
+        let regular = regularCollection(urls: ["https://a.example"])
+        let manager = manager(with: [fireWindow, regular])
+
+        XCTAssertNil(AIChatTabPickerSource.originTabCollectionViewModel(for: WKWebView(), in: manager))
+        XCTAssertNil(AIChatTabPickerSource.originTabCollectionViewModel(for: nil, in: manager))
+    }
+
+    /// A detached chat opened from a shared pinned tab: the tab is in every regular window, and any
+    /// of them offers the same tabs, so the picker still gets an origin.
+    func testWhenWindowlessCallerIsASharedPinnedTabThenARegularWindowIsTheOrigin() {
+        let pinned = Tab(uuid: "shared", content: .url(URL(string: "https://duck.ai")!, credential: nil, source: .ui))
+        let first = collection([.loaded(pinned)])
+        let second = collection([.unloaded(UnloadedTab(uuid: "shared", content: pinned.content, isSuspended: false))])
+        XCTAssertNil(pinned.webView.window)
+
+        let resolved = AIChatTabPickerSource.originTabCollectionViewModel(for: pinned.webView, in: manager(with: [burnerCollection(), first, second]))
+
+        XCTAssertTrue(resolved === first)
+    }
+
+    /// Fire Windows hold no pinned tabs, but should a tab id ever be in one and in another window,
+    /// the caller can't be placed without risking the Fire Window's tabs.
+    func testWhenWindowlessCallerIsSharedWithAFireWindowThenNoOriginIsResolved() {
+        let burnerMode = BurnerMode(isBurner: true)
+        let fireTab = Tab(uuid: "shared", content: .url(URL(string: "https://duck.ai")!, credential: nil, source: .ui), burnerMode: burnerMode)
+        let fireWindow = collection([.loaded(fireTab)], burnerMode: burnerMode)
+        let regular = collection([.unloaded(UnloadedTab(uuid: "shared", content: fireTab.content, isSuspended: false))])
+
+        XCTAssertNil(AIChatTabPickerSource.originTabCollectionViewModel(for: fireTab.webView, in: manager(with: [regular, fireWindow])))
+    }
+
+    /// A window's New Tab Page web view leaves the view hierarchy while another tab is shown, and
+    /// still reloads there. It belongs to its own window, here a Fire Window that isn't key.
+    func testWhenNewTabPageIsOffScreenThenOriginIsItsOwnWindow() {
+        let burnerMode = BurnerMode(isBurner: true)
+        let fireTab = Tab(content: .url(URL(string: "https://fire.example")!, credential: nil, source: .ui), burnerMode: burnerMode)
+        let fireWindow = collection([.loaded(fireTab)], burnerMode: burnerMode)
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: fireWindow,
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
+            aiChatSessionStore: AIChatSessionStore(featureFlagger: MockFeatureFlagger())
+        )
+        let windowController = MainWindowController(
+            window: MockWindow(isVisible: false),
+            mainViewController: mainViewController,
+            fireWindowSession: FireWindowSession(),
+            fireViewModel: Application.appDelegate.fireCoordinator.fireViewModel,
+            themeManager: MockThemeManager()
+        )
+        let newTabPageWebView = mainViewController.browserTabViewController.newTabPageWebViewModel.webView
+        XCTAssertNil(newTabPageWebView.window)
+        let manager = manager(with: [regularCollection(urls: ["https://a.example"]), fireWindow])
+        manager.mainWindowControllers = [windowController]
+
+        let resolved = AIChatTabPickerSource.originTabCollectionViewModel(for: newTabPageWebView, in: manager)
+
+        XCTAssertTrue(resolved === fireWindow)
     }
 
     // MARK: - materializeAttachableTab (wake suspended tabs)

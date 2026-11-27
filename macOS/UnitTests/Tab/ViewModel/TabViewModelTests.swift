@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import FeatureFlags_macOS
@@ -189,6 +190,70 @@ final class TabViewModelTests: XCTestCase {
             } .store(in: &cancellables)
             waitForExpectations(timeout: 1, handler: nil)
         }
+    }
+
+    // MARK: - Trusted indicators
+
+    @MainActor
+    func testWhenWebPageStartsNavigationToDuckAIThenTrustedIndicatorIsNotDisplayedUntilSecurityOriginMatches() {
+        let duckAIURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(content: .contentFromURL(duckAIURL, source: .webViewUpdated), securityOrigin: URL(string: "https://example.com")!.securityOrigin)
+        let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
+
+        XCTAssertEqual(tab.content, .aiChat(duckAIURL, source: .webViewUpdated))
+        XCTAssertFalse(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.aiChatAddressBarTrustedIndicator))
+
+        tabViewModel.simulateLoadingCompletion(duckAIURL, in: tab.webView)
+
+        XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.aiChatAddressBarTrustedIndicator))
+    }
+
+    @MainActor
+    func testWhenDuckAIIsOpenedFromUIThenTrustedIndicatorIsDisplayedInstantly() {
+        let duckAIURL = URL(string: "https://duck.ai/chat")!
+        let tab = Tab(content: .contentFromURL(duckAIURL, source: .ui), securityOrigin: URL(string: "https://example.com")!.securityOrigin)
+        let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
+
+        XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.aiChatAddressBarTrustedIndicator))
+    }
+
+    @MainActor
+    func testWhenWebPageStartsNavigationToSubscriptionThenTrustedIndicatorIsNotDisplayedUntilSecurityOriginMatches() {
+        let subscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
+        let tab = Tab(content: .subscription(subscriptionURL), securityOrigin: URL(string: "https://example.com")!.securityOrigin)
+        let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
+
+        XCTAssertFalse(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
+
+        tabViewModel.simulateLoadingCompletion(subscriptionURL, in: tab.webView)
+
+        XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
+    }
+
+    @MainActor
+    func testWhenSubscriptionIsOpenedInNewTabFromUIThenTrustedIndicatorIsDisplayedInstantly() {
+        let subscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
+        let tab = Tab(content: .subscription(subscriptionURL))
+        let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
+
+        XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
+    }
+
+    /// An opaque-origin (sandboxed) frame opens its child Tab with an empty Security Origin, the same
+    /// as a Tab opened from the UI; having a parent Tab is what tells them apart.
+    @MainActor
+    func testWhenOpaqueOriginFrameOpensSubscriptionInChildTabThenTrustedIndicatorIsNotDisplayedUntilSecurityOriginMatches() {
+        let subscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
+        let parentTab = Tab(content: .url(URL(string: "https://example.com")!, credential: nil, source: .ui))
+        let tab = Tab(content: .subscription(subscriptionURL), parentTab: parentTab)
+        let tabViewModel = TabViewModel(tab: tab, accessibilityPreferences: AccessibilityPreferences())
+        XCTAssertTrue(tab.securityOrigin.isEmpty)
+
+        XCTAssertFalse(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
+
+        tabViewModel.simulateLoadingCompletion(subscriptionURL, in: tab.webView)
+
+        XCTAssertTrue(tabViewModel.passiveAddressBarAttributedString.string.hasSuffix(UserText.subscriptionName))
     }
 
     // MARK: - Title

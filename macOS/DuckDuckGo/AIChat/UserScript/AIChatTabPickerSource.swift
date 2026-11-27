@@ -32,26 +32,42 @@ import WebKit
 @MainActor
 enum AIChatTabPickerSource {
 
-    /// Resolves the tab collection of the window that owns `webView`.
+    /// Resolves the tab collection of the window that owns `webView`; `nil` when it can't be placed.
+    ///
+    /// Never falls back to the key window: a background tab's web view has no window, and the key
+    /// window may be a Fire Window — guessing would hand its tabs to someone else's chat.
     static func originTabCollectionViewModel(for webView: WKWebView?,
                                              in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
-        guard let webView else {
-            return windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
-        }
-        if let window = webView.window,
-           let controller = windowControllersManager.mainWindowControllers.first(where: { $0.window === window }) {
+        guard let webView else { return nil }
+        if let controller = mainWindowController(owning: webView, in: windowControllersManager) {
             return controller.mainViewController.tabCollectionViewModel
         }
-        // A detached Duck.ai window belongs to the tab it was opened from, which is not necessarily
-        // in the key window — resolving to that one would hand a Fire Window chat regular tabs.
-        guard let tabID = hostingAIChatViewController(of: webView)?.tabID else {
-            return webView.window == nil
-                ? windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
-                : nil
+        // A detached Duck.ai window belongs to the tab it was opened from, so the owner tab decides there too.
+        guard let ownerTabID = ownerTabID(for: webView, in: windowControllersManager) else { return nil }
+        return pickerOrigin(containingTabID: ownerTabID, in: windowControllersManager)
+    }
+
+    /// The main window showing `webView`, or the one whose New Tab Page it is: that web view is
+    /// per window and leaves the view hierarchy while its window shows another tab.
+    private static func mainWindowController(owning webView: WKWebView,
+                                             in windowControllersManager: WindowControllersManagerProtocol) -> MainWindowController? {
+        if let window = webView.window,
+           let controller = windowControllersManager.mainWindowControllers.first(where: { $0.window === window }) {
+            return controller
         }
-        return windowControllersManager.allTabCollectionViewModels.first { collection in
-            collection.indexInAllTabs(where: { $0.uuid == tabID }) != nil
+        return windowControllersManager.mainWindowControllers.first {
+            $0.mainViewController.browserTabViewController.existingNewTabPageWebView === webView
         }
+    }
+
+    /// Unlike `collection(containingTabID:)`, a shared pinned tab still resolves here: it is in every
+    /// regular window, and any of them offers the same tabs (`tabCollections(forOrigin:)`). `nil` only
+    /// when a Fire Window is among several matches, as its tabs must not be offered to another window.
+    private static func pickerOrigin(containingTabID tabID: TabIdentifier,
+                                     in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
+        let matches = collections(containingTabID: tabID, in: windowControllersManager)
+        guard matches.count == 1 || !matches.contains(where: { $0.isBurner }) else { return nil }
+        return matches.first
     }
 
     /// Opaque handle for the window a call is scoped to. A tab id is not enough — pinned tabs are
@@ -71,10 +87,15 @@ enum AIChatTabPickerSource {
     /// A shared pinned tab is in every window's collection, so it has no single owner — `nil`.
     static func collection(containingTabID tabID: TabIdentifier,
                            in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
-        let matches = windowControllersManager.allTabCollectionViewModels.filter {
+        let matches = collections(containingTabID: tabID, in: windowControllersManager)
+        return matches.count == 1 ? matches[0] : nil
+    }
+
+    private static func collections(containingTabID tabID: TabIdentifier,
+                                    in windowControllersManager: WindowControllersManagerProtocol) -> [TabCollectionViewModel] {
+        windowControllersManager.allTabCollectionViewModels.filter {
             $0.indexInAllTabs(where: { $0.uuid == tabID }) != nil
         }
-        return matches.count == 1 ? matches[0] : nil
     }
 
     static func windowToken(forCollection collection: TabCollectionViewModel) -> String {

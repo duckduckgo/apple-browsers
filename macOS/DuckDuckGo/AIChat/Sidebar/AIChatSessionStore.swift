@@ -53,7 +53,7 @@ protocol AIChatSessionStoring: AnyObject {
     @discardableResult
     func expireSessionIfNeeded(for tabID: TabIdentifier) -> Bool
 
-    /// Snapshots live VC URLs into their states, then returns the states for serialization.
+    /// Snapshots live VC URLs into their states, then returns the states for serialization, excluding Fire Window sessions.
     func statesForSerialization() -> AIChatStatesByTab
 
     /// Restores sessions from previously saved states.
@@ -144,9 +144,11 @@ final class AIChatSessionStore: AIChatSessionStoring {
     }
 
     func statesForSerialization() -> AIChatStatesByTab {
-        for (_, session) in sessions {
+        // Fire Window sessions must never be written to the persistent restoration archive.
+        let persistableSessions = sessions.filter { !$0.value.burnerMode.isBurner }
+        for (_, session) in persistableSessions {
             session.snapshotCurrentURL()
         }
-        return statesByTab
+        return persistableSessions.mapValues { $0.state }
     }
 }

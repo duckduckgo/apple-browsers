@@ -37,8 +37,14 @@ protocol OnboardingDialogsReporting: AnyObject {
     func measureDialogManuallyDismissed(dialogType: ContextualDialogType)
     func measureGotItPressed(dialogType: ContextualDialogType)
     func measureTryDuckAIPressed()
+    func measureThatsDuckAITriggered(by trigger: ThatsDuckAITrigger)
     func measureSubscriptionUpsellAccepted()
     func measureSubscriptionUpsellDeclined()
+}
+
+protocol OnboardingDuckAIPathReporting: AnyObject {
+    func measureDuckAIChatReopened()
+    func measureDuckAIPathSearchFallback()
 }
 
 protocol OnboardingFireReporting: AnyObject {
@@ -235,6 +241,10 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         sharedPixelHandler.fire(.endTryDuckAI(.clicked(.engage)))
     }
 
+    func measureThatsDuckAITriggered(by trigger: ThatsDuckAITrigger) {
+        fire(DuckAIOnboardingPathPixel.thatsDuckAITriggered(trigger), .standard)
+    }
+
     func measureSubscriptionUpsellAccepted() {
         sharedPixelHandler.fire(.subscriptionPromo(.clicked(.engage)))
     }
@@ -250,5 +260,15 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         if onboardingStateProvider?.lastDialog == .tryASite {
             sharedPixelHandler.fire(.visitSite(.clicked(.suggested)))
         }
+    }
+}
+
+extension OnboardingPixelReporter: OnboardingDuckAIPathReporting {
+    func measureDuckAIChatReopened() {
+        fire(DuckAIOnboardingPathPixel.chatReopened, .standard)
+    }
+
+    func measureDuckAIPathSearchFallback() {
+        fire(DuckAIOnboardingPathPixel.searchFallback, .standard)
     }
 }

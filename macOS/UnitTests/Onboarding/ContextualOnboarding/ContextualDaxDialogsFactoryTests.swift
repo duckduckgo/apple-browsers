@@ -548,5 +548,8 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     func measureTryDuckAIPressed() {
         measureTryDuckAIPressedCalled = true
     }
+
+    func measureThatsDuckAITriggered(by trigger: ThatsDuckAITrigger) {
+    }
 }
 extension CapturingOnboardingNavigationDelegate: OnboardingNavigationDelegate {}

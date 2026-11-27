@@ -142,9 +142,9 @@
         "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "onboarding_thats-duckai_trigger_macos": {
-        "description": "Fired on the contextual onboarding Duck.ai path when the wait for Duck.ai's first answer ends and the \"That's Duck.ai!\" dialog can show: either the answer arrived or it didn't arrive in time.",
+        "description": "Fired on the contextual onboarding Duck.ai path when the \"That's Duck.ai!\" dialog shows, with what ended the wait before it: Duck.ai's first answer, or the timeout.",
         "owners": ["SabrinaTardio"],
-        "triggers": ["feature_lifecycle", "scheduled"],
+        "triggers": ["impression"],
         "parameters": [
             "appVersion",
             "pixelSource",

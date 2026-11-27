@@ -22,15 +22,8 @@ import PixelKit
 enum DuckAIOnboardingPathPixel: PixelKit.Event {
     var namePrefix: PixelKitNamePrefix { .none }
 
-    enum Trigger: String {
-        /// Duck.ai's first answer arrived.
-        case answer
-        /// The answer didn't arrive in time.
-        case timeout
-    }
-
-    /// The wait for Duck.ai's first answer ended, so "That's Duck.ai!" can show.
-    case thatsDuckAITriggered(Trigger)
+    /// "That's Duck.ai!" showed, after Duck.ai's first answer or the timeout.
+    case thatsDuckAITriggered(ThatsDuckAITrigger)
     /// The app reopened the onboarding chat in a window opened while the path waits for Fire.
     case chatReopened
     /// The path moved to the search path because Duck.ai or the prompt was no longer available.

@@ -357,6 +357,19 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertNil(eventSent)
     }
 
+    func test_DuckAIPathMoments_SendTheirMacOSPixels() {
+        reporter.measureThatsDuckAITriggered(by: .timeout)
+        XCTAssertEqual(eventSent?.name, "onboarding_thats-duckai_trigger_macos")
+        XCTAssertEqual(eventSent?.parameters, ["trigger": "timeout"])
+
+        reporter.measureDuckAIChatReopened()
+        XCTAssertEqual(eventSent?.name, "onboarding_duckai-chat_reopened_macos")
+
+        reporter.measureDuckAIPathSearchFallback()
+        XCTAssertEqual(eventSent?.name, "onboarding_duckai-path_search-fallback_macos")
+        XCTAssertEqual(frequency, .standard)
+    }
+
     func test_TryDuckAIDialog_ReportsShownEngageAndDismiss() {
         reporter.measureDialogShown(dialogType: .tryDuckAI)
         reporter.measureTryDuckAIPressed()

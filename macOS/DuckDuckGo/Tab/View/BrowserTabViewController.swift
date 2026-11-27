@@ -801,10 +801,13 @@ final class BrowserTabViewController: NSViewController {
     /// Applies what the scheduler decided to the dialog on screen.
     private func apply(_ update: ContextualOnboardingDialogUpdate) {
         switch update {
-        case .show(let dialogType):
+        case .show(let dialogType, let trigger):
             guard let tab = tabViewModel?.tab else { return }
             delegate?.dismissViewHighlight()
             showContextualOnboardingDialog(dialogType, in: tab)
+            if let trigger {
+                onboardingPixelReporter.measureThatsDuckAITriggered(by: trigger)
+            }
         case .hide:
             delegate?.dismissViewHighlight()
             removeExistingDialog()

@@ -19,7 +19,6 @@
 import AIChat
 import Combine
 import Foundation
-import PixelKit
 
 /// The onboarding state the restorer reads and changes.
 protocol DuckAIOnboardingResuming: AnyObject {
@@ -52,7 +51,7 @@ final class OnboardingDuckAIPathWindowRestorer {
     private let isDuckAIAvailable: () -> Bool
     private let clearDuckAIChats: () async -> Void
     private let aiChatURL: () -> URL
-    private let pixelFiring: PixelFiring?
+    private let pixelReporter: OnboardingDuckAIPathReporting
     private var cancellable: AnyCancellable?
 
     init(windowDidOpen: AnyPublisher<DuckAIOnboardingWindow, Never>,
@@ -60,12 +59,12 @@ final class OnboardingDuckAIPathWindowRestorer {
          isDuckAIAvailable: @escaping () -> Bool,
          clearDuckAIChats: @escaping () async -> Void,
          aiChatURL: @escaping () -> URL,
-         pixelFiring: PixelFiring? = PixelKit.shared) {
+         pixelReporter: OnboardingDuckAIPathReporting) {
         self.onboarding = onboarding
         self.isDuckAIAvailable = isDuckAIAvailable
         self.clearDuckAIChats = clearDuckAIChats
         self.aiChatURL = aiChatURL
-        self.pixelFiring = pixelFiring
+        self.pixelReporter = pixelReporter
         cancellable = windowDidOpen.sink { [weak self] window in
             self?.windowDidOpen(window)
         }
@@ -75,7 +74,7 @@ final class OnboardingDuckAIPathWindowRestorer {
         guard onboarding.isWaitingForDuckAIChatDeletion, window.canHoldDuckAIChat else { return }
         guard isDuckAIAvailable(), let prompt = onboarding.duckAIPrompt else {
             onboarding.fallBackToSearchPath()
-            pixelFiring?.fire(DuckAIOnboardingPathPixel.searchFallback, frequency: .standard)
+            pixelReporter.measureDuckAIPathSearchFallback()
             window.replaceTabs(with: Tab(content: .newtab))
             return
         }
@@ -86,7 +85,7 @@ final class OnboardingDuckAIPathWindowRestorer {
             // Fire may have been used while the old chat was cleared.
             guard let window, onboarding.isWaitingForDuckAIChatDeletion else { return }
             onboarding.restartDuckAIChat()
-            pixelFiring?.fire(DuckAIOnboardingPathPixel.chatReopened, frequency: .standard)
+            pixelReporter.measureDuckAIChatReopened()
             let url = AIChatURLParameters.desktopOnboardingPromptURL(from: aiChatURL(), prompt: prompt)
             window.replaceTabs(with: Tab(content: .aiChat(url)))
         }

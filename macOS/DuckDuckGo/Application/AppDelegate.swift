@@ -1320,7 +1320,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onboarding: contextualDialogsManager,
             isDuckAIAvailable: { [aiChatMenuConfiguration] in aiChatMenuConfiguration.shouldDisplayAnyAIChatFeature },
             clearDuckAIChats: { [aiChatHistoryCleaner] in _ = await aiChatHistoryCleaner?.cleanAIChatHistory() },
-            aiChatURL: { AIChatRemoteSettings().aiChatURL }
+            aiChatURL: { AIChatRemoteSettings().aiChatURL },
+            pixelReporter: OnboardingPixelReporter(onboardingStateProvider: contextualDialogsManager)
         )
 
         let onboardingManager = onboardingContextualDialogsManager

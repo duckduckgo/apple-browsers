@@ -20,13 +20,20 @@ import AIChat
 import Combine
 import FeatureFlags_macOS
 import Foundation
-import PixelKit
 import PrivacyConfig
+
+/// What ended the wait for Duck.ai's first answer before "That's Duck.ai!".
+enum ThatsDuckAITrigger: String {
+    /// Duck.ai's first answer arrived.
+    case answer
+    /// The answer didn't arrive in time.
+    case timeout
+}
 
 /// What a tab view should do with the contextual onboarding dialog it shows.
 enum ContextualOnboardingDialogUpdate: Equatable {
-    /// Show this dialog, replacing any dialog on screen.
-    case show(ContextualDialogType)
+    /// Show this dialog, replacing any dialog on screen; `trigger` is set when it follows the wait for Duck.ai's first answer.
+    case show(ContextualDialogType, trigger: ThatsDuckAITrigger? = nil)
     /// Remove the dialog on screen, if any.
     case hide
 }
@@ -54,20 +61,17 @@ final class ContextualOnboardingDialogScheduler {
     static let firstDuckAIAnswerFailsafeDelay: TimeInterval = 2
     /// Runs an action after a delay; cancelling the result skips it. Injected so tests control time.
     private let runAfter: (TimeInterval, @escaping @MainActor () -> Void) -> AnyCancellable
-    private let pixelFiring: PixelFiring?
     private weak var tabWaitingForFirstDuckAIAnswer: Tab?
     private var firstDuckAIAnswerFailsafe: AnyCancellable?
 
     init(dialogProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater,
          featureFlagger: FeatureFlagger,
          isInPopUpWindow: @escaping () -> Bool,
-         runAfter: @escaping (TimeInterval, @escaping @MainActor () -> Void) -> AnyCancellable = ContextualOnboardingDialogScheduler.runAfterDelay,
-         pixelFiring: PixelFiring? = PixelKit.shared) {
+         runAfter: @escaping (TimeInterval, @escaping @MainActor () -> Void) -> AnyCancellable = ContextualOnboardingDialogScheduler.runAfterDelay) {
         self.dialogProvider = dialogProvider
         self.featureFlagger = featureFlagger
         self.isInPopUpWindow = isInPopUpWindow
         self.runAfter = runAfter
-        self.pixelFiring = pixelFiring
     }
 
     /// A navigation finished in the tab on screen: moves onboarding forward, unless it's a reload.
@@ -148,15 +152,14 @@ final class ContextualOnboardingDialogScheduler {
         }
     }
 
-    private func askAfterFirstDuckAIAnswer(trigger: DuckAIOnboardingPathPixel.Trigger) {
+    private func askAfterFirstDuckAIAnswer(trigger: ThatsDuckAITrigger) {
         guard let tab = tabWaitingForFirstDuckAIAnswer else { return }
         stopWaitingForFirstDuckAIAnswer()
-        pixelFiring?.fire(DuckAIOnboardingPathPixel.thatsDuckAITriggered(trigger), frequency: .standard)
         guard canShowDialog() else {
             onUpdate(.hide)
             return
         }
-        send(dialogProvider.dialogTypeForTab(tab))
+        send(dialogProvider.dialogTypeForTab(tab), trigger: trigger)
     }
 
     private func stopWaitingForFirstDuckAIAnswer() {
@@ -182,12 +185,12 @@ final class ContextualOnboardingDialogScheduler {
         return !isInPopUpWindow()
     }
 
-    private func send(_ dialog: ContextualDialogType?) {
+    private func send(_ dialog: ContextualDialogType?, trigger: ThatsDuckAITrigger? = nil) {
         guard let dialog else {
             onUpdate(.hide)
             return
         }
         wasDismissed = false
-        onUpdate(.show(dialog))
+        onUpdate(.show(dialog, trigger: trigger))
     }
 }

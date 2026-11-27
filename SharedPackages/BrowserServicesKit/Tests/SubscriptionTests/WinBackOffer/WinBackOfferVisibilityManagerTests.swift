@@ -427,7 +427,86 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
         XCTAssertTrue(mockStore.offerRedeemed)
     }
 
+    func testWhenSameChurnIsSeenAfterCooldownPeriod_ItDoesNotResetOffer() async {
+        // Given
+        mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
+        let expiryDate = Date().addingTimeInterval(-300 * .day) // Expired 300 days ago, beyond 270-day cooldown
+        let presentationDate = Date().addingTimeInterval(-1 * .day)
+        mockStore.churnDate = expiryDate
+        mockStore.offerPresentationDate = presentationDate
+
+        let subscription = createMockSubscription(status: .expired, expiryDate: expiryDate)
+
+        // When
+        await postSubscriptionDidChange(subscription)
+        await postSubscriptionDidChange(subscription)
+
+        // Then
+        XCTAssertEqual(mockStore.churnDate, expiryDate)
+        XCTAssertEqual(mockStore.offerPresentationDate, presentationDate)
+        XCTAssertFalse(manager.shouldShowLaunchMessage)
+    }
+
+    func testWhenNewChurnIsSeenAfterCooldownPeriod_ItResetsOffer() async {
+        // Given
+        mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
+        let oldChurnDate = Date().addingTimeInterval(-400 * .day) // 400 days ago, beyond 270-day cooldown
+        let newExpiryDate = Date().addingTimeInterval(-10 * .day)
+        mockStore.churnDate = oldChurnDate
+        mockStore.offerPresentationDate = Date().addingTimeInterval(-395 * .day)
+
+        let subscription = createMockSubscription(status: .expired, expiryDate: newExpiryDate)
+
+        // When
+        await postSubscriptionDidChange(subscription)
+
+        // Then
+        XCTAssertEqual(mockStore.churnDate, newExpiryDate)
+        XCTAssertNil(mockStore.offerPresentationDate)
+        XCTAssertTrue(manager.shouldShowLaunchMessage)
+    }
+
+    func testWhenRedeemedOfferAndSameChurnIsSeenAfterCooldownPeriod_ItResetsOfferOnlyOnce() async {
+        // Given
+        mockFeatureFlagProvider.isWinBackOfferFeatureEnabled = true
+        let expiryDate = Date().addingTimeInterval(-300 * .day) // Expired 300 days ago, beyond 270-day cooldown
+        mockStore.churnDate = expiryDate
+        mockStore.offerRedeemed = true
+
+        let subscription = createMockSubscription(status: .expired, expiryDate: expiryDate)
+
+        // When
+        await postSubscriptionDidChange(subscription)
+
+        // Then
+        XCTAssertFalse(mockStore.offerRedeemed)
+        XCTAssertTrue(manager.shouldShowLaunchMessage)
+
+        // When
+        manager.setLaunchMessagePresented(true)
+        let presentationDate = mockStore.offerPresentationDate
+        await postSubscriptionDidChange(subscription)
+
+        // Then
+        XCTAssertNotNil(presentationDate)
+        XCTAssertEqual(mockStore.offerPresentationDate, presentationDate)
+        XCTAssertFalse(manager.shouldShowLaunchMessage)
+    }
+
     // MARK: - Helpers
+
+    private func postSubscriptionDidChange(_ subscription: DuckDuckGoSubscription) async {
+        NotificationCenter.default.post(
+            name: .subscriptionDidChange,
+            object: nil,
+            userInfo: [
+                UserDefaultsCacheKey.subscription: subscription
+            ]
+        )
+
+        // Give time for async notification handling
+        try? await Task.sleep(nanoseconds: 100_000_000)
+    }
 
     private func createMockSubscription(status: DuckDuckGoSubscription.Status, expiryDate: Date = Date().addingTimeInterval(30 * .day)) -> DuckDuckGoSubscription {
         DuckDuckGoSubscription(

@@ -235,8 +235,10 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
         let now = dateProvider()
         let timeSinceLastChurn = now.timeIntervalSince(lastStoredChurnDate)
         let cooldownHasPassed = timeSinceLastChurn > Constants.cooldownPeriod
+        // Only reset for a new churn, or when the previous offer was redeemed.
+        let isNewChurn = expiryDate > lastStoredChurnDate || winbackOfferStore.hasRedeemedOffer()
 
-        if cooldownHasPassed {
+        if cooldownHasPassed && isNewChurn {
             // Cooldown period has passed, mark churn.
             resetOffer(using: expiryDate)
             return

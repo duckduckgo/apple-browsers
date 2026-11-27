@@ -113,6 +113,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     var needsPreservedAccountCleanupBeforeServerOperation = false
     var autoRestorePromptSource: AutoRestorePromptSource?
     private var hasHandledFirstAppearance = false
+    private let startsPairingOnFirstAppearance: Bool
 
     var onConfirmAndDeleteAllData: (() -> Void)?
 
@@ -138,6 +139,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         syncPausedStateManager: any SyncPausedStateManaging,
         source: String? = nil,
         pairingInfo: PairingInfo? = nil,
+        startsPairingOnFirstAppearance: Bool = false,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         syncAutoRestoreHandler: SyncAutoRestoreHandling,
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
@@ -151,6 +153,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         self.syncPausedStateManager = syncPausedStateManager
         self.source = source
         self.pairingInfo = pairingInfo
+        self.startsPairingOnFirstAppearance = startsPairingOnFirstAppearance
         self.featureFlagger = featureFlagger
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.pixelFiring = pixelFiring
@@ -357,7 +360,11 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
 
         if !hasHandledFirstAppearance {
             hasHandledFirstAppearance = true
-            startSyncWithAnotherDeviceFromPromoIfNecessary()
+            if startsPairingOnFirstAppearance {
+                viewModel.beginPairingFlow()
+            } else {
+                startSyncWithAnotherDeviceFromPromoIfNecessary()
+            }
         }
     }
 

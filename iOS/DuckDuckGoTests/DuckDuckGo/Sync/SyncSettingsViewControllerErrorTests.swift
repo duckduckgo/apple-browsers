@@ -85,6 +85,41 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         )
     }
 
+    @MainActor
+    func testPairingLaunchAuthenticatesOnceForActiveAndInactiveSync() async {
+        for state in [SyncAuthState.active, .inactive] {
+            ddgSyncing.authState = state
+            let controller = PairingLaunchSyncSettingsViewController(
+                syncService: ddgSyncing,
+                syncBookmarksAdapter: syncBookmarksAdapter,
+                syncCredentialsAdapter: syncCredentialsAdapter,
+                syncCreditCardsAdapter: syncCreditCardsAdapter,
+                appSettings: AppSettingsMock(),
+                syncPausedStateManager: errorHandler,
+                startsPairingOnFirstAppearance: true,
+                featureFlagger: featureFlagger,
+                syncAutoRestoreHandler: syncAutoRestoreHandler,
+                syncPromoStorage: MockKeyValueStore().keyedStoring())
+            let authentication = expectation(description: "Authenticates before scanner presentation")
+            authentication.assertForOverFulfill = true
+            controller.onAuthenticate = { authentication.fulfill() }
+
+            controller.loadViewIfNeeded()
+            XCTAssertEqual(controller.authenticationCount, 0)
+            for _ in 0..<2 {
+                controller.beginAppearanceTransition(true, animated: false)
+                controller.endAppearanceTransition()
+                controller.beginAppearanceTransition(false, animated: false)
+                controller.endAppearanceTransition()
+            }
+            await fulfillment(of: [authentication], timeout: 2)
+
+            XCTAssertEqual(controller.authenticationCount, 1)
+            XCTAssertNil(controller.scanCodeViewModel)
+            XCTAssertNil(controller.pairingInfo)
+        }
+    }
+
     override func tearDown() {
         cancellables = nil
         errorHandler = nil
@@ -1342,5 +1377,17 @@ private final class SpySyncSettingsViewController: SyncSettingsViewController {
         presentCallCount += 1
         onPresent?(viewControllerToPresent)
         completion?()
+    }
+}
+
+@MainActor
+private final class PairingLaunchSyncSettingsViewController: SyncSettingsViewController {
+    var authenticationCount = 0
+    var onAuthenticate: (() -> Void)?
+
+    override func authenticateUser(completion: @escaping (UserAuthenticator.AuthError?) -> Void) {
+        authenticationCount += 1
+        onAuthenticate?()
+        completion(.failedToAuthenticate)
     }
 }

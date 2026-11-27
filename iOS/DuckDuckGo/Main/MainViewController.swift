@@ -6737,6 +6737,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onOmniQuerySubmitted(_ query: String) {
+        guard !openSyncPairingIfNeeded(for: query) else { return }
         fireAddressBarQuerySubmittedPixel(queryType: addressBarQueryType(for: query))
         // A search submission IS search mode — commit directly (see onPromptSubmitted).
         commitToggleMode(.search)

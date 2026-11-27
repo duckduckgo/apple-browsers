@@ -452,16 +452,24 @@ extension MainViewController {
     }
 
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
-        Logger.lifecycle.debug(#function)
-        hideAllHighlightsIfNeeded()
-
-        let launchSync: (SettingsViewModel) -> Void = { settingsViewModel in
+        segueToSettingsSync { settingsViewModel in
             if let source {
                 settingsViewModel.shouldPresentSyncViewWithSource(source, animated: false)
             } else {
                 settingsViewModel.presentLegacyView(.sync(pairingInfo), animated: false)
             }
         }
+    }
+
+    func segueToSettingsSyncPairing() {
+        segueToSettingsSync { settingsViewModel in
+            settingsViewModel.presentLegacyView(.syncPairing, animated: false)
+        }
+    }
+
+    private func segueToSettingsSync(launchSync: @escaping (SettingsViewModel) -> Void) {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
 
         if let navigationController = presentedViewController as? UINavigationController,
            navigationController.viewControllers.first is SettingsHostingController {

@@ -1664,6 +1664,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
            URL.isValidAddressBarURLInput(prompt.trimmingCharacters(in: .whitespacesAndNewlines)),
            let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
            url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
+            guard !openSyncPairingIfNeeded(for: prompt) else { return }
             unifiedToggleInputCoordinator?.recordDuckAIPromptInterpretedAsURL()
             // `loadUrlRespectingAIBoundary` carries no terminal of its own, so without this the visit
             // would stay open and later report a timeout despite the user having navigated.
@@ -1680,6 +1681,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidSubmitQuery(_ query: String) {
+        guard !openSyncPairingIfNeeded(for: query) else { return }
         handleUnifiedToggleInputSearchSubmission(query)
     }
 

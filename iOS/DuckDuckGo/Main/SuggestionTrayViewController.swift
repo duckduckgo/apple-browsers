@@ -165,6 +165,9 @@ class SuggestionTrayViewController: UIViewController {
         return autocompleteController?.selectedSuggestion
     }
 
+    var hasKeyboardSelectedSuggestion: Bool {
+        selectedSuggestion != nil || autocompleteController?.highlightedSuggestion != nil
+    }
 
     enum SuggestionType: Equatable {
 

@@ -85,6 +85,30 @@ class QuerySubmittedTests: XCTestCase {
         XCTAssertFalse(mock.wasOnOmniQuerySubmittedCalled)
     }
 
+    func testInlineCompletedPairingURLUsesTheTypedSubmissionDelegate() throws {
+        let field = try XCTUnwrap(sut.barView.textField)
+        field.text = "duck.ai/pair"
+        let completionStart = try XCTUnwrap(field.position(from: field.beginningOfDocument, offset: "duck.a".count))
+        field.selectedTextRange = field.textRange(from: completionStart, to: field.endOfDocument)
+
+        sut.onQuerySubmitted()
+
+        let url = try XCTUnwrap(URL(string: mock.query))
+        XCTAssertEqual(url.host, "duck.ai")
+        XCTAssertEqual(url.path, "/pair")
+        XCTAssertFalse(mock.wasOnOmniSuggestionSelectedCalled)
+    }
+
+    func testExplicitPairingURLSuggestionDoesNotUseTheTypedSubmissionDelegate() {
+        mock.suggestion = .website(url: URL(string: "https://duck.ai/pair")!)
+        sut.barView.textField.text = "duck.a"
+
+        sut.onQuerySubmitted()
+
+        XCTAssertTrue(mock.wasOnOmniSuggestionSelectedCalled)
+        XCTAssertFalse(mock.wasOnOmniQuerySubmittedCalled)
+    }
+
     func testEmptyQueryDoesNotCallDelegate() {
         sut.barView.textField.text = ""
         sut.onQuerySubmitted()

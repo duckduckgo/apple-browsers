@@ -7,8 +7,9 @@ the subtask's description is the prompt (``prompt.md`` filled in for the
 flag), it lives in a project the agent watches, and its "Apple Agent Status"
 is Ready. The worker then removes the flag and opens the PR.
 
-A Registry task that already has the subtask is skipped, so the script is
-safe to run repeatedly. Workflow logs are public: log task ids, flag names
+A Registry task that already has an agent subtask (one with "Apple Agent
+Status" set, or the expected name) is skipped, so the script is safe to run
+repeatedly. Workflow logs are public: log task ids, flag names
 and counts only, never task names, notes or comments.
 
 Environment:
@@ -84,7 +85,7 @@ class FlagRemoval:
 class AsanaClientProtocol(Protocol):
     def registry_tasks(self) -> Iterator[dict]: ...
     def task(self, gid: str) -> dict: ...
-    def subtask_names(self, gid: str) -> list[str]: ...
+    def subtasks(self, gid: str) -> list[dict]: ...
     def create_ready_subtask(self, removal: FlagRemoval, notes: str) -> str: ...
 
 
@@ -103,12 +104,12 @@ class AsanaClient:
             params = {**params, "offset": next_page["offset"]}
 
     def task(self, gid: str) -> dict:
-        params = {"opt_fields": f"completed,{REGISTRY_TASK_FIELDS}"}
+        params = {"opt_fields": f"completed,memberships.project.gid,{REGISTRY_TASK_FIELDS}"}
         return self._request("GET", f"/tasks/{gid}", params=params)["data"]
 
-    def subtask_names(self, gid: str) -> list[str]:
-        response = self._request("GET", f"/tasks/{gid}/subtasks", params={"opt_fields": "name"})
-        return [subtask["name"] for subtask in response.get("data", [])]
+    def subtasks(self, gid: str) -> list[dict]:
+        params = {"opt_fields": "name,custom_fields.gid,custom_fields.enum_value.gid"}
+        return self._request("GET", f"/tasks/{gid}/subtasks", params=params).get("data", [])
 
     def create_ready_subtask(self, removal: FlagRemoval, notes: str) -> str:
         body = {
@@ -149,6 +150,17 @@ def enum_value(task: dict, field_gid: str) -> Optional[dict]:
     return None
 
 
+def in_registry(task: dict) -> bool:
+    return any((membership.get("project") or {}).get("gid") == REGISTRY_PROJECT_GID
+               for membership in task.get("memberships", []))
+
+
+def is_queued(removal: FlagRemoval, subtasks: list[dict]) -> bool:
+    """Whether the Registry task already has an agent subtask, even a renamed one."""
+    return any(subtask.get("name") == removal.subtask_name or enum_value(subtask, AGENT_STATUS_FIELD_GID)
+               for subtask in subtasks)
+
+
 def plan_removal(task: dict) -> tuple[Optional[FlagRemoval], str]:
     """Return the removal for a Registry task, or None and why it's skipped."""
     auto_removal = enum_value(task, AUTO_REMOVAL_FIELD_GID)
@@ -159,8 +171,10 @@ def plan_removal(task: dict) -> tuple[Optional[FlagRemoval], str]:
         return None, "unknown Auto Removal option"
 
     platform = (enum_value(task, PLATFORM_FIELD_GID) or {}).get("name")
-    if platform not in PLATFORMS:
+    if not platform:
         return None, "Platform not set"
+    if platform not in PLATFORMS:
+        return None, f"unsupported Platform '{platform}'"
     if platform not in AGENT_PROJECT_GIDS:
         return None, f"no agent project for {platform} yet"
 
@@ -213,18 +227,23 @@ def queue_removals(
 ) -> list[FlagRemoval]:
     """Create up to ``limit`` agent subtasks and return the removals queued."""
     tasks = [asana.task(only_task_gid)] if only_task_gid else asana.registry_tasks()
+    # A targeted run is a check on one task, so say why it's skipped; a full scan skips most tasks.
+    log_skip = logger.info if only_task_gid else logger.debug
     queued: list[FlagRemoval] = []
     for task in tasks:
         if len(queued) >= limit:
             break
+        if only_task_gid and not in_registry(task):
+            logger.info("%s: skipped, not in the Feature Flags Registry", task["gid"])
+            continue
         if task.get("completed"):
             logger.info("%s: skipped, task is completed", task["gid"])
             continue
         removal, reason = plan_removal(task)
         if not removal:
-            logger.debug("%s: skipped, %s", task["gid"], reason)
+            log_skip("%s: skipped, %s", task["gid"], reason)
             continue
-        if removal.subtask_name in asana.subtask_names(removal.registry_task_gid):
+        if is_queued(removal, asana.subtasks(removal.registry_task_gid)):
             logger.info("%s (%s): skipped, already queued", removal.registry_task_gid, removal.flag)
             continue
 
@@ -250,7 +269,11 @@ def main() -> int:
     only_task_gid = os.environ.get("FFC_TASK_GID", "").strip() or None
     template = (Path(__file__).parent / "prompt.md").read_text()
 
-    queued = queue_removals(AsanaClient(pat), template, limit=limit, dry_run=dry_run, only_task_gid=only_task_gid)
+    try:
+        queued = queue_removals(AsanaClient(pat), template, limit=limit, dry_run=dry_run, only_task_gid=only_task_gid)
+    except AsanaError as error:
+        logger.error("Asana request failed: %s", error)
+        return 1
     verb = "Would queue" if dry_run else "Queued"
     logger.info("%s %d flag removal(s): %s", verb, len(queued), ", ".join(r.flag for r in queued) or "none")
     return 0

@@ -29,8 +29,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.APPLE_GH_RO_PAT }}
         run: |
-          gh api repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml \
-            --jq .content | base64 -d > "$RUNNER_TEMP/user_map.yml"
+          if gh api repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content \
+              | base64 -d > "$RUNNER_TEMP/user_map.yml" && [ -s "$RUNNER_TEMP/user_map.yml" ]; then
+            echo "Fetched user_map.yml"
+          else
+            echo "::warning::Couldn't fetch user_map.yml, so the PR stays unassigned"
+            : > "$RUNNER_TEMP/user_map.yml"
+          fi
 
       - name: Find the task owner
         id: owner

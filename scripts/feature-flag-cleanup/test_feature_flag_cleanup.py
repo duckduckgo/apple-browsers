@@ -9,7 +9,7 @@ TEMPLATE = (Path(__file__).parent / "prompt.md").read_text()
 class FakeAsana:
     def __init__(self, tasks, subtasks=None):
         self.tasks = tasks
-        self.subtasks = subtasks or {}
+        self.subtask_lists = subtasks or {}
         self.created = []
 
     def registry_tasks(self):
@@ -18,8 +18,8 @@ class FakeAsana:
     def task(self, gid):
         return next(task for task in self.tasks if task["gid"] == gid)
 
-    def subtask_names(self, gid):
-        return self.subtasks.get(gid, [])
+    def subtasks(self, gid):
+        return self.subtask_lists.get(gid, [])
 
     def create_ready_subtask(self, removal, notes):
         self.created.append((removal, notes))
@@ -35,7 +35,12 @@ def registry_task(gid, flag="someFlag", platform="macOS", auto_removal=ffc.KEEP_
         "notes": f"Author: someone\nFlag name: {flag} (macOS), remote releasable\n",
         "assignee": {"gid": "owner"},
         "custom_fields": fields,
+        "memberships": [{"project": {"gid": ffc.REGISTRY_PROJECT_GID}}],
     }
+
+
+def agent_subtask(name):
+    return {"name": name, "custom_fields": [{"gid": ffc.AGENT_STATUS_FIELD_GID, "enum_value": {"gid": "done"}}]}
 
 
 class PlanRemovalTests(unittest.TestCase):
@@ -55,12 +60,14 @@ class PlanRemovalTests(unittest.TestCase):
             registry_task("2", platform="iOS"),
             registry_task("3", platform=None),
             {**registry_task("4"), "notes": "No flag line"},
+            registry_task("5", platform="Windows"),
         ]
 
         plans = [ffc.plan_removal(task) for task in tasks]
 
-        self.assertEqual([removal for removal, _ in plans], [None] * 4)
+        self.assertEqual([removal for removal, _ in plans], [None] * 5)
         self.assertEqual(plans[1][1], "no agent project for iOS yet")
+        self.assertEqual(plans[4][1], "unsupported Platform 'Windows'")
 
 
 class RenderPromptTests(unittest.TestCase):
@@ -90,8 +97,16 @@ class MarkdownToAsanaHtmlTests(unittest.TestCase):
 class QueueRemovalsTests(unittest.TestCase):
     def test_skips_queued_flags_and_stops_at_the_limit(self):
         asana = FakeAsana(
-            [registry_task("1", flag="queued"), registry_task("2", flag="first"), registry_task("3", flag="second")],
-            subtasks={"1": ["Remove queued feature flag"]},
+            [
+                registry_task("1", flag="queued"),
+                registry_task("2", flag="renamed"),
+                registry_task("3", flag="first"),
+                registry_task("4", flag="second"),
+            ],
+            subtasks={
+                "1": [{"name": "Remove queued feature flag"}],
+                "2": [agent_subtask("Remove renamed feature flag (PR open)")],
+            },
         )
 
         queued = ffc.queue_removals(asana, TEMPLATE, limit=1, dry_run=False)
@@ -105,6 +120,14 @@ class QueueRemovalsTests(unittest.TestCase):
         queued = ffc.queue_removals(asana, TEMPLATE, limit=5, dry_run=True)
 
         self.assertEqual(len(queued), 1)
+        self.assertEqual(asana.created, [])
+
+    def test_targeted_run_skips_a_task_outside_the_registry(self):
+        asana = FakeAsana([{**registry_task("1"), "memberships": [{"project": {"gid": "other"}}]}])
+
+        queued = ffc.queue_removals(asana, TEMPLATE, limit=1, dry_run=False, only_task_gid="1")
+
+        self.assertEqual(queued, [])
         self.assertEqual(asana.created, [])
 
 

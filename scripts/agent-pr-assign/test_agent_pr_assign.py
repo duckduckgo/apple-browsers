@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 
 import agent_pr_assign as assign
 
@@ -34,6 +35,17 @@ class GithubLoginForTests(unittest.TestCase):
 
         self.assertEqual(known, "octocat")
         self.assertIsNone(unknown)
+
+
+class FindAssigneeTests(unittest.TestCase):
+    def test_leaves_the_pr_unassigned_when_the_task_cannot_be_read(self):
+        body = "Task/Issue URL: https://app.asana.com/0/0/1220707808674818/f"
+        unreadable = mock.patch.object(assign, "task_assignee_gid", side_effect=assign.AsanaError("HTTP 404"))
+
+        with unreadable:
+            login = assign.find_assignee(body, USER_MAP, "pat")
+
+        self.assertIsNone(login)
 
 
 if __name__ == "__main__":

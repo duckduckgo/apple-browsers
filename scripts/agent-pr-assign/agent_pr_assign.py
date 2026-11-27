@@ -29,8 +29,13 @@ from typing import Optional
 ASANA_BASE = "https://app.asana.com/api/1.0"
 TASK_LINE_PATTERN = re.compile(r"^Task/Issue URL:\s*(\S*app\.asana\.com\S*)", re.MULTILINE)
 GID_PATTERN = re.compile(r"\d{10,}")
+LOGIN_PATTERN = re.compile(r"[A-Za-z0-9_.-]+")
 
 logger = logging.getLogger("agent-pr-assign")
+
+
+class AsanaError(RuntimeError):
+    pass
 
 
 def task_gid_from_body(body: str) -> Optional[str]:
@@ -42,16 +47,28 @@ def task_gid_from_body(body: str) -> Optional[str]:
     return gids[-1] if gids else None
 
 
-def github_login_for(asana_user_gid: str, user_map: str) -> Optional[str]:
-    """Look up the GitHub login mapped to an Asana user in a flat user_map.yml."""
-    for line in user_map.splitlines():
-        line = line.split("#", 1)[0]
+def parse_user_map(text: str) -> dict[str, str]:
+    """Parse a flat ``github_login: asana_user_gid`` YAML map.
+
+    Same rules as ``parse_user_map`` in scripts/conflict-watch: indented,
+    keyless, valueless and non-login lines are skipped.
+    """
+    result: dict[str, str] = {}
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].rstrip()
         if not line.strip() or line[0].isspace() or ":" not in line:
             continue
-        login, _, gid = line.partition(":")
-        if gid.strip().strip("'\"") == asana_user_gid:
-            return login.strip().strip("'\"")
-    return None
+        key, _, value = line.partition(":")
+        key = key.strip().strip("'\"")
+        value = value.strip().strip("'\"")
+        if key and value and LOGIN_PATTERN.fullmatch(key):
+            result[key] = value
+    return result
+
+
+def github_login_for(asana_user_gid: str, user_map: str) -> Optional[str]:
+    """Look up the GitHub login mapped to an Asana user in user_map.yml."""
+    return next((login for login, gid in parse_user_map(user_map).items() if gid == asana_user_gid), None)
 
 
 def task_assignee_gid(task_gid: str, pat: str) -> Optional[str]:
@@ -61,7 +78,9 @@ def task_assignee_gid(task_gid: str, pat: str) -> Optional[str]:
         with urllib.request.urlopen(request, timeout=30) as response:
             task = json.loads(response.read().decode("utf-8"))["data"]
     except urllib.error.HTTPError as error:
-        raise RuntimeError(f"GET /tasks/{task_gid} -> HTTP {error.code}") from error
+        raise AsanaError(f"HTTP {error.code}") from error
+    except OSError as error:  # URLError, timeouts, connection resets
+        raise AsanaError(str(getattr(error, "reason", error))) from error
     return (task.get("assignee") or {}).get("gid")
 
 
@@ -70,7 +89,11 @@ def find_assignee(body: str, user_map: str, pat: str) -> Optional[str]:
     if not task_gid:
         logger.warning("No Asana task in the PR description; leaving it unassigned.")
         return None
-    assignee_gid = task_assignee_gid(task_gid, pat)
+    try:
+        assignee_gid = task_assignee_gid(task_gid, pat)
+    except AsanaError as error:
+        logger.warning("Couldn't read task %s (%s); leaving the PR unassigned.", task_gid, error)
+        return None
     if not assignee_gid:
         logger.warning("Task %s has no assignee; leaving the PR unassigned.", task_gid)
         return None

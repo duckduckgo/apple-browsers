@@ -7,7 +7,9 @@ name: Feature Flag Cleanup
 # the flag and opens the PR.
 #
 # Manual dispatches default to dry-run (no Asana writes): uncheck dry_run to
-# write for real. Scheduled runs are real (dry_run is unset → falsy).
+# write for real. Scheduled runs are real (dry_run is unset → falsy), and only
+# run once the FEATURE_FLAG_CLEANUP_SCHEDULE_ENABLED repository variable is
+# "true", so the first real run can be a manual one.
 
 on:
   workflow_dispatch:
@@ -37,6 +39,7 @@ concurrency:
 jobs:
   feature-flag-cleanup:
     name: Queue feature flag removals
+    if: github.event_name != 'schedule' || vars.FEATURE_FLAG_CLEANUP_SCHEDULE_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

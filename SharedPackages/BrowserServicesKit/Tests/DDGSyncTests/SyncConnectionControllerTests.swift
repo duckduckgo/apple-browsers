@@ -21,6 +21,7 @@ import Combine
 import Persistence
 import PrivacyConfig
 import Common
+@_spi(Testing) import WideEvent
 @testable import DDGSync
 
 // MARK: - Remote Polling Mocks
@@ -170,6 +171,8 @@ final class SyncConnectionControllerTests: XCTestCase {
     private var syncService: DDGSync!
     private var delegate: MockSyncConnectionControllerDelegate!
     private var dependencies: MockSyncDependencies!
+    private var attemptWideEvent: WideEventMock!
+    private var attemptTracker: SyncSetupAttemptTracker!
     private static let deviceName = "TestDeviceName"
     private static let deviceType = "TestDeviceType"
 
@@ -1658,6 +1661,10 @@ final class SyncConnectionControllerTests: XCTestCase {
             SyncSetupTimeoutStage.waitingForRecoveryCode.rawValue
         )
         XCTAssertEqual(
+            SyncConnectionError.pairingV2SessionTimedOut(timeoutStage: .waitingForHostConfirmation).syncSetupTimeoutStage,
+            SyncSetupTimeoutStage.waitingForRecoveryCode.rawValue
+        )
+        XCTAssertEqual(
             SyncConnectionError.pairingV2SessionTimedOut(timeoutStage: .loggingIn).syncSetupTimeoutStage,
             SyncSetupTimeoutStage.loggingIn.rawValue
         )
@@ -2410,6 +2417,354 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertNotNil(didComplete)
     }
 
+    @MainActor
+    func test_attempt_recoveryCodeEntered_reportsConnectMethod() async throws {
+        startAttempt()
+        dependencies.account = AccountManagingMock()
+
+        await controller.syncCodeEntered(code: Self.validRecoveryCode, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
+
+        let attempt = try XCTUnwrap(attemptWideEvent.started.last as? SyncSetupWideEventData)
+        XCTAssertEqual(attempt.pixelParameters()["feature.data.ext.connect_method"], "scan_code")
+        XCTAssertNil(attempt.pixelParameters()["feature.data.ext.role"])
+    }
+
+    @MainActor
+    func test_attempt_v1ExchangeHost_reportsPairingFactsAndSteps() async throws {
+        startAttempt()
+        givenExchangerPollForPublicKeySucceeds()
+        dependencies.createExchangeRecoveryKeyTransmitterStub = MockExchangeRecoveryKeyTransmitting()
+        let willBeginTransmitting = expectation(description: "will begin transmitting")
+        delegate.didBeginTransmittingRecoveryKeyCalled = {
+            willBeginTransmitting.fulfill()
+        }
+
+        _ = try await controller.startExchangeMode()
+        await fulfillment(of: [willBeginTransmitting], timeout: 5)
+
+        try assertOpenAttempt(role: "host", peerKind: "ddg", connectMethod: "show_code", flowVersion: "v1",
+                              steps: "started,preparing_code,code_accepted_by_other_device,preparing_sync")
+    }
+
+    @MainActor
+    func test_attempt_v1ConnectJoiner_reportsPairingFactsAndSteps() async throws {
+        startAttempt()
+        let remoteConnector = MockRemoteConnecting()
+        remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "TestUserId", primaryKey: Data())
+        dependencies.createRemoteConnectorStub = remoteConnector
+        let mockAccountManager = AccountManagingMock()
+        dependencies.account = mockAccountManager
+        let didLogIn = expectation(description: "did log in")
+        mockAccountManager.loginSpy = { _, _, _ in
+            didLogIn.fulfill()
+        }
+
+        _ = try await controller.startConnectMode()
+        await fulfillment(of: [didLogIn], timeout: 5)
+
+        try assertOpenAttempt(role: "joiner", peerKind: "ddg", connectMethod: "show_code", flowVersion: "v1",
+                              steps: "started,preparing_code,code_accepted_by_other_device,preparing_sync")
+    }
+
+    @MainActor
+    func test_attempt_v1ExchangeJoiner_reportsPairingFactsAndSteps() async throws {
+        startAttempt()
+        let publicKeyTransmitter = MockExchangePublicKeyTransmitting()
+        publicKeyTransmitter.sendGeneratedExchangeInfoStub = ExchangeInfo(keyId: "test", publicKey: Data(), secretKey: Data())
+        dependencies.createExchangePublicKeyTransmitterStub = publicKeyTransmitter
+        let exchangeRecoverer = MockRemoteExchangeRecovering()
+        exchangeRecoverer.pollForRecoveryKeyResult = SyncCode.RecoveryKey(userId: "testUser", primaryKey: Data())
+        dependencies.createRemoteExchangeRecoverer = exchangeRecoverer
+
+        let result = await controller.syncCodeEntered(code: Self.validExchangeCode, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
+
+        XCTAssertTrue(result)
+        try assertOpenAttempt(role: "joiner", peerKind: "ddg", connectMethod: "scan_code", flowVersion: "v1",
+                              steps: "started,preparing_sync")
+    }
+
+    @MainActor
+    func test_attempt_v1ConnectHostWithoutAccount_reportsAccountCreated() async throws {
+        startAttempt()
+        dependencies.account = AccountManagingMock()
+        dependencies.createRecoveryTransmitterStub = MockRecoveryKeyTransmitting()
+
+        let result = await controller.syncCodeEntered(code: Self.validConnectCode, canScanLegacyURLBarcodes: true, codeSource: .deepLink)
+
+        XCTAssertTrue(result)
+        try assertOpenAttempt(role: "host", peerKind: "ddg", connectMethod: "link", flowVersion: "v1",
+                              steps: "started,preparing_sync,account_created")
+    }
+
+    @MainActor
+    func test_attempt_v2ScannerHostForThirdPartyPeer_reportsPairingFactsAndSteps() async throws {
+        startAttempt()
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let peerKeyPair = try makePeerKeyPair()
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard sequence == 0 else { return [] }
+            return try self.encryptedPeerMessages(
+                [
+                    .recoveryCodeRequest(
+                        .init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest, name: "Peer", kind: .thirdParty)
+                    )
+                ],
+                messageExchanger: messageExchanger,
+                peerKeyPair: peerKeyPair
+            )
+        }
+        let payload = PairingV2QRCodePayload(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        let url = try payload.toURL(baseURL: XCTUnwrap(URL(string: "https://duckduckgo.com")))
+
+        let result = await controller.syncCodeEntered(code: url.absoluteString, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
+
+        XCTAssertTrue(result)
+        try assertOpenAttempt(role: "host", peerKind: "3party", connectMethod: "scan_code", flowVersion: "v2",
+                              steps: "started,confirmation_screen,sync_confirmation,preparing_sync,account_created")
+    }
+
+    @MainActor
+    func test_attempt_v2PresenterHost_reportsPairingFactsAndSteps() async throws {
+        try await assertPresenterHostAttempt(peerVersion: PairingV2ProtocolVersion.v2.rawValue, canUseExchangeV2Point1: false, expectedFlowVersion: "v2")
+    }
+
+    @MainActor
+    func test_attempt_v21PresenterHost_reportsPairingFactsAndSteps() async throws {
+        try await assertPresenterHostAttempt(peerVersion: PairingV2ProtocolVersion.v2Point1.rawValue, canUseExchangeV2Point1: true, expectedFlowVersion: "v2.1")
+    }
+
+    @MainActor
+    func test_attempt_v2JoinerConfirmingBeforeHost_waitsForConfirmationThenPreparesSync() async throws {
+        startAttempt()
+        let lock = NSLock()
+        var isWaitingForConfirmation = false
+        attemptWideEvent.onUpdate = { data in
+            guard (data as? SyncSetupWideEventData)?.steps.last == .waitingForConfirmation else { return }
+            lock.withLock { isWaitingForConfirmation = true }
+        }
+        let (messageExchanger, peerKeyPair) = try givenPairingV2Joiner()
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            switch sequence {
+            case 0:
+                return try self.encryptedPeerMessages([Self.hostRecoveryCodeAvailable],
+                                                      messageExchanger: messageExchanger,
+                                                      peerKeyPair: peerKeyPair)
+            case 1:
+                guard lock.withLock({ isWaitingForConfirmation }) else { return [] }
+                return try self.encryptedPeerMessages([Self.hostRecoveryCodeConfirmed, .recoveryCodeResponse(.init(recoveryCode: Self.validRecoveryCode))],
+                                                      messageExchanger: messageExchanger,
+                                                      peerKeyPair: peerKeyPair,
+                                                      initialSequence: sequence)
+            default:
+                return []
+            }
+        }
+
+        let url = try pairingV2URL(version: PairingV2ProtocolVersion.v2.rawValue, peerKeyPair: peerKeyPair)
+
+        let result = await controller.syncCodeEntered(code: url, canScanLegacyURLBarcodes: true, codeSource: .pastedCode)
+
+        XCTAssertTrue(result)
+        try assertOpenAttempt(role: "joiner", peerKind: "ddg", connectMethod: "paste_code", flowVersion: "v2",
+                              steps: "started,confirmation_screen,sync_confirmation,waiting_for_confirmation,preparing_sync")
+    }
+
+    @MainActor
+    func test_attempt_v21JoinerAfterHostConfirmed_goesStraightToPreparingSync() async throws {
+        startAttempt()
+        dependencies.canUseExchangeV2Point1 = { true }
+        let (messageExchanger, peerKeyPair) = try givenPairingV2Joiner()
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard sequence == 0 else { return [] }
+            return try self.encryptedPeerMessages(
+                [
+                    Self.hostRecoveryCodeAvailable,
+                    .recoveryCodeAwaitingConfirmation(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAwaitingConfirmation)),
+                    Self.hostRecoveryCodeConfirmed,
+                    .recoveryCodeResponse(.init(recoveryCode: Self.validRecoveryCode))
+                ],
+                messageExchanger: messageExchanger,
+                peerKeyPair: peerKeyPair
+            )
+        }
+
+        let url = try pairingV2URL(version: PairingV2ProtocolVersion.v2Point1.rawValue, peerKeyPair: peerKeyPair)
+
+        let result = await controller.syncCodeEntered(code: url, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
+
+        XCTAssertTrue(result)
+        try assertOpenAttempt(role: "joiner", peerKind: "ddg", connectMethod: "scan_code", flowVersion: "v2.1",
+                              steps: "started,confirmation_screen,sync_confirmation,preparing_sync")
+    }
+
+    @MainActor
+    func test_attempt_v2JoinerTimingOutBeforeHostConfirmed_endsCancelledWaitingForConfirmation() async throws {
+        startAttempt(pairingV2PollingTimeout: 1)
+        let (messageExchanger, peerKeyPair) = try givenPairingV2Joiner()
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard sequence == 0 else { return [] }
+            return try self.encryptedPeerMessages([Self.hostRecoveryCodeAvailable], messageExchanger: messageExchanger, peerKeyPair: peerKeyPair)
+        }
+
+        let url = try pairingV2URL(version: PairingV2ProtocolVersion.v2.rawValue, peerKeyPair: peerKeyPair)
+
+        let error = try await waitForError {
+            _ = await controller.syncCodeEntered(code: url, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
+        }
+        attemptTracker.end(with: error, underlyingError: nil)
+
+        let (data, status) = try XCTUnwrap(attemptWideEvent.completions.last)
+        XCTAssertEqual(status, .cancelled)
+        XCTAssertEqual(data.pixelParameters().filter { Self.outcomeKeys.contains($0.key) }, [
+            "feature.data.ext.status_reason": "session_timeout",
+            "feature.data.ext.timeout_stage": "waiting_for_confirmation",
+            "feature.data.ext.last_step": "waiting_for_confirmation"
+        ])
+    }
+
+    @MainActor
+    func test_attempt_v21JoinerTimingOutAfterHostConfirmed_endsFailedWaitingForRecoveryCode() async throws {
+        startAttempt(pairingV2PollingTimeout: 1)
+        dependencies.canUseExchangeV2Point1 = { true }
+        let (messageExchanger, peerKeyPair) = try givenPairingV2Joiner()
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard sequence == 0 else { return [] }
+            return try self.encryptedPeerMessages([Self.hostRecoveryCodeAvailable, Self.hostRecoveryCodeConfirmed],
+                                                  messageExchanger: messageExchanger,
+                                                  peerKeyPair: peerKeyPair)
+        }
+
+        let url = try pairingV2URL(version: PairingV2ProtocolVersion.v2Point1.rawValue, peerKeyPair: peerKeyPair)
+
+        let error = try await waitForError {
+            _ = await controller.syncCodeEntered(code: url, canScanLegacyURLBarcodes: true, codeSource: .qrCode)
+        }
+        attemptTracker.end(with: error, underlyingError: nil)
+
+        let (data, status) = try XCTUnwrap(attemptWideEvent.completions.last)
+        XCTAssertEqual(status, .failure)
+        XCTAssertEqual(data.pixelParameters().filter { Self.outcomeKeys.contains($0.key) }, [
+            "feature.data.ext.status_reason": "session_timeout",
+            "feature.data.ext.timeout_stage": "waiting_for_recovery_code",
+            "feature.data.ext.last_step": "preparing_sync"
+        ])
+    }
+
+    private static let outcomeKeys: Set<String> = [
+        "feature.data.ext.status_reason",
+        "feature.data.ext.timeout_stage",
+        "feature.data.ext.last_step"
+    ]
+
+    private static let hostRecoveryCodeAvailable = PairingV2ApplicationMessage.recoveryCodeAvailable(
+        .init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeAvailable, name: "Peer", kind: .ddg, userId: "other-user")
+    )
+
+    private static let hostRecoveryCodeConfirmed = PairingV2ApplicationMessage.recoveryCodeConfirmed(
+        .init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeConfirmed)
+    )
+
+    @MainActor
+    private func startAttempt(pairingV2PollingTimeout: TimeInterval? = nil) {
+        attemptWideEvent = WideEventMock()
+        attemptTracker = SyncSetupAttemptTracker(wideEvent: attemptWideEvent, isEnabled: { true })
+        attemptTracker.start(entryPoint: "settings_page", setupMode: .multiDevice, existingAccount: false, flowVersion: .v21, uiVersion: .v2)
+        resetControllerUnderTest(pairingV2PollingTimeout: pairingV2PollingTimeout, attemptTracker: attemptTracker)
+    }
+
+    private func givenPairingV2Joiner() throws -> (PairingV2MessageExchangingMock, PairingV2KeyPair) {
+        dependencies.account = AccountManagingMock()
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        return (messageExchanger, try makePeerKeyPair())
+    }
+
+    private func pairingV2URL(version: String, peerKeyPair: PairingV2KeyPair) throws -> String {
+        let payload = PairingV2QRCodePayload(version: version, channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey)
+        return try payload.toURL(baseURL: XCTUnwrap(URL(string: "https://duckduckgo.com"))).absoluteString
+    }
+
+    @MainActor
+    private func assertPresenterHostAttempt(peerVersion: String,
+                                            canUseExchangeV2Point1: Bool,
+                                            expectedFlowVersion: String,
+                                            file: StaticString = #filePath,
+                                            line: UInt = #line) async throws {
+        startAttempt()
+        dependencies.isPairingV2CodeEnabled = { true }
+        dependencies.canUseExchangeV2Point1 = { canUseExchangeV2Point1 }
+        try dependencies.secureStore.persistAccount(SyncAccount.mock)
+        let messageExchanger = PairingV2MessageExchangingMock()
+        dependencies.createPairingV2MessageExchangerStub = messageExchanger
+        let peerKeyPair = try makePeerKeyPair()
+        let lock = NSLock()
+        var payload: PairingV2QRCodePayload?
+        var hasSentRecoveryCode = false
+        messageExchanger.sendHandler = { messages, _ in
+            let sentRecoveryCode = try messages.contains {
+                guard case .recoveryCodeResponse = try PairingV2MessageCrypto().decrypt($0, privateKey: peerKeyPair.privateKey) else { return false }
+                return true
+            }
+            if sentRecoveryCode {
+                lock.withLock { hasSentRecoveryCode = true }
+            }
+        }
+        messageExchanger.fetchMessagesHandler = { _, sequence in
+            guard let payload = lock.withLock({ payload }) else { return [] }
+            switch sequence {
+            case 0:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .hello(.init(channelId: peerKeyPair.channelID, publicKey: peerKeyPair.publicKey, version: peerVersion))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair)
+            case 1:
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .recoveryCodeRequest(.init(type: PairingV2ApplicationMessage.MessageType.recoveryCodeRequest, name: "Peer", kind: .ddg))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+            case 2:
+                guard lock.withLock({ hasSentRecoveryCode }) else { return [] }
+                return try Self.encryptedPresenterPeerMessages(messages: [
+                    .recoveryCodeDone(.init(reason: .success))
+                ], presenterPayload: payload, peerKeyPair: peerKeyPair, initialSequence: sequence)
+            default:
+                return []
+            }
+        }
+        let didFinishTransmitting = expectation(description: "did finish transmitting")
+        delegate.didFinishTransmittingRecoveryKeyCalled = {
+            didFinishTransmitting.fulfill()
+        }
+
+        let pairingInfo = try await controller.startExchangeMode()
+        let presenterPayload = try XCTUnwrap(PairingV2QRCodePayload(url: try XCTUnwrap(URL(string: pairingInfo.base64Code))))
+        lock.withLock { payload = presenterPayload }
+        await fulfillment(of: [didFinishTransmitting], timeout: 5)
+
+        try assertOpenAttempt(role: "host", peerKind: "ddg", connectMethod: "show_code", flowVersion: expectedFlowVersion,
+                              steps: "started,preparing_code,code_accepted_by_other_device,confirmation_screen,sync_confirmation,preparing_sync",
+                              file: file, line: line)
+    }
+
+    @MainActor
+    private func assertOpenAttempt(role: String,
+                                   peerKind: String,
+                                   connectMethod: String,
+                                   flowVersion: String,
+                                   steps: String,
+                                   file: StaticString = #filePath,
+                                   line: UInt = #line) throws {
+        let attempt = try XCTUnwrap(attemptWideEvent.started.last as? SyncSetupWideEventData, file: file, line: line)
+        let expected = [
+            "feature.data.ext.role": role,
+            "feature.data.ext.peer_kind": peerKind,
+            "feature.data.ext.connect_method": connectMethod,
+            "feature.data.ext.flow_version": flowVersion,
+            "feature.data.ext.steps": steps
+        ]
+        XCTAssertEqual(attempt.pixelParameters().filter { expected.keys.contains($0.key) }, expected, file: file, line: line)
+        XCTAssertTrue(attemptWideEvent.completions.isEmpty, file: file, line: line)
+    }
+
     enum TestError: Error {
         case nilValue
     }
@@ -2476,6 +2831,7 @@ final class SyncConnectionControllerTests: XCTestCase {
     @MainActor
     private func resetControllerUnderTest(
         pairingV2PollingTimeout: TimeInterval? = nil,
+        attemptTracker: SyncSetupAttemptTracker? = nil,
         makePairingV2KeyPair: @escaping () throws -> PairingV2KeyPair = { try PairingV2KeyPairFactory.makeKeyPair() },
         createPairingV2QRCodeURL: @escaping (PairingV2QRCodePayload) throws -> URL = {
             try $0.toURL(baseURL: URL(string: "https://duckduckgo.com")!)
@@ -2488,6 +2844,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         controller = SyncConnectionController(deviceName: Self.deviceName,
                                               deviceType: Self.deviceType,
                                               delegate: delegate,
+                                              attemptTracker: attemptTracker,
                                               syncService: syncService,
                                               dependencies: dependencies,
                                               pairingV2PollingTimeout: pairingV2PollingTimeout ?? Self.pairingV2PollingTimeout,

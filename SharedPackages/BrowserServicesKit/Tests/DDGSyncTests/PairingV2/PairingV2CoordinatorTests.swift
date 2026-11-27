@@ -78,6 +78,9 @@ private final class PairingV2ConfirmationDelegateMock: PairingV2ConfirmationDele
     func pairingV2CoordinatorDidSendJoinReport(_ report: PairingV2JoinReport) async {
         sentJoinReports.append(report)
     }
+
+    func pairingV2CoordinatorDidChangeState(_ state: PairingV2State, negotiatedVersion: PairingV2ProtocolVersion) async {
+    }
 }
 
 private actor PairingV2CoordinatorTestGate {

@@ -106,6 +106,7 @@ public enum SyncSetupTimeoutStage: String, Equatable, Sendable {
     case waitingForPeerStatus = "waiting_for_peer_status"
     case waitingForConfirmation = "waiting_for_confirmation"
     case waitingForRecoveryCode = "waiting_for_recovery_code"
+    case waitingForHostConfirmation = "waiting_for_host_confirmation"
     case waitingForJoinStatus = "waiting_for_join_status"
     case loggingIn = "logging_in"
 }
@@ -221,6 +222,10 @@ public extension SyncConnectionError {
                 return Outcome(status: .success)
             case .waitingForPeerHello, .waitingForConfirmation:
                 return Outcome(status: .cancelled, statusReason: SyncSetupFailureReason.sessionTimeout, timeoutStage: stage?.rawValue)
+            case .waitingForHostConfirmation:
+                return Outcome(status: .cancelled,
+                               statusReason: SyncSetupFailureReason.sessionTimeout,
+                               timeoutStage: SyncSetupTimeoutStage.waitingForConfirmation.rawValue)
             case .waitingForPeerStatus, .waitingForRecoveryCode, .loggingIn, nil:
                 return Outcome(status: .failure,
                                statusReason: SyncSetupFailureReason.sessionTimeout,
@@ -233,6 +238,8 @@ public extension SyncConnectionError {
 
     var syncSetupTimeoutStage: String? {
         switch self {
+        case .pairingV2SessionTimedOut(.waitingForHostConfirmation):
+            return SyncSetupTimeoutStage.waitingForRecoveryCode.rawValue
         case .pairingV2SessionTimedOut(let timeoutStage):
             return timeoutStage?.rawValue
         default:
@@ -371,6 +378,7 @@ public class SyncConnectionController: SyncConnectionControlling {
     private let createPairingV2QRCodeURL: (PairingV2QRCodePayload) throws -> URL
 
     private weak var delegate: SyncConnectionControllerDelegate?
+    private let attemptTracker: SyncSetupAttemptTracker?
 
     private let state = SyncConnectionState()
 
@@ -385,6 +393,7 @@ public class SyncConnectionController: SyncConnectionControlling {
     init(deviceName: String,
          deviceType: String,
          delegate: SyncConnectionControllerDelegate? = nil,
+         attemptTracker: SyncSetupAttemptTracker? = nil,
          syncService: DDGSyncing,
          dependencies: SyncDependencies,
          pairingV2PollingTimeout: TimeInterval = PairingV2PollingDefaults.sessionTimeout,
@@ -397,6 +406,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         self.deviceType = deviceType
         self.syncService = syncService
         self.delegate = delegate
+        self.attemptTracker = attemptTracker
         self.dependencies = dependencies
         self.pairingV2PollingTimeout = pairingV2PollingTimeout
         self.pairingV2PollIntervalNanoseconds = pairingV2PollIntervalNanoseconds
@@ -409,6 +419,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             return try await startPairingV2PresenterMode()
         }
 
+        await reportV1CodePreparation()
         await state.prepareForNewFlow()
         let exchanger = try remoteExchange()
         await state.setExchanger(exchanger)
@@ -422,6 +433,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             return try await startPairingV2PresenterMode()
         }
 
+        await reportV1CodePreparation()
         await state.prepareForNewFlow()
         let connector = try remoteConnect()
         await state.setConnector(connector)
@@ -561,6 +573,7 @@ public class SyncConnectionController: SyncConnectionControlling {
     }
 
     private func startPairingV2PresenterMode() async throws -> PairingInfo {
+        await attemptTracker?.recordStep(.preparingCode)
         await state.prepareForNewFlow()
         let coordinator = makePairingV2Coordinator()
         let payload = try await coordinator.startPresenting()
@@ -589,6 +602,7 @@ public class SyncConnectionController: SyncConnectionControlling {
             return false
         }
 
+        await attemptTracker?.recordConnectMethod(SyncSetupWideEventData.ConnectMethod(codeSource))
         await state.prepareForNewFlow()
         let coordinator = makePairingV2Coordinator()
         await state.replacePairingV2Coordinator(with: coordinator)
@@ -714,9 +728,10 @@ public class SyncConnectionController: SyncConnectionControlling {
                 .joinerWaitingForConfirmation:
             return .waitingForConfirmation
         case .hostPreparingRecoveryCode,
-                .hostSendingRecoveryCode,
-                .joinerWaitingForRecoveryCode:
+                .hostSendingRecoveryCode:
             return .waitingForRecoveryCode
+        case .joinerWaitingForRecoveryCode(let session):
+            return session.hasHostConfirmed ? .waitingForRecoveryCode : .waitingForHostConfirmation
         case .hostWaitingForJoinStatus,
                 .hostJoinOutcomeUnknown:
             return .waitingForJoinStatus
@@ -830,6 +845,9 @@ public class SyncConnectionController: SyncConnectionControlling {
                 return
             }
 
+            await reportV1Peer(role: .host, connectMethod: .showCode)
+            attemptTracker?.recordStep(.codeAcceptedByOtherDevice)
+            attemptTracker?.recordStep(.preparingSync)
             await delegate?.controllerWillBeginTransmittingRecoveryKey()
             do {
                 try await syncService.transmitExchangeRecoveryKey(for: exchangeMessage)
@@ -858,11 +876,14 @@ public class SyncConnectionController: SyncConnectionControlling {
                 return
             }
 
+            await reportV1Peer(role: .joiner, connectMethod: .showCode)
+            attemptTracker?.recordStep(.codeAcceptedByOtherDevice)
             delegate?.controllerDidReceiveRecoveryKey()
 
             guard await shouldContinueServerSyncOperation(setupRole: .sharer) else {
                 return
             }
+            attemptTracker?.recordStep(.preparingSync)
 
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false, setupRole: .sharer)
@@ -875,6 +896,8 @@ public class SyncConnectionController: SyncConnectionControlling {
     private func handleExchangeKey(_ exchangeKey: SyncCode.ExchangeKey, codeSource: SyncCodeSource) async -> Bool {
         let exchangeInfo: ExchangeInfo
         let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
+        await reportV1Peer(role: .joiner, connectMethod: SyncSetupWideEventData.ConnectMethod(codeSource))
+        await attemptTracker?.recordStep(.preparingSync)
         do {
             exchangeInfo = try await self.syncService.transmitGeneratedExchangeInfo(exchangeKey, deviceName: deviceName)
         } catch {
@@ -924,6 +947,7 @@ public class SyncConnectionController: SyncConnectionControlling {
         }
 
         await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource, codeVersion: recovery.syncSetupCodeVersion)
+        await attemptTracker?.recordConnectMethod(SyncSetupWideEventData.ConnectMethod(codeSource))
         guard await shouldContinueServerSyncOperation(setupRole: setupRole) else {
             return false
         }
@@ -943,10 +967,13 @@ public class SyncConnectionController: SyncConnectionControlling {
 
     private func handleConnectKey(_ connectKey: SyncCode.ConnectCode, codeSource: SyncCodeSource) async -> Bool {
         var shouldShowSyncEnabled = true
+        await reportV1Peer(role: .host, connectMethod: SyncSetupWideEventData.ConnectMethod(codeSource))
+        await attemptTracker?.recordStep(.preparingSync)
 
         if syncService.account == nil {
             do {
                 try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)
+                await attemptTracker?.recordStep(.accountCreated)
                 await delegate?.controllerDidCreateSyncAccount(shouldShowSyncEnabled: true)
                 shouldShowSyncEnabled = false
             } catch {
@@ -977,6 +1004,17 @@ public class SyncConnectionController: SyncConnectionControlling {
         } else {
             await delegate?.controllerDidError(loginConnectionError(for: error), underlyingError: error, setupRole: setupRole)
         }
+    }
+
+    private func reportV1CodePreparation() async {
+        await attemptTracker?.recordFlowVersion(.v1)
+        await attemptTracker?.recordStep(.preparingCode)
+    }
+
+    private func reportV1Peer(role: SyncSetupWideEventData.Role, connectMethod: SyncSetupWideEventData.ConnectMethod) async {
+        await attemptTracker?.recordFlowVersion(.v1)
+        await attemptTracker?.recordPeer(role: role, kind: .ddg)
+        await attemptTracker?.recordConnectMethod(connectMethod)
     }
 
     private func shouldContinueServerSyncOperation(setupRole: SyncSetupRole) async -> Bool {
@@ -1142,11 +1180,17 @@ public extension SyncConnectionControllerDelegate {
 extension SyncConnectionController: PairingV2ConfirmationDelegate {
 
     func pairingV2CoordinatorShouldAllowPeerToJoin(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
-        await delegate?.controllerShouldAllowPairingV2PeerToJoin(peerName: peerName, peerKind: peerKind) ?? false
+        await reportConfirmationScreen(role: .host, peerKind: peerKind)
+        let isConfirmed = await delegate?.controllerShouldAllowPairingV2PeerToJoin(peerName: peerName, peerKind: peerKind) ?? false
+        await reportConfirmation(isConfirmed)
+        return isConfirmed
     }
 
     func pairingV2CoordinatorShouldJoinPeer(peerName: String?, peerKind: PairingV2DeviceKind) async -> Bool {
-        await delegate?.controllerShouldJoinPairingV2Peer(peerName: peerName, peerKind: peerKind) ?? false
+        await reportConfirmationScreen(role: .joiner, peerKind: peerKind)
+        let isConfirmed = await delegate?.controllerShouldJoinPairingV2Peer(peerName: peerName, peerKind: peerKind) ?? false
+        await reportConfirmation(isConfirmed)
+        return isConfirmed
     }
 
     func pairingV2CoordinatorDismissConfirmation() async {
@@ -1154,10 +1198,73 @@ extension SyncConnectionController: PairingV2ConfirmationDelegate {
     }
 
     func pairingV2CoordinatorDidCreateSyncAccount(credentialKind: PairingV2DeviceKind) async {
+        await attemptTracker?.recordStep(.accountCreated)
         await delegate?.controllerDidCreateSyncAccount(shouldShowSyncEnabled: credentialKind == .ddg)
     }
 
     func pairingV2CoordinatorDidSendJoinReport(_ report: PairingV2JoinReport) async {
         await delegate?.controllerDidSendPairingV2JoinReport(report)
+    }
+
+    func pairingV2CoordinatorDidChangeState(_ state: PairingV2State, negotiatedVersion: PairingV2ProtocolVersion) async {
+        switch state {
+        case .waitingForPeerStatus(let session):
+            await attemptTracker?.recordFlowVersion(SyncSetupWideEventData.FlowVersion(negotiatedVersion))
+            if session.localClient.isPresenter {
+                await attemptTracker?.recordConnectMethod(.showCode)
+                await attemptTracker?.recordStep(.codeAcceptedByOtherDevice)
+            }
+        case .hostPreparingRecoveryCode, .joinerLoggingIn:
+            await attemptTracker?.recordStep(.preparingSync)
+        case .joinerWaitingForRecoveryCode(let session):
+            await attemptTracker?.recordStep(session.hasHostConfirmed ? .preparingSync : .waitingForConfirmation)
+        default:
+            break
+        }
+    }
+
+    private func reportConfirmationScreen(role: SyncSetupWideEventData.Role, peerKind: PairingV2DeviceKind) async {
+        await attemptTracker?.recordPeer(role: role, kind: SyncSetupWideEventData.PeerKind(peerKind))
+        await attemptTracker?.recordStep(.confirmationScreen)
+    }
+
+    private func reportConfirmation(_ isConfirmed: Bool) async {
+        guard isConfirmed else {
+            return
+        }
+        await attemptTracker?.recordStep(.syncConfirmation)
+    }
+}
+
+private extension SyncSetupWideEventData.ConnectMethod {
+
+    init(_ codeSource: SyncCodeSource) {
+        switch codeSource {
+        case .qrCode:
+            self = .scanCode
+        case .pastedCode:
+            self = .pasteCode
+        case .deepLink:
+            self = .link
+        }
+    }
+}
+
+private extension SyncSetupWideEventData.PeerKind {
+
+    init(_ kind: PairingV2DeviceKind) {
+        switch kind {
+        case .ddg:
+            self = .ddg
+        case .thirdParty:
+            self = .thirdParty
+        }
+    }
+}
+
+private extension SyncSetupWideEventData.FlowVersion {
+
+    init(_ version: PairingV2ProtocolVersion) {
+        self = version >= .v2Point1 ? .v21 : .v2
     }
 }

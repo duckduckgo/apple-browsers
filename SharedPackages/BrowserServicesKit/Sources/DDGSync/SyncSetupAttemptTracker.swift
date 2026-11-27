@@ -85,6 +85,21 @@ public final class SyncSetupAttemptTracker {
         update { $0.setupMode = mode }
     }
 
+    func recordPeer(role: SyncSetupWideEventData.Role, kind: SyncSetupWideEventData.PeerKind) {
+        update {
+            $0.role = role
+            $0.peerKind = kind
+        }
+    }
+
+    func recordConnectMethod(_ method: SyncSetupWideEventData.ConnectMethod) {
+        update { $0.connectMethod = method }
+    }
+
+    func recordFlowVersion(_ version: SyncSetupWideEventData.FlowVersion) {
+        update { $0.flowVersion = version }
+    }
+
     public func recordDeviceAuthShown() {
         update {
             $0.deviceAuthShown = true

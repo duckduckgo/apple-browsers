@@ -252,9 +252,9 @@ final class NativeMessagingHostManifestTests: XCTestCase {
     }
 
     func testWhenSearchDirectoriesAreOmittedThenTheContainerDirectoryIsSearchedSecond() throws {
-        let userLibrary = try XCTUnwrap(FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first)
+        // The real `~/Library`, also when the test host is sandboxed.
         let bundleID = try XCTUnwrap(Bundle.main.bundleIdentifier)
-        let expected = userLibrary
+        let expected = URL.nonSandboxLibraryDirectoryURL
             .appendingPathComponent("Containers/\(bundleID)/Data/Library/Application Support/NativeMessagingHosts")
 
         XCTAssertEqual(NativeMessagingHostManifestLocator.containerHostsDirectory.standardizedFileURL, expected.standardizedFileURL)

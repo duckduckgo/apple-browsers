@@ -100,34 +100,58 @@ final class AIChatUserScriptLocalModelTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? AIChatLocalModelRequestError, .unavailable)
         }
-        XCTAssertEqual(prompt.askedModelNames, [])
+        XCTAssertEqual(prompt.askedRequests, [])
 
         let reply = try await accessHandler([:], message(from: "https://duck.ai/chat")) as? AIChatLocalModelAccessReply
         XCTAssertEqual(reply, AIChatLocalModelAccessReply(result: .allowed))
-        XCTAssertEqual(prompt.askedModelNames, [service.model.name])
+        XCTAssertEqual(prompt.askedRequests, [.connect(service.model)])
     }
 
-    func testRunsEndWhenTheScriptGoesAway() async {
+    func testTheServicesRequestReachesThePrompt() async throws {
+        service.accessRequest = .install(service.model, bytes: 974_984_960)
+        let script = makeScript()
+        let accessHandler = try XCTUnwrap(script.handler(forMethodNamed: AIChatUserScriptMessages.requestAIChatLocalModelAccess.rawValue))
+
+        _ = try await accessHandler([:], message(from: "https://duck.ai/chat"))
+
+        XCTAssertEqual(prompt.askedRequests, [.install(service.model, bytes: 974_984_960)])
+    }
+
+    func testRunsAreThePagesNotTheScripts() {
+        let script = makeScript()
+        script.webView = webView
+
+        XCTAssertTrue(script.localModelPage === webView)
+    }
+
+    func testClosingThePageEndsItsRuns() async {
         var script: AIChatUserScript? = makeScript()
-        let ownerID = ObjectIdentifier(script!)
+        script?.webView = webView
+        let pageID = ObjectIdentifier(webView)
         let cancelled = expectation(description: "Runs cancelled")
         service.onCancelRuns = { id in
-            if id == ownerID { cancelled.fulfill() }
+            if id == pageID { cancelled.fulfill() }
         }
 
+        // The web view goes first when its tab closes.
+        script?.webView = nil
         script = nil
 
         await fulfillment(of: [cancelled], timeout: 1)
     }
 
-    func testReplacedScriptHandsItsRunsToTheReplacement() {
-        let old = makeScript()
-        let replacement = makeScript()
+    /// Content-blocking updates replace the script while the page stays open.
+    func testReplacedScriptLeavesThePagesRunsGoing() async throws {
+        var cancelledIDs: [ObjectIdentifier] = []
+        service.onCancelRuns = { cancelledIDs.append($0) }
+        var script: AIChatUserScript? = makeScript()
+        script?.webView = webView
 
-        old.handOverLocalRuns(to: replacement)
+        script?.cleanUpForReplacement()
+        script = nil
+        try await Task.sleep(nanoseconds: 50_000_000)
 
-        XCTAssertEqual(service.movedRuns.map(\.from), [ObjectIdentifier(old)])
-        XCTAssertEqual(service.movedRuns.map(\.to), [ObjectIdentifier(replacement)])
+        XCTAssertEqual(cancelledIDs, [])
     }
 }
 
@@ -139,10 +163,10 @@ private final class StubURLWebView: WKWebView {
 @MainActor
 private final class RecordingLocalModelService: AIChatLocalModelServing {
     let model = AIChatLocalModelInfo(id: "m", name: "M")
+    var accessRequest: AIChatLocalModelAccessRequest?
     var configToReturn: AIChatLocalModelConfig?
     var onCancelRuns: ((ObjectIdentifier) -> Void)?
     private(set) var startedRequestIds: [String] = []
-    private(set) var movedRuns: [(from: ObjectIdentifier, to: ObjectIdentifier)] = []
 
     func config() -> AIChatLocalModelConfig? { configToReturn }
     func register(_ pusher: AIChatLocalModelPushing) {}
@@ -154,30 +178,26 @@ private final class RecordingLocalModelService: AIChatLocalModelServing {
 
     func cancelRun(requestId: String, for pusher: AIChatLocalModelPushing) {}
 
-    func moveRuns(from pusher: AIChatLocalModelPushing, to replacement: AIChatLocalModelPushing) {
-        movedRuns.append((ObjectIdentifier(pusher), ObjectIdentifier(replacement)))
-    }
-
     func cancelRuns(ownerID: ObjectIdentifier) {
         onCancelRuns?(ownerID)
     }
 
-    func requestAccess(ask: @MainActor () async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
-        await ask()
+    func requestAccess(ask: @MainActor (AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result) async throws -> AIChatLocalModelAccessReply.Result {
+        await ask(accessRequest ?? .connect(model))
     }
 }
 
 @MainActor
 private final class StubLocalModelAccessPrompt: LocalModelAccessAsking {
     let answer: AIChatLocalModelAccessReply.Result
-    private(set) var askedModelNames: [String] = []
+    private(set) var askedRequests: [AIChatLocalModelAccessRequest] = []
 
     init(answer: AIChatLocalModelAccessReply.Result) {
         self.answer = answer
     }
 
-    func ask(in window: UIWindow?, modelName: String) async -> AIChatLocalModelAccessReply.Result {
-        askedModelNames.append(modelName)
+    func ask(in window: UIWindow?, request: AIChatLocalModelAccessRequest) async -> AIChatLocalModelAccessReply.Result {
+        askedRequests.append(request)
         return answer
     }
 }

@@ -66,5 +66,6 @@ private struct StandaloneFeatureFlagger: DBPFeatureFlagging {
     var isExtractedProfileRefreshOn: Bool { fallback.isExtractedProfileRefreshOn }
     var isOptOutRetryErrorFrequencyExperimentOn: Bool { fallback.isOptOutRetryErrorFrequencyExperimentOn }
     var isChallengeSolverOn: Bool { fallback.isChallengeSolverOn }
+    var isUserAssistanceOn: Bool { fallback.isUserAssistanceOn }
 }
 #endif

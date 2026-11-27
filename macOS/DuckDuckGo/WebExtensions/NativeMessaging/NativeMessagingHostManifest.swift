@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Foundation
 import os.log
 import WebExtensions
@@ -67,8 +68,9 @@ enum NativeMessagingHostManifestLocator {
 
     /// Directories that hold host manifests, in search order.
     ///
-    /// Our own directory comes first. The other Chromium browsers' directories follow, because
-    /// a companion app writes one file per browser it knows and may not write one for us.
+    /// Our own directories come first: the one in the user's Library, then the one in our container.
+    /// The other Chromium browsers' directories follow, because a companion app writes one file
+    /// per browser it knows and may not write one for us.
     ///
     /// A companion app may also install its manifest for all users, under `/Library` rather than
     /// the user's own Library. macOS does this for iCloud Passwords, whose manifest lives in the
@@ -79,11 +81,10 @@ enum NativeMessagingHostManifestLocator {
     ///
     /// The browser fallbacks, at either level, go away once companion apps write a DuckDuckGo file.
     static var searchDirectories: [URL] {
-        var directories: [URL] = []
+        var directories = ownHostsDirectories
 
         if let userLibrary = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first {
             let userRelativePaths = [
-                "Application Support/DuckDuckGo",
                 "Application Support/Google/Chrome",
                 "Application Support/Chromium",
                 "Application Support/Microsoft Edge",
@@ -96,7 +97,7 @@ enum NativeMessagingHostManifestLocator {
         // The local domain's Library is `/Library`.
         if let systemLibrary = FileManager.default.urls(for: .libraryDirectory, in: .localDomainMask).first {
             let systemRelativePaths = [
-                "Application Support/DuckDuckGo",
+                ownRelativePath,
                 "Google/Chrome",
                 "Application Support/Chromium",
                 "Microsoft/Edge",
@@ -109,12 +110,50 @@ enum NativeMessagingHostManifestLocator {
         return directories
     }
 
-    private static func hostDirectories(in library: URL, relativePaths: [String]) -> [URL] {
-        relativePaths.map {
-            library
-                .appendingPathComponent($0)
-                .appendingPathComponent("NativeMessagingHosts")
+    /// Our own directory in the user's Library, which is the first directory searched.
+    static var userHostsDirectory: URL? {
+        FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first.map {
+            hostDirectory(in: $0, relativePath: ownRelativePath)
         }
+    }
+
+    /// Our own directory in our container's Application Support, which is the second directory searched.
+    ///
+    /// The path is `~/Library/Containers/<bundle ID>/Data/Library/Application Support/NativeMessagingHosts`
+    /// also in builds that are not sandboxed.
+    static var containerHostsDirectory: URL {
+        URL.sandboxApplicationSupportURL.appendingPathComponent("NativeMessagingHosts")
+    }
+
+    /// Our own directories in the user's Library and in our container, in search order.
+    static var ownHostsDirectories: [URL] {
+        [userHostsDirectory, containerHostsDirectory].compactMap { $0 }
+    }
+
+    /// Creates our own host directory if it does not exist, so that a companion app has a place for its manifest.
+    static func createHostsDirectoryIfNeeded(at directory: URL?) {
+        guard let directory else { return }
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            let nsError = error as NSError
+            Logger.webExtensions.error("""
+            ❌ Cannot create \(directory.path, privacy: .private): \
+            errorDomain=\(nsError.domain, privacy: .public) errorCode=\(nsError.code)
+            """)
+        }
+    }
+
+    private static let ownRelativePath = "Application Support/DuckDuckGo"
+
+    private static func hostDirectory(in library: URL, relativePath: String) -> URL {
+        library
+            .appendingPathComponent(relativePath)
+            .appendingPathComponent("NativeMessagingHosts")
+    }
+
+    private static func hostDirectories(in library: URL, relativePaths: [String]) -> [URL] {
+        relativePaths.map { hostDirectory(in: library, relativePath: $0) }
     }
 
     /// Chrome's rule for host names: lowercase letters, digits and underscores in dot-separated components.
@@ -151,10 +190,14 @@ enum NativeMessagingHostManifestLocator {
                     throw LocatorError.executableMissing(path: executable.path)
                 }
 
-                Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) found at \(manifestURL.path, privacy: .public)")
+                Logger.webExtensions.debug("🔗 Host \(name, privacy: .public) found at \(manifestURL.path, privacy: .private)")
                 return (manifest, executable)
             } catch {
-                Logger.webExtensions.error("❌ Host manifest \(manifestURL.path, privacy: .public) unusable: \(error.localizedDescription, privacy: .public)")
+                let nsError = error as NSError
+                Logger.webExtensions.error("""
+                ❌ Host manifest \(manifestURL.path, privacy: .private) unusable: \
+                errorDomain=\(nsError.domain, privacy: .public) errorCode=\(nsError.code)
+                """)
                 continue
             }
         }

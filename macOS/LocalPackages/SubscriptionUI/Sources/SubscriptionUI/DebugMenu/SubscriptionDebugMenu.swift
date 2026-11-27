@@ -39,6 +39,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     let subscriptionUserDefaults: UserDefaults
     let wideEvent: WideEventManaging
     let subscriptionSelectionHandler: SubscriptionSelectionHandler?
+    let makeTokensDebugModel: (@MainActor () -> SubscriptionTokensDebugViewModel)?
+    private var tokensWindow: NSWindow?
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -52,7 +54,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 subscriptionManager: any SubscriptionManager,
                 subscriptionUserDefaults: UserDefaults,
                 wideEvent: WideEventManaging,
-                subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil) {
+                subscriptionSelectionHandler: SubscriptionSelectionHandler? = nil,
+                makeTokensDebugModel: (@MainActor () -> SubscriptionTokensDebugViewModel)? = nil) {
         self.currentEnvironment = currentEnvironment
         self.updateServiceEnvironment = updateServiceEnvironment
         self.updatePurchasingPlatform = updatePurchasingPlatform
@@ -63,6 +66,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         self.subscriptionUserDefaults = subscriptionUserDefaults
         self.wideEvent = wideEvent
         self.subscriptionSelectionHandler = subscriptionSelectionHandler
+        self.makeTokensDebugModel = makeTokensDebugModel
         super.init(title: "Subscription", action: nil, keyEquivalent: "")
         self.submenu = makeSubmenu()
     }
@@ -75,6 +79,9 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         menu.addItem(NSMenuItem(title: "Show Account Details", action: #selector(showAccountDetails), target: self))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Validate Token", action: #selector(validateToken), target: self))
+        if makeTokensDebugModel != nil {
+            menu.addItem(NSMenuItem(title: "Manage Tokens…", action: #selector(showTokenManagement), target: self))
+        }
         menu.addItem(NSMenuItem(title: "Check Entitlements", action: #selector(checkEntitlements), target: self))
         menu.addItem(NSMenuItem(title: "Get Subscription Details", action: #selector(getSubscriptionDetails), target: self))
         menu.addItem(.separator())
@@ -262,6 +269,23 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 showAlert(title: "Validate token", message: "\(error)")
             }
         }
+    }
+
+    @MainActor
+    @objc
+    func showTokenManagement() {
+        if let tokensWindow {
+            tokensWindow.makeKeyAndOrderFront(nil)
+            return
+        }
+        guard let makeTokensDebugModel else { return }
+        let window = NSWindow(contentViewController: NSHostingController(rootView: SubscriptionTokensDebugView(model: makeTokensDebugModel())))
+        window.title = "Subscription Tokens"
+        window.isReleasedWhenClosed = false
+        window.delegate = self
+        window.center()
+        tokensWindow = window
+        window.makeKeyAndOrderFront(nil)
     }
 
     @objc
@@ -520,5 +544,13 @@ extension SubscriptionDebugMenu: NSMenuDelegate {
     public func menuWillOpen(_ menu: NSMenu) {
         purchasePlatformItem?.submenu = makePurchasePlatformSubmenu()
         regionOverrideItem?.submenu = makeRegionOverrideItemSubmenu()
+    }
+}
+
+extension SubscriptionDebugMenu: NSWindowDelegate {
+
+    public func windowWillClose(_ notification: Notification) {
+        guard (notification.object as? NSWindow) === tokensWindow else { return }
+        tokensWindow = nil
     }
 }

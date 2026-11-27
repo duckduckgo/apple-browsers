@@ -75,11 +75,12 @@ final class FireDialogViewModel: ObservableObject {
         case fireButton
         case mainMenuAll
         case historyView(query: DataModel.HistoryQueryKind)
+        case duckAIOnboarding
 
         /// Show Tab/Window/All Data segmented pill control only for fire button/MainMenu entry point
         var shouldShowSegmentedControl: Bool {
             switch self {
-            case .fireButton, .mainMenuAll: return true
+            case .fireButton, .mainMenuAll, .duckAIOnboarding: return true
             case .historyView: return false
             }
         }
@@ -92,7 +93,7 @@ final class FireDialogViewModel: ObservableObject {
                  .historyView(query: .rangeFilter(.all)),
                  .historyView(query: .rangeFilter(.allSites)):
                 return true
-            case .historyView:
+            case .historyView, .duckAIOnboarding:
                 return false
             }
         }
@@ -117,9 +118,24 @@ final class FireDialogViewModel: ObservableObject {
             }
         }
 
+        /// Show the History and Cookies rows?
+        var shouldShowSiteDataRows: Bool {
+            self != .duckAIOnboarding
+        }
+
+        /// Show the "…" menu? Its items lead away from the dialog, which the Duck.ai onboarding path doesn't allow.
+        var shouldShowMoreOptionsMenu: Bool {
+            self != .duckAIOnboarding
+        }
+
+        /// Whether the dialog remembers the user's choices for the next time.
+        var savesChoices: Bool {
+            self != .duckAIOnboarding
+        }
+
         func shouldShowChatHistoryToggle(_ featureFlagger: FeatureFlagger) -> Bool {
             switch self {
-            case .fireButton, .mainMenuAll:
+            case .fireButton, .mainMenuAll, .duckAIOnboarding:
                 return true
             case .historyView(query: .rangeFilter(.all)):
                 return !featureFlagger.isFeatureOn(.fireDialogSimplified)
@@ -131,7 +147,7 @@ final class FireDialogViewModel: ObservableObject {
         /// Hide fireproof section when dialog is scoped to specific site(s)
         var shouldShowFireproofSection: Bool {
             switch self {
-            case .historyView(query: .domainFilter), .historyView(query: .visits):
+            case .historyView(query: .domainFilter), .historyView(query: .visits), .duckAIOnboarding:
                 return false
             case .fireButton, .mainMenuAll, .historyView:
                 return true
@@ -179,6 +195,8 @@ final class FireDialogViewModel: ObservableObject {
                     return UserText.fireDialogHistoryItemsTitle(visits.uniqued(on: { $0.uuid }).count)
                 case .historyView:
                     return UserText.fireDialogTitle
+                case .duckAIOnboarding:
+                    return UserText.fireDialogDuckAIOnboardingTitle
                 }
             }()
             return title.replacingOccurrences(of: "\n", with: " ")
@@ -210,6 +228,8 @@ final class FireDialogViewModel: ObservableObject {
                 return UserText.fireDialogHistoryItemsTitle(visits.uniqued(on: { $0.uuid }).count)
             case .historyView:
                 return UserText.fireDialogTitle
+            case .duckAIOnboarding:
+                return UserText.fireDialogDuckAIOnboardingTitle
             }
         }
     }
@@ -219,8 +239,8 @@ final class FireDialogViewModel: ObservableObject {
         var favicon: NSImage?
     }
 
-    /// Remember last selected scope
-    private var settings: any KeyedStoring<FireDialogViewSettings>
+    /// Remember last selected scope. `nil` when the mode doesn't save choices.
+    private var settings: (any KeyedStoring<FireDialogViewSettings>)?
 
     init(fireViewModel: FireViewModel,
          tabCollectionViewModel: TabCollectionViewModel,
@@ -265,7 +285,13 @@ final class FireDialogViewModel: ObservableObject {
         // Apply provided scope domains BEFORE computing lists to avoid any flash
         self.scopeCookieDomains = scopeCookieDomains
 
-        self.settings = if let settings { settings } else { UserDefaults.standard.keyedStoring() }
+        self.settings = if !mode.savesChoices {
+            nil
+        } else if let settings {
+            settings
+        } else {
+            UserDefaults.standard.keyedStoring()
+        }
 
         // Disabling the current tab scope belongs to the new dialog only.
         let currentTabOptionEnabled = if featureFlagger.isFeatureOn(.fireDialogSimplified) {
@@ -277,13 +303,13 @@ final class FireDialogViewModel: ObservableObject {
 
         // Fall back to All Data when the current tab holds nothing to delete. This is set here,
         // and not after initialization, to keep the last selected clearing option untouched.
-        let selectedClearingOption = clearingOption ?? self.settings.lastSelectedClearingOption ?? .currentTab
+        let selectedClearingOption = clearingOption ?? self.settings?.lastSelectedClearingOption ?? .currentTab
         self.clearingOption = (selectedClearingOption == .currentTab && !currentTabOptionEnabled) ? .allData : selectedClearingOption
-        self.includeTabsAndWindows = includeTabsAndWindows ?? self.settings.lastIncludeTabsAndWindowsState ?? true
-        self.includeHistory = includeHistory ?? self.settings.lastIncludeHistoryState ?? true
-        self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings.lastIncludeCookiesAndSiteDataState ?? true
-        self.includeChatHistorySetting = includeChatHistory ?? self.settings.lastIncludeChatHistoryState ?? false
-        self.isSectionsExpanded = sectionsExpanded ?? self.settings.lastSectionsExpandedState ?? true
+        self.includeTabsAndWindows = includeTabsAndWindows ?? self.settings?.lastIncludeTabsAndWindowsState ?? true
+        self.includeHistory = includeHistory ?? self.settings?.lastIncludeHistoryState ?? true
+        self.includeCookiesAndSiteData = includeCookiesAndSiteData ?? self.settings?.lastIncludeCookiesAndSiteDataState ?? true
+        self.includeChatHistorySetting = includeChatHistory ?? self.settings?.lastIncludeChatHistoryState ?? false
+        self.isSectionsExpanded = sectionsExpanded ?? self.settings?.lastSectionsExpandedState ?? true
 
         updateLastSelectedClearingOptionIfNeeded()
 
@@ -339,6 +365,8 @@ final class FireDialogViewModel: ObservableObject {
     }
 
     var shouldShowChatHistoryToggle: Bool {
+        // The onboarding dialog always offers to delete the chat, whatever the scope, the selected tab or the chats listed.
+        if mode == .duckAIOnboarding { return true }
         let isPresentedOnAIChatTab = tabCollectionViewModel?.selectedTab?.url?.isDuckAIURL ?? false
         // Only hide chats toggle when no chats in the new dialog, so default this to `true` when the flag is off.
         let hasChats = featureFlagger.isFeatureOn(.fireDialogSimplified) ? chats.count > 0 : true
@@ -368,7 +396,7 @@ final class FireDialogViewModel: ObservableObject {
     var clearingOption: ClearingOption {
         didSet {
             updateItems(for: clearingOption)
-            settings.lastSelectedClearingOption = clearingOption
+            settings?.lastSelectedClearingOption = clearingOption
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleMode, frequency: .dailyAndCount)
         }
     }
@@ -378,14 +406,16 @@ final class FireDialogViewModel: ObservableObject {
     /// Use `shouldCloseTabsAndWindows` as source of truth that also covers toggle hidden case.
     @Published var includeTabsAndWindows: Bool {
         didSet {
-            settings.lastIncludeTabsAndWindowsState = includeTabsAndWindows
+            settings?.lastIncludeTabsAndWindowsState = includeTabsAndWindows
             pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName)
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleCloseTabs, frequency: .dailyAndCount)
         }
     }
 
-    /// Whether tabs and windows should be closed. It's always `false` if the toggle is hidden.
+    /// Whether tabs and windows should be closed. It's always `false` if the toggle is hidden,
+    /// except on the Duck.ai onboarding path, which only moves on once a new page loads.
     var shouldCloseTabsAndWindows: Bool {
+        if mode == .duckAIOnboarding { return true }
         return mode.shouldShowCloseTabsToggle ? includeTabsAndWindows : false
     }
 
@@ -394,7 +424,7 @@ final class FireDialogViewModel: ObservableObject {
     /// Use `shouldDeleteHistory` as source of truth that also covers toggle hidden case.
     @Published var includeHistory: Bool {
         didSet {
-            settings.lastIncludeHistoryState = includeHistory
+            settings?.lastIncludeHistoryState = includeHistory
             pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName)
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearHistory, frequency: .dailyAndCount)
         }
@@ -408,7 +438,7 @@ final class FireDialogViewModel: ObservableObject {
     /// when true, cookies/site data are cleared for the selected (non-fireproof) domains in scope.
     @Published var includeCookiesAndSiteData: Bool {
         didSet {
-            settings.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
+            settings?.lastIncludeCookiesAndSiteDataState = includeCookiesAndSiteData
             pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName)
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearSiteData, frequency: .dailyAndCount)
         }
@@ -422,7 +452,7 @@ final class FireDialogViewModel: ObservableObject {
     /// Do not use this property directly to perform the data clearing; use `includeChatHistory` instead.
     @Published var includeChatHistorySetting: Bool {
         didSet {
-            settings.lastIncludeChatHistoryState = includeChatHistorySetting
+            settings?.lastIncludeChatHistoryState = includeChatHistorySetting
             pixelFiring?.fire(FireDialogPixel.fireDialogChangeSettings, frequency: .uniqueByName)
             pixelFiring?.fire(FireDialogPixel.fireDialogToggleClearAIChats, frequency: .dailyAndCount)
         }
@@ -434,7 +464,7 @@ final class FireDialogViewModel: ObservableObject {
     /// stores the user choice, which all later dialogs use instead of the default.
     @Published var isSectionsExpanded: Bool {
         didSet {
-            settings.lastSectionsExpandedState = isSectionsExpanded
+            settings?.lastSectionsExpandedState = isSectionsExpanded
         }
     }
 
@@ -449,8 +479,8 @@ final class FireDialogViewModel: ObservableObject {
     /// Call this when the user starts data clearing from the dialog. Only the expand/collapse button
     /// also stores this state, so a missing stored state means that the user made no choice yet.
     func didConfirmDataClearing() {
-        guard settings.lastSectionsExpandedState == nil else { return }
-        settings.lastSectionsExpandedState = false
+        guard settings?.lastSectionsExpandedState == nil else { return }
+        settings?.lastSectionsExpandedState = false
     }
 
     @Published private(set) var selectable: [Item] = []
@@ -588,7 +618,9 @@ final class FireDialogViewModel: ObservableObject {
     /// This uses the same sources of truth as the confirmed result, so that the button is never
     /// disabled while confirming would still delete something.
     var isDeleteEnabled: Bool {
-        shouldCloseTabsAndWindows
+        // The onboarding dialog always closes the tab, so only the chats can enable it.
+        if mode == .duckAIOnboarding { return includeChatHistory }
+        return shouldCloseTabsAndWindows
         || (shouldDeleteHistory && hasHistoryItemsInScope)
         || (includeCookiesAndSiteData && hasCookiesAndSiteDataInScope)
         || includeChatHistory

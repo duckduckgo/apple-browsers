@@ -29,6 +29,7 @@ final class YandexDataImporter: ChromiumDataImporter {
                    loginImporter: nil,
                    bookmarkImporter: bookmarkImporter,
                    faviconManager: NSApp.delegateTyped.faviconManager,
+                   faviconRasterizer: NSApp.delegateTyped.faviconRasterizer,
                    historyReader: ChromiumHistoryReader(chromiumDataDirectoryURL: profile.profileURL),
                    historyImporter: HistoryImporter(historyCoordinator: NSApp.delegateTyped.historyCoordinator))
     }

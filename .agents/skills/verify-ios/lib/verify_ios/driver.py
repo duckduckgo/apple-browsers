@@ -16,6 +16,21 @@ from .env import RUNNER_DD, SKILL, HOME, Failed, port_listening, process_identit
 
 RUNNER_APP = "com.duckduckgo.verifyios.runner.xctrunner"
 APP_FOREGROUND = 4   # XCUIApplication.State.runningForeground
+SYSTEM_APPS = {"springboard": "com.apple.springboard"}
+
+
+def scoped(body):
+    """Move a locator's `app=<name>` into the request, where the runner reads which application to search. Only the
+    system UI in SYSTEM_APPS can be named (the device-passcode sheet belongs to SpringBoard); without `app=` the runner
+    searches the app under test."""
+    sel = body.get("sel")
+    if not isinstance(sel, dict) or "app" not in sel:
+        return body
+    sel = dict(sel)
+    name = sel.pop("app")
+    if name not in SYSTEM_APPS:
+        raise Failed(f"app={name} is not a known system app; use one of {sorted(SYSTEM_APPS)}")
+    return {**body, "sel": sel, "app": SYSTEM_APPS[name]}
 
 
 def _signal(recorded, sig):
@@ -47,6 +62,7 @@ class XCUITestRunner:
 
     # transport -----------------------------------------------------------------
     def call(self, body, timeout=180):
+        body = scoped(body)
         req = urllib.request.Request(f"http://127.0.0.1:{self.port}/", data=json.dumps({**body, "token": self.token}).encode(),
                                      method="POST", headers={"Content-Type": "application/json"})
         try:

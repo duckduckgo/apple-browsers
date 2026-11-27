@@ -25,6 +25,7 @@ paths must be absolute or relative to the config file.
 | `verdict: fail` (or `inconclusive`) | `--expect fail`. Without the line the scenario expects `pass`. A run whose verdict differs from the expected one needs attention. |
 | `action: run` with JSON fields | Those fields in the config, then `pir.py run --config <config> --evidence-dir <evidence>` |
 | `action: scheduler seed` | `pir.py scheduler seed --platform ios --profile-file <profile> --evidence-dir <evidence>` |
+| `launchProfile:` with JSON (optional) | `--launch-profile '<json>'` on iOS `run` and `scheduler` commands |
 | A matched `profileUrl` from the scan | Run the scan scenario first, then pin one `profileUrl` from its `pir-final-run.json` in `"expectedFile"`, a file holding `{"profileUrl": "..."}` |
 
 For example, "Opt-out is submitted" on macOS:

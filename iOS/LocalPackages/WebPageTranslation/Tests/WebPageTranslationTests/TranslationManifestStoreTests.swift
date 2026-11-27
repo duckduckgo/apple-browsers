@@ -33,7 +33,7 @@ extension StubbedNetworkTests {
         private let fixture: Data
 
         init() throws {
-            let fixtureURL = try #require(Bundle.module.url(forResource: "models", withExtension: "json", subdirectory: "Resources"))
+            let fixtureURL = try #require(Bundle.module.url(forResource: "models", withExtension: "json", subdirectory: "Fixtures"))
             fixture = try Data(contentsOf: fixtureURL)
         }
 

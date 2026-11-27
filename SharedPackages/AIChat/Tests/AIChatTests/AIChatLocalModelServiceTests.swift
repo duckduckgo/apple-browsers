@@ -134,23 +134,6 @@ final class AIChatLocalModelServiceTests {
         #expect(otherPage.chunks.isEmpty)
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("A run carries on through the script that replaced its page's old one", .timeLimit(.minutes(1)))
-    func movedRunStreamsToTheReplacement() async throws {
-        storage.pageSummariesModel = .appleIntelligence
-        engine.keepsRunning = true
-        let replacement = RecordingLocalModelPage()
-        _ = try service.startRun(request(), for: page)
-
-        service.moveRuns(from: page, to: replacement)
-        service.cancelRun(requestId: "r1", for: page)
-        service.cancelRun(requestId: "r1", for: replacement)
-        await waitUntil { replacement.chunks.last?.done == true }
-
-        #expect(page.chunks.isEmpty)
-        #expect(replacement.chunks.last?.status == .cancelled)
-    }
-
     // MARK: - Pushes
 
     @available(iOS 16, macOS 13, *)
@@ -237,16 +220,21 @@ final class AIChatLocalModelServiceTests {
     @available(iOS 16, macOS 13, *)
     @Test("Turn On in the prompt opts in", .timeLimit(.minutes(1)))
     func allowedOptsIn() async throws {
-        let result = try await service.requestAccess { .allowed }
+        var asked: AIChatLocalModelAccessRequest?
+        let result = try await service.requestAccess { request in
+            asked = request
+            return .allowed
+        }
 
         #expect(result == .allowed)
+        #expect(asked == .connect(engine.model))
         #expect(storage.pageSummariesModel == .appleIntelligence)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("No Thanks or closing the prompt leaves the model off", .timeLimit(.minutes(1)))
     func declinedLeavesItOff() async throws {
-        let result = try await service.requestAccess { .declined }
+        let result = try await service.requestAccess { _ in .declined }
 
         #expect(result == .declined)
         #expect(storage.pageSummariesModel == .duckAI)
@@ -258,7 +246,7 @@ final class AIChatLocalModelServiceTests {
         service.optIn()
         var asked = false
 
-        let result = try await service.requestAccess {
+        let result = try await service.requestAccess { _ in
             asked = true
             return .declined
         }
@@ -274,7 +262,7 @@ final class AIChatLocalModelServiceTests {
         var asked = false
 
         await #expect(throws: AIChatLocalModelRequestError.unavailable) {
-            try await self.service.requestAccess {
+            try await self.service.requestAccess { _ in
                 asked = true
                 return .allowed
             }
@@ -336,7 +324,7 @@ final class AIChatLocalModelServiceTests {
     @available(iOS 16, macOS 13, *)
     @Test("Turn On in the prompt saves the choice and sends selected once", .timeLimit(.minutes(1)))
     func promptTurnOnSendsSelected() async throws {
-        _ = try await service.requestAccess { .allowed }
+        _ = try await service.requestAccess { _ in .allowed }
         service.select(.appleIntelligence, source: .settings)
 
         #expect(storage.pageSummariesModel == .appleIntelligence)
@@ -346,7 +334,7 @@ final class AIChatLocalModelServiceTests {
     @available(iOS 16, macOS 13, *)
     @Test("No Thanks in the prompt sends no selected", .timeLimit(.minutes(1)))
     func promptNoThanksSendsNoSelected() async throws {
-        _ = try await service.requestAccess { .declined }
+        _ = try await service.requestAccess { _ in .declined }
 
         #expect(selectedPixels.isEmpty)
     }

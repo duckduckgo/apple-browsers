@@ -52,8 +52,10 @@ final class FaviconManagerMock: FaviconManagement {
         nil
     }
 
+    private(set) var handledFaviconsByDocumentUrl: [[URL: [Favicon]]] = []
+
     func handleFaviconsByDocumentUrl(_ faviconsByDocumentUrl: [URL: [Favicon]]) async {
-        // no-op
+        handledFaviconsByDocumentUrl.append(faviconsByDocumentUrl)
     }
 
     func getCachedFaviconURL(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> URL? {

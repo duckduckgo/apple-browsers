@@ -117,6 +117,7 @@ enum UserDefaultsKeys: String, StorageKeyDescribing {
     // MARK: - Contextual Onboarding
 
     case contextualOnboardingPathKind = "contextual-onboarding_path-kind"
+    case contextualOnboardingDuckAIPrompt = "contextual-onboarding_duck-ai-prompt"
     case contextualOnboardingBlockedTrackers = "contextual-onboarding_blocked-trackers"
 }
 

@@ -49,6 +49,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         var onFilePicked: ((AIChatFileAttachment, FileMetadata) -> Void)?
         var onFileValidationFailed: ((String, FileMetadata) -> Void)?
         var fileMetadataValidationMessage: ((FileMetadata) -> String?)?
+        var onCancelled: (() -> Void)?
     }
 
     var pickerCallbacksProvider: (() -> PickerCallbacks)?
@@ -375,9 +376,15 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         pixelSession.finish(didChoose: results.contains(.changed))
     }
 
-    /// Opens the system file picker directly (bypassing the attachment menu) for the promo "add file" CTA.
-    func presentFilePicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
-        presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes)
+    /// Opens the system file picker directly (bypassing the attachment menu), for the promo "add file" CTA and the
+    /// new chat hint. `callbacks`, when given, handle this picker alone in place of the shared ones.
+    func presentFilePicker(from presenter: UIViewController, allowedFileTypes: [UTType], callbacks: PickerCallbacks? = nil) {
+        presentDocumentPicker(from: presenter, allowedFileTypes: allowedFileTypes, callbacks: callbacks)
+    }
+
+    /// Opens the photo library directly (bypassing the attachment menu) for the new chat hint.
+    func presentPhotoLibrary(from presenter: UIViewController, selectionLimit: Int) {
+        presentPhotoPicker(from: presenter, selectionLimit: selectionLimit)
     }
 }
 
@@ -443,11 +450,11 @@ private extension UnifiedToggleInputAttachmentPresenter {
         presenter.present(picker, animated: true)
     }
 
-    func presentDocumentPicker(from presenter: UIViewController, allowedFileTypes: [UTType]) {
+    func presentDocumentPicker(from presenter: UIViewController, allowedFileTypes: [UTType], callbacks: PickerCallbacks? = nil) {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedFileTypes, asCopy: false)
         picker.allowsMultipleSelection = false
         picker.delegate = self
-        pickerCallbacks[ObjectIdentifier(picker)] = pickerCallbacksProvider?()
+        pickerCallbacks[ObjectIdentifier(picker)] = callbacks ?? pickerCallbacksProvider?()
         presenter.present(picker, animated: true)
     }
 
@@ -599,5 +606,6 @@ extension UnifiedToggleInputAttachmentPresenter: UIDocumentPickerDelegate {
         let callbacks = takeCallbacks(for: controller)
         controller.dismiss(animated: true)
         callbacks.onExpandIfNeeded?()
+        callbacks.onCancelled?()
     }
 }

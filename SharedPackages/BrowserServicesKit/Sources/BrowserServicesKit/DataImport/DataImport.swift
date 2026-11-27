@@ -22,7 +22,7 @@ import SecureStorage
 
 public enum DataImport {
 
-    public enum Source: String, RawRepresentable, CaseIterable, Equatable, Identifiable, Codable {
+    public enum Source: String, RawRepresentable, CaseIterable, Equatable, Identifiable, Codable, Sendable {
         public var id: String {
             rawValue
         }
@@ -55,7 +55,7 @@ public enum DataImport {
         }
     }
 
-    public enum DataType: String, Hashable, CaseIterable, CustomStringConvertible {
+    public enum DataType: String, Hashable, CaseIterable, CustomStringConvertible, Sendable {
 
         case bookmarks
         case passwords
@@ -77,13 +77,13 @@ public enum DataImport {
 
     /// Represents an import item with all necessary display information.
     /// Used to provide user-facing information about duplicate and failed items.
-    public enum DataImportItem: Equatable {
+    public enum DataImportItem: Equatable, Sendable {
         case bookmark(title: String, url: String, errorMessage: String? = nil)
         case password(title: String?, domain: String, username: String, errorMessage: String? = nil)
         case creditCard(maskedNumber: String, cardholderName: String?, errorMessage: String? = nil)
     }
 
-    public struct DataTypeSummary: Equatable {
+    public struct DataTypeSummary: Equatable, Sendable {
         public let successful: Int
         public let duplicateItems: [DataImportItem]
         public let failedItems: [DataImportItem]
@@ -358,7 +358,7 @@ public struct LoginImporterError: DataImportError {
         self._type = type
     }
 
-    public struct OperationType: RawRepresentable, Equatable {
+    public struct OperationType: RawRepresentable, Equatable, Sendable {
         public let rawValue: Int
 
         static let malformedCSV = OperationType(rawValue: -2)
@@ -431,3 +431,5 @@ public struct LoginImporterError: DataImportError {
     }
 
 }
+
+extension DataImportResult: Sendable where T: Sendable {}

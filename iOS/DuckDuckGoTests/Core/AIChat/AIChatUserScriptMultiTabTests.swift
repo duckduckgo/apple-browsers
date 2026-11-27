@@ -1140,6 +1140,7 @@ private final class MultiTabInputBox: AIChatInputBoxHandling {
     var persistedReasoningEffort: AIChatReasoningEffort?
     var isSubmitBlockedByRecoveryCard = false
     var isTermsOfServiceShownOnPage = false
+    var isAIChatPromoVisible: Bool?
     @Published var aiChatStatus: AIChatStatusValue = .unknown
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
     @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown

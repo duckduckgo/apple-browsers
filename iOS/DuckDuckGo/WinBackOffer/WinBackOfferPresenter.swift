@@ -84,6 +84,6 @@ private extension WinBackOfferPresenter {
 
     @available(iOS 16.0, *)
     func customDetentsHeightFor(context: UISheetPresentationControllerDetentResolutionContext) -> CGFloat? {
-        470
+        500
     }
 }

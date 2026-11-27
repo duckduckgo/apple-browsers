@@ -848,6 +848,12 @@ extension AppDelegate {
 
     @objc func resetOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
+        // Clears the AI Chat step's choice and the address bar toggle tip, as on a first run.
+        ["aichat.showSearchAndDuckAIToggle",
+         "aichat.showAIChatShortcutOnNewTabPage",
+         "aichat.userDidSeeToggleOnboarding",
+         "aichat.hasInteractedWithSearchDuckAIToggle"].forEach(UserDefaults.standard.removeObject(forKey:))
     }
 
     @objc func resetHomePageSettingsOnboarding(_ sender: Any?) {

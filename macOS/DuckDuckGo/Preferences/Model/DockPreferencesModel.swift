@@ -73,6 +73,10 @@ final class DockPreferencesModel: ObservableObject {
         isPresentingAddToDockDemoVideo = true
     }
 
+    func videoSheetButtonClicked(_ action: AddToDockVideoAction) {
+        pixelFiring?.fire(AddToDockVideoPixel.buttonClicked(action: action, entryPoint: .settings), frequency: .standard)
+    }
+
     func refresh() {
         isBeingAddedToDock = false
     }

@@ -59,6 +59,10 @@ protocol BrowserChromeDelegate: AnyObject {
     /// visibility, used to drive `WKWebView.obscuredContentInsets` on iOS 26.
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets
 
+    /// The insets the bars alone cover, without the keyboard or the find bar. Nil while a web input has the
+    /// keyboard, when the bars aren't at their resting size.
+    func floatingChromeObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets?
+
     func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets?
 
     var floatingAIChatHeaderObscuredHeight: CGFloat { get }
@@ -68,12 +72,21 @@ protocol BrowserChromeDelegate: AnyObject {
     var floatingNewTabPageTopObscuredHeight: CGFloat { get }
 
     var omniBar: any OmniBar { get }
+
+    /// The view the address bar is drawn in: the floating toolbar's glass when the bar is embedded in it.
+    var addressBarChromeView: UIView { get }
     var tabBarContainer: UIView { get }
 }
 
 extension BrowserChromeDelegate {
 
+    var addressBarChromeView: UIView { omniBar.barView }
+
     func findInPageObscuredInsets(in webView: WKWebView) -> UIEdgeInsets? { nil }
+
+    func floatingChromeObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets? {
+        floatingWebViewObscuredInsets(for: barsVisibilityPercent)
+    }
 
     var floatingAIChatHeaderObscuredHeight: CGFloat { 0 }
 

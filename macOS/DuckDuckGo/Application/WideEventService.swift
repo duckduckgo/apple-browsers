@@ -18,6 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
+import DDGSync
 import WideEvent
 import Subscription
 import VPN
@@ -25,12 +26,14 @@ import VPN
 actor WideEventService {
     private let wideEvent: WideEventManaging
     private let subscriptionManager: SubscriptionManager
+    private let isSyncSetupWideEventEnabled: () -> Bool
 
     private var isProcessing = false
 
-    init(wideEvent: WideEventManaging, subscriptionManager: SubscriptionManager) {
+    init(wideEvent: WideEventManaging, subscriptionManager: SubscriptionManager, isSyncSetupWideEventEnabled: @escaping () -> Bool) {
         self.wideEvent = wideEvent
         self.subscriptionManager = subscriptionManager
+        self.isSyncSetupWideEventEnabled = isSyncSetupWideEventEnabled
     }
 
     func sendPendingEvents() async {
@@ -46,14 +49,18 @@ actor WideEventService {
         await processSubscriptionPurchaseCompletion(trigger: trigger)
         await processCompletion(DataImportWideEventData.self, trigger: trigger)
         await processCompletion(AuthV2TokenRefreshWideEventData.self, trigger: trigger)
+        await processCompletion(SyncSetupWideEventData.self, trigger: trigger, isEnabled: isSyncSetupWideEventEnabled())
 
         isProcessing = false
     }
 
-    private func processCompletion<T: WideEventData>(_ type: T.Type, trigger: WideEventCompletionTrigger) async {
+    private func processCompletion<T: WideEventData>(_ type: T.Type, trigger: WideEventCompletionTrigger, isEnabled: Bool = true) async {
         for data in wideEvent.getAllFlowData(T.self) {
-            if case .complete(let status) = await data.completionDecision(for: trigger) {
+            guard case .complete(let status) = await data.completionDecision(for: trigger) else { continue }
+            if isEnabled {
                 _ = try? await wideEvent.completeFlow(data, status: status)
+            } else {
+                wideEvent.discardFlow(data)
             }
         }
     }

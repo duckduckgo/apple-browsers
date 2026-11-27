@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import SwiftUIExtensions
 import Utilities
 
 #if DEBUG
@@ -53,18 +54,25 @@ struct DefaultBrowserAndDockPromptInactiveUserView: View {
     let browsersComparisonChart: AnyView
 
     var body: some View {
-        HStack(spacing: .zero) {
-            PromptMessageAndImage(message: viewModel.message, image: viewModel.image)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ZStack(alignment: .bottomLeading) {
+            Image(.defaultBrowserAndDockPromptBackground)
+                .accessibilityHidden(true)
 
-            PromptChartAndButtons(browsersComparisonChart: browsersComparisonChart,
-                                  primaryButtonLabel: viewModel.primaryButtonLabel,
-                                  dismissButtonLabel: viewModel.dismissButtonLabel,
-                                  primaryButtonAction: viewModel.primaryButtonAction,
-                                  dismissButtonAction: viewModel.dismissButtonAction)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            HStack(spacing: Metrics.padding) {
+                PromptMessageAndImage(message: viewModel.message, image: viewModel.image)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                PromptChartAndButtons(browsersComparisonChart: browsersComparisonChart,
+                                      primaryButtonLabel: viewModel.primaryButtonLabel,
+                                      dismissButtonLabel: viewModel.dismissButtonLabel,
+                                      primaryButtonAction: viewModel.primaryButtonAction,
+                                      dismissButtonAction: viewModel.dismissButtonAction)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .padding(.trailing, Metrics.padding)
         }
         .frame(width: Metrics.width, height: Metrics.height)
+        .background(Color(singleUseColor: .defaultBrowserAndDockPromptBackground))
     }
 }
 
@@ -73,30 +81,28 @@ private struct PromptMessageAndImage: View {
     let image: NSImage
 
     var body: some View {
-        ZStack {
-            Image(.gradientBackground)
+        VStack(alignment: .leading, spacing: .zero) {
+            Text(message)
+                .font(.title.weight(.bold))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, Metrics.topPadding)
+                .padding(.horizontal, Metrics.padding)
 
-            VStack(alignment: .center) {
-                promptMessage
-                Spacer()
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-            }
-            .padding([.top, .horizontal], Metrics.padding)
+            Spacer(minLength: Metrics.padding)
+
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: image.size.width, maxHeight: image.size.height)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, PromptMessageAndImageMetrics.imageBottomPadding)
         }
-    }
-
-    var promptMessage: some View {
-        Text(message)
-            .font(.title.weight(.bold))
-            .multilineTextAlignment(.center)
-            .padding(.top, Metrics.padding)
-            .padding(.horizontal, PromptMessageAndImageMetrics.horizontalPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     enum PromptMessageAndImageMetrics {
-        static let horizontalPadding: CGFloat = 30
+        static let imageBottomPadding: CGFloat = 20
     }
 }
 
@@ -108,32 +114,45 @@ private struct PromptChartAndButtons: View {
     let dismissButtonAction: () -> Void
 
     var body: some View {
-        VStack(spacing: PromptChartAndButtonsMetrics.verticalSpacing) {
-            Spacer()
-
+        VStack {
             browsersComparisonChart
 
+            Spacer()
+
             HStack {
-                OnboardingSecondaryCTAButton(title: dismissButtonLabel, action: dismissButtonAction, pillShape: true)
-                    .frame(minWidth: 132) // Prevent button from being condensed to an unreadable width in non-English locales
-                    .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.dismissButton)
-                OnboardingPrimaryCTAButton(title: primaryButtonLabel, action: primaryButtonAction, pillShape: true)
-                    .layoutPriority(1) // Resist compression to avoid multiline label if possible
-                    .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.confirmButton)
+                Button(action: dismissButtonAction) {
+                    buttonLabel(dismissButtonLabel)
+                }
+                .buttonStyle(DismissActionButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true, stateColors: .themedDismissButton))
+                .fixedSize() // Prevent button from being condensed to an unreadable width in non-English locales
+                .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.dismissButton)
+
+                Button(action: primaryButtonAction) {
+                    buttonLabel(primaryButtonLabel)
+                }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, stateColors: .themedActionButton, pillShape: true))
+                .shadow(radius: 1, x: -0.6, y: 0.6)
+                .layoutPriority(1) // Resist compression to avoid multiline label if possible
+                .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.confirmButton)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .padding(Metrics.padding)
-        .background(Color(designSystemColor: .surfaceCanvas))
+        .padding(.bottom, Metrics.padding)
+        .padding(.top, Metrics.topPadding)
     }
 
-    enum PromptChartAndButtonsMetrics {
-        static let verticalSpacing: CGFloat = 50
+    private func buttonLabel(_ title: String) -> some View {
+        Text(title)
+            .padding(.horizontal, Metrics.buttonLabelHorizontalPadding)
+            .frame(height: Metrics.buttonHeight)
     }
 }
 
 private enum Metrics {
-    static let padding: CGFloat = 24
+    static let padding: CGFloat = 36
+    static let topPadding: CGFloat = 48
+    static let buttonLabelHorizontalPadding: CGFloat = 8
+    static let buttonHeight: CGFloat = 32
     static let width: CGFloat = 868
     static let height: CGFloat = 508
 }

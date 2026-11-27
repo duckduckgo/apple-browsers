@@ -17,6 +17,9 @@
 //
 
 import AIChat
+import FeatureFlags_macOS
+@_spi(Testing) import Persistence
+import PrivacyConfig
 @_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -29,6 +32,10 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
     private var catalog: BrowserToolCatalog!
     private var pixels: PixelKitMock!
     private var model: BrowserToolPermissionsPreferences!
+    private var translateStore: InMemoryKeyValueStore!
+    private var translatePages: TranslatePagesSetting!
+    private var featureFlagger: MockFeatureFlagger!
+    private var translateCenter: NotificationCenter!
 
     override func setUp() {
         super.setUp()
@@ -37,12 +44,26 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         let tools = [FakeTool(name: "pinTab", permissionMode: .auto), FakeTool(name: "listOpenTabs", permissionMode: .ask)]
         catalog = BrowserToolCatalog(tools: tools, configuration: FakeConfiguration())
         pixels = PixelKitMock()
-        model = BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager,
-                                                  pixelFiring: pixels)
+        translateStore = InMemoryKeyValueStore()
+        translateCenter = NotificationCenter()
+        translatePages = TranslatePagesSetting(store: translateStore, notificationCenter: translateCenter)
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = true
+        model = makeModel()
+    }
+
+    private func makeModel(source: BrowserToolsPixel.PermissionSource = .settings) -> BrowserToolPermissionsPreferences {
+        BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager,
+                                          source: source, pixelFiring: pixels, translatePages: translatePages,
+                                          featureFlagger: featureFlagger)
     }
 
     override func tearDown() {
         model = nil
+        translatePages = nil
+        translateStore = nil
+        translateCenter = nil
+        featureFlagger = nil
         pixels = nil
         catalog = nil
         permissions = nil
@@ -97,6 +118,213 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         cancellable.cancel()
     }
 
+    // MARK: - Translate Pages
+
+    func testWhenTheFlagIsOffThenTheTranslateRowIsHidden() {
+        featureFlagger.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = false
+        model = makeModel()
+
+        XCTAssertFalse(model.showsTranslateRow)
+    }
+
+    func testWhenTheFlagChangesWhileOpenThenTheRowFollows() {
+        let key = FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue
+        let hidden = expectation(description: "hidden")
+        let shown = expectation(description: "shown")
+        let cancellable = model.$showsTranslateRow.dropFirst().sink { $0 ? shown.fulfill() : hidden.fulfill() }
+
+        featureFlagger.featuresStub[key] = false
+        featureFlagger.triggerUpdate()
+        wait(for: [hidden], timeout: 1)
+        featureFlagger.featuresStub[key] = true
+        featureFlagger.triggerUpdate()
+        wait(for: [shown], timeout: 1)
+
+        cancellable.cancel()
+    }
+
+    func testWhenTheFlagIsOffThenResetAllKeepsTranslatePreferences() {
+        model.setTranslateMode(.neverAsk)
+        translatePages.exclude(languageCode: "de")
+        featureFlagger.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = false
+        model.reload()
+
+        model.resetAll()
+
+        XCTAssertEqual(translatePages.mode, .neverAsk)
+        XCTAssertEqual(translatePages.excludedLanguageCodes, ["de"])
+    }
+
+    func testWhenTheFlagTurnsOffBeforeTheQueuedRefreshThenResetAllKeepsTranslatePreferences() {
+        model.setTranslateMode(.neverAsk)
+        permissions.setState(.deny, forToolNamed: "pinTab")
+        model.reload()
+        featureFlagger.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = false
+
+        model.resetAll()
+
+        XCTAssertNil(permissions.state(forToolNamed: "pinTab"))
+        XCTAssertEqual(translatePages.mode, .neverAsk)
+    }
+
+    func testWhenALanguageIsExcludedOutsideTheModelThenItIsPickedUp() {
+        let expectation = expectation(description: "reloaded")
+        let cancellable = model.$translateExcludedLanguages.first { $0 == ["de"] }.sink { _ in expectation.fulfill() }
+
+        translatePages.exclude(languageCode: "de")
+
+        wait(for: [expectation], timeout: 1)
+        cancellable.cancel()
+    }
+
+    func testTranslatePagesDefaultsToAlwaysAskWithNothingToReset() {
+        XCTAssertTrue(model.showsTranslateRow)
+        XCTAssertEqual(model.translateMode, .alwaysAsk)
+        XCTAssertEqual(model.translateExcludedLanguages, [])
+        XCTAssertFalse(model.canResetAll)
+    }
+
+    func testWhenTranslateIsSetToNeverAskThenItIsStoredAndResettable() {
+        model.setTranslateMode(.neverAsk)
+
+        XCTAssertEqual(TranslatePagesSetting(store: translateStore).mode, .neverAsk)
+        XCTAssertEqual(model.translateMode, .neverAsk)
+        XCTAssertTrue(model.canResetAll)
+    }
+
+    func testWhenTheRowIsResetThenModeAndExcludedLanguagesAreCleared() {
+        model.setTranslateMode(.neverAsk)
+        translatePages.exclude(languageCode: "fr")
+
+        model.resetTranslate()
+
+        XCTAssertEqual(model.translateMode, .alwaysAsk)
+        XCTAssertEqual(model.translateExcludedLanguages, [])
+        XCTAssertFalse(translatePages.isCustomized)
+    }
+
+    func testResetAllAlsoClearsTranslatePages() {
+        model.setTranslateMode(.neverAsk)
+        translatePages.exclude(languageCode: "de")
+
+        model.resetAll()
+
+        XCTAssertEqual(model.translateMode, .alwaysAsk)
+        XCTAssertEqual(model.translateExcludedLanguages, [])
+    }
+
+    func testResetAllIsOfferedWhenOnlyAnExcludedLanguageIsStored() {
+        translatePages.exclude(languageCode: "de")
+        model.reload()
+
+        XCTAssertTrue(model.canResetAll)
+    }
+
+    func testExcludingALanguageKeepsItsPrimarySubtagOnceAndSurvivesANewInstance() {
+        translatePages.exclude(languageCode: "fr-CA")
+        translatePages.exclude(languageCode: "FR")
+        translatePages.exclude(languageCode: "pt_BR")
+
+        let reloaded = TranslatePagesSetting(store: translateStore)
+        XCTAssertEqual(reloaded.excludedLanguageCodes, ["fr", "pt"])
+        XCTAssertTrue(reloaded.isExcluded(languageCode: "fr-FR"))
+        XCTAssertFalse(reloaded.isExcluded(languageCode: "de"))
+    }
+
+    func testWhenOnlyTranslatePagesIsCustomizedThenResetAllFiresNoToolResetPixel() {
+        model.setTranslateMode(.neverAsk)
+
+        model.resetAll()
+
+        XCTAssertTrue(pixels.actualFireCalls.isEmpty)
+        XCTAssertEqual(model.translateMode, .alwaysAsk)
+    }
+
+    func testIncludingAnExcludedLanguageBringsItBack() {
+        translatePages.exclude(languageCode: "fr")
+        translatePages.exclude(languageCode: "de")
+
+        model.setTranslate(languageCode: "fr", excluded: false)
+
+        XCTAssertEqual(model.translateExcludedLanguages, ["de"])
+        model.setTranslate(languageCode: "de", excluded: false)
+        XCTAssertEqual(model.translateExcludedLanguages, [])
+        XCTAssertFalse(model.isTranslateCustomized)
+    }
+
+    func testTheLanguageMenuListsTheAppLocalizationsByNameWithoutTheSystemLanguage() {
+        let locale = Locale(identifier: "en_US")
+
+        let codes = TranslatePagesLanguages.menuCodes(localizations: ["en", "de", "es", "fr"], offered: [], excluded: [],
+                                                      systemCode: "en", locale: locale)
+
+        XCTAssertEqual(codes.map { TranslatePagesLanguages.name(of: $0, locale: locale) }, ["French", "German", "Spanish"])
+    }
+
+    func testTheLanguageMenuAddsOfferedAndExcludedLanguagesOnceByName() {
+        let locale = Locale(identifier: "en_US")
+
+        let codes = TranslatePagesLanguages.menuCodes(localizations: ["de", "fr"], offered: ["sv", "de"], excluded: ["ja", "fr"],
+                                                      systemCode: "en", locale: locale)
+
+        XCTAssertEqual(codes.map { TranslatePagesLanguages.name(of: $0, locale: locale) }, ["French", "German", "Japanese", "Swedish"])
+    }
+
+    func testTheAppLocalizationsDropBaseAndKeepThePrimarySubtag() {
+        XCTAssertEqual(TranslatePagesLanguages.appLocalizations(from: ["Base", "en", "pt-BR", "zh-Hans", "de"]),
+                       ["en", "pt", "zh", "de"])
+    }
+
+    func testTheRealBundleHasLocalizations() {
+        XCTAssertFalse(TranslatePagesLanguages.appLocalizations().isEmpty)
+    }
+
+    func testWhenAnotherInstanceRecordsAnOfferedLanguageThenTheOpenModelFollows() {
+        let expectation = expectation(description: "reloaded")
+        let cancellable = model.$translateOfferedLanguages.first { $0 == ["sv"] }.sink { _ in expectation.fulfill() }
+        let offer = TranslatePagesSetting(store: translateStore, notificationCenter: translateCenter)
+
+        offer.recordOffered(languageCode: "sv")
+
+        wait(for: [expectation], timeout: 1)
+        cancellable.cancel()
+    }
+
+    func testAnOfferedLanguageIsRecordedOnceAndSurvivesAReset() {
+        translatePages.recordOffered(languageCode: "sv-SE")
+        translatePages.recordOffered(languageCode: "sv")
+        translatePages.exclude(languageCode: "sv")
+
+        model.resetTranslate()
+
+        let reloaded = TranslatePagesSetting(store: translateStore)
+        XCTAssertEqual(reloaded.offeredLanguageCodes, ["sv"])
+        XCTAssertEqual(reloaded.excludedLanguageCodes, [])
+        XCTAssertEqual(model.translateOfferedLanguages, ["sv"])
+    }
+
+    func testResetAllKeepsOfferedLanguages() {
+        translatePages.recordOffered(languageCode: "sv")
+        model.reload()
+
+        model.resetAll()
+
+        XCTAssertEqual(translatePages.offeredLanguageCodes, ["sv"])
+    }
+
+    func testRecordingAnOfferedLanguageAloneDoesNotMakeTheSettingCustomized() {
+        translatePages.recordOffered(languageCode: "sv")
+
+        XCTAssertFalse(translatePages.isCustomized)
+    }
+
+    func testTheSummaryNamesTheSystemLanguageThenTheExcludedOnes() {
+        let locale = Locale(identifier: "en_US")
+
+        XCTAssertEqual(TranslatePagesLanguages.summary(excluded: [], systemCode: "en", locale: locale), "English")
+        XCTAssertEqual(TranslatePagesLanguages.summary(excluded: ["fr", "es", "en"], systemCode: "en", locale: locale), "English, French, Spanish")
+    }
+
     // MARK: - Pixels
 
     func testWhenAChoiceChangesInSettingsThenThePermissionChangedPixelFires() {
@@ -108,8 +336,7 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
     }
 
     func testWhenAChoiceChangesInThePanelThenThePixelNamesThePanel() {
-        model = BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager,
-                                                  source: .panel, pixelFiring: pixels)
+        model = makeModel(source: .panel)
 
         model.setState(.deny, of: model.rows[1])
 

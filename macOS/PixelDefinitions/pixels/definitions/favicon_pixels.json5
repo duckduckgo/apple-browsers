@@ -1,0 +1,10 @@
+{
+    "favicon-svg-rendering_process-terminated_macos": {
+        "description": "Fired when the web content process that renders SVG and PDF favicons terminates, whether it crashed or was killed by the system. The next favicon renders in a fresh process. Used to watch the stability of the WebKit favicon rendering during its rollout.",
+        "owners": ["mallexxx"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"],
+        "expires": "2027-03-31"
+    }
+}

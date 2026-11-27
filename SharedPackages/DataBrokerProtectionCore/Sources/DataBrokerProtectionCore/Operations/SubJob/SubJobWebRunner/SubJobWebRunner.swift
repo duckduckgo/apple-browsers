@@ -63,6 +63,9 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     /// downstream actions can reference keys by name.
     var emailData: ExtractedEmailData { get set }
 
+    /// Set only for an assisted opt-out the user started. Without it, a step that needs the user fails the run.
+    var assistanceObserver: OptOutAssistanceObserving? { get }
+
     func run(inputValue: InputValue,
              webViewHandler: WebViewHandler?,
              actionsHandler: ActionsHandler?,
@@ -83,6 +86,8 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 }
 
 public extension SubJobWebRunning {
+
+    var assistanceObserver: OptOutAssistanceObserving? { nil }
 
     // MARK: - Cancellation
 
@@ -124,8 +129,15 @@ public extension SubJobWebRunning {
         }
 #endif
         let stepType = actionsHandler?.stepType
+        await assistanceObserver?.attemptWillRun(action)
 
         stageCalculator.setLastAction(action)
+
+        if action.actionType == .userAssist, assistanceObserver == nil {
+            resetRetriesCount()
+            await onError(error: DataBrokerProtectionError.userAssistanceRequired)
+            return
+        }
 
         switch action {
         case is GetCaptchaInfoAction:
@@ -413,10 +425,16 @@ public extension SubJobWebRunning {
                                                                                actionLogContext: loggerContext(),
                                                                                challengeEventHandler: { message in
                                                                                    debugEventReporter?.recordDebugEvent(kind: .challenge, actionType: nil, details: message)
-                                                                               })
+                                                                               },
+                                                                               visualizeActions: assistanceObserver != nil,
+                                                                               rejectsStaleReplies: assistanceObserver != nil)
         }
 
-        await webViewHandler?.initializeWebView(showWebView: showWebView)
+        // The assisted opt-out UI hosts the page itself, so the separate debug window stays closed.
+        await webViewHandler?.initializeWebView(showWebView: showWebView && assistanceObserver == nil)
+        if let assistanceObserver, let webView = await (webViewHandler as? DataBrokerProtectionWebViewHandler)?.currentWebView {
+            await assistanceObserver.attemptDidCreate(webView: webView)
+        }
     }
 
     // MARK: - CSSCommunicationDelegate
@@ -498,6 +516,11 @@ public extension SubJobWebRunning {
             await executeNextStep()
         default: await executeNextStep()
         }
+    }
+
+    func userTurnNeeded(actionID: String) async {
+        recordDebugEvent(kind: .actionResponse, actionType: .userAssist, details: "User turn needed for \(actionID)")
+        await assistanceObserver?.attemptNeedsUser(actionID: actionID)
     }
 
     func conditionSuccess(actions: [Action]) async {

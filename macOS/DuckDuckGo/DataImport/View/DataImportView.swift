@@ -87,7 +87,6 @@ struct DataImportView: ModalView {
                     selectedImportTypes: Array(model.pickerSelectedDataTypes),
                     selectableImportTypes: Array(model.pickerSelectableDataTypes),
                     shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
-                    isSourceFilterEnabled: model.isSourceFilterEnabled,
                     isPickerExpanded: model.isPickerExpanded,
                     onSourceSelected: { source in
                         model.update(with: source)

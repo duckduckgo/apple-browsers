@@ -44,11 +44,15 @@ public struct AIChatLocalModelRunSummary: Equatable, Sendable {
     public let promptTokens: Int?
     public let outputTokens: Int?
     public let inputTruncated: Bool
+    /// Time spent loading the model for this run: 0 when it was already loaded, nil when the
+    /// engine doesn't load one itself.
+    public let loadMs: Int?
 
-    public init(promptTokens: Int?, outputTokens: Int?, inputTruncated: Bool) {
+    public init(promptTokens: Int?, outputTokens: Int?, inputTruncated: Bool, loadMs: Int? = nil) {
         self.promptTokens = promptTokens
         self.outputTokens = outputTokens
         self.inputTruncated = inputTruncated
+        self.loadMs = loadMs
     }
 }
 

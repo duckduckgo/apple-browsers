@@ -50,23 +50,32 @@ public final class AIChatQuickActionChipView: UIView {
         static let glassIconLeadingPadding: CGFloat = 14
         static let glassIconLabelSpacing: CGFloat = 8
         static let glassTrailingPadding: CGFloat = 14
+
+        static let outlinedFontSize: CGFloat = 15
+        static let outlinedIconSize: CGFloat = 24
+        static let outlinedHorizontalPadding: CGFloat = 8
+        static let outlinedIconLabelSpacing: CGFloat = 8
+        static let outlinedBorderWidth: CGFloat = 0.5
     }
 
-    /// `.translucent` is the sheet's flat fill; `.glass` is the contextual floating input over live page content.
+    /// `.translucent` is the sheet's flat fill; `.glass` is the contextual floating input over live page content;
+    /// `.outlinedGlass` is the smaller glass chip with a hairline ring that sits above the Duck.ai input.
     public enum BackgroundStyle {
         case translucent
         case glass
+        case outlinedGlass
     }
 
     // MARK: - Properties
 
-    var onTap: (() -> Void)?
+    public var onTap: (() -> Void)?
 
-    var backgroundStyle: BackgroundStyle = .translucent {
+    public var backgroundStyle: BackgroundStyle = .translucent {
         didSet { applyBackgroundStyle() }
     }
 
     private var heightConstraint: NSLayoutConstraint?
+    private var iconSizeConstraints: [NSLayoutConstraint] = []
     private var contentConstraints: [NSLayoutConstraint] = []
     private var iconLeadingConstraint: NSLayoutConstraint?
     private var iconLabelSpacingConstraint: NSLayoutConstraint?
@@ -149,28 +158,50 @@ private extension AIChatQuickActionChipView {
             layer.shadowOpacity = 0
             applyCornerRadius(Constants.cornerRadius)
             heightConstraint?.constant = Constants.height
+            applyIconSize(Constants.iconSize)
             label.font = UIFont.daxButton()
             applyHorizontalPadding(leading: Constants.iconLeadingPadding,
                                    iconToLabel: Constants.iconLabelSpacing,
                                    trailing: Constants.trailingPadding)
         case .glass:
-            // The glass is the background: nothing of ours behind it. It adapts to the page it sits over,
-            // darkened by its own tint so the pills read against light page content.
-            backgroundColor = .clear
             // No border: it lives on this layer, so it can't scale with the glass's interactive
             // expansion and would sit inside the enlarged pill on touch.
             layer.borderWidth = 0
-            let glass = installGlassBackgroundIfNeeded()
-            applyGlassTint(on: glass)
-            hostContent(in: glass.contentView)
-            applyGlassShadow()
-            applyCornerRadius(Constants.height / 2)
-            heightConstraint?.constant = Constants.height
+            applyGlassBackground()
+            applyIconSize(Constants.iconSize)
             label.font = .systemFont(ofSize: Constants.glassFontSize, weight: .medium)
             applyHorizontalPadding(leading: Constants.glassIconLeadingPadding,
                                    iconToLabel: Constants.glassIconLabelSpacing,
                                    trailing: Constants.glassTrailingPadding)
+        case .outlinedGlass:
+            // The ring keeps a light pill visible over a light page. It stays at rest size while the glass
+            // grows on touch, which the design accepts for a hairline.
+            layer.borderWidth = Constants.outlinedBorderWidth
+            layer.borderColor = UIColor(designSystemColor: .decorationPrimary).cgColor
+            applyGlassBackground()
+            applyIconSize(Constants.outlinedIconSize)
+            label.font = UIFontMetrics(forTextStyle: .subheadline)
+                .scaledFont(for: .systemFont(ofSize: Constants.outlinedFontSize, weight: .medium))
+            applyHorizontalPadding(leading: Constants.outlinedHorizontalPadding,
+                                   iconToLabel: Constants.outlinedIconLabelSpacing,
+                                   trailing: Constants.outlinedHorizontalPadding)
         }
+    }
+
+    /// The glass is the background: nothing of ours behind it. It adapts to the page it sits over,
+    /// darkened by its own tint so the pills read against light page content.
+    func applyGlassBackground() {
+        backgroundColor = .clear
+        let glass = installGlassBackgroundIfNeeded()
+        applyGlassTint(on: glass)
+        hostContent(in: glass.contentView)
+        applyGlassShadow()
+        applyCornerRadius(Constants.height / 2)
+        heightConstraint?.constant = Constants.height
+    }
+
+    func applyIconSize(_ size: CGFloat) {
+        iconSizeConstraints.forEach { $0.constant = size }
     }
 
     func applyHorizontalPadding(leading: CGFloat, iconToLabel: CGFloat, trailing: CGFloat) {
@@ -225,13 +256,15 @@ private extension AIChatQuickActionChipView {
 
         let effect = UIGlassEffect(style: .regular)
         effect.isInteractive = true
-        effect.tintColor = UIColor.black.withAlphaComponent(alpha)
+        effect.tintColor = alpha > 0 ? UIColor.black.withAlphaComponent(alpha) : nil
         glass.effect = effect
     }
 
     /// Dark glass carries more tint: it sits over darker content, so the same value would barely read.
+    /// The outlined chips use plain glass; their hairline ring separates them.
     var glassTintAlpha: CGFloat {
-        traitCollection.userInterfaceStyle == .dark
+        guard backgroundStyle != .outlinedGlass else { return 0 }
+        return traitCollection.userInterfaceStyle == .dark
             ? Constants.glassTintAlphaDark
             : Constants.glassTintAlphaLight
     }
@@ -259,12 +292,14 @@ private extension AIChatQuickActionChipView {
     func setupConstraints() {
         let height = heightAnchor.constraint(equalToConstant: Constants.height)
         heightConstraint = height
+        iconSizeConstraints = [
+            iconView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            iconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+        ]
+        NSLayoutConstraint.activate(iconSizeConstraints)
 
         NSLayoutConstraint.activate([
             height,
-
-            iconView.widthAnchor.constraint(equalToConstant: Constants.iconSize),
-            iconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             highlightOverlay.topAnchor.constraint(equalTo: topAnchor),
             highlightOverlay.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -327,14 +362,14 @@ extension AIChatQuickActionChipView {
     /// glass chip renders as a rectangular halo instead of hugging the capsule.
     public override func layoutSubviews() {
         super.layoutSubviews()
-        guard backgroundStyle == .glass else { return }
+        guard backgroundStyle != .translucent else { return }
         layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath
     }
 
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         // Interactive glass supplies its own touch response, so a second overlay would double it.
-        guard backgroundStyle != .glass else { return }
+        guard backgroundStyle == .translucent else { return }
         highlightOverlay.isHidden = false
     }
 

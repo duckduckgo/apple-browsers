@@ -114,13 +114,15 @@ class QueueRemovalsTests(unittest.TestCase):
         self.assertEqual([removal.flag for removal in queued], ["first"])
         self.assertEqual([removal.flag for removal, _ in asana.created], ["first"])
 
-    def test_dry_run_writes_nothing(self):
-        asana = FakeAsana([registry_task("1")])
+    def test_dry_run_writes_nothing_and_logs_only_the_task_and_flag(self):
+        asana = FakeAsana([registry_task("1", flag="first")])
 
-        queued = ffc.queue_removals(asana, TEMPLATE, limit=5, dry_run=True)
+        with self.assertLogs(ffc.logger, level="INFO") as logs:
+            queued = ffc.queue_removals(asana, TEMPLATE, limit=5, dry_run=True)
 
         self.assertEqual(len(queued), 1)
         self.assertEqual(asana.created, [])
+        self.assertEqual(logs.output, ["INFO:feature-flag-cleanup:1 (first): would create a subtask"])
 
     def test_targeted_run_skips_a_task_outside_the_registry(self):
         asana = FakeAsana([{**registry_task("1"), "memberships": [{"project": {"gid": "other"}}]}])

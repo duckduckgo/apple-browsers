@@ -246,8 +246,8 @@ def queue_removals(
 
         notes = render_prompt(removal, template)
         if dry_run:
-            logger.info("%s (%s): would create '%s' with this prompt:\n%s",
-                        removal.registry_task_gid, removal.flag, removal.subtask_name, notes)
+            # The prompt says whether the flag was approved and which code path to keep, so it stays out of the public log.
+            logger.info("%s (%s): would create a subtask", removal.registry_task_gid, removal.flag)
         else:
             subtask_gid = asana.create_ready_subtask(removal, notes)
             logger.info("%s (%s): created subtask %s", removal.registry_task_gid, removal.flag, subtask_gid)

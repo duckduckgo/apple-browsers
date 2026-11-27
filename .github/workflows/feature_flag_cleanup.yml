@@ -32,8 +32,9 @@ on:
 permissions:
   contents: read
 
+# Dry runs get their own group, so a queued dry run never replaces a pending write.
 concurrency:
-  group: feature-flag-cleanup
+  group: feature-flag-cleanup-${{ inputs.dry_run && 'dry-run' || 'write' }}
   cancel-in-progress: false
 
 jobs:

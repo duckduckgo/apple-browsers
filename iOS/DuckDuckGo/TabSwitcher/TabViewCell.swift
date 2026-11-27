@@ -59,8 +59,6 @@ class TabViewCell: UICollectionViewCell {
         static let borderOutset: CGFloat = 4
         static let selectionIndicatorSize: CGFloat = 24
 
-        static let shadowRadius: CGFloat = 12
-        static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
         static let unreadBorderWidth: CGFloat = 6
 
         static let swipeAnimationDuration: TimeInterval = 0.2
@@ -183,10 +181,7 @@ class TabViewCell: UICollectionViewCell {
     }
 
     private func applyShadows() {
-        layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-        layer.shadowOpacity = 1.0
-        layer.shadowRadius = Constants.shadowRadius
-        layer.shadowOffset = Constants.shadowOffset
+        layer.applyDesignSystemShadow(.card, traitCollection: .current)
     }
 
     private func updatePreviewToDisplay(image: UIImage) {

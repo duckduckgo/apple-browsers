@@ -70,9 +70,7 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
 
         cardShadow.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         cardShadow.layer.cornerCurve = .continuous
-        cardShadow.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
-        cardShadow.layer.shadowRadius = TabViewCell.Constants.shadowRadius
-        cardShadow.layer.shadowOffset = TabViewCell.Constants.shadowOffset
+        cardShadow.layer.applyDesignSystemShadow(.card, traitCollection: .current)
         transitionContext.containerView.addSubview(cardShadow)
 
         imageContainer.clipsToBounds = true

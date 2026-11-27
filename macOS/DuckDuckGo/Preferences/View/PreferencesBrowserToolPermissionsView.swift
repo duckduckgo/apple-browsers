@@ -39,22 +39,35 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
 
     @Published private(set) var rows: [Row] = []
     @Published private(set) var storedStates: [String: BrowserToolPermissionState] = [:]
+    @Published private(set) var translateMode: TranslatePagesMode = .alwaysAsk
+    @Published private(set) var translateExcludedLanguages: [String] = []
+    @Published private(set) var showsTranslateRow = false
 
     private let catalog: BrowserToolCatalog
     private let permissions: BrowserToolPermissionStoring
     private let source: BrowserToolsPixel.PermissionSource
     private let pixelFiring: PixelFiring?
+    private let translatePages: TranslatePagesSetting
+    private let isTranslateFlagOn: () -> Bool
     private var permissionChanges: AnyCancellable?
+    private var translateChanges: AnyCancellable?
 
     init(catalog: BrowserToolCatalog = NSApp.delegateTyped.aiChatBrowserToolsService.catalog,
          permissions: BrowserToolPermissionStoring = NSApp.delegateTyped.aiChatBrowserToolsService.permissions,
          permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
          source: BrowserToolsPixel.PermissionSource = .settings,
-         pixelFiring: PixelFiring? = PixelKit.shared) {
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         translatePages: TranslatePagesSetting = TranslatePagesSetting(),
+         isTranslateFlagOn: @escaping () -> Bool = { NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatOfferTranslationAndSummarize) }) {
         self.catalog = catalog
         self.permissions = permissions
         self.source = source
         self.pixelFiring = pixelFiring
+        self.translatePages = translatePages
+        self.isTranslateFlagOn = isTranslateFlagOn
+        translateChanges = NotificationCenter.default.publisher(for: TranslatePagesSetting.didChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reload() }
         // Every write, removal and burn, not only prompt answers.
         permissionChanges = permissionManager.persistedPermissionsPublisher
             .dropFirst()
@@ -68,6 +81,19 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
             .sorted { (Self.order.firstIndex(of: $0.name) ?? .max) < (Self.order.firstIndex(of: $1.name) ?? .max) }
             .map { Row(name: $0.name, defaultState: $0.permissionMode.defaultState, asksEveryTime: $0.asksEveryTime) }
         storedStates = permissions.storedDecisions
+        showsTranslateRow = isTranslateFlagOn()
+        translateMode = translatePages.mode
+        translateExcludedLanguages = translatePages.excludedLanguageCodes
+    }
+
+    func setTranslateMode(_ mode: TranslatePagesMode) {
+        translatePages.mode = mode
+        reload()
+    }
+
+    func resetTranslate() {
+        translatePages.reset()
+        reload()
     }
 
     func state(of row: Row) -> BrowserToolPermissionState {
@@ -91,6 +117,7 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
 
     func resetAll() {
         permissions.clearAll()
+        translatePages.reset()
         reload()
         pixelFiring?.fire(BrowserToolsPixel.permissionsReset)
     }
@@ -102,7 +129,7 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     }
 
     var canResetAll: Bool {
-        rows.contains { storedStates[$0.name] != nil }
+        rows.contains { storedStates[$0.name] != nil } || (showsTranslateRow && translatePages.isCustomized)
     }
 }
 
@@ -111,7 +138,7 @@ struct PreferencesBrowserToolPermissionsView: View {
     @StateObject private var model = BrowserToolPermissionsPreferences()
 
     var body: some View {
-        if !model.rows.isEmpty {
+        if !model.rows.isEmpty || model.showsTranslateRow {
             PreferencePaneSection(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
@@ -131,6 +158,12 @@ struct PreferencesBrowserToolPermissionsView: View {
                                 WebsitePermissionListSeparator()
                             }
                             BrowserToolPermissionRow(row: row, model: model)
+                        }
+                        if model.showsTranslateRow {
+                            if !model.rows.isEmpty {
+                                WebsitePermissionListSeparator()
+                            }
+                            TranslatePagesRow(model: model)
                         }
                     }
                 }
@@ -275,6 +308,81 @@ struct BrowserToolPermissionRow: View {
         case .ask: UserText.permissionCenterAlwaysAsk
         case .allow: UserText.permissionCenterAlwaysAllow
         case .deny: UserText.permissionCenterNeverAllow
+        }
+    }
+}
+
+struct TranslatePagesRow: View {
+
+    @ObservedObject var model: BrowserToolPermissionsPreferences
+
+    private var detail: String {
+        let userLanguage = Locale.preferredLanguages.first.flatMap { Locale.current.localizedString(forLanguageCode: $0) } ?? ""
+        let base = UserText.translatePagesSettingsDetail(userLanguage: userLanguage)
+        let excluded = model.translateExcludedLanguages
+            .compactMap { Locale.current.localizedString(forLanguageCode: $0) }
+            .sorted()
+        guard !excluded.isEmpty else { return base }
+        return base + " " + UserText.translatePagesSettingsExcluded(languages: excluded.joined(separator: ", "))
+    }
+
+    private var isCustomized: Bool {
+        model.translateMode != .alwaysAsk || !model.translateExcludedLanguages.isEmpty
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.translate)
+                .renderingMode(.template)
+                .resizable()
+                .frame(width: 16, height: 16)
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(UserText.translatePagesSettingsTitle)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                Text(detail)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 10)
+
+            NSPopUpButtonView(selection: Binding(get: { model.translateMode }, set: { model.setTranslateMode($0) })) {
+                let button = NSPopUpButton()
+                for mode in TranslatePagesMode.allCases {
+                    button.menu?.addItem(withTitle: Self.title(for: mode), action: nil, keyEquivalent: "").representedObject = mode
+                }
+                return button
+            }
+            .fixedSize()
+            .accessibilityLabel(UserText.translatePagesSettingsTitle)
+            .accessibilityIdentifier("Preferences.AIChat.translatePages")
+
+            Button(action: model.resetTranslate) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.replay)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(HoverHighlightButtonStyle())
+            .disabled(!isCustomized)
+            .opacity(isCustomized ? 1 : 0.4)
+            .help(UserText.browserToolSettingsReset)
+            .accessibilityLabel(UserText.browserToolSettingsReset(toolName: UserText.translatePagesSettingsTitle))
+            .accessibilityIdentifier("Preferences.AIChat.translatePages.reset")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private static func title(for mode: TranslatePagesMode) -> String {
+        switch mode {
+        case .alwaysAsk: UserText.translatePagesSettingsAlwaysAsk
+        case .neverAsk: UserText.translatePagesSettingsNeverAsk
         }
     }
 }

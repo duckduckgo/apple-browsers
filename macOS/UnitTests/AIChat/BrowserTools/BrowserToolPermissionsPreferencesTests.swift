@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import Persistence
 @_spi(Testing) import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -29,6 +30,9 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
     private var catalog: BrowserToolCatalog!
     private var pixels: PixelKitMock!
     private var model: BrowserToolPermissionsPreferences!
+    private var translateStore: InMemoryKeyValueStore!
+    private var translatePages: TranslatePagesSetting!
+    private var isTranslateFlagOn = true
 
     override func setUp() {
         super.setUp()
@@ -37,8 +41,16 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         let tools = [FakeTool(name: "pinTab", permissionMode: .auto), FakeTool(name: "listOpenTabs", permissionMode: .ask)]
         catalog = BrowserToolCatalog(tools: tools, configuration: FakeConfiguration())
         pixels = PixelKitMock()
-        model = BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager,
-                                                  pixelFiring: pixels)
+        translateStore = InMemoryKeyValueStore()
+        translatePages = TranslatePagesSetting(store: translateStore, notificationCenter: NotificationCenter())
+        isTranslateFlagOn = true
+        model = makeModel()
+    }
+
+    private func makeModel(source: BrowserToolsPixel.PermissionSource = .settings) -> BrowserToolPermissionsPreferences {
+        BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager,
+                                          source: source, pixelFiring: pixels, translatePages: translatePages,
+                                          isTranslateFlagOn: { [unowned self] in isTranslateFlagOn })
     }
 
     override func tearDown() {
@@ -97,6 +109,69 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         cancellable.cancel()
     }
 
+    // MARK: - Translate Pages
+
+    func testWhenTheFlagIsOffThenTheTranslateRowIsHidden() {
+        isTranslateFlagOn = false
+        model.reload()
+
+        XCTAssertFalse(model.showsTranslateRow)
+    }
+
+    func testTranslatePagesDefaultsToAlwaysAskWithNothingToReset() {
+        XCTAssertTrue(model.showsTranslateRow)
+        XCTAssertEqual(model.translateMode, .alwaysAsk)
+        XCTAssertEqual(model.translateExcludedLanguages, [])
+        XCTAssertFalse(model.canResetAll)
+    }
+
+    func testWhenTranslateIsSetToNeverAskThenItIsStoredAndResettable() {
+        model.setTranslateMode(.neverAsk)
+
+        XCTAssertEqual(TranslatePagesSetting(store: translateStore).mode, .neverAsk)
+        XCTAssertEqual(model.translateMode, .neverAsk)
+        XCTAssertTrue(model.canResetAll)
+    }
+
+    func testWhenTheRowIsResetThenModeAndExcludedLanguagesAreCleared() {
+        model.setTranslateMode(.neverAsk)
+        translatePages.exclude(languageCode: "fr")
+
+        model.resetTranslate()
+
+        XCTAssertEqual(model.translateMode, .alwaysAsk)
+        XCTAssertEqual(model.translateExcludedLanguages, [])
+        XCTAssertFalse(translatePages.isCustomized)
+    }
+
+    func testResetAllAlsoClearsTranslatePages() {
+        model.setTranslateMode(.neverAsk)
+        translatePages.exclude(languageCode: "de")
+
+        model.resetAll()
+
+        XCTAssertEqual(model.translateMode, .alwaysAsk)
+        XCTAssertEqual(model.translateExcludedLanguages, [])
+    }
+
+    func testResetAllIsOfferedWhenOnlyAnExcludedLanguageIsStored() {
+        translatePages.exclude(languageCode: "de")
+        model.reload()
+
+        XCTAssertTrue(model.canResetAll)
+    }
+
+    func testExcludingALanguageKeepsItsPrimarySubtagOnceAndSurvivesANewInstance() {
+        translatePages.exclude(languageCode: "fr-CA")
+        translatePages.exclude(languageCode: "FR")
+        translatePages.exclude(languageCode: "pt_BR")
+
+        let reloaded = TranslatePagesSetting(store: translateStore)
+        XCTAssertEqual(reloaded.excludedLanguageCodes, ["fr", "pt"])
+        XCTAssertTrue(reloaded.isExcluded(languageCode: "fr-FR"))
+        XCTAssertFalse(reloaded.isExcluded(languageCode: "de"))
+    }
+
     // MARK: - Pixels
 
     func testWhenAChoiceChangesInSettingsThenThePermissionChangedPixelFires() {
@@ -108,8 +183,7 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
     }
 
     func testWhenAChoiceChangesInThePanelThenThePixelNamesThePanel() {
-        model = BrowserToolPermissionsPreferences(catalog: catalog, permissions: permissions, permissionManager: manager,
-                                                  source: .panel, pixelFiring: pixels)
+        model = makeModel(source: .panel)
 
         model.setState(.deny, of: model.rows[1])
 

@@ -1142,11 +1142,17 @@ class MainViewCoordinator {
         return preferredBottomContentAnchorModeForVisibleChrome()
     }
 
+    /// With classic chrome the focused page keeps extending behind its input, so a layout refresh doesn't cut it off at the input's top.
+    private var focusedNewTabPageBottomAnchorMode: ContentContainerBottomAnchorMode? {
+        guard !isFloatingUIEnabled, newTabPageInputPresentation == .editing(usesUnifiedInput: true), !isNavigationChromeHidden else { return nil }
+        return preferredBottomContentAnchorModeForVisibleChrome()
+    }
+
     private func resolvedContentContainerBottomAnchorMode(requesting requestedMode: ContentContainerBottomAnchorMode) -> ContentContainerBottomAnchorMode {
         if #available(iOS 26, *), isDuckAIAndInputLiquidGlassEnabled, isNavigationChromeHidden {
             return .safeArea
         }
-        if let restingMode = restingNewTabPageBottomAnchorMode {
+        if let restingMode = restingNewTabPageBottomAnchorMode ?? focusedNewTabPageBottomAnchorMode {
             return restingMode
         }
         return shouldUnifiedToggleInputOwnBottomAnchor ? .unifiedToggleInput : requestedMode

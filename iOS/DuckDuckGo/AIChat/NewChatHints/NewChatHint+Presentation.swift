@@ -47,9 +47,12 @@ extension NewChatHint {
         }
     }
 
+    private static let pdfMIMEType = "application/pdf"
+
+    /// Summarize a PDF needs a model that takes PDFs, not just any file.
     func isSupported(by model: AIChatModel) -> Bool {
         switch self {
-        case .documents: return model.supportsFileUpload
+        case .documents: return model.supportedFileTypes.contains(Self.pdfMIMEType)
         case .photo: return model.supportsImageUpload
         case .imageGeneration: return model.supportsTool(.imageGeneration)
         }

@@ -135,7 +135,8 @@ final class NewChatHintsUsage {
                               hintsShown: chat.hintsShown,
                               tappedHint: chat.tappedHint,
                               prompt: prompt))
-        guard !chat.isFireTab else { return }
+        // With the flag off nothing is offered, so nothing was ignored or used: the cap only counts while it's on.
+        guard !chat.isFireTab, isFeatureEnabled() else { return }
         if chat.tappedHint != nil {
             capStore.reset()
         } else if chat.isDisplayed, capStore.recordIgnoredChat() == NewChatHintsCapStore.hideAfterIgnoredChats {

@@ -167,7 +167,7 @@ final class UTIModelStore {
 
     private var sendsNewChatDefaultEffort: Bool {
         guard let pickedMode = pickStore.reasoningMode, let selectedModel else { return true }
-        return selectedModel.resolvedReasoningEffort(from: pickedMode) == selectedModel.resolvedReasoningEffort(from: newChatDefaultReasoningMode)
+        return selectedModel.resolvedReasoningEffort(from: pickedMode) == selectedModel.resolvedReasoningEffort(from: newChatDefaultReasoningMode(on: selectedModel))
     }
 
     /// The tab's own pick, without the new-chat default filled in.
@@ -177,7 +177,10 @@ final class UTIModelStore {
 
     /// What a tab keeps as the user's pick, and what the last-used defaults copy: without a chat-only model.
     func selectionKeptOnTab(isNewChat: Bool) -> UTIModelSelection {
-        let shown = UTIModelSelection(modelID: persistedModelId(live: userModelId), reasoningMode: selectedReasoningMode)
+        let shownModelId = persistedModelId(live: userModelId)
+        let userModel = models.first { $0.id == shownModelId }
+        let shown = UTIModelSelection(modelID: shownModelId,
+                                      reasoningMode: pickStore.reasoningMode ?? newChatDefaultReasoningMode(on: userModel))
         guard isNewChat else { return shown }
         return pickStore.newChatSelectionKeptOnTab(ownPick: UTIModelSelection(modelID: userModelId, reasoningMode: pickStore.reasoningMode),
                                                    shown: shown)
@@ -194,12 +197,12 @@ final class UTIModelStore {
            chatOnlyModelId == nil || selectedModel?.availableReasoningModes.contains(mode) != false {
             return mode
         }
-        return newChatDefaultReasoningMode
+        return newChatDefaultReasoningMode(on: selectedModel)
     }
 
-    private var newChatDefaultReasoningMode: AIChatReasoningMode? {
-        guard let selectedModel, let selection = newChatDefaultSelection else { return nil }
-        return selectedModel.reasoningMode(for: selection.reasoningEffort(onModelId: selectedModel.id))
+    private func newChatDefaultReasoningMode(on model: AIChatModel?) -> AIChatReasoningMode? {
+        guard let model, let selection = newChatDefaultSelection else { return nil }
+        return model.reasoningMode(for: selection.reasoningEffort(onModelId: model.id))
     }
 
     var submissionReasoningEffort: AIChatReasoningEffort? {

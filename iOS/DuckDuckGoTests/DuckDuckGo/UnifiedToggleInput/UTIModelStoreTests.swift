@@ -410,6 +410,8 @@ final class UTIModelStoreTests: XCTestCase {
 
         XCTAssertEqual(sut.persistedModelId, "plain")
         XCTAssertEqual(preferences.selectedReasoningMode, .extendedReasoning)
+        XCTAssertEqual(sut.selectionKeptOnTab(isNewChat: false), UTIModelSelection(modelID: "gpt-5", reasoningMode: .extendedReasoning))
+        XCTAssertEqual(sut.selectionKeptOnTab(isNewChat: true).reasoningMode, .extendedReasoning)
 
         sut.endChatOnlyModel()
 

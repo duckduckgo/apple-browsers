@@ -153,6 +153,20 @@ final class NewChatHintsUsageTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("The flag turning off after the hints showed still reports the prompt but leaves the count alone",
+          .timeLimit(.minutes(1)))
+    func flagOffLeavesTheCount() {
+        sut.newChatShown(tab: "tab", isFireTab: false)
+        sut.hintsShown(Self.hints, tab: "tab")
+        isFeatureEnabled = false
+
+        sut.promptSubmitted(tab: "tab", isNewChat: true, prompt: .init())
+
+        #expect(capStore.ignoredChats == 0)
+        #expect(fired(NewChatHintsPixel.firstPromptSent(isFeatureEnabled: false, hintsShown: true, tappedHint: nil, prompt: .init()).name).count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Opening a new chat and leaving it doesn't count", .timeLimit(.minutes(1)))
     func openingDoesNotCount() {
         sut.newChatShown(tab: "tab", isFireTab: false)
@@ -274,6 +288,16 @@ struct NewChatHintOrderTests {
     func fallsBackToCapableModel() {
         let models = [Self.model("plain"), Self.model("locked", access: false, files: true), Self.model("docs", files: true)]
         #expect(NewChatHint.capableModel(for: .documents, in: models, selectedModelID: "plain")?.id == "docs")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Summarize a PDF needs a model that takes PDFs, not just any file", .timeLimit(.minutes(1)))
+    func documentsNeedPDF() {
+        let textOnly = AIChatModel(id: "text-files", name: "text-files", provider: .unknown, supportsImageUpload: false,
+                                   supportedFileTypes: ["text/plain"], supportedTools: [], entityHasAccess: true)
+        #expect(NewChatHint.capableModel(for: .documents, in: [textOnly, Self.model("pdf", files: true)],
+                                         selectedModelID: "text-files")?.id == "pdf")
+        #expect(NewChatHint.capableModel(for: .documents, in: [textOnly], selectedModelID: "text-files") == nil)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -151,6 +151,18 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         XCTAssertEqual(translatePages.excludedLanguageCodes, ["de"])
     }
 
+    func testWhenTheFlagTurnsOffBeforeTheQueuedRefreshThenResetAllKeepsTranslatePreferences() {
+        model.setTranslateMode(.neverAsk)
+        permissions.setState(.deny, forToolNamed: "pinTab")
+        model.reload()
+        featureFlagger.featuresStub[FeatureFlag.aiChatOfferTranslationAndSummarize.rawValue] = false
+
+        model.resetAll()
+
+        XCTAssertNil(permissions.state(forToolNamed: "pinTab"))
+        XCTAssertEqual(translatePages.mode, .neverAsk)
+    }
+
     func testWhenALanguageIsExcludedOutsideTheModelThenItIsPickedUp() {
         let expectation = expectation(description: "reloaded")
         let cancellable = model.$translateExcludedLanguages.first { $0 == ["de"] }.sink { _ in expectation.fulfill() }

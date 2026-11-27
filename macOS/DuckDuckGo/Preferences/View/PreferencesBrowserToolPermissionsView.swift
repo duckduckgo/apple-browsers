@@ -125,8 +125,9 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     func resetAll() {
         let hadStoredPermissions = rows.contains { storedStates[$0.name] != nil }
         permissions.clearAll()
+        // Read live, not the cached row state, which lags a flag update by a main-queue hop.
         // A hidden row keeps its opt-outs, so a flag rollback and re-enable does not lose them.
-        if showsTranslateRow {
+        if featureFlagger.isFeatureOn(.aiChatOfferTranslationAndSummarize) {
             translatePages.reset()
         }
         reload()

@@ -99,7 +99,6 @@ def run(ios):
 ```
 
 `examples/` shows how to drive the harness (t1–t12, listed in [features/](features/README.md)); start from the closest.
-Every feature map names its worked proof in `examples/`, and `tests/test_features.py` fails when one doesn't.
 
 **When a run passes:** the proof returned, recorded at least one passing check and no failing one (a failed check
 you caught still fails the run), and the app was still in the foreground at the end. A problem before the proof's
@@ -304,8 +303,8 @@ $V prove .agents/skills/verify-ios/examples/*.py                                
 | `lib/vrunner_start.sh` | start one runner and report its pids (called by the driver, which also stops it) |
 | `lib/ios_identity.sh` | running-binary sha256 vs build (called by doctor) |
 | `runner/` | Swift XCUITest runner, XcodeGen spec and generated project; regenerate with `cd runner && xcodegen generate` |
-| `examples/` | worked proofs t1–t12, harness examples; each feature map names one |
-| `tests/` | `test_tool.py` (no simulator), `test_features.py` (the feature map's contract and worked proofs), `must_fail.py` (refusals and build identity, as a proof) |
+| `examples/` | worked proofs t1–t12, harness examples |
+| `tests/` | `test_*.py` (no simulator), `must_fail.py` (refusals and build identity, as a proof) |
 | `fixture/` | local test pages |
 | `features/` | the feature map: shared steps, Duck.ai |
 

@@ -28,6 +28,7 @@ import Core
 private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
     var isNewTabPageVisible = true
     var hasInlineNewTabPageInput = false
+    var retractStagedFocusCallCount = 0
     var appOpenKeyboardRequestID = UUID()
     var dismissalCompletion: (() -> Void)?
     var closeScreensCallCount = 0
@@ -52,6 +53,10 @@ private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
         closeScreensCallCount += 1
         closedScreen = screenLeftOpen
         dismissalCompletion = completion
+    }
+
+    func retractStagedNewTabPageFocus() {
+        retractStagedFocusCallCount += 1
     }
 
     func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
@@ -126,9 +131,18 @@ final class KeyboardPresenterTests {
 
         #expect(target.closeScreensCallCount == 0)
         #expect(scheduledActions.count == (secondsInBackground == 25 ? 1 : 0))
+        #expect(target.retractStagedFocusCallCount == (secondsInBackground == 25 ? 0 : 1))
         #expect(pixelFiring.actualFireCalls.isEmpty)
         scheduledActions.forEach { $0() }
         #expect(pixelFiring.actualFireCalls.count == (secondsInBackground == 25 ? 1 : 0))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A launch that declines the keyboard retracts a staged focused page", .timeLimit(.minutes(1)))
+    func declinedKeyboardRetractsStagedFocus() {
+        presenter.appOpenKeyboardDeclined()
+
+        #expect(target.retractStagedFocusCallCount == 1)
     }
 
     @available(iOS 16, macOS 13, *)

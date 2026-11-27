@@ -383,8 +383,8 @@ final class MainCoordinator {
 
     }
 
-    func start(drawsIdleReturnNewTabPage: Bool) {
-        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
+    func start(drawsIdleReturnNewTabPage: Bool, hasLaunchAction: Bool) {
+        controller.loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage, hasLaunchAction: hasLaunchAction)
     }
 
     /// Whether a warm return puts up the after-idle New Tab Page before its first frame, given the UI it's returning to.
@@ -1040,6 +1040,8 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
             self.controller.openNewTabPageAfterIdleReturn()
+            // The keyboard flow always focuses a page created here, so it needn't draw resting first.
+            self.controller.stageFocusedNewTabPageBeforeAppOpenIfAllowed(hasLaunchAction: false)
             completion(.openedNewTab)
         }
     }

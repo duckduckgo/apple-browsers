@@ -252,12 +252,23 @@ class MainViewController: UIViewController {
     func cancelPendingAppOpenKeyboard() {
         // Automatic dismissal can end editing or select the tab switcher's browsing mode.
         guard !isClearingNavigationForAppOpen else { return }
+        // Tab transitions and the user's own cancel end the staged session themselves; dropping the flag
+        // keeps a later retract from touching a session the user starts.
+        hasStagedNewTabPageFocus = false
         appOpenKeyboardRequestID = UUID()
+    }
+
+    func retractStagedNewTabPageFocusAndCancelPendingAppOpenKeyboard() {
+        // The retract comes first because the cancel drops the staged flag it needs.
+        retractStagedNewTabPageFocus()
+        cancelPendingAppOpenKeyboard()
     }
 
     /// After a Face ID unlock, iOS keeps the app inactive for up to about 2 s while its Face ID indicator goes away.
     /// The unlocked page can take focus during that time; iOS shows the keyboard once the app is active.
     private var isFinishingAppLockUnlock = false
+    /// Set while the page was drawn focused ahead of the app-open keyboard flow, which then confirms or retracts it.
+    private(set) var hasStagedNewTabPageFocus = false
     private var appLockUnlockCancellables = Set<AnyCancellable>()
 
     private var isAppOpenKeyboardWindowVisible: Bool {
@@ -2000,7 +2011,7 @@ class MainViewController: UIViewController {
     }
 
     @objc private func onAppDidEnterBackground() {
-        cancelPendingAppOpenKeyboard()
+        retractStagedNewTabPageFocusAndCancelPendingAppOpenKeyboard()
         if newTabPagePresentation.hasPresentedPage, let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.appBackgroundedFromNTP(afterIdle: tab.openedAfterIdle)
         }
@@ -2559,6 +2570,46 @@ class MainViewController: UIViewController {
         attachHomeScreen(isNewTab: true, allowingKeyboard: false, openedAfterIdle: true)
     }
 
+    /// A return that will focus the page it lands on stages the focused layout before its first frame.
+    func prepareFocusedNewTabPageForWarmReturnIfNeeded(lastBackgroundDate: Date?,
+                                                       hasCompletedAuthentication: Bool,
+                                                       drewIdleReturnPage: Bool,
+                                                       hasLaunchAction: Bool) {
+        guard NewTabPageKeyboardPolicy.focusesOnReturn(lastBackgroundDate: lastBackgroundDate,
+                                                       hasCompletedAuthentication: hasCompletedAuthentication,
+                                                       drewIdleReturnPage: drewIdleReturnPage) else { return }
+        stageFocusedNewTabPageBeforeAppOpenIfAllowed(hasLaunchAction: hasLaunchAction)
+    }
+
+    /// Draws the focused layout ahead of the app-open keyboard flow, so the first frame is not the resting layout.
+    func stageFocusedNewTabPageBeforeAppOpenIfAllowed(hasLaunchAction: Bool) {
+        guard tabManager.currentTabsModel.currentTab?.isHomeTab == true,
+              presentedViewController == nil,
+              let coordinator = unifiedToggleInputCoordinator, !coordinator.isOmnibarSession,
+              NewTabPageKeyboardPolicy().presentsFocusedLayoutBeforeAppOpen(
+                hasInlineInput: hasInlineNewTabPageInput,
+                isHeldForOnboarding: isNewTabPageKeyboardHeldForOnboarding,
+                isBlockedByDialog: isNewTabPageKeyboardBlockedByDialog || daxDialogsManager.isShowingContextualOnboardingDialog,
+                isAutoClearEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
+                hasLaunchAction: hasLaunchAction) else { return }
+        hasStagedNewTabPageFocus = true
+        stageFocusedNewTabPageInputBeforeAppOpen(coordinator: coordinator)
+    }
+
+    /// A page staged before its window existed was measured without one, so it is re-measured before the first frame.
+    func reconcileStagedNewTabPageFocusAfterWindowAttach() {
+        guard hasStagedNewTabPageFocus else { return }
+        refreshFocusedNewTabPagePose(animated: false)
+    }
+
+    /// The app-open keyboard flow decided against focus, so the staged layout goes back to resting without a transition.
+    func retractStagedNewTabPageFocus() {
+        guard hasStagedNewTabPageFocus else { return }
+        hasStagedNewTabPageFocus = false
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession else { return }
+        coordinator.deactivateToOmnibar(animateDismiss: false)
+    }
+
     private func selectOrAddHomeTab(reuseExisting: Bool, placement: TabsModel.TabPlacement = .atEnd) {
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.select(existing, dismissCurrent: false)
@@ -2568,11 +2619,12 @@ class MainViewController: UIViewController {
     }
 
     /// Draws the first screen; a cold start after idle can land on the New Tab Page directly.
-    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool) {
+    func loadInitialViewIfNeeded(drawsIdleReturnNewTabPage: Bool, hasLaunchAction: Bool = false) {
         loadViewIfNeeded()
         guard !hasLoadedInitialView else { return }
         hasLoadedInitialView = true
         loadInitialView(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
+        stageFocusedNewTabPageBeforeAppOpenIfAllowed(hasLaunchAction: hasLaunchAction)
         hasCompletedInitialLoad = true
     }
 
@@ -2968,7 +3020,7 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func removeHomeScreen() {
-        cancelPendingAppOpenKeyboard()
+        retractStagedNewTabPageFocusAndCancelPendingAppOpenKeyboard()
         newTabPagePresentation.cancel()
         isAfterIdlePresentationPending = false
         let hadInlineSearchInput = newTabPageViewController?.hasInlineSearchInput == true
@@ -3334,14 +3386,18 @@ class MainViewController: UIViewController {
                                                 restoringInputFocus: restoringInputFocus) == true
         }
         guard isRequestValid() else {
+            retractStagedNewTabPageFocus()
             completion(false)
             return
         }
         let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
             guard let self, didFocus, isRequestValid() else {
+                self?.retractStagedNewTabPageFocus()
                 completion(false)
                 return
             }
+            hasStagedNewTabPageFocus = false
+            recomputeNavigationBarContainerHeightIfNeeded()
             recordPendingNewTabPagePresentationIfVisible()
             if onNewTabPage, isNewTabPageVisible {
                 newTabPageSessionInstrumentation.keyboardRaisedOnArrival()

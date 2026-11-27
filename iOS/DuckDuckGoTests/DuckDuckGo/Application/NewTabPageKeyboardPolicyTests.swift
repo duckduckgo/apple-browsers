@@ -55,6 +55,38 @@ struct NewTabPageKeyboardPolicyTests {
         #expect(NewTabPageKeyboardPolicy.isAppOpen(lastBackgroundDate: lastBackgroundDate, now: now) == isAppOpen)
     }
 
+    struct FocusesOnReturnCase: Sendable {
+        let name: String
+        let secondsInBackground: TimeInterval?
+        let hasCompletedAuthentication: Bool
+        let drewIdleReturnPage: Bool
+        let focuses: Bool
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "A return focuses when it is an app open or drew the idle return page",
+        .timeLimit(.minutes(1)),
+        arguments: [
+            FocusesOnReturnCase(name: "long return", secondsInBackground: 60, hasCompletedAuthentication: true, drewIdleReturnPage: false, focuses: true),
+            FocusesOnReturnCase(name: "short return", secondsInBackground: 5, hasCompletedAuthentication: true, drewIdleReturnPage: false, focuses: false),
+            FocusesOnReturnCase(name: "short return that drew the idle page", secondsInBackground: 5, hasCompletedAuthentication: true, drewIdleReturnPage: true, focuses: true),
+            FocusesOnReturnCase(name: "short return before App Lock was unlocked", secondsInBackground: 5, hasCompletedAuthentication: false, drewIdleReturnPage: false, focuses: true),
+            FocusesOnReturnCase(name: "no recorded background date", secondsInBackground: nil, hasCompletedAuthentication: true, drewIdleReturnPage: false, focuses: true)
+        ]
+    )
+    func whenReturningThenFocusFollowsAppOpenOrIdleReturnPage(testCase: FocusesOnReturnCase) {
+        let now = Date()
+        let lastBackgroundDate = testCase.secondsInBackground.map { now.addingTimeInterval(-$0) }
+
+        let focuses = NewTabPageKeyboardPolicy.focusesOnReturn(lastBackgroundDate: lastBackgroundDate,
+                                                               hasCompletedAuthentication: testCase.hasCompletedAuthentication,
+                                                               drewIdleReturnPage: testCase.drewIdleReturnPage,
+                                                               now: now)
+
+        #expect(focuses == testCase.focuses, "\(testCase.name)")
+    }
+
     struct AfterFireCase: Sendable {
         let onNewTab: Bool
         let onDuckAITab: Bool
@@ -161,6 +193,50 @@ struct NewTabPageKeyboardPolicyTests {
 
         #expect(restoredTab.wasInputFocusedBeforeTabSwitch == false)
         #expect(policy.shouldRestoreInputFocusOnTabSwipe(on: restoredTab) == false)
+    }
+
+    struct FocusedLayoutBeforeAppOpenCase: Sendable {
+        let name: String
+        let onNewTab: Bool
+        let hasInlineInput: Bool
+        let isHeldForOnboarding: Bool
+        let isBlockedByDialog: Bool
+        let isAutoClearEnabled: Bool
+        let hasLaunchAction: Bool
+        let presentsFocused: Bool
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(
+        "The focused layout is drawn first only when focus is certain at app open",
+        .timeLimit(.minutes(1)),
+        arguments: [
+            FocusedLayoutBeforeAppOpenCase(name: "everything allows focus", onNewTab: true, hasInlineInput: true, isHeldForOnboarding: false,
+                                           isBlockedByDialog: false, isAutoClearEnabled: false, hasLaunchAction: false, presentsFocused: true),
+            FocusedLayoutBeforeAppOpenCase(name: "New Tab keyboard setting off", onNewTab: false, hasInlineInput: true, isHeldForOnboarding: false,
+                                           isBlockedByDialog: false, isAutoClearEnabled: false, hasLaunchAction: false, presentsFocused: false),
+            FocusedLayoutBeforeAppOpenCase(name: "classic page has no inline input", onNewTab: true, hasInlineInput: false, isHeldForOnboarding: false,
+                                           isBlockedByDialog: false, isAutoClearEnabled: false, hasLaunchAction: false, presentsFocused: false),
+            FocusedLayoutBeforeAppOpenCase(name: "onboarding holds the keyboard", onNewTab: true, hasInlineInput: true, isHeldForOnboarding: true,
+                                           isBlockedByDialog: false, isAutoClearEnabled: false, hasLaunchAction: false, presentsFocused: false),
+            FocusedLayoutBeforeAppOpenCase(name: "a dialog blocks the keyboard", onNewTab: true, hasInlineInput: true, isHeldForOnboarding: false,
+                                           isBlockedByDialog: true, isAutoClearEnabled: false, hasLaunchAction: false, presentsFocused: false),
+            FocusedLayoutBeforeAppOpenCase(name: "automatic clearing re-attaches the page", onNewTab: true, hasInlineInput: true, isHeldForOnboarding: false,
+                                           isBlockedByDialog: false, isAutoClearEnabled: true, hasLaunchAction: false, presentsFocused: false),
+            FocusedLayoutBeforeAppOpenCase(name: "a launch action may replace the page", onNewTab: true, hasInlineInput: true, isHeldForOnboarding: false,
+                                           isBlockedByDialog: false, isAutoClearEnabled: false, hasLaunchAction: true, presentsFocused: false)
+        ]
+    )
+    func whenDecidingFocusedLayoutBeforeAppOpenThenOnlyCertainFocusDrawsIt(testCase: FocusedLayoutBeforeAppOpenCase) {
+        let policy = NewTabPageKeyboardPolicy(onNewTab: testCase.onNewTab, onAppLaunch: false)
+
+        let presentsFocused = policy.presentsFocusedLayoutBeforeAppOpen(hasInlineInput: testCase.hasInlineInput,
+                                                                        isHeldForOnboarding: testCase.isHeldForOnboarding,
+                                                                        isBlockedByDialog: testCase.isBlockedByDialog,
+                                                                        isAutoClearEnabled: testCase.isAutoClearEnabled,
+                                                                        hasLaunchAction: testCase.hasLaunchAction)
+
+        #expect(presentsFocused == testCase.presentsFocused, "\(testCase.name)")
     }
 
 }

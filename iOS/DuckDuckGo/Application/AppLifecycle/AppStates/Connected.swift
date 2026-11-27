@@ -157,9 +157,10 @@ struct Connected: ConnectedHandling {
         ThemeManager.shared.updateUserInterfaceStyle(window: window)
         window.rootViewController = mainCoordinator.controller
         // Before the window shows, so the first frame is this screen.
-        mainCoordinator.start(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage)
+        mainCoordinator.start(drawsIdleReturnNewTabPage: drawsIdleReturnNewTabPage, hasLaunchAction: actionToHandle != nil)
         sceneDependencies.authenticationService.suspend()
         window.makeKeyAndVisible()
+        mainCoordinator.controller.reconcileStagedNewTabPageFocusAfterWindowAttach()
         window.accessibilityIdentifier = "Browser.Window.Main"
     }
 

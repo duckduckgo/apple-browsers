@@ -395,8 +395,9 @@ extension MainViewController {
     }
 
     func recomputeNavigationBarContainerHeightIfNeeded() {
+        // A staged session is measured before the window exists and re-measures transiently once it does; confirming reconciles.
         guard let coordinator = unifiedToggleInputCoordinator,
-              coordinator.isInputEditing else {
+              coordinator.isInputEditing, !hasStagedNewTabPageFocus else {
             return
         }
         if isIPadFullTabChatInput {
@@ -1574,6 +1575,28 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
         isPresentingNewTabInputDirectly = wasPresentingDirectly
             || (hasInlineNewTabPageInput && tabManager.currentTabsModel.currentTab?.openedAfterIdle == true)
         defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
+        beginOmnibarInputSession(coordinator: coordinator, currentText: currentText,
+                                          isFocusRequestValid: isRequestValid, onFocus: completion)
+        return .intercept
+    }
+
+    /// Stages the focused layout without asking for the keyboard; the app-open keyboard flow focuses later.
+    func stageFocusedNewTabPageInputBeforeAppOpen(coordinator: UnifiedToggleInputCoordinator) {
+        // Bound to this tab first, as the app-open path does: binding to another tab later would end the staged session.
+        if coordinator.isTabAttachmentFeatureAvailable, let tab = tabManager.currentTabsModel.currentTab {
+            activateUnifiedToggleInput(for: tab)
+        }
+        let wasPresentingDirectly = isPresentingNewTabInputDirectly
+        isPresentingNewTabInputDirectly = true
+        defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
+        beginOmnibarInputSession(coordinator: coordinator, currentText: nil,
+                                          isFocusRequestValid: { false }, onFocus: { _ in })
+    }
+
+    private func beginOmnibarInputSession(coordinator: UnifiedToggleInputCoordinator,
+                                          currentText: String?,
+                                          isFocusRequestValid: @escaping () -> Bool,
+                                          onFocus: @escaping (Bool) -> Void) {
         revealAddressBarForEditing()
         defer { finishNewTabPageInputHandoff() }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top
@@ -1585,9 +1608,8 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
                                         inputMode: inputMode,
                                         cardPosition: position,
                                         allowsInactiveFocus: true,
-                                        isFocusRequestValid: isRequestValid,
-                                        onFocus: completion)
-        return .intercept
+                                        isFocusRequestValid: isFocusRequestValid,
+                                        onFocus: onFocus)
     }
 
     func activateFromOmnibarIfNeeded(currentText: String?, tapped: Bool, textEntryMode: TextEntryMode?,

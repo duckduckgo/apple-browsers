@@ -71,6 +71,7 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
     var showKeyboardOnLaunchCalled = false
     var showKeyboardOnNewTabPageCreatedCallCount = 0
+    var appOpenKeyboardDeclinedCallCount = 0
     var lastBackgroundDate: Date?
     var isAfterIdleReturn = false
     var hasCompletedAuthentication = true
@@ -84,6 +85,10 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
     func showKeyboardOnNewTabPageCreated() {
         showKeyboardOnNewTabPageCreatedCallCount += 1
+    }
+
+    func appOpenKeyboardDeclined() {
+        appOpenKeyboardDeclinedCallCount += 1
     }
 
 }
@@ -402,6 +407,7 @@ final class LaunchActionHandlerTests {
         #expect(!idleReturnDelegate.markLastUsedTabAsResumedAfterIdleCalled)
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 1)
         #expect(idleReturnDelegate.lastIsFirstForeground == false)
     }
 
@@ -434,6 +440,7 @@ final class LaunchActionHandlerTests {
         #expect(!keyboardPresenter.hasCompletedAuthentication)
         #expect(!keyboardPresenter.isAfterIdleReturn)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 0)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -453,6 +460,7 @@ final class LaunchActionHandlerTests {
 
         #expect(!keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 1)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 0)
     }
 
     @available(iOS 16, *)
@@ -488,6 +496,7 @@ final class LaunchActionHandlerTests {
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
         #expect(keyboardPresenter.isAfterIdleReturn)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 0)
     }
 
     @available(iOS 16, *)
@@ -509,6 +518,7 @@ final class LaunchActionHandlerTests {
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
         #expect(!keyboardPresenter.isAfterIdleReturn)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 0)
     }
 
     @available(iOS 16, *)
@@ -578,6 +588,7 @@ final class LaunchActionHandlerTests {
         #expect(idleReturnDelegate.releaseHeldNewTabPageCalled)
         #expect(!idleReturnDelegate.recordNewTabPageDrawnAtLaunchCalled)
         #expect(keyboardPresenter.showKeyboardOnNewTabPageCreatedCallCount == 0)
+        #expect(keyboardPresenter.appOpenKeyboardDeclinedCallCount == 1)
     }
 
     @available(iOS 16, *)

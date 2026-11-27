@@ -149,14 +149,17 @@ final class LaunchActionHandler: LaunchActionHandling {
         switch action {
         case .openURL(let url):
             launchSourceManager.setSource(.URL)
+            keyboardPresenter.appOpenKeyboardDeclined()
             openURL(url)
             releaseNewTabPageLeftUnderAction(drewNewTabPage)
         case .handleShortcutItem(let shortcutItem):
             launchSourceManager.setSource(.shortcut)
+            keyboardPresenter.appOpenKeyboardDeclined()
             shortcutItemHandler.handleShortcutItem(shortcutItem)
             releaseNewTabPageLeftUnderAction(drewNewTabPage)
         case .handleUserActivity(let userActivity):
             launchSourceManager.setSource(.standard)
+            keyboardPresenter.appOpenKeyboardDeclined()
             userActivityHandler.handleUserActivity(userActivity)
             releaseNewTabPageLeftUnderAction(drewNewTabPage)
         case .standardLaunch(let lastBackgroundDate, let isFirstForeground, let hasCompletedAuthentication):
@@ -176,7 +179,7 @@ final class LaunchActionHandler: LaunchActionHandling {
                     case .openedNewTab:
                         keyboardPresenter.showKeyboardOnNewTabPageCreated()
                     case .suppressed:
-                        break
+                        keyboardPresenter.appOpenKeyboardDeclined()
                     }
                 }
                 if drewNewTabPage {

@@ -1214,6 +1214,10 @@ extension SyncConnectionController: PairingV2ConfirmationDelegate {
                 await attemptTracker?.recordConnectMethod(.showCode)
                 await attemptTracker?.recordStep(.codeAcceptedByOtherDevice)
             }
+        case .hostWaitingForConfirmation(let session, _):
+            await reportPeer(role: .host, session: session)
+        case .joinerWaitingForConfirmation(let session):
+            await reportPeer(role: .joiner, session: session)
         case .hostPreparingRecoveryCode, .joinerLoggingIn:
             await attemptTracker?.recordStep(.preparingSync)
         case .joinerWaitingForRecoveryCode(let session):
@@ -1221,6 +1225,13 @@ extension SyncConnectionController: PairingV2ConfirmationDelegate {
         default:
             break
         }
+    }
+
+    private func reportPeer(role: SyncSetupWideEventData.Role, session: PairingV2Session) async {
+        guard let peerKind = session.peerStatus?.kind else {
+            return
+        }
+        await attemptTracker?.recordPeer(role: role, kind: SyncSetupWideEventData.PeerKind(peerKind))
     }
 
     private func reportConfirmationScreen(role: SyncSetupWideEventData.Role, peerKind: PairingV2DeviceKind) async {

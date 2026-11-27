@@ -396,7 +396,11 @@ final class PairingV2Coordinator {
     }
 
     private func execute(_ commands: [PairingV2Command]) async throws {
+        let stateForCommands = state
         await reportStateChange()
+        guard state == stateForCommands else {
+            return
+        }
         for command in commands {
             try await execute(command)
         }

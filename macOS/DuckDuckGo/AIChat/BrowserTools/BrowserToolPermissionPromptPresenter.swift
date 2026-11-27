@@ -20,6 +20,7 @@ import AIChat
 import AppKit
 import Combine
 import DesignResourcesKitIcons
+import PixelKit
 import SwiftUI
 import WebKit
 
@@ -96,15 +97,16 @@ final class BrowserToolPermissionPromptPresenter {
     private weak var localModelPromptWindow: NSWindow?
     private let translatePages: TranslatePagesSetting
     private var translatePagesChanges: AnyCancellable?
-    private let translateOfferSuppressed: (TranslateOfferSuppressor) -> Void
+    private let pixelFiring: PixelFiring?
+    private var shownTranslateOfferIDs: Set<String> = []
 
     init(windowControllersManager: WindowControllersManagerProtocol,
          translatePages: TranslatePagesSetting = TranslatePagesSetting(),
-         translateOfferSuppressed: @escaping (TranslateOfferSuppressor) -> Void = { _ in },
+         pixelFiring: PixelFiring? = PixelKit.shared,
          respond: @escaping Respond) {
         self.windowControllersManager = windowControllersManager
         self.translatePages = translatePages
-        self.translateOfferSuppressed = translateOfferSuppressed
+        self.pixelFiring = pixelFiring
         self.respond = respond
         translatePagesChanges = translatePages.changes.sink { [weak self] in self?.refresh() }
     }
@@ -229,7 +231,7 @@ final class BrowserToolPermissionPromptPresenter {
 
     private func suppressTranslateOffer(on tabID: TabIdentifier, by suppressor: TranslateOfferSuppressor) {
         guard translateOfferSuppressedTabIDs.insert(tabID).inserted else { return }
-        translateOfferSuppressed(suppressor)
+        pixelFiring?.fire(TranslateOfferPixel.suppressed(by: suppressor), frequency: .dailyAndCount)
     }
 
     // A pinned tab is in every window's collection: its web view's window picks one, or, when it shows in none, the main window.
@@ -258,13 +260,16 @@ final class BrowserToolPermissionPromptPresenter {
     }
 
     /// Anything but Translate keeps the tab from offering again (R6).
-    func answerTranslateOffer(for tabID: TabIdentifier, translate: Bool) {
+    func answerTranslateOffer(for tabID: TabIdentifier, _ answer: TranslateOfferAnswer) {
         guard let index = requests.firstIndex(where: { $0.ownerTabID == tabID && $0.translateOfferLanguageCode != nil }) else { return }
         let request = requests.remove(at: index)
-        if request.translateOfferChoice?.dontAskAgain == true, let languageCode = request.translateOfferLanguageCode {
+        shownTranslateOfferIDs.remove(request.id)
+        let dontAskAgain = request.translateOfferChoice?.dontAskAgain == true
+        pixelFiring?.fire(TranslateOfferPixel.answered(answer, dontAskAgain: dontAskAgain), frequency: .dailyAndCount)
+        if dontAskAgain, let languageCode = request.translateOfferLanguageCode {
             translatePages.exclude(languageCode: languageCode)
         }
-        if translate {
+        if answer == .translate {
             // The owner tab is the selected one while its offer shows.
             let translator = request.collection.flatMap(windowController(for:))?.mainViewController.aiChatTranslator
             Task { await translator?.translateCurrentPage() }
@@ -282,6 +287,7 @@ final class BrowserToolPermissionPromptPresenter {
         isRefreshing = true
         defer { isRefreshing = false }
         requests.removeAll { !$0.isLive || !($0.translateOfferLanguageCode.map(isAllowedByTranslatePages) ?? true) }
+        shownTranslateOfferIDs.formIntersection(requests.map(\.id))
         let collections = Dictionary(requests.compactMap { request in request.collection.map { (ObjectIdentifier($0), $0) } },
                                      uniquingKeysWith: { first, _ in first })
 
@@ -324,6 +330,7 @@ final class BrowserToolPermissionPromptPresenter {
         let icon: NSImage
         let title: String
         let dismiss: () -> Void
+        let close: () -> Void
         let primary: () -> Void
         switch request.kind {
         case .toolPrompt(let tool):
@@ -341,6 +348,7 @@ final class BrowserToolPermissionPromptPresenter {
             icon = DesignSystemImages.Glyphs.Size16.aiGeneral
             title = BrowserToolPermissionPromptText.title(toolName: prompt.toolName, targetsOtherTab: prompt.targetsOtherTab)
             dismiss = { [weak self] in self?.answer(prompt.requestID, with: .dismiss) }
+            close = dismiss
             primary = { [weak self] in
                 let decision: ClientToolPermissionDecision
                 if prompt.accessToolNames != nil {
@@ -357,12 +365,13 @@ final class BrowserToolPermissionPromptPresenter {
                 userLanguageName: TranslateOfferLanguage.name(of: Locale.preferredLanguages.first) ?? "",
                 choice: choice
             ) { [weak self] translate in
-                self?.answerTranslateOffer(for: tabID, translate: translate)
+                self?.answerTranslateOffer(for: tabID, translate ? .translate : .noThanks)
             })
             icon = DesignSystemImages.Glyphs.Size16.translate
             title = UserText.translateOfferTitle
-            dismiss = { [weak self] in self?.answerTranslateOffer(for: tabID, translate: false) }
-            primary = { [weak self] in self?.answerTranslateOffer(for: tabID, translate: true) }
+            dismiss = { [weak self] in self?.answerTranslateOffer(for: tabID, .escape) }
+            close = { [weak self] in self?.answerTranslateOffer(for: tabID, .close) }
+            primary = { [weak self] in self?.answerTranslateOffer(for: tabID, .translate) }
         }
         popover.contentViewController = content
         // Resized after showing, a popover drifts off its anchor.
@@ -374,14 +383,21 @@ final class BrowserToolPermissionPromptPresenter {
             popover.show(positionedBelow: anchor.bounds.insetFromLineOfDeath(flipped: anchor.isFlipped), in: anchor)
             // Key, so its shortcuts only answer it and never a key press meant for the page or address bar.
             popover.contentViewController?.view.window?.makeKey()
+            // AppKit skips the popover for a hidden window; only an offer that opened counts.
+            guard popover.isShown else { return }
             // Only an offer the user could see counts, and the reveal can be cut short by a tab switch.
-            if let languageCode = request.translateOfferLanguageCode { self?.translatePages.recordOffered(languageCode: languageCode) }
+            if let languageCode = request.translateOfferLanguageCode {
+                self?.translatePages.recordOffered(languageCode: languageCode)
+                if self?.shownTranslateOfferIDs.insert(requestID).inserted == true {
+                    self?.pixelFiring?.fire(TranslateOfferPixel.shown, frequency: .dailyAndCount)
+                }
+            }
         }
         // Before the button: it may call `open` right away.
         shown[key] = Shown(requestID: requestID, popover: popover, tabBar: tabBar,
                            keyMonitor: keyMonitor(dismiss: dismiss, primary: primary, popover: popover, ownerWindow: tabBar.view.window,
                                                    answersPageKeys: request.translateOfferLanguageCode == nil))
-        tabBar.showBrowserToolPermissionButton(icon: icon, title: title, action: { _ in dismiss() }, shown: open)
+        tabBar.showBrowserToolPermissionButton(icon: icon, title: title, action: { _ in close() }, shown: open)
     }
 
     // The browser window takes focus back from the popover, so its key presses answer too,

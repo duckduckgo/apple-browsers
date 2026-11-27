@@ -124,6 +124,17 @@ extension MainViewController {
         }
 
         installUnifiedToggleInputViewController(coordinator.viewController)
+        coordinator.viewController.shouldBeginTextInput = { [weak self] in
+            self?.refuseRestingFocusAndActivate() != true
+        }
+        coordinator.onWillActivateFromOmnibar = { [weak self] in
+            // Reparents before the session state the placement resolver reads exists, since focus follows at once.
+            self?.placeUnifiedToggleInputInChrome()
+        }
+        coordinator.onNewTabPageRestingModePicked = { [weak self] mode in
+            self?.redesignedNewTabPage?.selectedInputMode = mode
+            self?.scheduleRestingNewTabPageActivation()
+        }
 
         if let omniBarVC = viewCoordinator.omniBar as? DefaultOmniBarViewController {
             omniBarVC.unifiedToggleInputOmnibarActivating = self
@@ -165,6 +176,7 @@ extension MainViewController {
         if let currentTab {
             refreshUnifiedToggleInput(for: currentTab)
         }
+        refreshUnifiedToggleInputPlacement()
     }
 
     func updateUnifiedToggleInputKeyboardVisibility(_ keyboardVisible: Bool) {
@@ -636,6 +648,9 @@ extension MainViewController {
                     // Attachments grow the card, so re-cap before sizing or it overflows in landscape.
                     updateLandscapeEditingCap()
                     adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
+                } else if coordinator.isParkedOnNewTabPage, !coordinator.isRestoringAttachments,
+                          !coordinator.viewController.currentAttachments.isEmpty {
+                    scheduleRestingNewTabPageActivation()
                 }
                 updateFloatingReturnKeyVisibility()
             }
@@ -688,8 +703,13 @@ extension MainViewController {
         }
         postIdleSessionInstrumentation.toggleUsed()
         recordNewTabPageSessionToggleSwitch(to: mode)
+        if coordinator.isOmnibarSession, let page = redesignedNewTabPage {
+            page.selectedInputMode = mode
+        }
 
-        if coordinator.isOmnibarSession {
+        if coordinator.isParkedOnNewTabPage {
+            coordinator.refreshNewTabPageRestingCard()
+        } else if coordinator.isOmnibarSession {
             handleOmnibarModeChange(mode, coordinator: coordinator)
         } else if coordinator.isAITabExpanded {
             handleAITabModeChange(mode, coordinator: coordinator)
@@ -707,6 +727,13 @@ extension MainViewController {
         adjustUI(withKeyboardFrame: latestKeyboardFrame, in: 0.2, animationCurve: .curveEaseInOut)
         unifiedToggleInputCoordinator?.syncContentInputMode(mode)
         updateFloatingReturnKeyVisibility()
+        guard viewCoordinator.newTabPageInputPresentation.transition == .inlineInput else { return }
+        // The card can report its new height before the toolbar change has laid out; measure again once it has.
+        DispatchQueue.main.async { [weak self] in
+            UIView.animate(withDuration: 0.2, delay: 0, options: [.beginFromCurrentState, .curveEaseInOut]) {
+                self?.recomputeNavigationBarContainerHeightIfNeeded()
+            }
+        }
     }
 
     func handleAITabModeChange(_ mode: TextEntryMode, coordinator: UnifiedToggleInputCoordinator) {
@@ -1087,6 +1114,7 @@ private extension MainViewController {
         // Snap chrome revealed — prior chat-scroll could have hidden bars under the AI header, so without this the omnibar flies in on return.
         chromeManager.reset(animated: false)
         updateScrollInteractionIfNeeded()
+        refreshUnifiedToggleInputPlacement()
     }
 
     func setUpAIChatTabChatHeader() {
@@ -1484,6 +1512,7 @@ extension MainViewController {
         coordinator.clearText()
         reconcileToolbarVisibilityForCurrentTab()
         reconcileFloatingLayoutAfterUTIExit()
+        refreshUnifiedToggleInputPlacement()
         // The unified input dismisses on its own path, apart from `dismissOmniBar`.
         updateAddressBarSuppressionForNewTabPage()
         completion?()
@@ -1722,6 +1751,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
     }
 
     func unifiedToggleInputDidChangeHeight() {
+        resizeParkedNewTabPageInputSlot()
         recomputeNavigationBarContainerHeightIfNeeded()
         refreshFocusedNewTabPagePose()
     }
@@ -1751,17 +1781,21 @@ extension MainViewController: UnifiedToggleInputDelegate {
         loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
-    func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot {
+    func unifiedToggleInputDismissDestination() -> UTIDismissDestination {
+        // The same predicate the dismiss animation picks its inline path on, so the two stay in step.
+        if !isIPadFullTabChatInput, newTabPageInputPresentation.transition == .inlineInput {
+            return .newTabPageRestingCard
+        }
         let tab = tabManager.currentTabsModel.currentTab
         // AI tab reuses the same textView for the flanked input — populating it with the URL
         // would bleed past the collapse, so match the AI chrome (empty + aiChat placeholder).
         if tab?.isAITab == true {
-            return UTIDismissSnapshot(text: "", placeholderMode: .aiChat)
+            return .omnibar(UTIDismissSnapshot(text: "", placeholderMode: .aiChat))
         }
-        return UTIDismissSnapshot(
+        return .omnibar(UTIDismissSnapshot(
             text: AddressDisplayHelper.plainDisplayString(for: tab?.link?.url),
             placeholderMode: preferredTextEntryModeForCurrentTab() ?? .search
-        )
+        ))
     }
 }
 

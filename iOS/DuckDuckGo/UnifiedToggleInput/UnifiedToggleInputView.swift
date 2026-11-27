@@ -418,6 +418,11 @@ final class UnifiedToggleInputView: UIView {
         set { textEntryView.aiChatShortcutEmptyInputMenu = newValue }
     }
 
+    var shouldBeginTextInput: (() -> Bool)? {
+        get { textEntryView.shouldBeginTextInput }
+        set { textEntryView.shouldBeginTextInput = newValue }
+    }
+
     var usesOmnibarMargins: Bool = false
     private(set) var isToggleEnabled: Bool
 
@@ -1418,6 +1423,19 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
+    /// Sets the card's corner radius back to the current layout's value.
+    func recommitCardCornerRadius() {
+        // A property animator stopped at its current position commits the radius it was animating,
+        // and `applyCardLayout` skips a layout it has already applied.
+        cardView.layer.cornerRadius = cardCornerRadius(for: currentLayout)
+        updateGlassCardCorners()
+    }
+
+    private func cardCornerRadius(for layout: UnifiedToggleInputCardLayout) -> CGFloat {
+        // The bottom collapsed pose is a capsule to match the floating omnibar pill.
+        layout == .collapsed ? collapsedCornerRadius : Self.cardDimensions(for: layout).cornerRadius
+    }
+
     func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool) {
         let expanded = layout.isExpanded
         isExpanded = expanded
@@ -1510,7 +1528,7 @@ final class UnifiedToggleInputView: UIView {
             self.setCardFlanked(by: layout.flankingAccessories)
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
             // else uses the layout's own radius.
-            self.cardView.layer.cornerRadius = (layout == .collapsed) ? self.collapsedCornerRadius : dimensions.cornerRadius
+            self.cardView.layer.cornerRadius = self.cardCornerRadius(for: layout)
             self.updateGlassCardCorners()
             self.cardTopConstraint.constant = topMargin
             self.cardLeadingConstraint.constant = hLeadingMargin

@@ -47,10 +47,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     var hasInlineSearchInput: Bool { true }
 
-    var inlineToggleMode: TextEntryMode? {
-        guard let searchInputModel, searchInputModel.settings.isModeToggleShown else { return nil }
-        return searchInputModel.textEntryMode
-    }
+    var selectedInputMode: TextEntryMode?
 
     private let onboardingCoordinator: NewTabPageOnboardingCoordinator?
     var isPresentingOnboardingDialog: Bool { onboardingCoordinator?.isPresentingDialog == true }
@@ -59,7 +56,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private let favoritesModel: FavoritesViewModel?
     private let pageModel: NewTabPageViewModel?
     private let messagesModel: NewTabPageMessagesModel?
-    private let searchInputModel: NewTabPageSearchInputModel?
     private let returnSettings: NewTabPageReturnSettings
     private let customizationStateReporter = NewTabPageCustomizationStateReporter()
     private var isRemoteMessageSurfacePresented = false
@@ -139,7 +135,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
          favoritesModel: FavoritesViewModel? = nil,
          pageModel: NewTabPageViewModel? = nil,
          messagesModel: NewTabPageMessagesModel? = nil,
-         searchInputModel: NewTabPageSearchInputModel? = nil,
          returnSettings: NewTabPageReturnSettings,
          onboardingCoordinator: NewTabPageOnboardingCoordinator? = nil) {
         self.onboardingCoordinator = onboardingCoordinator
@@ -147,7 +142,6 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         self.favoritesModel = favoritesModel
         self.pageModel = pageModel
         self.messagesModel = messagesModel
-        self.searchInputModel = searchInputModel
         self.returnSettings = returnSettings
         super.init(nibName: nil, bundle: nil)
         onboardingCoordinator?.page = self
@@ -401,20 +395,8 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         searchInputView?.transform = CGAffineTransform(translationX: 0, y: stickySearchInputTranslation + focusedOffset)
     }
 
-    func refreshSearchInputSettings() {
-        searchInputModel?.refreshSettings()
-    }
-
-    func beginSearch(textEntryMode: TextEntryMode) {
-        delegate?.newTabPageDidRequestSearch(self, textEntryMode: textEntryMode)
-    }
-
-    func beginVoiceSearch(textEntryMode: TextEntryMode) {
-        delegate?.newTabPageDidRequestVoiceSearch(self, textEntryMode: textEntryMode)
-    }
-
-    func duckAIMenu() -> UIMenu? {
-        delegate?.newTabPageDuckAIMenu(self)
+    var inputSlot: NewTabPageInputSlotViewController? {
+        blocks.lazy.compactMap { $0 as? NewTabPageInputSlotBlock }.first?.slot
     }
 
     func dismiss() {
@@ -521,8 +503,8 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
 
     var canAnimateSearchInput: Bool { !isPresentingOnboardingDialog }
 
-    var searchInputView: UIView? {
-        blocks.first { $0.id == .searchInput }?.viewController.view
+    private var searchInputView: UIView? {
+        inputSlot?.view
     }
 
     func searchInputTransitionFrame(in targetView: UIView) -> CGRect? {

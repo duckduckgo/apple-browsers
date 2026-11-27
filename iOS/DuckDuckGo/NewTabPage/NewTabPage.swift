@@ -81,9 +81,6 @@ protocol NewTabPage: UIViewController,
     /// Suppresses the chrome address bar while the page is not editing.
     var hasInlineSearchInput: Bool { get }
 
-    /// The side the page's own toggle shows; nil when hidden.
-    var inlineToggleMode: TextEntryMode? { get }
-
     var delegate: NewTabPageControllerDelegate? { get set }
     var chromeDelegate: BrowserChromeDelegate? { get set }
 
@@ -139,7 +136,6 @@ struct NewTabPageFocusedPose: Equatable {
 }
 
 protocol NewTabPageInputTransitionSource: AnyObject {
-    var searchInputView: UIView? { get }
     /// The resting card's frame, without any focused pose transform.
     func searchInputTransitionFrame(in view: UIView) -> CGRect?
     /// The resting card's frame at the scroll offset editing began from, so a refreshed pose ignores scrolling while focused.

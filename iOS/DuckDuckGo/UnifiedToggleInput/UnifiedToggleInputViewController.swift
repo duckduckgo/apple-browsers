@@ -192,6 +192,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.aiChatShortcutEmptyInputMenu = newValue }
     }
 
+    var shouldBeginTextInput: (() -> Bool)? {
+        get { inputBarView.shouldBeginTextInput }
+        set { inputBarView.shouldBeginTextInput = newValue }
+    }
+
     var cardPosition: UnifiedToggleInputCardPosition {
         get { inputBarView.cardPosition }
         set {
@@ -440,6 +445,10 @@ final class UnifiedToggleInputViewController: UIViewController {
 
     func applyCardLayout(_ layout: UnifiedToggleInputCardLayout, animated: Bool) {
         inputBarView.applyCardLayout(layout, animated: animated)
+    }
+
+    func recommitCardCornerRadius() {
+        inputBarView.recommitCardCornerRadius()
     }
 
     func setFlankingAccessoriesVisible(_ accessories: UnifiedToggleInputFlankingAccessories) {

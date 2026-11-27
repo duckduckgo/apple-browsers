@@ -353,7 +353,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         reporter.measureDialogDismissed(dialogType: .thatsDuckAI)
         reporter.measureGotItPressed(dialogType: .thatsDuckAI)
 
-        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.fireButton(.shown), .fireButton(.clicked(.dismiss))])
+        XCTAssertEqual(sharedPixelHandler.eventsReceived, [.fireButton(.shown)])
         XCTAssertNil(eventSent)
     }
 

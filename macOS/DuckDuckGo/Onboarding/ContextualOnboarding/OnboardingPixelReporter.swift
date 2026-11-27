@@ -159,7 +159,8 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         case .subscriptionUpsell:
             sharedPixelHandler.fire(.subscriptionPromo(.clicked(.dismiss)))
         case .thatsDuckAI:
-            sharedPixelHandler.fire(.fireButton(.clicked(.dismiss)))
+            // No close button.
+            break
         case .tryDuckAI:
             sharedPixelHandler.fire(.endTryDuckAI(.clicked(.dismiss)))
         }

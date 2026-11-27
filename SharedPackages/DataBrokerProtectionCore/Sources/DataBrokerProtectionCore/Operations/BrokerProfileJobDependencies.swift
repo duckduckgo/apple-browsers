@@ -40,6 +40,11 @@ public protocol BrokerProfileJobDependencyProviding {
     var wideEvent: WideEventManaging? { get }
     var contentBlocking: DBPWebViewContentBlocking? { get }
 
+    func createAssistedOptOutRunner(profileQuery: SubJobContextProviding,
+                                    stageDurationCalculator: StageDurationCalculator,
+                                    observer: OptOutAssistanceObserving,
+                                    shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning
+
     func isAuthenticatedUser() async -> Bool
 
     func createScanRunner(profileQuery: SubJobContextProviding,
@@ -137,6 +142,27 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             executionConfig: self.executionConfig,
             actionsHandlerMode: .optOut,
             contentBlocking: self.contentBlocking,
+            shouldRunNextStep: shouldRunNextStep
+        )
+    }
+
+    public func createAssistedOptOutRunner(profileQuery: SubJobContextProviding,
+                                           stageDurationCalculator: StageDurationCalculator,
+                                           observer: OptOutAssistanceObserving,
+                                           shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning {
+        BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: privacyConfig,
+            prefs: contentScopeProperties,
+            context: profileQuery,
+            emailConfirmationDataService: emailConfirmationDataService,
+            captchaService: captchaService,
+            featureFlagger: featureFlagger,
+            stageCalculator: stageDurationCalculator,
+            pixelHandler: pixelHandler,
+            executionConfig: executionConfig,
+            actionsHandlerMode: .optOut,
+            contentBlocking: contentBlocking,
+            assistanceObserver: observer,
             shouldRunNextStep: shouldRunNextStep
         )
     }

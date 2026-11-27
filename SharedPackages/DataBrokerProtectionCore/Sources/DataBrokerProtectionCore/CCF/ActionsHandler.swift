@@ -25,7 +25,7 @@ public class ActionsHandler {
 
     public let stepType: StepType
 
-    private var actions: [Action]
+    private(set) var actions: [Action]
 
     public init(stepType: StepType, actions: [Action]) {
         self.stepType = stepType

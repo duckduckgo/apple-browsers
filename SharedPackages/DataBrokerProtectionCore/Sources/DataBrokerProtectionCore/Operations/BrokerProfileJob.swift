@@ -269,6 +269,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                 jobType: jobType,
                                 priorityDate: priorityDate,
                                 sortPredicate: jobDependencies.jobSortPredicate)
+            .excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: brokerProfileQueriesData)
             .filter { jobData in
                 guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
                     return true
@@ -317,6 +318,18 @@ private extension Array where Element == BrokerJobData {
     func excludingOptOutsWithEmailConfirmationBeingHalted() -> [BrokerJobData] {
         filter { jobData in
             jobData.historyEvents.max(by: { $0.date < $1.date })?.type != .optOutSubmittedAndAwaitingEmailConfirmation
+        }
+    }
+}
+
+extension Array where Element == BrokerJobData {
+    /// Drops opt-outs for brokers that need the user.
+    /// A scheduled run can't finish them, so they wait for the user even while user assistance is off.
+    func excludingOptOutsLeftToUserAssistance(brokerProfileQueriesData: [BrokerProfileQueryData]) -> [BrokerJobData] {
+        filter { jobData in
+            guard jobData is OptOutJobData,
+                  let broker = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker else { return true }
+            return !broker.requiresUserAssistance
         }
     }
 }

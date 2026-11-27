@@ -522,10 +522,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent(systemVersion: trimmedOSVersion))
         NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = AppVersion.shared.versionAndBuildNumber
         let settings = VPNSettings(defaults: defaults) // Note, settings here is not yet populated with the startup options
-        let buildType = StandardApplicationBuildType()
 
         let wideEvent = WideEvent(
-            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            isDevMode: !BuildFlags.isProductionBuild,
             featureFlagProvider: WideEventFeatureFlagProvider(settings: settings)
         )
         self.wideEvent = wideEvent

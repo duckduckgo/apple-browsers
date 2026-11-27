@@ -37,7 +37,8 @@ struct FireConfirmationPresenter {
                                  isSingleTab: Bool = false,
                                  browsingMode: BrowsingMode,
                                  onConfirm: @escaping (FireRequest) -> Void,
-                                 onCancel: @escaping () -> Void) {
+                                 onCancel: @escaping () -> Void,
+                                 onOpenSettings: (() -> Void)? = nil) {
         let sourceRect = (source as? UIView)?.bounds ?? .zero
         presentScopeConfirmationSheet(on: viewController,
                                       from: source,
@@ -49,7 +50,8 @@ struct FireConfirmationPresenter {
                                       isSingleTab: isSingleTab,
                                       browsingMode: browsingMode,
                                       onConfirm: onConfirm,
-                                      onCancel: onCancel)
+                                      onCancel: onCancel,
+                                      onOpenSettings: onOpenSettings)
     }
 
     @MainActor
@@ -82,7 +84,8 @@ struct FireConfirmationPresenter {
                                                isSingleTab: Bool,
                                                browsingMode: BrowsingMode,
                                                onConfirm: @escaping (FireRequest) -> Void,
-                                               onCancel: @escaping () -> Void) {
+                                               onCancel: @escaping () -> Void,
+                                               onOpenSettings: (() -> Void)? = nil) {
         let viewModel = ScopedFireConfirmationViewModel(tabViewModel: tabViewModel,
                                                         source: pixelSource,
                                                         fireContext: fireContext,
@@ -96,6 +99,13 @@ struct FireConfirmationPresenter {
                                                         onCancel: { [weak viewController] in
                                                             viewController?.dismiss(animated: true) {
                                                                 onCancel()
+                                                            }
+                                                        },
+                                                        onOpenSettings: onOpenSettings.map { onOpenSettings in
+                                                            { [weak viewController] in
+                                                                viewController?.dismiss(animated: true) {
+                                                                    onOpenSettings()
+                                                                }
                                                             }
                                                         })
 

@@ -55,6 +55,9 @@ protocol TabSwitcherDelegate: AnyObject {
 
     func tabSwitcherDidRequestAIChatHistory(_ tabSwitcher: TabSwitcherViewController)
 
+    /// Opens Data Clearing settings from the Fire Button's confirmation sheet.
+    func tabSwitcherDidRequestDataClearingSettings(_ tabSwitcher: TabSwitcherViewController)
+
     /// The overlay has finished dismissing and the selected browser surface is exposed.
     func tabSwitcherDidDismiss(_ tabSwitcher: TabSwitcherViewController)
 }

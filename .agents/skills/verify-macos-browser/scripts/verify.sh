@@ -83,7 +83,8 @@ on_target() {
 }
 
 app_pid() { on_target 'pgrep -f "$1.app/Contents/MacOS" | head -1 || true' "$APP_NAME"; }
-epoch_of_pid() { on_target 'date -j -f "%a %b %d %T %Y" "$(ps -o lstart= -p "$1" | sed "s/^ *//; s/ *$//")" +%s' "$1"; }
+# C locale: ps prints lstart in the session's locale (ssh forwards LANG and LC_*), and only en_US matches this format.
+epoch_of_pid() { on_target 'export LC_ALL=C; date -j -f "%a %b %d %T %Y" "$(ps -o lstart= -p "$1" | sed "s/^ *//; s/ *$//")" +%s' "$1"; }
 
 # On-screen main windows of a pid; needs neither Accessibility nor Screen Recording.
 WINDOW_JS='function run(argv) { ObjC.import("CoreGraphics"); var l = ObjC.castRefToObject($.CGWindowListCopyWindowInfo($.kCGWindowListOptionOnScreenOnly, 0)); var n = 0; for (var i = 0; i < l.count; i++) { var w = l.objectAtIndex(i); if (w.objectForKey("kCGWindowOwnerPID").intValue == parseInt(argv[0]) && w.objectForKey("kCGWindowLayer").intValue == 0) n++; } return n; }'
@@ -289,12 +290,29 @@ build)
     done
     echo $$ > "$build_lock/pid"; echo "$topic" > "$build_lock/topic"
     build_start=$(date +%s)
-    if ! (cd "$worktree" && SPM_FORCE_DEBUG=1 xcodebuild -workspace DuckDuckGo.xcworkspace -scheme "macOS Browser" -configuration "$CONFIGURATION" \
-            -destination "platform=macOS" -derivedDataPath "$DERIVED_DATA" -skipPackagePluginValidation \
-            -skipMacroValidation -skipPackageUpdates "PRODUCT_NAME_PREFIX=$APP_NAME" build) > "$RUN_DIR/build.log" 2>&1; then
-        rm -rf "$build_lock"
-        grep -m1 -E "error:" "$RUN_DIR/build.log" || tail -20 "$RUN_DIR/build.log"
-        exit 1
+    xcb() { (cd "$worktree" && SPM_FORCE_DEBUG=1 xcodebuild -workspace DuckDuckGo.xcworkspace -scheme "macOS Browser" \
+                -derivedDataPath "$DERIVED_DATA" "$@"); }
+    # DEPLOYMENT_LOCATION=NO: a LocalOverrides.xcconfig that installs into /Applications/DEBUG leaves only a symlink here.
+    build_args=(-configuration "$CONFIGURATION" -destination "platform=macOS" -skipPackagePluginValidation -skipMacroValidation
+                -skipPackageUpdates DEPLOYMENT_LOCATION=NO "PRODUCT_NAME_PREFIX=$APP_NAME" build)
+    log="$RUN_DIR/build.log"
+    if ! xcb "${build_args[@]}" > "$log" 2>&1; then
+        ok=0
+        # -skipPackageUpdates fetches nothing, so a pin the SwiftPM cache lacks (a new DerivedData, a bumped
+        # dependency) fails until the packages are resolved once.
+        if grep -q "Could not resolve package dependencies" "$log"; then
+            echo "resolving packages"
+            log="$RUN_DIR/resolve.log"
+            if xcb -resolvePackageDependencies > "$log" 2>&1; then
+                log="$RUN_DIR/build.log"
+                xcb "${build_args[@]}" > "$log" 2>&1 && ok=1
+            fi
+        fi
+        if (( ! ok )); then
+            rm -rf "$build_lock"
+            grep -m1 -E "error:" "$log" || tail -20 "$log"
+            exit 1
+        fi
     fi
     build_end=$(date +%s)
     rm -rf "$build_lock"

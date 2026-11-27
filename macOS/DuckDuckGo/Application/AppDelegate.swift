@@ -864,7 +864,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         wideEvent = WideEvent(
-            useMockRequests: buildType.isDebugBuild || buildType.isReviewBuild || buildType.isAlphaBuild,
+            isDevMode: !BuildFlags.isProductionBuild,
             featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
         )
 

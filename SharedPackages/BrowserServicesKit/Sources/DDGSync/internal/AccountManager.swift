@@ -235,8 +235,12 @@ struct AccountManager: AccountManaging {
 
         let request = api.createAuthenticatedGetRequest(url: endpoints.auditLog,
                                                         authToken: token,
-                                                        parameters: parameters)
+                                                        parameters: parameters,
+                                                        requirements: [.allowHTTPNotModified, .allowHTTPErrorResponse])
         let result = try await request.execute()
+        if result.response.httpStatus.isFailure {
+            throw auditLogError(from: result)
+        }
 
         guard let body = result.data else {
             throw SyncError.noResponseBody
@@ -280,6 +284,14 @@ struct AccountManager: AccountManaging {
             entries.append(try await decoder.decode(entry, for: account))
         }
         return AuditLogPage(entries: entries, after: response.auditLog.after, before: response.auditLog.before)
+    }
+
+    private func auditLogError(from response: HTTPResult) -> Error {
+        if response.response.statusCode == 400, let data = response.data,
+           let body = try? JSONDecoder().decode(AuditLogErrorResponse.self, from: data), body.error == "invalid_cursor" {
+            return AuditLogError.invalidCursor
+        }
+        return SyncError.unexpectedStatusCode(response.response.statusCode)
     }
 
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {
@@ -552,6 +564,8 @@ enum AuditLogError: DDGError {
     case responseDecodingFailed
     case missingRequiredAfterCursor
     case accountInfoKeyUnavailable
+    case invalidCursor
+    case nonAdvancingAfterCursor
 
     static var errorDomain: String { "com.duckduckgo.sync.audit-log" }
 
@@ -560,6 +574,8 @@ enum AuditLogError: DDGError {
         case .responseDecodingFailed: 1
         case .missingRequiredAfterCursor: 2
         case .accountInfoKeyUnavailable: 3
+        case .invalidCursor: 4
+        case .nonAdvancingAfterCursor: 5
         }
     }
 
@@ -568,8 +584,14 @@ enum AuditLogError: DDGError {
         case .responseDecodingFailed: "Failed to decode the audit log response."
         case .missingRequiredAfterCursor: "Audit log response is missing the required after cursor."
         case .accountInfoKeyUnavailable: "The account-info key manager is unavailable for reading the audit log."
+        case .invalidCursor: "The audit log cursor is invalid."
+        case .nonAdvancingAfterCursor: "The audit log cursor did not advance after a non-empty page."
         }
     }
+}
+
+private struct AuditLogErrorResponse: Decodable {
+    let error: String
 }
 
 private struct AuditLogResponsePage: Decodable {

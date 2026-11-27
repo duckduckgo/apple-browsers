@@ -38,7 +38,13 @@ public struct APIResponseRequirements: OptionSet {
     /// The user agent is required in the HTTP headers
     public static let requireUserAgent = APIResponseRequirements(rawValue: 1 << 3)
 
+    /// Returns HTTP 4xx/5xx responses, including their bodies, without applying success-response requirements.
+    /// The caller must check the returned status code and handle HTTP errors.
+    public static let allowHTTPErrorResponse = APIResponseRequirements(rawValue: 1 << 4)
+
     public static let `default`: APIResponseRequirements = [.requireNonEmptyData, .requireETagHeader]
+
+    /// Error responses remain opt-in even when all validation requirements are requested.
     public static let all: APIResponseRequirements = [.requireNonEmptyData, .requireETagHeader, .allowHTTPNotModified, .requireUserAgent]
 
 }

@@ -65,6 +65,10 @@ public struct APIRequest {
 
         Logger.networking.debug("Request completed: \(request.httpMethod ?? "") \(request.url?.shortDescription ?? "") response code: \(httpResponse.statusCode)")
 
+        if requirements.contains(.allowHTTPErrorResponse), httpResponse.httpStatus.isFailure {
+            return (data, httpResponse)
+        }
+
         var data = data
         if requirements.contains(.allowHTTPNotModified), httpResponse.httpStatus == .notModified {
             data = nil // avoid returning empty data

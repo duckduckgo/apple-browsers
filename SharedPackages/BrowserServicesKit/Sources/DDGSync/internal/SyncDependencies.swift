@@ -150,7 +150,8 @@ public protocol RemoteAPIRequestCreating {
                        headers: [String: String],
                        parameters: [String: String],
                        body: Data?,
-                       contentType: String?) -> HTTPRequesting
+                       contentType: String?,
+                       requirements: APIResponseRequirements) -> HTTPRequesting
 }
 
 protocol RecoveryKeyTransmitting {

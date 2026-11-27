@@ -61,6 +61,282 @@
         }
       }
     },
+    "duckai.local-model-access.connect" : {
+      "comment" : "Button that lets Duck.ai use Apple Intelligence on the device for page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Connect"
+          }
+        }
+      }
+    },
+    "duckai.local-model-access.disconnect" : {
+      "comment" : "Button in Settings > AI Features that stops Duck.ai from using Apple Intelligence",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disconnect"
+          }
+        }
+      }
+    },
+    "duckai.local-model-install.install" : {
+      "comment" : "Button that downloads the on-device model for Duck.ai page summaries. %@ is the download size, such as 975 MB",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Install %@"
+          }
+        }
+      }
+    },
+    "duckai.local-model-install.prompt.future-use" : {
+      "comment" : "Second paragraph of the pop-up that offers to download an on-device AI for Duck.ai page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Once installed, the on-device AI will be used for future page summaries."
+          }
+        }
+      }
+    },
+    "duckai.local-model.prompt.chip" : {
+      "comment" : "Badge in the title of the pop-up that asks whether Duck.ai may use an on-device AI for page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On-Device AI"
+          }
+        }
+      }
+    },
+    "duckai.local-model.prompt.message" : {
+      "comment" : "Explanation in the pop-up that asks whether Duck.ai may use an on-device AI. %@ is the AI's name, such as Apple Intelligence or Granite 4.0 1B. 'Duck.ai plan usage' is the user's Duck.ai usage allowance",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Uses %@ for certain tasks like page summaries. Chat is stored on your device and reduces Duck.ai plan usage."
+          }
+        }
+      }
+    },
+    "duckai.local-model.prompt.title" : {
+      "comment" : "Title of the pop-up that asks whether Duck.ai may use an on-device AI for page summaries. %@ is a badge reading On-Device AI",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai wants to use %@ for added privacy."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model-access.connect-confirmation.title" : {
+      "comment" : "Title of the alert shown when the user connects Apple Intelligence to Duck.ai in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Connect Apple Intelligence?"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.active" : {
+      "comment" : "Next to System AI in Settings > AI Features: Duck.ai uses Apple Intelligence for page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(Active)"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.available" : {
+      "comment" : "Next to System AI in Settings > AI Features: Apple Intelligence can be used but Duck.ai isn't using it yet",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(Available)"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.cancel-download" : {
+      "comment" : "Accessibility label of the button in Settings > AI Features that stops downloading the on-device model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel Download"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.disk-full" : {
+      "comment" : "Shown in Settings > AI Features when there isn't enough disk space to download the on-device model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "There isn't enough space on your Mac for the model."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.download-failed" : {
+      "comment" : "Shown in Settings > AI Features when downloading the on-device model failed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't download the model. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.install" : {
+      "comment" : "Button in Settings > AI Features that downloads the on-device model for Duck.ai page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Install"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.local-ai.title" : {
+      "comment" : "Name of the row for the downloadable on-device AI in the On-Device AIs section of Settings > AI Features, on Macs without Apple Intelligence",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Local AI"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.model.caption" : {
+      "comment" : "Caption under an on-device AI in Settings > AI Features. %@ is the AI's name, such as Apple Intelligence or Granite 4.0 1B",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Uses %@ for tasks like page summaries."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.progress" : {
+      "comment" : "Download progress next to the on-device model's name in Settings > AI Features. %1$@ is how much has downloaded and %2$@ the total, such as (400 MB/975 MB)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(%1$@/%2$@)"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.section.caption" : {
+      "comment" : "Explanation under the On-Device AIs title in Settings > AI Features. 'Duck.ai plan usage' is the user's Duck.ai usage allowance",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On-device AIs help analyze page content privately and reduce Duck.ai plan usage."
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.section.title" : {
+      "comment" : "Title of the section in Settings > AI Features for on-device AIs that Duck.ai uses for page summaries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "On-Device AIs"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.size" : {
+      "comment" : "The on-device model's download size next to its name in Settings > AI Features, such as (975 MB)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "(%@)"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.system-ai.title" : {
+      "comment" : "Name of the row for Apple Intelligence in the On-Device AIs section of Settings > AI Features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System AI"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.try-again" : {
+      "comment" : "Button in Settings > AI Features that retries downloading the on-device model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Again"
+          }
+        }
+      }
+    },
+    "duckai.settings.local-model.uninstall" : {
+      "comment" : "Button in Settings > AI Features that deletes the downloaded on-device model",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Uninstall"
+          }
+        }
+      }
+    },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
         "de" : {
@@ -31300,6 +31576,42 @@
         }
       }
     },
+    "contextual.onboarding.try-duck-ai.button" : {
+      "comment" : "Button on the last tip new users of the browser see after trying a search; it opens Duck.ai, DuckDuckGo's private AI chat. \"Duck.ai\" is a product name: keep it as is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Duck.ai"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.try-duck-ai.message" : {
+      "comment" : "Message of the last tip new users of the browser see after trying a search. It describes Duck.ai, DuckDuckGo's private AI chat.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chats are anonymized, no account required. And it’s free!"
+          }
+        }
+      }
+    },
+    "contextual.onboarding.try-duck-ai.title" : {
+      "comment" : "Title of the last tip new users of the browser see after trying a search, when they kept Duck.ai, DuckDuckGo's private AI chat, in the address bar. \"Duck.ai\" is a product name: keep it as is.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat privately with popular AIs in Duck.ai"
+          }
+        }
+      }
+    },
     "contextual.onboarding.try-fire-button.button" : {
       "comment" : "Button on the browser that invites the user to try the Fire Button.",
       "extractionState" : "extracted_with_value",
@@ -39791,246 +40103,6 @@
         }
       }
     },
-    "duckai.local-model-access.prompt.message" : {
-      "comment" : "Explanation in the pop-up that asks whether Duck.ai may summarize pages with Apple Intelligence on the Mac. 'Your plan' is the user's Duck.ai usage allowance",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence liest den Titel, die Adresse und den Text dieser Seite auf deinem Mac. Nichts wird an ein Cloud-Modell gesendet, und dabei wird weniger von deinem Kontingent verbraucht."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Apple Intelligence will read this page's title, address, and text on your Mac. Nothing is sent to a cloud model, and it uses less of your plan."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence leerá el título, la dirección y el texto de esta página en tu Mac. No se envía nada a un modelo en la nube y se consume menos de tu cuota."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence lira le titre, l’adresse et le texte de cette page sur ton Mac. Rien n’est envoyé à un modèle cloud, et cela consomme moins de ton forfait."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence leggerà il titolo, l’indirizzo e il testo di questa pagina sul tuo Mac. Non viene inviato nulla a un modello cloud e consuma meno della tua quota."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence leest de titel, het adres en de tekst van deze pagina op je Mac. Er wordt niets naar een cloudmodel gestuurd en het verbruikt minder van je bundel."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence przeczyta tytuł, adres i tekst tej strony na Twoim Macu. Nic nie jest wysyłane do modelu w chmurze, a przy tym zużywany jest mniejszy limit Twojego planu."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Apple Intelligence vai ler o título, o endereço e o texto desta página no teu Mac. Nada é enviado para um modelo na nuvem e consome menos do teu plano."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence прочитает заголовок, адрес и текст этой страницы на твоём Mac. Данные не отправляются в облачную модель, и расходуется меньше лимита твоего плана."
-          }
-        }
-      }
-    },
-    "duckai.local-model-access.prompt.title" : {
-      "comment" : "Title of the pop-up shown when the user asks Duck.ai to summarize a page before turning on the local model. %@ is the model's name, such as Apple Intelligence, shown as a badge",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duck.ai möchte %@ verwenden, um diese Seite zusammenzufassen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Duck.ai wants to use %@ to summarize this page"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duck.ai quiere usar %@ para resumir esta página"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duck.ai veut utiliser %@ pour résumer cette page"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duck.ai vuole usare %@ per riassumere questa pagina"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duck.ai wil %@ gebruiken om deze pagina samen te vatten"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duck.ai chce użyć %@ do podsumowania tej strony"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duck.ai quer usar %@ para resumir esta página"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duck.ai хочет использовать %@, чтобы кратко пересказать эту страницу"
-          }
-        }
-      }
-    },
-    "duckai.local-model-access.turn-off" : {
-      "comment" : "Button in Settings > AI Features that stops Duck.ai from using the local model, such as Apple Intelligence",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ausschalten"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Turn Off"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desactivar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Désactiver"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Disattiva"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uitschakelen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wyłącz"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desativar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отключить"
-          }
-        }
-      }
-    },
-    "duckai.local-model-access.turn-on" : {
-      "comment" : "Button that lets Duck.ai use the local model, such as Apple Intelligence, for page summaries",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktivieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Turn On"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activer"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attiva"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inschakelen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Włącz"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ativar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Включить"
-          }
-        }
-      }
-    },
     "duckai.menu.ask-about-page" : {
       "comment" : "Duck.ai menu item to open the sidebar and attach the current page's content",
       "extractionState" : "extracted_with_value",
@@ -41950,186 +42022,6 @@
         }
       }
     },
-    "duckai.settings.local-model-access.apple-intelligence.caption" : {
-      "comment" : "Caption under Apple Intelligence in the Local Model Access section of Settings > AI Features, saying what Duck.ai uses it for",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wird für Seitenzusammenfassungen verwendet"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Used for page summaries"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se usa para resumir páginas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pour résumer des pages"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Per riassumere le pagine"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gebruikt voor samenvattingen van pagina's"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Używane do podsumowywania stron"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utilizado para resumos de páginas"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Для кратких пересказов страниц"
-          }
-        }
-      }
-    },
-    "duckai.settings.local-model-access.caption" : {
-      "comment" : "Explanation under the Local Model Access title in Settings > AI Features",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lokale Modelle bieten zusätzliche Privatsphäre und verringern die Nutzung des Duck.ai-Plans."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Local models add additional privacy and reduce Duck.ai plan usage."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los modelos locales ofrecen más privacidad y reducen el consumo de tu cuota de uso de Duck.ai."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les modèles locaux renforcent la confidentialité et réduisent la consommation du forfait Duck.ai."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I modelli locali offrono maggiore privacy e riducono il consumo del tuo piano Duck.ai."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lokale modellen bieden extra privacy en verminderen het verbruik van je Duck.ai-tegoed."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modele lokalne zapewniają większą prywatność i zmniejszają zużycie planu Duck.ai."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Os modelos locais acrescentam privacidade e reduzem a utilização do teu plano Duck.ai."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Локальные модели обеспечивают дополнительную конфиденциальность и сокращают расход лимита Duck.ai."
-          }
-        }
-      }
-    },
-    "duckai.settings.local-model-access.title" : {
-      "comment" : "Title of the section in Settings > AI Features where the user turns the local model on or off",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zugriff auf lokale Modelle"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Local Model Access"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Acceso a modelos locales"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accès au modèle local"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accesso ai modelli locali"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toegang tot lokale modellen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dostęp do modeli lokalnych"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Acesso ao Modelo Local"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Доступ к локальным моделям"
-          }
-        }
-      }
-    },
     "duckai.settings.local-model-access.turn-on-confirmation.message" : {
       "comment" : "Message of the alert shown when the user turns on Apple Intelligence for Duck.ai in Settings",
       "extractionState" : "extracted_with_value",
@@ -42186,66 +42078,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai будет использовать Apple Intelligence на этом Mac для кратких пересказов страниц. Страницы обрабатываются на твоём Mac, данные не отправляются в облачную модель, и расходуется меньше лимита твоего плана Duck.ai."
-          }
-        }
-      }
-    },
-    "duckai.settings.local-model-access.turn-on-confirmation.title" : {
-      "comment" : "Title of the alert shown when the user turns on Apple Intelligence for Duck.ai in Settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence aktivieren?"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Turn On Apple Intelligence?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Activar Apple Intelligence?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activer Apple Intelligence ?"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attivare Apple Intelligence?"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple Intelligence inschakelen?"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Włączyć Apple Intelligence?"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ativar a Apple Intelligence?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Включить Apple Intelligence?"
           }
         }
       }
@@ -52806,6 +52638,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подробнее"
+          }
+        }
+      }
+    },
+    "fire.dialog.duck-ai-onboarding.title" : {
+      "comment" : "Title of the dialog that deletes browsing data, opened from the browser's Fire Button. New users see this version after their first chat in Duck.ai, DuckDuckGo's private AI chat, and it offers to delete only their Duck.ai chats. \"Duck.ai\" is not part of this text.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Chat Data"
           }
         }
       }
@@ -118376,66 +118220,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "А также..."
-          }
-        }
-      }
-    },
-    "subscription.upsell.popover.plus.features.subtitle" : {
-      "comment" : "Subtitle shown in VPN Upsell popover when there is only one plus feature is listed",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ weitere Premium-Schutzmaßnahmen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "+ more premium protections"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ protecciones prémium adicionales"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ protections Premium supplémentaires"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ altre protezioni premium"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ meer premium beveiligingen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ więcej zabezpieczeń premium"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ proteções premium adicionais"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "+ другие виды премиум-защиты"
           }
         }
       }

@@ -34,6 +34,7 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
         if settings.notifyStatusChanges {
             wrappeePresenter.showConnectedNotification(serverLocation: serverLocation, snoozeEnded: snoozeEnded)
         }
+        defaults.signedOutNotificationShown = false
         wrappeePresenter.clearAuthorizationSuppression()
     }
 
@@ -79,6 +80,13 @@ final public class VPNNotificationsPresenterTogglableDecorator: VPNNotifications
             defaults.showEntitlementNotification = false
             wrappeePresenter.showEntitlementNotification()
         }
+    }
+
+    /// Presents the signed-out notification once until the VPN connects again.
+    public func showSignedOutNotification() {
+        guard !defaults.signedOutNotificationShown else { return }
+        defaults.signedOutNotificationShown = true
+        wrappeePresenter.showSignedOutNotification()
     }
 
     public func showDebugEventNotification(message: String) {

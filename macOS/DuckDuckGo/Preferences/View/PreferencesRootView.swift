@@ -249,7 +249,7 @@ enum Preferences {
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
-                    SubscriptionUI.PreferencesSubscriptionSettingsView(model: subscriptionSettingsModel!, isPaidAIChatOn: { featureFlagger.isFeatureOn(.paidAIChat) })
+                    SubscriptionUI.PreferencesSubscriptionSettingsView(model: subscriptionSettingsModel!)
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel(),
                                  showExtensions: { model.selectPane(.extensions) })
@@ -332,7 +332,6 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
-                                                        featureFlagger: featureFlagger,
                                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler,
@@ -472,7 +471,6 @@ enum Preferences {
                                                         keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                         blackFridayCampaignProvider: blackFridayCampaignProvider,
-                                                        isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) },
                                                         cancelPendingDowngradeHandler: { [flowPerformer] productId in
                 _ = await flowPerformer.performTierChange(to: productId, changeType: nil, wideEventFunnelName: "CancelDowngradeButton")
             },

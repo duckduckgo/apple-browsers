@@ -25,12 +25,11 @@ import DuckAiDataStore
 /// of the instance only. Releasing the instance — or closing the fire window
 /// that owns it — discards the data with no on-disk residue.
 ///
-/// `seedSource`, when provided, is consulted on every read for the small allow-list of
-/// consent keys (see `DuckAiNativeStorageConsent.entryKeys`). When the in-memory entries
-/// dictionary doesn't have one of those keys, `getEntry` / `getAllEntries` read it through
-/// to `seedSource`. Writes always go to the in-memory dictionary only — the seed source is
-/// never modified — so a user who has accepted Duck.ai T&C / voice-mode consent in normal
-/// mode isn't re-prompted in fire mode, even after the FE calls `replaceAllEntries`.
+/// `seedSource`, when provided, is read through for the entries `DuckAiNativeEntriesReadThrough`
+/// allows when the in-memory dictionary doesn't have them. Writes always go to the in-memory
+/// dictionary only — the seed source is never modified — so a user who has accepted Duck.ai
+/// T&C / voice-mode consent in normal mode isn't re-prompted in fire mode, even after the FE
+/// calls `replaceAllEntries`.
 public final class DuckAiNativeMemoryStorageHandler: DuckAiNativeStorageHandling {
 
     private let lock = NSLock()
@@ -38,10 +37,10 @@ public final class DuckAiNativeMemoryStorageHandler: DuckAiNativeStorageHandling
     private var chats: [String: Data] = [:]
     private var files: [String: DuckAiFileContent] = [:]
     private var migrations: [String: Bool] = [:]
-    private let seedSource: DuckAiNativeStorageHandling?
+    private let readThrough: DuckAiNativeEntriesReadThrough?
 
     public init(seedSource: DuckAiNativeStorageHandling? = nil) {
-        self.seedSource = seedSource
+        self.readThrough = seedSource.map(DuckAiNativeEntriesReadThrough.init(seedSource:))
     }
 
     // MARK: - Entries
@@ -59,33 +58,28 @@ public final class DuckAiNativeMemoryStorageHandler: DuckAiNativeStorageHandling
             return value
         }
         lock.unlock()
-        guard let seedSource, DuckAiNativeStorageConsent.entryKeys.contains(key) else { return nil }
-        return try? seedSource.getEntry(key: key)
+        return readThrough?.seedEntry(forKey: key)
     }
 
     public func getAllEntries() throws -> [String: Any] {
         lock.lock()
-        var result = entries
+        let result = entries
         lock.unlock()
-        guard let seedSource else { return result }
-        for key in DuckAiNativeStorageConsent.entryKeys where result[key] == nil {
-            if let value = try? seedSource.getEntry(key: key) {
-                result[key] = value
-            }
-        }
-        return result
+        return readThrough?.entries(fillingIn: result) ?? result
     }
 
     public func deleteEntry(key: String) throws {
         lock.lock()
         defer { lock.unlock() }
         entries.removeValue(forKey: key)
+        readThrough?.entryDeleted(key: key)
     }
 
     public func deleteAllEntries() throws {
         lock.lock()
         defer { lock.unlock() }
         entries.removeAll()
+        readThrough?.allEntriesDeleted()
     }
 
     public func replaceAllEntries(_ entries: [String: Any]) throws {

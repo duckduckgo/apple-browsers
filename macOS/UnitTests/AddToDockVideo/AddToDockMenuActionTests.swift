@@ -99,7 +99,7 @@ final class AddToDockMenuActionTests {
 
         makeSUT().perform(from: .mainMenu)
 
-        #expect(videoPresenter.presentations == [.done])
+        #expect(videoPresenter.presentations == [.init(entryPoint: .mainMenu, primaryAction: .done)])
         #expect(pixelFiring.actualFireCalls == [ExpectedFireCall(pixel: GeneralPixel.userAddedToDockFromMainMenu, frequency: .standard)])
         #expect(!dockCustomizer.isAddedToDock)
     }
@@ -111,7 +111,7 @@ final class AddToDockMenuActionTests {
 
         makeSUT().perform(from: .moreOptionsMenu)
 
-        #expect(videoPresenter.presentations == [.done])
+        #expect(videoPresenter.presentations == [.init(entryPoint: .moreOptionsMenu, primaryAction: .done)])
         #expect(pixelFiring.actualFireCalls == [ExpectedFireCall(pixel: GeneralPixel.userAddedToDockFromMoreOptionsMenu, frequency: .dailyAndStandard)])
     }
 
@@ -123,7 +123,7 @@ final class AddToDockMenuActionTests {
 
         makeSUT().perform(from: .mainMenu)
 
-        #expect(videoPresenter.presentations == [.done])
+        #expect(videoPresenter.presentations == [.init(entryPoint: .mainMenu, primaryAction: .done)])
         #expect(pixelFiring.actualFireCalls.isEmpty)
     }
 

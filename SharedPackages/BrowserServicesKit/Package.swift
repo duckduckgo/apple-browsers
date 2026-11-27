@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "23.0.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "23.4.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -267,6 +267,7 @@ let package = Package(
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
                 .product(name: "Gzip", package: "GzipSwift"),
                 .product(name: "Networking", package: "Networking"),
+                .product(name: "WideEvent", package: "WideEvent"),
                 "PrivacyConfig",
             ],
             resources: [
@@ -683,6 +684,7 @@ let package = Package(
                 .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfigTestsUtils",
                 .product(name: "Networking", package: "Networking"),
+                .product(name: "WideEvent", package: "WideEvent"),
             ],
             resources: [
                 .copy("Resources/SyncMetadata_V3.sqlite"),

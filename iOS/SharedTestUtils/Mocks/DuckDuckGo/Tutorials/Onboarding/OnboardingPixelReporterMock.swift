@@ -421,6 +421,54 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCaptureAdBlockingSelection = (youTubeAdBlockingEnabled, cookiePopUpProtectionEnabled, popUpsWithoutOptOutsEnabled)
     }
 
+    // MARK: - VPN download-reason path
+
+    private(set) var didCallMeasureTryVPNImpression = false
+    private(set) var didCallMeasureTryVPNAction = false
+    private(set) var didCallMeasureSkipTryVPNAction = false
+    private(set) var capturedTryVPNPaywallEvents: [SubscriptionFlowEvent] = []
+    private(set) var didCallMeasureVPNActivationImpression = false
+    private(set) var capturedVPNActivationContinueIsVPNOn: Bool?
+    private(set) var capturedVPNActivationFailureReasons: [OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason] = []
+    private(set) var didCallMeasureSubscriptionReminderImpression = false
+    private(set) var didCallMeasureSubscriptionReminderContinue = false
+
+    func measureTryVPNImpression() {
+        didCallMeasureTryVPNImpression = true
+    }
+
+    func measureTryVPNAction() {
+        didCallMeasureTryVPNAction = true
+    }
+
+    func measureSkipTryVPNAction() {
+        didCallMeasureSkipTryVPNAction = true
+    }
+
+    func measureTryVPNPaywallEvent(_ event: SubscriptionFlowEvent) {
+        capturedTryVPNPaywallEvents.append(event)
+    }
+
+    func measureVPNActivationImpression() {
+        didCallMeasureVPNActivationImpression = true
+    }
+
+    func measureVPNActivationContinue(isVPNOn: Bool) {
+        capturedVPNActivationContinueIsVPNOn = isVPNOn
+    }
+
+    func measureVPNActivationFailed(_ reason: OnboardingSharedPixelEvent.VPNActivationEvent.FailureReason) {
+        capturedVPNActivationFailureReasons.append(reason)
+    }
+
+    func measureSubscriptionReminderImpression() {
+        didCallMeasureSubscriptionReminderImpression = true
+    }
+
+    func measureSubscriptionReminderContinue() {
+        didCallMeasureSubscriptionReminderContinue = true
+    }
+
     // MARK: - Try Duck.ai End of Journey
 
     private(set) var didCallMeasureEndOfJourneyTryDuckAICTAAction = false

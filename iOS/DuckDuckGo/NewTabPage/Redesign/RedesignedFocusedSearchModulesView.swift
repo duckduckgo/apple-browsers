@@ -92,7 +92,7 @@ struct RedesignedFocusedSearchModulesView: View {
     }
 
     private var hatchTopPadding: CGFloat {
-        guard embeddedModules?.isVisible == true else { return RedesignedNewTabPageModulesView.topPadding }
+        guard embeddedModules?.isVisible == true else { return RedesignedNewTabPageModulesView.Metrics.topPadding }
         return 0
     }
 }

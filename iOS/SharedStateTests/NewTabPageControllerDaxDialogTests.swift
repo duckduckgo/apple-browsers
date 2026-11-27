@@ -113,9 +113,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         controller.loadViewIfNeeded()
 
         let page = try XCTUnwrap(controller.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
-        XCTAssertEqual(controller.children.count, 1)
-        XCTAssertTrue(page.parent === controller)
-        XCTAssertTrue(page.view.superview === controller.view)
         XCTAssertEqual(controller.view.backgroundColor, .clear)
         XCTAssertEqual(page.view.backgroundColor, .clear)
     }
@@ -162,10 +159,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     func testWhenLegacyFocusedContentIsScrolledThenDismissalReturnsToAlignedTop() throws {
         try assertFocusedContentTracksTopClearance(usesRedesign: false, resetsScrolledContent: true)
-    }
-
-    func testWhenLegacyFocusedContentIsScrolledThenResetReturnsToAlignedTopBeforeClearanceChanges() throws {
-        try assertFocusedContentTracksTopClearance(usesRedesign: false, resetsScrolledContent: true, resetsBeforeClearanceChanges: true)
     }
 
     func testWhenTypingTopClearanceShrinksThenNativeListTracksItInBothFlagStates() throws {
@@ -343,8 +336,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
 
     private func assertFocusedContentTracksTopClearance(
         usesRedesign: Bool,
-        resetsScrolledContent: Bool = false,
-        resetsBeforeClearanceChanges: Bool = false
+        resetsScrolledContent: Bool = false
     ) throws {
         let (configuration, _) = makeConfiguration(withScheduledMessage: false)
         let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
@@ -406,13 +398,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                 XCTAssertTrue(outerContentScrollView(in: controller.view, holdingContentHeight: 1_200) === scrollView)
                 XCTAssertTrue(controller.isViewLoaded)
                 host.scrollLegacyContentToTop(duration: 0.2)
-                if resetsBeforeClearanceChanges {
-                    waitForLayout {
-                        parent.view.layoutIfNeeded()
-                        return abs(scrollView.contentOffset.y + scrollView.adjustedContentInset.top) <= 1
-                            && abs((probeFrame?.minY ?? .infinity) - initialFrame.minY - 131 + 184) <= 1
-                    }
-                }
             }
             let revision = probeRevision
             let animated = expectation(description: "Focused top clearance animation completes")

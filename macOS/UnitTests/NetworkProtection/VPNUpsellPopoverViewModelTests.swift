@@ -36,7 +36,6 @@ final class MockVPNUpsellDismisser: VPNUpsellDismissing {
 final class VPNUpsellPopoverViewModelTests: XCTestCase {
     var sut: VPNUpsellPopoverViewModel!
     var mockSubscriptionManager: SubscriptionManagerMock!
-    var mockFeatureFlagger: MockFeatureFlagger!
     var mockDismisser: MockVPNUpsellDismisser!
     var lastReceivedURL: URL?
     var firedPixels: [SubscriptionPixel] = []
@@ -45,7 +44,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockSubscriptionManager = SubscriptionManagerMock()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockDismisser = MockVPNUpsellDismisser()
         firedPixels = []
 
@@ -53,7 +51,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
 
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             upsellDismisser: mockDismisser,
             urlOpener: { url in
                 self.lastReceivedURL = url
@@ -70,7 +67,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         sut = nil
         mockDismisser = nil
         mockSubscriptionManager = nil
-        mockFeatureFlagger = nil
         lastReceivedURL = nil
         firedPixels = []
         cancellables.removeAll()
@@ -157,7 +153,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             upsellDismisser: mockDismisser,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -185,7 +180,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             upsellDismisser: mockDismisser,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -212,7 +206,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             upsellDismisser: mockDismisser,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -223,10 +216,9 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
 
-    func testWhenListingPlusFeatures_AndAIChatIsEnabled_ItListsAIChat() throws {
+    func testWhenListingPlusFeatures_ItListsAIChatFirst() throws {
         // Given
         let expectation = XCTestExpectation(description: "Feature set should be updated")
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         sut.$featureSet
             .dropFirst()
@@ -240,7 +232,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             upsellDismisser: mockDismisser,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -269,34 +260,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
-            upsellDismisser: mockDismisser,
-            onDismiss: {},
-            pixelHandler: { pixel in
-                self.firedPixels.append(pixel)
-            }
-        )
-
-        wait(for: [expectation], timeout: 1)
-    }
-
-    func testWhenOnlyOnePlusFeatureIsEnabled_TheCopyDoesNotContainTheCount() throws {
-        // Given
-        let expectation = XCTestExpectation(description: "Feature set should be updated")
-
-        sut.$featureSet
-            .dropFirst()
-            .sink { featureSet in
-                // Then
-                XCTAssertEqual(featureSet.plusFeaturesSubtitle, UserText.vpnUpsellPopoverPlusFeaturesSubtitle)
-                expectation.fulfill()
-            }
-            .store(in: &cancellables)
-
-        // When
-        sut = VPNUpsellPopoverViewModel(
-            subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             upsellDismisser: mockDismisser,
             onDismiss: {},
             pixelHandler: { pixel in
@@ -317,7 +280,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             .dropFirst()
             .sink { featureSet in
                 // Then
-                XCTAssertEqual(featureSet.plusFeaturesSubtitle, String(format: UserText.vpnUpsellPopoverPlusFeaturesSubtitleCount, 2))
+                XCTAssertEqual(featureSet.plusFeaturesSubtitle, String(format: UserText.vpnUpsellPopoverPlusFeaturesSubtitleCount, 3))
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -325,7 +288,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         // When
         sut = VPNUpsellPopoverViewModel(
             subscriptionManager: mockSubscriptionManager,
-            featureFlagger: mockFeatureFlagger,
             upsellDismisser: mockDismisser,
             onDismiss: {},
             pixelHandler: { pixel in

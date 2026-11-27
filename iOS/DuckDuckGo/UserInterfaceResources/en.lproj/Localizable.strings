@@ -1531,6 +1531,66 @@
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Your report helps make DuckDuckGo better for everyone!";
 
+/* Title of the prompt asking to let Duck.ai switch tabs */
+"browser-tool.permission.title.switch-to-tab" = "Allow Duck.ai to switch to another tab?";
+
+/* Heading for Duck.ai browser tools that perform actions */
+"browser-tool.settings.can-do" = "What Duck.ai Can Do";
+
+/* Heading for read-only Duck.ai browser tools */
+"browser-tool.settings.can-see" = "What Duck.ai Can See";
+
+/* Explains the scope of Duck.ai browser tool permissions in Settings */
+"browser-tool.settings.caption" = "Choose what actions Duck.ai can take in the browser, and whether it can act without asking for permission each time. These settings apply to every site and chat.";
+
+/* Description of Duck.ai's Find in Page browser tool */
+"browser-tool.settings.find-in-page.detail" = "Find text on a page and see short snippets around each match.";
+
+/* Description of Duck.ai's List Open Tabs browser tool */
+"browser-tool.settings.list-open-tabs.detail" = "See the title and address of each open tab.";
+
+/* Name of Duck.ai's browser tool for listing open tabs */
+"browser-tool.settings.list-open-tabs.title" = "List Open Tabs";
+
+/* Description of Duck.ai's Read Tab Content browser tool */
+"browser-tool.settings.read-tab-content.detail" = "Read the title, address, and text of a tab.";
+
+/* Name of Duck.ai's browser tool for reading a tab */
+"browser-tool.settings.read-tab-content.title" = "Read Tab Content";
+
+/* Message of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.message" = "This restores the default permission for every browser tool.";
+
+/* Title of the confirmation alert for resetting all Duck.ai browser tool permissions */
+"browser-tool.settings.reset-alert.title" = "Reset Browser Access?";
+
+/* Button that restores the default permission for every Duck.ai browser tool */
+"browser-tool.settings.reset-all" = "Reset All";
+
+/* Description of Duck.ai's Search Browsing History browser tool */
+"browser-tool.settings.search-history.detail" = "Search the sites you’ve visited, including before this chat.";
+
+/* Name of Duck.ai's browser tool for searching browsing history */
+"browser-tool.settings.search-history.title" = "Search Browsing History";
+
+/* Browser tool permission option that lets Duck.ai act without asking */
+"browser-tool.settings.state.allow" = "Always Allow";
+
+/* Browser tool permission option that asks the user before acting */
+"browser-tool.settings.state.ask" = "Always Ask";
+
+/* Browser tool permission option that denies access */
+"browser-tool.settings.state.deny" = "Never Allow";
+
+/* Description of Duck.ai's Switch to Tab browser tool */
+"browser-tool.settings.switch-to-tab.detail" = "Bring one of your open tabs to the front.";
+
+/* Name of Duck.ai's browser tool for bringing an open tab forward */
+"browser-tool.settings.switch-to-tab.title" = "Switch to Tab";
+
+/* Settings screen and navigation row for Duck.ai browser tool permissions */
+"browser-tool.settings.title" = "Browser Access";
+
 /* Close All Tabs */
 "close.all.tabs" = "Close All Tabs";
 
@@ -2074,6 +2134,12 @@
 /* Button that lets Duck.ai use the on-device model. */
 "duckai.local-model-access.turn-on" = "Turn On";
 
+/* Button that downloads the on-device model for Duck.ai page summaries. %@ is the download size, such as 975 MB. */
+"duckai.local-model-install.install" = "Install %@";
+
+/* Second paragraph of the pop-up that offers to download an on-device AI for Duck.ai page summaries. */
+"duckai.local-model-install.prompt.future-use" = "Once installed, the on-device AI will be used for future page summaries.";
+
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
 
@@ -2157,6 +2223,39 @@
 
 /* Title of the toggle in AI Features settings that lets Duck.ai use the on-device model. %@ is the model's name, for example Apple Intelligence. */
 "duckai.settings.local-model-access.use-model.title" = "Use %@";
+
+/* Accessibility label of the button in AI Features settings that stops downloading the on-device model. */
+"duckai.settings.local-model.cancel-download" = "Cancel Download";
+
+/* Shown in AI Features settings on iPad when there isn't enough storage to download the on-device model. */
+"duckai.settings.local-model.disk-full.ipad" = "There isn't enough space on your iPad for the model.";
+
+/* Shown in AI Features settings on iPhone when there isn't enough storage to download the on-device model. */
+"duckai.settings.local-model.disk-full.iphone" = "There isn't enough space on your iPhone for the model.";
+
+/* Shown in AI Features settings when downloading the on-device model failed. */
+"duckai.settings.local-model.download-failed" = "Couldn't download the model. Check your connection and try again.";
+
+/* Button in AI Features settings that downloads the on-device model for Duck.ai page summaries. */
+"duckai.settings.local-model.install" = "Install";
+
+/* Name of the row for the downloadable on-device AI in the On-Device Model section of AI Features settings, on devices without Apple Intelligence. */
+"duckai.settings.local-model.local-ai.title" = "Local AI";
+
+/* Caption under the downloadable on-device AI in AI Features settings. %@ is the AI's name, such as Granite 4.0 1B. */
+"duckai.settings.local-model.model.caption" = "Uses %@ for tasks like page summaries.";
+
+/* Download progress next to the on-device model's name in AI Features settings. %1$@ is how much has downloaded and %2$@ the total, such as (400 MB/975 MB). */
+"duckai.settings.local-model.progress" = "(%1$@/%2$@)";
+
+/* The on-device model's download size next to its name in AI Features settings, such as (975 MB). */
+"duckai.settings.local-model.size" = "(%@)";
+
+/* Button in AI Features settings that retries downloading the on-device model. */
+"duckai.settings.local-model.try-again" = "Try Again";
+
+/* Button in AI Features settings that deletes the downloaded on-device model. */
+"duckai.settings.local-model.uninstall" = "Uninstall";
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
@@ -3517,6 +3616,12 @@ https://duckduckgo.com/mac";
 /* Title text for an iOS quick action that opens VPN settings */
 "network.protection.quick-action.open-vpn" = "Open VPN";
 
+/* The body of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing */
+"network.protection.signed.out.notification.body" = "Open DuckDuckGo to restore VPN connection.";
+
+/* The title of the notification shown when the VPN stops reconnecting automatically because the subscription sign-in is missing */
+"network.protection.signed.out.notification.title" = "DuckDuckGo VPN disconnected";
+
 /* Button title for tooltip about VPN snooze mode */
 "network.protection.snooze.tip.action" = "Learn more";
 
@@ -4195,15 +4300,6 @@ https://duckduckgo.com/mac";
 /* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
 "onboarding.subscription.promo.buttons.tryItForFree" = "Try it for free!";
 
-/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
-"onboarding.subscription.promo.message" = "DuckDuckGo also has a secure %1$@, available with an %2$@.";
-
-/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
-"onboarding.subscription.promo.message.optional-subscription-bold" = "optional paid subscription";
-
-/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
-"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + 2 more premium protections";
-
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Add Widget";
 
@@ -4503,6 +4599,9 @@ https://duckduckgo.com/mac";
 
 /* Informational message explaining that new tabs can also be deleted individually */
 "scoped.fire.confirmation.new.tabs.info" = "New tabs you created can also be deleted individually.";
+
+/* Accessibility label for the button in the fire confirmation dialog that opens Data Clearing settings */
+"scoped.fire.confirmation.settings.button" = "Data Clearing Settings";
 
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";
@@ -4855,6 +4954,12 @@ Take back control of your personal information with the browser designed for dat
 /* Option to always default the omnibar toggle to Search */
 "settings.default.omnibar.mode.search" = "Search";
 
+/* Settings screen toggle text for the option that makes the Fire Button's Delete All also delete Duck.ai chats */
+"settings.delete.all.includes.duckai.chats" = "Delete All Includes Duck.ai Chats";
+
+/* Settings screen footer text explaining that the Fire Button's Delete All also deletes Duck.ai chats when the toggle is on */
+"settings.delete.all.includes.duckai.chats.footer" = "When on, choosing Delete All with the Fire Button also deletes your Duck.ai chats, including pinned chats.";
+
 /* Settings screen cell text for option to delete Duck.ai chats when using scoped fire */
 "settings.delete.duckai.chats" = "Delete Duck.ai Chats";
 
@@ -5075,12 +5180,6 @@ Take back control of your personal information with the browser designed for dat
 "settings.subscription.DBP.title" = "Personal Information Removal";
 
 /* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.row" = "Subscribers get our VPN and Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai.us" = "Subscribers get our VPN, Personal Information Removal, and Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
 "settings.subscription.description.row" = "Subscribers get our VPN, advanced AI models in Duck.ai, and Identity Theft Restoration.";
 
 /* Privacy pro description subtitle in settings */
@@ -5109,9 +5208,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe.title" = "Secure your Wi-Fi, and chat privately with advanced AI models";
-
-/* Call to action title for Privacy Pro settings */
-"settings.subscription.subscribe.title.no.ai.chat" = "Secure your Wi-Fi, and protect identity";
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Try Free";
@@ -5328,9 +5424,6 @@ Take back control of your personal information with the browser designed for dat
 
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Your plan will downgrade to %1$@ on %2$@.";
-
-/* Change plan or cancel title */
-"subscription.change.plan" = "Update Plan or Cancel";
 
 /* Navigation Button for closing subscription view */
 "subscription.close" = "Close";
@@ -5554,7 +5647,10 @@ Take back control of your personal information with the browser designed for dat
 /* Button that confirms withdrawal from the subscription contract */
 "subscription.withdraw.confirm.button" = "Confirm Withdrawal";
 
-/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and Duck.ai. */
+/* Duck.ai item in the list of features that stop working after withdrawing from the subscription contract, e.g. VPN, Personal Information Removal and advanced Duck.ai models */
+"subscription.withdraw.confirm.feature.advanced.duckai" = "advanced Duck.ai models";
+
+/* Second paragraph of the alert confirming withdrawal from the subscription contract. Parameter is a localized list of features, e.g. VPN, Personal Information Removal and advanced Duck.ai models. */
 "subscription.withdraw.confirm.features.message" = "%@ stop working once you confirm.";
 
 /* Message of the alert confirming withdrawal from the subscription contract. Parameters are the tier name (e.g. Plus) and the refund amount with currency. */
@@ -5838,6 +5934,30 @@ Take back control of your personal information with the browser designed for dat
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Privacy Protection enabled for %@";
+
+/* Subtitle of the translation banner naming the languages, e.g. Spanish to English. %1$@ is the page's language, %2$@ is the language it will be translated to */
+"translation.banner.subtitle" = "%1$@ to %2$@";
+
+/* Title of the banner offering to translate a web page that is in another language */
+"translation.banner.title" = "Translate this page?";
+
+/* Button in the translation banner that translates the current web page */
+"translation.banner.translate" = "Translate";
+
+/* Accessibility label of the button that closes the translation download sheet without downloading */
+"translation.download-sheet.close" = "Close";
+
+/* Button in the translation sheet that downloads the language pack and translates the current web page */
+"translation.download-sheet.download" = "Download and Translate";
+
+/* Explains the language pack download in the translation sheet. %@ is the page's language, e.g. Spanish */
+"translation.download-sheet.message" = "This one-time download lets you translate %@ pages privately on your device.";
+
+/* Size of the language pack download in the translation sheet. %@ is a formatted file size, e.g. 23 MB */
+"translation.download-sheet.size" = "Download size: %@";
+
+/* Title of the sheet asking to download what's needed to translate pages in a language on the device, e.g. Download Spanish language pack?. %@ is the page's language */
+"translation.download-sheet.title" = "Download %@ language pack?";
 
 /* Toast shown when a tapped .vcf contact link can't be parsed (e.g. malformed RFC 6350 content) */
 "vcard.add-contact.parse-failure" = "Unable to add contact. Try opening the contact file from Downloads instead.";

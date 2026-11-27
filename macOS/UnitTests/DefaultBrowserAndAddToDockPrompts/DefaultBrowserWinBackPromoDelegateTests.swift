@@ -31,6 +31,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
     private var uiHosting: MockDefaultBrowserAndDockPromptUIHosting!
     private var modal: MockDefaultBrowserAndDockPromptModal!
     private var confirmationMonitor: MockDefaultBrowserConfirmationMonitor!
+    private var rolloutMonitor: MockAppStoreDockRolloutMonitor!
     private var pixelFiring: PixelKitMock!
     private var isFeatureEnabled = true
     private var now = Date(timeIntervalSince1970: 1_700_000_000)
@@ -50,6 +51,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         uiHosting.modalAnchor = MockWindow()
         modal = MockDefaultBrowserAndDockPromptModal()
         confirmationMonitor = MockDefaultBrowserConfirmationMonitor()
+        rolloutMonitor = MockAppStoreDockRolloutMonitor()
         pixelFiring = PixelKitMock()
         isFeatureEnabled = true
         capturedTypes = []
@@ -65,6 +67,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         uiHosting = nil
         modal = nil
         confirmationMonitor = nil
+        rolloutMonitor = nil
         pixelFiring = nil
         capturedTypes = []
         onConfirm = nil
@@ -78,6 +81,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
             churnState: churnState,
             promptStore: promptStore,
             confirmationMonitor: confirmationMonitor,
+            rolloutMonitor: rolloutMonitor,
             pixelFiring: pixelFiring,
             isFeatureEnabled: { [unowned self] in isFeatureEnabled },
             uiHosting: { [unowned self] in uiHosting },
@@ -198,6 +202,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         XCTAssertEqual(capturedTypes, [.setAsDefaultPrompt])
         XCTAssertTrue(modal.presentedWindow === uiHosting.modalAnchor)
         XCTAssertEqual(firedPixels, [.shown(type: .setAsDefaultPrompt)])
+        XCTAssertEqual(rolloutMonitor.shownPrompts, [.init(type: .setAsDefaultPrompt, promptID: "win-back-modal")])
         delegate.hide()
         _ = await task.value
     }
@@ -210,8 +215,9 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         let result = await task.value
 
         XCTAssertEqual(result, .actioned())
-        XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 1)
+        XCTAssertEqual(actionPerformer.performPendingActionsEntryPoints, [.winBackModal])
         XCTAssertEqual(confirmationMonitor.startClickDates, [now])
+        XCTAssertEqual(rolloutMonitor.setAsDefaultRequestedCallCount, 1)
         XCTAssertEqual(promptStore.inactiveUserModalShownDate, now.timeIntervalSince1970)
         XCTAssertEqual(modal.dismissCallCount, 0)
 
@@ -236,6 +242,7 @@ final class DefaultBrowserWinBackPromoDelegateTests: XCTestCase {
         XCTAssertEqual(result, .actioned())
         XCTAssertEqual(actionPerformer.performPendingActionsCallCount, 1)
         XCTAssertTrue(confirmationMonitor.startClickDates.isEmpty)
+        XCTAssertEqual(rolloutMonitor.setAsDefaultRequestedCallCount, 0)
     }
 
     func testWhenSetAsDefaultRequestedAfterConfirmThenConfirmationCheckStartsAtRequestTime() async throws {

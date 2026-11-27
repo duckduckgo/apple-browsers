@@ -22,6 +22,7 @@ import Combine
 import Core
 import FeatureFlags_iOS
 import Persistence
+import SitePermissions
 import XCTest
 @testable import DuckDuckGo
 
@@ -32,7 +33,7 @@ final class FindInPageBrowserToolIntegrationTests: XCTestCase {
     func testDefaultRegistrationUsesIndependentFindAndReadFlagsAndParentGate() async throws {
         let fixture = BrowserToolsBridgeFixture(enabledFlags: [])
         defer { fixture.cleanUp() }
-        let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(), permissionStorage: fixture.defaults.keyedStoring())
+        let service = AIChatBrowserToolsService(featureFlagger: fixture.flags, historyManager: MockHistoryManager(), sitePermissionsStore: SitePermissionsStore(storage: fixture.defaults.keyedStoring()))
         fixture.script.bindBrowserTools(to: service, owner: fixture.owner, presenter: fixture.presenter, makeScope: fixture.makeScope)
         let states: [([FeatureFlag], [ClientToolCapability])] = [
             ([.aiChatBrowserTools, .aiChatBrowserToolReadTabContent, .aiChatBrowserToolSearchHistory, .aiChatBrowserToolFindInPage],

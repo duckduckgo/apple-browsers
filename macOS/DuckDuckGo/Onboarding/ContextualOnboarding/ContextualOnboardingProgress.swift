@@ -26,6 +26,7 @@ protocol ContextualOnboardingProgressReading: AnyObject {
 
 struct ContextualOnboardingSettings: StoringKeys {
     let pathKind = StorageKey<ContextualOnboardingPathKind>(.contextualOnboardingPathKind)
+    let duckAIPrompt = StorageKey<String>(.contextualOnboardingDuckAIPrompt)
 }
 
 /// Saved contextual onboarding state. Paths read it through `ContextualOnboardingProgressReading`; only the manager writes.
@@ -55,6 +56,12 @@ final class ContextualOnboardingProgress: ContextualOnboardingProgressReading {
         set { try? settings.set(newValue, for: \.pathKind) }
     }
 
+    /// The prompt sent from the junction, kept until Fire so the Duck.ai tab can be opened again.
+    var duckAIPrompt: String? {
+        get { try? settings.duckAIPrompt }
+        set { try? settings.set(newValue, for: \.duckAIPrompt) }
+    }
+
     func hasSeen(_ dialog: ContextualDialogType) -> Bool {
         storage.contextualDialogsSeen.contains(dialog.stringRepresentation)
     }
@@ -64,10 +71,15 @@ final class ContextualOnboardingProgress: ContextualOnboardingProgressReading {
         storage.contextualDialogsSeen.append(dialog.stringRepresentation)
     }
 
+    func markUnseen(_ dialog: ContextualDialogType) {
+        storage.contextualDialogsSeen.removeAll { $0 == dialog.stringRepresentation }
+    }
+
     /// Clears everything a restarted onboarding must not inherit. The state itself is set by the caller.
     func reset() {
         storage.contextualDialogsSeen = []
         storage.fireButtonUsedOnce = false
         try? settings.removeValue(for: \.pathKind)
+        try? settings.removeValue(for: \.duckAIPrompt)
     }
 }

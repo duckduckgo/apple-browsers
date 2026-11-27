@@ -42,6 +42,7 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
     @Published private(set) var storedStates: [String: BrowserToolPermissionState] = [:]
     @Published private(set) var translateMode: TranslatePagesMode = .alwaysAsk
     @Published private(set) var translateExcludedLanguages: [String] = []
+    @Published private(set) var translateOfferedLanguages: [String] = []
     @Published private(set) var isTranslateCustomized = false
     @Published private(set) var showsTranslateRow = false
 
@@ -90,6 +91,7 @@ final class BrowserToolPermissionsPreferences: ObservableObject {
         showsTranslateRow = featureFlagger.isFeatureOn(.aiChatOfferTranslationAndSummarize)
         translateMode = translatePages.mode
         translateExcludedLanguages = translatePages.excludedLanguageCodes
+        translateOfferedLanguages = translatePages.offeredLanguageCodes
         isTranslateCustomized = translatePages.isCustomized
     }
 
@@ -354,7 +356,10 @@ struct TranslatePagesRow: View {
                 .disabled(true)
                 Divider()
             }
-            ForEach(TranslatePagesLanguages.menuCodes(excluded: model.translateExcludedLanguages, systemCode: systemCode), id: \.self) { code in
+            ForEach(TranslatePagesLanguages.menuCodes(localizations: TranslatePagesLanguages.appLocalizations(),
+                                                                    offered: model.translateOfferedLanguages,
+                                                                    excluded: model.translateExcludedLanguages,
+                                                                    systemCode: systemCode), id: \.self) { code in
                 Toggle(isOn: Binding(
                     get: { model.translateExcludedLanguages.contains(code) },
                     set: { model.setTranslate(languageCode: code, excluded: $0) })) {

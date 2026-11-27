@@ -32,6 +32,7 @@ final class TranslatePagesSetting {
     enum Key: String {
         case mode = "aichat.translate-pages.mode"
         case excludedLanguages = "aichat.translate-pages.excluded-languages"
+        case offeredLanguages = "aichat.translate-pages.offered-languages"
     }
 
     static let didChange = Notification.Name("com.duckduckgo.aiChat.translatePagesSettingDidChange")
@@ -66,12 +67,24 @@ final class TranslatePagesSetting {
         store.object(forKey: Key.excludedLanguages.rawValue) as? [String] ?? []
     }
 
+    /// Page languages the offer has been shown for. Kept for good: Reset leaves them in the Settings menu.
+    var offeredLanguageCodes: [String] {
+        store.object(forKey: Key.offeredLanguages.rawValue) as? [String] ?? []
+    }
+
     var isCustomized: Bool {
         mode != .alwaysAsk || !excludedLanguageCodes.isEmpty
     }
 
     func isExcluded(languageCode: String) -> Bool {
         excludedLanguageCodes.contains(Self.normalized(languageCode))
+    }
+
+    func recordOffered(languageCode: String) {
+        let code = Self.normalized(languageCode)
+        guard !code.isEmpty, !offeredLanguageCodes.contains(code) else { return }
+        store.set(offeredLanguageCodes + [code], forKey: Key.offeredLanguages.rawValue)
+        notificationCenter.post(name: Self.didChange, object: self)
     }
 
     func exclude(languageCode: String) {
@@ -99,7 +112,7 @@ final class TranslatePagesSetting {
         notificationCenter.post(name: Self.didChange, object: self)
     }
 
-    private static func normalized(_ languageCode: String) -> String {
+    static func normalized(_ languageCode: String) -> String {
         let primary = languageCode.split(whereSeparator: { $0 == "-" || $0 == "_" }).first.map(String.init) ?? ""
         return primary.lowercased()
     }
@@ -108,20 +121,24 @@ final class TranslatePagesSetting {
 /// The languages the Settings menu lists, and how it names them.
 enum TranslatePagesLanguages {
 
-    static let offered = ["zh", "nl", "fr", "de", "it", "ja", "ko", "pl", "pt", "es", "tr"]
+    /// The languages the app is localized into, from its bundle at runtime.
+    static func appLocalizations(bundle: Bundle = .main) -> [String] {
+        bundle.localizations.filter { $0 != "Base" }.map(TranslatePagesSetting.normalized)
+    }
 
     /// The first preferred language's primary subtag, the one the offer never covers.
     static func systemCode(preferredLanguages: [String] = Locale.preferredLanguages) -> String? {
-        preferredLanguages.first?.split(whereSeparator: { $0 == "-" || $0 == "_" }).first.map { String($0).lowercased() }
+        preferredLanguages.first.map(TranslatePagesSetting.normalized)
     }
 
     static func name(of code: String, locale: Locale = .current) -> String? {
         locale.localizedString(forLanguageCode: code)
     }
 
-    /// The listed languages plus any excluded outside them, without the system language, by name.
-    static func menuCodes(excluded: [String], systemCode: String?, locale: Locale = .current) -> [String] {
-        Set(offered + excluded).subtracting([systemCode].compactMap { $0 })
+    /// App localizations, offered and excluded languages, without the system language, by name.
+    static func menuCodes(localizations: [String], offered: [String], excluded: [String], systemCode: String?,
+                          locale: Locale = .current) -> [String] {
+        Set(localizations + offered + excluded).subtracting([systemCode].compactMap { $0 })
             .compactMap { code in name(of: code, locale: locale).map { (code, $0) } }
             .sorted { $0.1.localizedCaseInsensitiveCompare($1.1) == .orderedAscending }
             .map(\.0)

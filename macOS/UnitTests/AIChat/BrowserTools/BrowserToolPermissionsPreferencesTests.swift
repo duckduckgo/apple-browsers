@@ -248,23 +248,55 @@ final class BrowserToolPermissionsPreferencesTests: XCTestCase {
         XCTAssertFalse(model.isTranslateCustomized)
     }
 
-    func testTheLanguageMenuListsTheOfferedLanguagesByNameWithoutTheSystemLanguage() {
+    func testTheLanguageMenuListsTheAppLocalizationsByNameWithoutTheSystemLanguage() {
         let locale = Locale(identifier: "en_US")
 
-        let codes = TranslatePagesLanguages.menuCodes(excluded: [], systemCode: "es", locale: locale)
+        let codes = TranslatePagesLanguages.menuCodes(localizations: ["en", "de", "es", "fr"], offered: [], excluded: [],
+                                                      systemCode: "en", locale: locale)
 
-        XCTAssertEqual(codes.map { TranslatePagesLanguages.name(of: $0, locale: locale) },
-                       ["Chinese", "Dutch", "French", "German", "Italian", "Japanese", "Korean", "Polish", "Portuguese", "Turkish"])
+        XCTAssertEqual(codes.map { TranslatePagesLanguages.name(of: $0, locale: locale) }, ["French", "German", "Spanish"])
     }
 
-    func testTheLanguageMenuAddsExcludedLanguagesOutsideTheOfferedList() {
+    func testTheLanguageMenuAddsOfferedAndExcludedLanguagesOnceByName() {
         let locale = Locale(identifier: "en_US")
 
-        let codes = TranslatePagesLanguages.menuCodes(excluded: ["sv", "fr"], systemCode: "en", locale: locale)
+        let codes = TranslatePagesLanguages.menuCodes(localizations: ["de", "fr"], offered: ["sv", "de"], excluded: ["ja", "fr"],
+                                                      systemCode: "en", locale: locale)
 
-        XCTAssertEqual(codes.count, 12)
-        XCTAssertTrue(codes.contains("sv"))
-        XCTAssertEqual(codes.filter { $0 == "fr" }.count, 1)
+        XCTAssertEqual(codes.map { TranslatePagesLanguages.name(of: $0, locale: locale) }, ["French", "German", "Japanese", "Swedish"])
+    }
+
+    func testTheAppLocalizationsComeFromTheBundleWithoutBase() {
+        XCTAssertFalse(TranslatePagesLanguages.appLocalizations().contains("base"))
+        XCTAssertFalse(TranslatePagesLanguages.appLocalizations().contains("Base"))
+    }
+
+    func testAnOfferedLanguageIsRecordedOnceAndSurvivesAReset() {
+        translatePages.recordOffered(languageCode: "sv-SE")
+        translatePages.recordOffered(languageCode: "sv")
+        translatePages.exclude(languageCode: "sv")
+
+        model.resetTranslate()
+
+        let reloaded = TranslatePagesSetting(store: translateStore)
+        XCTAssertEqual(reloaded.offeredLanguageCodes, ["sv"])
+        XCTAssertEqual(reloaded.excludedLanguageCodes, [])
+        XCTAssertEqual(model.translateOfferedLanguages, ["sv"])
+    }
+
+    func testResetAllKeepsOfferedLanguages() {
+        translatePages.recordOffered(languageCode: "sv")
+        model.reload()
+
+        model.resetAll()
+
+        XCTAssertEqual(translatePages.offeredLanguageCodes, ["sv"])
+    }
+
+    func testRecordingAnOfferedLanguageAloneDoesNotMakeTheSettingCustomized() {
+        translatePages.recordOffered(languageCode: "sv")
+
+        XCTAssertFalse(translatePages.isCustomized)
     }
 
     func testTheSummaryNamesTheSystemLanguageThenTheExcludedOnes() {

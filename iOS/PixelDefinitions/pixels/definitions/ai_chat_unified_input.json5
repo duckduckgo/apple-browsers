@@ -688,7 +688,7 @@
                 "key": "entry_point",
                 "description": "Where the user turned Create Image on.",
                 "type": "string",
-                "enum": ["tools_menu", "chat_header_new_image"]
+                "enum": ["tools_menu", "chat_header_new_image", "new_chat_hint"]
             }
         ]
     },

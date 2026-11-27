@@ -18,9 +18,11 @@
 //
 
 import AIChat
+import Combine
 import Foundation
 
-/// Hints are for returning users: someone who has sent a Duck.ai prompt and accepted the Terms of Service.
+/// Hints are for returning users: someone who has sent a Duck.ai prompt and accepted the Terms of Service,
+/// and who hasn't ignored them often enough to reach the cap.
 struct NewChatHintsEligibility {
 
     static let promptConversion = "duckai_prompt"
@@ -28,20 +30,32 @@ struct NewChatHintsEligibility {
     private let storage: DuckAiNativeStorageHandling?
     private let fireModeStorage: DuckAiNativeStorageHandling?
     private let termsOfServiceStore: DuckAiTermsOfServiceStore
+    private let isCapReached: () -> Bool
 
     init(storage: DuckAiNativeStorageHandling?,
          fireModeStorage: DuckAiNativeStorageHandling?,
-         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore()) {
+         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+         isCapReached: @escaping () -> Bool = { false }) {
         self.storage = storage
         self.fireModeStorage = fireModeStorage
         self.termsOfServiceStore = termsOfServiceStore
+        self.isCapReached = isCapReached
     }
 
     /// A Fire tab writes to its own store, so a prompt sent there counts too, while the normal store still holds
     /// the prompts sent before it.
     func isEligibleUser(isFireTab: Bool) -> Bool {
-        guard termsOfServiceStore.hasAccepted else { return false }
+        guard termsOfServiceStore.hasAccepted, !isCapReached() else { return false }
         return hasSentPrompt(in: storage) || (isFireTab && hasSentPrompt(in: fireModeStorage))
+    }
+
+    /// Fires when the web app writes its conversions to either store, so a first prompt turns the hints on
+    /// without waiting for something else to refresh them.
+    var updates: AnyPublisher<Void, Never> {
+        Publishers.MergeMany([storage, fireModeStorage].compactMap { ($0 as? DuckAiNativeEntriesObserving)?.reservedEntryUpdatesPublisher })
+            .filter { $0 == .originConversions }
+            .map { _ in () }
+            .eraseToAnyPublisher()
     }
 
     private func hasSentPrompt(in storage: DuckAiNativeStorageHandling?) -> Bool {

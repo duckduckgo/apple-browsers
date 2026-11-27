@@ -45,7 +45,7 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Starting the search path saves it and skips Try a search", .timeLimit(.minutes(1)))
     func startSearchPath() async throws {
-        manager.startPath(.search)
+        manager.startPath(.search, query: "best pizza")
 
         #expect(try store.object(forKey: "contextual-onboarding_path-kind") as? String == "search")
         let newTab = await Tab(content: .newtab)
@@ -57,7 +57,7 @@ struct ContextualDialogsManagerPathTests {
     func searchPathDoesNotLock() async {
         #expect(manager.uiLock == .unlocked)
 
-        manager.startPath(.search)
+        manager.startPath(.search, query: "best pizza")
         manager.state = .ongoing
         manager.fireButtonUsed()
         manager.state = .onboardingCompleted
@@ -70,7 +70,7 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("The Duck.ai path locks all but Fire once, until Fire is used", .timeLimit(.minutes(1)))
     func duckAIPathLocksUntilFire() async {
-        manager.startPath(.duckAI)
+        manager.startPath(.duckAI, query: "Plan a day in London")
         manager.state = .ongoing
 
         #expect(manager.uiLock == .locked(except: [.fire]))
@@ -87,7 +87,7 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("The Duck.ai path waits for its chat to be deleted until Fire is used", .timeLimit(.minutes(1)))
     func duckAIPathWaitsForChatDeletionUntilFire() {
-        manager.startPath(.duckAI)
+        manager.startPath(.duckAI, query: "Plan a day in London")
         manager.state = .ongoing
 
         #expect(manager.isWaitingForDuckAIChatDeletion)
@@ -100,7 +100,7 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("The search path doesn't wait for a chat to be deleted", .timeLimit(.minutes(1)))
     func searchPathDoesNotWaitForChatDeletion() {
-        manager.startPath(.search)
+        manager.startPath(.search, query: "best pizza")
         manager.state = .ongoing
 
         #expect(!manager.isWaitingForDuckAIChatDeletion)
@@ -109,7 +109,7 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Completing onboarding stops waiting for the chat to be deleted", .timeLimit(.minutes(1)))
     func completingOnboardingStopsWaitingForChatDeletion() {
-        manager.startPath(.duckAI)
+        manager.startPath(.duckAI, query: "Plan a day in London")
         manager.state = .onboardingCompleted
 
         #expect(!manager.isWaitingForDuckAIChatDeletion)
@@ -119,7 +119,7 @@ struct ContextualDialogsManagerPathTests {
     @Test("Ending or restarting onboarding unlocks the UI", .timeLimit(.minutes(1)),
           arguments: [ContextualOnboardingState.onboardingCompleted, .notStarted])
     func endingOnboardingUnlocks(newState: ContextualOnboardingState) async {
-        manager.startPath(.duckAI)
+        manager.startPath(.duckAI, query: "Plan a day in London")
 
         manager.state = newState
 
@@ -133,7 +133,7 @@ struct ContextualDialogsManagerPathTests {
     func fireBeforeDuckAIPathStillLocks() async {
         manager.fireButtonUsed()
 
-        manager.startPath(.duckAI)
+        manager.startPath(.duckAI, query: "Plan a day in London")
 
         #expect(manager.uiLock == .locked(except: [.fire]))
         await lockUpdatesDelivered()
@@ -143,7 +143,7 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("A relaunch during the Duck.ai path locks the UI again", .timeLimit(.minutes(1)))
     func relaunchRelocks() async {
-        manager.startPath(.duckAI)
+        manager.startPath(.duckAI, query: "Plan a day in London")
         manager.state = .ongoing
 
         let relaunchLocker = CapturingUILocker()
@@ -158,11 +158,11 @@ struct ContextualDialogsManagerPathTests {
           arguments: [true, false])
     func relaunchWithoutLock(duckAIPathAfterFire: Bool) async {
         if duckAIPathAfterFire {
-            manager.startPath(.duckAI)
+            manager.startPath(.duckAI, query: "Plan a day in London")
             manager.state = .ongoing
             manager.fireButtonUsed()
         } else {
-            manager.startPath(.search)
+            manager.startPath(.search, query: "best pizza")
             manager.state = .ongoing
         }
 
@@ -192,7 +192,7 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Starting the Duck.ai path saves it and asks for no search dialogs", .timeLimit(.minutes(1)))
     func startDuckAIPath() async throws {
-        manager.startPath(.duckAI)
+        manager.startPath(.duckAI, query: "Plan a day in London")
 
         #expect(try store.object(forKey: "contextual-onboarding_path-kind") as? String == "duckAI")
         let newTab = await Tab(content: .newtab)
@@ -202,7 +202,7 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Restarting onboarding forgets the chosen path", .timeLimit(.minutes(1)))
     func restartClearsThePath() throws {
-        manager.startPath(.search)
+        manager.startPath(.search, query: "best pizza")
         manager.state = .ongoing
 
         manager.state = .notStarted
@@ -214,12 +214,89 @@ struct ContextualDialogsManagerPathTests {
     @available(iOS 16, macOS 13, *)
     @Test("Restarting onboarding clears the state the path saves itself", .timeLimit(.minutes(1)))
     func restartResetsThePath() {
-        manager.startPath(.search)
+        manager.startPath(.search, query: "best pizza")
         searchPathStorage.blockedTrackerSeen = true
 
         manager.state = .notStarted
 
         #expect(!searchPathStorage.blockedTrackerSeen)
+    }
+
+    // MARK: - Duck.ai prompt
+
+    private var savedPrompt: String? {
+        get throws { try store.object(forKey: "contextual-onboarding_duck-ai-prompt") as? String }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only the Duck.ai path saves the prompt", .timeLimit(.minutes(1)))
+    func onlyDuckAIPathSavesThePrompt() throws {
+        manager.startPath(.search, query: "best pizza")
+        #expect(try savedPrompt == nil)
+
+        manager.startPath(.duckAI, query: "Plan a day in London")
+        #expect(try savedPrompt == "Plan a day in London")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Fire clears the saved prompt", .timeLimit(.minutes(1)))
+    func fireClearsThePrompt() throws {
+        manager.startPath(.duckAI, query: "Plan a day in London")
+
+        manager.fireButtonUsed()
+
+        #expect(try savedPrompt == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Completing onboarding clears the saved prompt", .timeLimit(.minutes(1)))
+    func completionClearsThePrompt() throws {
+        manager.startPath(.duckAI, query: "Plan a day in London")
+
+        manager.turnOffFeature()
+
+        #expect(try savedPrompt == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Restarting onboarding clears the saved prompt", .timeLimit(.minutes(1)))
+    func restartClearsThePrompt() throws {
+        manager.startPath(.duckAI, query: "Plan a day in London")
+
+        manager.state = .notStarted
+
+        #expect(try savedPrompt == nil)
+    }
+
+    // MARK: - Reopened Duck.ai chat
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A restarted Duck.ai chat shows That's Duck.ai again instead of the ending", .timeLimit(.minutes(1)))
+    func restartedChatShowsThatsDuckAIAgain() async throws {
+        manager.startPath(.duckAI, query: "Plan a day in London")
+        let duckAITab = await Tab(content: .aiChat(try #require(URL(string: "https://duck.ai/chat"))))
+        #expect(manager.dialogTypeForTab(duckAITab) == .thatsDuckAI)
+
+        manager.restartDuckAIChat()
+
+        let reopenedTab = await Tab(content: .aiChat(try #require(URL(string: "https://duck.ai/chat"))))
+        #expect(manager.dialogTypeForTab(reopenedTab) == .thatsDuckAI)
+        #expect(manager.uiLock == .locked(except: [.fire]))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Falling back from Duck.ai starts the search path at Try a search, unlocked", .timeLimit(.minutes(1)))
+    func fallBackStartsTheSearchPath() async throws {
+        manager.startPath(.duckAI, query: "Plan a day in London")
+
+        manager.fallBackToSearchPath()
+
+        #expect(try store.object(forKey: "contextual-onboarding_path-kind") as? String == "search")
+        #expect(try savedPrompt == nil)
+        #expect(!manager.isWaitingForDuckAIChatDeletion)
+        #expect(manager.uiLock == .unlocked)
+        let newTab = await Tab(content: .newtab)
+        #expect(manager.dialogTypeForTab(newTab) == .tryASearch)
     }
 }
 

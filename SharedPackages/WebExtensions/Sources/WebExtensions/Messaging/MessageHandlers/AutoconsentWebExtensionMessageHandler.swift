@@ -153,7 +153,8 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         // The extension is running but will never answer the page's init: the page stays unanswered and its tab is reported.
         let event = CPMMessagingHealthEvent.dashboardResponse(url: url,
                                                               extensionIdentifier: extensionIdentifier,
-                                                              isAnswer: !consentStatus.cpmCannotAnswerPage)
+                                                              isAnswer: !consentStatus.cpmCannotAnswerPage,
+                                                              position: Self.position(in: params))
         await cpmMessagingHealthMonitor?.handle(event)
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
@@ -172,8 +173,19 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
               url.host != nil else {
             return .success(Self.successResponse)
         }
-        await cpmMessagingHealthMonitor?.handle(.initProgress(url: url, stage: stage, extensionIdentifier: extensionIdentifier))
+        await cpmMessagingHealthMonitor?.handle(.initProgress(url: url,
+                                                              stage: stage,
+                                                              extensionIdentifier: extensionIdentifier,
+                                                              position: Self.position(in: params)))
         return .success(Self.successResponse)
+    }
+
+    /// The tab's index, its window and all windows, when the extension sends all three.
+    private static func position(in params: [String: Any]?) -> CPMExtensionTabPosition? {
+        guard let tabIndex = (params?["tabIndex"] as? NSNumber)?.intValue,
+              let windowId = (params?["windowId"] as? NSNumber)?.intValue,
+              let windowIds = (params?["windowIds"] as? [NSNumber])?.map(\.intValue) else { return nil }
+        return CPMExtensionTabPosition(tabIndex: tabIndex, windowId: windowId, windowIds: windowIds)
     }
 
     private func handleShowCpmAnimation(_ params: [String: Any]?) -> WebExtensionMessageResult {

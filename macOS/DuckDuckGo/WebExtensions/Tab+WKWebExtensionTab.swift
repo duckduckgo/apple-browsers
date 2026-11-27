@@ -50,6 +50,7 @@ extension Tab: WKWebExtensionTab {
     }
 
     func window(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
+        mainWindowController.map { WebExtensionWindowOrder.shared.register($0, in: context.uniqueIdentifier) }
         return mainWindowController
     }
 

@@ -157,6 +157,13 @@ enum WebExtensionManagerFactory {
         let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring,
                                                                   isUnmeasuredPage: { $0.isDuckPlayer },
                                                                   isInitProgressEnabled: isInitProgressEnabled)
+        cpmMessagingHealthMonitor.tabIdentifierAtExtensionPosition = { extensionIdentifier, index, windowRank, windowCount in
+            let open = Application.appDelegate.windowControllersManager.mainWindowControllers
+            let windows = WebExtensionWindowOrder.shared.windows(in: extensionIdentifier).compactMap { $0 as? MainWindowController }
+            let openWindows = windows.filter { window in open.contains { $0 === window } }
+            guard openWindows.count == windowCount, openWindows.indices.contains(windowRank) else { return nil }
+            return openWindows[windowRank].mainViewController.tabCollectionViewModel.webExtensionTab(at: index)?.uuid
+        }
         let installationStore = InstalledWebExtensionStore()
         let permissionController = WebExtensionPermissionController(
             store: WebExtensionPermissionStore(keyValueStore: keyValueStore),

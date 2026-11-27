@@ -108,6 +108,35 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenTheExtensionSendsTheTabPositionThenItReachesTheMonitorOnlyWhole() async {
+        enableInitProgress()
+        let consentStatus: [String: Any] = ["consentManaged": true, "cosmetic": false, "optoutFailed": false,
+                                            "consentReloadLoop": false, "consentHeuristicEnabled": true,
+                                            "cpmStage": "popup_found", "cpmQueueSize": 0]
+        let whole: [String: Any] = ["tabIndex": NSNumber(value: 2), "windowId": NSNumber(value: 40),
+                                    "windowIds": [NSNumber(value: 12), NSNumber(value: 40)]]
+        let withoutWindows = whole.filter { $0.key != "windowIds" }
+        for (extra, expected) in [(whole, CPMExtensionTabPosition(tabIndex: 2, windowId: 40, windowIds: [12, 40])),
+                                  (withoutWindows, nil)] {
+            let monitor = RecordingCPMMessagingHealthMonitor()
+            let handler = AutoconsentWebExtensionMessageHandler(
+                privacyConfigurationManager: mockPrivacyConfigurationManager,
+                autoconsentPreferences: mockAutoconsentPreferences,
+                cpmMessagingHealthMonitor: monitor
+            )
+            let page: [String: Any] = ["url": "https://example.com/a"]
+
+            _ = await handler.handleMessage(createMessage(method: "refreshCpmDashboardState",
+                                                          params: page.merging(extra) { $1 }.merging(["consentStatus": consentStatus]) { $1 }))
+            _ = await handler.handleMessage(createMessage(method: "cpmInitProgress",
+                                                          params: page.merging(extra) { $1 }.merging(["stage": "config_read"]) { $1 }))
+
+            XCTAssertEqual(monitor.position, expected)
+            XCTAssertEqual(monitor.progressPositions, [expected])
+        }
+    }
+
+    @MainActor
     func testWhenRefreshCpmDashboardStateThenForwardsURLAndExtensionToHealthMonitor() async {
         let monitor = RecordingCPMMessagingHealthMonitor()
         let handler = AutoconsentWebExtensionMessageHandler(
@@ -1054,13 +1083,17 @@ private final class RecordingCPMMessagingHealthMonitor: CPMMessagingHealthMonito
     private(set) var extensionIdentifier: String?
     private(set) var url: URL?
     private(set) var isAnswer: Bool?
+    private(set) var position: CPMExtensionTabPosition?
     private(set) var progress: [(url: URL, stage: CPMInitStage, extensionIdentifier: String?)] = []
+    private(set) var progressPositions: [CPMExtensionTabPosition?] = []
 
     func handle(_ event: CPMMessagingHealthEvent) {
-        if case .initProgress(let url, let stage, let extensionIdentifier) = event {
+        if case .initProgress(let url, let stage, let extensionIdentifier, let position) = event {
             progress.append((url, stage, extensionIdentifier))
+            progressPositions.append(position)
         }
-        guard case .dashboardResponse(let url, let extensionIdentifier, let isAnswer) = event else { return }
+        guard case .dashboardResponse(let url, let extensionIdentifier, let isAnswer, let position) = event else { return }
+        self.position = position
         self.extensionIdentifier = extensionIdentifier
         self.url = url
         self.isAnswer = isAnswer

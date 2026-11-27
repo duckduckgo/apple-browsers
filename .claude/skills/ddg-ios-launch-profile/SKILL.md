@@ -61,6 +61,7 @@ Keys marked * need `"internalUser": true` in the same profile (flags and experim
 | `debug.duckAI.customURL` | http(s) URL | Saved | Loads Duck.ai from this URL |
 | `debug.idleReturnThresholdSeconds` | Int > 0 | Saved | Seconds in the background before the app returns to a new tab page |
 | `debug.syncEnvironment` | `Production`, `Development` | Saved | Sync server; use it signed out of Sync |
+| `debug.daysSinceInstall` | Int ≥ 0 | Saved | Install date that many days back, as Remote Messaging's "Set Days Since Installed" sets it; a fresh install's first statistics request can still reset it to today, so relaunch with the profile before relying on it |
 | `debug.configURLs.<name>` * | http(s) URL | Saved | Custom configuration URL; `<name>` is `privacyConfiguration`, `trackerDataSet`, `surrogates`, `remoteMessagingConfig`, `bloomFilterSpec`, `bloomFilterBinary` or `bloomFilterExcludedDomains` |
 
 "Saved" values stay until the app changes them or is reinstalled. For a privacy config used once, use

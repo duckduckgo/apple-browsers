@@ -98,7 +98,7 @@ def run(ios):
     ios.expect_wide_event("data-clearing", status="SUCCESS")
 ```
 
-`examples/` shows how to drive the harness (t1–t12, listed in [features/](features/README.md)); start from the closest.
+`examples/` shows how to drive the harness (t1–t13, listed in [features/](features/README.md)); start from the closest.
 
 **When a run passes:** the proof returned, recorded at least one passing check and no failing one (a failed check
 you caught still fails the run), and the app was still in the foreground at the end. A problem before the proof's
@@ -303,10 +303,10 @@ $V prove .agents/skills/verify-ios/examples/*.py                                
 | `lib/vrunner_start.sh` | start one runner and report its pids (called by the driver, which also stops it) |
 | `lib/ios_identity.sh` | running-binary sha256 vs build (called by doctor) |
 | `runner/` | Swift XCUITest runner, XcodeGen spec and generated project; regenerate with `cd runner && xcodegen generate` |
-| `examples/` | worked proofs t1–t12, harness examples |
+| `examples/` | worked proofs t1–t13, harness examples |
 | `tests/` | `test_*.py` (no simulator), `must_fail.py` (refusals and build identity, as a proof) |
 | `fixture/` | local test pages |
-| `features/` | the feature map: shared steps, Duck.ai |
+| `features/` | the feature map |
 
 Swift under `runner/` must pass `mint run swiftlint lint --strict --force-exclude .agents/skills/verify-ios/runner/Sources`.
 Keep the runner's fixes: the animation-idle swizzle, the `record(_:)` override, the alert handler (app + SpringBoard),

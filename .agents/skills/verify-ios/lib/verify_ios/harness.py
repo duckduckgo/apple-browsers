@@ -3,8 +3,8 @@
 A proof is a short Python file written for one change, saved with its evidence, never committed. It defines `run(ios)`
 and may set `DEVICES = ["iphone", "ipad"]`, `LIVE = ["duck.ai"]` (live services it depends on),
 `FLAGS = {"flagName": True}` (remote feature flags to pin, on top of env.PINNED_FLAGS),
-`PROFILE = {"settings": {"theme": "dark"}}` (launch profile keys other than flags, applied by `ios.reset()`) and
-`LANGUAGE = {"language": "fr", "locale": "fr_FR"}` (only to test localization: the default, env.LANGUAGE, is en-US).
+`PROFILE = {"settings": {"theme": "dark"}}` (launch profile keys other than flags, applied by `ios.reset()` and
+again by `ios.launch()`) and `LANGUAGE = {"language": "fr", "locale": "fr_FR"}` (only to test localization: the default, env.LANGUAGE, is en-US).
 Checks made inside `with ios.on_base("fail"):` (or "pass") declare what the base build should do; `prove --base`
 judges each check against a run on the base build (compare.py). Elsewhere a check should be unchanged on base.
 
@@ -58,7 +58,7 @@ class Ios:
         self.evidence = evidence
         self.flags = dict(flags or {})
         self.profile = dict(profile or {})
-        self.profile_applied = False             # PROFILE reaches the app only through reset()
+        self.profile_applied = False             # reset() must apply PROFILE first; launch() reapplies it
         self.language = dict(language or env.LANGUAGE)
         self.checks, self.unverified_items, self.notes, self.warnings = [], [], [], []
         self.shots = []   # screenshot files in the order taken: the key frames
@@ -99,7 +99,7 @@ class Ios:
         return out
 
     def launch(self):
-        return self._session("launch", lambda: self.d.launch(flags=self.flags, language=self.language))
+        return self._session("launch", lambda: self.d.launch(flags=self.flags, language=self.language, profile=self.profile))
 
     def _session(self, action, fn):
         """A launch that fails is setup trouble (build identity, readiness, runner), not the behavior under proof."""

@@ -34,12 +34,14 @@ extension IOSLaunchSettings {
     static func debugMenu(appSettings: AppSettings,
                           appDefaults: UserDefaults,
                           aiChatDebugSettings: AIChatDebugSettingsHandling,
+                          statistics: StatisticsUserDefaults,
                           customConfigurationURLs urlStore: CustomConfigurationURLStoring) -> [LaunchSetting] {
         [onboardingUserType(appSettings),
          onboardingFlowType(appSettings),
          duckAICustomURL(aiChatDebugSettings),
          idleReturnThreshold(appDefaults.keyedStoring()),
-         syncEnvironment(appDefaults)]
+         syncEnvironment(appDefaults),
+         daysSinceInstall(statistics)]
         + customConfigurationURLs(urlStore)
     }
 
@@ -80,6 +82,16 @@ extension IOSLaunchSettings {
                       validate: { (seconds: Int) in
             guard seconds > 0 else { throw LaunchSettingInvalidValue("use a number of seconds above 0.") }
         }, write: { storage.thresholdSecondsOverride = $0 })
+    }
+
+    static func daysSinceInstall(_ statistics: StatisticsUserDefaults) -> LaunchSetting {
+        LaunchSetting("debug.daysSinceInstall",
+                      summary: "Sets the install date this many days back, like Remote Messaging's \"Set Days Since Installed\".",
+                      validate: { (days: Int) in
+            guard days >= 0 else { throw LaunchSettingInvalidValue("use 0 or more days.") }
+        }, write: { (days: Int) in
+            statistics.installDate = Calendar.current.date(byAdding: .day, value: -days, to: Date())
+        })
     }
 
     static func syncEnvironment(_ appDefaults: UserDefaults) -> LaunchSetting {

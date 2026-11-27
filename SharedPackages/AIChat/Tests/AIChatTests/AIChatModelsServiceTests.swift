@@ -20,6 +20,7 @@ import XCTest
 import AIChat
 @_spi(Testing) import Networking
 import Subscription
+import WKAbstractions
 
 @MainActor
 final class AIChatModelsServiceTests: XCTestCase {
@@ -966,6 +967,67 @@ final class AIChatModelsServiceTests: XCTestCase {
         _ = try await service.fetchModels()
     }
 
+    // MARK: - Cookie domain matching
+
+    func testWhenCookiesHaveMatchingDomains_ThenProviderReturnsThem() async {
+        let store = MockHTTPCookieStore(cookies: [
+            makeCookie(name: "hostOnly", domain: "duckduckgo.com"),
+            makeCookie(name: "domain", domain: ".duckduckgo.com")
+        ])
+        let provider = WKHTTPCookieStoreProvider(cookieStore: store)
+
+        let cookies = await provider.cookies(for: URL(string: "https://duckduckgo.com")!)
+
+        XCTAssertEqual(Set(cookies.map(\.name)), ["hostOnly", "domain"])
+    }
+
+    func testWhenHostIsSubdomain_ThenOnlyDomainCookiesAreReturned() async {
+        let store = MockHTTPCookieStore(cookies: [
+            makeCookie(name: "hostOnly", domain: "duckduckgo.com"),
+            makeCookie(name: "domain", domain: ".duckduckgo.com"),
+            makeCookie(name: "sub", domain: "sub.duckduckgo.com")
+        ])
+        let provider = WKHTTPCookieStoreProvider(cookieStore: store)
+
+        let cookies = await provider.cookies(for: URL(string: "https://sub.duckduckgo.com")!)
+
+        XCTAssertEqual(Set(cookies.map(\.name)), ["domain", "sub"])
+    }
+
+    func testWhenCookieDomainIsOnlyCharacterSuffixOfHost_ThenProviderExcludesIt() async {
+        let store = MockHTTPCookieStore(cookies: [
+            makeCookie(name: "go", domain: "go.com"),
+            makeCookie(name: "dotGo", domain: ".go.com"),
+            makeCookie(name: "o", domain: ".o.com"),
+            makeCookie(name: "kai", domain: ".k.ai"),
+            makeCookie(name: "kaiHostOnly", domain: "k.ai")
+        ])
+        let provider = WKHTTPCookieStoreProvider(cookieStore: store)
+
+        let ddgCookies = await provider.cookies(for: URL(string: "https://duckduckgo.com")!)
+        let duckAICookies = await provider.cookies(for: URL(string: "https://duck.ai")!)
+
+        XCTAssertTrue(ddgCookies.isEmpty)
+        XCTAssertTrue(duckAICookies.isEmpty)
+    }
+
+    func testWhenDuckAICookiesExist_ThenProviderReturnsThemForDuckAIHost() async {
+        let store = MockHTTPCookieStore(cookies: [
+            makeCookie(name: "hostOnly", domain: "duck.ai"),
+            makeCookie(name: "domain", domain: ".duck.ai"),
+            makeCookie(name: "other", domain: ".duckduckgo.com")
+        ])
+        let provider = WKHTTPCookieStoreProvider(cookieStore: store)
+
+        let cookies = await provider.cookies(for: AIChatModelsService.defaultBaseURL)
+
+        XCTAssertEqual(Set(cookies.map(\.name)), ["hostOnly", "domain"])
+    }
+
+    private func makeCookie(name: String, domain: String) -> HTTPCookie {
+        HTTPCookie(properties: [.name: name, .value: "1", .domain: domain, .path: "/"])!
+    }
+
     // MARK: - Service Error Tests
 
     func testWhenHTTPErrorOccurs_ThenDescriptionIsCorrect() {
@@ -980,6 +1042,19 @@ final class AIChatModelsServiceTests: XCTestCase {
 }
 
 // MARK: - Mocks
+
+@MainActor
+private final class MockHTTPCookieStore: DDGHTTPCookieStore {
+    var cookies: [HTTPCookie]
+
+    init(cookies: [HTTPCookie]) {
+        self.cookies = cookies
+    }
+
+    func setCookie(_ cookie: HTTPCookie) async { cookies.append(cookie) }
+    func allCookies() async -> [HTTPCookie] { cookies }
+    func deleteCookie(_ cookie: HTTPCookie) async { cookies.removeAll { $0 == cookie } }
+}
 
 @MainActor
 private final class MockCookieProvider: AIChatCookieProviding {
